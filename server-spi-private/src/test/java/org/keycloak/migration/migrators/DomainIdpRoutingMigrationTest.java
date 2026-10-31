@@ -17,6 +17,7 @@
 package org.keycloak.migration.migrators;
 
 import java.text.Collator;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -283,11 +284,11 @@ public class DomainIdpRoutingMigrationTest {
         idp("ip", "p", "ANY", "x.café.o.com", true);
         idp("iq", "q", "ANY", "cafe.q.com, a.q.com, Á.q.com", true);
 
-        // the caller inserts a.q.com and Á.q.com in this order, and skips the second if the database treats them as the
-        // same name
+        // names with non-ASCII characters are not added; with an accent-insensitive collation, the database would find
+        // the emails of x.café.o.com, which go to p, by the name x.cafe.o.com, and cafe.q.com is café.q.com
         assertThat(newDomains(migrate(this::findAccentSensitive)),
-                containsInAnyOrder("o x.cafe.o.com -", "p x.café.o.com -", "q a.q.com -", "q Á.q.com -", "q cafe.q.com -"));
-        assertThat(newDomains(migrate(this::findAccentInsensitive)), contains("q a.q.com -", "q Á.q.com -"));
+                containsInAnyOrder("o x.cafe.o.com -", "q a.q.com -", "q cafe.q.com -"));
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), contains("q a.q.com -"));
     }
 
     @Test
@@ -296,19 +297,105 @@ public class DomainIdpRoutingMigrationTest {
         org("p", "*.café.o.com");
         idp("io", "o", "ANY", "x.cafe.o.com", true);
 
-        // with an accent-insensitive collation, the emails of x.cafe.o.com go to p
+        // with an accent-insensitive collation, the database would find the emails of x.café.o.com, which go to p, by
+        // the name x.cafe.o.com
         assertThat(newDomains(migrate(this::findAccentSensitive)), contains("o x.cafe.o.com -"));
         assertThat(newDomains(migrate(this::findAccentInsensitive)), empty());
         assertThat(newDomains(migrate()), empty());
     }
 
     @Test
-    public void testExcludedDomainThatOnlyDiffersInDotlessI() {
-        // i and ı are the same letter ignoring case, but not in lower case, which is how domains are matched
-        org("o", "*.o.com", "i.o.com");
-        idp("io", "o", "ANY", "ı.o.com", true);
+    public void testExcludedDomainWithNonAsciiName() {
+        // the emails of x.cafe.o.com go to o; with an accent-insensitive collation the database would find them by the
+        // name x.café.o.com of p
+        org("o", "*.o.com");
+        org("p", "*.café.o.com");
+        idp("ip", "p", "ANY", "x.café.o.com", true);
 
-        assertThat(newDomains(migrate()), contains("o ı.o.com -"));
+        assertThat(newDomains(migrate(this::findAccentSensitive)), empty());
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), empty());
+        assertThat(newDomains(migrate()), empty());
+    }
+
+    @Test
+    public void testExcludedDomainUnderLessSpecificDomainWithNameThatOnlyDiffersInAccents() {
+        // the emails of x.a.ḃ.com go to p, since *.a.b.com of o does not match them
+        org("o", "*.a.b.com");
+        org("p", "*.ḃ.com");
+        idp("io", "o", "ANY", "x.a.b.com", true);
+
+        assertThat(newDomains(migrate(this::findAccentSensitive)), contains("o x.a.b.com -"));
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), empty());
+        assertThat(newDomains(migrate()), empty());
+    }
+
+    @Test
+    public void testExcludedDomainUnderMoreSpecificDomainOverlappingDomainWithNameThatOnlyDiffersInAccents() {
+        // the emails of y.x.café.o.com go to p, since *.x.cafe.o.com of o does not match them
+        org("o", "*.x.cafe.o.com");
+        org("p", "*.café.o.com");
+        idp("io", "o", "ANY", "y.x.cafe.o.com", true);
+
+        assertThat(newDomains(migrate(this::findAccentSensitive)), contains("o y.x.cafe.o.com -"));
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), empty());
+        assertThat(newDomains(migrate()), empty());
+    }
+
+    @Test
+    public void testExcludedWildcardDomainUnderDomainWithNameThatOnlyDiffersInAccents() {
+        // a wildcard domain is never found by the exact name of an email domain, so it moves no emails
+        org("o", "*.o.com");
+        org("p", "*.café.o.com");
+        idp("io", "o", "ANY", "*.x.cafe.o.com", true);
+
+        assertThat(newDomains(migrate(this::findAccentSensitive)), contains("o *.x.cafe.o.com -"));
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), contains("o *.x.cafe.o.com -"));
+        assertThat(newDomains(migrate()), contains("o *.x.cafe.o.com -"));
+    }
+
+    @Test
+    public void testExcludedDomainUnderDomainThatGeneralCollationTreatsAsTheSame() {
+        // utf8mb4_general_ci compares ß as s, so the database would find the emails of x.straße.o.com, which go to p, by
+        // the name x.strase.o.com
+        org("o", "*.o.com");
+        org("p", "*.straße.o.com");
+        idp("io", "o", "ANY", "x.strase.o.com", true);
+
+        assertThat(newDomains(migrate(this::findAccentSensitive)), contains("o x.strase.o.com -"));
+        assertThat(newDomains(migrate(this::findLikeGeneralCollation)), empty());
+        assertThat(newDomains(migrate()), empty());
+    }
+
+    @Test
+    public void testExcludedWildcardDomainsThatGeneralCollationTreatsAsTheSame() {
+        org("o", "*.o.com");
+        idp("io", "o", "ANY", "*.straße.o.com, *.strase.o.com", true);
+
+        // the import keeps the first; the caller inserts both in this order, and skips the second if the database
+        // treats them as the same name
+        assertThat(newDomains(migrate()), contains("o *.strase.o.com -"));
+        assertThat(newDomains(migrate(this::findLikeGeneralCollation)), contains("o *.strase.o.com -", "o *.straße.o.com -"));
+    }
+
+    @Test
+    public void testExcludedDomainThatGeneralCollationMayTreatAsDomainWithDotlessI() {
+        org("o", "*.o.com");
+        org("p", "lı.o.com");
+        idp("io", "o", "ANY", "li.o.com", true);
+
+        assertThat(newDomains(migrate(this::findAccentSensitive)), contains("o li.o.com -"));
+        assertThat(newDomains(migrate()), empty());
+    }
+
+    @Test
+    public void testExcludedDomainThatOnlyDiffersInDotlessI() {
+        // i and ı are the same letter ignoring case, but not in lower case, which is how domains are matched; still, a
+        // name with non-ASCII characters is not added
+        org("o", "*.o.com", "i.o.com");
+        idp("io", "o", "ANY", "ı.o.com, I.o.com", true);
+
+        assertThat(newDomains(migrate()), empty());
+        assertThat(newDomains(migrate(this::findAccentSensitive)), empty());
     }
 
     @Test
@@ -328,8 +415,7 @@ public class DomainIdpRoutingMigrationTest {
         idp("io", "o", "ANY", "straße.o.com, strasse.o.com, æ.o.com, ae.o.com", true);
 
         assertThat(newDomains(migrate()), contains("o ae.o.com -", "o strasse.o.com -"));
-        assertThat(newDomains(migrate(this::findAccentInsensitive)),
-                contains("o ae.o.com -", "o æ.o.com -", "o strasse.o.com -", "o straße.o.com -"));
+        assertThat(newDomains(migrate(this::findAccentInsensitive)), contains("o ae.o.com -", "o strasse.o.com -"));
     }
 
     @Test
@@ -397,6 +483,17 @@ public class DomainIdpRoutingMigrationTest {
      */
     private List<Domain> findAccentSensitive(String name) {
         return domains.stream().filter(domain -> domain.name().toLowerCase().equals(name.toLowerCase())).toList();
+    }
+
+    /**
+     * Like utf8mb4_general_ci: case- and accent-insensitive, ß is s.
+     */
+    private List<Domain> findLikeGeneralCollation(String name) {
+        return domains.stream().filter(domain -> generalKey(domain.name()).equals(generalKey(name))).toList();
+    }
+
+    private static String generalKey(String name) {
+        return Normalizer.normalize(name.toLowerCase().replace("ß", "s"), Normalizer.Form.NFD).replaceAll("\\p{M}", "");
     }
 
     /**

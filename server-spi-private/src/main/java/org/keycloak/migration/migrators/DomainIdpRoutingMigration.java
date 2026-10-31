@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.HexFormat;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -180,11 +179,14 @@ public final class DomainIdpRoutingMigration {
             }
         });
 
-        Result result = new Result(routings, addExcludedDomains(organizationNames, domains, candidates, databaseLookup));
+        Set<Routing> mayBeSkipped = new HashSet<>();
+        Result result = new Result(routings, addExcludedDomains(organizationNames, domains, candidates, databaseLookup, mayBeSkipped));
 
+        // a new domain that the database may skip does not count, so that the warning is not lost
         Set<IdentityProvider> routed = new HashSet<>();
         result.routings().forEach(routing -> routed.add(routing.identityProvider()));
-        result.newDomains().forEach(domain -> routed.add(domain.identityProvider()));
+        result.newDomains().stream().filter(domain -> !mayBeSkipped.contains(domain))
+                .forEach(domain -> routed.add(domain.identityProvider()));
         identityProvidersByOrganization.forEach((organizationId, organizationIdentityProviders) -> organizationIdentityProviders.stream()
                 .filter(idp -> !routed.contains(idp))
                 .forEach(idp -> logger.warnf("No domain of organization '%s' is routed to identity provider '%s', so the email domain of its members is no longer checked. To check it, route a domain to the identity provider without enabling the redirect",
@@ -216,7 +218,8 @@ public final class DomainIdpRoutingMigration {
     }
 
     private static List<Routing> addExcludedDomains(Map<String, String> organizationNames, Collection<Domain> domains,
-                                                   List<Candidate> candidates, DomainLookup databaseLookup) {
+                                                   List<Candidate> candidates, DomainLookup databaseLookup,
+                                                   Set<Routing> mayBeSkipped) {
         Collator collator = createCollator();
 
         // domain names are case-insensitive, also where the database compares them case-sensitively
@@ -224,25 +227,36 @@ public final class DomainIdpRoutingMigration {
         Map<String, List<Domain>> domainsByCollationKey = new HashMap<>();
         for (Domain domain : domains) {
             domainsByName.computeIfAbsent(domain.name().toLowerCase(), key -> new ArrayList<>()).add(domain);
-            domainsByCollationKey.computeIfAbsent(toCollationKey(collator, domain.name()), key -> new ArrayList<>()).add(domain);
+            getCollationKeys(collator, domain.name()).forEach(key -> domainsByCollationKey.computeIfAbsent(key, k -> new ArrayList<>()).add(domain));
         }
         DomainLookup lookup = databaseLookup != null ? databaseLookup
-                : name -> domainsByCollationKey.getOrDefault(toCollationKey(collator, name), List.of());
+                : name -> getCollationKeys(collator, name).stream()
+                        .flatMap(key -> domainsByCollationKey.getOrDefault(key, List.of()).stream()).distinct().toList();
         Map<String, List<Domain>> found = new HashMap<>();
 
         Map<String, Map<String, Candidate>> candidatesByName = new TreeMap<>();
 
         for (Candidate candidate : candidates) {
             String organizationId = candidate.organizationId();
+            boolean wildcard = isWildcard(candidate.name());
+
+            if (!wildcard && !isAscii(candidate.name())) {
+                // the database finds an email domain by its exact name with the collation of the column, so other
+                // spellings of the name, which may belong to other organizations, would be found by it
+                logger.warnf("Excluded domain '%s' of identity provider '%s' is not migrated: the database may treat other spellings of a name with non-ASCII characters as the same name. Review the domains of organization '%s'",
+                        candidate.name(), candidate.identityProvider().alias(), organizationNames.get(organizationId));
+                continue;
+            }
+
             Domain conflict = null;
 
             for (String name : getOverlappingNames(candidate.name())) {
-                List<Domain> sameName = found.computeIfAbsent(name, key -> {
-                    Set<Domain> result = new LinkedHashSet<>(domainsByName.getOrDefault(key.toLowerCase(), List.of()));
-                    result.addAll(lookup.findByName(key));
-                    return List.copyOf(result);
-                });
-                conflict = sameName.stream().filter(domain -> isInConflict(candidate, name, domain)).findFirst().orElse(null);
+                Set<Domain> matching = new LinkedHashSet<>(domainsByName.getOrDefault(name.toLowerCase(), List.of()));
+                if (!wildcard || name.equals(candidate.name())) {
+                    // a wildcard domain is never found by its exact name, so only its own name is looked up
+                    matching.addAll(found.computeIfAbsent(name, lookup::findByName));
+                }
+                conflict = matching.stream().filter(domain -> isInConflict(candidate, name, domain)).findFirst().orElse(null);
                 if (conflict != null) {
                     break;
                 }
@@ -259,7 +273,9 @@ public final class DomainIdpRoutingMigration {
                     .merge(organizationId, candidate, (a, b) -> a.name().compareTo(b.name()) <= 0 ? a : b);
         }
 
-        Map<String, List<Candidate>> candidatesByCollationKey = new LinkedHashMap<>();
+        // candidates that share one of their collation keys may have the same name for the database
+        List<List<Candidate>> groups = new ArrayList<>();
+        Map<String, List<Candidate>> groupsByCollationKey = new HashMap<>();
 
         for (Map<String, Candidate> byOrganization : candidatesByName.values()) {
             if (byOrganization.size() > 1) {
@@ -269,12 +285,37 @@ public final class DomainIdpRoutingMigration {
             }
 
             Candidate candidate = byOrganization.values().iterator().next();
-            candidatesByCollationKey.computeIfAbsent(toCollationKey(collator, candidate.name()), key -> new ArrayList<>()).add(candidate);
+            Set<String> keys = getCollationKeys(collator, candidate.name());
+            List<Candidate> group = null;
+
+            for (String key : keys) {
+                List<Candidate> other = groupsByCollationKey.get(key);
+                if (other == null || other == group) {
+                    continue;
+                }
+                if (group == null) {
+                    group = other;
+                    continue;
+                }
+                // the candidate joins two groups
+                group.addAll(other);
+                List<Candidate> merged = group;
+                groupsByCollationKey.replaceAll((k, g) -> g == other ? merged : g);
+                groups.removeIf(g -> g == other);
+            }
+
+            if (group == null) {
+                group = new ArrayList<>();
+                groups.add(group);
+            }
+            group.add(candidate);
+            List<Candidate> joined = group;
+            keys.forEach(key -> groupsByCollationKey.put(key, joined));
         }
 
         List<Routing> newDomains = new ArrayList<>();
 
-        for (List<Candidate> similar : candidatesByCollationKey.values()) {
+        for (List<Candidate> similar : groups) {
             Candidate first = similar.get(0);
 
             if (databaseLookup == null && similar.stream().anyMatch(candidate -> !candidate.organizationId().equals(first.organizationId()))) {
@@ -284,21 +325,21 @@ public final class DomainIdpRoutingMigration {
             }
 
             for (Candidate candidate : similar) {
-                // names of different organizations that the database treats as the same do not both get here, since
-                // each one finds the organization domain of the other
-                Candidate earlier = similar.stream()
-                        .filter(other -> other.organizationId().equals(candidate.organizationId()))
-                        .findFirst().orElseThrow();
-                if (candidate != earlier) {
+                Routing domain = new Routing(candidate.organizationId(), candidate.name(), candidate.redirect());
+                if (candidate != first) {
+                    String organizationName = organizationNames.get(candidate.organizationId());
                     if (databaseLookup == null) {
                         logger.warnf("Excluded domain '%s' of identity provider '%s' is not migrated: the database may treat it as the same name as '%s'. Review the domains of organization '%s'",
-                                candidate.name(), candidate.identityProvider().alias(), earlier.name(), organizationNames.get(earlier.organizationId()));
+                                candidate.name(), candidate.identityProvider().alias(), first.name(), organizationName);
                         continue;
                     }
+                    // the caller inserts the names in this order, and skips a name that the database treats as an
+                    // earlier one
                     logger.warnf("Excluded domain '%s' of identity provider '%s' is not migrated if the database treats it as the same name as '%s'. Review the domains of organization '%s'",
-                            candidate.name(), candidate.identityProvider().alias(), earlier.name(), organizationNames.get(earlier.organizationId()));
+                            candidate.name(), candidate.identityProvider().alias(), first.name(), organizationName);
+                    mayBeSkipped.add(domain);
                 }
-                newDomains.add(new Routing(candidate.organizationId(), candidate.name(), candidate.redirect()));
+                newDomains.add(domain);
             }
         }
 
@@ -325,17 +366,27 @@ public final class DomainIdpRoutingMigration {
     }
 
     /**
-     * Whether the domain, whose name the database treats as {@code name}, is the candidate, or a domain of another
-     * organization that is at least as specific as the organization domain of the candidate, so adding the candidate
-     * would move email domains between organizations.
+     * Whether adding the candidate would move email domains of the domain, which the database finds by {@code name},
+     * between organizations: the domain has the name of the candidate, or it is a domain of another organization that
+     * is at least as specific as the organization domain of the candidate, or whose name only the database treats as
+     * {@code name}. In the last case the emails of that spelling of the candidate's name go to the other organization,
+     * and the database would find them by the name of the candidate.
      */
     private static boolean isInConflict(Candidate candidate, String name, Domain domain) {
         if (name.equals(candidate.name())) {
             return true;
         }
 
-        return !domain.organizationId().equals(candidate.organizationId())
-                && compareSpecificity(name, candidate.matchingDomain()) >= 0;
+        if (domain.organizationId().equals(candidate.organizationId())) {
+            return false;
+        }
+
+        return !domain.name().toLowerCase().equals(name.toLowerCase())
+                || compareSpecificity(name, candidate.matchingDomain()) >= 0;
+    }
+
+    private static boolean isAscii(String name) {
+        return name.chars().allMatch(c -> c < 0x80);
     }
 
     private static Set<String> parseDomains(String value) {
@@ -463,6 +514,20 @@ public final class DomainIdpRoutingMigration {
         // only the parts between punctuation: the collator ignores '-', the database collations do not
         return LETTERS_AND_DIGITS.matcher(name)
                 .replaceAll(part -> HexFormat.of().formatHex(collator.getCollationKey(part.group()).toByteArray()));
+    }
+
+    /**
+     * The collation key of the name and, if it has {@code ß} or {@code ı}, also of the name with {@code s} and {@code i}
+     * instead, which is how {@code utf8mb4_general_ci} may compare them, unlike the collator.
+     */
+    private static Set<String> getCollationKeys(Collator collator, String name) {
+        Set<String> keys = new LinkedHashSet<>();
+        keys.add(toCollationKey(collator, name));
+        String folded = name.replace("ß", "s").replace("ı", "i");
+        if (!folded.equals(name)) {
+            keys.add(toCollationKey(collator, folded));
+        }
+        return keys;
     }
 
     private static boolean isWildcard(String domain) {

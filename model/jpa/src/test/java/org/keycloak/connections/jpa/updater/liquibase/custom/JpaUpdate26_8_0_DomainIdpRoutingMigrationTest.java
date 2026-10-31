@@ -204,8 +204,9 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTest {
 
         migrate();
 
-        // for the collation, the emails of x.cafe.o.com go to p, so only p adds its exclusion
-        assertDomains("r o *.o.com io redirect", "r p *.café.o.com ip redirect", "r p x.café.o.com -", "r q *.q.com iq redirect", "r q café.q.com iq redirect", "r q a.q.com -");
+        // the collation would find the emails of x.café.o.com of p by the name x.cafe.o.com, and the emails of
+        // x.cafe.o.com of o by the name x.café.o.com, so neither is added
+        assertDomains("r o *.o.com io redirect", "r p *.café.o.com ip redirect", "r q *.q.com iq redirect", "r q café.q.com iq redirect", "r q a.q.com -");
     }
 
     @Test
@@ -259,8 +260,39 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigrationTest {
 
         migrate();
 
-        // the default collation of H2, like the one of PostgreSQL, keeps all names
-        assertDomains("r o *.o.com io redirect", "r o a.o.com -", "r o strasse.o.com -", "r o straße.o.com -", "r o á.o.com -");
+        // the default collation of H2, like the one of PostgreSQL, could keep all names, but names with non-ASCII
+        // characters are not added on any database
+        assertDomains("r o *.o.com io redirect", "r o a.o.com -", "r o strasse.o.com -");
+    }
+
+    @Test
+    public void testExcludedDomainWithNonAsciiNameWithAccentInsensitiveCollation() throws Exception {
+        connection.close();
+        createSchema("ENGLISH STRENGTH PRIMARY");
+        realm("r");
+        org("r", "o", "*.o.com");
+        org("r", "p", "*.café.o.com");
+        idp("r", "ip", "p", "ANY", "x.café.o.com");
+
+        migrate();
+
+        // the collation would find the emails of x.cafe.o.com, which go to o, by the name x.café.o.com
+        assertDomains("r o *.o.com -", "r p *.café.o.com ip redirect");
+    }
+
+    @Test
+    public void testExcludedDomainUnderLessSpecificDomainWithNameThatOnlyDiffersInAccents() throws Exception {
+        connection.close();
+        createSchema("ENGLISH STRENGTH PRIMARY");
+        realm("r");
+        org("r", "o", "*.a.b.com");
+        org("r", "p", "*.ḃ.com");
+        idp("r", "io", "o", "ANY", "x.a.b.com");
+
+        migrate();
+
+        // the emails of x.a.ḃ.com go to p, and the collation would find them by the name x.a.b.com
+        assertDomains("r o *.a.b.com io redirect", "r p *.ḃ.com -");
     }
 
     @Test
