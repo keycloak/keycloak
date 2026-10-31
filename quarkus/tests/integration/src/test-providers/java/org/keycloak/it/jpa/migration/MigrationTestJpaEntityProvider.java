@@ -20,8 +20,40 @@ package org.keycloak.it.jpa.migration;
 import java.util.List;
 
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.representations.migration.ChangeSetDescriptor;
+import org.keycloak.representations.migration.ChangeSetStep;
+import org.keycloak.representations.migration.MigrationManifest;
 
 public class MigrationTestJpaEntityProvider implements JpaEntityProvider {
+
+    /** Manifest with a single change-set that creates the MIGRATION_TEST_ENTITY table. */
+    private static final MigrationManifest MANIFEST = buildManifest();
+
+    private static MigrationManifest buildManifest() {
+        // Standard SQL supported by all Keycloak databases.
+        String createTable =
+                "CREATE TABLE MIGRATION_TEST_ENTITY (" +
+                "ID VARCHAR(36) NOT NULL, " +
+                "NAME VARCHAR(255), " +
+                "CONSTRAINT PK_MIGRATION_TEST_ENTITY PRIMARY KEY (ID))";
+
+        ChangeSetStep step = new ChangeSetStep();
+        step.setType("sql");
+        for (String dialect : List.of("h2", "postgresql", "mysql", "mariadb", "oracle", "mssql")) {
+            step.addStatement(dialect, createTable);
+        }
+
+        ChangeSetDescriptor cs = new ChangeSetDescriptor();
+        cs.setId("migration-test-1.0");
+        cs.setAuthor("keycloak");
+        cs.setChangeLogFile("META-INF/migration-test-changelog.xml");
+        cs.setCheckSum("9:migration-test-1.0");
+        cs.getSteps().add(step);
+
+        MigrationManifest manifest = new MigrationManifest();
+        manifest.getChangeSets().add(cs);
+        return manifest;
+    }
 
     @Override
     public List<Class<?>> getEntities() {
@@ -29,8 +61,8 @@ public class MigrationTestJpaEntityProvider implements JpaEntityProvider {
     }
 
     @Override
-    public String getChangelogLocation() {
-        return "META-INF/migration-test-changelog.xml";
+    public MigrationManifest getMigrationManifest() {
+        return MANIFEST;
     }
 
     @Override

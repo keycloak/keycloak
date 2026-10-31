@@ -322,6 +322,7 @@
         <module>services</module>
         <module>themes</module>
         <module>misc/db-compatibility-verifier</module>
+        <module>misc/schema-generator-maven-plugin</module>
         <module>misc/theme-verifier</module>
         <module>model</module>
         <module>util</module>

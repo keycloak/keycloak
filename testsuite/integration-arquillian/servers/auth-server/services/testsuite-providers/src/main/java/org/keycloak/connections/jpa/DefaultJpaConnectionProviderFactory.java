@@ -43,7 +43,7 @@ import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.support.EntityManagerProxy;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
+import org.keycloak.connections.jpa.updater.jdbc.JdbcJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
@@ -56,7 +56,6 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-import liquibase.GlobalConfiguration;
 import org.hibernate.boot.archive.scan.spi.ClassDescriptor;
 import org.hibernate.boot.archive.scan.spi.MappingFileDescriptor;
 import org.hibernate.boot.archive.scan.spi.PackageDescriptor;
@@ -320,7 +319,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     void migration(MigrationStrategy strategy, boolean initializeEmpty, String schema, File databaseUpdateFile, Connection connection, KeycloakSession session) {
-        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class, LiquibaseJpaUpdaterProviderFactory.PROVIDER_ID);
+        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class, JdbcJpaUpdaterProviderFactory.PROVIDER_ID);
 
         JpaUpdaterProvider.Status status = updater.validate(connection, schema);
         if (status == JpaUpdaterProvider.Status.VALID) {
@@ -431,12 +430,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
 
     @Override
     public String getSchema() {
-        String schema = config.get("schema");
-        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
-            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
-            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
-        }
-        return schema;
+        return config.get("schema");
     }
 
     @Override

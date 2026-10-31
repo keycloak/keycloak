@@ -116,16 +116,14 @@ public class LoggingDistTest {
         CLIResult cliResult = runner.run("start-dev", "--log-console-output=json");
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();
-        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
     }
 
     @Test
     void testLogLevelSettingsAppliedWhenJsonEnabled(KeycloakRunner runner) throws IOException {
         runner.getDistribution(RawKeycloakDistribution.class).resetH2Dir();
-        CLIResult cliResult = runner.run("start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json");
+        CLIResult cliResult = runner.run("start-dev", "--log-level=off,org.keycloak:debug", "--log-console-output=json");
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
         cliResult.assertStartedDevMode();
     }
 

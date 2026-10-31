@@ -35,7 +35,6 @@ import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Priorities;
-import org.apache.commons.collections4.IteratorUtils;
 
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
@@ -150,7 +149,20 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
                 .filter(m -> hasInferredValue(m, context))
                 .map(m -> m.getTo());
 
-        return IteratorUtils.chainedIterator(baseStream.iterator(), inferredValueStream.iterator());
+        // chain the iterators lazily - Stream.concat would eagerly bind to the underlying sources
+        Iterator<String> base = baseStream.iterator();
+        Iterator<String> inferred = inferredValueStream.iterator();
+        return new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return base.hasNext() || inferred.hasNext();
+            }
+
+            @Override
+            public String next() {
+                return base.hasNext() ? base.next() : inferred.next();
+            }
+        };
     }
 
     private boolean isAugmenting(ConfigSourceInterceptorContext context) {

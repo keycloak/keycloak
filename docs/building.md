@@ -77,6 +77,8 @@ retrieved from [Wildfly ide-configs](https://github.com/wildfly/wildfly-core/tre
 rules, see following [instructions](http://community.jboss.org/wiki/ImportFormattingRules).
 
 If your changes require updates to the database read [Updating Database Schema](updating-database-schema.md).
+Note that database schema changes require a Maven build of `model/jpa` (not just an IDE build) to regenerate
+the migration manifest (which embeds the per-dialect SQL) — see the database schema guide for the exact commands.
 
 If your changes require introducing new dependencies or updating dependency versions please discuss this first on the
 dev mailing list. We do not accept new dependencies to be added lightly, so try to use what is available.

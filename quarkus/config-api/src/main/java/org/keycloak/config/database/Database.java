@@ -48,16 +48,6 @@ public final class Database {
         }
     }
 
-    public static boolean isLiquibaseDatabaseSupported(String databaseType, String dbKind) {
-        for (Vendor vendor : DATABASES.values()) {
-            if (vendor.liquibaseType.equals(databaseType) && vendor.isOfKind(dbKind)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public static Optional<Vendor> getVendor(String vendor) {
         return Arrays.stream(Vendor.values())
                 .filter(v -> v.isOfKind(vendor) || asList(v.aliases).contains(vendor))
@@ -147,7 +137,6 @@ public final class Database {
                     }
 
                 },
-                "liquibase.database.core.H2Database",
                 "dev-mem", "dev-file"
         ),
         MYSQL("mysql",
@@ -159,8 +148,7 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_HOST, getter, "localhost"),
                         getProperty(DatabaseOptions.DB_URL_PORT, getter, "3306"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak"),
-                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter)),
-                "org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase"
+                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter))
         ),
         TIDB("tidb",
                 "com.mysql.cj.jdbc.MysqlXADataSource",
@@ -171,8 +159,7 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_HOST, getter, "localhost"),
                         getProperty(DatabaseOptions.DB_URL_PORT, getter, "3306"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak"),
-                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter)),
-                "org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase"
+                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter))
         ),
         MARIADB("mariadb",
                 "org.mariadb.jdbc.MariaDbDataSource",
@@ -183,8 +170,7 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_HOST, getter, "localhost"),
                         getProperty(DatabaseOptions.DB_URL_PORT, getter, "3306"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak"),
-                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter)),
-                "org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase"
+                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter))
         ),
         POSTGRES("postgresql",
                 "org.postgresql.xa.PGXADataSource",
@@ -196,7 +182,6 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_PORT, getter, "5432"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak"),
                         getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter)),
-                "liquibase.database.core.PostgresDatabase",
                 "postgres"
         ),
         MSSQL("mssql",
@@ -209,7 +194,6 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_PORT, getter, "1433"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak"),
                         getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter)),
-                "org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase",
                 "mssql"
         ),
         ORACLE("oracle",
@@ -223,8 +207,7 @@ public final class Database {
                         getProperty(DatabaseOptions.DB_URL_HOST, getter, "localhost"),
                         getProperty(DatabaseOptions.DB_URL_PORT, getter, "1521"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, getter, "keycloak"),
-                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter)),
-                "liquibase.database.core.OracleDatabase"
+                        getProperty(DatabaseOptions.DB_URL_PROPERTIES, getter))
         );
 
         final String databaseKind;
@@ -232,23 +215,20 @@ public final class Database {
         final String nonXaDriver;
         final Function<String, String> dialect;
         final TriFunction<Function<Option<?>, String>, String, String, String> defaultUrl;
-        final String liquibaseType;
         final String[] aliases;
 
         Vendor(String databaseKind, String xaDriver, String nonXaDriver, String dialect, TriFunction<Function<Option<?>, String>, String, String, String> defaultUrl,
-               String liquibaseType, String... aliases) {
-            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, defaultUrl, liquibaseType, aliases);
+               String... aliases) {
+            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, defaultUrl, aliases);
         }
 
         Vendor(String databaseKind, String xaDriver, String nonXaDriver, Function<String, String> dialect, TriFunction<Function<Option<?>, String>, String, String, String> defaultUrl,
-               String liquibaseType,
                String... aliases) {
             this.databaseKind = databaseKind;
             this.xaDriver = xaDriver;
             this.nonXaDriver = nonXaDriver;
             this.dialect = dialect;
             this.defaultUrl = defaultUrl;
-            this.liquibaseType = liquibaseType;
             this.aliases = aliases.length == 0 ? new String[]{databaseKind} : aliases;
         }
 
@@ -262,10 +242,6 @@ public final class Database {
 
         private static String getProperty(Option<?> option, Function<Option<?>, String> getter, String defaultValue) {
             return Optional.ofNullable(getter.apply(option)).orElse(defaultValue);
-        }
-
-        public String getLiquibaseType() {
-            return liquibaseType;
         }
 
         @Override

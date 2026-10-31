@@ -70,8 +70,6 @@ import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
-import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
-import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.policy.DenylistPasswordPolicyProviderFactory;
 import org.keycloak.protocol.ProtocolMapperSpi;
@@ -224,9 +222,7 @@ class KeycloakProcessor {
 
     private static final List<Class<? extends ProviderFactory>> IGNORED_PROVIDER_FACTORY = List.of(
             JBossJtaTransactionManagerLookup.class,
-            DefaultLiquibaseConnectionProvider.class,
             FolderThemeProviderFactory.class,
-            LiquibaseJpaUpdaterProviderFactory.class,
             FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             DenylistPasswordPolicyProviderFactory.class,
@@ -926,13 +922,11 @@ class KeycloakProcessor {
     /**
      * This will cause quarkus to include specified modules in the jandex index. For example keycloak-services is needed as it includes
      * most of the JAX-RS resources, which are required to register Resteasy builtin providers.
-     * Similar reason is liquibase
      *
      * @param indexDependencyBuildItemBuildProducer
      */
     @BuildStep
     void index(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
-        indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.liquibase", "liquibase-core"));
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-services"));
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("com.fasterxml.jackson.jakarta.rs", "jackson-jakarta-rs-yaml-provider"));
     }
