@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 
 export async function clickCancelButton(page: Page) {
   await page.getByTestId("user-creation-revert").click();
@@ -44,4 +44,15 @@ export async function joinGroup(page: Page, groups: string[], empty = false) {
   }
 
   await page.getByTestId("join-button").click();
+}
+
+export async function assertLinkedProvider(
+  page: Page,
+  alias: string,
+  providerId: string,
+) {
+  await expect(page.getByRole("link", { name: alias })).toHaveAttribute(
+    "href",
+    new RegExp(`/identity-providers/${providerId}/${alias}/settings$`),
+  );
 }

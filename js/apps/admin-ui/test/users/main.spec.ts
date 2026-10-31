@@ -28,6 +28,7 @@ import {
   searchItem,
 } from "../utils/table.ts";
 import {
+  assertLinkedProvider,
   clickAddUserButton,
   clickCancelButton,
   clickSaveButton,
@@ -435,5 +436,53 @@ test.describe("User attribute search", () => {
     // that includes service account users in the results
     await assertRowExists(page, exactUserName);
     await assertRowExists(page, "service-account-sa-client", false);
+  });
+});
+
+test.describe("Identity provider links", () => {
+  test("shows a linked provider when the realm has more than 100 providers", async ({
+    page,
+  }) => {
+    // the server returns at most 100 providers per request, sorted by alias
+    const identityProviders = Array.from({ length: 101 }, (_, index) => ({
+      alias: `idp-${String(index).padStart(3, "0")}`,
+      providerId: "oidc",
+      config: {
+        clientId: "client",
+        clientSecret: "secret",
+        authorizationUrl: "https://idp.example.com/auth",
+        tokenUrl: "https://idp.example.com/token",
+      },
+    }));
+    const linkedAlias = identityProviders[100].alias;
+    await using testBed = await createTestBed({
+      identityProviders,
+      users: [
+        {
+          username: "linked-user",
+          federatedIdentities: [
+            {
+              identityProvider: linkedAlias,
+              userId: "remote-id",
+              userName: "remote-user",
+            },
+          ],
+        },
+      ],
+    });
+    const user = await adminClient.findUserByUsername(
+      testBed.realm,
+      "linked-user",
+    );
+
+    await login(page, {
+      to: toUser({
+        realm: testBed.realm,
+        id: user.id!,
+        tab: "identity-provider-links",
+      }),
+    });
+
+    await assertLinkedProvider(page, linkedAlias, "oidc");
   });
 });
