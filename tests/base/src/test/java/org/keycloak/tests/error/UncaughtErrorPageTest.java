@@ -104,9 +104,11 @@ class UncaughtErrorPageTest {
         HttpResponse response = httpClient.execute(post);
         assertThat("status code", response.getStatusLine().getStatusCode(), is(400));
 
+        assertContentTypeJson(response);
+
         OAuth2ErrorRepresentation error = readError(response);
         assertThat("error code", error.getError(), is(OAuthErrorException.INVALID_REQUEST));
-        assertThat("error description", error.getErrorDescription(), is(notNullValue()));
+        assertThat("error description", error.getErrorDescription(), is("Cannot parse the JSON"));
     }
 
     @Test
@@ -117,9 +119,11 @@ class UncaughtErrorPageTest {
         HttpResponse response = httpClient.execute(post);
         assertThat("status code", response.getStatusLine().getStatusCode(), is(400));
 
+        assertContentTypeJson(response);
+
         OAuth2ErrorRepresentation error = readError(response);
         assertThat("error code", error.getError(), is(OAuthErrorException.INVALID_REQUEST));
-        assertThat("error description", error.getErrorDescription(), is(notNullValue()));
+        assertThat("error description", error.getErrorDescription(), is("Cannot parse the JSON"));
     }
 
     @Test
@@ -135,6 +139,10 @@ class UncaughtErrorPageTest {
         String body = EntityUtils.toString(response.getEntity());
         assertThat("XSS payload should be escaped in response", body,
                 containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
+        var error = JsonSerialization.mapper.readTree(body);
+        assertThat("error message", error.get("error").asText(),
+                containsString("Unrecognized field \"<img src=alert(1)>\""));
+        assertThat("representation type", error.get("error").asText(), containsString("ComponentRepresentation"));
     }
 
     @Test

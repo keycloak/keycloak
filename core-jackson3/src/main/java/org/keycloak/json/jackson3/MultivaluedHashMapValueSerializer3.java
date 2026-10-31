@@ -1,4 +1,4 @@
-package org.keycloak.admin.client.jackson3;
+package org.keycloak.json.jackson3;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -13,7 +13,7 @@ import tools.jackson.core.JsonGenerator;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.ValueSerializer;
 
-class MultivaluedHashMapValueSerializer3 extends ValueSerializer<MultivaluedHashMap<String, String>> {
+public class MultivaluedHashMapValueSerializer3 extends ValueSerializer<MultivaluedHashMap<String, String>> {
 
     @Override
     public void serialize(MultivaluedHashMap<String, String> map, JsonGenerator gen, SerializationContext ctxt) {
