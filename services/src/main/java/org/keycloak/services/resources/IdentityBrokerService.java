@@ -752,6 +752,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 .detail(Details.REDIRECT_URI, authenticationSession.getRedirectUri())
                 .detail(Details.IDENTITY_PROVIDER, providerAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, context.getId())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         UserModel federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, federatedIdentityModel);
@@ -896,6 +897,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             event.detail(Details.IDENTITY_PROVIDER, providerAlias);
             event.detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+            event.detail(Details.IDENTITY_PROVIDER_USER_ID, context.getId());
 
             // Ensure the first-broker-login flow was successfully finished
             String authProvider = authSession.getAuthNote(AbstractIdpAuthenticator.FIRST_BROKER_LOGIN_SUCCESS);
@@ -930,7 +932,18 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             // Add federated identity link here
             if (!(federatedUser instanceof LightweightUserAdapter)) {
+                // The stored federated identity can differ from the incoming one, for example when the provider
+                // sent the same federated user ID in a different case than the one the link was created with, so
+                // the lookup of the returning user above missed. Record the stored ID in the event to make this
+                // situation visible in the events instead of only in the server log. The stored link is read
+                // before checkOverrideLink, which removes it when the user confirmed to override an existing link.
+                FederatedIdentityModel storedIdentity = session.users().getFederatedIdentity(realmModel, federatedUser, providerAlias);
+
                 checkOverrideLink(authSession, federatedUser, providerAlias);
+
+                if (storedIdentity != null) {
+                    event.detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, storedIdentity.getUserId());
+                }
 
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getUsername(), context.getToken());
@@ -997,6 +1010,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         event.clone()
                 .event(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
                 .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previous.getUserName())
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, previous.getUserId())
                 .success();
     }
 
@@ -1096,9 +1110,14 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         context.getIdp().authenticationFinished(authSession, context);
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER, providerAlias);
         authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+        // When the brokered authentication is followed by a required action or consent, the login event
+        // is rebuilt from the user session notes in the next request, so the federated user ID is
+        // persisted alongside the provider and the username to survive that rebuild.
+        authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USER_ID, context.getId());
 
         event.detail(Details.IDENTITY_PROVIDER, providerAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, context.getId())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, context.getBrokerSessionId());
 
         if (isDebugEnabled()) {
