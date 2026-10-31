@@ -839,6 +839,51 @@ export const RealmSettingsTokensTab = ({
             }}
             rows={6}
           />
+          <TextAreaControl
+            name={convertAttributeNameToForm("attributes.oid4vci.display")}
+            label={t("issuerDisplay")}
+            labelIcon={t("issuerDisplayHelp")}
+            rules={{
+              validate: (value: string) => {
+                if (!value) {
+                  return true;
+                }
+                try {
+                  const parsed: unknown = JSON.parse(value);
+                  const isObject = (element: unknown): element is object =>
+                    typeof element === "object" &&
+                    element !== null &&
+                    !Array.isArray(element);
+                  const isDisplayElement = (element: unknown) => {
+                    if (!isObject(element)) {
+                      return false;
+                    }
+                    if (!("logo" in element)) {
+                      return true;
+                    }
+                    const { logo } = element;
+                    return (
+                      isObject(logo) &&
+                      "uri" in logo &&
+                      typeof logo.uri === "string" &&
+                      logo.uri.trim().length > 0
+                    );
+                  };
+                  return (
+                    (Array.isArray(parsed) &&
+                      parsed.length > 0 &&
+                      parsed.every(isDisplayElement) &&
+                      new Set(parsed.map((element) => element.locale)).size ===
+                        parsed.length) ||
+                    t("issuerDisplayInvalid")
+                  );
+                } catch {
+                  return t("issuerDisplayInvalid");
+                }
+              },
+            }}
+            rows={6}
+          />
 
           <Text
             className="kc-override-action-tokens-subtitle"
