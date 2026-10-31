@@ -18,10 +18,13 @@
 package org.keycloak.testframework.conformance;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -62,6 +65,7 @@ public final class OpenIdConformanceServer implements AutoCloseable {
     private final ConformanceApiClient client;
     private final URI baseUri;
     private final X509Certificate nginxCertificate;
+    private final SuiteTunnel tunnel;
 
     private OpenIdConformanceServer(Network network, GenericContainer<?> mongo, GenericContainer<?> server,
                                     GenericContainer<?> nginx, URI baseUri, SSLContext sslContext, X509Certificate nginxCertificate) {
@@ -72,6 +76,7 @@ public final class OpenIdConformanceServer implements AutoCloseable {
         this.baseUri = baseUri;
         this.nginxCertificate = nginxCertificate;
         this.client = new ConformanceApiClient(baseUri, sslContext);
+        this.tunnel = new SuiteTunnel(INTERNAL_BASE_URI, baseUri.getHost(), baseUri.getPort());
     }
 
     /**
@@ -151,7 +156,31 @@ public final class OpenIdConformanceServer implements AutoCloseable {
         return nginxCertificate;
     }
 
-    // Rewrites a suite internal URI to one reachable from the test JVM.
+    // The suite's nginx TLS certificate PEM encoded, e.g. for a truststore of Keycloak, as Keycloak calls the suite
+    // itself for some flows, e.g. back-channel logout.
+    public String certificatePem() {
+        try {
+            return "-----BEGIN CERTIFICATE-----\n"
+                    + Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.US_ASCII)).encodeToString(nginxCertificate.getEncoded())
+                    + "\n-----END CERTIFICATE-----";
+        } catch (CertificateEncodingException e) {
+            throw new RuntimeException("Failed to encode the conformance suite TLS certificate", e);
+        }
+    }
+
+    /**
+     * The value of the {@code proxy-mappings} option of Keycloak's outgoing HTTP client
+     * ({@code spi-connections-http-client--default--proxy-mappings}) under which Keycloak reaches the URLs the suite
+     * publishes on its container internal host, e.g. the jwks_uri, request_uri or sector_identifier_uri of a
+     * dynamically registered client. The requests go through a tunnel in the test JVM to the suite's port on the Docker
+     * host.
+     */
+    public String keycloakProxyMapping() {
+        return tunnel.keycloakProxyMapping();
+    }
+
+    // Rewrites a suite internal URI to one reachable from the test JVM, and from Keycloak, which runs on the Docker host
+    // as well, e.g. for the endpoints Keycloak calls itself such as the back-channel logout endpoint.
     public URI externalUri(URI internalUri) {
         if (!INTERNAL_BASE_URI.getHost().equals(internalUri.getHost())) {
             return internalUri;
@@ -162,6 +191,7 @@ public final class OpenIdConformanceServer implements AutoCloseable {
 
     @Override
     public void close() {
+        tunnel.close();
         List.of(nginx, server, mongo).forEach(GenericContainer::stop);
         network.close();
         synchronized (OpenIdConformanceServer.class) {

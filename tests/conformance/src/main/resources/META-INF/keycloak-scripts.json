@@ -1,0 +1,9 @@
+{
+  "mappers": [
+    {
+      "name": "OpenID Connect conformance ID token claims",
+      "fileName": "oidc-id-token-claims.js",
+      "description": "Removes the typ claim, and the email claims unless no access token is issued, from the ID token"
+    }
+  ]
+}

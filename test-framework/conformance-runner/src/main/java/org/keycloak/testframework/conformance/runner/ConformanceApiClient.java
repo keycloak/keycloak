@@ -118,6 +118,16 @@ public final class ConformanceApiClient {
      */
     public ConformanceModuleResult run(ConformanceModuleVariant module, JsonNode suiteConfig,
             Consumer<ModuleRun> interaction) {
+        return run(module, suiteConfig, null, interaction);
+    }
+
+    /**
+     * Like {@link #run(ConformanceModuleVariant, JsonNode, Consumer)}, with {@code beforeStart} run once the module is
+     * configured and before it is started, e.g. to rotate the server's keys for a module comparing them with the keys
+     * it fetched while being configured. It runs only for modules the suite does not start by itself.
+     */
+    public ConformanceModuleResult run(ConformanceModuleVariant module, JsonNode suiteConfig, Runnable beforeStart,
+            Consumer<ModuleRun> interaction) {
         JsonNode plan = createPlan(module.plan(), suiteConfig, module.planVariant());
         String planId = requiredText(plan, "id");
 
@@ -125,6 +135,9 @@ public final class ConformanceApiClient {
         String moduleId = requiredText(moduleNode, "id");
         JsonNode info = waitForRunnableOrFinished(planId, moduleId);
         if ("CONFIGURED".equals(info.path("status").asText())) {
+            if (beforeStart != null) {
+                beforeStart.run();
+            }
             startModule(planId, moduleId);
         }
         if (interaction != null) {
