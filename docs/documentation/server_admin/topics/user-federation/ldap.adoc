@@ -141,6 +141,8 @@ This behavior allows you to use case-sensitive usernames and emails when *Import
 
 It is recommended to not use case-sensitive usernames and emails when using LDAP with {project_name}, as some features in {project_name} may not work correctly with case-sensitive usernames and emails.
 
+When {project_name} imports an LDAP user into the local database, the internal user id is derived from the realm, the LDAP provider and the UUID of the LDAP entry. As a result, deleting an imported user and re-importing the same LDAP entry restores the previous user id. This keeps identifiers that are anchored on the user id stable across a re-import, such as the user handle of registered passkeys or references to the user id stored by external systems. The id changes when the LDAP entry is assigned a different UUID or when the LDAP provider is re-created. Users imported by earlier versions, which received a randomly generated id, are assigned the derived id the next time the same LDAP entry is imported again, so identifiers anchored on their old id, such as a registered passkey, need to be set up once more.
+
 If you want to sync all LDAP users into the {project_name} database, configure and enable the *Sync Settings* on the LDAP provider configuration page.
 
 Two types of synchronization exist:

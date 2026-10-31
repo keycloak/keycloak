@@ -744,7 +744,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
                     }
                 } else {
-                    imported = userProvider.addUser(realm, ldapUsername);
+                    // Derive the local id from the federation anchors instead of generating a random one, so that the
+                    // id (and identifiers built on top of it, such as the WebAuthn user handle) is restored when the
+                    // same LDAP entry is re-imported after the user was deleted locally. See https://github.com/keycloak/keycloak/issues/54325
+                    imported = userProvider.addUser(realm, LDAPUtils.generateStableUserId(realm.getId(), model.getId(), ldapUser.getUuid()), ldapUsername.toLowerCase(), true, true);
                 }
             } else {
                 InMemoryUserAdapter adapter = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), ldapUsername).getId());

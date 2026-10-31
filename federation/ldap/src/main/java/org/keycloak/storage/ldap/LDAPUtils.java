@@ -18,6 +18,11 @@
 package org.keycloak.storage.ldap;
 
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -30,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.naming.directory.SearchControls;
@@ -64,6 +70,41 @@ import org.jboss.logging.Logger;
 public class LDAPUtils {
 
     private static final Logger log = Logger.getLogger(LDAPUtils.class);
+
+    /**
+     * Generates a stable identifier for a user imported from LDAP. The identifier is derived from the realm, the
+     * federation provider importing the user and the UUID of the LDAP entry, so that deleting the imported user and
+     * re-importing the same LDAP entry restores the previous user id instead of assigning a new random one.
+     * <p/>
+     * This keeps identifiers anchored to the identity stable across re-imports, which stored credentials such as
+     * WebAuthn passkeys (whose user handle is the user id) as well as external references rely on. It mirrors the
+     * intent of the derived ids used when importing is disabled ({@code f:<provider-id>:<username>}), but it anchors
+     * on the LDAP entry UUID, which does not change when the username is renamed in the directory.
+     * <p/>
+     * The identifier is an RFC 9562 UUID-formatted string derived from a SHA-256 digest of the federation anchors,
+     * mirroring how {@code SHA256PairwiseSubMapper} derives stable subject identifiers from a salted SHA-256 digest.
+     *
+     * @param realmId id of the realm the user is imported to
+     * @param providerId id of the user storage provider importing the user
+     * @param ldapUuid UUID of the LDAP entry, as stored in the {@code LDAP_ID} user attribute
+     * @return a stable user id for the given federation anchors
+     */
+    public static String generateStableUserId(String realmId, String providerId, String ldapUuid) {
+        try {
+            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+            byte[] digest = sha256.digest((realmId + ':' + providerId + ':' + ldapUuid).getBytes(StandardCharsets.UTF_8));
+            // Format the first digest bytes directly as an RFC 9562 custom-format UUID. UUID.nameUUIDFromBytes() would
+            // re-hash the digest with MD5, which is unavailable on runtimes that exclude MD5, for instance strict FIPS
+            // profiles, and would then break every import from LDAP.
+            byte[] uuidBytes = Arrays.copyOf(digest, 16);
+            uuidBytes[6] = (byte) ((uuidBytes[6] & 0x0F) | 0x80); // version 8: custom, digest-derived
+            uuidBytes[8] = (byte) ((uuidBytes[8] & 0x3F) | 0x80); // RFC 9562 variant
+            ByteBuffer uuidByteBuffer = ByteBuffer.wrap(uuidBytes);
+            return new UUID(uuidByteBuffer.getLong(), uuidByteBuffer.getLong()).toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
 
     /**
      * Method to create a user in the LDAP. The user will be created when all
