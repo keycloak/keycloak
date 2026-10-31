@@ -8,7 +8,12 @@ import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import { clickTableRowItem, searchItem } from "../utils/table.ts";
 import { continueNext, createClient, save } from "./utils.ts";
 import {
+  assertJwtAlgorithmOptions,
   assertKeyForCodeExchangeInput,
+  assertMacAlgorithmLabel,
+  assertSignatureAlgorithmLabel,
+  goToCredentialsTab,
+  selectClientAuthenticator,
   enableJwtAuthorizationGrant,
   getJwtAuthorizationGrantIdpOptions,
   selectKeyForCodeExchangeInput,
@@ -87,6 +92,25 @@ test.describe.serial("Clients details test", () => {
     await assertNotificationMessage(page, "Client successfully updated");
     await page.reload();
     await assertResourceUrl(page, resourceUrl);
+  });
+
+  test("Should use MAC terminology for client secret JWT algorithms", async ({
+    page,
+  }) => {
+    await clickTableRowItem(page, clientId);
+    await goToCredentialsTab(page);
+
+    await selectClientAuthenticator(page, "Signed JWT with Client Secret");
+    await assertMacAlgorithmLabel(page);
+    await assertJwtAlgorithmOptions(
+      page,
+      ["HS256", "HS384", "HS512"],
+      ["RS256", "ES256"],
+    );
+
+    await selectClientAuthenticator(page, "Signed JWT");
+    await assertSignatureAlgorithmLabel(page);
+    await assertJwtAlgorithmOptions(page, ["RS256", "ES256"], ["HS256"]);
   });
 });
 

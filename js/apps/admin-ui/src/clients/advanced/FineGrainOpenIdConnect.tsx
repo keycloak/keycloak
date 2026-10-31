@@ -8,7 +8,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { ApplicationUrls } from "./ApplicationUrls";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 
 type FineGrainOpenIdConnectProps = {
   save: () => void;
@@ -23,11 +23,51 @@ export const FineGrainOpenIdConnect = ({
 }: FineGrainOpenIdConnectProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext();
-  const providers = useServerInfo().providers;
+  const { providers, cryptoInfo } = useServerInfo();
   const clientSignatureProviders = providers?.clientSignature.providers;
   const contentEncryptionProviders = providers?.contentencryption.providers;
   const cekManagementProviders = providers?.cekmanagement.providers;
   const signatureProviders = providers?.signature.providers;
+  const symmetricAlgorithms =
+    cryptoInfo?.clientSignatureSymmetricAlgorithms ?? [];
+
+  const accessTokenAlgorithm = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.access.token.signed.response.alg",
+    ),
+  });
+  const idTokenAlgorithm = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.id.token.signed.response.alg",
+    ),
+  });
+  const requestObjectAlgorithm = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.request.object.signature.alg",
+    ),
+  });
+  const userInfoAlgorithm = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.user.info.response.signature.alg",
+    ),
+  });
+  const authorizationResponseAlgorithm = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.authorization.signed.response.alg",
+    ),
+  });
+
+  const algorithmType = (algorithm?: string) => {
+    if (!algorithm || algorithm === "none") return "Algorithm";
+    return algorithm.startsWith("HS") || symmetricAlgorithms.includes(algorithm)
+      ? "MacAlgorithm"
+      : "SignatureAlgorithm";
+  };
 
   const convert = (list: { [index: string]: ProviderRepresentation }) =>
     sortProviders(list).map((i) => ({ key: i, value: i }));
@@ -53,8 +93,8 @@ export const FineGrainOpenIdConnect = ({
         name={convertAttributeNameToForm<FormFields>(
           "attributes.access.token.signed.response.alg",
         )}
-        label={t("accessTokenSignatureAlgorithm")}
-        labelIcon={t("accessTokenSignatureAlgorithmHelp")}
+        label={t(`accessToken${algorithmType(accessTokenAlgorithm)}`)}
+        labelIcon={t(`accessToken${algorithmType(accessTokenAlgorithm)}Help`)}
         controller={{
           defaultValue: "",
         }}
@@ -93,8 +133,8 @@ export const FineGrainOpenIdConnect = ({
         name={convertAttributeNameToForm<FormFields>(
           "attributes.id.token.signed.response.alg",
         )}
-        label={t("idTokenSignatureAlgorithm")}
-        labelIcon={t("idTokenSignatureAlgorithmHelp")}
+        label={t(`idToken${algorithmType(idTokenAlgorithm)}`)}
+        labelIcon={t(`idToken${algorithmType(idTokenAlgorithm)}Help`)}
         controller={{
           defaultValue: "",
         }}
@@ -155,8 +195,8 @@ export const FineGrainOpenIdConnect = ({
         name={convertAttributeNameToForm<FormFields>(
           "attributes.user.info.response.signature.alg",
         )}
-        label={t("userInfoSignedResponseAlgorithm")}
-        labelIcon={t("userInfoSignedResponseAlgorithmHelp")}
+        label={t(`userInfoResponse${algorithmType(userInfoAlgorithm)}`)}
+        labelIcon={t(`userInfoResponse${algorithmType(userInfoAlgorithm)}Help`)}
         controller={{
           defaultValue: "",
         }}
@@ -190,8 +230,10 @@ export const FineGrainOpenIdConnect = ({
         name={convertAttributeNameToForm<FormFields>(
           "attributes.request.object.signature.alg",
         )}
-        label={t("requestObjectSignatureAlgorithm")}
-        labelIcon={t("requestObjectSignatureAlgorithmHelp")}
+        label={t(`requestObject${algorithmType(requestObjectAlgorithm)}`)}
+        labelIcon={t(
+          `requestObject${algorithmType(requestObjectAlgorithm)}Help`,
+        )}
         controller={{
           defaultValue: "",
         }}
@@ -259,8 +301,12 @@ export const FineGrainOpenIdConnect = ({
         name={convertAttributeNameToForm<FormFields>(
           "attributes.authorization.signed.response.alg",
         )}
-        label={t("authorizationSignedResponseAlg")}
-        labelIcon={t("authorizationSignedResponseAlgHelp")}
+        label={t(
+          `authorizationResponse${algorithmType(authorizationResponseAlgorithm)}`,
+        )}
+        labelIcon={t(
+          `authorizationResponse${algorithmType(authorizationResponseAlgorithm)}Help`,
+        )}
         controller={{
           defaultValue: "",
         }}
