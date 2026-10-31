@@ -145,17 +145,42 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
     }
 
     public boolean failure(String error, String errorDescription, int statusCode) {
+        logFailure(errorDescription);
         Response challengeResponse = ClientAuthUtil.errorResponse(statusCode, error, errorDescription);
         return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
     }
 
     protected boolean failure(AuthenticationFlowError error) {
+        logFailure(error.toString());
         return failure(error, null);
     }
 
     protected boolean failure(AuthenticationFlowError error, Response response) {
         context.failure(error, response);
         return false;
+    }
+
+    /**
+     * Logs a client authentication failure, but only for genuine JWT attempts. In the default client
+     * authentication flow the JWT authenticators also run as alternatives for clients using other
+     * methods (e.g. client-x509), where their failures are ignored; logging those would be misleading.
+     * Control characters are neutralized to prevent log injection.
+     */
+    private void logFailure(String reason) {
+        if (clientAssertionState.getClientAssertionType() == null
+                && clientAssertionState.getClientAssertion() == null) {
+            return;
+        }
+        String clientId = getClient() != null ? getClient().getClientId() : "unknown";
+        logger.warnf("JWT client authentication failed for client '%s': %s", sanitize(clientId), sanitize(reason));
+    }
+
+    private static String sanitize(String value) {
+        if (value == null) {
+            return "unknown";
+        }
+        String sanitized = value.replaceAll("\\p{Cntrl}", "_");
+        return sanitized.length() > 200 ? sanitized.substring(0, 200) + "..." : sanitized;
     }
 
     @Override
