@@ -16,10 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
@@ -34,6 +33,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -43,6 +43,7 @@ import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperConfigException;
@@ -315,6 +316,11 @@ public class ProtocolMappersResource {
     }
 
     private void validateModel(ProtocolMapperModel model) {
+        if (model.getConfig() == null) {
+            // A representation may omit the configuration. Validators read it without expecting that, so give them
+            // an empty map rather than letting a NullPointerException be reported as a 500.
+            model.setConfig(new HashMap<>());
+        }
         try {
             ProtocolMapper mapper = (ProtocolMapper)session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, model.getProtocolMapper());
             if (mapper != null) {
@@ -323,9 +329,9 @@ public class ProtocolMappersResource {
                 throw new NotFoundException("ProtocolMapper provider not found");
             }
         } catch (ProtocolMapperConfigException ex) {
-            logger.error(ex.getMessage());
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(ex.getMessage(), MessageFormat.format(messages.getProperty(ex.getMessageKey(), ex.getMessage()), ex.getParameters()),
+            logger.warnf("Invalid configuration for protocol mapper '%s': %s", model.getName(), ex.getMessage());
+            throw new ErrorResponseException(Errors.INVALID_INPUT,
+                    ProtocolMapperValidationUtil.INVALID_CONFIG_MESSAGE,
                     Response.Status.BAD_REQUEST);
         }
     }

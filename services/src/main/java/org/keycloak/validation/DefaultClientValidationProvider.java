@@ -31,9 +31,12 @@ import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -228,7 +231,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateClientId(context);
         validateProtocol(context);
         validateUrls(context);
-        validatePairwiseInClientModel(context);
+        validateProtocolMappers(context);
         new CibaClientValidation(context).validate();
         validateJwks(context);
         validateAcrLoaMap(context);
@@ -350,6 +353,38 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
     }
 
+    /**
+     * Validates every installed mapper through {@link ProtocolMapper#validateConfig} on paths that write a whole
+     * client. Imports must call this after the referenced clients have been created.
+     * Each mapper is validated on its own, because the contract of
+     * {@link ValidationContext} is to collect all errors of a client whereas
+     * {@link ProtocolMapper#validateConfig} reports only the first one it finds.
+     */
+    private void validateProtocolMappers(ValidationContext<ClientModel> context) {
+        KeycloakSession session = context.getSession();
+        ClientModel client = context.getObjectToValidate();
+        RealmModel realm = client.getRealm();
+
+        client.getProtocolMappersStream().toList()
+                .forEach(mapperModel -> {
+                    try {
+                        ProtocolMapperValidationUtil.validateProtocolMapper(session, realm, client, mapperModel);
+                    } catch (ProtocolMapperConfigException e) {
+                        logger.warnf("Invalid configuration for protocol mapper '%s' on client '%s': %s",
+                                mapperModel.getName(), client.getClientId(), e.getMessage());
+                        context.addError("protocolMappers", ProtocolMapperValidationUtil.INVALID_CONFIG_MESSAGE);
+                    }
+                });
+    }
+
+    private void validatePairwiseInClientModel(ValidationContext<ClientModel> context) {
+        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(toRepresentation(context.getObjectToValidate(), context.getSession()));
+
+        for (ProtocolMapperRepresentation foundPairwise : foundPairwiseMappers) {
+            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwise);
+            validatePairwise(context, sectorIdentifierUri);
+        }
+    }
 
     private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment) {
         if (url == null || url.isEmpty()) {
@@ -436,15 +471,6 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
         catch (URISyntaxException e) {
             context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
-        }
-    }
-
-    private void validatePairwiseInClientModel(ValidationContext<ClientModel> context) {
-        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(toRepresentation(context.getObjectToValidate(), context.getSession()));
-
-        for (ProtocolMapperRepresentation foundPairwise : foundPairwiseMappers) {
-            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwise);
-            validatePairwise(context, sectorIdentifierUri);
         }
     }
 
