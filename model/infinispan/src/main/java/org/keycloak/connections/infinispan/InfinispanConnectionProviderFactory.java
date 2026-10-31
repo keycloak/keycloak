@@ -59,6 +59,18 @@ public interface InfinispanConnectionProviderFactory extends ProviderFactory<Inf
     }
 
     /**
+     * Checks whether this node should perform database-backed cluster tasks.
+     * JDBC discovery selects a fresh publisher in the same winning partition as the readiness check.
+     * Selection is not exclusive; tasks must tolerate overlapping execution during ownership changes.
+     * Other discovery stacks use the JGroups coordinator, or all nodes when coordinator checks are unsupported.
+     *
+     * @return {@code true} if this node should perform database-backed cluster tasks.
+     */
+    default boolean isDatabaseTaskCoordinator() {
+        return !isCoordinatorSupported() || isCoordinator();
+    }
+
+    /**
      * Checks if the coordinator check is supported.
      * <p>
      * Not all configurations use an embedded cache manager with JGroups clustering,
