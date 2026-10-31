@@ -74,6 +74,14 @@ public class UserSessionManager {
         } else {
             // keep a reused offline client session's identity pins in sync with the online one
             ParameterizedScopeTypeProvider.syncPinnedIdentities(clientSession, offlineClientSession);
+            // and the executions of the authentication that issued the new offline token, so tokens refreshed with it
+            // report that authentication's methods rather than those of the login that created the offline session
+            String currentAuthenticationExecutions = clientSession.getNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION);
+            if (currentAuthenticationExecutions != null) {
+                offlineClientSession.setNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION, currentAuthenticationExecutions);
+            } else {
+                offlineClientSession.removeNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION);
+            }
             offlineClientSession.setTimestamp(clientSession.getTimestamp());
         }
     }
