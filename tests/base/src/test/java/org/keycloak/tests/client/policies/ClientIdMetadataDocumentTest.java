@@ -758,7 +758,7 @@ public class ClientIdMetadataDocumentTest {
         updatePolicy(conditionConfig, executorConfig);
 
         // CIMD Executor's min cache time default value: 300 sec
-        // CIMD Executor's max cache time default value: 259200 sec
+        // CIMD Executor's max cache time default value: 2592000 sec
 
         // no Cache-Control header : cached in min cache time
         testClientIdMetadataDocumentExecutorCacheControl(null, CIMD_EXECUTOR_MIN_CACHE_TIME_SEC);
@@ -788,8 +788,8 @@ public class ClientIdMetadataDocumentTest {
         // under the min cache time : 5 -> 300
         testClientIdMetadataDocumentExecutorCacheControl("max-age=5", CIMD_EXECUTOR_MIN_CACHE_TIME_SEC);
 
-        // over the max cache time : 365000 -> 259200
-        testClientIdMetadataDocumentExecutorCacheControl("s-maxage=365000", 259200);
+        // over the max cache time : 3650000 -> 2592000
+        testClientIdMetadataDocumentExecutorCacheControl("s-maxage=3650000", 2592000);
     }
 
     @Test
