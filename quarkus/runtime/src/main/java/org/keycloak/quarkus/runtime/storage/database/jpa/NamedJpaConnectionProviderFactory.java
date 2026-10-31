@@ -39,12 +39,13 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
 
     private String unitName;
     private String dataSourceName;
+    private boolean dataSourceRequired = true;
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         // Skip an inactive datasource's persistence unit instead of failing to resolve its (deactivated) EntityManagerFactory.
         String dsName = getDsName();
-        if (!DataSourceUtil.isDefault(dsName)) { // default DS is always active
+        if (dataSourceRequired && !DataSourceUtil.isDefault(dsName)) { // default DS is always active
             var dsInstance = Arc.requireContainer().select(AgroalDataSource.class, new DataSource.DataSourceLiteral(dsName));
             if (dsInstance.isResolvable() && !dsInstance.getHandle().getBean().isActive()) {
                 if (!isExplicitlyDisabled(dsName)) {
@@ -65,6 +66,15 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
     public JpaConnectionProvider create(KeycloakSession session) {
         throwIfDatasourceInactive();
         return super.create(session);
+    }
+
+    /**
+     * The persistence unit of an extension uses the flush mode of its configuration, see {@code db-orm-flush-mode-<datasource>};
+     * the Quarkus default is the automatic flush mode as well.
+     */
+    @Override
+    protected boolean isAutoFlushModeRequired() {
+        return false;
     }
 
     @Override
@@ -91,8 +101,25 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
         this.unitName = unitName;
     }
 
+    // the getters pair with the setters so that the Quarkus recorder records the fields along with the factory
+    public String getDataSourceName() {
+        return dataSourceName;
+    }
+
     public void setDataSourceName(String dataSourceName) {
         this.dataSourceName = dataSourceName;
+    }
+
+    /**
+     * Whether the persistence unit is skipped when its datasource is inactive. A DATABASE multi-tenant persistence unit
+     * gets its connections from the datasources of its tenants, so it works without its own datasource being active.
+     */
+    public boolean isDataSourceRequired() {
+        return dataSourceRequired;
+    }
+
+    public void setDataSourceRequired(boolean dataSourceRequired) {
+        this.dataSourceRequired = dataSourceRequired;
     }
 
     @Override

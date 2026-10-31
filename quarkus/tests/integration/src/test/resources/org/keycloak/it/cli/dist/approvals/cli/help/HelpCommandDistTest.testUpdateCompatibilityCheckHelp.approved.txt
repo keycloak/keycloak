@@ -225,6 +225,11 @@ Database - additional datasources:
 --db-health-exclude-<datasource> <true|false>
                      If you have enabled health endpoints, but want the given datasource excluded
                        from the health check. Default: false.
+--db-jpa-packages-<datasource> <packages>
+                     Defines a persistence unit for the named <datasource>: a comma-separated list
+                       of the packages of the JPA entities it manages. The persistence unit has the
+                       same name as the datasource, and the database options of the datasource such
+                       as 'db-dialect-<datasource>' apply to it.
 --db-kind-<datasource> <vendor>
                      Used for named <datasource>. The database vendor. Possible values are:
                        dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.

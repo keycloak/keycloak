@@ -13,6 +13,7 @@ public class Option<T> {
     private final String key;
     private final OptionCategory category;
     private final boolean hidden;
+    private final boolean cli;
     private final boolean buildTime;
     private final String description;
     private final Optional<T> defaultValue;
@@ -24,13 +25,14 @@ public class Option<T> {
     private String wildcardKey;
     private final boolean synthetic;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description,
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean cli, boolean buildTime, String description,
                   Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues,
                   DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String wildcardKey, Class<?> componentType, boolean synthetic) {
         this.type = type;
         this.key = key;
         this.category = category;
         this.hidden = hidden;
+        this.cli = cli;
         this.buildTime = buildTime;
         this.description = getDescriptionByCategorySupportLevel(description, category);
         this.defaultValue = defaultValue;
@@ -49,6 +51,15 @@ public class Option<T> {
     }
 
     public boolean isHidden() { return hidden; }
+
+    /**
+     * Whether the option can be set on the command line. An option that cannot is set through the other configuration
+     * sources only (the environment variables, the configuration file or a KeyStore), and it is not listed in the command
+     * line help and completion.
+     */
+    public boolean isCli() {
+        return cli;
+    }
 
     public boolean isBuildTime() {
         return buildTime;
@@ -125,6 +136,7 @@ public class Option<T> {
     public OptionBuilder<T> toBuilder() {
         var builder = new OptionBuilder<>(key, type)
                 .category(category)
+                .cli(cli)
                 .buildTime(buildTime)
                 .description(description)
                 .defaultValue(defaultValue)
