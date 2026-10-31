@@ -31,6 +31,18 @@ public class BrokerSecondTabAmrTest extends AbstractKcOidcBrokerTest {
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
 
+    @org.keycloak.testframework.ui.annotations.InjectPage
+    org.keycloak.testframework.ui.page.LoginTotpPage loginTotpPage;
+
+    private static final String TOTP_SECRET = "totpsecret";
+
+    @org.junit.jupiter.api.AfterEach
+    void closeExtraTabs() {
+        webDriver.tabs().closeTabs();
+    }
+    private static final String OTP_ROLE = "otp-required";
+    private static final String GATED_FLOW = "browser-amr";
+
     @Test
     public void secondTabBrokeredLoginIntoExistingSession() {
         disableUpdateProfileOnFirstLogin();
@@ -120,6 +132,10 @@ public class BrokerSecondTabAmrTest extends AbstractKcOidcBrokerTest {
     }
 
     private void prepareLinkedUser() {
+        prepareLinkedUser(false);
+    }
+
+    private void prepareLinkedUser(boolean totp) {
         String providerUserId = AdminApiUtil.findUserByUsername(providerRealm.admin(), USER_LOGIN).getId();
 
         UserRepresentation user = new UserRepresentation();
@@ -133,7 +149,7 @@ public class BrokerSecondTabAmrTest extends AbstractKcOidcBrokerTest {
         password.setType(CredentialRepresentation.PASSWORD);
         password.setValue(USER_PASSWORD);
         password.setTemporary(false);
-        user.setCredentials(List.of(password));
+        user.setCredentials(totp ? List.of(password, org.keycloak.testframework.realm.CredentialBuilder.totp(TOTP_SECRET).build()) : List.of(password));
         consumerRealm.admin().users().create(user).close();
         String consumerUserId = AdminApiUtil.findUserByUsername(consumerRealm.admin(), USER_LOGIN).getId();
 
@@ -142,6 +158,111 @@ public class BrokerSecondTabAmrTest extends AbstractKcOidcBrokerTest {
         link.setUserId(providerUserId);
         link.setUserName(USER_LOGIN);
         consumerRealm.admin().users().get(consumerUserId).addFederatedIdentity(IDP_OIDC_ALIAS, link).close();
+    }
+
+    /**
+     * A later login that completes a method the offline copy has never seen. The OTP form is gated behind a realm role
+     * granted only before the third tab's login, so the offline copy created by the second tab knows only the
+     * password step. The third tab's token reports both methods at the code exchange and must still report both
+     * after an offline refresh. This guards the reuse path; it has not been observed to fail.
+     */
+    @Test
+    public void thirdTabLoginCompletingNewMethodReusingOfflineSession() {
+        disableUpdateProfileOnFirstLogin();
+        prepareLinkedUser(true);
+        addAmrMapper();
+        gateOtpBehindRole(OTP_ROLE);
+        setReference(GATED_FLOW, "auth-username-password-form", "password", 0);
+        setReference(GATED_FLOW, "auth-otp-form", "otp", 0);
+
+        oauth.openLoginForm();
+        oauth.scope(org.keycloak.OAuth2Constants.OFFLINE_ACCESS);
+        webDriver.tabs().newTab(oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build());
+        webDriver.tabs().newTab(oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build());
+
+        webDriver.tabs().switchToTab(0);
+        oauth.scope(null);
+        oauth.fillLoginForm(USER_LOGIN, USER_PASSWORD);
+        AccessTokenResponse first = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(200, first.getStatusCode());
+        String sid = oauth.parseRefreshToken(first.getRefreshToken()).getSessionId();
+
+        timeOffSet.set(5);
+        oauth.scope(org.keycloak.OAuth2Constants.OFFLINE_ACCESS);
+        webDriver.tabs().switchToTab(1);
+        oauth.fillLoginForm(USER_LOGIN, USER_PASSWORD);
+        AccessTokenResponse second = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(200, second.getStatusCode());
+        Assertions.assertEquals(sid, oauth.parseRefreshToken(second.getRefreshToken()).getSessionId());
+        Assertions.assertEquals(List.of("password"), amr(second));
+
+        grantRole(OTP_ROLE);
+
+        timeOffSet.set(10);
+        webDriver.tabs().switchToTab(2);
+        oauth.fillLoginForm(USER_LOGIN, USER_PASSWORD);
+        loginTotpPage.login(new org.keycloak.models.utils.TimeBasedOTP().generateTOTP(TOTP_SECRET));
+        AccessTokenResponse third = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(200, third.getStatusCode());
+        Assertions.assertEquals(sid, oauth.parseRefreshToken(third.getRefreshToken()).getSessionId());
+        Assertions.assertEquals(List.of("otp", "password"), sorted(amr(third)));
+
+        timeOffSet.set(15);
+        AccessTokenResponse refreshed = oauth.doRefreshTokenRequest(third.getRefreshToken());
+        Assertions.assertEquals(200, refreshed.getStatusCode());
+        Assertions.assertEquals(List.of("otp", "password"), sorted(amr(refreshed)),
+                "a refresh of the offline token must report the methods of the login that issued it");
+    }
+
+    private static List<String> sorted(List<String> values) {
+        return values.stream().sorted().toList();
+    }
+
+    private void grantRole(String roleName) {
+        String userId = AdminApiUtil.findUserByUsername(consumerRealm.admin(), USER_LOGIN).getId();
+        var role = consumerRealm.admin().roles().get(roleName).toRepresentation();
+        consumerRealm.admin().users().get(userId).roles().realmLevel().add(List.of(role));
+    }
+
+    /**
+     * Copies the browser flow (built-in flows cannot be changed), adds a user-role condition to the copy's conditional
+     * 2FA subflow so the OTP form only runs for users holding the role, and binds the realm's browser flow to the copy.
+     */
+    private void gateOtpBehindRole(String roleName) {
+        var role = new org.keycloak.representations.idm.RoleRepresentation();
+        role.setName(roleName);
+        consumerRealm.admin().roles().create(role);
+
+        consumerRealm.admin().flows().copy("browser", Map.of("newName", GATED_FLOW)).close();
+        String subflowAlias = GATED_FLOW + " Browser - Conditional 2FA";
+        consumerRealm.admin().flows().addExecution(subflowAlias, Map.of("provider", "conditional-user-role"));
+        var condition = consumerRealm.admin().flows().getExecutions(subflowAlias).stream()
+                .filter(e -> "conditional-user-role".equals(e.getProviderId())).findFirst().orElseThrow();
+        condition.setRequirement("REQUIRED");
+        consumerRealm.admin().flows().updateExecutions(subflowAlias, condition);
+        AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
+        config.setAlias("otp-role-condition");
+        config.setConfig(Map.of("condUserRole", roleName, "negate", "false"));
+        consumerRealm.admin().flows().newExecutionConfig(condition.getId(), config).close();
+
+        var realmRep = consumerRealm.admin().toRepresentation();
+        realmRep.setBrowserFlow(GATED_FLOW);
+        consumerRealm.admin().update(realmRep);
+    }
+
+    private void setReference(String providerId, String reference, int maxAge) {
+        setReference("browser", providerId, reference, maxAge);
+    }
+
+    private void setReference(String flowAlias, String providerId, String reference, int maxAge) {
+        var execution = consumerRealm.admin().flows().getExecutions(flowAlias).stream()
+                .filter(e -> providerId.equals(e.getProviderId())).findFirst().orElseThrow();
+        AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
+        config.setAlias(reference + "-reference");
+        config.setConfig(Map.of(
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, reference,
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, String.valueOf(maxAge)));
+        consumerRealm.admin().flows().newExecutionConfig(execution.getId(), config).close();
     }
 
     @SuppressWarnings("unchecked")
