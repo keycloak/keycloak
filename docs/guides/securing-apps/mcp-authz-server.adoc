@@ -239,6 +239,24 @@ To configure the condition, create a client policy in the {project_name} Admin C
 
 With this configuration, when an MCP client sends an authorization request with a `client_id` value that is an `https` URL matching a trusted domain, {project_name} fetches the Client ID Metadata Document from that URL and uses the metadata to process the request.
 
+===== Requiring PKCE for clients registered by Client ID Metadata Documents
+
+The `client-id-uri` condition only matches the `PRE_AUTHORIZATION_REQUEST` event, which {project_name} triggers at the start of every authorization request, before it looks up the client. Executors added to `cimd-profile` therefore only run for that event, and executors that act on other events never run from it. For example, `pkce-enforcer` in `cimd-profile` has no effect, so authorization requests without PKCE are accepted.
+
+To require PKCE with the `S256` method, add `pkce-enforcer` to a separate policy that matches the registration of the client:
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Profiles* tab.
+. Click *Create client profile*, give the profile a name such as `pkce-profile` and click *Save*.
+. Click *Add executor*, select `pkce-enforcer`, set *Auto-configure* to `ON` and click *Save*.
+. Navigate to the *Policies* tab and click *Create client policy*.
+. Give the policy a name such as `pkce-policy` and click *Save*.
+. Under *Conditions*, click *Add condition*, select `client-updater-context`, set *Update Client Context* to `ByAnonymous` and click *Save*.
+. Under *Associated client profiles*, add the `pkce-profile` profile and click *Save*.
+
+When {project_name} creates a client from a Client ID Metadata Document, it does so without an access token, so this policy matches and sets the client's PKCE method to `S256`. Authorization requests from that client without a `code_challenge` parameter, or with the `plain` method, are then rejected. The policy also applies to clients registered through anonymous Dynamic Client Registration.
+
+NOTE: Existing CIMD clients are configured the next time their metadata is re-fetched with `200 OK` after the cache expires. Until then, including `304 Not Modified` refreshes, set their PKCE method to `S256` explicitly.
+
 ===== Client ID URL validation
 
 In accordance with the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-01[OAuth Client ID Metadata Document] specification, {project_name} validates the `client_id` URL and rejects the authorization request if it does not meet the following requirements:
