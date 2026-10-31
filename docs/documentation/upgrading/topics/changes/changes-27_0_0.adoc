@@ -307,6 +307,19 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== Default values of user profile attributes are stored for new users who cannot edit the attribute
+// https://github.com/keycloak/keycloak/issues/50505
+
+Previously, when a user profile attribute had a default value but users could not edit the attribute, the default value was not stored for users created through self-registration or first broker login.
+The Admin Console displayed the default value for these users, but protocol mappers, exports, and anything else reading stored user attributes found no value.
+
+Starting with this release, the default value is stored when these users are created.
+As a result, tokens can now include claims for these attributes that were previously missing.
+
+Existing users are not updated automatically.
+Users created before the upgrade have no stored value for these attributes unless an administrator has since saved the user.
+To store the default value for such users, save each user in the Admin Console, or update the attribute through the Admin REST API.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
