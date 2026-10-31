@@ -127,7 +127,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
 
         WebElement errorElement;
         try {
-            errorElement = driver.findElement(By.className("pf-v5-c-alert"));
+            errorElement = driver.findElement(By.className("pf-v6-c-alert"));
         } catch (NoSuchElementException e) {
             errorElement = driver.findElement(By.className("alert-error"));
         }
