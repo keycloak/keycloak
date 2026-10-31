@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -41,6 +42,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
 import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
@@ -332,6 +334,11 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
             return true;
         }
 
+        // Check if the token was issued for a resource URI registered by the authenticated client (RFC 8707)
+        if (isIssuedForClientResource(authenticatedClient, audiences)) {
+            return true;
+        }
+
         // Get server-wide configuration from OIDCLoginProtocol
         OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
         OIDCProviderConfig config = loginProtocol.getConfig();
@@ -356,6 +363,23 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
         eventBuilder.detail(Details.REASON, String.format("Client '%s' is not in the token audience", authenticatedClient.getClientId()));
         eventBuilder.error(Errors.INVALID_TOKEN);
         return false;
+    }
+
+    /**
+     * When the resource indicators feature issues a token with the resource parameter, the audience of the
+     * token is the resource URI instead of the resource server's client id. The resource URI is bound to
+     * the resource server through the client's resource_url attribute, which is the same binding the
+     * token endpoint relies on to validate the resource parameter. A resource server is therefore in
+     * the audience of the token when the token was issued for its registered resource URI, even if its
+     * client id does not match the audience.
+     */
+    private boolean isIssuedForClientResource(ClientModel authenticatedClient, String[] audiences) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS) || audiences == null) {
+            return false;
+        }
+
+        String clientResourceUrl = authenticatedClient.getAttribute(ResourceIndicatorConstants.CLIENT_RESOURCE_URL_ATTRIBUTE);
+        return clientResourceUrl != null && Arrays.asList(audiences).contains(clientResourceUrl);
     }
 
     protected UserSessionUtil.UserSessionValidationResult verifyUserSession() {

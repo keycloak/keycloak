@@ -256,10 +256,57 @@ public class ResourceIndicatorsTest {
         MatcherAssert.assertThat(tokenMetadata.getAudience(), Matchers.hasItemInArray("https://custom-api"));
     }
 
+    @Test
+    public void testIntrospectionByResourceServerWithRegisteredResourceUrl() throws Exception {
+        // The resource server is registered for the resource URI through its resource_url client attribute
+        // instead of its client id, so the token's audience is the resource URI (RFC 8707) while the
+        // introspecting client is news-rs. Introspection by the resource server the token was issued for
+        // must return active.
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("https://thenews").send();
+        assertValidResponse(tokenResponse, "https://thenews");
+
+        IntrospectionResponse introspectionResponse = oauth.introspectionRequest(tokenResponse.getAccessToken())
+                .tokenTypeHint("access_token")
+                .client("news-rs", "news-secret")
+                .send();
+        Assertions.assertTrue(introspectionResponse.isSuccess());
+        TokenMetadataRepresentation tokenMetadata = introspectionResponse.asTokenMetadata();
+        Assertions.assertTrue(tokenMetadata.isActive());
+        Assertions.assertEquals("user", tokenMetadata.getUserName());
+        MatcherAssert.assertThat(tokenMetadata.getAudience(), Matchers.hasItemInArray("https://thenews"));
+    }
+
+    @Test
+    public void testIntrospectionByClientRegisteredForOtherResourceUrl() throws Exception {
+        // A resource server registered for a different resource URI is not in the audience of the
+        // token and its introspection request must keep returning inactive.
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("https://thenews").send();
+        assertValidResponse(tokenResponse, "https://thenews");
+
+        events.clear();
+
+        IntrospectionResponse introspectionResponse = oauth.introspectionRequest(tokenResponse.getAccessToken())
+                .tokenTypeHint("access_token")
+                .client("billing-rs", "billing-secret")
+                .send();
+        Assertions.assertTrue(introspectionResponse.isSuccess());
+        Assertions.assertFalse(introspectionResponse.asTokenMetadata().isActive());
+
+        EventAssertion.assertError(events.poll())
+                .type(EventType.INTROSPECT_TOKEN_ERROR)
+                .error(Errors.INVALID_TOKEN)
+                .details(Details.REASON, "Client 'billing-rs' is not in the token audience");
+        Assertions.assertNull(events.poll());
+    }
+
     private static final class ResourceIndicatorsRealm implements RealmConfig {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
+            // INTROSPECT_TOKEN events are not saved by default, so the tests asserting the introspection
+            // denial event need them enabled explicitly.
+            realm.eventsEnabled(true).enabledEventTypes(
+                    "LOGIN", "LOGIN_ERROR", "CLIENT_LOGIN_ERROR", "INTROSPECT_TOKEN", "INTROSPECT_TOKEN_ERROR");
             realm.clients(ClientBuilder.create("theservice").attribute("resource_url", "https://theservice"));
             realm.clientRoles("theservice", "myrole");
 
@@ -269,12 +316,18 @@ public class ResourceIndicatorsTest {
             realm.clients(ClientBuilder.create("serviceWithoutResource"));
             realm.clientRoles("serviceWithoutResource", "myrole");
 
+            realm.clients(ClientBuilder.create("news-rs").secret("news-secret").attribute("resource_url", "https://thenews"));
+            realm.clientRoles("news-rs", "myrole");
+
+            realm.clients(ClientBuilder.create("billing-rs").secret("billing-secret").attribute("resource_url", "https://thebilling"));
+
             realm.clients(ClientBuilder.create("https://custom-api").secret("introspection-secret"));
 
             realm.users(UserBuilder.create("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
                     .clientRoles("theservice", "myrole")
                     .clientRoles("otherservice", "myrole")
-                    .clientRoles("serviceWithoutResource", "myrole"));
+                    .clientRoles("serviceWithoutResource", "myrole")
+                    .clientRoles("news-rs", "myrole"));
 
             realm.users(UserBuilder.create("user-without-roles").firstName("noroles").lastName("noroles")
                     .password("pass").email("noroles@email.localhost"));
