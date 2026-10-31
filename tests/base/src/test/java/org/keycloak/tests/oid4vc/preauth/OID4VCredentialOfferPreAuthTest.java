@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.Time;
 import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
@@ -13,6 +14,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -32,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
@@ -41,6 +44,7 @@ import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.injectTxCode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -355,14 +359,88 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
             //
             AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
             assertFalse(tokenResponse.isSuccess(), "Token request should have failed for disabled client");
-            assertEquals("invalid_request", tokenResponse.getError());
-            assertTrue(tokenResponse.getErrorDescription().contains("disabled"),
-                    "Error description should mention disabled: " + tokenResponse.getErrorDescription());
+            assertEquals("invalid_client", tokenResponse.getError());
         } finally {
             // Re-enable client
             clientRep.setEnabled(true);
             testRealm.admin().clients().get(ctx.getClient().getId()).update(clientRep);
         }
+    }
+
+    @Test
+    public void testPreAuthOffer_OtherClient() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Pre-Authorized CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // Redeem Pre-Authorized Code with a confidential wallet client other than the one that created the offer
+        //
+        String walletSecret = "wallet-secret";
+        testRealm.updateClientWithCleanup(pubClient.getClientId(), c -> c.publicClient(false).secret(walletSecret));
+
+        oauth.client(pubClient.getClientId(), "wrong-secret");
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("unauthorized_client", tokenResponse.getError());
+
+        oauth.client(pubClient.getClientId(), walletSecret);
+        tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+        assertEquals(pubClient.getClientId(),
+                TokenVerifier.create(tokenResponse.getAccessToken(), AccessToken.class).getToken().getIssuedFor());
+
+        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+
+        // Send the CredentialRequest
+        //
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+                .credentialIdentifier(authorizedIdentifier)
+                .proofs(wallet.generateJwtProof(ctx))
+                .send().getCredentialResponse();
+
+        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+    }
+
+    @Test
+    public void testPreAuthOffer_ClientNotEnabledForOid4vci() {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // Redeem Pre-Authorized Code with a client that is not enabled for OID4VCI
+        //
+        testRealm.updateClientWithCleanup(pubClient.getClientId(), c -> c.attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "false"));
+
+        oauth.client(pubClient.getClientId(), null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("unauthorized_client", tokenResponse.getError());
+
+        // The rejected attempt did not consume the code, so the wallet can redeem it once enabled
+        //
+        ClientResource walletClient = testRealm.admin().clients().get(pubClient.getId());
+        ClientRepresentation walletClientRep = walletClient.toRepresentation();
+        walletClientRep.getAttributes().put(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true");
+        walletClient.update(walletClientRep);
+
+        tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
     }
 
     @Test
@@ -386,7 +464,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialOfferStateRecord runtimeOfferState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
         assertEquals("john", runtimeOfferState.targetUsername());
-        assertEquals(client.getClientId(), runtimeOfferState.targetClientId());
+        assertNull(runtimeOfferState.targetClientId());
 
         // Redeem Pre-Authorized Code for AccessToken
         //
@@ -427,7 +505,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialOfferStateRecord runtimeOfferState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
         assertEquals("alice", runtimeOfferState.targetUsername());
-        assertEquals(client.getClientId(), runtimeOfferState.targetClientId());
+        assertNull(runtimeOfferState.targetClientId());
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
         assertNotNull(preAuthCode, "preAuthCode");

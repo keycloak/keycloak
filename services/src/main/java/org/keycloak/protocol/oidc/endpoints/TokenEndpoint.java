@@ -78,7 +78,6 @@ import static org.keycloak.OAuth2Constants.UMA_GRANT_TYPE;
 import static org.keycloak.events.Details.REASON;
 import static org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID;
 import static org.keycloak.models.Constants.ADMIN_CONSOLE_CLIENT_ID;
-import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -156,8 +155,7 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
-        // pre-authorized grants are not necessarily used by known clients.
-        if (!grantType.equals(UMA_GRANT_TYPE) && !grantType.equals(PRE_AUTH_GRANT_TYPE)) {
+        if (!grantType.equals(UMA_GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
         }

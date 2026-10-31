@@ -74,6 +74,7 @@ public abstract class AbstractVciConformanceTest extends AbstractConformanceTest
                 keyAttestationJwks(),
                 clientJwks(),
                 client2Jwks(),
+                staticTxCode(),
                 VciTestSigningKey.caCertificatePem(),
                 module.browserInteraction()).toJson();
     }
@@ -110,6 +111,14 @@ public abstract class AbstractVciConformanceTest extends AbstractConformanceTest
      * multiple-clients module. HAIP returns {@code null}; non-HAIP overrides it.
      */
     protected JsonNode client2Jwks() {
+        return null;
+    }
+
+    /**
+     * The tx_code the suite sends when redeeming a pre-authorized code. The baseline returns {@code null}, which
+     * omits it from the suite config.
+     */
+    protected String staticTxCode() {
         return null;
     }
 
