@@ -735,6 +735,14 @@ public class AuthenticationManager {
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
         AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm, asm, userSession, true, false);
 
+        // Notify backchannel clients before handing control to the browser. The browser may
+        // never reach the upstream provider or return to finishBrowserLogout.
+        userSession.getAuthenticatedClientSessions().values().stream()
+                .filter(clientSession -> !clientSession.getClient().isFrontchannelLogout())
+                .filter(clientSession -> clientSession.getProtocol() != null)
+                .filter(clientSession -> !Objects.equals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), clientSession.getAction()))
+                .forEach(clientSession -> backchannelLogoutClientSession(session, realm, clientSession, logoutAuthSession, uriInfo, headers));
+
         String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
         String initiatingIdp = logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
         if (brokerId != null && !brokerId.equals(initiatingIdp)) {
