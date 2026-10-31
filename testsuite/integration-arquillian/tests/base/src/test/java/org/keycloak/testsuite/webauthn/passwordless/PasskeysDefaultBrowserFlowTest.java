@@ -24,6 +24,7 @@ import org.keycloak.WebAuthnConstants;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -206,7 +207,7 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(user.getId())
                 .details(Details.USERNAME, USERNAME)
-                .details(Details.CREDENTIAL_TYPE, null);
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
 
         logout();
     }
