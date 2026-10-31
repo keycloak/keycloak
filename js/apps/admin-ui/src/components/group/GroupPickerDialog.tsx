@@ -38,6 +38,7 @@ export type GroupPickerDialogProps = {
   id?: string;
   type: "selectOne" | "selectMany";
   filterGroups?: GroupRepresentation[];
+  filterOrg?: OrganizationRepresentation;
   text: { title: string; ok: string };
   canBrowse?: boolean;
   isMove?: boolean;
@@ -61,6 +62,7 @@ export const GroupPickerDialog = ({
   id,
   type,
   filterGroups,
+  filterOrg,
   text,
   canBrowse = true,
   isMove = false,
@@ -233,6 +235,16 @@ export const GroupPickerDialog = ({
   );
 
   const isRowDisabled = (row?: GroupRepresentation) => {
+    const blockedByOrg =
+      !!filterOrg &&
+      !!row &&
+      !!groupResource &&
+      groupResource.getOrgId() !== filterOrg.id;
+
+    if (blockedByOrg) {
+      return blockedByOrg;
+    }
+
     return [
       ...joinedGroups.map((item) => item.id),
       ...(filterGroups || []).map((group) => group.id),
@@ -265,9 +277,9 @@ export const GroupPickerDialog = ({
             );
           }}
           isDisabled={
-            // in the organization flow there is nothing to confirm until a group below the organization is picked
-            (!!identityProviderAlias && navigation.length === 0) ||
-            (type === "selectMany" && selectedRows.length === 0)
+            type === "selectOne"
+              ? !!identityProviderAlias && navigation.length === 0
+              : selectedRows.length === 0
           }
         >
           {t(text.ok)}
