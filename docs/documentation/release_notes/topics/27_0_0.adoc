@@ -7,6 +7,12 @@ This removes the need for a separate API call to discover the service account us
 The dedicated `GET /admin/realms/\{realm}/clients/\{id}/service-account-user` endpoint has been removed.
 See the upgrading guide for migration details.
 
+== Hiding the username and password form on the login page
+
+Realms that authenticate users exclusively through identity providers can now hide the username and password form on the login page, so that only the configured identity providers are offered.
+Enable the new *Username/password form* toggle on the *Login* tab of the realm settings (it is on by default, preserving existing behavior).
+When disabled, the login page renders only the identity provider buttons.
+
 = Security and Standards
 
 == SAML OneTimeUse condition enforced for identity brokering
