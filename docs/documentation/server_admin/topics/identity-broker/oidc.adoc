@@ -30,6 +30,8 @@ image:images/oidc-add-identity-provider.png[Add Identity Provider]
 |Backchannel Logout
 |A background, out-of-band, REST request to the IDP to log out the user. Some IDPs perform logout through browser redirects only, as they may identify sessions using a browser cookie.
 
+When logout redirects the browser to this identity provider, {project_name} first sends logout notifications to its clients configured for backchannel logout. Those notifications do not depend on the browser reaching the identity provider or returning. Frontchannel client logout still requires the browser to continue the logout flow.
+
 |User Info URL
 |An endpoint the OIDC protocol defines. This endpoint points to user profile information.
 
