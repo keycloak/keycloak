@@ -17,6 +17,11 @@ export async function fillKerberosForm(
     .getByTestId("config.serverPrincipal.0")
     .fill(data.config!["serverPrincipal"]!);
   await page.getByTestId("config.keyTab.0").fill(data.config!["keyTab"]!);
+  if (data.config!["allowedKerberosRealms"]) {
+    await page
+      .getByTestId("config.allowedKerberosRealms0")
+      .fill(data.config!["allowedKerberosRealms"]!);
+  }
 }
 
 export async function clickSave(page: Page, provider: string) {
