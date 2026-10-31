@@ -189,6 +189,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyCreateTimeout");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegister");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguids");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyBackupEligibility");
 
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyRpEntityNamePasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicySignatureAlgorithmsPasswordless");
@@ -203,6 +204,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyPasskeysEnabledPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyMediationPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyBackupEligibilityPasswordless");
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
@@ -604,6 +606,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(webAuthnPolicy.isAvoidSameAuthenticatorRegister());
         rep.setWebAuthnPolicyAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyExtraOrigins(webAuthnPolicy.getExtraOrigins());
+        rep.setWebAuthnPolicyBackupEligibility(webAuthnPolicy.getBackupEligibility());
 
         webAuthnPolicy = realm.getWebAuthnPolicyPasswordless();
         rep.setWebAuthnPolicyPasswordlessRpEntityName(webAuthnPolicy.getRpEntityName());
@@ -620,6 +623,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(webAuthnPolicy.isPasskeysEnabled());
         rep.setWebAuthnPolicyPasswordlessMediation(webAuthnPolicy.getMediation());
+        rep.setWebAuthnPolicyPasswordlessBackupEligibility(webAuthnPolicy.getBackupEligibility());
 
         CibaConfig cibaPolicy = realm.getCibaPolicy();
         Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());

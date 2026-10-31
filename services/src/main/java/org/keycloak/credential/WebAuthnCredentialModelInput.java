@@ -41,6 +41,8 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
     private final String credentialType;
     private String attestationStatementFormat;
     private Set<AuthenticatorTransport> transports;
+    private Boolean backupEligible;
+    private Boolean backupState;
 
     public WebAuthnCredentialModelInput(String credentialType) {
         this.credentialType = credentialType;
@@ -130,6 +132,22 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
         this.transports = transports;
     }
 
+    public Boolean getBackupEligible() {
+        return backupEligible;
+    }
+
+    public void setBackupEligible(Boolean backupEligible) {
+        this.backupEligible = backupEligible;
+    }
+
+    public Boolean getBackupState() {
+        return backupState;
+    }
+
+    public void setBackupState(Boolean backupState) {
+        this.backupState = backupState;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder("Credential Type = " + credentialType + ",");
         if (credentialDBId != null)
@@ -179,6 +197,12 @@ public class WebAuthnCredentialModelInput implements CredentialInput {
             sb.append("Transports = [")
               .append(transportsString)
               .append("],");
+        }
+        if (backupEligible != null) {
+            sb.append("Backup Eligible = ").append(backupEligible).append(",");
+        }
+        if (backupState != null) {
+            sb.append("Backup State = ").append(backupState).append(",");
         }
         if (sb.length() > 0)
             sb.deleteCharAt(sb.lastIndexOf(","));

@@ -82,6 +82,12 @@ const MEDIATION_OPTIONS = [
   "silent",
 ] as const;
 
+const BACKUP_ELIGIBILITY = [
+  "not specified",
+  "device-bound",
+  "backup-eligible",
+] as const;
+
 type WeauthnSelectProps = {
   name: string;
   label: string;
@@ -309,6 +315,13 @@ export const WebauthnPolicy = ({
             labelIcon={t("webAuthnPolicyAvoidSameAuthenticatorRegisterHelp")}
             labelOn={t("on")}
             labelOff={t("off")}
+          />
+          <WebauthnSelect
+            name={`${namePrefix}BackupEligibility`}
+            label={t("webAuthnPolicyBackupEligibility")}
+            labelIcon={t("webAuthnPolicyBackupEligibilityHelp")}
+            options={BACKUP_ELIGIBILITY}
+            labelPrefix="backupEligibility"
           />
           <FormGroup
             label={t("webAuthnPolicyAcceptableAaguids")}

@@ -30,6 +30,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.requiredactions.WebAuthnPolicyException;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.UriUtils;
@@ -67,6 +68,9 @@ import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_INVALID
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_SECURITY;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_CHALLENGE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_ORIGIN;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_RPID;
@@ -265,6 +269,16 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         boolean result = false;
         try {
             result = user.credentialManager().isValid(cred);
+        } catch (WebAuthnPolicyException wpe) {
+            logger.debug("WebAuthn policy violation during authentication.", wpe);
+            if (cred.getBackupEligible() != null) {
+                // the flags the authenticator asserted, so an admin can tell a flag change from a wrong passkey
+                context.getEvent()
+                    .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_ELIGIBLE_ATTR, cred.getBackupEligible().toString())
+                    .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_STATE_ATTR, String.valueOf(cred.getBackupState()));
+            }
+            setErrorResponse(context, wpe.getMessageKey(), wpe.getMessage(), wpe.getParameters());
+            return;
         } catch (WebAuthnException wae) {
             logger.debug("WebAuthn authentication verification failed.", wae);
             String errorCase = getWebAuthnErrorMessageKey(wae, false);
@@ -279,6 +293,11 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.getEvent()
                 .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, isUVChecked)
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, encodedCredentialID);
+            if (cred.getBackupEligible() != null) {
+                context.getEvent()
+                    .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_ELIGIBLE_ATTR, cred.getBackupEligible().toString())
+                    .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_STATE_ATTR, String.valueOf(cred.getBackupState()));
+            }
             context.success(getCredentialType());
         } else {
             context.getEvent()
@@ -363,6 +382,9 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         case WEBAUTHN_ERROR_BAD_RPID:
         case WEBAUTHN_ERROR_BAD_CHALLENGE:
         case WEBAUTHN_ERROR_BAD_SIGNATURE:
+        case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED:
+        case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED:
+        case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_CHANGED:
             context.getEvent()
                 .detail(AUTH_ERR_LABEL, errorCase)
                 .detail(AUTH_ERR_DETAIL_LABEL, errorMessage)

@@ -22,10 +22,12 @@ public class WebAuthnCredentialPresentationData extends WebAuthnCredentialData {
                                               @JsonProperty("credentialPublicKey") String credentialPublicKey,
                                               @JsonProperty("attestationStatementFormat") String attestationStatementFormat,
                                               @JsonProperty("transports") Set<String> transports,
+                                              @JsonProperty("backupEligible") Boolean backupEligible,
+                                              @JsonProperty("backupState") Boolean backupState,
                                               @JsonProperty("authenticatorProvider") String authenticatorProvider,
                                               @JsonProperty("iconLight") String iconLight,
                                               @JsonProperty("iconDark") String iconDark) {
-        super(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat, transports);
+        super(aaguid, credentialId, counter, attestationStatement, credentialPublicKey, attestationStatementFormat, transports, backupEligible, backupState);
         this.authenticatorProvider = authenticatorProvider;
         this.iconLight = iconLight;
         this.iconDark = iconDark;

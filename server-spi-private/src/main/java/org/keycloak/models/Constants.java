@@ -97,6 +97,10 @@ public final class Constants {
     public static final String WEBAUTHN_POLICY_OPTION_DISCOURAGED = "discouraged";
     public static final String WEBAUTHN_POLICY_OPTION_YES = "Yes";
     public static final String WEBAUTHN_POLICY_OPTION_NO = "No";
+     // backup eligibility: the credential private key must stay on the device (BE flag must be 0)
+    public static final String WEBAUTHN_POLICY_OPTION_DEVICE_BOUND = "device-bound";
+    // backup eligibility: the credential must be eligible for backup/sync (BE flag must be 1)
+    public static final String WEBAUTHN_POLICY_OPTION_BACKUP_ELIGIBLE = "backup-eligible";
 
     // Prefix used for the realm attributes and other places
     public static final String WEBAUTHN_PASSWORDLESS_PREFIX = "Passwordless";
