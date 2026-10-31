@@ -1,4 +1,4 @@
-package org.keycloak.admin.client.jackson3;
+package org.keycloak.json.jackson3;
 
 import java.util.List;
 import java.util.Map;
@@ -12,7 +12,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.ValueDeserializer;
 
-class ResourceTypeMapDeserializer3 extends ValueDeserializer<Map<String, ResourceType>> {
+public class ResourceTypeMapDeserializer3 extends ValueDeserializer<Map<String, ResourceType>> {
 
     @Override
     public Map<String, ResourceType> deserialize(JsonParser p, DeserializationContext ctxt) {

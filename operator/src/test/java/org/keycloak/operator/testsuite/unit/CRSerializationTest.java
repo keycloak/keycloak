@@ -61,6 +61,31 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class CRSerializationTest {
 
+    @Test
+    public void realmImportPreservesDeviceSettingNames() {
+        var resource = Serialization.unmarshal("""
+                apiVersion: k8s.keycloak.org/v2beta1
+                kind: KeycloakRealmImport
+                metadata:
+                  name: device-settings
+                spec:
+                  keycloakCRName: example
+                  realm:
+                    realm: example
+                    oauth2DeviceCodeLifespan: 600
+                    oauth2DevicePollingInterval: 5
+                """, KeycloakRealmImport.class);
+        var realm = resource.getSpec().getRealm();
+        assertEquals(600, realm.getOAuth2DeviceCodeLifespan());
+        assertEquals(5, realm.getOAuth2DevicePollingInterval());
+
+        var json = Serialization.jsonMapper().readTree(Serialization.asJson(resource)).path("spec").path("realm");
+        assertEquals(600, json.path("oauth2DeviceCodeLifespan").asInt());
+        assertEquals(5, json.path("oauth2DevicePollingInterval").asInt());
+        assertFalse(json.has("OAuth2DeviceCodeLifespan"));
+        assertFalse(json.has("OAuth2DevicePollingInterval"));
+    }
+
     private static final Map<String, String> CUSTOM_INGRESS_ANNOTATION = Map.of(
             "myAnnotation", "myValue",
             "anotherAnnotation", "anotherValue"
