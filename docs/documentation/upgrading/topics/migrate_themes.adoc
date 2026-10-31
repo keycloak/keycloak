@@ -54,8 +54,8 @@ For example:
 
 [source,bash,subs=+attributes]
 ----
-$ diff {project_dirref}_OLD/themes/keycloak/login/resources/css/login.css \
-{project_dirref}_NEW/themes/keycloak/login/resources/css/login.css
+$ diff {project_dirref}_OLD/themes/keycloak.v2/login/resources/css/styles.css \
+{project_dirref}_NEW/themes/keycloak.v2/login/resources/css/styles.css
 ----
 
 Review the changes and determine if they affect your custom styling.

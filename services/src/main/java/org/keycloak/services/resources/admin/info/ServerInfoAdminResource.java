@@ -294,10 +294,8 @@ public class ServerInfoAdminResource {
         LinkedList<String> filteredNames = new LinkedList<>(themeNames);
         boolean filterAdminV2 = (type == Theme.Type.ADMIN) &&
                 !Profile.isFeatureEnabled(Profile.Feature.ADMIN_V2);
-        boolean filterLoginV2 = (type == Theme.Type.LOGIN) &&
-                !Profile.isFeatureEnabled(Profile.Feature.LOGIN_V2);
 
-        if (filterAdminV2 || filterLoginV2) {
+        if (filterAdminV2) {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
         }

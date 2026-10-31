@@ -77,8 +77,6 @@ public class Profile {
 
         LOGIN_V2("New Login Theme", Type.DEFAULT, 2, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
 
-        LOGIN_V1("Legacy Login Theme", Type.DEPRECATED, 1, FeatureUpdatePolicy.ROLLING_NO_UPGRADE),
-
         QUICK_THEME("WYSIWYG theme configuration tool", Type.EXPERIMENTAL, 1),
 
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
@@ -358,7 +356,10 @@ public class Profile {
     }
 
     private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey(), Feature.ROLLING_UPDATES_V2.getUnversionedKey())));
+            new HashSet<>(Arrays.asList(
+                    Feature.HOSTNAME_V2.getUnversionedKey(),
+                    Feature.LOGIN_V2.getUnversionedKey(),
+                    Feature.ROLLING_UPDATES_V2.getUnversionedKey())));
 
     private static final Logger logger = Logger.getLogger(Profile.class);
 

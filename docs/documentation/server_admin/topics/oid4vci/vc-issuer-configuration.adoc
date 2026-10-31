@@ -628,7 +628,7 @@ Alternatively, you can create and configure the client programmatically. Ensure 
     "oid4vci.enabled": "true",
     "client.secret.creation.time": "1719785014",
     "client.introspection.response.allow.jwt.claim.enabled": "false",
-    "login_theme": "keycloak",
+    "login_theme": "keycloak.v2",
     "post.logout.redirect.uris": "http://localhost:8080"
   }
 }

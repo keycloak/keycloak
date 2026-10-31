@@ -1,3 +1,11 @@
+= User interface
+
+== Login v1 theme removed
+
+The legacy Login v1 theme based on PatternFly 3/4 has been removed.
+`keycloak.v2` remains the only built-in login theme.
+See the upgrading guide for migration details.
+
 = Administration
 
 == Service account user ID available on client representation
