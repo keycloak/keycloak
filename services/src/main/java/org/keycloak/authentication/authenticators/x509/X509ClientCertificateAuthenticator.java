@@ -51,8 +51,8 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
     private final static Logger logger = Logger.getLogger(X509ClientCertificateAuthenticator.class);
 
-    public X509ClientCertificateAuthenticator(boolean legacyCriticalBehavior) {
-        super(legacyCriticalBehavior);
+    public X509ClientCertificateAuthenticator(boolean legacyCriticalBehavior, CertificateValidator.LdapContext crlLdapContext) {
+        super(legacyCriticalBehavior, crlLdapContext);
     }
 
     @Override

@@ -103,7 +103,12 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             CERTIFICATE_POLICY_MODE_ANY
     };
 
+    private static final String CRL_LDAP_MAX_CONSUMED_RESPONSE_SIZE = "crlLdapMaxConsumedResponseSize";
+    private static final String CRL_LDAP_SOCKET_TIMEOUT_MILLIS = "crlLdapSocketTimeoutMillis";
+    private static final String CRL_LDAP_ESTABLISH_CONNECTION_TIMEOUT_MILLIS = "crlLdapEstablishConnectionTimeoutMillis";
+
     private boolean legacyCriticalBehavior;
+    private CertificateValidator.LdapContext crlLdapContext = new CertificateValidator.LdapContext();
 
     protected static final List<ProviderConfigProperty> configProperties;
     static {
@@ -312,6 +317,10 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
     @Override
     public void init(Config.Scope config) {
         this.legacyCriticalBehavior = config.getBoolean("legacyCriticalBehavior", Boolean.FALSE);
+        this.crlLdapContext = new CertificateValidator.LdapContext(
+                config.getLong(CRL_LDAP_MAX_CONSUMED_RESPONSE_SIZE, CertificateValidator.LdapContext.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE),
+                config.getLong(CRL_LDAP_SOCKET_TIMEOUT_MILLIS, CertificateValidator.LdapContext.DEFAULT_SOCKET_TIMEOUT_MILLIS),
+                config.getLong(CRL_LDAP_ESTABLISH_CONNECTION_TIMEOUT_MILLIS, CertificateValidator.LdapContext.DEFAULT_ESTABLISH_CONNECTION_TIMEOUT_MILLIS));
     }
 
     @Override
@@ -331,10 +340,32 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 .helpText("Boolean to enable legacy critical behavior in the Key Usage and Extended Key Usage validations. This option is deprecated.")
                 .defaultValue("false")
                 .add()
+                .property()
+                .name(CRL_LDAP_MAX_CONSUMED_RESPONSE_SIZE)
+                .type("long")
+                .helpText("Maximum size in bytes of a CRL loaded from an LDAP server.")
+                .defaultValue(CertificateValidator.LdapContext.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE)
+                .add()
+                .property()
+                .name(CRL_LDAP_SOCKET_TIMEOUT_MILLIS)
+                .type("long")
+                .helpText("Maximum time of inactivity in milliseconds while loading a CRL from an LDAP server. A non-positive value means no timeout.")
+                .defaultValue(CertificateValidator.LdapContext.DEFAULT_SOCKET_TIMEOUT_MILLIS)
+                .add()
+                .property()
+                .name(CRL_LDAP_ESTABLISH_CONNECTION_TIMEOUT_MILLIS)
+                .type("long")
+                .helpText("Timeout in milliseconds when connecting to an LDAP server to load a CRL. A non-positive value means no timeout.")
+                .defaultValue(CertificateValidator.LdapContext.DEFAULT_ESTABLISH_CONNECTION_TIMEOUT_MILLIS)
+                .add()
                 .build();
     }
 
     public boolean isLegacyCriticalBehavior() {
         return legacyCriticalBehavior;
+    }
+
+    protected CertificateValidator.LdapContext getCrlLdapContext() {
+        return crlLdapContext;
     }
 }

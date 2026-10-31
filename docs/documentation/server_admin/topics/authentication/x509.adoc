@@ -141,6 +141,8 @@ Use CDP to check the certificate revocation status. Most PKI authorities include
 
 *CRL Path*::
 This option specifies the location of the CRL as an HTTP or LDAP URL or as the path to a CRL file. File paths are relative to the `conf` directory of the {project_name} installation, and {project_name} rejects any path that resolves outside that directory. You can add multiple locations, and the certificate is checked against each of them.
++
+CRLs loaded from LDAP are subject to <<_x509-crl-ldap-limits,size and time limits>>.
 
 *CRL abort if non updated*::
 A CRL conforming to link:https://datatracker.ietf.org/doc/html/rfc5280#section-5.1.2.5[RFC 5280] contains a next update field that indicates the date by which the next CRL will be issued. When that time is passed, the CRL is considered outdated and it should be refreshed. If this option is `true`, the authentication will fail if the CRL is outdated (recommended). If the option is set to `false`, the outdated CRL is still used to validate the user certificates.
@@ -176,6 +178,36 @@ If enabled, X.509 client certificate authentication does not prompt the user to 
 Subject DN of the root Certificate Authority (or Authorities) (CA) that issued the user certificates (trust anchor). The CA Subject DN can be in the RFC4514 or RFC1779 format. This option allows you to identify the valid trust anchor names for the user certificates, differentiating them for anchors used for other usages or realms. This option is required.
 +
 NOTE: Now the client certificate trust chain is always revalidated by {project_name} using the server trust-store or mTLS store in order to obtain the associated root CA.
+
+[[_x509-crl-ldap-limits]]
+===== Limits for CRLs loaded from LDAP
+
+When {project_name} loads a CRL from an `ldap` or `ldaps` URL, it limits the size of the CRL and the time it waits for the LDAP server. The limits protect {project_name} from LDAP servers that return very large responses or stop responding. They apply to CRLs from the *CRL Path* option and from CRL distribution points. If a limit is exceeded, the CRL is not loaded and the authentication fails.
+
+[cols="2,1,3",options="header"]
+|===
+|Option |Default |Description
+
+|`crl-ldap-max-consumed-response-size`
+|`10000000`
+|Maximum number of bytes read from the LDAP server for one CRL.
+
+|`crl-ldap-socket-timeout-millis`
+|`5000`
+|Maximum time in milliseconds to wait for more data from the LDAP server. A value of zero or less disables the timeout.
+
+|`crl-ldap-establish-connection-timeout-millis`
+|`-1`
+|Maximum time in milliseconds to establish the connection to the LDAP server. By default, the connection timeout of the operating system applies.
+|===
+
+These options are provider options of the X.509 authenticators, and you set them for each authenticator separately. The `auth-x509-client-username-form` provider is used in browser flows and the `direct-grant-auth-x509-username` provider in direct grant flows. For example, the following command raises the size limit to 20 MB for both.
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authenticator--auth-x509-client-username-form--crl-ldap-max-consumed-response-size=20000000 \
+  --spi-authenticator--direct-grant-auth-x509-username--crl-ldap-max-consumed-response-size=20000000
+----
 
 ==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
 

@@ -205,6 +205,12 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
+=== X.509 authenticators limit the size of CRLs loaded from LDAP
+
+Previously, {project_name} read CRLs from `ldap` and `ldaps` URLs without a size limit or timeout. A malicious LDAP server could exhaust the memory of the server or block request threads.
+
+Starting with this release, {project_name} reads at most 10 MB when it loads a CRL from LDAP, and it stops waiting when the LDAP server sends no data for 5 seconds. This applies to the *CRL Path* option and to CRL distribution points. If your CRLs are larger or your LDAP server responds more slowly, increase the limits as described in link:{adminguide_link}#_x509-crl-ldap-limits[Limits for CRLs loaded from LDAP].
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

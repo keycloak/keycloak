@@ -49,7 +49,7 @@ public class X509ClientCertificateAuthenticatorFactory  extends AbstractX509Clie
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return new X509ClientCertificateAuthenticator(isLegacyCriticalBehavior());
+        return new X509ClientCertificateAuthenticator(isLegacyCriticalBehavior(), getCrlLdapContext());
     }
 
     @Override

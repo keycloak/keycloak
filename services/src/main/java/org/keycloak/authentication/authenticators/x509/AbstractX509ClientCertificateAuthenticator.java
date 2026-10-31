@@ -100,9 +100,11 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
     private final static Logger logger = Logger.getLogger(AbstractX509ClientCertificateAuthenticator.class);
 
     private boolean legacyCriticalBehavior;
+    private final CertificateValidator.LdapContext crlLdapContext;
 
-    public AbstractX509ClientCertificateAuthenticator(boolean legacyCriticalBehavior) {
+    public AbstractX509ClientCertificateAuthenticator(boolean legacyCriticalBehavior, CertificateValidator.LdapContext crlLdapContext) {
         this.legacyCriticalBehavior = legacyCriticalBehavior;
+        this.crlLdapContext = crlLdapContext;
     }
 
     protected Response createInfoResponse(AuthenticationFlowContext context, String infoMessage, Object ... parameters) {
@@ -112,7 +114,8 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     protected static class CertificateValidatorConfigBuilder {
 
-        static CertificateValidator.CertificateValidatorBuilder fromConfig(KeycloakSession session, X509AuthenticatorConfigModel config) throws Exception {
+        static CertificateValidator.CertificateValidatorBuilder fromConfig(KeycloakSession session, X509AuthenticatorConfigModel config,
+                CertificateValidator.LdapContext crlLdapContext) throws Exception {
 
             CertificateValidator.CertificateValidatorBuilder builder = new CertificateValidator.CertificateValidatorBuilder();
             return builder
@@ -125,6 +128,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                         .mode(config.getCertificatePolicyMode().getMode())
                         .parse(config.getCertificatePolicy())
                     .revocation()
+                        .crlLdapContext(crlLdapContext)
                         .crlAbortIfNonUpdated(config.getCrlAbortIfNonUpdated())
                         .cRLEnabled(config.getCRLEnabled())
                         .cRLDPEnabled(config.getCRLDistributionPointEnabled())
@@ -143,7 +147,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     // The method is purely for purposes of facilitating the unit testing
     public CertificateValidator.CertificateValidatorBuilder certificateValidationParameters(KeycloakSession session, X509AuthenticatorConfigModel config) throws Exception {
-        return CertificateValidatorConfigBuilder.fromConfig(session, config);
+        return CertificateValidatorConfigBuilder.fromConfig(session, config, crlLdapContext);
     }
 
     protected static class UserIdentityExtractorBuilder {
