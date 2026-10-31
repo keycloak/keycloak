@@ -157,18 +157,31 @@ public final class AuthenticatorUtils {
         // set new execution and serialize note
         completedExecutions.put(executionId, Time.currentTime());
 
-        // track the executions of the current authentication separately, so token mappers can tell them apart from carried over ones
+        // track the executions of the current authentication separately, so token mappers can tell them apart from carried over ones.
+        // Kept as an auth note so a reset of the flow discards it along with the execution statuses.
         Set<String> currentAuthenticationExecutions = parseCurrentAuthenticationExecutions(
-                authSession.getClientNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION));
+                authSession.getAuthNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION));
         currentAuthenticationExecutions.add(executionId);
         try {
             String updated = JsonSerialization.writeValueAsString(completedExecutions);
             authSession.setUserSessionNote(Constants.AUTHENTICATORS_COMPLETED, updated);
-            authSession.setClientNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION,
+            authSession.setAuthNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION,
                     JsonSerialization.writeValueAsString(currentAuthenticationExecutions));
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * Serialize the executions completed during the current authentication for the client session, so token mappers
+     * can exempt them from the max age that applies to executions carried over from earlier authentications.
+     *
+     * @param authSession The authentication session being attached to the client session
+     * @return The serialized list, an empty list when the authentication completed no execution
+     */
+    public static String serializeCurrentAuthenticationExecutions(AuthenticationSessionModel authSession) {
+        String note = authSession.getAuthNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION);
+        return note != null ? note : "[]";
     }
 
 
