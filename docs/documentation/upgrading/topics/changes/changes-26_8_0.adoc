@@ -500,11 +500,27 @@ During migration, the following changes are applied automatically:
 * The `ORG_DOMAIN` table is extended with new columns for domain routing: `REALM_ID`, `IDP_ID` (identity provider routing), and `AUTO_REDIRECT`. Each domain is now a first-class entity with its own routing configuration.
 
 * Three identity provider configuration entries are migrated to the new `ORG_DOMAIN` columns and then removed:
-** `kc.org.domain` -- migrated to `ORG_DOMAIN.IDP_ID` (identity provider routing). If the value was `ANY`, all domains of the organization receive the identity provider routing, except those listed in the exclusion list below.
+** `kc.org.domain` -- migrated to `ORG_DOMAIN.IDP_ID` (identity provider routing). If the value was `ANY`, the identity provider is linked to all domains of the organization.
 ** `kc.org.broker.redirect.mode.email-matches` -- migrated to `ORG_DOMAIN.AUTO_REDIRECT`
-** `kc.org.excluded.domains` -- excluded domains are migrated with `IDP_ID=NULL` (no routing)
+** `kc.org.excluded.domains` -- used to decide the routing of each domain, as described below
 +
-The concept of domain exclusions no longer exists as a separate setting. Instead, each domain now has its own identity provider routing configuration. A domain that previously appeared in the exclusion list is migrated with no identity provider assigned (`IDP_ID=NULL`), which means users with that email domain see the standard login form instead of being redirected. To achieve the same effect going forward, edit the domain in the organization's *Domains* tab and leave the *Identity provider* field empty. Conversely, to start routing a previously excluded domain, select the desired identity provider from the dropdown.
+The concept of domain exclusions no longer exists as a separate setting. Instead, each domain now has its own identity provider routing configuration. To exclude a domain going forward, edit the domain in the organization's *Domains* tab and leave the *Identity provider* field empty. Conversely, to start routing a previously excluded domain, select the desired identity provider from the dropdown.
++
+The migration keeps the redirects of the earlier version, both when the database is upgraded and when you import a realm exported from an earlier version:
++
+--
+* A domain of the organization is routed to the identity provider that its users were redirected to. If every identity provider with *Redirect when email domain matches* excluded it, the domain is routed to a linked identity provider without that option, or has no identity provider assigned (for example `example.com`, excluded by `*.example.com`).
+* An excluded domain that is part of a domain of the organization (for example `sub.example.com` under `*.example.com`) is added to the organization. It is routed to the identity provider that its users were redirected to, for example another identity provider of the organization that did not exclude it, or has no identity provider assigned. It is not added when its users were redirected to the same identity provider as the rest of the domain.
+* Any other excluded domain, such as `gmail.com` for an organization with domain `example.com`, had no effect and is not added to the organization. The same applies to the excluded domains of identity providers without *Redirect when email domain matches*.
+--
++
+In the earlier version, when several identity providers could redirect the same users, which one was used was not defined. The migration routes the domain to the first of them by alias and logs the others. Check the routing of these domains after the upgrade.
++
+A domain name can only belong to one organization in a realm. An excluded domain is therefore not added when another organization has a domain with the same name or a more specific domain that overlaps it. It is also not added when it is not a valid domain, or when the database compares its name as equal to the name of another domain: with a case- or accent-insensitive collation, as the default collations of MySQL and MariaDB, `á.example.com` and `a.example.com`, or `straße.example.com` and `strasse.example.com`, are the same name. In these cases the migration logs a warning, and you can review the domains of the organization after the upgrade.
++
+If you already upgraded to 26.8.0 or 26.8.1, the migration has run with the earlier rules and does not run again. Those versions added every excluded domain of an identity provider with the domain `ANY` to the organization, without an identity provider assigned, including domains that had no effect, such as `gmail.com`. Review the domains of your organizations and remove the ones that do not belong to them.
++
+The routing of a domain now also decides which email domains an identity provider accepts for its members: an identity provider accepts the domains routed to it. In the earlier version, an identity provider with the domain `ANY` accepted all domains of the organization, including excluded ones. If members of such an identity provider use an excluded domain, route that domain to the identity provider without enabling the redirect. If no domain is routed to any identity provider that a member is linked to, the email domain of that member is not checked.
 
 * Several display settings previously configured on the organization's identity provider link dialog have moved to the identity provider's own Settings page at the realm level, under the *Organization settings* section:
 ** *Hide on login page when organization is not resolved*
