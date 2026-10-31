@@ -35,7 +35,6 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
-import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -1206,11 +1205,6 @@ public class AuthenticationProcessor {
             clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
             clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
         }
-
-        // Only a real authentication replaces the executions the client session reports in amr. Grants that attach a synthetic
-        // authentication session to an existing client session, such as token exchange, keep the ones of the login.
-        clientSessionCtx.getClientSession().setNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION,
-                AuthenticatorUtils.serializeCurrentAuthenticationExecutions(authSession));
 
         event.user(userSession.getUser())
                 .detail(Details.USERNAME, username)
