@@ -227,6 +227,19 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (password != null && !password.isEmpty() && user.credentialManager().isValid(UserCredentialModel.password(password))) {
             context.getAuthenticationSession().setAuthNote(AuthenticationManager.PASSWORD_VALIDATED, "true");
             return true;
+        } else if (AuthenticatorUtils.consumePasswordChangeRequiredInDirectory(context)) {
+            // The password was not accepted, because the directory requires the user to change it, while the federated
+            // provider cannot perform the change (its edit mode is not writable). Say that, instead of "invalid user
+            // credentials", which would be indistinguishable from a wrong password.
+            context.getEvent().user(user);
+            context.getEvent().error(Errors.RESOLVE_REQUIRED_ACTIONS);
+            AuthenticatorUtils.setupReauthenticationInUsernamePasswordFormError(context);
+            Response challengeResponse = challenge(context, Messages.ACCOUNT_PASSWORD_CHANGE_REQUIRED_IN_DIRECTORY, FIELD_PASSWORD);
+            context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);
+            if (clearUser) {
+                context.clearUser();
+            }
+            return false;
         } else {
             return badPasswordHandler(context, user, clearUser,false);
         }

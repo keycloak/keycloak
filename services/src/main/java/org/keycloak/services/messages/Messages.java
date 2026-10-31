@@ -47,6 +47,8 @@ public class Messages {
 
     public static final String ACCOUNT_DISABLED = "accountDisabledMessage";
 
+    public static final String ACCOUNT_PASSWORD_CHANGE_REQUIRED_IN_DIRECTORY = "accountPasswordChangeRequiredInDirectoryMessage";
+
     public static final String ACCOUNT_TEMPORARILY_DISABLED = "accountTemporarilyDisabledMessage";
 
     public static final String ACCOUNT_PERMANENTLY_DISABLED = "accountPermanentlyDisabledMessage";
