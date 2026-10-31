@@ -20,6 +20,7 @@ package org.keycloak.marshalling;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.cluster.infinispan.ClockSkewTimestampSample;
 import org.keycloak.cluster.infinispan.LockEntry;
 import org.keycloak.cluster.infinispan.LockEntryPredicate;
 import org.keycloak.cluster.infinispan.WrapperClusterEvent;
@@ -135,6 +136,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 UserStorageProviderClusterEvent.class,
 
                 // clustering.infinispan package
+                ClockSkewTimestampSample.class,
                 LockEntry.class,
                 LockEntryPredicate.class,
                 WrapperClusterEvent.class,

@@ -196,6 +196,10 @@ public final class Marshalling {
 
     public static final int AUTHENTICATED_USER_AUTH_SESSION_PREDICATE = 65623;
 
+    // cluster.infinispan package - clock skew detection
+    /** see {@link org.keycloak.cluster.infinispan.ClockSkewTimestampSample} */
+    public static final int CLOCK_SKEW_TIMESTAMP_SAMPLE = 65624;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);
     }
