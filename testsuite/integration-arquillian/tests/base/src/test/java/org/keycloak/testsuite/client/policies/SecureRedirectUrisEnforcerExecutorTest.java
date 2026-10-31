@@ -29,6 +29,7 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -83,7 +84,9 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         ).toString();
         updatePolicies(json);
 
-        // The executor's check logic is not executed to an auth code flow or implicit flow disabled client.
+        // The executor's redirect uri check is not executed to an auth code flow or implicit flow disabled client.
+        // The post-logout redirect uri check is executed regardless of the enabled flows, so the client below
+        // switches the post-logout redirect uris off ("-") to keep its redirect uris out of that check.
 
         // Registration
         // Success - even if not setting a valid redirect uri
@@ -94,6 +97,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             cId = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
                 clientRep.setSecret("secret");
                 clientRep.setRedirectUris(List.of("http://oauth.redirect/some")); // normally, a redirect url with http scheme is not allowed.
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(List.of("-"));
                 clientRep.setStandardFlowEnabled(false);
                 clientRep.setImplicitFlowEnabled(false);
                 clientRep.setServiceAccountsEnabled(true);
@@ -102,6 +106,23 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             assertEquals(new HashSet<>(List.of("http://oauth.redirect/some")), new HashSet<>(cRep.getRedirectUris()));
         } catch (ClientPolicyException cpe) {
             fail();
+        }
+
+        // Registration
+        // Fail - the post-logout redirect uri is checked even though both redirect based flows are disabled
+        try {
+            createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> {
+                clientRep.setSecret("secret");
+                clientRep.setRedirectUris(List.of("https://oauth.redirect/some"));
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep)
+                        .setPostLogoutRedirectUris(List.of("http://oauth.redirect/post-logout"));
+                clientRep.setStandardFlowEnabled(false);
+                clientRep.setImplicitFlowEnabled(false);
+                clientRep.setServiceAccountsEnabled(true);
+            });
+            fail("Expected to fail with an http post-logout redirect uri");
+        } catch (ClientPolicyException cpe) {
+            assertEquals(OAuthErrorException.INVALID_REQUEST, cpe.getError());
         }
 
         // Update
@@ -116,6 +137,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         } catch (ClientPolicyException cpe) {
             fail();
         }
+
     }
 
     @Test
