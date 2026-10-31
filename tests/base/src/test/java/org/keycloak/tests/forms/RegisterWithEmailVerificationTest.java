@@ -381,10 +381,19 @@ public class RegisterWithEmailVerificationTest {
         }
     }
 
+    @Test
+    public void registerUserSuccessWithEmailVerificationInDifferentBrowser() throws Exception {
+        verifyEmailInFreshBrowser(false);
+    }
+
     // Issue 51088 - Verify email link opened in a fresh browser (e.g. incognito tab) after Keycloak was restarted,
     // so the original root authentication session no longer exists.
     @Test
     public void registerUserSuccessWithEmailVerificationInFreshBrowserAfterRestart() throws Exception {
+        verifyEmailInFreshBrowser(true);
+    }
+
+    private void verifyEmailInFreshBrowser(boolean removeOriginalSession) throws Exception {
         String authConfigId = enableAlwaysSetPasswordOnRegisterForm();
         realm.updateWithCleanup((realmm) -> realmm.verifyEmail(true));
         String userId = null;
@@ -414,20 +423,22 @@ public class RegisterWithEmailVerificationTest {
             MimeMessage message = mailServer.getReceivedMessages()[0];
             String link = MailUtils.getPasswordResetEmailLink(message);
 
-            // Simulate a Keycloak restart before the user clicks the link: the in-memory root authentication
-            // session created during registration is lost.
-            removeRootAuthenticationSession();
+            if (removeOriginalSession) {
+                // Simulate losing the original authentication session during a Keycloak restart.
+                removeRootAuthenticationSession();
+            }
 
             // Open the verification link in a fresh browser (e.g. an incognito tab) without any auth session cookie.
-            // As the original authentication session is gone, a confirmation page asking to proceed is shown.
+            // A confirmation page is shown before the address is verified.
             driver2.open(link);
             proceedPage2.assertCurrent();
+            Assert.assertFalse(getUser(userId).isEmailVerified());
             proceedPage2.clickProceedLink();
 
             // Before the fix this failed with a NullPointerException because the original root authentication
             // session referenced by the token no longer existed. Now the email is verified successfully.
             infoPage2.assertCurrent();
-            assertThat(infoPage2.getInfo(), is("Your email address has been verified."));
+            assertThat(infoPage2.getInfo(), is("Your email address has been verified. You completed verification in a different browser session, and the original sign-in is no longer active. Return to the application and sign in again."));
 
             EventRepresentation reqActionEmailEvent = events.poll();
             EventAssertion.assertSuccess(reqActionEmailEvent)
@@ -436,6 +447,8 @@ public class RegisterWithEmailVerificationTest {
                     .type(EventType.VERIFY_EMAIL);
 
             assertTrue(getUser(userId).isEmailVerified());
+            driver.navigate().refresh();
+            loginPage.assertCurrent();
         } finally {
             disableAlwaysSetPasswordOnRegisterForm(authConfigId);
             if (userId != null) {
