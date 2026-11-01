@@ -19,49 +19,40 @@ package org.keycloak.protocol.oidc.utils;
 
 import java.util.Map;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
  * Whether an execution completed by an earlier authentication in the SSO session is reported by a later one.
+ * The current time is passed explicitly, so the boundaries do not depend on the wall clock.
  */
 public class AmrUtilsTest {
 
-    @After
-    public void resetTime() {
-        Time.setOffset(0);
-    }
+    private static final int COMPLETED_AT = 1_700_000_000;
 
     @Test
     public void zeroMaxAgeNeverCarriesOver() {
-        int completedAt = Time.currentTime();
-        Assert.assertFalse("same second", AmrUtils.carriesOver(config("0"), completedAt));
-        Time.setOffset(1);
-        Assert.assertFalse("next second", AmrUtils.carriesOver(config("0"), completedAt));
+        Assert.assertFalse("same second", AmrUtils.carriesOver(config("0"), COMPLETED_AT, COMPLETED_AT));
+        Assert.assertFalse("next second", AmrUtils.carriesOver(config("0"), COMPLETED_AT, COMPLETED_AT + 1));
     }
 
     @Test
     public void missingMaxAgeDefaultsToZero() {
-        Assert.assertFalse(AmrUtils.carriesOver(Map.of(), Time.currentTime()));
+        Assert.assertFalse(AmrUtils.carriesOver(Map.of(), COMPLETED_AT, COMPLETED_AT));
     }
 
     @Test
     public void positiveMaxAgeCarriesOverInclusive() {
-        int completedAt = Time.currentTime();
-        Assert.assertTrue("same second", AmrUtils.carriesOver(config("10"), completedAt));
-        Time.setOffset(10);
-        Assert.assertTrue("at the max age", AmrUtils.carriesOver(config("10"), completedAt));
-        Time.setOffset(11);
-        Assert.assertFalse("past the max age", AmrUtils.carriesOver(config("10"), completedAt));
+        Assert.assertTrue("same second", AmrUtils.carriesOver(config("10"), COMPLETED_AT, COMPLETED_AT));
+        Assert.assertTrue("at the max age", AmrUtils.carriesOver(config("10"), COMPLETED_AT, COMPLETED_AT + 10));
+        Assert.assertFalse("past the max age", AmrUtils.carriesOver(config("10"), COMPLETED_AT, COMPLETED_AT + 11));
     }
 
     @Test
     public void invalidMaxAgeDoesNotCarryOver() {
-        Assert.assertFalse(AmrUtils.carriesOver(config("soon"), Time.currentTime()));
+        Assert.assertFalse(AmrUtils.carriesOver(config("soon"), COMPLETED_AT, COMPLETED_AT));
     }
 
     private static Map<String, String> config(String maxAge) {

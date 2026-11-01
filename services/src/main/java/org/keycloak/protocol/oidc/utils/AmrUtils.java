@@ -110,9 +110,21 @@ public class AmrUtils {
      * @return True if the authentication completing now reports the execution
      */
     public static boolean carriesOver(Map<String, String> config, Integer completedAt) {
+        return carriesOver(config, completedAt, Time.currentTime());
+    }
+
+    /**
+     * {@link #carriesOver(Map, Integer)} against an explicit current time.
+     *
+     * @param config The authenticator execution config
+     * @param completedAt The time the execution completed
+     * @param now The time the authentication completes
+     * @return True if the authentication completing at {@code now} reports the execution
+     */
+    public static boolean carriesOver(Map<String, String> config, Integer completedAt, int now) {
         try {
             int maxAge = Integer.parseInt(config.getOrDefault(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "0"));
-            return maxAge > 0 && completedAt + maxAge >= Time.currentTime();
+            return maxAge > 0 && completedAt + maxAge >= now;
         } catch (NumberFormatException e) {
             logger.warnf("invalid authentication execution max age '%s'", config.get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE));
             return false;
