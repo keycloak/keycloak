@@ -148,7 +148,8 @@ public class OAuth2Error {
                 OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(error, errorDescription);
                 builder.entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE);
             } else {
-                WWWAuthenticate.BearerChallenge bearer = DPOP_SCHEME.equals(this.authScheme) ? new WWWAuthenticate.DPoPChallenge(session) : new WWWAuthenticate.BearerChallenge();
+                // Auth schemes are case insensitive per RFC 9110 section 11.1, as in AppAuthManager
+                WWWAuthenticate.BearerChallenge bearer = DPOP_SCHEME.equalsIgnoreCase(this.authScheme) ? new WWWAuthenticate.DPoPChallenge(session) : new WWWAuthenticate.BearerChallenge();
                 bearer.setRealm(realm.getName());
                 bearer.setError(error);
                 bearer.setErrorDescription(errorDescription);

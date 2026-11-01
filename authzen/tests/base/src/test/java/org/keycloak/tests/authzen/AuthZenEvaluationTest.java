@@ -58,6 +58,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.CLIENT;
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.USER;
@@ -440,15 +442,17 @@ public class AuthZenEvaluationTest {
         assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "invalid_token");
     }
 
-    // The challenge uses the scheme of the Authorization header, so a DPoP request gets a DPoP challenge
-    @Test
-    public void testInvalidDPoPTokenReturnsDPoPChallenge() throws IOException {
+    // The challenge uses the scheme of the Authorization header, so a DPoP request gets a DPoP challenge.
+    // Auth schemes are case insensitive, so this also holds for other spellings of DPoP.
+    @ParameterizedTest
+    @ValueSource(strings = {"DPoP", "dpop"})
+    public void testInvalidDPoPTokenReturnsDPoPChallenge(String scheme) throws IOException {
         EvaluationResult result = authZenClient.evaluate(AuthZenClient.evaluationRequest()
                     .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/admin")
                     .build(),
-              Map.of(HttpHeaders.AUTHORIZATION, "DPoP not-a-token"));
+              Map.of(HttpHeaders.AUTHORIZATION, scheme + " not-a-token"));
 
         assertEquals(401, result.statusCode());
         assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "DPoP", "invalid_token");
