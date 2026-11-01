@@ -83,6 +83,7 @@ import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantA
 import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import DefaultTrustSettings from "./DefaultTrustSettings";
+import EtsiTrustListSettings from "./EtsiTrustListSettings";
 import { IdpDomainsTab } from "./IdpDomainsTab";
 import { IdpOrganizationsTab } from "./IdpOrganizationsTab";
 import Oid4VpSettings from "./Oid4VpSettings";
@@ -491,6 +492,7 @@ export default function DetailSettings() {
     "jwt-authorization-grant",
   );
   const isDefaultTrust = provider.providerId === "default-trust";
+  const isEtsiTrustList = provider.providerId === "etsi-trust-list";
   const isOid4vp = provider.providerId === "oid4vp";
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
   const isJWTAuthorizationGrantSupported =
@@ -531,6 +533,7 @@ export default function DetailSettings() {
         isKubernetes ||
         isJWTAuthorizationGrant ||
         isDefaultTrust ||
+        isEtsiTrustList ||
         isOid4vp,
       panel: (
         <FormAccess
@@ -693,6 +696,25 @@ export default function DetailSettings() {
       ),
     },
     {
+      title: t("generalSettings"),
+      isHidden: !isEtsiTrustList,
+      panel: (
+        <Form
+          isHorizontal
+          className="pf-v5-u-py-lg"
+          onSubmit={handleSubmit(save)}
+        >
+          <EtsiTrustListSettings />
+          <FixedButtonsGroup
+            name="idp-details"
+            isSubmit
+            reset={reset}
+            isDisabled={!isDirty}
+          />
+        </Form>
+      ),
+    },
+    {
       title: t("samlSettings"),
       isHidden: !isSAML,
       panel: <DescriptorSettings readOnly={false} />,
@@ -713,7 +735,11 @@ export default function DetailSettings() {
     {
       title: t("advancedSettings"),
       isHidden:
-        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isDefaultTrust,
+        isSPIFFE ||
+        isKubernetes ||
+        isJWTAuthorizationGrant ||
+        isDefaultTrust ||
+        isEtsiTrustList,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -808,7 +834,8 @@ export default function DetailSettings() {
               isSPIFFE ||
               isKubernetes ||
               isJWTAuthorizationGrant ||
-              isDefaultTrust
+              isDefaultTrust ||
+              isEtsiTrustList
             }
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
