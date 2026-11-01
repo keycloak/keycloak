@@ -42,6 +42,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -60,6 +61,7 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.utils.AmrUtils;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
@@ -1205,6 +1207,12 @@ public class AuthenticationProcessor {
             clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
             clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
         }
+
+        // Fix the executions the amr claim reports for this client session now, as the level of authentication is fixed
+        // just above. Every token of the client session, refreshed ones included, then reports the authentication that issued it.
+        AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+        clientSession.setNote(Constants.AMR_AUTHENTICATION_EXECUTIONS,
+                AmrUtils.resolveAuthenticationExecutions(authSession, clientSession.getUserSession(), realm));
 
         event.user(userSession.getUser())
                 .detail(Details.USERNAME, username)

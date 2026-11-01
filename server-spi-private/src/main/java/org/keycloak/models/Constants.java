@@ -195,6 +195,19 @@ public final class Constants {
     // Authentication session note containing a serialized map of successfully completed authentication executions and their associated times
     public static final String AUTHENTICATORS_COMPLETED = "authenticators-completed";
 
+    // Authentication session auth note containing a serialized list of the authentication executions completed during the
+    // current authentication, as opposed to executions carried over from earlier authentications in the SSO session.
+    // Cleared with the other auth notes when the flow is reset.
+    public static final String AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION = "authenticators-completed-current-authentication";
+
+    // Client session note containing a serialized list of the authentication execution ids whose reference values the
+    // Authentication Method Reference (AMR) protocol mapper reports in every token of the client session. Resolved once, when
+    // an authentication attaches to the client session (AuthenticationProcessor.attachSession): executions completed by that
+    // authentication unconditionally, executions carried over from earlier authentications in the SSO session only while within
+    // their configured max age. Absent on client sessions no authentication attached to, such as those created by token exchange,
+    // and on client sessions attached before the note existed; the mapper then falls back to the user session's completed executions.
+    public static final String AMR_AUTHENTICATION_EXECUTIONS = "amr-authentication-executions";
+
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,
     // so it is possible to check when particular level expires and needs to be re-authenticated
     public static final String LOA_MAP = "loa-map";
