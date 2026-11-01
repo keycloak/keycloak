@@ -67,7 +67,7 @@ public class AmrUtils {
                 return;
             }
             Map<String, String> config = getExecutionConfig(executionId, realm);
-            if (config != null && isAmrValid(config, completedAt)) {
+            if (config != null && carriesOver(config, completedAt)) {
                 resolved.add(executionId);
             }
         });
@@ -97,6 +97,26 @@ public class AmrUtils {
             })
             .filter(ref -> ref != null && !ref.isEmpty())
             .collect(Collectors.toList());
+    }
+
+    /**
+     * Decide whether an execution completed by an earlier authentication in the SSO session is still reported by an
+     * authentication completing now. A max age of 0, the default, never carries over: the reference value belongs to
+     * the authentication that completed the execution only. A positive max age carries over while the execution
+     * completed within that many seconds, inclusive.
+     *
+     * @param config The authenticator execution config
+     * @param completedAt The time the execution completed
+     * @return True if the authentication completing now reports the execution
+     */
+    public static boolean carriesOver(Map<String, String> config, Integer completedAt) {
+        try {
+            int maxAge = Integer.parseInt(config.getOrDefault(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "0"));
+            return maxAge > 0 && completedAt + maxAge >= Time.currentTime();
+        } catch (NumberFormatException e) {
+            logger.warnf("invalid authentication execution max age '%s'", config.get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE));
+            return false;
+        }
     }
 
     private static Map<String, String> getExecutionConfig(String executionId, RealmModel realm) {
