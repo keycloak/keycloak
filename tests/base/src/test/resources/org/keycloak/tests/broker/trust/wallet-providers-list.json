@@ -1,0 +1,186 @@
+{
+  "LoTE": {
+    "ListAndSchemeInformation": {
+      "LoTEVersionIdentifier": 1,
+      "LoTESequenceNumber": 5,
+      "LoTEType": "http://uri.etsi.org/19602/LoTEType/EUWalletProvidersList",
+      "SchemeInformationURI": [
+        {
+          "lang": "en",
+          "uriValue": "https://lists.example.test/"
+        },
+        {
+          "lang": "en",
+          "uriValue": "https://lists.example.test/wallet-provider/"
+        }
+      ],
+      "StatusDeterminationApproach": "http://uri.etsi.org/19602/WalletProvidersList/StatusDetn/EU",
+      "SchemeTypeCommunityRules": [
+        {
+          "lang": "en",
+          "uriValue": "http://uri.etsi.org/19602/WalletProvidersList/schemerules/EU"
+        }
+      ],
+      "SchemeTerritory": "BE",
+      "SchemeOperatorName": [
+        {
+          "lang": "en",
+          "value": "Example Scheme Operator"
+        }
+      ],
+      "SchemeOperatorAddress": {
+        "SchemeOperatorPostalAddress": [
+          {
+            "lang": "en",
+            "StreetAddress": "Example Street 1",
+            "Locality": "Example City",
+            "PostalCode": "12345",
+            "Country": "BE"
+          }
+        ],
+        "SchemeOperatorElectronicAddress": [
+          {
+            "lang": "en",
+            "uriValue": "mailto:operator@example.test"
+          }
+        ]
+      },
+      "SchemeName": [
+        {
+          "lang": "en",
+          "value": "BE:Example Wallet Providers list"
+        }
+      ],
+      "PolicyOrLegalNotice": [
+        {
+          "LoTEPolicy": {
+            "lang": "en",
+            "uriValue": "https://lists.example.test/policy"
+          }
+        }
+      ],
+      "PointersToOtherLoTE": [
+        {
+          "LoTELocation": "https://lists.example.test/wallet-provider.jwt",
+          "ServiceDigitalIdentities": [
+            {
+              "X509Certificates": [
+                {
+                  "val": "${SIGNER}"
+                }
+              ]
+            }
+          ],
+          "LoTEQualifiers": [
+            {
+              "LoTEType": "http://uri.etsi.org/19602/LoTEType/EUWalletProvidersList",
+              "SchemeOperatorName": [
+                {
+                  "lang": "en",
+                  "value": "Example Scheme Operator"
+                }
+              ],
+              "SchemeTypeCommunityRules": [
+                {
+                  "lang": "en",
+                  "uriValue": "http://uri.etsi.org/19602/WalletProvidersList/schemerules/EU"
+                }
+              ],
+              "SchemeTerritory": "BE",
+              "MimeType": "application/jwt"
+            }
+          ]
+        }
+      ],
+      "ListIssueDateTime": "${LIST_ISSUE_DATE_TIME}",
+      "NextUpdate": "${NEXT_UPDATE}"
+    },
+    "TrustedEntitiesList": [
+      {
+        "TrustedEntityInformation": {
+          "TEInformationURI": [
+            {
+              "lang": "en",
+              "uriValue": "http://uri.etsi.org/19602/ListOfTrustedEntities/WalletProvider/BE"
+            },
+            {
+              "lang": "en",
+              "uriValue": "https://wallet.example.test/about"
+            }
+          ],
+          "TEName": [
+            {
+              "lang": "en",
+              "value": "Example Wallet Provider"
+            }
+          ],
+          "TETradeName": [
+            {
+              "lang": "en",
+              "value": "VATBE-0000000000"
+            }
+          ],
+          "TEAddress": {
+            "TEPostalAddress": [
+              {
+                "lang": "en",
+                "StreetAddress": "Example Street 2",
+                "Locality": "Example City",
+                "PostalCode": "12345",
+                "Country": "BE"
+              }
+            ],
+            "TEElectronicAddress": [
+              {
+                "lang": "en",
+                "uriValue": "mailto:wallet@example.test"
+              },
+              {
+                "lang": "en",
+                "uriValue": "tel:+3200000000"
+              }
+            ]
+          }
+        },
+        "TrustedEntityServices": [
+          {
+            "ServiceInformation": {
+              "ServiceTypeIdentifier": "http://uri.etsi.org/19602/SvcType/WalletSolution/Issuance",
+              "ServiceName": [
+                {
+                  "lang": "en",
+                  "value": "Example Wallet"
+                }
+              ],
+              "ServiceDigitalIdentity": {
+                "X509Certificates": [
+                  {
+                    "val": "${ISSUANCE_CA}"
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "ServiceInformation": {
+              "ServiceTypeIdentifier": "http://uri.etsi.org/19602/SvcType/WalletSolution/Revocation",
+              "ServiceName": [
+                {
+                  "lang": "en",
+                  "value": "Example Wallet"
+                }
+              ],
+              "ServiceDigitalIdentity": {
+                "X509Certificates": [
+                  {
+                    "val": "${REVOCATION_CA}"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

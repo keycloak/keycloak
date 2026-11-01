@@ -147,7 +147,6 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
 
     // How trusted issuer material is resolved for a presented credential, through the trust material
     // identity providers configured for that credential.
-    // TODO add a trust list backed resolver (e.g. ETSI), selected from configuration.
     protected TrustedSdJwtIssuerResolver trustedIssuerResolver(RequestedCredentials.Credential credential) {
         return new TrustMaterialSdJwtIssuerResolver(session, credential.trustMaterialIdps());
     }
