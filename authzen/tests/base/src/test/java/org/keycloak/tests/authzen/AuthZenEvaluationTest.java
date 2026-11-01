@@ -440,6 +440,20 @@ public class AuthZenEvaluationTest {
         assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "invalid_token");
     }
 
+    // The challenge uses the scheme of the Authorization header, so a DPoP request gets a DPoP challenge
+    @Test
+    public void testInvalidDPoPTokenReturnsDPoPChallenge() throws IOException {
+        EvaluationResult result = authZenClient.evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build(),
+              Map.of(HttpHeaders.AUTHORIZATION, "DPoP not-a-token"));
+
+        assertEquals(401, result.statusCode());
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "DPoP", "invalid_token");
+    }
+
     @Test
     public void testPasswordGrantTokenReturnsUnauthorized() throws IOException {
         AccessTokenResponse tokenResponse = oauth
@@ -908,8 +922,12 @@ public class AuthZenEvaluationTest {
     }
 
     private void assertChallenge(String header, String expectedError) {
+        assertChallenge(header, "Bearer", expectedError);
+    }
+
+    private void assertChallenge(String header, String scheme, String expectedError) {
         assertNotNull(header, "401 without a WWW-Authenticate header");
-        assertTrue(header.startsWith("Bearer "), header);
+        assertTrue(header.startsWith(scheme + " "), header);
         assertTrue(header.contains("realm=\"" + realm.getName() + "\""), header);
         if (expectedError == null) {
             assertFalse(header.contains("error="), header);
