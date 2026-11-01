@@ -18,7 +18,9 @@
 package org.keycloak.authentication.authenticators.util;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
@@ -125,19 +127,43 @@ public final class AuthenticatorUtils {
     public static void updateCompletedExecutions(AuthenticationSessionModel authSession, UserSessionModel userSession, String executionId){
         Map<String, Integer> completedExecutions = parseCompletedExecutions(authSession.getUserSessionNotes().get(Constants.AUTHENTICATORS_COMPLETED));
 
-        // attempt to fetch previously completed authenticators
+        // attempt to fetch previously completed authenticators. An execution completed again in the current authentication keeps its new time.
         if (userSession != null){
             Map<String, Integer> prevCompleted = parseCompletedExecutions(userSession.getNote(Constants.AUTHENTICATORS_COMPLETED));
             logger.debugf("merging completed executions from previous authentication session %s", prevCompleted);
-            completedExecutions.putAll(prevCompleted);
+            prevCompleted.forEach(completedExecutions::putIfAbsent);
         }
 
         // set new execution and serialize note
         completedExecutions.put(executionId, Time.currentTime());
+
+        // the executions of the current authentication are tracked separately, so they can be told apart from carried over ones
+        // when the authentication attaches to a client session. An auth note, so a reset of the flow discards it with the execution statuses.
+        Set<String> currentAuthenticationExecutions = parseExecutionIds(authSession.getAuthNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION));
+        currentAuthenticationExecutions.add(executionId);
         try {
-            String updated = JsonSerialization.writeValueAsString(completedExecutions);
-            authSession.setUserSessionNote(Constants.AUTHENTICATORS_COMPLETED, updated);
+            authSession.setUserSessionNote(Constants.AUTHENTICATORS_COMPLETED, JsonSerialization.writeValueAsString(completedExecutions));
+            authSession.setAuthNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION, JsonSerialization.writeValueAsString(currentAuthenticationExecutions));
         } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * Parse a serialized list of authentication execution ids, as stored in the
+     * {@link Constants#AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION} and {@link Constants#AMR_AUTHENTICATION_EXECUTIONS} notes.
+     *
+     * @param note The serialized list, or null when nothing has been recorded
+     * @return The execution ids in their recorded order. Never null.
+     */
+    public static Set<String> parseExecutionIds(String note){
+        if (note == null){
+            return new LinkedHashSet<>();
+        }
+        try {
+            return JsonSerialization.readValue(note, new TypeReference<LinkedHashSet<String>>() {});
+        } catch (IOException e) {
+            logger.warnf("Invalid format of the authentication execution ids list. Saved value was: %s", note);
             throw new IllegalStateException(e);
         }
     }

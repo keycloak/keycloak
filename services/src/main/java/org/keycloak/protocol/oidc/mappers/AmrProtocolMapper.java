@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
@@ -104,6 +105,17 @@ public class AmrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
      * @return The authenticator reference values associated with the completed executions
      */
     protected List<String> getAmr(AuthenticatedClientSessionModel clientSession, RealmModel realmModel) {
+        String resolvedExecutions = clientSession.getNote(Constants.AMR_AUTHENTICATION_EXECUTIONS);
+        if (resolvedExecutions != null) {
+            Set<String> executions = AuthenticatorUtils.parseExecutionIds(resolvedExecutions);
+            logger.debugf("found the following authentication executions resolved for the client session: %s", executions);
+            List<String> refs = AmrUtils.getAuthenticationExecutionReferences(executions, realmModel);
+            logger.debugf("amr %s set in token", refs);
+            return refs;
+        }
+
+        // No authentication attached to this client session since the executions were resolved on attach (token exchange,
+        // client sessions from before the note existed): report the user session's completed executions within their max age.
         Map<String, Integer> executions = AuthenticatorUtils.parseCompletedExecutions(clientSession.getUserSession().getNote(Constants.AUTHENTICATORS_COMPLETED));
         logger.debugf("found the following completed authentication executions: %s", executions.toString());
         List<String> refs = AmrUtils.getAuthenticationExecutionReferences(executions, realmModel);
