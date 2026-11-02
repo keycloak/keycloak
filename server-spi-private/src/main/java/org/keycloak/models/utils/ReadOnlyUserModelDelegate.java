@@ -150,10 +150,8 @@ public class ReadOnlyUserModelDelegate extends UserModelDelegate {
         throw readOnlyException("group mapping for group " + group.getName());
     }
 
-    @Override
-    public void leaveGroup(GroupModel group) {
-        throw readOnlyException("group mapping for group " + group.getName());
-    }
+    // leaveGroup is intentionally not blocked because group membership is stored and managed locally in Keycloak,
+    // so removing a user from a group should remain possible even if the user is otherwise read-only.
 
     @Override
     public void grantRole(RoleModel role) {
