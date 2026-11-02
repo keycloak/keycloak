@@ -50,12 +50,18 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-cyclonedx</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>
         <!-- define this as a property, so it can still be overwritten on the CLI -->
         <!-- direct the auto-created files to the target folder, so they are cleaned by "mvn clean" -->
         <kc.home.dir>${project.build.directory}/kc</kc.home.dir>
+        <!-- Enable Quarkus SBOM generation for this build -->
+        <quarkus.cyclonedx.enabled>true</quarkus.cyclonedx.enabled>
     </properties>
 
     <build>
@@ -81,6 +87,7 @@
                         <kc.home.dir>${kc.home.dir}</kc.home.dir>
                         <kc.db>dev-file</kc.db>
                         <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
+                        <quarkus.cyclonedx.enabled>${quarkus.cyclonedx.enabled}</quarkus.cyclonedx.enabled>
                     </systemProperties>
                 </configuration>
                 <executions>
