@@ -199,3 +199,33 @@ To enable this behavior, you need to enable the `Requires user membership` setti
 If enabled, and after the user provides the username or email in the identity-first login page, the server will
 try to resolve a organization where the user is a member by looking at any existing membership or based on the semantics of the <<_mapping_organization_claims_,organization>> scope,
 if requested by the client. If not a member of an organization, an error page will be shown.
+
+[[_conditions_on_organizations_]]
+== Conditions on organizations
+
+The *Condition - organization attribute* condition runs a conditional sub-flow depending on an <<_managing_attributes_,attribute>> of the organizations of the user.
+For example, to require OTP from members of organizations with the attribute `requireOtp` set to `true`:
+
+.Procedure
+. Duplicate the flow bound to the *Browser flow* binding type.
+. In the sub-flow of the copy whose name ends with *forms*, click *Add sub-flow* and give it a name such as *Organization OTP*. Once added, change the *Requirement* to *Conditional*.
+. Click *Add condition* in the *Organization OTP* sub-flow and select *Condition - organization attribute*. Once added, change the *Requirement* to *Required*.
+. Click the settings of the condition and set *Attribute name* to `requireOtp` and *Expected attribute value* to `true`.
+. Click *Add condition* in the *Organization OTP* sub-flow and select *Condition - credential*. Once added, change the *Requirement* to *Required*.
+. Click the settings of this condition, set *Credentials* to `otp` and `webauthn-passwordless`, and leave *Included* off. If the realm uses WebAuthn or recovery codes as a second factor, add `webauthn` or `recovery-authn-codes` as well. Members who already entered an OTP code in the sub-flow of the copy whose name ends with *Browser - Conditional 2FA*, or who logged in with a passkey, are then not asked for an OTP code.
+. Click *Add step* in the *Organization OTP* sub-flow and select *OTP Form*. Once added, change the *Requirement* to *Required*.
+. Bind the flow to the *Browser* binding type.
+. Add the attribute `requireOtp` with the value `true` to the organizations whose members must use OTP.
+
+After entering their password, members of these organizations are asked for an OTP code, or to set up OTP if they do not have it yet.
+
+The *Organization* setting of the condition selects the organizations it checks:
+
+* `any-membership`, the default, checks every enabled organization the user is a member of.
+* `selected` checks only the organization the user is authenticating in the scope of, as resolved by the *Organization Identity-First Login* step,
+for example from the <<_mapping_organization_claims_,organization>> scope requested by the client or from the organization chosen by the user.
+An organization the user is not a member of is not checked.
+As the client and the user choose this organization, a user who is a member of several organizations does not get the conditional steps when authenticating in the scope of an organization without the attribute.
+Use `any-membership` to require the steps from every member of an organization.
+
+The condition only applies to the steps of the flow that run: a user who already has an SSO session, or who authenticates through an identity provider, does not go through the *forms* sub-flow.
