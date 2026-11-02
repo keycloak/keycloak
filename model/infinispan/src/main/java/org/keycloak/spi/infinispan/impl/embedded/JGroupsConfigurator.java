@@ -33,6 +33,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 
 import org.keycloak.Config;
@@ -104,6 +105,7 @@ public final class JGroupsConfigurator {
 
     private static final String FD_SOCK_ENABLED_NAME = "fdSockEnabled";
     private static final boolean FD_SOCK_ENABLED_DEFAULT = true;
+    private static final String MTLS_KEY_EXCHANGE_GROUPS = "mtlsKeyExchangeGroups";
 
     private JGroupsConfigurator() {
     }
@@ -155,7 +157,7 @@ public final class JGroupsConfigurator {
         var tracingEnabled = config.getBoolean(TRACING, false);
         var fdSockEnabled = config.getBoolean(FD_SOCK_ENABLED_NAME, FD_SOCK_ENABLED_DEFAULT);
         configureDiscovery(holder, session, tracingEnabled, fdSockEnabled);
-        configureTls(holder, session);
+        configureTls(config, holder, session);
         warnDeprecatedStack(holder);
     }
 
@@ -197,6 +199,7 @@ public final class JGroupsConfigurator {
         Util.copyFromOption(builder, SystemProperties.BIND_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_BIND_PORT, false);
         Util.copyFromOption(builder, SystemProperties.EXTERNAL_ADDRESS.configKey, "address", ProviderConfigProperty.STRING_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS, false);
         Util.copyFromOption(builder, SystemProperties.EXTERNAL_PORT.configKey, "port", ProviderConfigProperty.INTEGER_TYPE, CachingOptions.CACHE_EMBEDDED_NETWORK_EXTERNAL_PORT, false);
+        Util.copyFromOption(builder, MTLS_KEY_EXCHANGE_GROUPS, "groups", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, CachingOptions.CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS, false);
 
         builder.property()
                 .name(FD_SOCK_ENABLED_NAME)
@@ -210,35 +213,133 @@ public final class JGroupsConfigurator {
         Arrays.stream(SystemProperties.values()).forEach(p -> p.set(config));
     }
 
-    private static void configureTls(ConfigurationBuilderHolder holder, KeycloakSession session) {
+    private static void configureTls(Config.Scope config, ConfigurationBuilderHolder holder, KeycloakSession session) {
         var provider = session.getProvider(JGroupsCertificateProvider.class);
         if (provider == null || !provider.isEnabled()) {
             return;
         }
-        var factory = createSocketFactory(provider);
+        var groups = config.getArray(MTLS_KEY_EXCHANGE_GROUPS);
+        var factory = createSocketFactory(provider, groups);
         transportOf(holder).addProperty(JGroupsTransport.SOCKET_FACTORY, factory);
         validateTlsAvailable(holder);
-        logger.info("JGroups Encryption enabled (mTLS).");
+        var snapshot = provider.tlsContext();
+        String identity = snapshot == null ? fileIdentity(provider) : snapshot.identityAlgorithm();
+        String tlsProvider = snapshot == null ? defaultTlsProviderName() : snapshot.context().getProvider().getName();
+        logger.infof("JGroups Encryption enabled (mTLS). Protocol=%s, identity=%s, provider=%s, key-exchange groups=%s, hybrid key exchange=%s",
+                TLS_PROTOCOL_VERSION, identity, tlsProvider, groups == null ? "defaults" : Arrays.toString(groups), hybridPolicy(groups));
     }
 
-    private static SocketFactory createSocketFactory(JGroupsCertificateProvider provider) {
+    static String hybridPolicy(String[] groups) {
+        if (groups == null || groups.length == 0) {
+            return "not explicitly required";
+        }
+        var hybrids = java.util.Set.of("X25519MLKEM768", "SECP256R1MLKEM768", "SECP384R1MLKEM1024", "CURVESM2MLKEM768");
+        long hybrid = Arrays.stream(groups).filter(group -> hybrids.contains(group.trim().toUpperCase(java.util.Locale.ROOT))).count();
+        boolean classical = Arrays.stream(groups).anyMatch(group -> !group.toUpperCase(java.util.Locale.ROOT).contains("MLKEM"));
+        if (hybrid == groups.length) {
+            return "required";
+        }
+        if (hybrid > 0) {
+            return classical ? "allowed with classical fallback" : "allowed alongside other post-quantum groups";
+        }
+        return "not configured";
+    }
+
+    private static String defaultTlsProviderName() {
+        try {
+            return SSLContext.getInstance(TLS_PROTOCOL).getProvider().getName();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("TLS is unavailable", e);
+        }
+    }
+
+    private static String fileIdentity(JGroupsCertificateProvider provider) {
+        if (provider.keyManager() instanceof javax.net.ssl.X509ExtendedKeyManager manager) {
+            var algorithms = new java.util.LinkedHashSet<String>();
+            for (String type : new String[]{"RSA", "EC", "Ed25519", "Ed448", "ML-DSA", "ML-DSA-65"}) {
+                var aliases = manager.getServerAliases(type, null);
+                if (aliases != null) {
+                    for (String alias : aliases) {
+                        var chain = manager.getCertificateChain(alias);
+                        if (chain != null && chain.length > 0) {
+                            algorithms.add(chain[0].getPublicKey().getAlgorithm());
+                        }
+                    }
+                }
+            }
+            if (!algorithms.isEmpty()) {
+                return String.join(",", algorithms);
+            }
+        }
+        return "custom identity";
+    }
+
+    static SocketFactory createSocketFactory(JGroupsCertificateProvider provider, String[] namedGroups) {
+        if (provider.tlsContext() != null) {
+            return new ReloadingTlsSocketFactory(() -> {
+                provider.reloadCertificate();
+                var snapshot = provider.tlsContext();
+                var context = snapshot.context();
+                var parameters = new SSLParameters();
+                parameters.setProtocols(new String[]{TLS_PROTOCOL_VERSION});
+                parameters.setNeedClientAuth(true);
+                var signatures = snapshot.signatureSchemes();
+                if (signatures != null) {
+                    applySignatures(parameters, signatures);
+                }
+                if (namedGroups != null) {
+                    JGroupsTlsNamedGroups.apply(parameters, JGroupsTlsNamedGroups.validate(context, namedGroups));
+                }
+                return new ReloadingTlsSocketFactory.State(context, parameters);
+            });
+        }
         try {
             var sslContext = SSLContext.getInstance(TLS_PROTOCOL);
             sslContext.init(new KeyManager[]{provider.keyManager()}, new TrustManager[]{provider.trustManager()}, null);
-            return createFromContext(sslContext);
+            return createFromContext(sslContext, namedGroups);
         } catch (KeyManagementException | NoSuchAlgorithmException e) {
             // we should have valid certificates and keys.
             throw new RuntimeException(e);
         }
     }
 
-    private static SocketFactory createFromContext(SSLContext context) {
+    static SocketFactory createFromContext(SSLContext context, String[] namedGroups) {
+        return createFromContext(context, namedGroups, null);
+    }
+
+    static SocketFactory createFromContext(SSLContext context, String[] namedGroups, String[] signatures) {
         DefaultSocketFactory socketFactory = new DefaultSocketFactory(context);
         final SSLParameters serverParameters = new SSLParameters();
         serverParameters.setProtocols(new String[]{TLS_PROTOCOL_VERSION});
         serverParameters.setNeedClientAuth(true);
+        if (signatures != null) {
+            applySignatures(serverParameters, signatures);
+            final SSLParameters clientParameters = new SSLParameters();
+            clientParameters.setProtocols(new String[]{TLS_PROTOCOL_VERSION});
+            applySignatures(clientParameters, signatures);
+            if (namedGroups != null) {
+                JGroupsTlsNamedGroups.apply(serverParameters, JGroupsTlsNamedGroups.validate(context, namedGroups));
+                JGroupsTlsNamedGroups.apply(clientParameters, JGroupsTlsNamedGroups.validate(context, namedGroups));
+            }
+            socketFactory.setSocketConfigurator(socket -> ((SSLSocket) socket).setSSLParameters(clientParameters));
+        } else if (namedGroups != null) {
+            var groups = JGroupsTlsNamedGroups.validate(context, namedGroups);
+            JGroupsTlsNamedGroups.apply(serverParameters, groups);
+            final SSLParameters clientParameters = new SSLParameters();
+            clientParameters.setProtocols(new String[]{TLS_PROTOCOL_VERSION});
+            JGroupsTlsNamedGroups.apply(clientParameters, groups);
+            socketFactory.setSocketConfigurator(socket -> ((SSLSocket) socket).setSSLParameters(clientParameters));
+        }
         socketFactory.setServerSocketConfigurator(socket -> ((SSLServerSocket) socket).setSSLParameters(serverParameters));
         return socketFactory;
+    }
+
+    private static void applySignatures(SSLParameters parameters, String[] signatures) {
+        try {
+            SSLParameters.class.getMethod("setSignatureSchemes", String[].class).invoke(parameters, (Object) signatures);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("The runtime cannot enforce cluster authentication signature schemes", e);
+        }
     }
 
     private static void configureDiscovery(ConfigurationBuilderHolder holder, KeycloakSession session, boolean tracingEnabled, boolean fdSockEnabled) {

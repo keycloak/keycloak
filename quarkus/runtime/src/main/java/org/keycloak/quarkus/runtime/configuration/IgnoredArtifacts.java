@@ -58,6 +58,7 @@ public class IgnoredArtifacts {
             "org.bouncycastle:bcprov-jdk18on",
             "org.bouncycastle:bcpkix-jdk18on",
             "org.bouncycastle:bcutil-jdk18on",
+            "org.bouncycastle:bctls-jdk18on",
             "org.keycloak:keycloak-crypto-default"
     );
 

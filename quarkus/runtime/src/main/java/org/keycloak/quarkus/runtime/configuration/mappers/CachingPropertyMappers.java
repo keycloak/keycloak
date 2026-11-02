@@ -111,6 +111,16 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
                         .validator(CachingPropertyMappers::validateCertificateRotationIsPositive)
                         .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_IDENTITY_ALGORITHM)
+                        .paramLabel("algorithm")
+                        .to("kc.spi-jgroups-mtls--default--identity-algorithm")
+                        .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property 'cache-embedded-mtls-enabled' is enabled")
+                        .build(),
+                fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS)
+                        .paramLabel("groups")
+                        .to("kc.spi-cache-embedded--default--mtls-key-exchange-groups")
+                        .isEnabled(() -> Configuration.isTrue(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED), "property '%s' is enabled".formatted(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED.getKey()))
+                        .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_NODE_NAME)
                         .paramLabel("name")
                         .to("kc.spi-cache-embedded--default--node-name")

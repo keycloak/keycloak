@@ -106,7 +106,57 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
                   requireConfiguration(TRUSTSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
             );
         }
-        return DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(requireRotationInDays()));
+        String algorithm = configuration.get("identityAlgorithm", "RSA");
+        if (!Set.of("RSA", "ML-DSA-65").contains(algorithm)) {
+            throw new IllegalArgumentException("Unsupported JGroups identity algorithm: " + algorithm);
+        }
+        selectTlsProvider(algorithm); // Validate before changing the shared identity.
+        return DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(requireRotationInDays()), algorithm,
+                DefaultJGroupsCertificateProviderFactory::selectTlsProvider);
+    }
+
+    private static java.security.Provider selectTlsProvider(String algorithm) {
+        java.security.Provider tls = null;
+
+        boolean nativePq = false;
+        if ("ML-DSA-65".equals(algorithm)) {
+            try {
+                var context = javax.net.ssl.SSLContext.getInstance("TLS", "SunJSSE");
+                context.init(null, null, null);
+                var schemes = (String[]) javax.net.ssl.SSLParameters.class.getMethod("getSignatureSchemes")
+                        .invoke(context.getSupportedSSLParameters());
+                nativePq = schemes != null && java.util.Arrays.stream(schemes).anyMatch("mldsa65"::equalsIgnoreCase);
+            } catch (ReflectiveOperationException | java.security.GeneralSecurityException e) {
+                nativePq = false;
+            }
+
+        }
+        var requestedGroups = Config.scope("cacheEmbedded", "default").getArray("mtlsKeyExchangeGroups");
+        boolean nativeGroups = true;
+        if (requestedGroups != null) {
+            try {
+                var context = javax.net.ssl.SSLContext.getInstance("TLS", "SunJSSE");
+                context.init(null, null, null);
+                var groups = (String[]) javax.net.ssl.SSLParameters.class.getMethod("getNamedGroups")
+                        .invoke(context.getSupportedSSLParameters());
+                nativeGroups = groups != null && java.util.Arrays.stream(requestedGroups).allMatch(requested ->
+                        java.util.Arrays.stream(groups).anyMatch(group -> group.equalsIgnoreCase(requested.trim())));
+            } catch (ReflectiveOperationException | java.security.GeneralSecurityException e) {
+                nativeGroups = false;
+            }
+        }
+        if (nativePq) {
+            tls = java.security.Security.getProvider("SunJSSE");
+        }
+        if (!nativeGroups || ("ML-DSA-65".equals(algorithm) && !nativePq)) {
+            try {
+                tls = (java.security.Provider) Class.forName("org.bouncycastle.jsse.provider.BouncyCastleJsseProvider")
+                        .getConstructor(java.security.Provider.class).newInstance(java.security.Security.getProvider("BC"));
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("The configured cluster TLS policy requires the BC TLS provider, but it could not be initialized", e);
+            }
+        }
+        return tls;
     }
 
     private boolean isKeystoreOrTruststoreConfigured() {

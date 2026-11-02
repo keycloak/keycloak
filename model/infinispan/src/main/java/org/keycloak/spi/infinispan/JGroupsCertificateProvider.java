@@ -73,6 +73,21 @@ public interface JGroupsCertificateProvider extends Provider {
         throw new UnsupportedOperationException();
     }
 
+    /** Returns an identity-specific TLS snapshot, or null to use the managed key/trust managers. */
+    default TlsContext tlsContext() {
+        return null;
+    }
+
+    record TlsContext(javax.net.ssl.SSLContext context, String[] signatureSchemes, String identityAlgorithm) {
+        public TlsContext {
+            signatureSchemes = signatureSchemes == null ? null : signatureSchemes.clone();
+        }
+        @Override
+        public String[] signatureSchemes() {
+            return signatureSchemes == null ? null : signatureSchemes.clone();
+        }
+    }
+
     /**
      * Returns a managed {@link KeyManager}.
      * <p>

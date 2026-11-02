@@ -63,6 +63,9 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     private final Lock lock = new ReentrantLock();
     // not final to be updated for testing
     private volatile Duration rotationPeriod;
+    private String identityAlgorithm = "RSA";
+    private volatile TlsContext tlsContext;
+    private java.util.function.Function<String, java.security.Provider> providerSelector;
     private volatile JGroupsCertificate currentCertificate;
 
     private DatabaseJGroupsCertificateProvider(KeycloakSessionFactory sessionFactory, Duration rotationPeriod) {
@@ -74,9 +77,21 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     }
 
     public static DatabaseJGroupsCertificateProvider create(KeycloakSessionFactory factory, Duration rotationPeriod) {
+        return create(factory, rotationPeriod, "RSA", algorithm -> null);
+    }
+
+    public static DatabaseJGroupsCertificateProvider create(KeycloakSessionFactory factory, Duration rotationPeriod,
+            String algorithm, java.util.function.Function<String, java.security.Provider> selector) {
         var provider = new DatabaseJGroupsCertificateProvider(factory, rotationPeriod);
+        provider.identityAlgorithm = algorithm;
+        provider.providerSelector = selector;
         provider.init();
         return provider;
+    }
+
+    @Override
+    public TlsContext tlsContext() {
+        return tlsContext;
     }
 
     private void init() {
@@ -175,11 +190,25 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
             if (Objects.equals(currentCertificate.getAlias(), certificate.getAlias())) {
                 return;
             }
-            var km = Utils.createKeyManager(certificate);
-            var tm = Utils.createTrustManager(certificate);
-            currentCertificate = certificate;
+            var selectedProvider = providerSelector.apply(identityAlgorithm(certificate));
+            var km = Utils.createKeyManager(certificate, selectedProvider);
+            var tm = Utils.createTrustManager(certificate, selectedProvider);
+            var context = selectedProvider == null ? javax.net.ssl.SSLContext.getInstance("TLS")
+                    : javax.net.ssl.SSLContext.getInstance("TLS", selectedProvider);
+            context.init(new KeyManager[]{km}, new TrustManager[]{tm}, null);
             keyManager.reload(km);
             trustManager.reload(tm);
+            String[] signatures = "ML-DSA-65".equals(identityAlgorithm(certificate))
+                    || (selectedProvider != null && "BCJSSE".equals(selectedProvider.getName()))
+                    ? new String[]{"mldsa65", "rsa_pss_rsae_sha256", "rsa_pss_rsae_sha384", "rsa_pss_rsae_sha512", "rsa_pkcs1_sha256"}
+                    : null;
+            var previous = tlsContext;
+            tlsContext = new TlsContext(context, signatures, identityAlgorithm(certificate));
+            if (previous != null && (!previous.identityAlgorithm().equals(tlsContext.identityAlgorithm())
+                    || !previous.context().getProvider().getName().equals(context.getProvider().getName()))) {
+                logger.infof("JGroups TLS identity reloaded: identity=%s, provider=%s", tlsContext.identityAlgorithm(), context.getProvider().getName());
+            }
+            currentCertificate = certificate;
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -189,10 +218,29 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
 
     private JGroupsCertificate loadOrCreateCertificate(KeycloakSession session) {
         var storage = session.getProvider(ServerConfigStorageProvider.class);
-        return fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
+        return loadOrCreateCertificate(storage, identityAlgorithm, this::generateSelfSignedCertificate);
+    }
+
+    static JGroupsCertificate loadOrCreateCertificate(ServerConfigStorageProvider storage, String identityAlgorithm,
+            java.util.function.Supplier<String> generator) {
+        var certificate = fromJson(storage.loadOrCreate(CERTIFICATE_ID, generator));
+        if (!identityAlgorithm.equals(identityAlgorithm(certificate))) {
+            logger.infof("Regenerating shared JGroups identity using %s", identityAlgorithm);
+            storage.replace(CERTIFICATE_ID, certificate::isSameAlias, generator);
+            certificate = fromJson(storage.find(CERTIFICATE_ID).orElseThrow());
+            if (!identityAlgorithm.equals(identityAlgorithm(certificate))) {
+                throw new IllegalStateException("Concurrent JGroups identity algorithm change; retry startup");
+            }
+        }
+        return certificate;
+    }
+
+    static String identityAlgorithm(JGroupsCertificate certificate) {
+        return "2.16.840.1.101.3.4.3.18".equals(certificate.getCertificate().getSigAlgOID())
+                ? "ML-DSA-65" : certificate.getCertificate().getPublicKey().getAlgorithm();
     }
 
     private String generateSelfSignedCertificate() {
-        return toJson(Utils.generateSelfSignedCertificate(rotationPeriod.multipliedBy(2L)));
+        return toJson(Utils.generateSelfSignedCertificate(rotationPeriod.multipliedBy(2L), identityAlgorithm));
     }
 }
