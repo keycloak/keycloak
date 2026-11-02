@@ -48,6 +48,7 @@ public class ManualMigrationEmptyDatabaseDistTest {
 
     private static final String CREATE_CHANGELOG_TABLE = "CREATE TABLE PUBLIC.DATABASECHANGELOG (";
     private static final String INSERT_INTO_CHANGELOG = "INSERT INTO PUBLIC.DATABASECHANGELOG (";
+    private static final String CREATE_LOCK_TABLE = "CREATE TABLE PUBLIC.DATABASECHANGELOGLOCK (";
 
     /**
      * The manual migration strategy exists for database users without DDL privileges. On an empty
@@ -82,10 +83,49 @@ public class ManualMigrationEmptyDatabaseDistTest {
         assertThat("changelog table must be created before it is inserted into",
                 output.indexOf(CREATE_CHANGELOG_TABLE), lessThan(output.indexOf(INSERT_INTO_CHANGELOG)));
 
+        // The server creates Liquibase's lock table itself on startup, which a database user without DDL privileges
+        // is not allowed to do. A database populated only by this script must therefore get it from the script.
+        assertThat("lock table must be created exactly once",
+                countOccurrences(output, CREATE_LOCK_TABLE), is(1));
+
         // changeSetExecuted preconditions are resolved against the changelog table, so it must still exist while
         // the script is generated. Were it missing, they would all resolve to "not executed" and changesets that
         // should be marked as ran would be emitted instead - this one carries MySQL-only index syntax.
         assertThat(output, not(containsString("VALUE(255)")));
+    }
+
+    /**
+     * An administrator may create both Liquibase bookkeeping tables up front, so that a database user without DDL
+     * privileges can produce the script at all. The script must then not create them again: it is meant to be
+     * applied to that same database, where the DDL would fail with "already exists". Producing the script once
+     * leaves exactly that state behind, as the server creates both tables on the live connection while exporting.
+     */
+    @Test
+    void testEmptyDatabaseExportSkipsPreCreatedBookkeepingTables(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws IOException {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+
+        // First export on an empty database: creates the changelog and lock tables on the live connection
+        runner.run("start-dev",
+                "--spi-connections-jpa-quarkus-migration-strategy=manual",
+                "--spi-connections-jpa-quarkus-initialize-empty=false")
+                .assertMessage("Database not initialized, please initialize database with");
+
+        // Second export against the same, still empty database, where both tables now pre-exist
+        CLIResult result = runner.run("start-dev",
+                "--spi-connections-jpa-quarkus-migration-strategy=manual",
+                "--spi-connections-jpa-quarkus-initialize-empty=false");
+
+        result.assertMessage("Database not initialized, please initialize database with");
+
+        File script = rawDistRootPath.getDistRootPath().resolve("bin").resolve("keycloak-database-update.sql").toFile();
+        String output = FileUtils.readFileToString(script, Charset.defaultCharset());
+
+        assertThat(output, containsString(INSERT_INTO_CHANGELOG));
+        assertThat("changelog table must not be created when it already existed",
+                countOccurrences(output, CREATE_CHANGELOG_TABLE), is(0));
+        assertThat("lock table must not be created when it already existed",
+                countOccurrences(output, CREATE_LOCK_TABLE), is(0));
     }
 
     private static int countOccurrences(String haystack, String needle) {

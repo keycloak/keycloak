@@ -90,7 +90,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         if (storepath == null) {
             storepath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
             if (storepath == null) {
-                File defaultTrustStore = TruststoreBuilder.getJRETruststore();
+                File defaultTrustStore = TruststoreBuilder.getImplicitJRETruststore();
                 if (!defaultTrustStore.exists()) {
                     throw new RuntimeException("Attribute 'file' missing in 'truststore':'file' configuration, and could not find the system truststore");
                 }

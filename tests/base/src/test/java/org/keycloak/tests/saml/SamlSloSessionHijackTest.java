@@ -31,7 +31,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -123,7 +123,7 @@ public class SamlSloSessionHijackTest extends AbstractSamlTest {
                 .sessionIndex(sessionIndex)
                 .buildDocument();
 
-        HttpPost post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, logoutRequest);
+        HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, logoutRequest);
         try (CloseableHttpResponse response = httpClient.execute(post)) {
             return response.getStatusLine().getStatusCode();
         }

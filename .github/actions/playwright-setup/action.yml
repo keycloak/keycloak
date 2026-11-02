@@ -1,0 +1,18 @@
+name: Setup Playwright
+description: Installs a Playwright browser and its system dependencies for a workspace.
+
+inputs:
+  workspace:
+    description: PNPM workspace filter to run Playwright from
+    required: true
+  browser:
+    description: Playwright browser to install, so that only its binaries and system dependencies are fetched
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install Playwright browser
+      shell: bash
+      working-directory: js
+      run: pnpm --fail-if-no-match --filter ${{ inputs.workspace }} exec playwright install --with-deps ${{ inputs.browser }}

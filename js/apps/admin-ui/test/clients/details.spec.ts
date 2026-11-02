@@ -33,7 +33,6 @@ test.describe.serial("Clients details test", () => {
 
   test.afterAll(async () => {
     await adminClient.deleteRealm(realmName);
-    await adminClient.deleteClient(clientId);
   });
 
   test.beforeEach(async ({ page }) => {

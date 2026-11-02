@@ -223,48 +223,51 @@ test.describe.serial("Client authentication subtab", () => {
 
 test.describe
   .serial("Client authorization tab access for view-realm-authorization", () => {
+  const realmName = `realm-view-authz-${crypto.randomUUID()}`;
+  const username = `test-view-authz-user-${crypto.randomUUID()}`;
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
   const resourceName = `test-resource-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
-    await adminClient.createRealm("realm-view-authz");
+    await adminClient.createRealm(realmName);
     const testUser = await adminClient.createUser({
       // Create user in master realm
-      username: "test-view-authz-user",
+      username,
       enabled: true,
       credentials: [{ type: "password", value: "password" }],
     });
 
-    await adminClient.addClientRoleToUser(
-      testUser.id!,
-      "realm-view-authz-realm",
-      ["view-realm", "view-users", "view-authorization", "view-clients"],
-    );
+    await adminClient.addClientRoleToUser(testUser.id!, `${realmName}-realm`, [
+      "view-realm",
+      "view-users",
+      "view-authorization",
+      "view-clients",
+    ]);
     await adminClient.createClient({
-      realm: "realm-view-authz",
+      realm: realmName,
       clientId,
       authorizationServicesEnabled: true,
       serviceAccountsEnabled: true,
       standardFlowEnabled: true,
     });
     await adminClient.createResource(clientId, {
-      realm: "realm-view-authz",
+      realm: realmName,
       name: resourceName,
     });
   });
 
   test.afterAll(async () => {
-    await adminClient.deleteUser("test-view-authz-user");
-    await adminClient.deleteRealm("realm-view-authz");
+    await adminClient.deleteUser(username);
+    await adminClient.deleteRealm(realmName);
   });
 
   test("Should view authorization tab", async ({ page }) => {
     await login(page, {
-      username: "test-view-authz-user",
+      username,
       password: "password",
     });
 
-    await goToRealm(page, "realm-view-authz");
+    await goToRealm(page, realmName);
     await page.reload();
     await goToClients(page);
 

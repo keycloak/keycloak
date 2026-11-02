@@ -960,7 +960,7 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        String requireReauthentication = authSession.getAuthNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN);
+        String requireReauthentication = authSession.getClientNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN);
         return Objects.equals(SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT, requireReauthentication);
     }
 

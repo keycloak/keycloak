@@ -21,6 +21,14 @@ General validation also preserves the legacy web origin literals `${authAdminUrl
 Trusted Hosts resolves relative logo URLs against the {project_name} frontend URL and checks that host against its allowlist. The client's root URL does not determine where the browser loads a logo.
 The pattern executor continues to match literal configured values, including markers and relative URLs, and respects an explicit field selection. Sector identifier URLs in pairwise protocol mappers remain subject to their separate validation.
 
+=== Authorization endpoint JSON errors
+// https://github.com/keycloak/keycloak/issues/54134
+
+When an OpenID Connect authorization request with `Accept: application/json` is rejected during client or request validation, the JSON response now contains an OAuth error code in `error` and the human-readable message in `error_description`.
+For example, an unknown client returns `{"error":"invalid_client","error_description":"Client not found."}`.
+Applications should use `error` rather than matching translated messages. HTTP status codes and HTML error pages retain their existing behavior, and errors sent to a validated redirect URI continue to use that redirect.
+Other JSON error pages, including direct-grant authenticator errors, are unchanged.
+
 === Realm-level default client scopes require `manage-realm`
 // https://github.com/keycloak/keycloak/issues/50588
 
@@ -92,6 +100,15 @@ The following conditions are now enforced:
 After upgrading, logins through a SAML identity provider, or through an application using the SAML adapter, fail when the assertion omits `SubjectConfirmationData` on every Bearer confirmation, or omits one of the attributes above when the corresponding check applies.
 Broker logins fail with an invalid response error; adapter logins restart the login flow.
 If your identity provider's responses do not meet these requirements, update it to include a spec-compliant Bearer `SubjectConfirmationData`.
+
+=== SAML broker IdP-initiated logins enforce a recipient bound to the target client
+// https://github.com/keycloak/keycloak/issues/54342
+
+When processing a SAML assertion received from an identity provider through identity brokering, {project_name} now always validates the Bearer `SubjectConfirmationData` `Recipient` against the broker endpoint expected for that specific login -- the per-client IdP-initiated endpoint for IdP-initiated logins, or the generic broker endpoint for SP-initiated logins -- regardless of whether the outer SAML response `Destination` is present.
+
+Previously, when the identity provider's response omitted the (optional, and not necessarily signed) `Destination` attribute, the `Recipient` attribute was not validated at all for broker logins. This allowed an assertion that an identity provider legitimately issued for one IdP-initiated client to be replayed, unmodified, against a different IdP-initiated client configured on the same broker, bypassing client-specific login policy.
+
+After upgrading, a Bearer `SubjectConfirmationData` whose `Recipient` is missing or does not match the expected broker endpoint is rejected, even when the response's `Destination` is absent or matches. If you operate an identity provider that issues assertions without a `Recipient`, or with a `Recipient` that does not point at the expected {project_name} broker endpoint, update it to send a spec-compliant Bearer `SubjectConfirmationData`.
 
 === SAML logins with an empty principal are rejected
 // https://github.com/keycloak/keycloak/issues/53816
@@ -248,6 +265,14 @@ In the Admin Console, these roles are no longer listed in the *Scope* tab of cli
 The client scope evaluation endpoints (`GET /admin/realms/\{realm}/clients/\{id}/evaluate-scopes/scope-mappings/\{role-container}/granted` and `not-granted`) apply the same role visibility rules under both legacy RBAC and fine-grained admin permissions V2.
 After upgrading, callers may see fewer evaluated role scope mappings when they cannot view or map roles to users or client scopes in the requested realm or client role container.
 Callers allowed only to map roles to client scopes can still see those roles, and roles in the effective scope appear under `granted` rather than `not-granted`.
+
+=== Group lookup by path filters role mappings by visibility
+// https://github.com/keycloak/keycloak/issues/54356
+
+The Admin REST API endpoint `GET /admin/realms/\{realm}/group-by-path/\{path}` now omits the role mappings that the caller is not allowed to view or to map to users, as the `groups/\{id}` endpoint and the group listings already do.
+Previously, any caller allowed to view the group received all of its role mappings in `realmRoles` and `clientRoles`.
+For example, an administrator with only the `view-users` role no longer receives them, while an administrator with the `manage-users` role still does.
+If an integration reads group role mappings through this endpoint, make sure its account is allowed to view the roles, for example through the `view-realm` and `view-clients` roles or the corresponding fine-grained permissions.
 
 === Workflow expressions with unsupported characters are rejected
 // https://github.com/keycloak/keycloak/issues/53790

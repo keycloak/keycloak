@@ -418,7 +418,7 @@ public class OID4VCIssuerEndpoint {
      * </p>
      * <b>Pre-Authorized Code Grant Offer</b>
      * <ul>
-     *   <li>A pre-authorized offer is authorized for the clientId from the current login session</li>
+     *   <li>The offer is not bound to a client, any authenticated client holding the code can redeem it</li>
      *   <li>If targetUser is null or empty, it defaults to the user from the current login session</li>
      *   <li>If targetUser is equal to the current login, the generated offer is "self issued"</li>
      *   <li>To create an offer for another user, the issuing user must hold the {@code credential_offer_create} role</li>
@@ -539,17 +539,14 @@ public class OID4VCIssuerEndpoint {
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
         List<String> credentialConfigurationIds = List.of(credentialConfigurationId);
 
-        // Bind pre-authorized code offers to the authenticated client to prevent redemption from a different client_id.
-        // Authorization Code Grant offers are intentionally not bound to a client_id.
+        // Offers are not bound to the creating client, the wallet redeems them with its own client
         // https://github.com/keycloak/keycloak/issues/48188
-        String targetClientId = preAuthorized ? clientModel.getClientId() : null;
-
         CredentialOfferState offerState;
         try {
 
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(loginUserModel, grantType,
-                    credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+                    credentialConfigurationIds, null, targetUser, expiresAt);
             if (preAuthorized) {
                 offerState.setOriginatingUserId(loginUserModel.getId());
                 // Bearer authentication reconstructs request-scoped sessions for stateless tokens. Bind the offer to
@@ -587,13 +584,12 @@ public class OID4VCIssuerEndpoint {
         offerStorage.putOfferState(offerState);
 
         String targetUserId = offerState.getTargetUserId();
-        LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, cid=%s, uid=%s, nonce=%s]",
-                grantType, credentialConfigurationIds, offerState.getTargetClientId(), targetUserId, offerState.getNonce());
+        LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, uid=%s, nonce=%s]",
+                grantType, credentialConfigurationIds, targetUserId, offerState.getNonce());
 
         // Add event details
         eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized))
                 .detail(Details.RESPONSE_TYPE, responseType.toString())
-                .detail(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, targetClientId)
                 .detail(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, targetUserId)
                 .success();
 
