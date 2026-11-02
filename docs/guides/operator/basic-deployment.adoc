@@ -257,7 +257,7 @@ It is enabled when you associate a `tlsSecret` with the `http` configuration and
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -283,7 +283,7 @@ To use cluster domain do not provide a tls secret for the `ingress` and ensure t
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -342,7 +342,7 @@ To use cluster domain do not provide a tls secret for the `ingress` and ensure t
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -377,7 +377,7 @@ To use custom domain provide distinct tls secrets for the `ingress` and `http` a
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
