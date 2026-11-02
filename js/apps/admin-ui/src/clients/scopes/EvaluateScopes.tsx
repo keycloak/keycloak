@@ -1,6 +1,5 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
@@ -34,6 +33,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { ClientSelect } from "../../components/client/ClientSelect";
+import {
+  type EffectiveRole,
+  getEvaluatedEffectiveRoles,
+} from "../../components/role-mapping/resource";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -89,8 +92,9 @@ const ProtocolMappers = ({
 const EffectiveRoles = ({
   effectiveRoles,
 }: {
-  effectiveRoles: RoleRepresentation[];
+  effectiveRoles: EffectiveRole[];
 }) => {
+  const { realmRepresentation } = useRealm();
   const [key, setKey] = useState(0);
   useEffect(() => {
     setKey(key + 1);
@@ -111,6 +115,8 @@ const EffectiveRoles = ({
         {
           name: "containerId",
           displayKey: "origin",
+          cellRenderer: (role) =>
+            (role.clientRole ? role.clientId : realmRepresentation.id) ?? "",
         },
       ]}
     />
@@ -123,7 +129,6 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const openidPrefix = "openid";
   const { t } = useTranslation();
   const { enabled } = useHelp();
-  const { realm } = useRealm();
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
 
   const supportsScopeSelection = (proto: string) => {
@@ -149,9 +154,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
 
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
-  const [effectiveRoles, setEffectiveRoles] = useState<RoleRepresentation[]>(
-    [],
-  );
+  const [effectiveRoles, setEffectiveRoles] = useState<EffectiveRole[]>([]);
   const [protocolMappers, setProtocolMappers] = useState<
     ProtocolMapperRepresentation[]
   >([]);
@@ -187,23 +190,11 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   useFetch(
     async () => {
       const scope = selected.join(" ");
-
-      const [realmRoles, clientRoles] = await Promise.all([
-        adminClient.clients.evaluatePermission({
-          id: clientId,
-          roleContainer: realm,
-          scope,
-          type: "granted",
-        }),
-        adminClient.clients.evaluatePermission({
-          id: clientId,
-          roleContainer: clientId,
-          scope,
-          type: "granted",
-        }),
-      ]);
-
-      const effectiveRoles = [...realmRoles, ...clientRoles];
+      const effectiveRoles = await getEvaluatedEffectiveRoles(
+        adminClient,
+        clientId,
+        scope,
+      );
 
       const mapperList = (await adminClient.clients.evaluateListProtocolMapper({
         id: clientId,

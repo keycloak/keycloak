@@ -13,6 +13,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 
 import org.keycloak.admin.ui.rest.model.EffectiveRole;
 import org.keycloak.models.ClientModel;
@@ -22,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -94,6 +96,34 @@ public class AllEffectiveRoleMappingResource extends RoleMappingResource {
         return toSortedEffectiveRoles(
                 addSubRoles(client.getScopeMappingsStream())
         );
+    }
+
+    @GET
+    @Path("/clients/{id}/evaluate")
+    @Consumes({"application/json"})
+    @Produces({"application/json"})
+    @Operation(
+            summary = "List all effective roles (realm and client) for this client and the given scope parameter",
+            description = "This endpoint returns all effective role scope mappings for a specific client and the given scope parameter"
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "",
+            content = {@Content(
+                    schema = @Schema(
+                            implementation = EffectiveRole.class,
+                            type = SchemaType.ARRAY
+                    )
+            )}
+    )
+    public final List<EffectiveRole> listAllEffectiveClientsEvaluatedRoleMappings(@PathParam("id") String id, @QueryParam("scope") String scope) {
+        ClientModel client = this.realm.getClientById(id);
+        if (client == null) {
+            throw new NotFoundException("Could not find client");
+        }
+
+        auth.clients().requireView(client);
+        return toSortedEffectiveRoles(getGrantedRoles(client, scope));
     }
 
     @GET
@@ -197,6 +227,18 @@ public class AllEffectiveRoleMappingResource extends RoleMappingResource {
                         .thenComparing(r -> r.getClient() != null ? r.getClient() : "")
                         .thenComparing(EffectiveRole::getName))
                 .collect(Collectors.toList());
+    }
+
+    private Stream<RoleModel> getGrantedRoles(ClientModel client, String scope) {
+        if (client.isFullScopeAllowed()) {
+            return Stream.concat(realm.getRolesStream(), realm.getClientsStream().flatMap(ClientModel::getRolesStream))
+                    .filter(auth.roles()::canView);
+        }
+
+        return addSubRoles(Stream.concat(client.getRolesStream(),
+                TokenManager.getRequestedClientScopes(session, scope, client, null)
+                        .flatMap(ClientScopeModel::getScopeMappingsStream)))
+                .distinct();
     }
 
     private Stream<RoleModel> addSubRoles(Stream<RoleModel> roles) {
