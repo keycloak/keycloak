@@ -36,6 +36,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
@@ -75,6 +76,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import static org.keycloak.OAuth2Constants.UMA_GRANT_TYPE;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
 import static org.keycloak.events.Details.REASON;
 import static org.keycloak.models.Constants.ADMIN_CLI_CLIENT_ID;
 import static org.keycloak.models.Constants.ADMIN_CONSOLE_CLIENT_ID;
@@ -156,7 +158,9 @@ public class TokenEndpoint {
         }
 
         if (!grantType.equals(UMA_GRANT_TYPE)) {
-            checkClient();
+            if (!grant.isAnonymousAccessAllowed() || isClientIdentified()) {
+                checkClient();
+            }
             checkParameterDuplicated();
         }
 
@@ -230,6 +234,14 @@ public class TokenEndpoint {
                             "Please update your client settings to disable the switch and configure needed roles, which this client application needs, to the client role scope", client.getClientId(), realm.getName()
                     );
         }
+    }
+
+    private boolean isClientIdentified() {
+        return formParams.containsKey(OAuth2Constants.CLIENT_ID)
+                || session.getContext().getUri().getQueryParameters().containsKey(OAuth2Constants.CLIENT_ID)
+                || formParams.containsKey(OAuth2Constants.CLIENT_ASSERTION)
+                || headers.getHeaderString(HttpHeaders.AUTHORIZATION) != null
+                || headers.getHeaderString(OAUTH_CLIENT_ATTESTATION_HEADER) != null;
     }
 
     private void checkGrantType() {
