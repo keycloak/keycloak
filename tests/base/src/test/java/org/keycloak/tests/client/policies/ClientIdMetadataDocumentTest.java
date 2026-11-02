@@ -41,6 +41,8 @@ import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCr
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -54,8 +56,11 @@ import org.keycloak.testframework.oauth.annotations.InjectCimdProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectSectorIdentifierRedirectUrisProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -72,12 +77,19 @@ import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  *
@@ -111,6 +123,12 @@ public class ClientIdMetadataDocumentTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectClient(config = StoredUriClientConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedClient storedUriClient;
+
+    @InjectHttpClient(followRedirects = false)
+    CloseableHttpClient httpClient;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
@@ -495,6 +513,44 @@ public class ClientIdMetadataDocumentTest {
         logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "http, code, 400",
+            "http, , 400",
+            "https, code, 200"
+    })
+    public void testSecureRedirectUrisEnforcerWithClientIdUriCondition(String redirectScheme,
+            String responseType, int expectedStatus) throws Exception {
+        String redirectUri = redirectScheme + "://client.example.com/callback";
+        // The managed client's callbacks are stored before enabling the policy, as after an upgrade.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("https"));
+        conditionConfig.setTrustedDomains(List.of("client.example.com"));
+        SecureRedirectUrisEnforcerExecutor.Configuration executorConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(false);
+        realm.updateWithCleanup(r -> r.resetClientProfiles().clientProfile(ClientProfileBuilder.create()
+                .name("redirect-uris-profile")
+                .executor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID, executorConfig)
+                .build())
+                .resetClientPolicies().clientPolicy(ClientPolicyBuilder.create()
+                        .name("redirect-uris-policy")
+                        .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                        .profile("redirect-uris-profile")
+                        .build()));
+
+        oauth.client(storedUriClient.getClientId()).redirectUri(redirectUri).responseType(responseType).scope("openid");
+        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(oauth.loginForm().build()))) {
+            Assertions.assertEquals(expectedStatus, response.getStatusLine().getStatusCode());
+            Assertions.assertNull(response.getFirstHeader(HttpHeaders.LOCATION));
+            String body = EntityUtils.toString(response.getEntity());
+            if (expectedStatus == 400) {
+                Assertions.assertTrue(body.contains(SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI));
+            } else {
+                Assertions.assertTrue(body.contains("name=\"username\""));
+            }
+        }
+    }
+
     @Test
     public void testSecureRedirectUrisEnforcerOnCimdCreate() throws Exception {
         // register CIMD policy and SecureRedirectUrisEnforcer policy
@@ -517,7 +573,7 @@ public class ClientIdMetadataDocumentTest {
         oauth.redirectUri("http://localhost:8500/callback");
         oauth.openLoginForm();
         errorPage.assertCurrent();
-        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_LOOPBACK, errorPage.getError());
+        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI, errorPage.getError());
     }
 
     @Test
@@ -559,7 +615,7 @@ public class ClientIdMetadataDocumentTest {
         oauth.redirectUri(REDIRECT_URI);
         oauth.openLoginForm();
         errorPage.assertCurrent();
-        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_LOOPBACK, errorPage.getError());
+        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI, errorPage.getError());
 
         // cleanup
         deleteClientByAdmin(clientRepresentation.getId());
@@ -1572,6 +1628,17 @@ public class ClientIdMetadataDocumentTest {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS);
+        }
+    }
+
+    public static class StoredUriClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("https://client.example.com/metadata")
+                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                    .publicClient(true)
+                    .redirectUris("http://client.example.com/callback", "https://client.example.com/callback");
         }
     }
 

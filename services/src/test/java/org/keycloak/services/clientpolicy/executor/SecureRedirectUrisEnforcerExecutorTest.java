@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,6 +89,37 @@ public class SecureRedirectUrisEnforcerExecutorTest {
     public void failUriSyntax() {
         checkFail("https://keycloak.org\n" ,false, SecureRedirectUrisEnforcerExecutor.ERR_GENERAL);
         checkFail("Collins'&1=1;--" ,false, SecureRedirectUrisEnforcerExecutor.ERR_GENERAL);
+        checkFail("https://[::1/callback", true, SecureRedirectUrisEnforcerExecutor.ERR_GENERAL);
+    }
+
+    @Test
+    public void loopbackHostnameMustPassAllowlist() throws Exception {
+        // Ensure the unfixed implementation would classify this hostname as loopback.
+        assertTrue(InetAddress.getByName("localhost").isLoopbackAddress());
+        enable(ALLOW_IPV4_LOOPBACK_ADDRESS, ALLOW_IPV6_LOOPBACK_ADDRESS);
+        permittedDomains("allowed\\.example");
+        checkFail("https://localhost/callback", false, SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI);
+    }
+
+    @Test
+    public void explicitlyAllowedHostnameDoesNotRequireLoopbackSwitches() {
+        permittedDomains("localhost");
+        checkSuccess("https://localhost/callback", false);
+    }
+
+    @Test
+    public void literalLoopbackRemainsExemptFromAllowlist() {
+        enable(ALLOW_IPV4_LOOPBACK_ADDRESS, ALLOW_IPV6_LOOPBACK_ADDRESS);
+        permittedDomains("allowed\\.example");
+        checkSuccess("https://127.0.0.1/callback", false);
+        checkSuccess("https://[::1]/callback", false);
+    }
+
+    @Test
+    public void oauth21RejectsExplicitlyAllowedLocalhost() {
+        enable(ALLOW_IPV4_LOOPBACK_ADDRESS, ALLOW_IPV6_LOOPBACK_ADDRESS, OAUTH_2_1_COMPLIANT);
+        permittedDomains("localhost");
+        checkFail("https://localhost/callback", false, SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI);
     }
 
     @Test
@@ -433,6 +465,7 @@ public class SecureRedirectUrisEnforcerExecutorTest {
         } catch (ClientPolicyException cpe) {
             assertEquals(OAuthErrorException.INVALID_REQUEST, cpe.getMessage());
             assertEquals(errorDetail, cpe.getErrorDetail());
+            assertFalse(cpe.isErrorRedirectAllowed());
         }
     }
 

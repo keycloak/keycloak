@@ -23,14 +23,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class AuthorizationRequestContext implements ClientPolicyContext, ClientModelContext, ScopeParameterContext {
+public class AuthorizationRequestContext implements AuthorizationRequestParametersContext {
 
     private final OIDCResponseType parsedResponseType;
     private final AuthorizationEndpointRequest request;
@@ -60,10 +59,12 @@ public class AuthorizationRequestContext implements ClientPolicyContext, ClientM
         return parsedResponseType;
     }
 
+    @Override
     public AuthorizationEndpointRequest getAuthorizationEndpointRequest() {
         return request;
     }
 
+    @Override
     public String getRedirectUri() {
         return redirectUri;
     }

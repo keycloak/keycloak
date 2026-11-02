@@ -61,6 +61,7 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestRedirectUriContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
@@ -171,6 +172,16 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         try {
+            session.clientPolicy().triggerOnEvent(new AuthorizationRequestRedirectUriContext(client, request, redirectUri));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw ErrorPageException.oauthError(session, null, cpe.getErrorStatus(), cpe.getError(), cpe.getErrorDetail());
+        }
+
+        try {
             checker.checkResponseType();
             this.parsedResponseType = checker.getParsedResponseType();
             this.parsedResponseMode = checker.getParsedResponseMode();
@@ -218,6 +229,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authenticationSession, false);
+            if (!cpe.isErrorRedirectAllowed()) {
+                throw ErrorPageException.oauthError(session, null, cpe.getErrorStatus(), cpe.getError(), cpe.getErrorDetail());
+            }
             return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
         }
 
