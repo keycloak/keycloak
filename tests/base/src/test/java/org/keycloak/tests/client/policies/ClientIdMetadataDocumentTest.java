@@ -706,6 +706,44 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientIdMetadataDocumentExecutorIgnoresKeycloakSpecificProperties() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // a client metadata document must only use standard OIDC fields
+        // Keycloak-specific ClientRepresentation properties are not client metadata
+        setCimdPublicClient();
+        cimd.setAdditionalProperties(Map.of(
+                "fullScopeAllowed", true,
+                "consentRequired", false,
+                "serviceAccountsEnabled", true,
+                "authorizationServicesEnabled", true,
+                "adminUrl", "http://localhost:8500/admin",
+                "defaultRoles", List.of("injected-default-role"),
+                "protocolMappers", List.of(Map.of(
+                        "name", "injected-mapper",
+                        "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL,
+                        "protocolMapper", AudienceProtocolMapper.PROVIDER_ID,
+                        "config", Map.of(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, "https://injected.example.com/api")))));
+
+        String code = loginUserAndGetCode(true);
+
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // none of the Keycloak-specific properties took effect
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isConsentRequired());
+        Assertions.assertFalse(clientRepresentation.isFullScopeAllowed());
+        Assertions.assertFalse(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        Assertions.assertNull(clientRepresentation.getAdminUrl());
+        Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), "https://injected.example.com/api"));
+        Assertions.assertTrue(realm.admin().clients().get(clientRepresentation.getId()).roles().list().isEmpty());
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorParseClientMetadataFailed() throws Exception {
         // register profiles
         updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
@@ -1387,6 +1425,55 @@ public class ClientIdMetadataDocumentTest {
         oauth.redirectUri(REDIRECT_URI);
         cimd.getRepresentation().setLogoUri(null);
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_REQUIRED_PROPERTIES);
+    }
+
+    @Test
+    public void testUmaGrantTypeDoesNotCreateResourceServer() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.UMA_GRANT_TYPE
+        ));
+
+        String code = loginUserAndGetCode(true);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testRefetchKeepsMappersAddedByAdmin() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        String code = loginUserAndGetCode(true);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        logout(tokenResponse.getIdToken());
+
+        // an admin adds a mapper which is not described in the client metadata
+        String id = findByClientIdByAdmin().getId();
+        String audience = "https://admin.example.com/api";
+        realm.admin().clients().get(id).getProtocolMappers().createMapper(
+                ModelToRepresentation.toRepresentation(
+                        AudienceProtocolMapper.createClaimMapper("admin-audience", null, audience, true, false, true))).close();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, audience));
+
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+        code = loginUserAndGetCode(false);
+        signedJwt = createSignedRequestToken();
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, audience));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
     }
 
     @Test
