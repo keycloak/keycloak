@@ -30,3 +30,33 @@ image:images/identity-provider-mapper.png[identity provider mapper]
 For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, `contact.address[0].country`.
 
 To investigate the structure of user profile JSON data provided by social providers, you can enable the `DEBUG` level logger `org.keycloak.social.user_profile_dump` when starting the server.
+
+[[_claim_to_groups_and_roles_mapper]]
+==== Mapping delimited claim entries to groups and roles
+
+Some identity providers send a user's entitlements as a list of structured strings in one claim, for example:
+
+[source,json]
+----
+"entitlements": ["acme,admin,active", "globex,viewer,active", "initech,viewer,suspended"]
+----
+
+The *Claim to Groups and Roles* mapper, available for OpenID Connect identity providers, maps each such entry to a membership of a subgroup of a parent group and to roles, so you do not need one mapper per group or role.
+
+The mapper looks for the claim in the access token, the ID token and the UserInfo response, in this order, using the claim path syntax described above, and reads it as a string or a list of strings; each string is one entry, taken as sent. It splits each entry on the *Field delimiter*, `,` unless configured otherwise, and picks fields by position, counting from 0:
+
+* *Group field index* names a subgroup of the *Parent group*. The user becomes a member of that subgroup, which {project_name} creates if it does not exist. When the identity provider is linked to an organization, the parent group can be a group of that organization; the subgroups are then organization groups, and the mapper maps groups only for members of that organization.
+* *Role field index* is looked up in the *Role table*. Each row maps a field value to a realm role, or to a client role written as `clientId.roleName`. Values must match exactly; a value missing from the table grants no role.
+* *State field index* and *Required state* are optional. When set, an entry whose state field is not exactly the required state is skipped.
+
+Set at least one of the group and role field indexes, and no two field indexes to the same position. A mapper whose configuration is invalid maps nothing and logs a warning that names the mapper and the configuration key at fault on each login.
+
+An entry is skipped as a whole, including its role, when it has fewer fields than the configured indexes need, or when its group name is empty, longer than 255 characters, or contains `/`, whitespace, or a control or formatting character such as a no-break space, a zero-width space, a byte order mark or a bidirectional override. List items that are not strings are skipped as well. Each skipped entry is logged at debug level. When group names are refused, the mapper also logs one warning per login with their number and the first three entries.
+
+With the *force* sync mode, and with *legacy*, the mapper also removes on each login what it owns and the claim no longer grants: memberships of direct subgroups of the parent group, and roles listed in its role table. Memberships of other groups and roles not listed in the table are not changed. With the *import* sync mode, the mapper only adds groups and roles when the user is first created.
+
+Roles that are administrative, and groups that carry administrative roles directly or through a parent group, are only granted when *Allow granting admin roles via mappers* is enabled on the identity provider. In the same case, the mapper does not create subgroups under a parent group that carries administrative roles, and saving the mapper is refused while its role table names an administrative role or its parent group carries administrative roles.
+
+The role table follows renames: when a role is renamed, the references in the table that name that role are updated, and when a client ID changes, the references in the table that name that client are updated. A reference whose new spelling would name a different role, for example `app.child.viewer` when a client `app.child` exists, is left unchanged and a warning naming the mapper is logged; correct that reference by hand.
+
+When two users who claim the same subgroup that does not exist yet log in at the same time, one of the logins can fail because both try to create the subgroup; logging in again succeeds.
