@@ -480,7 +480,8 @@ public class UserAdapter implements CachedUserModel {
                 }
             }
 
-            if (groups != null) {
+            // don't replace the groups from the store with the partial result collected before a missing group
+            if (updated == null && groups != null) {
                 result = groups.stream();
             }
         }
