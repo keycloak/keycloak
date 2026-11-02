@@ -36,8 +36,10 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.timer.TimerProvider;
 
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
@@ -175,6 +177,11 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         if (clockSkewDetectionEnabled) {
             scheduleClockSkewDetection(factory);
         }
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(InfinispanConnectionProvider.class, TimerProvider.class);
     }
 
     protected void scheduleClockSkewDetection(KeycloakSessionFactory factory) {
