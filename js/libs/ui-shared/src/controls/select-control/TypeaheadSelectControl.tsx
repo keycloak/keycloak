@@ -212,6 +212,10 @@ export const TypeaheadSelectControl = <
               >
                 <TextInputGroup isPlain>
                   <TextInputGroupMain
+                    aria-invalid={!!get(errors, name)}
+                    aria-errormessage={
+                      get(errors, name) ? `${id || name}-error` : undefined
+                    }
                     placeholder={placeholderText}
                     value={
                       variant === SelectVariant.typeahead && field.value
