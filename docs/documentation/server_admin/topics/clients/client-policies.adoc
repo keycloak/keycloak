@@ -262,6 +262,12 @@ Include patterns for these literal values when your policy allows them. Selected
 
 The sector identifier URL stored in a pairwise protocol mapper is validated separately and is outside this catalog.
 
+The *Allow IPv4 loopback address* and *Allow IPv6 loopback address* options of *Secure Redirect URIs Enforcer* apply only to literal IP addresses.
+Hostnames, including `localhost`, must match *Allow permitted domains* when it is configured, regardless of the addresses they resolve to.
+The executor continues to reject `localhost` when *OAuth 2.1 Compliant* is enabled.
+If the executor rejects a redirect URI during authorization, {project_name} displays an error page instead of redirecting to that URI.
+Review previously registered redirect URIs when upgrading: this validation does not remove existing client configuration.
+
 [[_full_scope_disabled_policy]]
 == Enforcing Full Scope Allowed to be disabled
 

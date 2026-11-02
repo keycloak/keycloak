@@ -94,3 +94,26 @@ Available guides, which cover the required knowledge to successfully migrate a s
 * [Manual migration](MANUAL_MIGRATION.md) - Guide with recommendations on how to fully migrate a test
 
 Once the migration is over the _migration-util_ module will be removed!
+
+
+## Loopback redirect policy regression tests
+
+`SecureRedirectUrisLoopbackTest` checks that hostnames resolving to loopback addresses still require domain allowlist validation.
+
+Before running locally:
+
+1. Open your hosts file with administrator privileges: `/etc/hosts` on Linux/macOS, or `C:\Windows\System32\drivers\etc\hosts` on Windows.
+2. Add these entries if they are missing:
+
+   ```text
+   127.0.0.1 redirect-loopback-v4.kc.test
+   ::1 redirect-loopback-v6.kc.test
+   ```
+
+3. From the repository root, run:
+
+   ```shell
+   ./mvnw test -pl tests/base -Dtest=SecureRedirectUrisLoopbackTest
+   ```
+
+CI configures these mappings automatically. The test checks hostname resolution inside the server JVM and fails if either mapping is missing.
