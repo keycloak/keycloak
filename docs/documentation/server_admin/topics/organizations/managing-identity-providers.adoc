@@ -42,7 +42,8 @@ The identity provider you want to link to the organization. A single identity pr
 
 Auto membership::
 When enabled, users who authenticate through this identity provider are automatically added as members of the organization,
-subject to the domain gate (see <<authenticating-members_{context},Authenticating members>>). Enabled by default.
+provided their email domain matches one of the organization's domains. If the organization has no domains, the domain check
+is skipped and all users from this identity provider are added. See <<authenticating-members_{context},Authenticating members>> for the full membership resolution flow. Enabled by default.
 
 Membership type::
 The membership type assigned to users who are auto-added through this identity provider link.
