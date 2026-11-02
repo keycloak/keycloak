@@ -32,6 +32,7 @@ import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
@@ -44,9 +45,12 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
@@ -270,5 +274,99 @@ public class AuthenticatorUtil {
             // not expected
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Resolves the user session whose auth time is used by the {@code max_auth_age} check of an application-initiated action.
+     * <p>
+     * The user session is looked up by the ID of the root authentication session first. When the root authentication session was created with
+     * its own ID (e.g. restart of the login or an action token with an existing SSO session), no user session with that ID exists. In that case
+     * this falls back to the session of the identity cookie, which is the session {@code CookieAuthenticator} used when it authenticated the
+     * user via SSO. Without the fallback the auth time would be missing and the re-authentication check would fire on every submit.
+     *
+     * @param session the Keycloak session
+     * @param authSession the current authentication session
+     * @return the user session, or {@code null} if none can be resolved
+     */
+    public static UserSessionModel getUserSessionForKcAction(KeycloakSession session, AuthenticationSessionModel authSession) {
+        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+        if (userSession != null) {
+            return userSession;
+        }
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, authSession.getRealm(), true);
+        if (authResult == null || authResult.session() == null) {
+            return null;
+        }
+        UserModel authenticatedUser = authSession.getAuthenticatedUser();
+        if (authenticatedUser != null && !authenticatedUser.getId().equals(authResult.user().getId())) {
+            return null;
+        }
+        return authResult.session();
+    }
+
+    /**
+     * Checks if re-authentication is required for an application-initiated action (kc_action).
+     * @param session the Keycloak session
+     * @param userSession the current user session, or {@code null} if it does not exist (e.g. expired or removed). In that case only the
+     *                    auth-session timestamp is considered and a missing timestamp results in re-authentication being required
+     * @param authSession the current authentication session, or {@code null}. It must be the authentication session of
+     *                    {@code session.getContext()}: the default {@link RequiredActionProvider#getMaxAuthAge(KeycloakSession)}
+     *                    resolves the max auth age configuration of the action from the context's authentication session
+     * @param provider the required action provider instance, or {@code null} to resolve it from {@code kc_action}
+     * @param actionId the expected action ID to match against {@code kc_action}, or {@code null} to check any action
+     * @return {@code true} if re-authentication is required because the user's auth time exceeds the action's max auth age, {@code false} otherwise
+     */
+    public static boolean isReAuthRequiredForKcAction(KeycloakSession session, UserSessionModel userSession, AuthenticationSessionModel authSession, RequiredActionProvider provider, String actionId) {
+        if (authSession == null) {
+            return false;
+        }
+        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        if (kcAction == null) {
+            return false;
+        }
+
+        if (actionId != null) {
+            String normalizedKcAction = DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively(kcAction);
+            String normalizedActionId = DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively(actionId);
+
+            if (!normalizedKcAction.equalsIgnoreCase(normalizedActionId)) {
+                return false;
+            }
+        }
+
+        if (provider == null) {
+            String providerId = null;
+            String resolvedAction = DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively(kcAction);
+            if (session.getContext() != null && session.getContext().getRealm() != null) {
+                RequiredActionProviderModel model = session.getContext().getRealm().getRequiredActionProviderByAlias(resolvedAction);
+                if (model != null) {
+                    providerId = model.getProviderId();
+                }
+            }
+            if (providerId == null) {
+                providerId = resolvedAction;
+            }
+            provider = session.getProvider(RequiredActionProvider.class, providerId);
+            if (provider == null) {
+                return false;
+            }
+        }
+        int maxAuthAge = provider.getMaxAuthAge(session);
+
+        String authTimeStr = authSession.getAuthNote(AuthenticationManager.AUTH_TIME);
+        boolean isAuthSessionNote = true;
+        if (authTimeStr == null) {
+            authTimeStr = userSession == null ? null : userSession.getNote(AuthenticationManager.AUTH_TIME);
+            isAuthSessionNote = false;
+        }
+
+        if (maxAuthAge == 0) {
+            return !isAuthSessionNote;
+        } else if (maxAuthAge < 0) {
+            maxAuthAge = Constants.KC_ACTION_MAX_AGE;
+        }
+
+        long authTime = authTimeStr == null ? 0 : Long.parseLong(authTimeStr);
+        return authTime + maxAuthAge < Time.currentTime();
     }
 }
