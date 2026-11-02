@@ -12,6 +12,16 @@ For example, an unknown client returns `{"error":"invalid_client","error_descrip
 Applications should use `error` rather than matching translated messages. HTTP status codes and HTML error pages retain their existing behavior, and errors sent to a validated redirect URI continue to use that redirect.
 Other JSON error pages, including direct-grant authenticator errors, are unchanged.
 
+=== Identity brokering API V1 token retrieval requires the client to be allowed for the identity provider
+// https://github.com/keycloak/keycloak/issues/53059
+
+The V1 identity brokering token endpoint (`+GET /realms/{realm}/broker/{provider_alias}/token+`) previously only required the user to have the `broker.read-token` role, which allowed a user linked to one identity provider to retrieve stored tokens from any other identity provider in the realm.
+
+The endpoint now additionally requires the client for which the bearer token was issued to be allowed to retrieve external tokens from the requested identity provider, which is the same authorization model as used by the V2 endpoint.
+Existing V1 clients without this configuration receive an HTTP 403 response when retrieving a stored token. To continue using the V1 endpoint, enable *Allow retrieve external tokens* in the client's *Capability config* and add the identity provider to *Allowed Identity Providers for External Tokens*.
+
+While V1 is enabled, these settings are also shown in the Admin Console for public clients. V2 hides them for public clients because it only supports confidential clients.
+
 === Realm-level default client scopes require `manage-realm`
 // https://github.com/keycloak/keycloak/issues/50588
 
