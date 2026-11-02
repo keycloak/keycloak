@@ -16,6 +16,8 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.OrganizationModel;
 
 public interface OrganizationPermissionEvaluator {
@@ -39,4 +41,29 @@ public interface OrganizationPermissionEvaluator {
     boolean canQuery();
 
     void requireQuery();
+
+    /**
+     * Returns {@code true} if the caller has one of {@link AdminRoles#MANAGE_USERS} or
+     * {@link AdminRoles#VIEW_USERS} roles.
+     * <p/>
+     * Or if it has a permission to {@link AdminPermissionsSchema#VIEW_MEMBERS} of the organization.
+     */
+    boolean canViewMembers(OrganizationModel organization);
+
+    /**
+     * Throws ForbiddenException if {@link #canViewMembers(OrganizationModel)} returns {@code false}.
+     */
+    void requireViewMembers(OrganizationModel organization);
+
+    /**
+     * Returns {@code true} if the caller has {@link AdminRoles#MANAGE_USERS} role.
+     * <p/>
+     * Or if it has a permission to {@link AdminPermissionsSchema#MANAGE_MEMBERS} of the organization.
+     */
+    boolean canManageMembers(OrganizationModel organization);
+
+    /**
+     * Throws ForbiddenException if {@link #canManageMembers(OrganizationModel)} returns {@code false}.
+     */
+    void requireManageMembers(OrganizationModel organization);
 }

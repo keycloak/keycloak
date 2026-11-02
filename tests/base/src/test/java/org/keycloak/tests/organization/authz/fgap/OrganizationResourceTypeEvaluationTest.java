@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
@@ -36,9 +37,11 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
@@ -48,19 +51,34 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ORGANIZATIONS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
 public class OrganizationResourceTypeEvaluationTest {
+
+    @InjectUser(ref = "alice")
+    ManagedUser userAlice;
+
+    @InjectUser(ref = "bob")
+    ManagedUser userBob;
+
+    @InjectUser(ref = "user-in-a-and-b")
+    ManagedUser userInOrgAandB;
+
+    @InjectUser(ref = "user-without-org")
+    ManagedUser userWithoutOrg;
 
     @InjectRealm(config = OrganizationFgapConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
@@ -78,6 +96,10 @@ public class OrganizationResourceTypeEvaluationTest {
         clientResource = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         orgAId = createOrg("orgA", "orga.org");
         orgBId = createOrg("orgB", "orgb.org");
+        realm.admin().organizations().get(orgAId).members().addMember(userAlice.getId());
+        realm.admin().organizations().get(orgBId).members().addMember(userBob.getId());
+        realm.admin().organizations().get(orgAId).members().addMember(userInOrgAandB.getId());
+        realm.admin().organizations().get(orgBId).members().addMember(userInOrgAandB.getId());
     }
 
     @Test
@@ -281,6 +303,153 @@ public class OrganizationResourceTypeEvaluationTest {
         Set<String> orgNames = orgs.stream().map(OrganizationRepresentation::getName).collect(java.util.stream.Collectors.toSet());
         assertThat(orgNames.contains("orgA"), equalTo(true));
         assertThat(orgNames.contains("orgB"), equalTo(false));
+    }
+
+    @Test
+    public void testCanViewUserByViewOrganizationMembers() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+
+        // my admin should NOT be able to see Alice
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertTrue(search.isEmpty());
+
+        // allow my admin to view members of the organization where Alice is member of
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
+
+        // my admin should be able to see Alice due to her membership and VIEW_MEMBERS permission
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(2, search.size());
+        assertEquals(
+                Set.of(userAlice.getUsername(), userInOrgAandB.getUsername()),
+                search.stream().map(UserRepresentation::getUsername).collect(java.util.stream.Collectors.toSet())
+        );
+
+        UserResource retrievedUserModel = realmAdminClient.realm(realm.getName()).users().get(userAlice.getId());
+        assertEquals(userAlice.getUsername(), retrievedUserModel.toRepresentation().getUsername());
+    }
+
+    @Test
+    public void testCanManageUserByManageOrganizationMembers() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+
+        // my admin should NOT be able to see Alice
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertTrue(search.isEmpty());
+
+        // my admin should not be able to manage yet
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserBuilder.create().email("email@test.com").build());
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // allow my admin to view and manage members of the organization where Alice is member of
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS), policy);
+
+        // my admin should be able to see Alice, bob and user-in-a-and-b due to their membership and MANAGE_MEMBERS permission
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(2, search.size());
+        assertEquals(
+                Set.of(userAlice.getUsername(), userInOrgAandB.getUsername()),
+                search.stream().map(UserRepresentation::getUsername).collect(java.util.stream.Collectors.toSet())
+        );
+
+        // my admin should be able to update Alice due to her membership and MANAGE_MEMBERS permission
+        realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserBuilder.create().email("email@test.com").build());
+        assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).toRepresentation().getEmail());
+    }
+
+    @Test
+    public void testCanViewAllUsersByViewAllOrganizationMembers() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+
+        // my admin should NOT be able to see Alice and user-without-org
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertTrue(search.isEmpty());
+
+        // allow my admin to view members of all organizations
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW_MEMBERS));
+
+        // my admin should be able to see Alice, Bob and user-in-a-and-b due to their membership and VIEW_MEMBERS permission
+        // note that we do not expect user-without-org to be visible, since the user is not in any organization
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(3, search.size());
+        assertEquals(
+                Set.of(userAlice.getUsername(), userBob.getUsername(), userInOrgAandB.getUsername()),
+                search.stream().map(UserRepresentation::getUsername).collect(java.util.stream.Collectors.toSet())
+        );
+    }
+
+    @Test
+    public void testCanManageAllUsersByManageAllOrganizationMembers() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+
+        // my admin should NOT be able to see Alice and user-without-org
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertTrue(search.isEmpty());
+
+        // my admin should not be able to manage Alice yet
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserBuilder.create().email("email@test.com").build());
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        // allow my admin to view and manage members of all organizations
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW_MEMBERS, MANAGE_MEMBERS));
+
+        // my admin should be able to see Alice, Bob and user-in-a-and-b due to their membership and VIEW_MEMBERS permission
+        // note that we do not expect user-without-org to be visible, since the user is not in any organization
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(3, search.size());
+        assertEquals(
+                Set.of(userAlice.getUsername(), userBob.getUsername(), userInOrgAandB.getUsername()),
+                search.stream().map(UserRepresentation::getUsername).collect(java.util.stream.Collectors.toSet())
+        );
+
+        // my admin should be able to update Alice due to her membership and MANAGE_MEMBERS permission
+        realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserBuilder.create().email("email@test.com").build());
+        assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).toRepresentation().getEmail());
+
+        // my admin should not be able to update user-without-org due to not being a member of any organization
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(userWithoutOrg.getId()).update(UserBuilder.create().email("email@test.com").build());
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+    }
+
+    @Test
+    public void testCanViewMembersForCompositePermissions() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+
+        // my admin should NOT be able to see Alice yet
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertTrue(search.isEmpty());
+
+        // allow my admin to view organizations OrgA and OrgB
+        PermissionTestUtils.createPermission(clientResource, Set.of(orgAId, orgBId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+
+        // my admin should not be able to see Alice (only has view, not view-members on OrgA)
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertTrue(search.isEmpty());
+
+        // allow my admin to view-members on OrgA
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
+
+        search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
+        assertEquals(2, search.size());
+        assertEquals(userAlice.getUsername(), search.get(0).getUsername());
+        assertEquals(userInOrgAandB.getUsername(), search.get(1).getUsername());
+
+        UserResource retrievedAliceUserModel = realmAdminClient.realm(realm.getName()).users().get(userAlice.getId());
+        assertEquals(userAlice.getUsername(), retrievedAliceUserModel.toRepresentation().getUsername());
+
+        UserResource retrievedAandBUserModel = realmAdminClient.realm(realm.getName()).users().get(userInOrgAandB.getId());
+        assertEquals(userInOrgAandB.getUsername(), retrievedAandBUserModel.toRepresentation().getUsername());
     }
 
     // -- helpers --

@@ -195,9 +195,11 @@ public class OrganizationMemberResource {
     ) {
         auth.users().requireQuery();
 
-        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return empty list right away to save a roundtrip to the DB
+        // if a dedicated admin can query, but cannot view neither all users nor this organization's users (and FGAP is not enabled) - we can return empty list right away to save a roundtrip to the DB
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
             return Stream.empty();
+        } else {
+            auth.orgs().requireViewMembers(organization);
         }
 
         Map<String, String> filters = new HashMap<>();

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -48,6 +49,9 @@ import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
@@ -132,9 +136,14 @@ public class OrganizationMemberFgapTest {
     }
 
     @Test
-    public void testSearchWithNoPermissionsReturnsEmpty() {
+    public void testCannotSearchWithNoPermissions() {
         // no user view permissions granted - myadmin has only query-users + manage-organizations
-        assertTrue(getOrgMembers().list(null, null).isEmpty());
+        try {
+            getOrgMembers().list(null, null);
+            fail("Expected ForbiddenException");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
     }
 
     @Test

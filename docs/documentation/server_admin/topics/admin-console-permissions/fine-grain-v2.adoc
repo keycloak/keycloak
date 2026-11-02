@@ -95,9 +95,10 @@ set of scopes:
 
 |===
 
-The user resource type has a strong relationship with some of the permissions you can set to groups. Most of the time,
-users are members of groups and granting access to `view-members` or `manage-members` of a group should also allow
-a realm administrator to `view` and `manage` members of that group. Note that `manage` for users includes creating new users.
+The user resource type has a strong relationship with some of the permissions you can set to groups and organizations.
+Most of the time, users are members of groups and/or organizations and granting access to `view-members` or
+`manage-members` of a group or organization should also allow a realm administrator to `view` and `manage` members of
+that group/organization. Note that `manage` for users includes creating new users.
 
 To assign or unassign a specific user to or from a group, both sides of the relationship are required: `manage-group-membership`
 on the user and `manage-membership` on the target group.
@@ -253,6 +254,8 @@ set of management operations:
 | *view*                    | Defines if a realm administrator can view organizations. This scope should be set whenever you want
                               to make organizations available from queries.
 | *manage*                  | Defines if a realm administrator can manage organizations, including updating and deleting them.
+| *view-members*            | Defines if a realm administrator can view organization members.
+| *manage-members*          | Defines if a realm administrator can manage organization members.
 |===
 
 Creating new organizations requires `manage` permission on all organizations (the resource type level), not just on a specific organization.

@@ -332,12 +332,12 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, String configValue) {
-        return findDependentPolicies(resourceServer, resourceType, groupResourceType, associatedPolicyType, configKey, List.of(configValue));
+    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String organizationResourceType, String associatedPolicyType, String configKey, String configValue) {
+        return findDependentPolicies(resourceServer, resourceType, groupResourceType, organizationResourceType, associatedPolicyType, configKey, List.of(configValue));
     }
 
     @Override
-    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String associatedPolicyType, String configKey, List<String> configValues) {
+    public Stream<Policy> findDependentPolicies(ResourceServer resourceServer, String resourceType, String groupResourceType, String organizationResourceType, String associatedPolicyType, String configKey, List<String> configValues) {
         String dbProductName = entityManager.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
 
         if (dbProductName.equals("Oracle")) {
@@ -353,7 +353,7 @@ public class JPAPolicyStore implements PolicyStore {
             query.setParameter("resourceType", resourceType);
             query.setParameter("associatedPolicyType", associatedPolicyType);
 
-            if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType)) {
+            if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType) || AdminPermissionsSchema.ORGANIZATIONS.getType().equals(organizationResourceType)) {
                 query.setParameter("scopeName", AdminPermissionsSchema.VIEW_MEMBERS);
             } else {
                 query.setParameter("scopeName", AdminPermissionsSchema.VIEW);
@@ -392,7 +392,7 @@ public class JPAPolicyStore implements PolicyStore {
 
         predicates.add(cb.equal(from.get("resourceServer").get("id"), resourceServer.getId()));
 
-        if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType)) {
+        if (AdminPermissionsSchema.GROUPS.getType().equals(groupResourceType) || AdminPermissionsSchema.ORGANIZATIONS.getType().equals(organizationResourceType)) {
             predicates.add(cb.equal(scope.get("name"), AdminPermissionsSchema.VIEW_MEMBERS));
         } else {
             predicates.add(cb.equal(scope.get("name"), AdminPermissionsSchema.VIEW));

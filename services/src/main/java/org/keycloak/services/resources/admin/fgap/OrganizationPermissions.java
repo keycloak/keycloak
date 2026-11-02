@@ -114,4 +114,36 @@ class OrganizationPermissions implements OrganizationPermissionEvaluator {
             throw new ForbiddenException();
         }
     }
+
+    @Override
+    public boolean canViewMembers(OrganizationModel organization) {
+        if (root.hasOneAdminRole(AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
+
+        return eval.hasPermission(new OrganizationModelRecord(organization), null, AdminPermissionsSchema.VIEW_MEMBERS);
+    }
+
+    @Override
+    public void requireViewMembers(OrganizationModel organization) {
+        if (!canViewMembers(organization)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Override
+    public boolean canManageMembers(OrganizationModel organization) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
+
+        return eval.hasPermission(new OrganizationModelRecord(organization), null, AdminPermissionsSchema.MANAGE_MEMBERS);
+    }
+
+    @Override
+    public void requireManageMembers(OrganizationModel organization) {
+        if (!canManageMembers(organization)) {
+            throw new ForbiddenException();
+        }
+    }
 }

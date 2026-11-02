@@ -35,8 +35,10 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 
@@ -121,6 +123,24 @@ public final class UserResourceTypePolicyEvaluator implements ResourceTypePolicy
             Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, resourceServer, GROUPS_RESOURCE_TYPE);
             policyStore.findByResource(resourceServer, resourceTypeResource, policyConsumer);
         }
+
+        OrganizationProvider organizationProvider = authorization.getKeycloakSession().getProvider(OrganizationProvider.class);
+        List<GroupModel> organizationBackingGroups = organizationProvider.getByMember(user)
+                .map(organizationProvider::getOrganizationGroup)
+                .toList();
+
+        for (GroupModel group : organizationBackingGroups) {
+            evaluateOrganizationPolicies(permission, authorization, group, policyConsumer);
+        }
+
+        if (!organizationBackingGroups.isEmpty()) {
+            KeycloakSession session = authorization.getKeycloakSession();
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            PolicyStore policyStore = storeFactory.getPolicyStore();
+            ResourceServer resourceServer = permission.getResourceServer();
+            Resource organizationsResourceType = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, resourceServer, AdminPermissionsSchema.ORGANIZATIONS_RESOURCE_TYPE);
+            policyStore.findByResource(resourceServer, organizationsResourceType, policyConsumer);
+        }
     }
 
     private void evaluateGroupPolicies(ResourcePermission permission, AuthorizationProvider authorization, GroupModel group, Consumer<Policy> consumer) {
@@ -129,6 +149,29 @@ public final class UserResourceTypePolicyEvaluator implements ResourceTypePolicy
         ResourceStore resourceStore = storeFactory.getResourceStore();
         ResourceServer resourceServer = permission.getResourceServer();
         Resource resource = resourceStore.findByName(resourceServer, group.getId());
+
+        if (resource != null) {
+            policyStore.findByResource(resourceServer, resource, consumer);
+        }
+    }
+
+    private void evaluateOrganizationPolicies(
+            ResourcePermission permission,
+            AuthorizationProvider authorization,
+            GroupModel organizationGroup,
+            Consumer<Policy> consumer) {
+        OrganizationModel organization = organizationGroup.getOrganization();
+
+        if (organization == null) {
+            return;
+        }
+
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        ResourceServer resourceServer = permission.getResourceServer();
+
+        Resource resource = resourceStore.findByName(resourceServer, organization.getId());
 
         if (resource != null) {
             policyStore.findByResource(resourceServer, resource, consumer);
