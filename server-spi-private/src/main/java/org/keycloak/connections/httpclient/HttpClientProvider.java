@@ -23,6 +23,7 @@ import java.io.InputStream;
 import org.keycloak.provider.Provider;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.checkerframework.checker.mustcall.qual.MustCall;
 import org.checkerframework.checker.mustcall.qual.NotOwning;
 
 /**
@@ -41,6 +42,9 @@ public interface HttpClientProvider extends Provider {
      */
     // TODO: Change return type to HttpClient in next major release to make non-ownership contract explicit
     @NotOwning
+    // Release the callers from the obligation to close the returned HttpClient instance as they not own it.
+    // Can be removed once HttpClient is returned
+    @MustCall({})
     CloseableHttpClient getHttpClient();
 
     /**
