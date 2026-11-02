@@ -15,6 +15,15 @@ See the upgrading guide for migration details.
 
 = Security and Standards
 
+== Post-quantum WebAuthn signatures (experimental)
+
+{project_name} introduces experimental support for `ML-DSA-44`, `ML-DSA-65`, and `ML-DSA-87` in WebAuthn policies.
+Enable it with `--features=webauthn-ml-dsa`.
+Using these algorithms requires a compatible browser, authenticator, and server cryptographic provider.
+The default signature algorithms remain unchanged.
+
+For requirements, see link:{adminguide_link}#_webauthn-pqc[Post-quantum signature algorithms] in the {adminguide_name}.
+
 == PAR discovery respects the feature flag
 
 When the `par` feature is disabled, OpenID Connect discovery no longer advertises the pushed authorization request endpoint, including its mTLS alias, or `require_pushed_authorization_requests`.
