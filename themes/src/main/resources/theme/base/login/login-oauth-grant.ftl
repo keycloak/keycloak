@@ -21,7 +21,7 @@
                             <span><#if !clientScope.parameterizedScopeParameter??>
                                         ${advancedMsg(clientScope.consentScreenText)}
                                     <#else>
-                                        ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.parameterizedScopeParameter}</b>
+                                        ${advancedMsg(clientScope.consentScreenText, clientScope.parameterizedScopeParameter)}
                                 </#if>
                             </span>
                         </li>
