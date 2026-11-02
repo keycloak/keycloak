@@ -30,11 +30,13 @@ The pattern executor continues to match literal configured values, including mar
 // https://github.com/keycloak/keycloak/issues/52342
 
 The built-in login experience now has a new versioned theme, `keycloak.v3`, based on PatternFly 6.
+The built-in welcome theme also uses PatternFly 6 for its markup and styles.
 
 For new realms, `keycloak.v3` is now the default login theme.
 Existing realms that explicitly use `keycloak.v2` are migrated to `keycloak.v3` during upgrade.
 
 The built-in `keycloak.v2` login theme has been removed. If you maintain a custom login theme that extends or copies `keycloak.v2`, migrate it to PatternFly 6 before switching to `keycloak.v3`.
+If you maintain a custom welcome theme that copies PatternFly 5 classes from the built-in welcome theme, update those classes to PatternFly 6.
 
 The `login:v2` feature value has also been removed. If you explicitly enable it (for example `--features=login:v2` or `KC_FEATURES=login:v2`), replace it with `login:v3`, or remove the entry because `login:v3` is enabled by default. Servers that still request `login:v2` fail feature validation at startup.
 

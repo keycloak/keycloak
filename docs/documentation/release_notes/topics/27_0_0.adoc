@@ -27,8 +27,9 @@ The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry th
 
 = Themes
 
-== Login UI upgraded to PatternFly 6
+== Login and welcome UI upgraded to PatternFly 6
 
 The built-in login theme is now `keycloak.v3`, based on PatternFly 6. The previous `keycloak.v2` login theme has been removed.
+The built-in welcome theme also uses PatternFly 6.
 
-Realms that explicitly used `keycloak.v2` are migrated to `keycloak.v3` during upgrade. If you maintain a custom login theme based on `keycloak.v2`, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
+Realms that explicitly used `keycloak.v2` are migrated to `keycloak.v3` during upgrade. If you maintain a custom login theme based on `keycloak.v2`, or a custom welcome theme based on PatternFly 5, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
