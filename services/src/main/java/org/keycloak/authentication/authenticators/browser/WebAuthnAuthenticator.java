@@ -189,7 +189,11 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             context.getAuthenticationSession().removeAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE);
         }
         Challenge challenge = new DefaultChallenge(challengeNote);
-        ServerProperty server = new ServerProperty(origin, rpId, challenge);
+        ServerProperty server = ServerProperty.builder()
+                .origin(origin)
+                .rpId(rpId)
+                .challenge(challenge)
+                .build();
 
         byte[] credentialId = Base64Url.decode(params.getFirst(WebAuthnConstants.CREDENTIAL_ID));
         byte[] clientDataJSON = Base64Url.decode(params.getFirst(WebAuthnConstants.CLIENT_DATA_JSON));

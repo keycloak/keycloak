@@ -26,7 +26,6 @@ import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 
-import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
 
@@ -71,8 +70,7 @@ public class WebAuthnDataWrapper implements Serializable {
 
     public COSEKey getKey() {
         if (webAuthnData != null) {
-            CborConverter cborConverter = converter.getCborConverter();
-            return cborConverter.readValue(Base64Url.decode(webAuthnData.getCredentialPublicKey()), COSEKey.class);
+            return converter.getCborMapper().readValue(Base64Url.decode(webAuthnData.getCredentialPublicKey()), COSEKey.class);
         }
         return null;
     }

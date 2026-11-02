@@ -18,26 +18,26 @@ package org.keycloak.credential;
 
 import org.keycloak.common.util.Base64Url;
 
-import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 public class AttestationStatementConverter {
 
-    private CborConverter cborConverter;
+    private final CBORMapper cborMapper;
 
     public AttestationStatementConverter(ObjectConverter objectConverter) {
-        this.cborConverter = objectConverter.getCborConverter();
+        this.cborMapper = objectConverter.getCborMapper();
     }
 
     public String convertToDatabaseColumn(AttestationStatement attribute) {
         AttestationStatementSerializationContainer container = new AttestationStatementSerializationContainer(attribute);
-        return Base64Url.encode(cborConverter.writeValueAsBytes(container));
+        return Base64Url.encode(cborMapper.writeValueAsBytes(container));
     }
 
     public AttestationStatement convertToEntityAttribute(String dbData) {
         byte[] data = Base64Url.decode(dbData);
-        AttestationStatementSerializationContainer container = cborConverter.readValue(data, AttestationStatementSerializationContainer.class);
+        AttestationStatementSerializationContainer container = cborMapper.readValue(data, AttestationStatementSerializationContainer.class);
         return container.getAttestationStatement();
     }
 }
