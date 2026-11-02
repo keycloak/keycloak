@@ -298,7 +298,9 @@ impersonation and preview support for delegation through the <<_token-exchange-d
 
 Assuming that there is a subject token `access-token1` issued to the client `initial-client`, here are some considerations related to token revocation:
 
-* For the case when the `access-token1` was exchanged to the `access-token2` of the client `requester-client`, the revocation of the `access-token1` will not revoke `access-token2`. Supporting of a "revocation chain" for access
+* For the case when the `access-token1` was exchanged to the `access-token2` of the client `requester-client`, the revocation of the `access-token1` will not revoke `access-token2`.
+After `access-token1` is revoked, `access-token2` can still be exchanged for a new `access-token3`, as long as `access-token2` remains valid and the token exchange request meets the usual requirements.
+Supporting of a "revocation chain" for access
 tokens would mean quite an overhead. So considering this,  the administrator must ensure that access tokens are short-lived and are revoked automatically after some time.
 
 * For the case when `access-token1` was exchanged to `refresh-token2` of client `requester-client`, we try to support revocation chain. This means that:
