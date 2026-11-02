@@ -211,6 +211,42 @@ public class ResetPasswordTest {
     }
 
     @Test
+    public void resetPasswordFailsWhenEmailChangesAfterLinkWasOpened() throws IOException {
+        final var user = consumerRealm.admin().users().search(USER_LOGIN).get(0);
+        oauth.openLoginForm();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword(USER_LOGIN);
+
+        MimeMessage message = mailServer.getReceivedMessages()[0];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        // open the link: the email is valid at this point and the update password form is displayed
+        driver.driver().navigate().to(changePasswordUrl.trim());
+        updatePasswordPage.assertCurrent();
+
+        // the email changes while the form is still open
+        user.setEmail("changed-" + USER_EMAIL);
+        consumerRealm.admin().users().get(user.getId()).update(user);
+
+        events.clear();
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+        assertTrue(driver.page().getPageSource().contains("Invalid email address"));
+        EventAssertion.assertError(events.poll())
+                .type(EventType.UPDATE_CREDENTIAL_ERROR)
+                .error(Errors.INVALID_EMAIL)
+                .userId(user.getId());
+
+        // the password was not changed
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.fillLogin(USER_LOGIN, "resetPassword");
+        loginPage.submit();
+        loginPage.assertCurrent();
+    }
+
+    @Test
     public void resetPasswordMaxLengthUsername() {
 
         oauth.openLoginForm();

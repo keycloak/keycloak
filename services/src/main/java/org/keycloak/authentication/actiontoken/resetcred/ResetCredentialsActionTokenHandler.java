@@ -67,6 +67,10 @@ public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHandl
     public Response handleToken(ResetCredentialsActionToken token, ActionTokenContext tokenContext) {
         AuthenticationProcessor authProcessor = new ResetCredsAuthenticationProcessor();
 
+        if (token.getEmail() != null) {
+            tokenContext.getAuthenticationSession().setAuthNote(ResetCredentialsActionToken.RESET_CREDENTIALS_EMAIL_NOTE, token.getEmail());
+        }
+
         return tokenContext.processFlow(
           false,
           RESET_CREDENTIALS_PATH,

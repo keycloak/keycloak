@@ -27,6 +27,12 @@ public class ResetCredentialsActionToken extends DefaultActionToken {
 
     public static final String TOKEN_TYPE = "reset-credentials";
 
+    /**
+     * Auth note holding the user's email at the time the reset link was opened, used to detect email changes
+     * while the reset session is still open.
+     */
+    public static final String RESET_CREDENTIALS_EMAIL_NOTE = "reset-credentials-email";
+
     public ResetCredentialsActionToken(String userId, String email, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.issuedFor = clientId;
