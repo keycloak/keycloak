@@ -47,24 +47,24 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_URL_HOST = new OptionBuilder<>("db-url-host", String.class)
             .category(OptionCategory.DATABASE)
-            .description("Sets the hostname of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
+            .description("Sets the hostname of the default JDBC URL of the chosen vendor. Can't be combined with the `db-url` option.")
             .build();
 
     public static final Option<String> DB_URL_DATABASE = new OptionBuilder<>("db-url-database", String.class)
             .category(OptionCategory.DATABASE)
-            .description("Sets the database name of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
+            .description("Sets the database name of the default JDBC URL of the chosen vendor. Can't be combined with the `db-url` option.")
             .build();
 
     public static final Option<Integer> DB_URL_PORT = new OptionBuilder<>("db-url-port", Integer.class)
             .category(OptionCategory.DATABASE)
-            .description("Sets the port of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
+            .description("Sets the port of the default JDBC URL of the chosen vendor. Can't be combined with the `db-url` option.")
             .build();
 
     public static final Option<String> DB_URL_PROPERTIES = new OptionBuilder<>("db-url-properties", String.class)
             .category(OptionCategory.DATABASE)
             .description("Sets the properties of the default JDBC URL of the chosen vendor. " +
                     "Make sure to set the properties accordingly to the format expected by the database vendor, as well as appending the right character at the beginning of this property value. " +
-                    "If the `db-url` option is set, this option is ignored.")
+                    "Can't be combined with the `db-url` option.")
             .build();
 
     public static final Option<String> DB_USERNAME = new OptionBuilder<>("db-username", String.class)

@@ -15,6 +15,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
@@ -360,6 +362,48 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                                 .formatted(DB_POOL_MAX_SIZE.getKey(), JDBC_PING_MIN_POOL_MAX_SIZE, poolMaxSize));
             }
         });
+        validateDbUrlOptionsNotCombined();
+    }
+
+    private static void validateDbUrlOptionsNotCombined() {
+        validateDbUrlOptionsNotCombined(null);
+
+        String urlKeyPrefix = NS_KEYCLOAK_PREFIX + WildcardOptionsUtil.getWildcardPrefix(DB_URL.getWildcardKey().orElseThrow());
+        StreamSupport.stream(Configuration.getConfig().getPropertyNames().spliterator(), false)
+                .filter(name -> name.startsWith(urlKeyPrefix))
+                .map(name -> name.substring(urlKeyPrefix.length()))
+                .distinct()
+                .forEach(DatabasePropertyMappers::validateDbUrlOptionsNotCombined);
+    }
+
+    private static void validateDbUrlOptionsNotCombined(String datasource) {
+        if (!isSetForDatasource(DB_URL, datasource)) {
+            return;
+        }
+        String ignored = Stream.of(DatabaseOptions.DB_URL_HOST, DatabaseOptions.DB_URL_PORT, DatabaseOptions.DB_URL_DATABASE, DatabaseOptions.DB_URL_PROPERTIES)
+                .filter(option -> isSetForDatasource(option, datasource))
+                .map(option -> "'" + getDatasourceOptionKey(option, datasource) + "'")
+                .collect(Collectors.joining(", "));
+        if (!ignored.isEmpty()) {
+            String urlKey = getDatasourceOptionKey(DB_URL, datasource);
+            throw new PropertyException(
+                    "The option '%s' can't be combined with %s, as the JDBC URL set in '%s' would silently take precedence. Either remove '%s', or remove the other options and include them in the JDBC URL."
+                            .formatted(urlKey, ignored, urlKey, urlKey));
+        }
+    }
+
+    private static String getDatasourceOptionKey(Option<?> option, String datasource) {
+        return datasource == null ? option.getKey() : WildcardOptionsUtil.getWildcardNamedKey(option.getWildcardKey().orElseThrow(), datasource);
+    }
+
+    private static boolean isSetForDatasource(Option<?> option, String datasource) {
+        if (datasource == null) {
+            return Configuration.isSet(option);
+        }
+        return option.getWildcardKey()
+                .map(key -> Configuration.getKcConfigValue(WildcardOptionsUtil.getWildcardNamedKey(key, datasource)))
+                .filter(Configuration::isUserModifiable)
+                .isPresent();
     }
 
     private static boolean isJdbcPingStack() {
