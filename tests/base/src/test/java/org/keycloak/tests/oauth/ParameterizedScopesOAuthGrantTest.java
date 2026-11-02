@@ -376,6 +376,29 @@ public class ParameterizedScopesOAuthGrantTest {
     }
 
     @Test
+    public void oauthGrantParameterizedScopeConsentTextInBaseTheme() {
+        realm.updateWithCleanup(r -> r.loginTheme("keycloak"));
+        realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s.attribute(
+                ClientScopeModel.CONSENT_SCREEN_TEXT, "Parameterized scope with parameter {0}"));
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.scope("foo-parameter-scope:param1");
+        oauth.openLoginForm();
+        oauth.fillLoginForm(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        grantPage.assertCurrent();
+        List<String> grants = grantPage.getDisplayedGrants();
+        Assertions.assertTrue(grants.contains("Parameterized scope with parameter param1"));
+        grantPage.accept();
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN)
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+    }
+
+    @Test
     public void oauthGrantParameterizedScopeParamRequiredWithConsentTextKey() {
         realm.admin().localization().saveRealmLocalizationText("en", "parameterConsentText", "Parameterized scope with parameter {0}");
         realm.updateClientScope(PARAMETERIZED_SCOPE_ID, s -> s
