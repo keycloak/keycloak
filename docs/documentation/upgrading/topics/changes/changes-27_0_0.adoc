@@ -4,6 +4,18 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Redirect URI loopback exceptions require literal IP addresses
+// https://github.com/keycloak/keycloak/issues/54413
+
+The *Allow IPv4 loopback address* and *Allow IPv6 loopback address* options of the *Secure Redirect URIs Enforcer* client policy executor now apply only to literal IP addresses.
+Hostnames, including `localhost`, are evaluated using the ordinary scheme and permitted-domain rules, regardless of the addresses they resolve to.
+The executor continues to reject `localhost` when *OAuth 2.1 Compliant* is enabled.
+
+The executor also validates the effective redirect URI during authorization, so previously registered callbacks can now be rejected.
+When a redirect URI is rejected, {project_name} displays an error page instead of redirecting to that URI.
+Review affected client configurations and use literal loopback addresses where appropriate, or ensure that legitimate hostnames satisfy the configured scheme and permitted-domain rules.
+Existing registrations are not automatically rewritten or removed.
+
 === Client registration policies restrict default roles and full scope (CVE-2026-109081)
 // https://github.com/keycloak/keycloak/issues/54702
 
