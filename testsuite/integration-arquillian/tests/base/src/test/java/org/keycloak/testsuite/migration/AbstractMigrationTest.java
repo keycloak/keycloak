@@ -202,6 +202,23 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assertions.assertNull(client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY), "migration-saml-client login theme was not removed");
     }
 
+    protected void testLoginV1Themes(RealmResource realmWithLegacyTheme, RealmResource realmWithCustomTheme) {
+        RealmRepresentation legacyRep = realmWithLegacyTheme.toRepresentation();
+        Assertions.assertEquals("keycloak.v2", legacyRep.getLoginTheme(),
+                "Login v1 realm theme was not migrated to keycloak.v2");
+
+        List<ClientRepresentation> legacyClients = realmWithLegacyTheme.clients().findByClientId("migration-test-client");
+        Assertions.assertNotNull(legacyClients, "migration-test-client client is missing");
+        Assertions.assertEquals(1, legacyClients.size(), "migration-test-client client is missing");
+        Assertions.assertEquals("keycloak.v2",
+                legacyClients.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY),
+                "Login v1 client theme was not migrated to keycloak.v2");
+
+        RealmRepresentation customRep = realmWithCustomTheme.toRepresentation();
+        Assertions.assertEquals("custom-theme", customRep.getLoginTheme(),
+                "Custom login theme should be preserved");
+    }
+
     protected void testHttpChallengeFlow(RealmResource realm) {
         log.info("testing 'http challenge' flow not present");
         Assertions.assertFalse(realm.flows().getFlows()
@@ -473,6 +490,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testLdapBinaryAttributeDecoderMigration(migrationRealm2);
         testLdapGroupAttributeDecoderMigration(migrationRealm2);
         testAuthnContextClassRefIsPresent(migrationRealm);
+    }
+
+    protected void testMigrationTo27_0_0() {
+        testLoginV1Themes(migrationRealm, migrationRealm2);
     }
 
     private void testAuthnContextClassRefIsPresent(RealmResource realm) {

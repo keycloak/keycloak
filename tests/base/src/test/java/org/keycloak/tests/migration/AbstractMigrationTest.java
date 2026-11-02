@@ -200,6 +200,23 @@ public abstract class AbstractMigrationTest {
         Assertions.assertNull(client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY), "migration-saml-client login theme was not removed");
     }
 
+    protected void testLoginV1Themes(RealmResource realmWithLegacyTheme, RealmResource realmWithCustomTheme) {
+        RealmRepresentation legacyRep = realmWithLegacyTheme.toRepresentation();
+        Assertions.assertEquals(PREFERRED_DEFAULT_LOGIN_THEME, legacyRep.getLoginTheme(),
+                "Login v1 realm theme was not migrated to keycloak.v2");
+
+        List<ClientRepresentation> legacyClients = realmWithLegacyTheme.clients().findByClientId("migration-test-client");
+        Assertions.assertNotNull(legacyClients, "migration-test-client client is missing");
+        Assertions.assertEquals(1, legacyClients.size(), "migration-test-client client is missing");
+        Assertions.assertEquals(PREFERRED_DEFAULT_LOGIN_THEME,
+                legacyClients.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY),
+                "Login v1 client theme was not migrated to keycloak.v2");
+
+        RealmRepresentation customRep = realmWithCustomTheme.toRepresentation();
+        Assertions.assertEquals("custom-theme", customRep.getLoginTheme(),
+                "Custom login theme should be preserved");
+    }
+
     protected void testHttpChallengeFlow(RealmResource realm) {
         LOG.info("testing 'http challenge' flow not present");
         Assertions.assertFalse(realm.flows().getFlows()
@@ -443,6 +460,10 @@ public abstract class AbstractMigrationTest {
 
     protected void testMigrationTo26_4_0() {
         testSamlEncryptionAttributes(migrationRealm);
+    }
+
+    protected void testMigrationTo27_0_0() {
+        testLoginV1Themes(migrationRealm, migrationRealm2);
     }
 
     private void testClientContainsExpectedClientScopes() {

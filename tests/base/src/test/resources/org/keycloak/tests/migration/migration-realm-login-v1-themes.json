@@ -1,0 +1,32 @@
+{
+  "realm": "login-v1-themes",
+  "enabled": true,
+  "keycloakVersion": "26.0.0",
+  "loginTheme": "keycloak",
+  "clients": [
+    {
+      "clientId": "legacy-theme-client",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["*"],
+      "attributes": {
+        "login_theme": "keycloak"
+      }
+    },
+    {
+      "clientId": "custom-theme-client",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["*"],
+      "attributes": {
+        "login_theme": "custom-theme"
+      }
+    },
+    {
+      "clientId": "unset-theme-client",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["*"]
+    }
+  ]
+}

@@ -43,7 +43,7 @@
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 30,
-  "loginTheme": "rh-sso",
+  "loginTheme": "keycloak",
   "emailTheme": "rh-sso",
   "accountTheme": "rh-sso.v2",
   "roles": {
@@ -801,6 +801,7 @@
       "frontchannelLogout": false,
       "protocol": "openid-connect",
       "attributes": {
+        "login_theme": "keycloak",
         "backchannel.logout.session.required": "true",
         "backchannel.logout.revoke.offline.tokens": "false"
       },
