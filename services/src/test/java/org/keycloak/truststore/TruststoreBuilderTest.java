@@ -51,9 +51,11 @@ public class TruststoreBuilderTest {
             TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY,
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY,
             TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY + ".orig",
             TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY + ".orig",
             TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig",
+            TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY + ".orig",
             CERT_PROTECTION_ALGORITHM_KEY
     };
 

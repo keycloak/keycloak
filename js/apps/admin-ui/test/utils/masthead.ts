@@ -3,10 +3,21 @@ import { expect, type Page } from "@playwright/test";
 
 const ALERT_TIMEOUT = 15_000;
 
-export async function assertNotificationMessage(page: Page, message: string) {
+export async function assertNotificationMessage(
+  page: Page,
+  message: string | RegExp,
+) {
   const alert = page.getByTestId("last-alert");
   await expect(alert).toBeVisible({ timeout: ALERT_TIMEOUT });
   await expect(alert).toHaveText(message, { timeout: ALERT_TIMEOUT });
+  // Close the toast so a later assertion for the same message cannot match this stale one.
+  // A CSS locator is used as role-based locators ignore content hidden by an open modal.
+  await alert
+    .locator("button")
+    .click({ timeout: 1_000 })
+    .catch(() => {
+      // The toast may have expired on its own between the assertion and the click
+    });
 }
 
 function getActionToggleButton(page: Page) {

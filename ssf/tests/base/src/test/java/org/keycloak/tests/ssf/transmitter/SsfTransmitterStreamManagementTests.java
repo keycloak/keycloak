@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
@@ -17,9 +19,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.jpa.entities.OutboxEntryStatus;
+import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
@@ -55,6 +60,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -1372,6 +1378,58 @@ public class SsfTransmitterStreamManagementTests {
         try (SimpleHttpResponse response = postStream(userToken, request)) {
             Assertions.assertEquals(201, response.getStatus(),
                     "with ssf.requireServiceAccount=false, a regular-user bearer must pass the gate");
+        }
+    }
+
+    @Test
+    public void testRequiredRoleGateIgnoresRoleInjectedByHardcodedRoleMapper() throws IOException {
+
+        // Regression guard for keycloak/keycloak#54070: ssf.requiredRole
+        // must be checked against the caller's actual role grant. A
+        // Hardcoded Role mapper puts the role into realm_access without
+        // granting it, so the token claim alone must not pass the gate.
+        String roleName = "ssf-stream-manager";
+        RoleRepresentation roleRep = new RoleRepresentation();
+        roleRep.setName(roleName);
+        realm.admin().roles().create(roleRep);
+
+        ClientResource receiver = realm.admin().clients().get(findClientByClientId(RECEIVER_RW).getId());
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName("hardcoded-" + roleName);
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper(HardcodedRole.PROVIDER_ID);
+        mapper.setConfig(Map.of(HardcodedRole.ROLE_CONFIG, roleName));
+        String mapperId;
+        try (Response response = receiver.getProtocolMappers().createMapper(mapper)) {
+            Assertions.assertEquals(201, response.getStatus(), "hardcoded role mapper should be created");
+            mapperId = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_REQUIRED_ROLE_KEY, roleName);
+
+            String injectedToken = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+            StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+            try (SimpleHttpResponse response = postStream(injectedToken, request)) {
+                Assertions.assertEquals(401, response.getStatus(),
+                        "a mapper-injected role claim without a role grant must not pass ssf.requiredRole");
+            }
+
+            // Positive control: once the role is actually granted, the
+            // same receiver passes the gate.
+            String saUserId = receiver.toRepresentation().getServiceAccountUserId();
+            realm.admin().users().get(saUserId).roles().realmLevel()
+                    .add(List.of(realm.admin().roles().get(roleName).toRepresentation()));
+
+            String grantedToken = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+            try (SimpleHttpResponse response = postStream(grantedToken, request)) {
+                Assertions.assertEquals(201, response.getStatus(),
+                        "a receiver whose service account holds the required role must pass the gate");
+            }
+        } finally {
+            setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_REQUIRED_ROLE_KEY, "");
+            receiver.getProtocolMappers().delete(mapperId);
+            realm.admin().roles().deleteRole(roleName);
         }
     }
 

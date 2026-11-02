@@ -97,8 +97,14 @@ public class KeystoreUtil {
     }
 
     public static KeyStore loadKeyStore(String filename, String password, String preferedType) throws Exception {
+        return loadKeyStore(filename, password, preferedType, null);
+    }
+
+    public static KeyStore loadKeyStore(String filename, String password, String preferedType, String provider) throws Exception {
         String keystoreType = getKeystoreType(preferedType, filename, KeyStore.getDefaultType());
-        KeyStore trustStore = KeyStore.getInstance(keystoreType);
+        KeyStore trustStore = provider == null || provider.isEmpty()
+                ? KeyStore.getInstance(keystoreType)
+                : KeyStore.getInstance(keystoreType, provider);
         InputStream trustStream = null;
         if (filename.startsWith(GenericConstants.PROTOCOL_CLASSPATH)) {
             String resourcePath = filename.replace(GenericConstants.PROTOCOL_CLASSPATH, "");

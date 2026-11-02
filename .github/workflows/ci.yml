@@ -11,7 +11,6 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
   KC_TEST_GITHUB_SLOW_METHOD: "10"
@@ -40,6 +39,7 @@ jobs:
   conditional:
     name: Check conditional workflows and jobs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
       ci-quarkus: ${{ steps.conditional.outputs.ci-quarkus }}
@@ -56,6 +56,8 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -99,8 +101,11 @@ jobs:
   testsuite-deprecation-check:
     name: Testsuite Deprecation Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
 
       - id: conditional
         uses: ./.github/actions/testsuite-deprecation-check
@@ -112,6 +117,7 @@ jobs:
     if: needs.conditional.outputs.ci == 'true'
     runs-on: ubuntu-latest
     needs: conditional
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -120,6 +126,8 @@ jobs:
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
+        with:
+          upload-dist: true
 
       - name: Spotless
         run: ./mvnw -Pdocs,distribution,operator spotless:check
@@ -178,7 +186,7 @@ jobs:
     name: Adapter IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -192,6 +200,7 @@ jobs:
         run: ./mvnw install -DskipTests -f distribution/pom.xml
 
       - name: Build app servers
+        id: build-app-servers
         run: ./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
 
       - name: Run adapter tests
@@ -200,45 +209,21 @@ jobs:
           echo "Tests: $TESTS"
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
 
+      # Reuses the adapter distributions and app servers built above instead of building them again in a separate job
+      - name: Run adapter tests (strict cookies)
+        if: ${{ !cancelled() && steps.build-app-servers.conclusion == 'success' }}
+        run: |
+          TESTS="org.keycloak.testsuite.adapter.**"
+          echo "Tests: $TESTS"
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pfirefox-strict-cookies -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Dsurefire.reportNameSuffix=strict-cookies -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Adapter IT
-
-  adapter-integration-tests-strict-cookies:
-    name: Adapter IT Strict Cookies
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
-        with:
-          jdk-version: "21"
-
-      - name: Build adapter distributions
-        run: ./mvnw install -DskipTests -f distribution/pom.xml
-
-      - name: Build app servers
-        run: ./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
-
-      - name: Run adapter tests
-        run: |
-          TESTS="org.keycloak.testsuite.adapter.**"
-          echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pfirefox-strict-cookies -Pauth-server-quarkus -Papp-server-wildfly -Dtest=$TESTS -Dapp.server.ssl.required=true "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
-
-      - uses: ./.github/actions/upload-flaky-tests
-        name: Upload flaky tests
-        env:
-          GH_TOKEN: ${{ github.token }}
-        with:
-          job-name: Adapter IT Strict Cookies
 
   quarkus-unit-tests:
     name: Quarkus UT
@@ -888,7 +873,7 @@ jobs:
 
   store-integration-tests-additional:
     name: Store IT (additional)
-    needs: build
+    needs: [build, conditional]
     runs-on: ubuntu-latest
     timeout-minutes: 75
     if: needs.conditional.outputs.ci-additional-dbs == 'true'
@@ -979,7 +964,7 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run crypto tests
-        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-ut.sh
+        run: docker run --rm --workdir /github/workspace -e "MAVEN_ARGS" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-ut.sh
 
   fips-integration-tests:
     name: FIPS IT
@@ -1006,7 +991,7 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run base tests
-        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
+        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -e "MAVEN_ARGS" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -1218,11 +1203,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.suite }}
@@ -1239,11 +1221,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f scim/tests/pom.xml
@@ -1260,11 +1239,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f ssf/tests/pom.xml
@@ -1281,9 +1257,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw package -f authzen/tests/pom.xml
@@ -1346,11 +1321,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw verify -pl tests/clustering
@@ -1358,7 +1330,7 @@ jobs:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
       - name: Run tests with stateless
-        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportsDirectory=target/surefire-reports-stateless
+        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportNameSuffix=stateless
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
           KC_TEST_SERVER_STATELESS: "true"
@@ -1381,11 +1353,8 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
-
-        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
-        # file that is not part of m2-keycloak.tzts archive
-      - name: Build tar keycloak-quarkus-dist
-        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+        with:
+          download-dist: true
 
       - name: Run tests
         run: ./mvnw verify -pl tests/clustering
@@ -1408,11 +1377,12 @@ jobs:
       - unit-tests
       - base-integration-tests
       - adapter-integration-tests
-      - adapter-integration-tests-strict-cookies
       - quarkus-unit-tests
       - quarkus-integration-tests
       - jdk-integration-tests
+      - login-v1-tests
       - store-integration-tests
+      - store-integration-tests-additional
       - volatile-sessions-tests
       - http-client-v2-tests
       - store-model-tests
@@ -1428,6 +1398,8 @@ jobs:
       - test-framework
       - base-new-integration-tests
       - mixed-cluster-compatibility-tests
+      - scim-integration-tests
+      - ssf-integration-tests
       - authzen-integration-tests
       - admin-v2-tests
       - jackson3-admin-client-tests
@@ -1435,8 +1407,11 @@ jobs:
       - stateless-tests
       - stateless-cluster-integration-tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

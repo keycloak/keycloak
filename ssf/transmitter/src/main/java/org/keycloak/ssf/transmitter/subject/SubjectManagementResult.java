@@ -6,9 +6,10 @@ public enum SubjectManagementResult {
     FORMAT_UNSUPPORTED,
     SUBJECT_NOT_FOUND,
     /**
-     * The receiver is not permitted to add this subject, either because
-     * its {@link ReceiverSubjectAddPolicy} does not cover the subject or
-     * because an administrator explicitly excluded (ignored) it.
+     * The receiver is not permitted to add or remove this subject,
+     * either because an administrator explicitly excluded (ignored) it
+     * or, for an add, because its {@link ReceiverSubjectAddPolicy} does
+     * not cover the subject.
      */
     SUBJECT_NOT_PERMITTED,
     /**
