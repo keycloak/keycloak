@@ -199,4 +199,9 @@ public class ClientBuilder extends Builder<ClientRepresentation> {
         return this;
     }
 
+    public ClientBuilder notBefore(Integer notBefore) {
+        rep.setNotBefore(notBefore);
+        return this;
+    }
+
 }

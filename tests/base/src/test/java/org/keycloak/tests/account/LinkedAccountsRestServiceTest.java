@@ -25,12 +25,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.representations.account.AccountLinkUriRepresentation;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -339,18 +337,8 @@ public class LinkedAccountsRestServiceTest {
     }
 
     private void runUsingShowInAccountConsoleValue(String identityProviderAlias, String showInAccountConsoleValue, ThrowingRunnable runnable) throws IOException {
-        IdentityProviderResource identityProviderResource = managedRealm.admin().identityProviders().get(identityProviderAlias);
-        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
-        String attribute = "showInAccountConsole";
-        String genuineValue = representation.getConfig().get(attribute);
-        representation.getConfig().put(attribute, showInAccountConsoleValue);
-        identityProviderResource.update(representation);
-        try {
-            runnable.run();
-        } finally {
-            representation.getConfig().put(attribute, genuineValue);
-            identityProviderResource.update(representation);
-        }
+        managedRealm.updateIdentityProvider(identityProviderAlias, rep -> rep.getConfig().put("showInAccountConsole", showInAccountConsoleValue));
+        runnable.run();
     }
 
     private interface ThrowingRunnable {

@@ -131,7 +131,6 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
     @AfterEach
     void resetTestState() {
         resetUserNotBefore();
-        timeOffSet.set(0);
     }
 
     /**

@@ -614,8 +614,6 @@ public class UserEmailTest extends AbstractUserTest {
             errorPage.assertCurrent();
             assertEquals("Action expired.", errorPage.getError());
         } finally {
-            timeOffSet.set(0);
-
             realmRep.setActionTokenGeneratedByAdminLifespan(originalValue.get());
             managedRealm.admin().update(realmRep);
         }

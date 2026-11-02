@@ -414,6 +414,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder userManagedAccessAllowed(boolean userManagedAccessAllowed) {
+        rep.setUserManagedAccessAllowed(userManagedAccessAllowed);
+        return this;
+    }
+
     public RealmBuilder bruteForceProtected(boolean enabled) {
         rep.setBruteForceProtected(enabled);
         return this;

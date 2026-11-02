@@ -1026,31 +1026,29 @@ public class RefreshTokenTest {
     @Test
     public void refreshTokenAfterUserAdminLogoutEndpointAndLoginAgain() {
         String refreshToken1 = loginAndForceNewLoginPage();
+
+        // Snapshot user before logout — logout sets notBefore as a side effect
+        UserRepresentation originalUserRep = user.admin().toRepresentation();
+        user.cleanup().add(u -> u.update(originalUserRep));
+
         user.admin().logout();
 
-        try {
-            // Continue with login
-            timeOffSet.set(2);
-            driver.navigate().refresh();
-            oauth.fillLoginForm("test-user@localhost", "password");
+        // Continue with login
+        timeOffSet.set(2);
+        driver.navigate().refresh();
+        oauth.fillLoginForm("test-user@localhost", "password");
 
-            AccessTokenResponse tokenResponse2;
-            String code = oauth.parseLoginResponse().getCode();
-            tokenResponse2 = oauth.doAccessTokenRequest(code);
+        AccessTokenResponse tokenResponse2;
+        String code = oauth.parseLoginResponse().getCode();
+        tokenResponse2 = oauth.doAccessTokenRequest(code);
 
-            // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
-            AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1);
-            assertEquals(400, responseReuseExceeded.getStatusCode());
+        // Now try refresh with the original refreshToken1 created in logged-out userSession. It should fail
+        AccessTokenResponse responseReuseExceeded = oauth.doRefreshTokenRequest(refreshToken1);
+        assertEquals(400, responseReuseExceeded.getStatusCode());
 
-            // Finally try with valid refresh token
-            responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken());
-            assertEquals(200, responseReuseExceeded.getStatusCode());
-        } finally {
-            // Need to reset not-before of user, which was updated during user.logout()
-            UserRepresentation userRep = user.admin().toRepresentation();
-            userRep.setNotBefore(0);
-            user.admin().update(userRep);
-        }
+        // Finally try with valid refresh token
+        responseReuseExceeded = oauth.doRefreshTokenRequest(tokenResponse2.getRefreshToken());
+        assertEquals(200, responseReuseExceeded.getStatusCode());
     }
 
 
@@ -1099,24 +1097,16 @@ public class RefreshTokenTest {
         assertNotNull(refreshTokenString);
         events.clear();
 
-        UserRepresentation userRep = user.admin().toRepresentation();
+        user.updateWithCleanup(u -> u.enabled(false));
 
-        try {
-            userRep.setEnabled(false);
-            user.admin().update(userRep);
+        response = oauth.doRefreshTokenRequest(refreshTokenString);
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_grant", response.getError());
 
-            response = oauth.doRefreshTokenRequest(refreshTokenString);
-            assertEquals(400, response.getStatusCode());
-            assertEquals("invalid_grant", response.getError());
-
-            EventAssertion.assertError(events.poll())
-                    .type(EventType.REFRESH_TOKEN_ERROR)
-                    .sessionId(sessionId)
-                    .error(Errors.INVALID_TOKEN);
-        } finally {
-            userRep.setEnabled(true);
-            user.admin().update(userRep);
-        }
+        EventAssertion.assertError(events.poll())
+                .type(EventType.REFRESH_TOKEN_ERROR)
+                .sessionId(sessionId)
+                .error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -1168,7 +1158,6 @@ public class RefreshTokenTest {
 
     @Test
     public void refreshTokenRequestNoRefreshToken() {
-        ClientRepresentation client = oauth.clientResource().toRepresentation();
         oauth.doLogin("test-user@localhost", "password");
 
         String code = oauth.parseLoginResponse().getCode();
@@ -1177,19 +1166,12 @@ public class RefreshTokenTest {
 
         String refreshTokenString = tokenResponse.getRefreshToken();
 
-        client.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
-        oauth.clientResource().update(client);
+        realm.updateClientWithCleanup("test-app", c -> c.attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false"));
 
-        try {
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString);
 
-            AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString);
-
-            assertNotNull(response.getAccessToken());
-            assertNull(response.getRefreshToken());
-        } finally {
-            client.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
-            oauth.clientResource().update(client);
-        }
+        assertNotNull(response.getAccessToken());
+        assertNull(response.getRefreshToken());
     }
 
     @Test
@@ -1259,37 +1241,17 @@ public class RefreshTokenTest {
 
         int currentTime = (int) (System.currentTimeMillis() / 1000);
 
-        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
-        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+        realm.updateClientWithCleanup("test-app", c -> c.notBefore(currentTime - 100));
 
-        try {
-            //Test realm notBefore with client notBefore both set
-            // Set client notBefore to past
-            clientRep.setNotBefore(currentTime - 100);
-            oauth.clientResource().update(clientRep);
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, tokenResponse.getStatusCode());
 
-            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, tokenResponse.getStatusCode());
+        // Set realm notBefore to future
+        realm.updateWithCleanup(r -> r.notBefore(currentTime + 100));
 
-            // Set realm notBefore to future
-            RealmRepresentation realmRep = realm.admin().toRepresentation();
-            int originalRealmNotBefore = realmRep.getNotBefore() != null ? realmRep.getNotBefore() : 0;
-            try {
-                realmRep.setNotBefore(currentTime + 100);
-                realm.admin().update(realmRep);
-
-                tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
-                assertEquals(400, tokenResponse.getStatusCode());
-                assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
-            } finally {
-                realmRep.setNotBefore(originalRealmNotBefore);
-                realm.admin().update(realmRep);
-            }
-
-        } finally {
-            clientRep.setNotBefore(originalClientNotBefore);
-            oauth.clientResource().update(clientRep);
-        }
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
     }
 
     @Test
@@ -1318,62 +1280,25 @@ public class RefreshTokenTest {
 
         int currentTime = (int) (System.currentTimeMillis() / 1000);
 
-        RealmRepresentation realmRep = realm.admin().toRepresentation();
-        int originalRealmNotBefore = realmRep.getNotBefore() != null ? realmRep.getNotBefore() : 0;
+        // Set realm notBefore to the past
+        realm.updateWithCleanup(r -> r.notBefore(currentTime - 200));
 
-        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
-        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(200, tokenResponse.getStatusCode(), "Token should be valid when only an older realm notBefore is set");
 
-        try {
-            // Set realm notBefore to the past
-            realmRep.setNotBefore(currentTime - 200);
-            realm.admin().update(realmRep);
+        realm.updateClientWithCleanup("test-app", c -> c.notBefore(currentTime + 100));
 
-            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(200, tokenResponse.getStatusCode(), "Token should be valid when only an older realm notBefore is set");
-
-            //set the client nbf
-            clientRep.setNotBefore(currentTime + 100);
-            oauth.clientResource().update(clientRep);
-
-            // The token was issued before clientNotBefore, must be rejected
-            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
-            assertEquals(400, tokenResponse.getStatusCode());
-            assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
-
-        } finally {
-            realmRep.setNotBefore(originalRealmNotBefore);
-            realm.admin().update(realmRep);
-
-            clientRep.setNotBefore(originalClientNotBefore);
-            oauth.clientResource().update(clientRep);
-        }
+        // The token was issued before clientNotBefore, must be rejected
+        tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
     }
 
     private void conductTokenRefreshRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
-        try {
-            // Realm setting is used for ID Token signature algorithm
-            changeRealmTokenSignatureProvider(expectedIdTokenAlg);
-            changeClientAccessTokenSignatureProvider(expectedAccessAlg);
-            refreshToken(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
-        } finally {
-            changeRealmTokenSignatureProvider(Constants.DEFAULT_SIGNATURE_ALGORITHM);
-            changeClientAccessTokenSignatureProvider(Constants.DEFAULT_SIGNATURE_ALGORITHM);
-        }
-    }
-
-    private void changeRealmTokenSignatureProvider(String toSigAlgName) {
-        RealmRepresentation rep = realm.admin().toRepresentation();
-        log.tracef("change realm test signature algorithm from %s to %s", rep.getDefaultSignatureAlgorithm(), toSigAlgName);
-        rep.setDefaultSignatureAlgorithm(toSigAlgName);
-        realm.admin().update(rep);
-    }
-
-    private void changeClientAccessTokenSignatureProvider(String toSigAlgName) {
-        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
-        log.tracef("change client %s access token signature algorithm from %s to %s", clientRep.getClientId(), clientRep.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG), toSigAlgName);
-        clientRep.getAttributes().put(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, toSigAlgName);
-        oauth.clientResource().update(clientRep);
+        // Realm setting is used for ID Token signature algorithm
+        realm.updateWithCleanup(r -> r.defaultSignatureAlgorithm(expectedIdTokenAlg));
+        realm.updateClientWithCleanup("test-app", c -> c.attribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG, expectedAccessAlg));
+        refreshToken(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg);
     }
 
     private void refreshToken(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
