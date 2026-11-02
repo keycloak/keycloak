@@ -274,7 +274,11 @@ public class CertificateInfoHelper {
             return info;
         }
 
-        String keyAlias = uploadForm.getFirst("keyAlias").asString();
+        FormPartValue keyAliasPart = uploadForm.getFirst("keyAlias");
+        String keyAlias = keyAliasPart != null ? keyAliasPart.asString() : null;
+        if (Strings.isEmpty(keyAlias)) {
+            throw new BadRequestException("keyAlias cannot be null or empty");
+        }
         FormPartValue keyPasswordPart = uploadForm.getFirst("keyPassword");
         char[] keyPassword = keyPasswordPart != null ? keyPasswordPart.asString().toCharArray() : null;
 
