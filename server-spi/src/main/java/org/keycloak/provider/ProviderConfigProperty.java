@@ -61,6 +61,7 @@ public class ProviderConfigProperty {
      */
     public static final String MULTIVALUED_LIST_TYPE="MultivaluedList";
 
+    public static final String GROUP_LIST_TYPE ="GroupList";
     public static final String CLIENT_LIST_TYPE="ClientList";
 
     /**
