@@ -29,7 +29,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenIdGenerator;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -75,6 +74,7 @@ import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.authentication.AuthenticatorUtil.isReAuthRequiredForKcAction;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.approveOAuth2DeviceAuthorization;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.denyOAuth2DeviceAuthorization;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
@@ -547,7 +547,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
 
     @Override
     public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        return isPromptLogin(authSession) || isAuthTimeExpired(userSession, authSession) || isReAuthRequiredForKcAction(userSession, authSession);
+        // Without a user session (e.g. SAMLIdentityProvider) there is no authentication time to compare, so the kc_action max_auth_age check does not apply
+        return isPromptLogin(authSession) || isAuthTimeExpired(userSession, authSession)
+                || (userSession != null && isReAuthRequiredForKcAction(session, userSession, authSession, null, null));
     }
 
     protected boolean isPromptLogin(AuthenticationSessionModel authSession) {
@@ -575,22 +577,6 @@ public class OIDCLoginProtocol implements LoginProtocol {
         }
 
         return false;
-    }
-
-    protected boolean isReAuthRequiredForKcAction(UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        if (userSession != null && authSession.getClientNote(Constants.KC_ACTION) != null) {
-            String providerId = authSession.getClientNote(Constants.KC_ACTION);
-            RequiredActionProvider requiredActionProvider = this.session.getProvider(RequiredActionProvider.class, providerId);
-            if (requiredActionProvider == null) {
-                return false;
-            }
-            String authTime = userSession.getNote(AuthenticationManager.AUTH_TIME);
-            int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
-            int maxAgeInt = requiredActionProvider.getMaxAuthAge(session);
-            return (long) authTimeInt + maxAgeInt < Time.currentTime();
-        } else {
-            return false;
-        }
     }
 
     @Override

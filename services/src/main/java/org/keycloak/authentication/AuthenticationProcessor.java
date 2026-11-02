@@ -1237,6 +1237,11 @@ public class AuthenticationProcessor {
 
     protected Response authenticationComplete() {
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
+        // Do not record an auth time for SSO (cookie only) authentication, as no credentials were presented in this flow.
+        // The check for max_auth_age of application-initiated actions then falls back to the auth time of the user session.
+        if (!AuthenticatorUtil.isSSOAuthentication(authenticationSession)) {
+            authenticationSession.setAuthNote(AuthenticationManager.AUTH_TIME, String.valueOf(Time.currentTime()));
+        }
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);
 
         String nextRequiredAction = nextRequiredAction();
