@@ -21,6 +21,10 @@ function usage() {
 Required:
   --theme-path <path>        Custom theme root or login directory
 
+When --theme-path points at a theme root (or a login dir whose parent is the
+theme root), a sibling common/ directory is migrated too. Themes that use
+import=common/<theme> often keep PF5 CSS/templates there.
+
 Options:
   --apply                    Apply changes to the source theme (default: dry-run)
   --report-dir <path>        Directory for markdown/json reports
@@ -177,9 +181,10 @@ async function listFilesRecursive(rootPath) {
   return files;
 }
 
-async function scanResiduals(loginDir) {
-  const filePaths = await listFilesRecursive(loginDir);
+async function scanResiduals(rootDir, pathPrefix = "") {
+  const filePaths = await listFilesRecursive(rootDir);
   const residuals = [];
+  const prefix = pathPrefix ? `${pathPrefix}/` : "";
 
   for (const filePath of filePaths) {
     const ext = path.extname(filePath).toLowerCase();
@@ -192,7 +197,7 @@ async function scanResiduals(loginDir) {
     for (let i = 0; i < lines.length; i++) {
       if (PF5_PATTERN.test(lines[i]) || V2_PARENT_PATTERN.test(lines[i])) {
         residuals.push({
-          file: path.relative(loginDir, filePath),
+          file: `${prefix}${path.relative(rootDir, filePath)}`,
           line: i + 1,
           text: lines[i],
         });
@@ -201,6 +206,83 @@ async function scanResiduals(loginDir) {
   }
 
   return residuals;
+}
+
+async function resolveSiblingCommonDir(loginDir) {
+  const themeRoot = path.dirname(loginDir);
+  const commonDir = path.join(themeRoot, "common");
+  if (!(await pathExists(commonDir))) {
+    return undefined;
+  }
+  // Only migrate a real theme common/ directory (has theme.properties or resources).
+  if (
+    (await pathExists(path.join(commonDir, "theme.properties"))) ||
+    (await pathExists(path.join(commonDir, "resources")))
+  ) {
+    return commonDir;
+  }
+  return undefined;
+}
+
+async function migrateStagedDir(stagedDir, stagedDirRelative, options) {
+  const steps = [];
+
+  const stagedJsDir = path.join(stagedDir, "resources", "js");
+  if (!options.skipPfCodemods && (await pathExists(stagedJsDir))) {
+    steps.push(
+      await runCommand(
+        "npx",
+        [
+          "@patternfly/pf-codemods@latest",
+          "--v6",
+          "--only",
+          "tokens-update",
+          path.join(stagedDirRelative, "resources", "js"),
+          "--fix",
+        ],
+        path.dirname(stagedDir),
+      ),
+    );
+  }
+
+  const stagedCssDir = path.join(stagedDir, "resources", "css");
+  if (!options.skipCssVarsUpdater && (await pathExists(stagedCssDir))) {
+    steps.push(
+      await runCommand(
+        "npx",
+        [
+          "@patternfly/css-vars-updater@latest",
+          path.join(stagedDirRelative, "resources", "css"),
+          "--fix",
+        ],
+        path.dirname(stagedDir),
+      ),
+    );
+  }
+
+  if (!options.skipClassUpdater) {
+    steps.push(
+      await runCommand(
+        "npx",
+        [
+          "@patternfly/class-name-updater@latest",
+          "--v6",
+          "--extensions",
+          "ftl,properties,css,scss,less,html,js,jsx,ts,tsx,md",
+          stagedDirRelative,
+          "--fix",
+        ],
+        path.dirname(stagedDir),
+      ),
+    );
+  }
+
+  const themePropertiesPath = path.join(stagedDir, "theme.properties");
+  if (await pathExists(themePropertiesPath)) {
+    await rewriteThemeProperties(themePropertiesPath);
+  }
+
+  return steps;
 }
 
 async function rewriteThemeProperties(themePropertiesPath) {
@@ -242,6 +324,7 @@ function toMarkdownReport(report) {
 - Mode: **${report.mode}**
 - Theme path: \`${report.themePath}\`
 - Login path: \`${report.loginPath}\`
+${report.commonPath ? `- Common path: \`${report.commonPath}\`` : ""}
 - Timestamp: \`${report.timestamp}\`
 
 ## Steps
@@ -254,6 +337,7 @@ ${residualSection}
 - Success: **${report.success}**
 - Applied: **${report.applied}**
 ${report.backupPath ? `- Backup: \`${report.backupPath}\`` : ""}
+${report.commonBackupPath ? `- Common backup: \`${report.commonBackupPath}\`` : ""}
 `;
 }
 
@@ -275,72 +359,36 @@ async function main() {
     );
   }
 
+  const commonDir = await resolveSiblingCommonDir(loginDir);
   const themeName = path.basename(path.dirname(loginDir));
   const runTimestamp = formatTimestamp();
   const tempRoot = await mkdtemp(path.join(tmpdir(), "kc-pf6-login-migrate-"));
   const stagedLoginDir = path.join(tempRoot, "login");
   await cp(loginDir, stagedLoginDir, { recursive: true });
 
-  const steps = [];
-  const stagedLoginDirRelative = "login";
-
-  const stagedJsDir = path.join(stagedLoginDir, "resources", "js");
-  if (!options.skipPfCodemods && (await pathExists(stagedJsDir))) {
-    steps.push(
-      await runCommand(
-        "npx",
-        [
-          "@patternfly/pf-codemods@latest",
-          "--v6",
-          "--only",
-          "tokens-update",
-          path.join(stagedLoginDirRelative, "resources", "js"),
-          "--fix",
-        ],
-        tempRoot,
-      ),
-    );
+  let stagedCommonDir;
+  if (commonDir) {
+    stagedCommonDir = path.join(tempRoot, "common");
+    await cp(commonDir, stagedCommonDir, { recursive: true });
   }
 
-  const stagedCssDir = path.join(stagedLoginDir, "resources", "css");
-  if (!options.skipCssVarsUpdater && (await pathExists(stagedCssDir))) {
-    steps.push(
-      await runCommand(
-        "npx",
-        [
-          "@patternfly/css-vars-updater@latest",
-          path.join(stagedLoginDirRelative, "resources", "css"),
-          "--fix",
-        ],
-        tempRoot,
-      ),
-    );
+  const steps = [
+    ...(await migrateStagedDir(stagedLoginDir, "login", options)),
+  ];
+  if (stagedCommonDir) {
+    steps.push(...(await migrateStagedDir(stagedCommonDir, "common", options)));
   }
 
-  if (!options.skipClassUpdater) {
-    steps.push(
-      await runCommand(
-        "npx",
-        [
-          "@patternfly/class-name-updater@latest",
-          "--v6",
-          "--extensions",
-          "ftl,properties,css,scss,less,html,js,jsx,ts,tsx,md",
-          stagedLoginDirRelative,
-          "--fix",
-        ],
-        tempRoot,
-      ),
-    );
-  }
-
-  await rewriteThemeProperties(path.join(stagedLoginDir, "theme.properties"));
-  const residuals = await scanResiduals(stagedLoginDir);
+  const residuals = [
+    ...(await scanResiduals(stagedLoginDir, "login")),
+    ...(stagedCommonDir ? await scanResiduals(stagedCommonDir, "common") : []),
+  ];
   const failedStep = steps.find((step) => step.exitCode !== 0);
   const hasUnresolvedResiduals =
     options.failOnUnresolved && residuals.length > 0;
 
   let backupPath;
+  let commonBackupPath;
   let applied = false;
 
   if (!failedStep && options.apply && !hasUnresolvedResiduals) {
@@ -350,6 +398,16 @@ async function main() {
 
     await rm(loginDir, { recursive: true, force: true });
     await cp(stagedLoginDir, loginDir, { recursive: true });
+
+    if (commonDir && stagedCommonDir) {
+      commonBackupPath = path.join(
+        options.backupDir,
+        `${themeName}-common-${runTimestamp}`,
+      );
+      await cp(commonDir, commonBackupPath, { recursive: true });
+      await rm(commonDir, { recursive: true, force: true });
+      await cp(stagedCommonDir, commonDir, { recursive: true });
+    }
     applied = true;
   }
 
@@ -358,7 +416,9 @@ async function main() {
     mode: options.apply ? "apply" : "dry-run",
     themePath: path.resolve(options.themePath),
     loginPath: loginDir,
+    commonPath: commonDir,
     backupPath,
+    commonBackupPath,
     steps,
     residuals,
     applied,
