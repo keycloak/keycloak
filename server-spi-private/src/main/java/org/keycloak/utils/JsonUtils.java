@@ -117,14 +117,22 @@ public class JsonUtils {
                     jsonObject.put(component, collectionValues);
                 }
             } else {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> nested = (Map<String, Object>) jsonObject.get(component);
-
-                if (nested == null) {
+                Object existing = jsonObject.get(component);
+                Map<String, Object> nested;
+                if (existing instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> existingMap = (Map<String, Object>) existing;
+                    nested = existingMap;
+                } else if (existing instanceof JsonNode && ((JsonNode) existing).isObject()) {
+                    // A prior JSON-type mapper stored an ObjectNode here. Convert it to a
+                    // mutable Map so subsequent mappers can add nested claims through this path.
+                    nested = new HashMap<>();
+                    ((JsonNode) existing).fields().forEachRemaining(e -> nested.put(e.getKey(), e.getValue()));
+                    jsonObject.put(component, nested);
+                } else {
                     nested = new HashMap<>();
                     jsonObject.put(component, nested);
                 }
-
                 jsonObject = nested;
             }
         }
