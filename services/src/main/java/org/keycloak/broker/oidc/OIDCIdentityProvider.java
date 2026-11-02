@@ -46,6 +46,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.IdpLinkAction;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
 import org.keycloak.broker.provider.TrustMaterialRequest;
@@ -355,6 +356,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
             Object authTime = idToken.getOtherClaims().get(IDToken.AUTH_TIME);
 
+            if (isKcActionReAuthPending(authSession) && !isAuthTimeFreshForKcActionReAuth(authTime, authSession)) {
+                throw new IdentityBrokerException("User not re-authenticated by the target OpenID Provider");
+            }
+
             if (authTime != null) {
                 authSession.setClientNote(AuthenticationManager.AUTH_TIME_BROKER, authTime.toString());
             }
@@ -425,6 +430,36 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw new IdentityBrokerException(String.format("Claim %s not found", filterName)).
                 withMessageCode(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
         }
+    }
+
+    /**
+     * Whether the user has to authenticate again at the IdP because an application-initiated action was rejected as its max_auth_age elapsed.
+     * It does not apply to linking an identity provider, which is a separate request that must not inherit the requirement.
+     */
+    private boolean isKcActionReAuthPending(AuthenticationSessionModel authSession) {
+        return authSession.getAuthNote(AuthenticationManager.KC_ACTION_REAUTH_SINCE) != null
+                && !Boolean.parseBoolean(authSession.getAuthNote(IdpLinkAction.KC_ACTION_LINKING_IDENTITY_PROVIDER));
+    }
+
+    /**
+     * Proof that the IdP authenticated the user again after the rejection. A missing auth_time is no proof. The auth_time is on the clock of the IdP,
+     * so it is compared with the auth_time of the rejected login (same clock). Only without one the local time of the rejection is used, with the
+     * allowed clock skew of the IdP.
+     */
+    private boolean isAuthTimeFreshForKcActionReAuth(Object authTime, AuthenticationSessionModel authSession) {
+        if (authTime == null) {
+            logger.debugf("Missing auth_time claim. User not re-authenticated by the target OP after the application-initiated action was rejected.");
+            return false;
+        }
+        long authTimeValue = Long.parseLong(authTime.toString());
+        String staleAuthTime = authSession.getAuthNote(AuthenticationManager.KC_ACTION_REAUTH_STALE_BROKER_AUTH_TIME);
+        boolean fresh = staleAuthTime != null
+                ? authTimeValue > Long.parseLong(staleAuthTime)
+                : authTimeValue + getConfig().getAllowedClockSkew() >= Long.parseLong(authSession.getAuthNote(AuthenticationManager.KC_ACTION_REAUTH_SINCE));
+        if (!fresh) {
+            logger.debugf("Invalid auth_time claim. User not re-authenticated by the target OP after the application-initiated action was rejected.");
+        }
+        return fresh;
     }
 
     protected boolean isAuthTimeExpired(JsonWebToken idToken, AuthenticationSessionModel authSession) {
@@ -1024,6 +1059,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         if (Booleans.isTrue(getConfig().isPassMaxAge()) && maxAge != null) {
             uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
+        }
+
+        // The auth_time of the IdP is what the max_auth_age check of the action uses, so after a rejected action the IdP must authenticate the user again.
+        // max_age makes the IdP include auth_time in the ID token, which is the proof of that.
+        if (Booleans.isTrue(getConfig().isPassMaxAge()) && isKcActionReAuthPending(authenticationSession)) {
+            uriBuilder.replaceQueryParam(OAuth2Constants.PROMPT, OIDCLoginProtocol.PROMPT_VALUE_LOGIN);
+            uriBuilder.replaceQueryParam(OIDCLoginProtocol.MAX_AGE_PARAM, 0);
         }
 
         return uriBuilder;

@@ -164,6 +164,14 @@ public class AuthenticationManager {
     // authSession client note set during brokering indicating the time when the authentication happened at the IdP
     public static final String AUTH_TIME_BROKER = "AUTH_TIME_BROKER";
 
+    // authSession note with the time when an application-initiated action was rejected because its max_auth_age elapsed. The authentication
+    // that follows must be newer than this time, so a brokered login must ask the IdP to authenticate the user again
+    public static final String KC_ACTION_REAUTH_SINCE = "KC_ACTION_REAUTH_SINCE";
+
+    // authSession note with the auth_time the IdP reported for the login that was rejected. It is on the clock of the IdP, so a retry is
+    // compared against it without comparing clocks. Removed together with KC_ACTION_REAUTH_SINCE when the authentication completes
+    public static final String KC_ACTION_REAUTH_STALE_BROKER_AUTH_TIME = "KC_ACTION_REAUTH_STALE_BROKER_AUTH_TIME";
+
     // clientSession note with flag that clientSession was authenticated through SSO cookie
     public static final String SSO_AUTH = "SSO_AUTH";
 
@@ -1415,7 +1423,8 @@ public class AuthenticationManager {
         final String kcAction = authSession.getClientNote(Constants.KC_ACTION);
         final RequiredActionProviderModel firstApplicableRequiredAction =
                 getFirstApplicableRequiredAction(realm, authSession, user, kcAction, ignoredActions);
-        boolean kcActionExecution = kcAction != null && kcAction.equals(firstApplicableRequiredAction.getProviderId());
+        boolean kcActionExecution = kcAction != null && firstApplicableRequiredAction != null
+                && (kcAction.equals(firstApplicableRequiredAction.getProviderId()) || kcAction.equals(firstApplicableRequiredAction.getAlias()));
 
         if (firstApplicableRequiredAction != null) {
             return executeAction(session, authSession, firstApplicableRequiredAction, request, event, realm, user,
@@ -1836,16 +1845,34 @@ public class AuthenticationManager {
     }
 
     public static void setKcActionStatus(String executedProviderId, RequiredActionContext.KcActionStatus status, AuthenticationSessionModel authSession) {
-        if (executedProviderId.equals(authSession.getClientNote(Constants.KC_ACTION))) {
-            authSession.setClientNote(Constants.KC_ACTION_STATUS, status.name().toLowerCase());
-            authSession.removeClientNote(Constants.KC_ACTION);
-            authSession.removeClientNote(Constants.KC_ACTION_EXECUTING);
+        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        if (executedProviderId != null && kcAction != null) {
+            String kcActionExecuting = authSession.getClientNote(Constants.KC_ACTION_EXECUTING);
+            RealmModel realm = authSession.getRealm();
+            RequiredActionProviderModel model = realm != null ? realm.getRequiredActionProviderByAlias(kcAction) : null;
+            String modelProviderId = model != null ? model.getProviderId() : null;
+            if (executedProviderId.equals(kcAction)
+                    || executedProviderId.equals(kcActionExecuting)
+                    || executedProviderId.equals(modelProviderId)) {
+                authSession.setClientNote(Constants.KC_ACTION_STATUS, status.name().toLowerCase());
+                authSession.removeClientNote(Constants.KC_ACTION);
+                authSession.removeClientNote(Constants.KC_ACTION_EXECUTING);
+            }
         }
     }
 
     public static void setKcActionToEnforced(String executedProviderId, AuthenticationSessionModel authSession) {
-        if (executedProviderId.equals(authSession.getClientNote(Constants.KC_ACTION))) {
-            authSession.setClientNote(Constants.KC_ACTION_ENFORCED, Boolean.TRUE.toString());
+        String kcAction = authSession.getClientNote(Constants.KC_ACTION);
+        if (executedProviderId != null && kcAction != null) {
+            String kcActionExecuting = authSession.getClientNote(Constants.KC_ACTION_EXECUTING);
+            RealmModel realm = authSession.getRealm();
+            RequiredActionProviderModel model = realm != null ? realm.getRequiredActionProviderByAlias(kcAction) : null;
+            String modelProviderId = model != null ? model.getProviderId() : null;
+            if (executedProviderId.equals(kcAction)
+                    || executedProviderId.equals(kcActionExecuting)
+                    || executedProviderId.equals(modelProviderId)) {
+                authSession.setClientNote(Constants.KC_ACTION_ENFORCED, Boolean.TRUE.toString());
+            }
         }
     }
 
