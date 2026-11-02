@@ -105,34 +105,84 @@ public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
     }
 
     private void addClaimsToSessionNote(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        Map<String, List<String>> claims = mapperModel.getConfigMap(CLAIMS_PROPERTY_NAME);
-        boolean areClaimValuesRegex =
+        final var claims = mapperModel.getConfigMap(CLAIMS_PROPERTY_NAME);
+        final var areClaimValuesRegex =
                 Boolean.parseBoolean(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
 
         for (Map.Entry<String, List<String>> claim : claims.entrySet()) {
-            Object claimValueObj = getClaimValue(context, claim.getKey());
+            final var claimValueObj = getClaimValue(context, claim.getKey());
+            if (claimValueObj == null) {
+                continue;
+            }
+
+            final var brokeredUserId = context.getBrokerUserId();
+            final var claimKey = claim.getKey();
+
             for (String value : claim.getValue()) {
-                if (claimValueObj != null) {
-                    if (!(claimValueObj instanceof String)) {
-                        LOG.warnf(
-                                "Claim '%s' does not contain a string value for user with brokerUserId '%s'. "
-                                + "Actual value is of type '%s': %s",
-                                claim.getKey(),
-                                context.getBrokerUserId(), claimValueObj.getClass(), claimValueObj);
-                        continue;
-                    }
+                final var claimValue = getClaimValueString(brokeredUserId, claimKey, claimValueObj);
+                if (claimValue == null) {
+                    continue;
+                }
 
-                    String claimValue = (String) claimValueObj;
+                final var claimValuesMatch = areClaimValuesRegex ? valueMatchesRegex(value, claimValue)
+                        : valueEquals(value, claimValue);
 
-                    boolean claimValuesMatch = areClaimValuesRegex ? valueMatchesRegex(value, claimValue)
-                            : valueEquals(value, claimValue);
-
-                    if (claimValuesMatch) {
-                        context.setSessionNote(claim.getKey(), claimValue);
-                    }
+                if (claimValuesMatch) {
+                    context.setSessionNote(claim.getKey(), claimValue);
                 }
             }
         }
     }
 
+    private String getClaimValueString(final String brokeredUserId, final String claimKey, final Object claimValueObj) {
+        var result = "";
+
+        if (claimValueObj instanceof List) {
+            result = convertArrayClaimToString(brokeredUserId, claimKey, claimValueObj);
+        } else if (claimValueObj instanceof String claimValueString) {
+            result = claimValueString;
+        } else {
+            LOG.warnf("Claim '%s':%s contains a value with an unsupported type (%s) for user with brokerUserId '%s'. "
+                            + "The supported types are either String or List.", claimKey, claimValueObj,
+                    claimValueObj.getClass(), brokeredUserId);
+
+            return null;
+        }
+
+        return result;
+    }
+
+    private String convertArrayClaimToString(final String brokeredUserId, final String claimKey,
+                                             final Object claimValueObj) {
+        var result = String.valueOf(claimValueObj);
+        result = result.replace(" ", "");
+        result = result.replace("[", "");
+        result = result.replace("]", "");
+
+        final var resultIsInvalid = containsMalformedEntries(brokeredUserId, claimKey, claimValueObj, result);
+        if (Boolean.TRUE.equals(resultIsInvalid)) {
+            return null;
+        }
+
+        return  result;
+    }
+
+    private Boolean containsMalformedEntries(final String brokeredUserId, final String claimKey,
+                                             final Object claimValueObj, final String stringArray) {
+        var foundEntryWithIllegalCharacter = false;
+        final var entries = stringArray.split(",");
+
+        for(String entry: entries) {
+            final var entryIsValid = entry.matches("^[a-zA-Z0-9._-]+$");
+            if (!entryIsValid) {
+                LOG.warnf("Claim \"%s\": %s contains a String \"%s\" with unsupported characters for user with brokeredUserId '%s'",
+                        claimKey, claimValueObj, entry, brokeredUserId);
+
+                foundEntryWithIllegalCharacter = true;
+                break;
+            }
+        }
+
+        return foundEntryWithIllegalCharacter;
+    }
 }
