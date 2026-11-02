@@ -220,6 +220,31 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
     @Test
     @DatabaseTest
+    public void testIssuedCredentialCacheInvalidatedOnAddAndUnscopedRemove() {
+        String userId = createUser();
+        UserResource userResource = managedRealm.admin().users().get(userId);
+
+        // Populate the cache with an empty list.
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), empty());
+
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_1, "wallet-123", "rev-001");
+
+        // Adding the issued credential must invalidate the cached empty list.
+        List<IssuedVerifiableCredentialRepresentation> issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
+        assertThat(issuedCredentials, hasSize(1));
+
+        String credentialId = issuedCredentials.get(0).getId();
+        runOnServer.run(session -> {
+            boolean removed = session.users().removeIssuedVerifiableCredential(credentialId);
+            Assertions.assertTrue(removed);
+        });
+
+        // Unscoped removal must resolve the owner and invalidate that user's cache entry.
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), empty());
+    }
+
+    @Test
+    @DatabaseTest
     public void testRevokeIssuedCredential_CrossUserDenied() {
         String ownerId = createUser("vc-owner", "vc-owner@test.com");
         UserResource ownerResource = managedRealm.admin().users().get(ownerId);

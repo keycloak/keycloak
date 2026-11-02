@@ -33,6 +33,8 @@ import org.jboss.logging.Logger;
  */
 public class UserCacheManager extends CacheManager {
 
+    private static final String ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY = "issuedVerifiableCredentials.all";
+
     private static final Logger logger = Logger.getLogger(UserCacheManager.class);
 
     public UserCacheManager(Cache<String, Revisioned> cache, Cache<String, Long> revisions) {
@@ -70,6 +72,9 @@ public class UserCacheManager extends CacheManager {
 
         // Verifiable credentials
         invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
+
+        // Issued verifiable credentials
+        invalidations.add(UserCacheSession.getIssuedVerifiableCredentialsCacheKey(userId));
     }
 
     public void federatedIdentityLinkUpdatedInvalidation(String userId, Set<String> invalidations) {
@@ -91,6 +96,23 @@ public class UserCacheManager extends CacheManager {
         invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
+    public void issuedVerifiableCredentialsInvalidation(String userId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getIssuedVerifiableCredentialsCacheKey(userId));
+    }
+
+    public void allIssuedVerifiableCredentialsInvalidation(Set<String> invalidations) {
+        invalidations.add(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY);
+    }
+
+    public boolean isAllIssuedVerifiableCredentialsInvalidationPending(Set<String> invalidations) {
+        return invalidations.contains(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY);
+    }
+
+    public long getIssuedVerifiableCredentialsInvalidationRevision() {
+        long revision = counter.current();
+        Long existing = revisions.putIfAbsent(ALL_ISSUED_VERIFIABLE_CREDENTIALS_CACHE_KEY, revision);
+        return existing == null ? revision : existing;
+    }
 
     @Override
     protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
