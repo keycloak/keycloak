@@ -74,7 +74,8 @@ public interface TrustMaterialIdentityProvider<C extends IdentityProviderModel> 
         for (X509TrustMaterial trustMaterial : trustMaterials) {
             try {
                 return X509CertificateChainValidator.validate(x5c, algorithm,
-                        trustMaterial.trustAnchors(), trustMaterial.requiredExtendedKeyUsages());
+                        trustMaterial.trustAnchors(), trustMaterial.requiredExtendedKeyUsages(),
+                        trustMaterial.rejectTrustAnchorInPresentedChain());
             } catch (VerificationException e) {
                 lastFailure = e;
             }

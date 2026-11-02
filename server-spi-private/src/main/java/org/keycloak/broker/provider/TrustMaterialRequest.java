@@ -22,11 +22,13 @@ public class TrustMaterialRequest {
     private final String kid;
     private final String algorithm;
     private final String issuer;
+    private final Purpose purpose;
 
     private TrustMaterialRequest(Builder builder) {
         this.kid = builder.kid;
         this.algorithm = builder.algorithm;
         this.issuer = builder.issuer;
+        this.purpose = builder.purpose;
     }
 
     public String getKid() {
@@ -41,6 +43,10 @@ public class TrustMaterialRequest {
         return issuer;
     }
 
+    public Purpose getPurpose() {
+        return purpose;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -50,6 +56,7 @@ public class TrustMaterialRequest {
         private String kid;
         private String algorithm;
         private String issuer;
+        private Purpose purpose = Purpose.UNSPECIFIED;
 
         public Builder kid(String kid) {
             this.kid = kid;
@@ -66,8 +73,19 @@ public class TrustMaterialRequest {
             return this;
         }
 
+        public Builder purpose(Purpose purpose) {
+            this.purpose = purpose;
+            return this;
+        }
+
         public TrustMaterialRequest build() {
             return new TrustMaterialRequest(this);
         }
+    }
+
+    public enum Purpose {
+        UNSPECIFIED,
+        KEY_ATTESTATION,
+        SD_JWT_ISSUER
     }
 }
