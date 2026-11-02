@@ -135,7 +135,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class AbstractMigrationTest {
 
     private static final Logger LOG = Logger.getLogger(AbstractMigrationTest.class);
-    private static final String PREFERRED_DEFAULT_LOGIN_THEME = "keycloak.v2";
+    private static final String PREFERRED_DEFAULT_LOGIN_THEME = "keycloak.v3";
 
     static final String MIGRATION = "Migration";
     static final String MIGRATION2 = "Migration2";
