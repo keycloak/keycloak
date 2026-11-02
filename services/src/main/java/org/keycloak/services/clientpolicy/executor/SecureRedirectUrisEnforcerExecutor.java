@@ -239,6 +239,12 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         if (postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
             return;
         }
+        postLogoutRedirectUris = postLogoutRedirectUris.stream()
+                .filter(uri -> uri != null && !uri.isBlank())
+                .toList();
+        if (postLogoutRedirectUris.isEmpty()) {
+            return;
+        }
         logger.tracef("Verifying post-logout redirect uris. Target client: %s, Effective post-logout uris: %s", client.getClientId(), postLogoutRedirectUris);
         verifyRedirectUris(client.getRootUrl(), postLogoutRedirectUris);
     }
