@@ -903,6 +903,53 @@ public class ParTest extends AbstractClientPoliciesTest {
     }
 
     /**
+     * Verify that a PAR request_uri is still consumed after {@code /login-actions/restart}.
+     * Restart clears authentication-session notes but must not drop the PAR binding, otherwise the
+     * same request_uri can be replayed for a second authorization code (CVE-2026-117859).
+     */
+    @Test
+    public void testParSingleUseEnforcedAfterAuthenticationRestart() throws Exception {
+        String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+            clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+            clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+        });
+        OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+        String clientSecret = oidcCRep.getClientSecret();
+        assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+        assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+
+        oauth.client(clientId, clientSecret);
+        oauth.redirectUri(CLIENT_REDIRECT_URI);
+
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+        oauth.loginForm().requestUri(requestUri).open();
+        loginPage.assertCurrent();
+
+        // Restart clears auth notes; PAR request_uri must survive as a client note
+        driver.navigate().to(driver.getCurrentUrl().replaceFirst("/login-actions/[^/?]+", "/login-actions/restart"));
+        loginPage.assertCurrent();
+
+        oauth.fillLoginForm(TEST_USER_NAME, TEST_USER_PASSWORD);
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        String code = loginResponse.getCode();
+        assertThat(code, notNullValue());
+
+        // Replay must fail — PAR was consumed on the post-restart completion
+        oauth.loginForm().requestUri(requestUri).open();
+        errorPage.assertCurrent();
+
+        oauth.redirectUri(CLIENT_REDIRECT_URI);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
+    }
+
+    /**
      * Verify that a PAR request_uri is consumed (single-use enforced) even when the authorization
      * endpoint short-circuits via the prompt=none silent authentication path (existing SSO session).
      *
