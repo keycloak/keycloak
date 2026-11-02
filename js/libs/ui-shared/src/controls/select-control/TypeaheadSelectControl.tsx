@@ -117,11 +117,15 @@ export const TypeaheadSelectControl = <
 
         if (!isTypeaheadMulti) {
           setFilterValue(getValue(focusedItem));
+          field.onChange(
+            Array.isArray(field.value)
+              ? [key(focusedItem)]
+              : key(focusedItem),
+          );
         } else {
           setFilterValue("");
+          updateValue(key(focusedItem), field);
         }
-
-        updateValue(key(focusedItem), field);
 
         setOpen(false);
         setFocusedItemIndex(0);
