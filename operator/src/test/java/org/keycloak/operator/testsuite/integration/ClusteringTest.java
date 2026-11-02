@@ -153,7 +153,7 @@ public class ClusteringTest extends BaseOperatorTest {
         var scale = crSelector.scale();
         assertThat(scale.getSpec().getReplicas()).isEqualTo(1);
         assertThat(scale.getStatus().getReplicas()).isEqualTo(1);
-        assertThat(scale.getStatus().getSelector()).isEqualTo("app=keycloak,app.kubernetes.io/managed-by=keycloak-operator,app.kubernetes.io/instance=example-kc");
+        assertThat(scale.getStatus().getSelector()).isEqualTo("app=keycloak,app.kubernetes.io/managed-by=keycloak-operator,app.kubernetes.io/instance=example-kc,app.kubernetes.io/component=server");
 
         // when scale it to 0
         Keycloak scaled = crSelector.scale(0);
