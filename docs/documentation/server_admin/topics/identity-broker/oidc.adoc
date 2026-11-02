@@ -85,6 +85,9 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 | Define the query parameters to be forwarded to an external AS from the initial authorization request sent to the authorization endpoint. Multiple parameters can be entered, separated by comma (,). The parameters available
 to forward are any non OpenID Connect/OAuth standard parameter or standard parameters that are available as a client note from the authentication session.
 
+|Token request parameters
+|Name/value pairs {project_name} adds to the requests it sends to the token endpoint of the external IDP: the authorization code exchange and the refresh token request. Use them for an IDP that expects non-standard parameters on these requests. Names and values are sent as entered; a name with leading or trailing whitespace is refused. Values can contain any character. Each name can be configured once. Parameters that {project_name} sets itself cannot be configured: `code`, `redirect_uri`, `grant_type`, `code_verifier`, `refresh_token`, `client_id`, `client_secret`, `client_assertion` and `client_assertion_type`. For a *Keycloak OpenID Connect* identity provider, `client_session_state` cannot be configured either.
+
 |Supports client assertions
 |This setting enables support for using client assertions issued by the provider to authenticate clients. This requires to set Issuer and keys of this Identity provider. Keys can be set by setup of 'JWKS URL' or 'Validating public key' option.
 

@@ -77,5 +77,6 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig imp
         if (isJWTAuthorizationGrantEnabled()) {
             validateIssuer(realm, IdentityProviderType.JWT_AUTHORIZATION_GRANT);
         }
+        validateTokenRequestParameters();
     }
 }

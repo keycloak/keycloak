@@ -36,7 +36,7 @@ public class KeycloakOIDCIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public KeycloakOIDCIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new KeycloakOIDCIdentityProvider(session, new OIDCIdentityProviderConfig(model));
+        return new KeycloakOIDCIdentityProvider(session, new KeycloakOIDCIdentityProviderConfig(model));
     }
 
     @Override
@@ -51,6 +51,6 @@ public class KeycloakOIDCIdentityProviderFactory extends AbstractIdentityProvide
 
     @Override
     public OIDCIdentityProviderConfig createConfig() {
-        return new OIDCIdentityProviderConfig();
+        return new KeycloakOIDCIdentityProviderConfig();
     }
 }

@@ -35,7 +35,7 @@ export const MapComponent = ({
 }: ComponentProps) => {
   const { t } = useTranslation();
 
-  const { watch, setValue } = useFormContext();
+  const { watch, setValue, getValues } = useFormContext();
   const [map, setMap] = useState<KeyValueType[]>([]);
   const fieldName = convertToName(name!);
   const value = watch(fieldName, defaultValue || "[]");
@@ -48,7 +48,10 @@ export const MapComponent = ({
 
   const update = (val = map) => {
     const v = val.filter((e) => e.key !== "");
-    setValue(fieldName, v.length > 0 ? JSON.stringify(v) : "");
+    const serialized = v.length > 0 ? JSON.stringify(v) : "";
+    if (serialized !== (getValues(fieldName) ?? "")) {
+      setValue(fieldName, serialized, { shouldDirty: true });
+    }
   };
 
   const updateKey = (index: number, key: string) => {

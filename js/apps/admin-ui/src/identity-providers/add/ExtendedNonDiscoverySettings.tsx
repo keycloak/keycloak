@@ -13,6 +13,7 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { MapComponent } from "../../components/dynamic/MapComponent";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
@@ -139,6 +140,12 @@ export const ExtendedNonDiscoverySettings = () => {
           />
         </FormGroup>
         <TextField field="config.forwardParameters" label="forwardParameters" />
+        <MapComponent
+          name="config.tokenRequestParameters"
+          label="tokenRequestParameters"
+          helpText="tokenRequestParametersHelp"
+          convertToName={(name) => name}
+        />
       </Form>
     </ExpandableSection>
   );

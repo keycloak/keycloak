@@ -17,8 +17,12 @@
 package org.keycloak.broker.oidc;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
@@ -38,6 +42,7 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public static final String PKCE_METHOD = "pkceMethod";
     public static final String TOKEN_ENDPOINT_URL = "tokenUrl";
     public static final String TOKEN_INTROSPECTION_URL = "tokenIntrospectionUrl";
+    public static final String TOKEN_REQUEST_PARAMETERS = "tokenRequestParameters";
 
     public static final String JWT_X509_HEADERS_ENABLED = "jwtX509HeadersEnabled";
 
@@ -159,6 +164,19 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
        getConfig().put("forwardParameters", forwardParameters);
     }
 
+    public TokenRequestParameters getTokenRequestParameters() {
+        String stored = Optional.ofNullable(getConfig().get(TOKEN_REQUEST_PARAMETERS)).orElse("");
+        return TokenRequestParameters.parse(stored, getProviderReservedTokenRequestParameterNames());
+    }
+
+    /**
+     * Names of the token request parameters the identity provider sets itself in addition to
+     * {@link TokenRequestParameters#RESERVED_NAMES}. They cannot be configured as token request parameters.
+     */
+    protected Set<String> getProviderReservedTokenRequestParameterNames() {
+        return Set.of();
+    }
+
     public boolean isPkceEnabled() {
         return Boolean.parseBoolean(getConfig().getOrDefault(PKCE_ENABLED, "false"));
     }
@@ -243,6 +261,27 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
                 throw new IllegalArgumentException("PKCE Method not supported: " + pkceMethod);
             }
         }
+
+        validateTokenRequestParameters();
+    }
+
+    /**
+     * Rejects a {@link #TOKEN_REQUEST_PARAMETERS} setting that has entries the identity provider would not send. An
+     * override of {@link #validate(RealmModel)} that does not call {@code super.validate} must call this method.
+     *
+     * @throws IllegalArgumentException listing the rejected entries
+     */
+    protected final void validateTokenRequestParameters() {
+        List<TokenRequestParameters.Problem> problems = getTokenRequestParameters().problems();
+        if (!problems.isEmpty()) {
+            throw new IllegalArgumentException(invalidTokenRequestParametersMessage(problems));
+        }
+    }
+
+    private static String invalidTokenRequestParametersMessage(List<TokenRequestParameters.Problem> problems) {
+        return "Invalid token request parameters: " + problems.stream()
+                .map(TokenRequestParameters.Problem::message)
+                .collect(Collectors.joining("; "));
     }
 
     /**

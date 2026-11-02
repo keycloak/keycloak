@@ -2,6 +2,7 @@ import { NumberControl, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { ExpandableSection, Form } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MapComponent } from "../../components/dynamic/MapComponent";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
 
@@ -45,6 +46,12 @@ export const ExtendedOAuth2Settings = () => {
           controller={{ defaultValue: 0, rules: { min: 0 } }}
         />
         <TextField field="config.forwardParameters" label="forwardParameters" />
+        <MapComponent
+          name="config.tokenRequestParameters"
+          label="tokenRequestParameters"
+          helpText="tokenRequestParametersHelp"
+          convertToName={(name) => name}
+        />
       </Form>
     </ExpandableSection>
   );

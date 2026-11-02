@@ -460,6 +460,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(getConfig().getTokenUrl())
                 .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
                 .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
+        getConfig().getTokenRequestParameters().addTo(refreshTokenRequest);
         return authenticateTokenRequest(refreshTokenRequest);
     }
 
@@ -1102,6 +1103,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, Urls.identityProviderAuthnResponse(context.getUri().getBaseUri(),
                             providerConfig.getAlias(), context.getRealm().getName()).toString())
                     .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_AUTHORIZATION_CODE);
+            providerConfig.getTokenRequestParameters().addTo(tokenRequest);
 
             if (providerConfig.isPkceEnabled()) {
 
