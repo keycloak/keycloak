@@ -511,6 +511,17 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
+    public void joinGroup(GroupModel group, MembershipMetadata metadata) {
+        // Only REALM groups are cached; organization groups always delegate to persistence
+        if (group.getType() == Type.REALM && updated == null && cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.joinGroup(group, metadata);
+
+    }
+
+    @Override
     public void leaveGroup(GroupModel group) {
         // Only REALM groups are cached; organization groups always delegate to persistence
         if (group.getType() == Type.REALM && updated == null && !cached.getGroups(keycloakSession, modelSupplier).contains(group.getId())) {
