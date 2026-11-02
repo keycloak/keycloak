@@ -357,36 +357,42 @@ public class TokenManager {
 
     public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, ClientModel client, HttpRequest request, String encodedRefreshToken, boolean checkExpiration) throws OAuthErrorException {
         try {
-            RefreshToken refreshToken = toRefreshToken(session, encodedRefreshToken);
-
-            if (!(TokenUtil.TOKEN_TYPE_REFRESH.equals(refreshToken.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()))) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
-            }
-
-            TokenVerifier<RefreshToken> tokenVerifier = TokenVerifier.createWithoutSignature(refreshToken)
-                    .withChecks(new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())));
-
-            if (checkExpiration) {
-                tokenVerifier.withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE);
-            }
-
-            try {
-                tokenVerifier.verify();
-            } catch (VerificationException e) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
-            }
-
-            if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
-            }
-
-            verifyConfirmationBinding(session, client, request, refreshToken);
-
-            return refreshToken;
-
+            return verifyRefreshToken(session, realm, client, request, toRefreshToken(session, encodedRefreshToken), checkExpiration);
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
+    }
+
+    /**
+     * Verifies an already-decoded refresh token without a second JWS signature check.
+     * Use this overload when the caller already holds a signature-verified {@link RefreshToken}
+     * (e.g. from a prior {@link #toRefreshToken} call) to avoid redundant cryptographic work.
+     */
+    public RefreshToken verifyRefreshToken(KeycloakSession session, RealmModel realm, ClientModel client, HttpRequest request, RefreshToken refreshToken, boolean checkExpiration) throws OAuthErrorException {
+        if (!(TokenUtil.TOKEN_TYPE_REFRESH.equals(refreshToken.getType()) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()))) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token");
+        }
+
+        TokenVerifier<RefreshToken> tokenVerifier = TokenVerifier.createWithoutSignature(refreshToken)
+                .withChecks(new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName())));
+
+        if (checkExpiration) {
+            tokenVerifier.withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE);
+        }
+
+        try {
+            tokenVerifier.verify();
+        } catch (VerificationException e) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, e.getMessage());
+        }
+
+        if (!client.getClientId().equals(refreshToken.getIssuedFor())) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token. Token client and authorized client don't match");
+        }
+
+        verifyConfirmationBinding(session, client, request, refreshToken);
+
+        return refreshToken;
     }
 
     private void verifyConfirmationBinding(KeycloakSession session, ClientModel client, HttpRequest request, RefreshToken refreshToken) throws OAuthErrorException {

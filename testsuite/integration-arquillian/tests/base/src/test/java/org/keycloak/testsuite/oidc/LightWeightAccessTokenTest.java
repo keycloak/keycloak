@@ -60,6 +60,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
@@ -1117,6 +1118,88 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             deleteProtocolMappers(protocolMappers);
             alwaysUseLightWeightAccessToken(false);
         }
+    }
+
+    /**
+     * Regression test for https://github.com/keycloak/keycloak/issues/53817 — Bug #1.
+     *
+     * A scope NOT granted in the original session must not be injected into a refresh request
+     * to trick a client policy into issuing a lightweight access token.
+     */
+    @Test
+    public void testClientScopeConditionPhantomScopeInjectionPrevented() throws Exception {
+        setClientScopesLightweightPolicy();
+        try {
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+
+            // Obtain initial token WITHOUT "address" scope — lightweight policy should not fire.
+            oauth.scope("email");
+            AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+            assertEquals(200, tokenResponse.getStatusCode());
+            Assertions.assertNotNull(oauth.verifyToken(tokenResponse.getAccessToken()).getSubject(),
+                    "Initial token should be normal (sub present)");
+
+            // Refresh with "address" injected — it was never granted in the session.
+            oauth.scope("email address");
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+            assertEquals(200, refreshResponse.getStatusCode());
+            // After fix: "address" is removed (not in session scope), policy does not fire, token is normal.
+            Assertions.assertNotNull(oauth.verifyToken(refreshResponse.getAccessToken()).getSubject(),
+                    "Injected scope must be stripped; refreshed token should remain normal (sub present)");
+        } finally {
+            oauth.scope(null);
+            deletePolicy(POLICY_NAME);
+        }
+    }
+
+    /**
+     * Regression test for https://github.com/keycloak/keycloak/issues/53817 — Bug #2.
+     *
+     * Omitting the scope parameter in a refresh request must not bypass a client policy that is
+     * active because of a scope that was originally granted in the session.
+     */
+    @Test
+    public void testClientScopeConditionActiveScopeNotBypassed() throws Exception {
+        setClientScopesLightweightPolicy();
+        try {
+            oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
+
+            // Obtain initial token WITH "address" scope — lightweight policy fires.
+            oauth.scope("email address");
+            AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+            assertEquals(200, tokenResponse.getStatusCode());
+            Assertions.assertNull(oauth.verifyToken(tokenResponse.getAccessToken()).getSubject(),
+                    "Initial token should be lightweight (sub absent) because policy fired for 'address' scope");
+
+            // Refresh without any scope parameter — session scope (which includes "address") must be used.
+            oauth.scope(null);
+            AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken());
+            assertEquals(200, refreshResponse.getStatusCode());
+            // After fix: session scope is used, "address" triggers the policy, token remains lightweight.
+            Assertions.assertNull(oauth.verifyToken(refreshResponse.getAccessToken()).getSubject(),
+                    "Session-active 'address' scope must keep policy active; refreshed token should remain lightweight (sub absent)");
+        } finally {
+            oauth.scope(null);
+            deletePolicy(POLICY_NAME);
+        }
+    }
+
+    private void setClientScopesLightweightPolicy() throws Exception {
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Scope-based Lightweight Access Token")
+                        .addExecutor(UseLightweightAccessTokenExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Scope-based Lightweight Policy", Boolean.TRUE)
+                        .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
+                                ClientPoliciesUtil.createClientScopesConditionConfig(ClientScopesConditionFactory.OPTIONAL, Arrays.asList("address")))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
     }
 
     @Test
