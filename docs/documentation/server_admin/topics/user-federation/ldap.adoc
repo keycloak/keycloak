@@ -187,6 +187,10 @@ This mapper grants a specified {project_name} role to each {project_name} user f
 Group Mapper::
 This mapper maps LDAP groups from a branch of an LDAP tree into groups within {project_name}. This mapper also propagates user-group mappings from LDAP into user-group mappings in {project_name}.
 
+[[_freeipa_mapper]]
+FreeIPA User Account Mapper::
+This mapper is specific to FreeIPA. It can integrate the FreeIPA user account state into the {project_name} account state, such as enabled account or expired password. This mapper uses the `krbPasswordExpiration`, and `nsAccountLock` LDAP attributes, specific to FreeIPA and are not the LDAP standard. For example, if the value of `krbPasswordExpiration` have passed, the {project_name} user must update their password. The result is an UPDATE_PASSWORD required action added to the user. If the value of `nsAccountLock` is `TRUE` (disabled account), the {project_name} user is disabled.
+
 [[_msad_mapper]]
 MSAD User Account Mapper::
 This mapper is specific to Microsoft Active Directory (MSAD). It can integrate the MSAD user account state into the {project_name} account state, such as enabled account or  expired password. This mapper uses the `userAccountControl`, and `pwdLastSet` LDAP attributes, specific to MSAD and are not the LDAP standard. For example, if the value of `pwdLastSet` is `0`, the {project_name} user must update their password. The result is an UPDATE_PASSWORD required action added to the user. If the value of  `userAccountControl` is `514` (disabled account), the {project_name} user is disabled.
