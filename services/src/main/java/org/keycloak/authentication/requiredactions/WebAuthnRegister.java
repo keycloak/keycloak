@@ -438,6 +438,15 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             case Algorithm.Ed25519:
                 algs.add(COSEAlgorithmIdentifier.EdDSA.getValue());
                 break;
+            case Algorithm.ML_DSA_44:
+                algs.add(COSEAlgorithmIdentifier.ML_DSA_44.getValue());
+                break;
+            case Algorithm.ML_DSA_65:
+                algs.add(COSEAlgorithmIdentifier.ML_DSA_65.getValue());
+                break;
+            case Algorithm.ML_DSA_87:
+                algs.add(COSEAlgorithmIdentifier.ML_DSA_87.getValue());
+                break;
             case "RS1" :
                 algs.add(COSEAlgorithmIdentifier.RS1.getValue());
                 break;

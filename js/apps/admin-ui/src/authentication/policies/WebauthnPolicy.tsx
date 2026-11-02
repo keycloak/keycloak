@@ -44,6 +44,9 @@ const SIGNATURE_ALGORITHMS = [
   "RS512",
   "Ed25519",
   "RS1",
+  "ML-DSA-44",
+  "ML-DSA-65",
+  "ML-DSA-87",
 ] as const;
 const ATTESTATION_PREFERENCE = [
   "not specified",
