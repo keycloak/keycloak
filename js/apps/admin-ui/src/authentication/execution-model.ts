@@ -1,4 +1,5 @@
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
+import { inferSubflowProviderId } from "./execution-provider";
 
 export type ExpandableExecution = AuthenticationExecutionInfoRepresentation & {
   executionList?: ExpandableExecution[];
@@ -251,10 +252,41 @@ export class ExecutionList {
     return targetIdx;
   }
 
+  #flowProviderIdOf(
+    parent: ExpandableExecution | undefined,
+    rootFlowProviderId: string,
+  ): string {
+    if (!parent) {
+      return rootFlowProviderId;
+    }
+    return inferSubflowProviderId(parent) ?? rootFlowProviderId;
+  }
+
+  /**
+   * Non-flow executions are only valid under the same flow provider family as
+   * their current parent (basic / form / client). Subflows may move freely via
+   * addFlowToFlow.
+   */
+  #isCompatibleDestination(
+    dragged: ExpandableExecution,
+    destinationParent: ExpandableExecution | undefined,
+    rootFlowProviderId: string,
+  ): boolean {
+    if (dragged.authenticationFlow) {
+      return true;
+    }
+    const sourceParent = this.#findParentOf(dragged.id!);
+    return (
+      this.#flowProviderIdOf(sourceParent, rootFlowProviderId) ===
+      this.#flowProviderIdOf(destinationParent, rootFlowProviderId)
+    );
+  }
+
   resolveDropTarget(
     draggedId: string,
     hoverId: string,
     vertical: DropVertical,
+    rootFlowProviderId: string = "basic-flow",
   ): ResolvedDrop | null {
     const visualOrder = this.order();
     const hoverIndex = visualOrder.findIndex((ex) => ex.id === hoverId);
@@ -366,6 +398,10 @@ export class ExecutionList {
           preview: reorderPreview,
           order,
         };
+      }
+
+      if (!this.#isCompatibleDestination(dragged, parent, rootFlowProviderId)) {
+        return null;
       }
 
       const change =

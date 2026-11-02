@@ -526,7 +526,60 @@ describe("ExecutionList", () => {
 
     it("returns null for into on non-subflow", () => {
       const list = new ExecutionList(list2Data);
-      expect(list.resolveDropTarget("1", "1", "into")).toBeNull();
+      expect(list.resolveDropTarget("1", "3", "into")).toBeNull();
+    });
+
+    it("returns null when dropping an authenticator into a form-flow", () => {
+      const list = new ExecutionList([
+        { id: "1", index: 0, level: 0, providerId: "auth-cookie" },
+        {
+          id: "2",
+          index: 1,
+          level: 0,
+          authenticationFlow: true,
+          displayName: "Registration form",
+          requirementChoices: ["REQUIRED", "DISABLED"],
+        },
+        {
+          id: "3",
+          index: 0,
+          level: 1,
+          providerId: "registration-user-creation",
+        },
+      ]);
+
+      expect(list.resolveDropTarget("1", "2", "into")).toBeNull();
+    });
+
+    it("allows dropping a form action into another form-flow", () => {
+      const list = new ExecutionList([
+        {
+          id: "1",
+          index: 0,
+          level: 0,
+          authenticationFlow: true,
+          displayName: "Form A",
+          requirementChoices: ["REQUIRED", "DISABLED"],
+        },
+        {
+          id: "2",
+          index: 0,
+          level: 1,
+          providerId: "registration-user-creation",
+        },
+        {
+          id: "3",
+          index: 1,
+          level: 0,
+          authenticationFlow: true,
+          displayName: "Form B",
+          requirementChoices: ["REQUIRED", "DISABLED"],
+        },
+      ]);
+
+      const resolved = list.resolveDropTarget("2", "3", "into");
+      expect(resolved).not.toBeNull();
+      expect(resolved!.kind).toBe("level-change");
     });
   });
 

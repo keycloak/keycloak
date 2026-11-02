@@ -43,6 +43,7 @@ import {
   goToPoliciesTab,
   goToRequiredActions,
   hoverExecutionDuringDrag,
+  hoverExecutionOutsideRows,
   releaseExecutionDrag,
   startExecutionDrag,
   goToWebAuthnTab,
@@ -290,6 +291,8 @@ test.describe("Authentication flow details", () => {
     await assertFlowRowExpanded(page, subflowB, true);
     await assertFlowRowExpanded(page, subflowA, true);
 
+    // Cancel the hover-only drag so teardown does not race an unawaited move.
+    await hoverExecutionOutsideRows(page);
     await releaseExecutionDrag(page);
   });
 
@@ -335,6 +338,8 @@ test.describe("Authentication flow details", () => {
     await assertFlowRowExpanded(page, nestedChild, true);
     await hoverExecutionDuringDrag(page, nestedParentRow, { yRatio: 0.5 });
     await assertFlowRowExpanded(page, nestedParent, true);
+    // Cancel before starting the next drag so moves cannot race.
+    await hoverExecutionOutsideRows(page);
     await releaseExecutionDrag(page);
 
     await startExecutionDrag(page, nestedChildRow);
@@ -344,6 +349,7 @@ test.describe("Authentication flow details", () => {
     // individual nested subflows — children are hidden with the parent row.
     await assertFlowRowExpanded(page, parentSubflow, false);
     await assertRowExists(page, nestedParent, false);
+    await hoverExecutionOutsideRows(page);
     await releaseExecutionDrag(page);
   });
 

@@ -62,6 +62,7 @@ import {
   IndexChange,
   LevelChange,
 } from "./execution-model";
+import { decodeExecutionProviderId } from "./execution-provider";
 import {
   hasMovedToDeeperLevel,
   isWithinAutoExpandedContext,
@@ -762,6 +763,7 @@ export default function FlowDetails() {
         active.id as string,
         hoverId,
         vertical,
+        flow?.providerId || "basic-flow",
       );
       if (resolved) {
         updateDropInfo(resolved.preview);
@@ -814,6 +816,7 @@ export default function FlowDetails() {
       activeId,
       currentDropInfo.targetId,
       dropModeToVertical(currentDropInfo.mode),
+      flow?.providerId || "basic-flow",
     );
 
     if (!resolved) {
@@ -978,6 +981,34 @@ export default function FlowDetails() {
                 flowId: executionFlow.flowId,
               })
             : undefined;
+        const destinationFlowId = change.parent?.flowId || flow?.id;
+        const destinationFlow =
+          destinationFlowId && destinationFlowId !== flow?.id
+            ? await adminClient.authenticationManagement.getFlow({
+                flowId: destinationFlowId,
+              })
+            : flow;
+        const destinationFlowType =
+          destinationFlow?.providerId || flow?.providerId || "basic-flow";
+        const executionProviderId = !movingAuthenticationFlow
+          ? decodeExecutionProviderId(ex.providerId!)
+          : undefined;
+
+        if (!movingAuthenticationFlow && executionProviderId) {
+          const providers =
+            destinationFlowType === "form-flow"
+              ? await adminClient.authenticationManagement.getFormActionProviders()
+              : destinationFlowType === "client-flow"
+                ? await adminClient.authenticationManagement.getClientAuthenticatorProviders()
+                : await adminClient.authenticationManagement.getAuthenticatorProviders();
+          if (
+            !providers.some((provider) => provider.id === executionProviderId)
+          ) {
+            throw new Error(
+              `Cannot move execution into incompatible ${destinationFlowType} destination`,
+            );
+          }
+        }
 
         try {
           await adminClient.authenticationManagement.delExecution({ id });
@@ -1033,7 +1064,7 @@ export default function FlowDetails() {
           const result =
             await adminClient.authenticationManagement.addExecutionToFlow({
               flow: change.parent?.displayName! || flow?.alias!,
-              provider: ex.providerId!,
+              provider: executionProviderId!,
             });
           id = result.id!;
           await restoreExecutionConfig(id, config);
