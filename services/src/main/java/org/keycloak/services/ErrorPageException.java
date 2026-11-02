@@ -19,6 +19,7 @@ package org.keycloak.services;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -33,6 +34,16 @@ public class ErrorPageException extends RollbackWebApplicationException {
 
     public ErrorPageException(KeycloakSession session, AuthenticationSessionModel authSession, Response.Status status, String errorMessage, Object... parameters) {
         super(errorMessage, ErrorPage.error(session, authSession, status, errorMessage, parameters));
+    }
+
+    public static ErrorPageException oauthError(KeycloakSession session, AuthenticationSessionModel authSession,
+            Response.Status status, String error, String errorMessage, Object... parameters) {
+        session.getTransactionManager().setRollbackOnly();
+        Response response = session.getProvider(LoginFormsProvider.class)
+                .setAuthenticationSession(authSession)
+                .setError(errorMessage, parameters)
+                .createErrorPage(status, error);
+        return new ErrorPageException(response);
     }
 
     public ErrorPageException(Response response) {
