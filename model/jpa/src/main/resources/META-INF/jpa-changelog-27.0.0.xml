@@ -25,4 +25,24 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_OidcIssuerMigration"/>
     </changeSet>
 
+    <!-- Searching users by attribute compares lower(VALUE), which the (NAME, VALUE) index cannot serve.
+         MariaDB, MSSQL and H2 do not support expression indexes, so the index is only created where it can be. -->
+    <changeSet author="keycloak" id="27.0.0-user-attribute-lower-value-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="postgresql"/>
+                <dbms type="oracle"/>
+                <dbms type="mysql"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="USER_ATTRIBUTE" indexName="IDX_USER_ATTR_NAME_LOWER_VAL">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="LOWER(VALUE)" valueComputed="LOWER(VALUE)"/>
+        </createIndex>
+        <modifySql dbms="mysql">
+            <!-- MySQL requires functional key parts to be wrapped in parentheses -->
+            <replace replace="LOWER(VALUE)" with="(LOWER(VALUE))"/>
+        </modifySql>
+    </changeSet>
+
 </databaseChangeLog>
