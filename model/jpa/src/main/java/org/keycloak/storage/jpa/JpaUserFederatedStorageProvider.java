@@ -226,7 +226,11 @@ public class JpaUserFederatedStorageProvider implements
         entity.setBrokerUserName(link.getUserName());
         entity.setStorageProviderId(new StorageId(userId).getProviderId());
         em.persist(entity);
-
+        // Flush so a duplicate broker link is reported as ModelDuplicateException here
+        // at the call site instead of failing only at commit time, where it would bypass
+        // the catch (ModelDuplicateException) in IdentityBrokerService#afterFirstBrokerLogin
+        // under concurrent first-broker-login. Mirrors JpaUserProvider#addFederatedIdentity.
+        em.flush();
     }
 
     @Override
