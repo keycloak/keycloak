@@ -155,4 +155,35 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
             realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
         }
     }
+
+    @Test
+    public void executeActionWithTermsAndConditionsUnsupportedAIAButAssignedToUser() throws IOException {
+        RealmResource realm = managedRealm.admin();
+        RequiredActionProviderRepresentation termsAndConditions = realm.flows().getRequiredAction(TermsAndConditions.PROVIDER_ID);
+        boolean prevEnabled = termsAndConditions.isEnabled();
+
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(realm, "test-user@localhost")
+                .setRequiredActions(UserModel.RequiredAction.TERMS_AND_CONDITIONS).update()) {
+
+            // enable terms and conditions
+            termsAndConditions.setEnabled(true);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
+
+            // request kc_action for terms and conditions which is not supported
+            oauth.loginForm().kcAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()).open();
+            loginPage.login("test-user@localhost", "password");
+
+            // Terms and conditions are displayed because it is assigned to the user
+            termsAndConditionsPage.assertCurrent();
+            termsAndConditionsPage.acceptTerms();
+
+            // assert login and kc_action_status is error because it was not allowed
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+            assertEquals("error", oauth.parseLoginResponse().getKcActionStatus());
+        } finally {
+            termsAndConditions.setEnabled(prevEnabled);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
+        }
+    }
 }
