@@ -17,19 +17,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.W
 
 /**
  * Periodically publishes the current node's timestamp to the work cache for clock skew detection.
- * Other cluster nodes receive these samples and compare them with their local clocks to detect
- * if any node's clock is ahead by more than the configured threshold.
- * <p>
- * This task runs at a configurable interval (default 60 seconds) and writes a
- * {@link ClockSkewTimestampSample} to the work cache with a TTL of 3x the interval.
- * The TTL ensures samples remain available long enough for all nodes to read them,
- * accounting for network delays and garbage collection pauses.
- * <p>
- * Clock skew detection focuses on identifying nodes that are ahead in time, as this
- * is the security-critical case that can lead to premature expiry of tokens, replay
- * windows, and missed invalidations (see issue #54284).
- *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * Runs at a configurable interval and writes a {@link ClockSkewTimestampSample} with a TTL of 3x the interval.
  */
 public class ClockSkewDetectionTask implements ScheduledTask {
 
