@@ -198,15 +198,9 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean getDefaultMtlsEnabled() {
-        if (!cacheSetToInfinispan()) {
-            return false;
-        }
-        Optional<String> cacheStackOptional = getOptionalKcValue(CachingOptions.CACHE_STACK);
-        if (cacheStackOptional.isEmpty()) {
-            return true;
-        }
-        String cacheStack = cacheStackOptional.get();
-        return !(cacheStack.equals("udp") || cacheStack.equals("jdbc-ping-udp"));
+        // MTLS is always enabled by default for TCP-based jdbc-ping stack
+        // If people use a custom stack, they must disable it by setting the property to false
+        return cacheSetToInfinispan();
     }
 
     private static boolean remoteHostSet() {
