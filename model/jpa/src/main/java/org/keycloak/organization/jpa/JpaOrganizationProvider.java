@@ -482,17 +482,20 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         Join<OrganizationEntity, OrganizationDomainEntity> domain = org.join("domains", JoinType.LEFT);
         Predicate namePredicate;
+        Predicate aliasPredicate;
         Predicate domainPredicate;
 
         if (Boolean.TRUE.equals(exact)) {
             namePredicate = builder.equal(org.get("name"), search);
+            aliasPredicate = builder.equal(org.get("alias"), search);
             domainPredicate = builder.equal(domain.get("name"), search);
         } else {
             namePredicate = builder.like(builder.lower(org.get("name")), "%" + search.toLowerCase() + "%");
+            aliasPredicate = builder.like(builder.lower(org.get("alias")), "%" + search.toLowerCase() + "%");
             domainPredicate = builder.like(domain.get("name"), "%" + search.toLowerCase() + "%");
         }
 
-        predicates.add(builder.or(namePredicate, domainPredicate));
+        predicates.add(builder.or(namePredicate, aliasPredicate, domainPredicate));
 
         return builder.and(predicates.toArray(new Predicate[0]));
     }
