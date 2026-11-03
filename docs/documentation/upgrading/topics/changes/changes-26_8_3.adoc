@@ -73,6 +73,21 @@ Updating an existing client scope does not revalidate its stored mappers.
 Existing deployments continue to start, because mappers that are read from the database at startup are not validated.
 If you provision realms from an exported JSON file, import the file once after upgrading to find out whether it contains a mapper that is now rejected.
 
+=== SCIM listings respect per-resource view permissions (CVE-2026-116470)
+// https://github.com/keycloak/keycloak/issues/54340
+
+Listing and searching resources through the SCIM API now returns only the resources the caller is allowed to view.
+Previously, the `query-users` and `query-groups` roles were checked when entering `GET /realms/\{realm}/scim/v2/Users`, `GET /realms/\{realm}/scim/v2/Groups`, and their `.search` counterparts, but the resources those endpoints matched were returned in full without a per-resource view check.
+A service account holding only `query-users` could therefore read every user in the realm, including email addresses, names, and custom attributes, which the Admin REST API would not have disclosed to it.
+
+The query roles now behave as they do in the Admin REST API: they grant access to the listing and search endpoints, not read access to the resources those endpoints match.
+After upgrading, a client holding only `query-users` or `query-groups` receives an empty `Resources` array.
+Grant `view-users` in addition, or configure a fine-grained `view` permission on the users and groups the client is allowed to see.
+When fine-grained admin permissions v2 are enabled for the realm, listings were already narrowed to the permitted resources and are unaffected.
+
+With fine-grained admin permissions v2, the listing and the count are restricted by the same authorization filter in the database query, so `totalResults` stays exact.
+With the deprecated fine-grained admin permissions v1, a caller can be allowed to view some resources but not others, so `totalResults` counts the resources matching the query, before the per-resource view check is applied, and should be treated as an upper bound; a page can also be shorter than the requested `count`, or even empty, while later pages still contain resources the caller is allowed to see, so neither a short page nor an empty page means that no further resources exist, and clients should keep incrementing `startIndex` by `count` until `startIndex` exceeds `totalResults`.
+Without any fine-grained admin permissions, the per-resource view check evaluates the same way for every resource of a given type, so access is all-or-nothing: a client holding only a query role and no realm-wide view role gets a `totalResults` of `0`, consistently across every page, rather than the unfiltered database count.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
