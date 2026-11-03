@@ -731,6 +731,10 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== New index for searching users by attribute
+
+A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
