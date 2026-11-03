@@ -23,10 +23,10 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
- * Migrates realms and clients that still use the removed Login v1 theme (`keycloak`)
+ * Migrates imported realms and clients that still use the removed Login v1 theme (`keycloak`)
  * to the Login v2 theme (`keycloak.v2`).
  */
-public class MigrateTo27_0_0 extends RealmMigration {
+public class MigrateTo27_0_0 implements Migration {
 
     public static final ModelVersion VERSION = new ModelVersion("27.0.0");
 
@@ -35,9 +35,8 @@ public class MigrateTo27_0_0 extends RealmMigration {
     private static final String LOGIN_V2_THEME = "keycloak.v2";
 
     @Override
-    public void migrateRealm(KeycloakSession session, RealmModel realm) {
-        updateLoginTheme(realm);
-        updateClientLoginThemes(realm);
+    public void migrate(KeycloakSession session) {
+        // Persisted themes are migrated by Liquibase.
     }
 
     @Override
