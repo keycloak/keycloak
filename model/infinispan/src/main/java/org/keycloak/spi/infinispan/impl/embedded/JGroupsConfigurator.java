@@ -317,7 +317,12 @@ public final class JGroupsConfigurator {
             stack.add(new ProtocolConfiguration(protocol.getProtocolName(), properties));
         }
         var connectionFactory = (JpaConnectionProviderFactory) sessionFactory.getProviderFactory(JpaConnectionProvider.class);
+        var existingNames = transportOf(holder).build().transport().jgroups().stacks().stream()
+                .map(s -> s.name()).toList();
         var wrappedName = stackName + "-keycloak";
+        for (int i = 2; existingNames.contains(wrappedName); i++) {
+            wrappedName = stackName + "-keycloak-" + i;
+        }
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(sessionFactory, wrappedName, stack, embedded.getUncombinedRemoteSites(), null, connectionFactory, null), null);
         transportOf(holder).stack(wrappedName);
         logger.infof("Custom stack '%s' uses %s. Injected the database connection factory.", stackName, KEYCLOAK_JDBC_PING2.class.getSimpleName());

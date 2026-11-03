@@ -130,6 +130,27 @@ public class JGroupsConfiguratorCustomStackTest {
     }
 
     @Test
+    public void testWrapperNameAvoidsExistingStack() {
+        var holder = new ParserRegistry().parse("""
+                <infinispan xmlns="urn:infinispan:config:16.0" xmlns:jg="urn:org:jgroups">
+                  <jgroups>
+                    <stack name="custom" extends="tcp">
+                      %s
+                    </stack>
+                    <stack name="custom-keycloak" extends="tcp"/>
+                  </jgroups>
+                  <cache-container>
+                    <transport cluster="test" stack="custom"/>
+                  </cache-container>
+                </infinispan>
+                """.formatted(PING_PROTOCOL));
+
+        assertTrue(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom"));
+
+        assertEquals("custom-keycloak-2", holder.getGlobalConfigurationBuilder().transport().attributes().attribute(TransportConfiguration.STACK).get());
+    }
+
+    @Test
     public void testInJvmTestStackExemptionIsNarrow() {
         var inJvm = new ParserRegistry().parse("""
                 <infinispan xmlns="urn:infinispan:config:16.0" xmlns:jg="urn:org:jgroups">
