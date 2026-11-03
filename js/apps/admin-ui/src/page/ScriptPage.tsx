@@ -73,7 +73,7 @@ export default function ScriptPage() {
       mounted?.remove();
       host.replaceChildren();
     };
-  }, [container, url, realm, i18n, adminClient, addError]);
+  }, [container, providerId, url, realm, i18n, adminClient, addError]);
 
   if (!script || !url) {
     throw new Error(t("notFound"));

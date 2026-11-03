@@ -68,7 +68,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.services.ui.extend.UiScriptProviderFactory;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -91,6 +90,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.ui.extend.UiScriptProviderFactory;
 import org.keycloak.theme.Theme;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
