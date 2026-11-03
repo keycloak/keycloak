@@ -1,5 +1,6 @@
 package org.keycloak.tests.admin.identityprovider;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.keycloak.events.admin.OperationType;
@@ -66,9 +67,9 @@ public class AbstractIdentityProviderTest {
         idp.setDisplayName(displayName);
         idp.setProviderId(providerId);
         idp.setEnabled(enabled);
-        if (config != null) {
-            idp.setConfig(config);
-        }
+        idp.setConfig(config == null ? new HashMap<>() : new HashMap<>(config));
+        idp.getConfig().putIfAbsent("validateSignature", "false");
+
         return idp;
     }
 

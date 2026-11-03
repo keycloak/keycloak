@@ -38,6 +38,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.validateSignature",
   });
 
+  const wantAssertionsSigned = useWatch({
+    control,
+    name: "config.wantAssertionsSigned",
+  });
+
   const useMetadataDescriptorUrl = useWatch({
     control,
     name: "config.useMetadataDescriptorUrl",
@@ -279,7 +284,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           isDisabled={readOnly}
           stringify
         />
-        {validateSignature === "true" && (
+        {(validateSignature === "true" || wantAssertionsSigned === "true") && (
           <>
             <TextControl
               name="config.metadataDescriptorUrl"

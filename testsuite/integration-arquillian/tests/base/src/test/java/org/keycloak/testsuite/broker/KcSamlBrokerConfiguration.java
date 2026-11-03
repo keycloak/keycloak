@@ -37,6 +37,7 @@ import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_R
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.VALIDATE_SIGNATURE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME;
@@ -248,6 +249,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(POST_BINDING_RESPONSE, "true");
         config.put(POST_BINDING_AUTHN_REQUEST, "true");
         config.put(VALIDATE_SIGNATURE, "false");
+        config.put(WANT_ASSERTIONS_SIGNED, "false");
         config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
         config.put(BACKCHANNEL_SUPPORTED, "false");
         config.put(ARTIFACT_BINDING_RESPONSE, "false");

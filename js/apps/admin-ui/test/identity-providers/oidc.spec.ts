@@ -44,6 +44,13 @@ test.describe.serial("OIDC identity provider test", () => {
       page,
       "Identity provider successfully created",
     );
+
+    const provider = await adminClient.getIdentityProvider(
+      oidcProviderName,
+      realmName,
+    );
+    expect(provider?.config?.validateSignature).toBe("true");
+
     await assertAuthorizationUrl(page);
 
     await setUrl(page, "authorization", "invalid");
@@ -93,6 +100,7 @@ test.describe.serial("Edit OIDC Provider", () => {
       oidcProviderName,
       alias,
       realmName,
+      { validateSignature: "false" },
     );
     await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
     await clickTableRowItem(page, oidcProviderName);

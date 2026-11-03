@@ -167,6 +167,7 @@ public class EventMetricsProviderWithTagsTest {
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                             .alias(REAL_IDP_ALIAS)
+                            .attribute("validateSignature", "false")
                             .build());
         }
     }

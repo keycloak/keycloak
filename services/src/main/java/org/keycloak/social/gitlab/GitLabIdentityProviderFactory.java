@@ -36,12 +36,18 @@ public class GitLabIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     @Override
     public GitLabIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new GitLabIdentityProvider(session, new OIDCIdentityProviderConfig(model));
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(model);
+        config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+        config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.JWKS_URL, "https://gitlab.com/oauth/discovery/keys");
+        return new GitLabIdentityProvider(session, config);
     }
 
     @Override
     public OIDCIdentityProviderConfig createConfig() {
-        return new OIDCIdentityProviderConfig();
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig();
+        config.setUseJwksUrl(true);
+        config.setJwksUrl("https://gitlab.com/oauth/discovery/keys");
+        return config;
     }
 
     @Override

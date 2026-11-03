@@ -92,11 +92,12 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
             label={t("validateSignature")}
             labelIcon={t("validateSignatureHelp")}
             isDisabled={readOnly}
+            defaultValue="true"
             stringify
           />
-          {(validateSignature === "true" ||
+          {((validateSignature ?? "true") === "true" ||
             jwtAuthorizationGrantEnabled === "true" ||
-            supportsClientAssertions == "true") && (
+            supportsClientAssertions === "true") && (
             <JwksSettings readOnly={readOnly} />
           )}
         </>
