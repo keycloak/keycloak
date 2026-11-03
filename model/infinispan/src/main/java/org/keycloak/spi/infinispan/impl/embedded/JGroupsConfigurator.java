@@ -491,7 +491,8 @@ public final class JGroupsConfigurator {
     static boolean isInJvmTestStack(ConfigurationBuilderHolder holder, String stackName) {
         return "test".equals(stackName)
                 && transportOf(holder).build().transport().jgroups().configurator(stackName).getProtocolStack().stream()
-                        .anyMatch(p -> p.getProtocolName().contains("SHARED_LOOPBACK"));
+                        .anyMatch(p -> "SHARED_LOOPBACK".equals(p.getProtocolName())
+                                || "org.jgroups.protocols.SHARED_LOOPBACK".equals(p.getProtocolName()));
     }
 
     private static boolean isJdbcPingStack(String stackName) {
