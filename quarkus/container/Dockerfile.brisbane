@@ -1,0 +1,49 @@
+# Build with a local Keycloak distribution tarball as the Docker context.
+FROM registry.access.redhat.com/ubi9/ubi:9.8 AS openssl-build
+
+RUN dnf install -y gcc make perl-core && dnf clean all
+
+# OpenSSL 3.1.2 supplies the FIPS 140-3 validated provider; 3.5.9 supplies libcrypto.
+ADD --checksum=sha256:a0ce69b8b97ea6a35b96875235aa453b966ba3cba8af2de23657d8b6767d6539 \
+    https://github.com/openssl/openssl/releases/download/openssl-3.1.2/openssl-3.1.2.tar.gz /tmp/openssl-3.1.2.tar.gz
+ADD --checksum=sha256:603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a \
+    https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz /tmp/openssl-3.5.9.tar.gz
+
+RUN cd /tmp && tar -xzf openssl-3.1.2.tar.gz && tar -xzf openssl-3.5.9.tar.gz
+RUN cd /tmp/openssl-3.5.9 && \
+    ./Configure enable-fips --prefix=/opt/jipher/openssl --openssldir=/opt/jipher/openssl/ssl --libdir=lib && \
+    make -j4 && make install_sw install_ssldirs
+RUN cd /tmp/openssl-3.1.2 && \
+    ./Configure enable-fips --prefix=/opt/jipher/openssl --openssldir=/opt/jipher/openssl/ssl --libdir=lib && \
+    make -j4 && make install_fips
+RUN LD_LIBRARY_PATH=/opt/jipher/openssl/lib \
+    /opt/jipher/openssl/bin/openssl fipsinstall \
+      -out /tmp/fips-selftest.cnf \
+      -module /opt/jipher/openssl/lib/ossl-modules/fips.so && \
+    LD_LIBRARY_PATH=/opt/jipher/openssl/lib \
+    /opt/jipher/openssl/bin/openssl fipsinstall -verify \
+      -in /tmp/fips-selftest.cnf \
+      -module /opt/jipher/openssl/lib/ossl-modules/fips.so
+
+FROM registry.access.redhat.com/ubi9/ubi:9.8
+
+ARG KEYCLOAK_VERSION=999.0.0-SNAPSHOT
+RUN dnf install -y java-25-openjdk-headless tar gzip && dnf clean all
+
+COPY --from=openssl-build /opt/jipher/openssl /opt/jipher/openssl
+COPY keycloak-${KEYCLOAK_VERSION}.tar.gz /tmp/keycloak.tar.gz
+RUN mkdir -p /opt/keycloak && \
+    tar -xzf /tmp/keycloak.tar.gz -C /opt/keycloak --strip-components=1 && \
+    rm /tmp/keycloak.tar.gz && \
+    chown -R 1000:0 /opt/keycloak && \
+    chmod -R g+rwX /opt/keycloak
+
+ENV KC_RUN_IN_CONTAINER=true \
+    LD_LIBRARY_PATH=/opt/jipher/openssl/lib \
+    JAVA_OPTS_APPEND="--enable-native-access=ALL-UNNAMED -Djipher.openssl.dir=/opt/jipher/openssl"
+
+USER 1000
+RUN /opt/keycloak/bin/kc.sh build --features=fips,brisbane --fips-mode=strict
+
+EXPOSE 8080 8443 9000
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
