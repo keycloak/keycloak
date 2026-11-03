@@ -590,6 +590,10 @@ The emails are sent by the `email` executor. It has 4 threads by default and sta
 Custom email template providers, including ones that extend `FreeMarkerEmailTemplateProvider`, still send the email right away, so for them the response time still depends on the mail server.
 To send it in the background, a provider that extends `FreeMarkerEmailTemplateProvider` can override `supportsBackgroundDelivery()`. Other providers need to implement `EmailTemplateProvider.renderPasswordReset` and `send(RenderedEmail, int, EmailDeliveryListener)`.
 
+=== New index for searching users by attribute
+
+A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
