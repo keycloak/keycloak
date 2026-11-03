@@ -9,6 +9,11 @@ See the upgrading guide for migration details.
 
 = Security and Standards
 
+== PAR discovery respects the feature flag
+
+When the `par` feature is disabled, OpenID Connect discovery no longer advertises the pushed authorization request endpoint, including its mTLS alias, or `require_pushed_authorization_requests`.
+Discovery metadata is unchanged when PAR is enabled.
+
 == SAML OneTimeUse condition enforced for identity brokering
 
 When an external SAML identity provider issues an assertion with a `OneTimeUse` condition, {project_name} now rejects any later attempt to present the same assertion, as required by the SAML 2.0 specification.
