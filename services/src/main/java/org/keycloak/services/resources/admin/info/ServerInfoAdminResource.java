@@ -68,6 +68,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.provider.Spi;
+import org.keycloak.services.ui.extend.UiScriptProviderFactory;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.PasswordPolicyTypeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -227,6 +228,18 @@ public class ServerInfoAdminResource {
                         List<ProviderConfigProperty> configClientProperties = ((ConfiguredPerClientProvider) pi).getConfigPropertiesPerClient();
                         rep.setClientProperties(ModelToRepresentation.toRepresentation(configClientProperties));
                     }
+                    List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
+                    if (reps == null) {
+                        reps = new LinkedList<>();
+                        info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
+                    }
+                    reps.add(rep);
+                } else if (pi instanceof UiScriptProviderFactory scriptFactory) {
+                    ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+                    rep.setId(pi.getId());
+                    Map<String, Object> metadata = new HashMap<>();
+                    metadata.put("url", scriptFactory.getUrl());
+                    rep.setMetadata(metadata);
                     List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
                     if (reps == null) {
                         reps = new LinkedList<>();
