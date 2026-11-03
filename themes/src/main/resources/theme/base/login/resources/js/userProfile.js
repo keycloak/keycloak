@@ -11,7 +11,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 /** @type {AnnotationDescriptor[]} */
 const descriptors = [];
 
-/** @type {WeakMap<HTMLElement, () => void>} */
+/** @type {WeakMap<HTMLElement, Map<AnnotationDescriptor, (() => void) | void>>} */
 const cleanupFunctions = new WeakMap();
 
 /**
@@ -39,10 +39,18 @@ function onMutate(mutations) {
     }
 
     for (const element of [node, ...node.querySelectorAll('*')]) {
-      const handleRemovedElement = cleanupFunctions.get(element);
+      if (!(element instanceof HTMLElement)) {
+        continue;
+      }
 
-      if (handleRemovedElement) {
-        handleRemovedElement();
+      const cleanups = cleanupFunctions.get(element);
+
+      if (cleanups) {
+        for (const cleanup of cleanups.values()) {
+          if (cleanup) {
+            cleanup();
+          }
+        }
       }
 
       cleanupFunctions.delete(element);
@@ -76,9 +84,14 @@ function onMutate(mutations) {
  * @param {AnnotationDescriptor} descriptor
  */
 function handleNewElement(element, descriptor) {
-  const cleanup = descriptor.onAdd(element);
+  let cleanups = cleanupFunctions.get(element);
 
-  if (cleanup) {
-    cleanupFunctions.set(element, cleanup);
+  if (!cleanups) {
+    cleanups = new Map();
+    cleanupFunctions.set(element, cleanups);
+  }
+
+  if (!cleanups.has(descriptor)) {
+    cleanups.set(descriptor, descriptor.onAdd(element));
   }
 }

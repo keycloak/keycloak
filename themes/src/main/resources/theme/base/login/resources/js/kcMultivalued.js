@@ -1,3 +1,5 @@
+import { defaultActionClass } from "./kcMultivaluedConfig.js";
+
 const DATA_KC_MULTIVALUED = 'data-kcMultivalued';
 const KC_ADD_ACTION_PREFIX = "kc-add-";
 const KC_REMOVE_ACTION_PREFIX = "kc-remove-";
@@ -77,7 +79,7 @@ function createAction(text, type, element, onClick) {
     action.setAttribute("id", type + element.getAttribute("id"));
     action.setAttribute("type", "button");
     action.innerText = text;
-    action.className = element.dataset.kcMultivaluedActionClass ?? "";
+    action.className = element.dataset.kcMultivaluedActionClass ?? defaultActionClass;
     action.addEventListener("click", onClick);
     return action;
 }

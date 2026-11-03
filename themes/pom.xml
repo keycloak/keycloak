@@ -29,6 +29,17 @@
 
     <build>
         <resources>
+            <!-- Copy shared scripts first so legacy source files take precedence. -->
+            <resource>
+                <directory>src/main/resources/theme/base/login/resources/js</directory>
+                <targetPath>theme/base-legacy/login/resources/js</targetPath>
+                <includes>
+                    <include>**/*.js</include>
+                </includes>
+                <excludes>
+                    <exclude>password-policy.js</exclude>
+                </excludes>
+            </resource>
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
@@ -42,6 +53,14 @@
             </resource>
         </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <!-- Apply legacy script and shared locale overrides regardless of timestamps. -->
+                    <overwrite>true</overwrite>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.keycloak</groupId>
                 <artifactId>theme-verifier-maven-plugin</artifactId>
@@ -83,16 +102,6 @@
                         </includes>
                     </resource>
                 </resources>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <configuration>
-                            <!-- Let shared locale metadata override the default legacy properties. -->
-                            <overwrite>true</overwrite>
-                        </configuration>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
     </profiles>

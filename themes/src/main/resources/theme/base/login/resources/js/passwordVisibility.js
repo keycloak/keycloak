@@ -1,6 +1,6 @@
 const toggle = (button) =>  {
     const passwordElement = document.getElementById(button.getAttribute('aria-controls'));
-    const icon = button.querySelector('i') ?? button.children.item(0);
+    const icon = button.querySelector('[data-password-toggle-icon]') ?? button.children.item(0);
     if (passwordElement.type === "password") {
         passwordElement.type = "text";
         icon.className = button.dataset.iconHide;
