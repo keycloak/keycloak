@@ -47,8 +47,8 @@ public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
     }
 
     @Override
-    public HealthStatus healthStatus() {
-        return statusQueue.isEmpty() ? super.healthStatus() : statusQueue.poll();
+    protected HealthStatus queryHealthStatus() {
+        return statusQueue.isEmpty() ? super.queryHealthStatus() : statusQueue.poll();
     }
 
     @Override

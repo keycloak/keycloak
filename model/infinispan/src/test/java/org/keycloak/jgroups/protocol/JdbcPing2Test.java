@@ -1,5 +1,6 @@
 package org.keycloak.jgroups.protocol;
 
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,19 +10,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.keycloak.cluster.infinispan.InfinispanClusterProvider;
+import org.keycloak.cluster.infinispan.ClusterHealthRestored;
 import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.NodeInfo;
+import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.infinispan.health.impl.JdbcPingClusterHealthImpl;
-import org.keycloak.models.cache.infinispan.ClearCacheEvent;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderEventListener;
 
 import org.hamcrest.CoreMatchers;
 import org.infinispan.Cache;
@@ -31,11 +38,15 @@ import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.util.concurrent.WithinThreadExecutor;
 import org.jboss.logging.Logger;
 import org.jgroups.Address;
+import org.jgroups.Event;
 import org.jgroups.JChannel;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.logging.Log;
+import org.jgroups.protocols.FD_ALL3;
+import org.jgroups.protocols.MERGE3;
 import org.jgroups.protocols.PingData;
+import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.protocols.relay.SiteUUID;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.util.NameCache;
@@ -101,10 +112,8 @@ public class JdbcPing2Test {
         // test exception
         ping.setException(new RuntimeException("Induced"));
         assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, ping.healthStatus());
-        // A database exception do not change the cluster health.
-        // It relies on Quarkus database health check to mark the Keycloak instance as not ready.
         clusterHealth.triggerClusterHealthCheck();
-        assertTrue(clusterHealth.isHealthy());
+        assertFalse(clusterHealth.isHealthy());
         // Remove exception
         ping.setException(null);
 
@@ -251,6 +260,309 @@ public class JdbcPing2Test {
         return new JChannel(JdbcPing2Test.PROTOCOL_STACK).name(name);
     }
 
+    private static void suspectPeers(JChannel first, JChannel second) throws Exception {
+        // JGroups timers do not use Time's offset. Deliver their verified-suspicion events without waiting for them.
+        GMS firstGms = first.getProtocolStack().findProtocol(GMS.class);
+        GMS secondGms = second.getProtocolStack().findProtocol(GMS.class);
+        firstGms.up(new Event(Event.SUSPECT, List.of(second.getAddress())));
+        secondGms.up(new Event(Event.SUSPECT, List.of(first.getAddress())));
+        Util.waitUntil(10000, 50, () -> first.getView().size() == 1 && second.getView().size() == 1);
+    }
+
+    private static void mergePartitions(JChannel... channels) throws Exception {
+        MERGE3[] protocols = Arrays.stream(channels)
+                .map(channel -> channel.getProtocolStack().<MERGE3>findProtocol(MERGE3.class))
+                .toArray(MERGE3[]::new);
+        // Run normal discovery and merge checks directly instead of waiting for JGroups' independent periodic timers.
+        Util.waitUntil(10000, 50, () -> {
+            var view = channels[0].getView();
+            if (view.size() == channels.length && Arrays.stream(channels).allMatch(channel -> view.equals(channel.getView()))) {
+                return true;
+            }
+            for (MERGE3 protocol : protocols) {
+                protocol.sendInfo();
+            }
+            for (MERGE3 protocol : protocols) {
+                protocol.checkInconsistencies();
+            }
+            return false;
+        }, () -> Arrays.stream(channels).map(channel -> channel.getName() + ": " + channel.getView())
+                .collect(Collectors.joining("\n")));
+    }
+
+    @Test
+    public void testCoordinatorQuarantinesAndRecoversWithoutRestart() throws Exception {
+        try (JChannel first = createChannel("coordinator"); JChannel second = createChannel("member")) {
+            first.connect("quarantine-recovery");
+            second.connect("quarantine-recovery");
+            Util.waitUntilAllChannelsHaveSameView(10000, 50, first, second);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = first.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING member = second.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            var recoveryCallbacks = new AtomicInteger();
+            var cleanupAllowed = new AtomicBoolean();
+            coordinator.setOnHealthRestored(() -> {
+                if (coordinator.isQuarantined()) {
+                    assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                }
+                recoveryCallbacks.incrementAndGet();
+                if (!cleanupAllowed.get()) {
+                    throw new IllegalStateException("Induced cache cleanup failure");
+                }
+            });
+            coordinator.setDatabaseAvailable(false);
+            try {
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                assertFalse(coordinator.isQuarantined());
+                Time.setOffset(80);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertTrue(coordinator.isQuarantined());
+                // Keep one end-to-end check that quarantined traffic is detected automatically by the real failure detectors.
+                Util.waitUntil(20000, 50, () -> first.getView().size() == 1 && second.getView().size() == 1);
+                assertTrue(first.isConnected());
+                assertTrue(second.isConnected());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, member.healthStatus());
+                try (JChannel joiner = createChannel("joiner")) {
+                    joiner.connect("quarantine-recovery");
+                    Util.waitUntilAllChannelsHaveSameView(10000, 50, second, joiner);
+                    assertEquals(second.getAddress(), joiner.getView().getCoord());
+                    coordinator.setDatabaseAvailable(true);
+                    coordinator.runHealthCheck(new CapturingLog());
+                    assertTrue(coordinator.isQuarantined());
+                    assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                    assertTrue(recoveryCallbacks.get() >= 1);
+                    coordinator.writeAll();
+                    assertFalse(member.readFromDB("quarantine-recovery").stream()
+                            .anyMatch(data -> data.isCoord() && data.getAddress().equals(first.getAddress())));
+                    cleanupAllowed.set(true);
+                    coordinator.runHealthCheck(new CapturingLog());
+                    assertFalse(coordinator.isQuarantined());
+                    assertTrue(recoveryCallbacks.get() >= 2);
+                    assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, coordinator.healthStatus());
+                    assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, member.healthStatus());
+                    assertTrue(member.readFromDB("quarantine-recovery").stream()
+                            .anyMatch(data -> data.isCoord() && data.getAddress().equals(first.getAddress())));
+                    mergePartitions(first, second, joiner);
+                    coordinator.runHealthCheck(new CapturingLog());
+                    assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, coordinator.healthStatus());
+                    assertTrue(first.isConnected());
+                }
+            } finally {
+                Time.setOffset(0);
+                coordinator.setDatabaseAvailable(true);
+            }
+        }
+    }
+
+    @Test
+    public void testTransientDatabaseFailureDoesNotQuarantine() throws Exception {
+        try (JChannel first = createChannel("coordinator"); JChannel second = createChannel("member")) {
+            first.connect("quarantine-transient");
+            second.connect("quarantine-transient");
+            Util.waitUntilAllChannelsHaveSameView(10000, 50, first, second);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = first.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            var initialView = first.getView();
+            coordinator.setDatabaseAvailable(false);
+            try {
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                Time.setOffset(20);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertFalse(coordinator.isQuarantined());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                coordinator.setDatabaseAvailable(true);
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                Time.setOffset(80);
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                assertFalse(coordinator.isQuarantined());
+                assertEquals(initialView, first.getView());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, coordinator.healthStatus());
+            } finally {
+                Time.setOffset(0);
+                coordinator.setDatabaseAvailable(true);
+            }
+        }
+    }
+
+    @Test
+    public void testReadFailuresDoNotQuarantineWhilePublicationSucceeds() throws Exception {
+        try (JChannel first = createChannel("coordinator"); JChannel second = createChannel("member")) {
+            first.connect("quarantine-read-failure");
+            second.connect("quarantine-read-failure");
+            Util.waitUntilAllChannelsHaveSameView(10000, 50, first, second);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = first.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            Object selectSql = coordinator.getValue("select_all_pingdata_sql");
+            var initialView = first.getView();
+            try {
+                coordinator.setValue("select_all_pingdata_sql", "SELECT * FROM missing_table");
+                coordinator.runHealthCheck(new CapturingLog());
+                Time.setOffset(80);
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                assertFalse(coordinator.isQuarantined());
+                assertEquals(initialView, first.getView());
+            } finally {
+                coordinator.setValue("select_all_pingdata_sql", selectSql);
+                Time.setOffset(0);
+            }
+        }
+    }
+
+    @Test
+    public void testCoordinatorQuarantinesWhenDatabaseIsReadableButNotWritable() throws Exception {
+        try (JChannel first = createChannel("coordinator"); JChannel second = createChannel("member")) {
+            first.connect("quarantine-read-only");
+            second.connect("quarantine-read-only");
+            Util.waitUntilAllChannelsHaveSameView(10000, 50, first, second);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = first.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            String insertSql = coordinator.getInsertSingleSql();
+            try {
+                coordinator.setValue("insert_single_sql", "INSERT INTO missing_table VALUES (?)");
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                assertFalse(coordinator.isQuarantined());
+                Time.setOffset(80);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertTrue(coordinator.isQuarantined());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                suspectPeers(first, second);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertTrue(coordinator.isQuarantined());
+            } finally {
+                coordinator.setValue("insert_single_sql", insertSql);
+                Time.setOffset(0);
+            }
+        }
+    }
+
+    @Test
+    public void testQuarantineRecoversAfterClusterWideDatabaseOutage() throws Exception {
+        try (JChannel first = createChannel("coordinator"); JChannel second = createChannel("member")) {
+            first.connect("quarantine-full-outage");
+            second.connect("quarantine-full-outage");
+            Util.waitUntilAllChannelsHaveSameView(10000, 50, first, second);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = first.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING member = second.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            coordinator.setDatabaseAvailable(false);
+            member.setDatabaseAvailable(false);
+            try {
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                member.runHealthCheck(new CapturingLog());
+                Time.setOffset(80);
+                coordinator.runHealthCheck(new CapturingLog());
+                suspectPeers(first, second);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, member.healthStatus());
+                coordinator.setDatabaseAvailable(true);
+                member.setDatabaseAvailable(true);
+                coordinator.runHealthCheck(new CapturingLog());
+                member.writeAll();
+                mergePartitions(first, second);
+                coordinator.runHealthCheck(new CapturingLog());
+                member.runHealthCheck(new CapturingLog());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, coordinator.healthStatus());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, member.healthStatus());
+            } finally {
+                Time.setOffset(0);
+                coordinator.setDatabaseAvailable(true);
+                member.setDatabaseAvailable(true);
+            }
+        }
+    }
+
+    @Test
+    public void testQuarantineWaitsForSingletonAfterEarlyDatabaseRecovery() throws Exception {
+        try (JChannel first = createChannel("coordinator"); JChannel second = createChannel("member")) {
+            first.connect("quarantine-unchanged-view");
+            second.connect("quarantine-unchanged-view");
+            Util.waitUntilAllChannelsHaveSameView(10000, 50, first, second);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = first.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING member = second.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            var initialView = first.getView();
+            FD_ALL3 firstFailureDetector = first.getProtocolStack().findProtocol(FD_ALL3.class);
+            FD_ALL3 secondFailureDetector = second.getProtocolStack().findProtocol(FD_ALL3.class);
+            // Hold the original view until the early-recovery assertions, even on a slow test runner.
+            firstFailureDetector.stopFailureDetection();
+            secondFailureDetector.stopFailureDetection();
+            var recoveryCallbacks = new AtomicInteger();
+            coordinator.setOnHealthRestored(() -> {
+                if (coordinator.isQuarantined()) {
+                    assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                    assertEquals(1, first.getView().size());
+                }
+                recoveryCallbacks.incrementAndGet();
+            });
+            coordinator.setDatabaseAvailable(false);
+            try {
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                Time.setOffset(80);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertTrue(coordinator.isQuarantined());
+
+                coordinator.setDatabaseAvailable(true);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertTrue(coordinator.isQuarantined());
+                assertEquals(initialView, first.getView());
+                assertEquals(initialView, second.getView());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.NO_COORDINATOR, member.healthStatus());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, coordinator.healthStatus());
+                assertEquals(0, recoveryCallbacks.get());
+
+                suspectPeers(first, second);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertFalse(coordinator.isQuarantined());
+                assertTrue(recoveryCallbacks.get() >= 1);
+                assertTrue(first.isConnected());
+                mergePartitions(first, second);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, coordinator.healthStatus());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, member.healthStatus());
+                List<PingData> published = member.readFromDB("quarantine-unchanged-view");
+                assertEquals(2, published.size());
+                assertEquals(List.of(first.getView().getCoord()), published.stream().filter(PingData::isCoord)
+                        .map(PingData::getAddress).toList());
+                assertEquals(2, published.stream().filter(PingData::isCoord).findFirst().orElseThrow().mbrs().size());
+            } finally {
+                Time.setOffset(0);
+                coordinator.setDatabaseAvailable(true);
+            }
+        }
+    }
+
+    @Test
+    public void testQuarantineRecoversWhenOtherMembersHaveStopped() throws Exception {
+        try (JChannel first = createChannel("coordinator"); JChannel second = createChannel("member")) {
+            first.connect("quarantine-last-survivor");
+            second.connect("quarantine-last-survivor");
+            Util.waitUntilAllChannelsHaveSameView(10000, 50, first, second);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = first.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+            coordinator.setDatabaseAvailable(false);
+            try {
+                coordinator.writeAll();
+                coordinator.runHealthCheck(new CapturingLog());
+                Time.setOffset(80);
+                coordinator.runHealthCheck(new CapturingLog());
+                suspectPeers(first, second);
+                second.close();
+                Time.setOffset(160);
+                coordinator.setDatabaseAvailable(true);
+                coordinator.runHealthCheck(new CapturingLog());
+                assertFalse(coordinator.isQuarantined());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, coordinator.healthStatus());
+                assertTrue(first.isConnected());
+                assertEquals(1, first.getView().size());
+            } finally {
+                Time.setOffset(0);
+                coordinator.setDatabaseAvailable(true);
+            }
+        }
+    }
+
     @Test
     public void testRunHealthCheck() {
         var ping = new ControlledJdbcPing();
@@ -321,61 +633,105 @@ public class JdbcPing2Test {
         ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
         ping.runHealthCheck(capturingLog);
         assertEquals(2, callbackCount.get());
+
+        // A failed cleanup must be retried even if database health stays HEALTHY.
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
+        ping.runHealthCheck(capturingLog);
+        ping.setOnHealthRestored(() -> {
+            throw new IllegalStateException("Induced cache cleanup failure");
+        });
+        int errorsBeforeCleanup = capturingLog.errors.get();
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(errorsBeforeCleanup + 1, capturingLog.errors.get());
+        ping.setOnHealthRestored(callbackCount::incrementAndGet);
+        ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
+        ping.runHealthCheck(capturingLog);
+        assertEquals(3, callbackCount.get());
     }
 
     @Test
     public void testCachesClearedOnHealthRecovery() throws Exception {
         var ping = new ControlledJdbcPing();
         var capturingLog = new CapturingLog();
-
+        boolean initializedProfile = Profile.getInstance() == null;
+        if (initializedProfile) {
+            Profile.defaults();
+        }
         DefaultCacheManager cacheManager = new DefaultCacheManager();
-        var executor = Executors.newSingleThreadExecutor();
+        var clusterFactory = new InfinispanClusterProviderFactory() {
+            @Override
+            protected int initClusterStartupTime(KeycloakSession session) {
+                return 0;
+            }
+        };
         try {
             cacheManager.defineConfiguration(InfinispanConnectionProvider.WORK_CACHE_NAME,
                     new ConfigurationBuilder().build());
             cacheManager.defineConfiguration(InfinispanConnectionProvider.REALM_CACHE_NAME,
                     new ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL).build());
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME,
+                    new ConfigurationBuilder().build());
+            cacheManager.defineConfiguration(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME,
+                    new ConfigurationBuilder().build());
 
-            Cache<String, Object> workCache = cacheManager.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
             Cache<String, String> realmCache = cacheManager.getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
+            Cache<String, String> sessionCache = cacheManager.getCache(InfinispanConnectionProvider.USER_SESSION_CACHE_NAME);
+            Cache<String, String> authenticationCache = cacheManager.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
 
-            var cp = new InfinispanClusterProvider(0, new NodeInfo("test-node", null, "test-cluster"), workCache, executor);
-            workCache.addListener(cp.new CacheEntryListener());
-            cp.registerListener(InfinispanClusterProviderFactory.CLEAR_ALL_LOCAL_CACHES_EVENT, event ->
-                    Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
-                            .filter(cacheManager::cacheExists)
-                            .map(name -> cacheManager.<String, Object>getCache(name))
-                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
-                            .forEach(Cache::clear)
-            );
+            var connections = new DefaultInfinispanConnectionProvider(cacheManager, new TopologyInfo(cacheManager),
+                    new NodeInfo("test-node", null, "test-cluster"));
+            var session = (KeycloakSession) Proxy.newProxyInstance(getClass().getClassLoader(),
+                    new Class<?>[]{KeycloakSession.class}, (proxy, method, args) -> {
+                        if (method.getName().equals("getProvider") && args[0] == InfinispanConnectionProvider.class) {
+                            return connections;
+                        }
+                        throw new UnsupportedOperationException(method.getName());
+                    });
+            clusterFactory.create(session);
+            var recoveryListener = new AtomicReference<ProviderEventListener>();
+            var sessionFactory = (KeycloakSessionFactory) Proxy.newProxyInstance(getClass().getClassLoader(),
+                    new Class<?>[]{KeycloakSessionFactory.class}, (proxy, method, args) -> {
+                        if (method.getName().equals("register")) {
+                            recoveryListener.set((ProviderEventListener) args[0]);
+                            return null;
+                        }
+                        throw new UnsupportedOperationException(method.getName());
+                    });
+            clusterFactory.postInit(sessionFactory);
+            ping.setOnHealthRestored(() -> recoveryListener.get().onEvent(new ClusterHealthRestored()));
 
             realmCache.put("test-realm", "test-data");
-            assertEquals(1, realmCache.size());
-
-            ping.setOnHealthRestored(() ->
-                    cp.notify(InfinispanClusterProviderFactory.CLEAR_ALL_LOCAL_CACHES_EVENT,
-                            ClearCacheEvent.getInstance(), false));
-
+            sessionCache.put("test-session", "test-data");
+            authenticationCache.put("test-authentication", "test-data");
             ping.setView(new UUID(0, 0));
 
             // Disconnect: transition to ERROR
             ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR);
             ping.runHealthCheck(capturingLog);
             assertEquals("Cache should not be cleared during disconnect", 1, realmCache.size());
+            assertEquals(1, sessionCache.size());
 
-            // Reconnect: transition to HEALTHY — event broadcast clears caches on all nodes
+            // Recovery must synchronously clear database-backed caches, but not in-memory authentication sessions.
             ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
             ping.runHealthCheck(capturingLog);
             assertEquals("Cache should be cleared after health recovery", 0, realmCache.size());
+            assertEquals(0, sessionCache.size());
+            assertEquals(1, authenticationCache.size());
 
             // Populate again, stay HEALTHY — cache should NOT be cleared
             realmCache.put("new-key", "new-value");
+            sessionCache.put("new-session", "new-value");
             ping.enqueueStatus(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY);
             ping.runHealthCheck(capturingLog);
             assertEquals("Cache should not be cleared when health is stable", 1, realmCache.size());
+            assertEquals(1, sessionCache.size());
         } finally {
-            executor.shutdownNow();
+            clusterFactory.close();
             cacheManager.stop();
+            if (initializedProfile) {
+                Profile.reset();
+            }
         }
     }
 

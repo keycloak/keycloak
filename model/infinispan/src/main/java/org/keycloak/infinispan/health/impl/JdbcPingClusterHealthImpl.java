@@ -41,9 +41,8 @@ import org.jboss.logging.Logger;
  * Since each node is registered in the database, it is possible to detect if a partition is happening.
  * <p>
  * The method {@link KEYCLOAK_JDBC_PING2#healthStatus()} contains the algorithm description. If it returns
- * {@link HealthStatus#ERROR}, the healthy state does not change and relies on the Quarkus/Agroal readiness health
- * check. But, if {@link HealthStatus#NO_COORDINATOR} is returned, the state will be changed to unhealthy. The should be
- * a temporary situation as at least one coordinator must be present in the database table.
+ * {@link HealthStatus#ERROR}, the node is unhealthy because it cannot query discovery metadata or is quarantined.
+ * If {@link HealthStatus#NO_COORDINATOR} is returned, the node is also unhealthy until discovery metadata is restored.
  *
  * @see KEYCLOAK_JDBC_PING2#healthStatus()
  */
@@ -100,11 +99,9 @@ public class JdbcPingClusterHealthImpl implements ClusterHealth {
                     // fallthrough
                 case UNHEALTHY:
                 case MULTIPLE_CLUSTERS:
+                case ERROR:
                     logger.debug("Set cluster health status to unhealthy");
                     healthy = false;
-                    break;
-                case ERROR:
-                    logger.debug("Error querying the database. Skip updating the cluster health status.");
                     break;
             }
         } finally {

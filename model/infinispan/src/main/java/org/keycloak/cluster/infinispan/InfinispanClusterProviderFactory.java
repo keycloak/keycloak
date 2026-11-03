@@ -143,6 +143,37 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+            factory.register(event -> {
+                if (event instanceof ClusterHealthRestored) {
+                    clearLocalCachesAfterRecovery();
+                }
+            });
+        }
+    }
+
+    /**
+     * Clears potentially stale values after missed invalidations. Quarantine recovery calls this synchronously
+     * so the node cannot serve stale cached data when traffic and readiness are restored.
+     */
+    protected void clearLocalCachesAfterRecovery() {
+        Cache<String, Object> cache = workCache;
+        if (cache == null) {
+            return;
+        }
+        var manager = cache.getCacheManager();
+        Arrays.stream(LOCAL_CACHE_NAMES)
+                .filter(manager::cacheExists)
+                .map(manager::getCache)
+                .filter(localCache -> localCache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                .forEach(Cache::clear);
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            // These caches are database-backed; discard local copies without clearing healthy peers' session caches.
+            Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
+                    .filter(manager::cacheExists)
+                    .map(name -> manager.getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
+                    .forEach(Cache::clear);
+        }
     }
 
 
@@ -176,22 +207,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             // During split-brain only Keycloak instances contained within the same partition will receive updates via
             // the work cache. On split-brain healing, it's necessary for us to clear all local caches so that potentially
             // stale values are invalidated and subsequent requests are forced to read from the DB.
-            localExecutor.execute(() ->
-                    Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
-                            .map(name -> workCache.getCacheManager().getCache(name))
-                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
-                            .forEach(Cache::clear)
-            );
-
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
-                // If persistent user sessions are enabled, the reasoning from above is true for the user and client sessions as well.
-                // As the session caches are distributed caches and as this runs on every node, run it locally on each node.
-                localExecutor.execute(() ->
-                        Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
-                                .map(name -> workCache.getCacheManager().getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
-                                .forEach(Cache::clear)
-                );
-            }
+            localExecutor.execute(InfinispanClusterProviderFactory.this::clearLocalCachesAfterRecovery);
         }
 
         @ViewChanged

@@ -39,6 +39,9 @@ import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 
 import org.jgroups.Address;
+import org.jgroups.BytesMessage;
+import org.jgroups.Event;
+import org.jgroups.Message;
 import org.jgroups.PhysicalAddress;
 import org.jgroups.View;
 import org.jgroups.annotations.Property;
@@ -46,8 +49,10 @@ import org.jgroups.conf.AttributeType;
 import org.jgroups.logging.Log;
 import org.jgroups.protocols.JDBC_PING2;
 import org.jgroups.protocols.PingData;
+import org.jgroups.protocols.PingHeader;
 import org.jgroups.protocols.relay.SiteUUID;
 import org.jgroups.stack.IpAddress;
+import org.jgroups.util.MessageBatch;
 import org.jgroups.util.NameCache;
 import org.jgroups.util.UUID;
 import org.jgroups.util.Util;
@@ -82,8 +87,95 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     private volatile Future<?> healthCheckTask;
     private volatile Runnable onHealthRestored;
 
+    /**
+     * Epoch milliseconds of the first failed publication of this node's coordinator row, or zero when no failure is outstanding.
+     * Waiting {@link #staleness_timeout} before quarantining avoids turning transient write failures into a partition and cache rebalancing.
+     * It also lets the last successful publication expire before peers take over: ownership-aware cleanup does not necessarily delete
+     * a departed coordinator's row, which can otherwise keep the successor not ready in a two-node tie.
+     * Successful reads do not reset this timer, since they do not prove that discovery metadata can be refreshed.
+     */
+    private volatile long coordinatorWriteFailureSince;
+    private volatile boolean quarantined;
+
     @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
     protected long staleness_timeout = 60000L;
+
+    public boolean isQuarantined() {
+        return quarantined;
+    }
+
+    protected void setQuarantined(boolean quarantined) {
+        this.quarantined = quarantined;
+    }
+
+    @Override
+    public Object up(Message message) {
+        return quarantined && !Objects.equals(local_addr, message.getSrc()) ? null : super.up(message);
+    }
+
+    @Override
+    public void up(MessageBatch batch) {
+        if (quarantined) {
+            batch.removeIf(message -> !Objects.equals(local_addr, message.getSrc()), true);
+        }
+        if (!batch.isEmpty()) {
+            super.up(batch);
+        }
+    }
+
+    @Override
+    public Object down(Message message) {
+        if (!quarantined) {
+            return super.down(message);
+        }
+        if (message.getDest() == null) {
+            if (message.isFlagSet(Message.TransientFlag.DONT_LOOPBACK)) {
+                return null;
+            }
+            if (message.getSrc() == null) {
+                message.setSrc(local_addr);
+            }
+            // Preserve local protocol progress without sending the multicast to remote peers.
+            return up(message);
+        }
+        return Objects.equals(local_addr, message.getDest()) ? super.down(message) : null;
+    }
+
+    // Discovery's response methods otherwise bypass down(Message), including delayed responses.
+    @Override
+    protected void sendDiscoveryResponse(Address address, PhysicalAddress physicalAddress, String name,
+            Address destination, boolean coordinator) {
+        PingData data = new PingData(address, is_server, name, physicalAddress).coord(coordinator);
+        sendDiscoveryMessage(new BytesMessage(destination)
+                .setFlag(Message.Flag.OOB, Message.Flag.DONT_BUNDLE)
+                .putHeader(id, new PingHeader(PingHeader.GET_MBRS_RSP))
+                .setArray(marshal(data)));
+    }
+
+    @Override
+    protected void sendDiscoveryResponse(List<PingData> members, Address destination) {
+        sendDiscoveryMessage(new BytesMessage(destination)
+                .setFlag(Message.Flag.OOB, Message.Flag.DONT_BUNDLE)
+                .setFlag(Message.TransientFlag.DONT_BLOCK)
+                .putHeader(id, new PingHeader(PingHeader.GET_MBRS_RSP))
+                .setArray(marshal(members)));
+    }
+
+    private void sendDiscoveryMessage(Message message) {
+        if (quarantined) {
+            return;
+        }
+        if (stagger_timeout > 0) {
+            int viewSize = view != null ? view.size() : 10;
+            int rank = Util.getRank(view, local_addr);
+            long delay = rank == 0 ? Util.random(stagger_timeout)
+                    : stagger_timeout * rank / viewSize - stagger_timeout / viewSize;
+            // Quarantine may start after this response is queued, so recheck it through down(Message) when sending.
+            timer.schedule(() -> down(message), delay, TimeUnit.MILLISECONDS, sends_can_block);
+        } else {
+            down(message);
+        }
+    }
 
     @Override
     protected void loadDriver() {
@@ -277,6 +369,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             task.cancel(false);
             healthCheckTask = null;
         }
+        setQuarantined(false);
+        coordinatorWriteFailureSince = 0;
         super.stop();
     }
 
@@ -284,7 +378,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         if (view == null) {
             return;
         }
-        HealthStatus status = healthStatus();
+        boolean wasQuarantined = quarantined;
+        HealthStatus status = checkQuarantine(queryHealthStatus(), logger);
         boolean statusChanged = status != previousHealthStatus;
         if (statusChanged) {
             previousHealthStatus = status;
@@ -293,15 +388,12 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
         if (status == HealthStatus.HEALTHY) {
             if (statusChanged) {
-                logger.info("Cluster health restored for cluster '%s'.", cluster_name);
-                Runnable callback = onHealthRestored;
-                if (callback != null) {
-                    try {
-                        callback.run();
-                    } catch (Throwable t) {
-                        logger.error("onHealthRestored callback failed", t);
-                    }
+                // Quarantine recovery already completed cache cleanup before reopening traffic.
+                if (!wasQuarantined && !notifyHealthRestored(logger)) {
+                    previousHealthStatus = HealthStatus.ERROR;
+                    return;
                 }
+                logger.info("Cluster health restored for cluster '%s'.", cluster_name);
             }
             return;
         }
@@ -319,9 +411,15 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                         cluster_name, local_addr);
                 case NO_COORDINATOR -> logger.warn("No coordinator found in the database for cluster '%s'. "
                         + "This is most likely transient and will resolve once a coordinator is elected.", cluster_name);
-                case ERROR -> logger.warn("Failed to determine cluster health for cluster '%s' from the database. "
-                        + "This may indicate a database connectivity issue.",
-                        cluster_name);
+                case ERROR -> {
+                    if (quarantined) {
+                        logger.warn("Cluster traffic for '%s' is isolated after a sustained discovery database failure.",
+                                cluster_name);
+                    } else {
+                        logger.warn("Failed to determine cluster health for cluster '%s' from the database. "
+                                + "This may indicate a database connectivity issue.", cluster_name);
+                    }
+                }
                 case MULTIPLE_CLUSTERS -> logger.error("Multiple cluster names detected in the JDBC_PING table "
                         + "while the stateless feature is not enabled. "
                         + "Cross-cluster cache invalidation requires the stateless feature to be enabled. "
@@ -331,6 +429,91 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         } else {
             cyclesSinceLastLog++;
         }
+    }
+
+    /**
+     * Suppresses publication by the still-running InfoWriter during quarantine. A recovered database must not let
+     * this unreachable coordinator advertise itself or overwrite peers' discovery rows using its old view.
+     */
+    @Override
+    protected void writeToDB(PingData data, String cluster) throws SQLException {
+        boolean coordinatorPublication = data.isCoord() && Objects.equals(data.getAddress(), local_addr);
+        // Finish any in-flight publication before isolation, and keep its failure tracking atomic with that decision.
+        lock.lock();
+        try {
+            if (quarantined) {
+                log.debug("Skipping discovery publication while this node is isolated.");
+                return;
+            }
+            super.writeToDB(data, cluster);
+            if (coordinatorPublication) {
+                coordinatorWriteFailureSince = 0;
+            }
+        } catch (SQLException e) {
+            if (coordinatorPublication && coordinatorWriteFailureSince == 0) {
+                coordinatorWriteFailureSince = Time.currentTimeMillis();
+            }
+            throw e;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private HealthStatus checkQuarantine(HealthStatus status, Log logger) {
+        lock.lock();
+        try {
+            boolean sustainedFailure = coordinatorWriteFailureSince != 0
+                    && Time.currentTimeMillis() - coordinatorWriteFailureSince >= staleness_timeout;
+            if (!quarantined && is_coord && view.size() > 1 && sustainedFailure) {
+                logger.warn("Coordinator cannot refresh discovery metadata for cluster '%s'. "
+                        + "Isolating cluster traffic so a database-connected member can take over.", cluster_name);
+                setQuarantined(true);
+            }
+        } finally {
+            lock.unlock();
+        }
+        if (!quarantined) {
+            return status;
+        }
+        // Even if the DB returns early, finish removing peers from our local view. Reopening traffic could let
+        // heartbeats preserve the old view after peers have elected a successor, allowing our publications to
+        // overwrite discovery rows for members now belonging to that other partition.
+        if (view.size() != 1 || status == HealthStatus.ERROR) {
+            return HealthStatus.ERROR;
+        }
+        PhysicalAddress physicalAddress = (PhysicalAddress) down(new Event(Event.GET_PHYSICAL_ADDRESS, local_addr));
+        try {
+            // Verify writes and republish our physical address for merge discovery, without advertising a coordinator
+            // before cache cleanup.
+            super.writeToDB(new PingData(local_addr, true, NameCache.get(local_addr), physicalAddress).coord(false),
+                    cluster_name);
+        } catch (SQLException e) {
+            logger.warn("Discovery database is readable but cannot be written; keeping this node isolated.", e);
+            return HealthStatus.ERROR;
+        }
+        // Clear potentially stale values while traffic and readiness are still blocked; failed cleanup must be retried.
+        if (!notifyHealthRestored(logger)) {
+            return HealthStatus.ERROR;
+        }
+        coordinatorWriteFailureSince = 0;
+        setQuarantined(false);
+        writeAll();
+        logger.info("Database access and local caches restored for cluster '%s'. Resuming normal cluster traffic.",
+                cluster_name);
+        return queryHealthStatus();
+    }
+
+    private boolean notifyHealthRestored(Log logger) {
+        Runnable callback = onHealthRestored;
+        if (callback != null) {
+            try {
+                callback.run();
+            } catch (Throwable t) {
+                logger.error("onHealthRestored callback failed", t);
+                return false;
+            }
+        }
+        return true;
     }
 
     public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
@@ -360,14 +543,19 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      *     <li>If an error occurs fetching the data, it returns {@link HealthStatus#ERROR}</li>
      *     <li>Filters out non coordinator members</li>
      *     <li>If no coordinator is found, it return {@link HealthStatus#NO_COORDINATOR}</li>
-     *     <li>If multiple coordinators are found, it compares them and uses the coordinator with the lowest {@link UUID}</li>
+     *     <li>If multiple coordinators are found, it selects the largest partition, breaking ties by the lowest coordinator {@link UUID}</li>
      *     <li>Finally, it compares if the coordinator is the same as the current view coordinator. If so, it returns {@link HealthStatus#HEALTHY}, otherwise {@link HealthStatus#UNHEALTHY}</li>
      * </ul>
      *
      * @return The {@link HealthStatus}.
+     *         Quarantined nodes also return {@link HealthStatus#ERROR}.
      * @see HealthStatus
      */
     public HealthStatus healthStatus() {
+        return quarantined ? HealthStatus.ERROR : queryHealthStatus();
+    }
+
+    protected HealthStatus queryHealthStatus() {
         try {
             HealthStatus status = readFromDB(cluster_name)
                     .stream()
