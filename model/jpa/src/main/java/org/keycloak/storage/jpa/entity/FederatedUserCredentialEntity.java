@@ -25,6 +25,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -80,6 +81,10 @@ public class FederatedUserCredentialEntity {
     @Deprecated // Needed just for backwards compatibility when migrating old credentials
     @Column(name="SALT")
     protected byte[] salt;
+
+    @Version
+    @Column(name="VERSION")
+    private int version;
 
 
     public String getId() {
