@@ -821,6 +821,10 @@ Therefore, review the clients that were registered through a Client ID Metadata 
 Delete a client whose back-channel logout URL or CIBA client notification endpoint is a destination that {project_name} should not send requests to.
 A deleted client is registered again from its client metadata document on its next authorization request.
 
+=== New index for searching users by attribute
+
+A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
