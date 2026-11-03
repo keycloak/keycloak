@@ -38,6 +38,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.hamcrest.number.OrderingComparison.lessThan;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -126,6 +127,36 @@ public class ManualMigrationEmptyDatabaseDistTest {
                 countOccurrences(output, CREATE_CHANGELOG_TABLE), is(0));
         assertThat("lock table must not be created when it already existed",
                 countOccurrences(output, CREATE_LOCK_TABLE), is(0));
+    }
+
+    /**
+     * Some changesets replace an index by dropping it and creating one of the same name. The script is generated
+     * against an empty database, where the index to drop does not exist yet because an earlier changeset of the
+     * same script creates it. The drop must therefore be emitted regardless, otherwise creating the replacement
+     * fails with "already exists" when the script is applied.
+     */
+    @Test
+    void testEmptyDatabaseExportDropsReplacedIndexes(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws IOException {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+
+        runner.run("start-dev",
+                "--spi-connections-jpa-quarkus-migration-strategy=manual",
+                "--spi-connections-jpa-quarkus-initialize-empty=false")
+                .assertMessage("Database not initialized, please initialize database with");
+
+        File script = rawDistRootPath.getDistRootPath().resolve("bin").resolve("keycloak-database-update.sql").toFile();
+        String output = FileUtils.readFileToString(script, Charset.defaultCharset());
+
+        for (String index : new String[] { "IDX_USER_SESSION_EXPIRATION_CREATED", "IDX_USER_SESSION_EXPIRATION_LAST_REFRESH", "IDX_ROOT_AUTH_SESSION_REALM" }) {
+            int firstCreate = output.indexOf("CREATE INDEX PUBLIC." + index);
+            int drop = output.indexOf("DROP INDEX PUBLIC." + index);
+            int lastCreate = output.lastIndexOf("CREATE INDEX PUBLIC." + index);
+
+            assertThat(index + " must be created by an earlier changeset", firstCreate, greaterThan(-1));
+            assertThat(index + " must be dropped after it is first created", drop, greaterThan(firstCreate));
+            assertThat(index + " must be re-created after it is dropped", lastCreate, greaterThan(drop));
+        }
     }
 
     private static int countOccurrences(String haystack, String needle) {
