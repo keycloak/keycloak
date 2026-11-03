@@ -1,4 +1,5 @@
 <#import "divider.ftl" as divider>
+<#-- Use <@identityProviders.show social=social/> to render the configured identity providers and divider. -->
 <#macro show social>
   <#assign useGrid = (social.providers?size gt 3)>
   <@divider.or text=msg(useGrid?then("identity-provider-login-label-divider", "orLabel")) />

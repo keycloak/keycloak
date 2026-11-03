@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
     <#if section = "header">
         ${msg("frontchannel-logout.title")}
@@ -23,7 +24,7 @@
                 document.addEventListener('readystatechange', readystatechange);
                 </#outputformat>
             </script>
-            <a id="continue" class="btn btn-primary" href="${logout.logoutRedirectUri}">${msg("doContinue")}</a>
+            <@buttons.buttonLink id="continue" href=logout.logoutRedirectUri label="doContinue" class=["kcButtonPrimaryClass"] />
         </#if>
     </#if>
 </@layout.registrationLayout>

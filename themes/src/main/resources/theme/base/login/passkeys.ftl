@@ -1,3 +1,4 @@
+<#-- Use <@passkeys.conditionalUIData/> to add conditional WebAuthn data and its alternative login action. -->
 <#macro conditionalUIData>
     <#if enableWebAuthnConditionalUI?has_content>
         <form id="webauth" action="${url.loginAction}" method="post">

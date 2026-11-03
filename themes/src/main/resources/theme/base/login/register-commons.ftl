@@ -1,4 +1,5 @@
 <#import "field.ftl" as field>
+<#-- Use <@registerCommons.termsAcceptance/> inside registration forms to render required terms and errors. -->
 <#macro termsAcceptance>
     <#if termsAcceptanceRequired??>
         <div class="${properties.kcFormGroupClass!}">

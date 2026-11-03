@@ -1,6 +1,7 @@
 <#import "field.ftl" as field>
 <#import "footer.ftl" as loginFooter>
 <#import "theme-resources.ftl" as themeResourceTags>
+<#-- Render the attempted username and restart-login action with <@layout.username/>. -->
 <#macro username>
   <#assign label>
     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -16,7 +17,7 @@
         <button id="reset-login" class="${properties.kcFormPasswordVisibilityButtonClass!} kc-login-tooltip" type="button" 
               aria-label="${msg('restartLoginTooltip')}" onclick="location.href='${url.loginRestartFlowUrl}'">
             <#if properties.kcButtonIconClass?has_content><span class="${properties.kcButtonIconClass!}"></#if>
-            <i class="fa-sync-alt fas" aria-hidden="true"></i>
+            <i class="${properties.kcRestartLoginIconClass!}" aria-hidden="true"></i>
             <#if properties.kcButtonIconClass?has_content></span></#if>
             <span class="kc-tooltip-text">${msg("restartLoginTooltip")}</span>
         </button>
@@ -25,6 +26,7 @@
   </@field.group>
 </#macro>
 
+<#-- Use <@layout.registrationLayout; section> and render the requested header, form, info, or socialProviders section. -->
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}" lang="${lang}"<#if realm.internationalizationEnabled> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>

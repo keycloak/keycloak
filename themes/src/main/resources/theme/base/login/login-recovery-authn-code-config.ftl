@@ -12,7 +12,7 @@
             <i class="${properties.kcRecoveryCodesWarningIconClass!}" aria-hidden="true"></i>
         </div>
         <h4 class="${properties.kcAlertTitleClass!}">
-            <span class="pf-screen-reader">Warning alert:</span>
+            <span class="${properties.kcSrOnlyClass!}">Warning alert:</span>
             ${msg("recovery-code-config-warning-title")}
         </h4>
         <div class="${properties.kcAlertDescriptionClass!}">

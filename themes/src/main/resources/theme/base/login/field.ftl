@@ -1,3 +1,4 @@
+<#-- Nest a custom control in <@field.group name="field-id" label=msg("labelKey")> for its label and errors. -->
 <#macro group name label error="" required=false>
 
 <div class="${properties.kcFormGroupClass!}">
@@ -31,6 +32,7 @@
 
 </#macro>
 
+<#-- Use <@field.errorIcon error=message/> inside a control to show its validation status. -->
 <#macro errorIcon error="">
   <#if error?has_content>
     <span class="${properties.kcFormControlUtilClass!}">
@@ -41,6 +43,7 @@
   </#if>
 </#macro>
 
+<#-- Use <@field.input name="username" label=msg("username")/>; errors default to messagesPerField. -->
 <#macro input name label value="" required=false autocomplete="off" fieldName=name error=messagesPerField.get(fieldName) autofocus=false>
   <@group name=name label=label error=error required=required>
     <span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
@@ -52,6 +55,7 @@
   </@group>
 </#macro>
 
+<#-- Use <@field.password name="password" label=msg("password")>; nest optional helper text or controls. -->
 <#macro password name label value="" required=false forgotPassword=false fieldName=name error=messagesPerField.get(fieldName) autocomplete="off" autofocus=false>
   <@group name=name label=label error=error required=required>
     <div class="${properties.kcInputGroup!}">
@@ -94,6 +98,7 @@
   </#if>
 </#macro>
 
+<#-- Use <@field.clipboard name="code" label=msg("labelKey") value=code/> for copy and expand controls. -->
 <#macro clipboard name label ariaLabel=label value="" readonly=true>
   <@group name=name label=label>
     <div class="${properties.kcCodeClipboardCopyClass!}" id="kc-${name}-clipboard">
@@ -149,6 +154,7 @@
   </@group>
 </#macro>
 
+<#-- Use <@field.checkbox name="rememberMe" label=msg("rememberMe") value=true/>; value sets the checked state. -->
 <#macro checkbox name label value=false required=false invalid=false>
   <div class="${properties.kcCheckboxClass!}">
     <label for="${name}" class="${properties.kcCheckboxClass!}">

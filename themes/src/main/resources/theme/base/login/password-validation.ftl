@@ -1,3 +1,4 @@
+<#-- Include <@validator.templates/> once before enabling client-side password validation. -->
 <#macro templates>
     <template id="errorTemplate">
         <div class="${properties.kcFormHelperTextClass!}" aria-live="polite">
@@ -14,6 +15,7 @@
     </template>
 </#macro>
 
+<#-- Use <@validator.script field="password"/> to attach the configured password policy to that input. -->
 <#macro script field="">
     <script type="module">
         <#outputformat "JavaScript">

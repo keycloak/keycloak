@@ -32,6 +32,14 @@
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
+            <!-- Share the Weblate login bundles with the standalone legacy theme. -->
+            <resource>
+                <directory>src/main/resources/theme/base/login/messages</directory>
+                <targetPath>theme/base-legacy/login/messages</targetPath>
+                <includes>
+                    <include>messages_*.properties</include>
+                </includes>
+            </resource>
         </resources>
         <plugins>
             <plugin>
@@ -66,7 +74,25 @@
                     <resource>
                         <directory>src/main/resources-community</directory>
                     </resource>
+                    <resource>
+                        <directory>src/main/resources-community/theme/base/login</directory>
+                        <targetPath>theme/base-legacy/login</targetPath>
+                        <includes>
+                            <include>messages/messages_*.properties</include>
+                            <include>theme.properties</include>
+                        </includes>
+                    </resource>
                 </resources>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <configuration>
+                            <!-- Let shared locale metadata override the default legacy properties. -->
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>
