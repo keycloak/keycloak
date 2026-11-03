@@ -63,7 +63,7 @@ export default function Page() {
       if (!canView || !id) {
         return undefined;
       }
-      return adminClient.components.findOne({ id });
+      return (await adminClient.components.findOne({ id })) ?? undefined;
     },
     setPageData,
     [id, canView],
