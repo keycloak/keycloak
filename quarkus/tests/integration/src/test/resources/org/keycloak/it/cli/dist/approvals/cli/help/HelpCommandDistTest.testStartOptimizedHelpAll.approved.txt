@@ -59,6 +59,18 @@ Cache:
                        and certificates are created and rotated automatically, which is recommended
                        for standard setups. Default: true. Available only when a TCP based
                        cache-stack is used.
+--cache-embedded-mtls-identity-algorithm <algorithm>
+                     Algorithm for automatically generated cluster identities. A different stored
+                       algorithm is replaced at startup. Scheduled rotation uses this algorithm.
+                       Possible values are: RSA, ML-DSA-65. Default: RSA. Available only when
+                       property 'cache-embedded-mtls-enabled' is enabled.
+--cache-embedded-mtls-key-exchange-groups <groups>
+                     Allowed TLS key-exchange groups for embedded cluster connections, in
+                       preference order. Defaults to the TLS provider's groups. All configured
+                       groups must be supported by the selected TLS provider. Use X25519MLKEM768
+                       alone to require post-quantum hybrid key exchange. Requires Java 21 or later
+                       and provider support for the configured groups. Available only when property
+                       'cache-embedded-mtls-enabled' is enabled.
 --cache-embedded-mtls-key-store-file <file>
                      The Keystore file path. The Keystore must contain the certificate to use by
                        the TLS protocol. By default, it looks up 'cache-mtls-keystore.p12' under

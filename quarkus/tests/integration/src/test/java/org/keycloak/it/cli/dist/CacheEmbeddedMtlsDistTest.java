@@ -20,6 +20,8 @@ package org.keycloak.it.cli.dist;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
@@ -30,6 +32,8 @@ import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @DistributionTest(stopServer = Mode.BEFORE_BOOTSTRAP)
 public class CacheEmbeddedMtlsDistTest {
@@ -43,7 +47,8 @@ public class CacheEmbeddedMtlsDistTest {
                 CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE,
                 CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD,
                 CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD,
-                CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION
+                CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION,
+                CachingOptions.CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS
         )) {
             var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=false", "--%s=1".formatted(option.getKey()));
             result.assertError("Disabled option: '--%s'. Available only when property 'cache-embedded-mtls-enabled' is enabled".formatted(option.getKey()));
@@ -110,6 +115,72 @@ public class CacheEmbeddedMtlsDistTest {
         var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true");
         result.assertMessage("JGroups JDBC_PING discovery enabled.");
         result.assertMessage("JGroups Encryption enabled (mTLS).");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    public void testCacheEmbeddedMtlsRejectsUnsupportedNamedGroup(KeycloakRunner runner) throws Exception {
+        assumeTrue(supportedNamedGroups().length > 0, "TLS provider must report supported named groups");
+        var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-key-exchange-groups=not-a-tls-group");
+        result.assertError("Unsupported TLS named group 'not-a-tls-group' in option 'cache-embedded-mtls-key-exchange-groups'");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    public void testCacheEmbeddedMtlsHybridKeyExchange(KeycloakRunner runner) throws Exception {
+        assumeTrue(Arrays.stream(supportedNamedGroups()).anyMatch("X25519MLKEM768"::equalsIgnoreCase),
+                "TLS provider must support X25519MLKEM768");
+        var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-key-exchange-groups=X25519MLKEM768");
+        result.assertMessage("JGroups JDBC_PING discovery enabled.");
+        result.assertMessage("JGroups Encryption enabled (mTLS).");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Exercises local server restarts")
+    public void testIdentityMigrationAndRollback(KeycloakRunner runner) throws Exception {
+        assumeTrue(Runtime.version().feature() >= 21, "Per-connection signature configuration requires Java 21 or later");
+        for (String algorithm : new String[]{"RSA", "ML-DSA-65", "RSA", "ML-DSA-65"}) {
+            var result = runner.run("start-dev", "--cache=ispn",
+                    "--cache-embedded-mtls-key-exchange-groups=X25519MLKEM768",
+                    "--cache-embedded-mtls-identity-algorithm=" + algorithm);
+            result.assertMessage("JGroups Encryption enabled (mTLS).");
+            runner.stop();
+        }
+        var strict = runner.run("start-dev", "--cache=ispn",
+                "--cache-embedded-mtls-key-exchange-groups=X25519MLKEM768",
+                "--cache-embedded-mtls-identity-algorithm=ML-DSA-65");
+        strict.assertMessage("JGroups Encryption enabled (mTLS).");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Exercises local server restarts")
+    public void testAutomaticProviderSelectionForPqIdentity(KeycloakRunner runner) throws Exception {
+        assumeTrue(Runtime.version().feature() >= 21, "Per-connection TLS configuration requires Java 21 or later");
+        var result = runner.run("start-dev", "--cache=ispn",
+                "--cache-embedded-mtls-key-exchange-groups=X25519MLKEM768",
+                "--cache-embedded-mtls-identity-algorithm=ML-DSA-65");
+        result.assertMessage("JGroups Encryption enabled (mTLS).");
+        result.assertMessage("identity=ML-DSA-65, provider=");
+        result.assertMessage("hybrid key exchange=required");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Exercises automatic provider selection on the local runtime")
+    public void testAutomaticHybridKeyExchangeWithRsaIdentity(KeycloakRunner runner) throws Exception {
+        assumeTrue(Runtime.version().feature() >= 21, "Per-connection TLS configuration requires Java 21 or later");
+        var result = runner.run("start-dev", "--cache=ispn",
+                "--cache-embedded-mtls-key-exchange-groups=X25519MLKEM768");
+        result.assertMessage("JGroups Encryption enabled (mTLS).");
+    }
+
+    private static String[] supportedNamedGroups() throws Exception {
+        try {
+            var groups = (String[]) SSLParameters.class.getMethod("getNamedGroups")
+                    .invoke(SSLContext.getDefault().getSupportedSSLParameters());
+            return groups == null ? new String[0] : groups;
+        } catch (NoSuchMethodException e) {
+            return new String[0];
+        }
     }
 
     private void doFileAndPasswordValidation(KeycloakRunner runner, Option<String> fileOption, Option<String> passwordOption) {

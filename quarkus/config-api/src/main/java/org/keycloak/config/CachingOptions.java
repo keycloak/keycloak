@@ -18,6 +18,7 @@ public class CachingOptions {
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-file";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-password";
     public static final String CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-rotation-interval-days";
+    public static final String CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-key-exchange-groups";
     public static final String CACHE_EMBEDDED_NODE_NAME_PROPERTY = CACHE_EMBEDDED_PREFIX + "-node-name";
     public static final String CACHE_EMBEDDED_CLUSTER_NAME_PROPERTY = CACHE_EMBEDDED_PREFIX + "-cluster-name";
     public static final String CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-bind-address";
@@ -94,10 +95,24 @@ public class CachingOptions {
             .defaultValue(Boolean.TRUE)
             .build();
 
+    public static final Option<String> CACHE_EMBEDDED_MTLS_IDENTITY_ALGORITHM = new OptionBuilder<>("cache-embedded-mtls-identity-algorithm", String.class)
+            .category(OptionCategory.CACHE)
+            .expectedValues("RSA", "ML-DSA-65")
+            .defaultValue("RSA")
+            .description("Algorithm for automatically generated cluster identities. A different stored algorithm is replaced at startup. Scheduled rotation uses this algorithm.")
+            .build();
+
     public static final Option<String> CACHE_EMBEDDED_MTLS_KEYSTORE = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_KEYSTORE_FILE_PROPERTY, String.class)
             .category(OptionCategory.CACHE)
             .description("The Keystore file path. The Keystore must contain the certificate to use by the TLS protocol. " +
                     "By default, it looks up 'cache-mtls-keystore.p12' under conf/ directory.")
+            .build();
+
+    public static final Option<List<String>> CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS = OptionBuilder.listOptionBuilder(CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("Allowed TLS key-exchange groups for embedded cluster connections, in preference order. "
+                    + "Defaults to the TLS provider's groups. All configured groups must be supported by the selected TLS provider. "
+                    + "Use X25519MLKEM768 alone to require post-quantum hybrid key exchange. Requires Java 21 or later and provider support for the configured groups.")
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD = new OptionBuilder<>(CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD_PROPERTY, String.class)

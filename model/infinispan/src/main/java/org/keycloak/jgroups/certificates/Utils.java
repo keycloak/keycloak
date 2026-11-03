@@ -26,6 +26,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -38,7 +39,6 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
 
@@ -54,9 +54,19 @@ public final class Utils {
     }
 
     public static JGroupsCertificate generateSelfSignedCertificate(Duration validity) {
+        return generateSelfSignedCertificate(validity, "RSA");
+    }
+
+    public static JGroupsCertificate generateSelfSignedCertificate(Duration validity, String algorithm) {
         var endDate = Date.from(Instant.now().plus(validity));
-        var keyPair = KeyUtils.generateRsaKeyPair(2048);
-        var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT, BigInteger.valueOf(System.currentTimeMillis()), endDate);
+        var keyPair = "RSA".equals(algorithm) ? KeyUtils.generateRsaKeyPair(2048) : generateKeyPair(algorithm);
+        X509Certificate certificate;
+        try {
+            certificate = CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(
+                    keyPair, JGROUPS_SUBJECT, BigInteger.valueOf(System.currentTimeMillis()), endDate);
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Cannot generate the requested JGroups certificate signatures", e);
+        }
 
         logger.debugf("Created JGroups certificate. Valid until %s", certificate.getNotAfter());
 
@@ -68,10 +78,35 @@ public final class Utils {
         return entity;
     }
 
+    private static java.security.KeyPair generateKeyPair(String algorithm) {
+        try {
+            return CryptoIntegration.getProvider().getKeyPairGen(algorithm).generateKeyPair();
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Cannot generate JGroups identity: " + algorithm, e);
+        }
+    }
+
     public static X509ExtendedKeyManager createKeyManager(JGroupsCertificate certificate) throws GeneralSecurityException, IOException {
-        var ks = getKeyStore();
-        ks.setKeyEntry(certificate.getAlias(), certificate.getPrivateKey(), KEY_PASSWORD, new java.security.cert.Certificate[]{certificate.getCertificate()});
-        var kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        return createKeyManager(certificate, null);
+    }
+
+    public static X509ExtendedKeyManager createKeyManager(JGroupsCertificate certificate, java.security.Provider tls) throws GeneralSecurityException, IOException {
+        var ks = tls != null && "BCJSSE".equals(tls.getName()) ? KeyStore.getInstance("PKCS12", "BC") : getKeyStore();
+        if (tls != null && "BCJSSE".equals(tls.getName())) {
+            ks.load(null, null);
+        }
+        var nodeCertificate = certificate.getCertificate();
+        if (tls != null && "SunJSSE".equals(tls.getName())) {
+            nodeCertificate = (X509Certificate) java.security.cert.CertificateFactory.getInstance("X.509", "SUN")
+                    .generateCertificate(new java.io.ByteArrayInputStream(nodeCertificate.getEncoded()));
+        }
+        var privateKey = certificate.getPrivateKey();
+        if (tls != null && "BCJSSE".equals(tls.getName())) {
+            privateKey = java.security.KeyFactory.getInstance(certificate.getCertificate().getPublicKey().getAlgorithm(), "BC")
+                    .generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(privateKey.getEncoded()));
+        }
+        ks.setKeyEntry(certificate.getAlias(), privateKey, KEY_PASSWORD, new java.security.cert.Certificate[]{nodeCertificate});
+        var kmf = tls == null ? KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()) : KeyManagerFactory.getInstance("PKIX", tls);
         kmf.init(ks, KEY_PASSWORD);
         for (KeyManager km : kmf.getKeyManagers()) {
             if (km instanceof X509ExtendedKeyManager) {
@@ -82,9 +117,16 @@ public final class Utils {
     }
 
     public static X509ExtendedTrustManager createTrustManager(JGroupsCertificate certificate) throws GeneralSecurityException, IOException {
-        var ks = getKeyStore();
+        return createTrustManager(certificate, null);
+    }
+
+    public static X509ExtendedTrustManager createTrustManager(JGroupsCertificate certificate, java.security.Provider tls) throws GeneralSecurityException, IOException {
+        var ks = tls != null && "BCJSSE".equals(tls.getName()) ? KeyStore.getInstance("PKCS12", "BC") : getKeyStore();
+        if (tls != null && "BCJSSE".equals(tls.getName())) {
+            ks.load(null, null);
+        }
         ks.setCertificateEntry(certificate.getAlias(), certificate.getCertificate());
-        var tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        var tmf = tls == null ? TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()) : TrustManagerFactory.getInstance("PKIX", tls);
         tmf.init(ks);
         for (TrustManager tm : tmf.getTrustManagers()) {
             if (tm instanceof X509ExtendedTrustManager) {

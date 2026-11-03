@@ -113,14 +113,20 @@ public class JGroupsCertificate {
 
     @JsonIgnore
     public KeyPair getKeyPair() {
-        var prv = PemUtils.decodePrivateKey(getPrivateKeyPem());
-        var pub = PemUtils.decodePublicKey(getPublicKeyPem());
+        var prv = getPrivateKey();
+        var pub = getCertificate().getPublicKey();
         return new KeyPair(pub, prv);
     }
 
     @JsonIgnore
     public PrivateKey getPrivateKey() {
-        return PemUtils.decodePrivateKey(getPrivateKeyPem());
+        try {
+            return org.keycloak.common.crypto.CryptoIntegration.getProvider()
+                    .getKeyFactory(getCertificate().getPublicKey().getAlgorithm())
+                    .generatePrivate(new java.security.spec.PKCS8EncodedKeySpec(PemUtils.pemToDer(getPrivateKeyPem())));
+        } catch (java.security.GeneralSecurityException e) {
+            throw new IllegalStateException("Cannot decode JGroups identity key", e);
+        }
     }
 
     @Override

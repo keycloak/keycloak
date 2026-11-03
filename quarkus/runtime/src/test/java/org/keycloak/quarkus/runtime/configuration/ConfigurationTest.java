@@ -54,6 +54,7 @@ import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.ssl.DefaultJavaSSLFactory;
 import org.postgresql.xa.PGXADataSource;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1149,10 +1150,29 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testMtlsIdentityOptions() {
+        var config = createConfigFromCliArguments("--cache=ispn", "--cache-embedded-mtls-identity-algorithm=ML-DSA-65");
+        assertEquals("ML-DSA-65", config.getConfigValue("kc.spi-jgroups-mtls--default--identity-algorithm").getValue());
+    }
+
+    @Test
     public void testMtlsEnabledMapsToRuntimeProperty() {
         var config = createConfigFromCliArguments("--cache-embedded-mtls-enabled=false");
         assertEquals("false", config.getConfigValue("kc.spi-jgroups-mtls--default--activated").getValue());
         assertNull(config.getConfigValue("kc.spi-jgroups-mtls--default--enabled").getValue());
+    }
+
+    @Test
+    public void testMtlsKeyExchangeGroupsCliMapsToEmbeddedTransport() {
+        var config = createConfigFromCliArguments("--cache=ispn", "--cache-embedded-mtls-key-exchange-groups=X25519MLKEM768,x25519");
+        assertEquals("X25519MLKEM768,x25519", config.getConfigValue("kc.spi-cache-embedded--default--mtls-key-exchange-groups").getValue());
+    }
+
+    @Test
+    public void testMtlsKeyExchangeGroupsEnvironmentMapsToEmbeddedTransport() {
+        putEnvVar("KC_CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS", "X25519MLKEM768");
+        var scope = initConfig("cache-embedded", "default");
+        assertArrayEquals(new String[]{"X25519MLKEM768"}, scope.getArray("mtlsKeyExchangeGroups"));
     }
     
     @Test

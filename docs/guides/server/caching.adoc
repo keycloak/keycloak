@@ -343,6 +343,137 @@ The keys and the certificate are stored in the database so they are available to
 By default, the certificate is valid for 60 days and is rotated at runtime every 30 days.
 Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
 
+=== Post-quantum-safe transport stacks
+
+You can protect cluster traffic against future quantum attacks in two stages:
+
+* *Protect recorded traffic*: require hybrid key exchange. This protects against an attacker recording encrypted traffic now and decrypting it later. You can keep the existing RSA certificates.
+* *Add post-quantum authentication*: migrate the cluster identity from RSA to ML-DSA-65. This also protects authentication against quantum attacks.
+
+These settings secure embedded-cluster connections between {project_name} servers. HTTPS, database connections, and other application connections have their own security settings.
+
+==== Prerequisites
+
+// TODO: Keycloak 27.0 will require JDK 21 or later, so the docs can be streamlined once that is in place.
+// TODO: Keylcoak 27.0 will only allow automatic certificate management, so the docs can be streamlined once that is in place.
+
+Use JDK 21 or later on every server where you want to enable post-quantum-safe transport.
+These steps assume the default automatic cluster-certificate management.
+{project_name} automatically uses the bundled Bouncy Castle TLS implementation when the JDK cannot provide the configured cluster transport protection.
+
+[cols="2,3",options="header"]
+|===
+|Your goal |What to configure
+|Protect recorded traffic against harvest-now-decrypt-later attacks
+|Require `X25519MLKEM768` key exchange. Keep the default RSA identity if you do not need post-quantum authentication.
+|Also protect node authentication against quantum attacks
+|Require `X25519MLKEM768` key exchange. Migrate the identity to `ML-DSA-65`.
+|===
+
+==== Understanding hybrid protection
+
+A *hybrid* key exchange combines two different ways of establishing the encryption secret for a connection.
+`X25519MLKEM768` combines conventional X25519 with post-quantum ML-KEM-768, and incorporates both results into that secret.
+An attacker must defeat both components to recover it, assuming the combination and its implementation remain secure.
+
+This combination protects against two different risks:
+
+* A sufficiently capable quantum computer could break X25519. ML-KEM is designed to retain protection against that attack, including when an attacker records today's traffic for later decryption.
+* Post-quantum algorithms have less deployment history than conventional algorithms. If a weakness is discovered in ML-KEM, X25519 can still protect the connection against attackers who cannot break X25519.
+
+Hybrid protection therefore lets you adopt post-quantum key exchange while retaining the protection of an established conventional algorithm.
+Both components participate in each hybrid connection; this is different from offering a list of alternative algorithms and letting a peer choose just one.
+Adding `x25519` to the allowed group list permits conventional-only connections for compatibility, and those connections do not receive the hybrid protection.
+
+The cluster identity currently has *one* algorithm, either RSA or ML-DSA-65.
+A hybrid identity would require both a conventional and a post-quantum authentication proof, providing a similar hedge against a weakness in either algorithm. That combination is not currently supported by this configuration.
+Keeping RSA while enabling hybrid key exchange protects recorded traffic, but leaves authentication dependent on RSA.
+Switching the identity to ML-DSA-65 adds post-quantum authentication, while relying on ML-DSA alone for that authentication protection.
+
+The post-quantum transport configuration described here is unavailable in FIPS mode.
+
+==== Protecting recorded cluster traffic
+
+Once all cluster members support hybrid key exchange, start every server with:
+
+[source,bash]
+----
+bin/kc.sh start --cache-embedded-mtls-key-exchange-groups=X25519MLKEM768
+----
+
+Or set `KC_CACHE_EMBEDDED_MTLS_KEY_EXCHANGE_GROUPS=X25519MLKEM768`.
+
+`X25519MLKEM768` combines conventional X25519 key exchange with post-quantum ML-KEM-768.
+Specifying this group alone requires hybrid key exchange; incompatible peers cannot connect.
+Certificate generation, database storage, and automatic rotation continue to work without additional settings.
+You can stop at this stage if your goal is protection against harvest-now-decrypt-later attacks.
+
+==== Rolling update to hybrid key exchange
+
+When updating an existing cluster, allow hybrid and conventional key exchange temporarily:
+
+[source,bash]
+----
+bin/kc.sh start --cache-embedded-mtls-key-exchange-groups=X25519MLKEM768,x25519,secp256r1
+----
+
+. Update one server at a time to a release with these options, using JDK 21 or later and the mixed group list above. Servers still running an older release keep their existing configuration.
+. After every server has been updated, confirm that the cluster is healthy.
+. Perform another rolling restart with only `cache-embedded-mtls-key-exchange-groups=X25519MLKEM768` to require hybrid key exchange.
+
+The mixed list permits conventional connections while older servers remain. Those connections are not protected against harvest-now-decrypt-later attacks.
+Choose conventional groups compatible with your existing servers; `x25519` and `secp256r1` cover typical Java TLS defaults.
+To return to servers without hybrid support, first restore a compatible mixed list on all remaining members.
+
+==== Adding post-quantum authentication
+
+Complete a rolling software upgrade so every cluster member runs a {project_name} release supporting `cache-embedded-mtls-identity-algorithm=ML-DSA-65`, on JDK 21 or later.
+Keep `cache-embedded-mtls-identity-algorithm=RSA` throughout this software/JDK rollout. Do not change the shared identity while any member still runs an older release without ML-DSA identity support.
+Complete the hybrid key-exchange rollout above as well.
+
+After all members meet these requirements, begin a separate rolling restart to change the identity algorithm.
+
+To change the identity, restart servers one at a time with:
+
+[source,bash]
+----
+bin/kc.sh start --cache-embedded-mtls-key-exchange-groups=X25519MLKEM768 --cache-embedded-mtls-identity-algorithm=ML-DSA-65
+----
+
+The first restarted server replaces the shared RSA identity in the database with an ML-DSA-65 identity.
+Running servers adopt the database identity for new connections and continue authenticating cluster members with the updated identity.
+Established connections can continue while the rolling update proceeds.
+Certificates are generated and rotated automatically.
+
+Use the same identity-generation setting on every member. A server restarting with `cache-embedded-mtls-identity-algorithm=RSA` can replace the shared identity with RSA again.
+Scheduled certificate rotation also follows the configured generation algorithm.
+
+The completed configuration provides hybrid key exchange and ML-DSA authentication.
+The key exchange still includes a conventional component; authentication now relies entirely on ML-DSA rather than RSA.
+This protects authentication against quantum attacks, but does not retain an RSA hedge against a weakness in ML-DSA.
+
+==== Rolling back the identity algorithm
+
+To return to RSA, restart servers one at a time with:
+
+[source,bash]
+----
+bin/kc.sh start --cache-embedded-mtls-key-exchange-groups=X25519MLKEM768 --cache-embedded-mtls-identity-algorithm=RSA
+----
+
+The first restarted server replaces the stored identity. Other members adopt it for new connections.
+Hybrid key exchange continues to protect recorded traffic even after authentication returns to RSA.
+
+==== Verifying protection
+
+Check that all expected members are present and the cluster is healthy after each rollout stage.
+The startup security summary reports the identity algorithm, TLS provider, allowed key-exchange groups, and whether hybrid key exchange is required or conventional fallback is permitted.
+For protection against recorded-traffic attacks, verify that it reports `hybrid key exchange=required`.
+After migrating authentication, also verify `identity=ML-DSA-65`.
+Identity and TLS-provider changes are logged when a server reloads its identity.
+Requiring only `X25519MLKEM768` prevents conventional-only key exchange; incompatible members cannot connect.
+After migrating authentication, keep `cache-embedded-mtls-identity-algorithm=ML-DSA-65` on every server so a later restart or certificate rotation does not restore RSA.
+
 === Running inside a service mesh
 
 When using a service mesh like Istio, you might need to allow a direct mTLS communication between the {project_name} Pods to allow for the mutual authentication to work.
