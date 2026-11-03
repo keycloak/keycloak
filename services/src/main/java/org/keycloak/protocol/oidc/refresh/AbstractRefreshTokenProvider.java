@@ -322,7 +322,9 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
     @Override
     public void lockForRevocation(RefreshToken refreshToken) {
         RealmModel realm = session.getContext().getRealm();
-        if (!realm.isRevokeRefreshToken()) {
+        // The revocation endpoint authenticates the client and verifies the token was issued for it before
+        // calling this, so the client in the context is the one whose override has to be honoured.
+        if (!TokenManager.isRevokeRefreshToken(realm, session.getContext().getClient())) {
             return;
         }
         createTemporaryExclusiveLockForTokenRefreshOperation(session, realm, refreshToken, new TokenManager());

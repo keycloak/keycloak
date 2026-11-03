@@ -113,9 +113,9 @@ test.describe.serial("Advanced tab test", () => {
   test("Refresh token revocation override", async ({ page }) => {
     const inherited = "Inherits from realm settings (Disabled)";
     const getAttributes = async () =>
-      (await adminClient.getClient(clientId))?.attributes ?? {};
+      (await adminClient.getClient(clientId, realmName))?.attributes ?? {};
 
-    // Default: inherits from realm (master realm has revocation disabled), no max reuse field
+    // Default: inherits from realm (a new realm has revocation disabled), no max reuse field
     await assertRevokeRefreshToken(page, inherited);
     await assertRefreshTokenMaxReuseVisible(page, false);
 
@@ -145,9 +145,11 @@ test.describe.serial("Advanced tab test", () => {
     await assertRefreshTokenMaxReuse(page, "2");
 
     // Non-canonical but valid values set through the admin API are shown as the matching option
-    await adminClient.updateClient(clientId, {
-      attributes: { "revoke.refresh.token": " TRUE " },
-    });
+    await adminClient.updateClient(
+      clientId,
+      { attributes: { "revoke.refresh.token": " TRUE " } },
+      realmName,
+    );
     await page.reload();
     await goToAdvancedTab(page);
     await assertRevokeRefreshToken(page, "Enabled");

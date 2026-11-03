@@ -219,6 +219,30 @@ public class RefreshTokenRevokeClientOverrideTest {
     }
 
     @Test
+    public void revocationEndpointHonoursClientOverride() {
+        // realm default: revokeRefreshToken=false, revocation is effective for the client only through the override
+        setClientOverride(true, null);
+
+        login();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        assertEquals(200, tokenResponse.getStatusCode());
+        String refreshToken = tokenResponse.getRefreshToken();
+        assertNotNull(refreshToken);
+        events.poll();
+
+        assertEquals(200, oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+        // the revoked token is no longer usable
+        assertEquals(400, oauth.doRefreshTokenRequest(refreshToken).getStatusCode());
+
+        // the revocation endpoint serializes against refreshes using the same lock as the refresh path; a second
+        // revocation acquires that lock again, which only succeeds if the first one released it
+        assertEquals(200, oauth.doTokenRevoke(refreshToken).getStatusCode());
+
+        events.clear();
+    }
+
+    @Test
     public void invalidOverridesAreRejectedByClientValidation() {
         ClientRepresentation rep = oauth.clientResource().toRepresentation();
         Map<String, String> attributes = rep.getAttributes() != null ? new HashMap<>(rep.getAttributes()) : new HashMap<>();
