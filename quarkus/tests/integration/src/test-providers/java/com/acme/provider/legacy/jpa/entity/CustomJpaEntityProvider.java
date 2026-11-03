@@ -18,13 +18,16 @@
 package com.acme.provider.legacy.jpa.entity;
 
 import java.util.Map;
+
+import org.keycloak.acme.test.OverlapEntity;
 import org.keycloak.it.TestProvider;
 
 public class CustomJpaEntityProvider implements TestProvider {
 
     @Override
     public Class[] getClasses() {
-        return new Class[] { Realm.class, KeycloakItH2Dialect.class, UnlistedEntity.class, OrmMappedEntity.class };
+        return new Class[] { OverlapEntity.class, Realm.class, KeycloakItH2Dialect.class, UnlistedEntity.class, OrmMappedEntity.class,
+                FallbackEntity.class, FallbackBase.class, FallbackEmbeddable.class, FallbackConverter.class };
     }
 
     @Override

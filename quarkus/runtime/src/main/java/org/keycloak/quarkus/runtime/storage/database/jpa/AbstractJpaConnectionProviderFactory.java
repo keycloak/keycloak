@@ -120,8 +120,18 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     protected EntityManager createEntityManager(EntityManagerFactory emf, KeycloakSession session, boolean sessionManaged) {
         EntityManager entityManager = EntityManagerProxy.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED), sessionManaged);
 
-        entityManager.setFlushMode(FlushModeType.AUTO);
+        if (isAutoFlushModeRequired()) {
+            entityManager.setFlushMode(FlushModeType.AUTO);
+        }
 
         return entityManager;
+    }
+
+    /**
+     * Whether the entity managers flush automatically regardless of the flush mode configured for the persistence unit.
+     * The default persistence unit of Keycloak requires it, see https://github.com/keycloak/keycloak/issues/10411.
+     */
+    protected boolean isAutoFlushModeRequired() {
+        return true;
     }
 }

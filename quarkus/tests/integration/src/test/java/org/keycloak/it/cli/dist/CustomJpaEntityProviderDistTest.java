@@ -17,6 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.util.List;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
@@ -54,6 +56,7 @@ public class CustomJpaEntityProviderDistTest {
         result.assertNoMessage("Datasource 'new-user-store' is not active, so the 'new-user-store' persistence unit is skipped");
         result.assertNoMessage("Datasource 'pu-without-dialect-store' is not active, so the 'pu-without-dialect-store' persistence unit is skipped");
         result.assertNoMessage("Persistence-unit [<default>] sets unsupported properties");
+        result.assertNoMessage("Could not find a suitable persistence unit for model classes/packages");
         result.assertStarted();
     }
 
@@ -94,6 +97,7 @@ public class CustomJpaEntityProviderDistTest {
                 "OrmMappedEntity (from provider's META-INF/orm.xml) must NOT leak into "
                         + "Keycloak's '<default>' persistence unit");
 
+        cliResult.assertNoMessage("Could not find a suitable persistence unit for model classes/packages");
         cliResult.assertStartedDevMode();
     }
 
@@ -114,6 +118,7 @@ public class CustomJpaEntityProviderDistTest {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("name: pu-without-dialect-store", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.Realm", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.UnlistedEntity", 1);
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.FallbackEntity", 1);
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: com.acme.provider.legacy.jpa.entity.KeycloakItH2Dialect", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", 4);
@@ -133,6 +138,9 @@ public class CustomJpaEntityProviderDistTest {
         assertNotNull(newUserStorePuBlock, "'new-user-store' PU info block should be present");
 
         // Realm is listed as <class> in persistence.xml — it should be in new-user-store only.
+        assertTrue(newUserStorePuBlock.contains("org.keycloak.acme.test.OverlapEntity"), "OverlapEntity must be in new-user-store");
+        assertFalse(defaultPuBlock.contains("org.keycloak.acme.test.OverlapEntity"), "OverlapEntity must NOT leak into default PU");
+
         assertTrue(newUserStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.Realm"),
                 "Realm entity must be in 'new-user-store' PU (from <class> in persistence.xml)");
         assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.Realm"),
@@ -144,6 +152,17 @@ public class CustomJpaEntityProviderDistTest {
         assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
                 "OrmMappedEntity (from orm.xml) must NOT leak into '<default>' PU");
 
+        // FallbackEntity is an unmapped @Entity in the provider JAR without persistence.xml or orm.xml — it must fall back to the default PU,
+        // together with its class hierarchy and the classes it references
+        for (String fallbackClass : List.of("FallbackEntity", "FallbackBase", "FallbackEmbeddable", "FallbackConverter")) {
+            String className = "com.acme.provider.legacy.jpa.entity." + fallbackClass;
+            assertTrue(defaultPuBlock.contains(className), className + " must fall back into '<default>' PU");
+            assertFalse(newUserStorePuBlock.contains(className), className + " must NOT leak into 'new-user-store' PU");
+        }
+        assertTrue(defaultPuBlock.contains("org.keycloak.provider.Provider"),
+                "the interface FallbackEntity implements from a non-indexed JAR must be assigned to the '<default>' PU");
+
+        cliResult.assertNoMessage("Could not find a suitable persistence unit for model classes/packages");
         cliResult.assertStartedDevMode();
     }
 

@@ -149,8 +149,9 @@ public class KeycloakRecorder {
                 """.formatted(itemsHtml));
     }
 
-    public void setHibernateUnsupportedProperties(Set<String> keycloakDefaultUnsupportedProperties) {
+    public void setHibernateUnsupportedProperties(Set<String> keycloakDefaultUnsupportedProperties, Set<String> keycloakNamedUnitUnsupportedProperties) {
         KeycloakLogFilter.setKeycloakDefaultUnsupportedProperties(keycloakDefaultUnsupportedProperties);
+        KeycloakLogFilter.setKeycloakNamedUnitUnsupportedProperties(keycloakNamedUnitUnsupportedProperties);
     }
 
     private record ManagementInterfaceItem(String path, String description, BooleanSupplier isEnabled) {

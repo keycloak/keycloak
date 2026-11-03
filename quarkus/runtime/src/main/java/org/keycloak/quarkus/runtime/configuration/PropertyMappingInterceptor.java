@@ -27,10 +27,14 @@ import java.util.stream.StreamSupport;
 import jakarta.annotation.Priority;
 
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
+import io.quarkus.runtime.ExecutionMode;
+import io.quarkus.runtime.ExecutionModeManager;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -135,8 +139,15 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
                 var wildcardValue = wildcardMapper.extractWildcardValue(name).orElseThrow();
 
                 if (mapper.hasConnectedOptions()) {
+                    // a connected option may be mapped to several properties, e.g. a Keycloak and a Quarkus one
                     wildcardMapper.getConnectedOptions(wildcardValue).stream()
-                            .map(option -> Optional.ofNullable(PropertyMappers.getMapper(NS_KEYCLOAK_PREFIX + option)).orElseThrow(() -> new IllegalArgumentException("Cannot find connected options")))
+                            .flatMap(option -> {
+                                List<PropertyMapper<?>> connected = PropertyMappers.getMappers(NS_KEYCLOAK_PREFIX + option);
+                                if (connected.isEmpty()) {
+                                    throw new IllegalArgumentException("Cannot find connected options");
+                                }
+                                return connected.stream();
+                            })
                             .map(m -> m.hasWildcard() ? ((WildcardPropertyMapper<?>) m).getTo(wildcardValue) : m.getTo())
                             .filter(key -> hasValue(key, context)).forEach(allNames::add);
                 }
@@ -203,12 +214,43 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     private boolean hasValue(String key, ConfigSourceInterceptorContext context) {
         try {
+            if (DatabasePropertyMappers.isHibernateUnsupportedProperty(key) && isAugmentation()) {
+                // Keycloak contributes Hibernate ORM unsupported properties from runtime options only. Advertising
+                // such a map key during augmentation would record the option's value into the build, and Quarkus
+                // then applies it regardless of the option at runtime.
+                return false;
+            }
+            if (DatabasePropertyMappers.isNamedPersistenceUnitProperty(key)) {
+                // Quarkus defines a persistence unit for every name it finds a property of, so a property of a named
+                // persistence unit is advertised only when Keycloak provides its value, that is a set option, a Keycloak
+                // default or a value derived from another option (see DatabasePropertyMappers.Datasources), or when the
+                // user set the Quarkus property itself. Like for the default unit, an unset option is not advertised:
+                // Quarkus supplies the default of a property, such as query.query-plan-cache-max-size, for any unit name.
+                return isProvidedValue(context.restart(key));
+            }
             return !Configuration.isInitialized()
                     || key.startsWith(NS_KEYCLOAK_PREFIX) // once we remove Scope.getPropertyNames, this check can be inverted like in hasInferredValue
                     || Optional.ofNullable(context.restart(key)).map(ConfigValue::getValue).isPresent();
         } catch (Exception e) {
             return false; // corner case - validation or other failure, we won't report it as having a value
         }
+    }
+
+    /**
+     * Whether the value is provided by Keycloak (a mapped or derived value and a Keycloak default carry no config source
+     * name) or set by the user, as opposed to no value or a default that Quarkus supplies.
+     */
+    private static boolean isProvidedValue(ConfigValue value) {
+        return value != null && value.getValue() != null
+                && (value.getConfigSourceName() == null || Configuration.isUserModifiable(value));
+    }
+
+    /**
+     * Whether Quarkus is being augmented (re-built) instead of started: Keycloak sets the rebuild flag before the
+     * augmentation, and Quarkus sets its execution mode only once the built application starts.
+     */
+    static boolean isAugmentation() {
+        return Environment.isRebuild() && ExecutionModeManager.getExecutionMode() == ExecutionMode.UNSET;
     }
 
     @Override

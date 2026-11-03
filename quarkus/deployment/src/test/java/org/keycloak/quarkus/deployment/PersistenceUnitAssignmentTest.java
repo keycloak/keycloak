@@ -1,0 +1,301 @@
+package org.keycloak.quarkus.deployment;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import jakarta.persistence.Convert;
+import jakarta.persistence.Converter;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.MappedSuperclass;
+
+import org.keycloak.provider.ProviderFactory;
+
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfigPersistenceUnit;
+import io.quarkus.hibernate.orm.runtime.migration.MultiTenancyStrategy;
+import org.jboss.jandex.Index;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+/**
+ * Tests {@link KeycloakProcessor.JpaModelAssignment} and {@link KeycloakProcessor#validateConfiguredPersistenceUnits}.
+ */
+public class PersistenceUnitAssignmentTest {
+
+    // stands for a server-spi interface: available through the computing index, absent from the plain index
+    interface ModelInterface {
+    }
+
+    interface OtherInterface extends ModelInterface {
+    }
+
+    // implemented by a class of a user persistence unit only
+    interface UserUnitInterface {
+    }
+
+    @MappedSuperclass
+    static class Base implements OtherInterface {
+        @Id
+        String id;
+    }
+
+    @Embeddable
+    static class ProviderEmbeddable {
+        String value;
+    }
+
+    @Converter
+    static class ProviderConverter implements jakarta.persistence.AttributeConverter<Boolean, String> {
+        @Override
+        public String convertToDatabaseColumn(Boolean attribute) {
+            return String.valueOf(attribute);
+        }
+
+        @Override
+        public Boolean convertToEntityAttribute(String dbData) {
+            return Boolean.valueOf(dbData);
+        }
+    }
+
+    @Entity
+    static class ProviderEntity extends Base {
+        @Embedded
+        ProviderEmbeddable embeddable;
+        @Convert(converter = ProviderConverter.class)
+        Boolean flag;
+    }
+
+    static class ProviderId implements Serializable {
+        String a;
+        String b;
+    }
+
+    @Entity
+    @IdClass(ProviderId.class)
+    static class ProviderIdEntity {
+        @Id
+        String a;
+        @Id
+        String b;
+    }
+
+    @Entity
+    static class ClaimedEntity implements ModelInterface {
+        @Id
+        String id;
+    }
+
+    @Entity
+    static class XmlEntity implements UserUnitInterface {
+        @Id
+        String id;
+    }
+
+    private static final String DEFAULT = "<default>";
+    private static final String PACKAGE = PersistenceUnitAssignmentTest.class.getPackageName() + ".";
+    private static final Class<?>[] INDEXED = { Base.class, ProviderEmbeddable.class, ProviderConverter.class, ProviderEntity.class,
+            ProviderId.class, ProviderIdEntity.class, ClaimedEntity.class, XmlEntity.class };
+
+    private static Index plainIndex;
+    private static Index computingIndex;
+
+    @BeforeAll
+    static void index() throws IOException {
+        plainIndex = Index.of(INDEXED);
+        Class<?>[] all = new Class<?>[INDEXED.length + 3];
+        System.arraycopy(INDEXED, 0, all, 0, INDEXED.length);
+        all[INDEXED.length] = ModelInterface.class;
+        all[INDEXED.length + 1] = OtherInterface.class;
+        all[INDEXED.length + 2] = UserUnitInterface.class;
+        computingIndex = Index.of(all);
+    }
+
+    private static Map<String, Set<String>> assign(Map<String, Set<String>> userUnitClasses, Map<String, Set<String>> packageRules) {
+        return new KeycloakProcessor.JpaModelAssignment(plainIndex, computingIndex, userUnitClasses, packageRules).compute();
+    }
+
+    private static String name(Class<?> clazz) {
+        return clazz.getName();
+    }
+
+    @Test
+    public void unclaimedModelClassesBelongToDefaultUnit() {
+        Map<String, Set<String>> assignments = assign(Map.of(), Map.of("org.keycloak.models.jpa.entities.", Set.of(DEFAULT)));
+
+        for (Class<?> clazz : INDEXED) {
+            assertEquals(Set.of(DEFAULT), assignments.get(name(clazz)), clazz.getName());
+        }
+        // the class hierarchy of unclaimed classes is assigned with them, java.* types excluded
+        assertEquals(Set.of(DEFAULT), assignments.get(name(OtherInterface.class)));
+        assertEquals(Set.of(DEFAULT), assignments.get(name(ModelInterface.class)));
+        assertEquals(Set.of(DEFAULT), assignments.get(name(UserUnitInterface.class)));
+        assertEquals(INDEXED.length + 3, assignments.size(), assignments.toString());
+    }
+
+    @Test
+    public void claimedModelClassesOnlyGetUnresolvedHierarchyAssigned() {
+        Map<String, Set<String>> assignments = assign(Map.of(), Map.of(PACKAGE, Set.of(DEFAULT)));
+
+        assertEquals(Map.of(name(OtherInterface.class), Set.of(DEFAULT), name(ModelInterface.class), Set.of(DEFAULT),
+                name(UserUnitInterface.class), Set.of(DEFAULT)), assignments);
+    }
+
+    @Test
+    public void unresolvedHierarchyAssignedToNamedUnit() {
+        Map<String, Set<String>> assignments = assign(Map.of(), Map.of(PACKAGE, Set.of("my-store"), "org.keycloak.models.jpa.entities", Set.of(DEFAULT)));
+
+        assertEquals(Map.of(name(OtherInterface.class), Set.of("my-store"), name(ModelInterface.class), Set.of("my-store"),
+                name(UserUnitInterface.class), Set.of("my-store")), assignments);
+    }
+
+    @Test
+    public void packageRulesOfTheSamePackageAreMerged() {
+        // the Hibernate ORM extension assigns the entities of a package configured with and without the trailing delimiter
+        // to both units, so their unresolved hierarchy belongs to both units as well
+        Map<String, Set<String>> assignments = assign(Map.of(), Map.of(PACKAGE, Set.of("my-store"), PACKAGE.substring(0, PACKAGE.length() - 1), Set.of("other-store")));
+
+        assertEquals(Set.of("my-store", "other-store"), assignments.get(name(ModelInterface.class)));
+        assertEquals(Set.of("my-store", "other-store"), assignments.get(name(OtherInterface.class)));
+        assertNull(assignments.get(name(ProviderEntity.class)));
+    }
+
+    @Test
+    public void packageRuleMatchesPackagePrefixOnly() {
+        // a rule for a package whose name is a prefix of the test package name, but which is not a parent package, claims nothing
+        String truncated = PACKAGE.substring(0, PACKAGE.length() - 4);
+        assertTrue(name(ProviderEntity.class).startsWith(truncated));
+        Map<String, Set<String>> assignments = assign(Map.of(), Map.of(truncated, Set.of("my-store")));
+
+        assertEquals(Set.of(DEFAULT), assignments.get(name(ProviderEntity.class)));
+        assertFalse(assignments.values().stream().anyMatch(units -> units.contains("my-store")));
+    }
+
+    @Test
+    public void classesOfUserPersistenceUnitsAreLeftAlone() {
+        Map<String, Set<String>> assignments = assign(Map.of(name(XmlEntity.class), Set.of("xml-unit"), name(ClaimedEntity.class), Set.of("xml-unit"), name(ModelInterface.class), Set.of("xml-unit")), Map.of());
+
+        assertFalse(assignments.containsKey(name(XmlEntity.class)));
+        assertFalse(assignments.containsKey(name(ClaimedEntity.class)));
+        assertFalse(assignments.containsKey(name(ModelInterface.class)));
+        assertEquals(Set.of(DEFAULT), assignments.get(name(ProviderEntity.class)));
+        assertEquals(Set.of(DEFAULT), assignments.get(name(OtherInterface.class)));
+    }
+
+    @Test
+    public void hierarchyOfUserPersistenceUnitClassesIsAssignedToTheirUnit() {
+        // Quarkus assigns the classes of a persistence.xml unit, not their hierarchy: an unassigned UserUnitInterface would
+        // be reported as a model class without a persistence unit
+        Map<String, Set<String>> assignments = assign(Map.of(name(XmlEntity.class), Set.of("xml-unit")), Map.of());
+
+        assertNull(assignments.get(name(XmlEntity.class)));
+        assertEquals(Set.of("xml-unit"), assignments.get(name(UserUnitInterface.class)));
+    }
+
+    @Test
+    public void configuredPersistenceUnitsMustBeNamedAfterTheirDatasource() {
+        assertTrue(KeycloakProcessor.validateConfiguredPersistenceUnits(config(Map.of())).isEmpty());
+        assertTrue(KeycloakProcessor.validateConfiguredPersistenceUnits(config(Map.of("my-store", Optional.of("my-store")))).isEmpty());
+
+        Optional<String> error = KeycloakProcessor.validateConfiguredPersistenceUnits(config(Map.of("my-store", Optional.of("other"))));
+        assertEquals("The persistence unit 'my-store' must use the datasource 'my-store' of the same name, but it uses the datasource 'other'. "
+                + "Define the persistence unit of a datasource with the 'kc.db-jpa-packages-my-store' option.", error.orElseThrow());
+
+        error = KeycloakProcessor.validateConfiguredPersistenceUnits(config(Map.of("my-store", Optional.empty())));
+        assertEquals("The persistence unit 'my-store' must use the datasource 'my-store' of the same name, but no datasource is set. "
+                + "Define the persistence unit of a datasource with the 'kc.db-jpa-packages-my-store' option.", error.orElseThrow());
+    }
+
+    @Test
+    public void configuredPersistenceUnitPackagesMustNotOverlapTheDefaultUnit() {
+        Map<String, Optional<String>> myStore = Map.of("my-store", Optional.of("my-store"));
+        assertTrue(KeycloakProcessor.validateConfiguredPersistenceUnits(
+                config(myStore, Map.of("my-store", Set.of("org.example.entities", "org.keycloakish")), KEYCLOAK_PACKAGES)).isEmpty());
+        // Quarkus accepts a trailing package delimiter
+        assertTrue(KeycloakProcessor.validateConfiguredPersistenceUnits(
+                config(myStore, Map.of("my-store", Set.of("org.example.")), Set.of("org.keycloak.models.jpa.entities."))).isEmpty());
+
+        String expected = "The package '%s' of the persistence unit 'my-store' overlaps with the package '%s' of the default persistence unit, "
+                + "whose entities belong to the default persistence unit only. Set the 'kc.db-jpa-packages-my-store' option to the packages of the entities of your extension.";
+        // the same package as, a sub-package of and a parent package of a package of the default unit
+        assertEquals(expected.formatted("org.keycloak.storage.jpa.entity", "org.keycloak.storage.jpa.entity"),
+                KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.example", "org.keycloak.storage.jpa.entity")), KEYCLOAK_PACKAGES)).orElseThrow());
+        assertEquals(expected.formatted("org.keycloak.models.jpa.entities.custom", "org.keycloak.models.jpa.entities"),
+                KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.keycloak.models.jpa.entities.custom")), KEYCLOAK_PACKAGES)).orElseThrow());
+        assertEquals(expected.formatted("org.keycloak", "org.keycloak.models.jpa.entities"),
+                KeycloakProcessor.validateConfiguredPersistenceUnits(config(myStore, Map.of("my-store", Set.of("org.keycloak")), Set.of("org.keycloak.models.jpa.entities"))).orElseThrow());
+    }
+
+    @Test
+    public void persistenceUnitMustNotBeNamedAfterAProvider() {
+        Set<String> providerIds = Set.of("quarkus", "jpa", "default");
+        Map<String, ProviderFactory> preConfigured = Map.of("script-authenticator", mock(ProviderFactory.class), "user-store", mock(ProviderFactory.class));
+        assertTrue(KeycloakProcessor.checkPersistenceUnitName("my-store", providerIds, preConfigured).isEmpty());
+
+        String expected = "The persistence unit '%s' cannot use this name, which is the name of a provider or of another persistence unit. "
+                + "Rename the persistence unit, or the datasource that defines it.";
+        // the id of a provider of any SPI, a pre-configured provider and a persistence unit registered before
+        assertEquals(expected.formatted("quarkus"), KeycloakProcessor.checkPersistenceUnitName("quarkus", providerIds, preConfigured).orElseThrow());
+        assertEquals(expected.formatted("default"), KeycloakProcessor.checkPersistenceUnitName("default", providerIds, preConfigured).orElseThrow());
+        assertEquals(expected.formatted("script-authenticator"), KeycloakProcessor.checkPersistenceUnitName("script-authenticator", providerIds, preConfigured).orElseThrow());
+        assertEquals(expected.formatted("user-store"), KeycloakProcessor.checkPersistenceUnitName("user-store", Set.of(), preConfigured).orElseThrow());
+    }
+
+    @Test
+    public void multiTenancyStrategyOfConfiguredPersistenceUnit() {
+        assertEquals(MultiTenancyStrategy.NONE, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.empty())));
+        assertEquals(MultiTenancyStrategy.DATABASE, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("database"))));
+        assertEquals(MultiTenancyStrategy.SCHEMA, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("SCHEMA"))));
+        assertEquals(MultiTenancyStrategy.DISCRIMINATOR, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("Discriminator"))));
+        // a value that is not a strategy is left to Quarkus, which fails the build
+        assertEquals(MultiTenancyStrategy.NONE, KeycloakProcessor.getMultiTenancyStrategy(unit(Optional.of("bogus"))));
+    }
+
+    private static final Set<String> KEYCLOAK_PACKAGES = Set.of("org.keycloak.models.jpa.entities", "org.keycloak.storage.jpa.entity");
+
+    private static HibernateOrmConfig config(Map<String, Optional<String>> namedUnits) {
+        Map<String, Set<String>> packages = new java.util.HashMap<>();
+        namedUnits.keySet().forEach(name -> packages.put(name, Set.of("org.example." + name)));
+        return config(namedUnits, packages, KEYCLOAK_PACKAGES);
+    }
+
+    /**
+     * @param namedUnits the datasource of each named unit
+     * @param packages the packages of each named unit
+     * @param defaultUnitPackages the packages of the default unit
+     */
+    private static HibernateOrmConfig config(Map<String, Optional<String>> namedUnits, Map<String, Set<String>> packages, Set<String> defaultUnitPackages) {
+        HibernateOrmConfig config = mock(HibernateOrmConfig.class);
+        Map<String, HibernateOrmConfigPersistenceUnit> units = new java.util.HashMap<>();
+        namedUnits.forEach((name, datasource) -> {
+            HibernateOrmConfigPersistenceUnit unit = mock(HibernateOrmConfigPersistenceUnit.class);
+            when(unit.datasource()).thenReturn(datasource);
+            when(unit.packages()).thenReturn(Optional.ofNullable(packages.get(name)));
+            units.put(name, unit);
+        });
+        when(config.namedPersistenceUnits()).thenReturn(units);
+        HibernateOrmConfigPersistenceUnit defaultUnit = mock(HibernateOrmConfigPersistenceUnit.class);
+        when(defaultUnit.packages()).thenReturn(Optional.of(defaultUnitPackages));
+        when(config.defaultPersistenceUnit()).thenReturn(defaultUnit);
+        return config;
+    }
+
+    private static HibernateOrmConfigPersistenceUnit unit(Optional<String> multitenant) {
+        HibernateOrmConfigPersistenceUnit unit = mock(HibernateOrmConfigPersistenceUnit.class);
+        when(unit.multitenant()).thenReturn(multitenant);
+        return unit;
+    }
+}

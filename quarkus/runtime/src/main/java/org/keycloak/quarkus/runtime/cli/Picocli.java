@@ -54,6 +54,7 @@ import org.keycloak.quarkus.runtime.configuration.KcUnmatchedArgumentException;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -156,10 +157,10 @@ public class Picocli {
 
             // now that the property mappers are properly initalized further refine the args
             if (options.allowUnrecognized) {
-                normalizedArgs.keySet().removeIf(arg -> PropertyMappers.getMapperByCliKey(arg) != null || arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX));
+                normalizedArgs.keySet().removeIf(arg -> isCliOption(arg) || arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX));
             }
             unknown.forEach(arg -> {
-                if (PropertyMappers.getMapperByCliKey(arg) != null) {
+                if (isCliOption(arg)) {
                     addCommandOptions(cl, currentCommand);
                     throw new MissingParameterException(cl, cl.getCommandSpec().optionsMap().get(arg), null);
                 } else if (arg.startsWith(ConfigArgsConfigSource.SPI_OPTION_PREFIX)) {
@@ -195,6 +196,15 @@ public class Picocli {
 
     protected int execute(CommandLine cmd, String[] argArray) {
         return cmd.execute(argArray);
+    }
+
+    /**
+     * Whether the argument is an option that can be set on the command line, see {@link Option#isCli()}. An option that
+     * cannot is reported as an unmatched argument, see {@link ShortErrorMessageHandler}.
+     */
+    private static boolean isCliOption(String cliKey) {
+        PropertyMapper<?> mapper = PropertyMappers.getMapperByCliKey(cliKey);
+        return mapper != null && mapper.getOption().isCli();
     }
 
     public Optional<AbstractCommand> getParsedCommand() {
@@ -276,7 +286,8 @@ public class Picocli {
                 return; // TODO: need to look for disabled Wildcard mappers
             }
             var forKey = mapper.forKey(name);
-            if (!name.equals(forKey.getFrom())) {
+            // a raw Quarkus property is second-class to its option, unless the option does not apply
+            if (!name.equals(forKey.getFrom()) && DatabasePropertyMappers.appliesToPersistenceUnit(mapper, name)) {
                 ConfigValue value = getUnmappedValue(name);
                 if (value.getValue() != null && isUserModifiable(value)) {
                     secondClassOptions.put(name, forKey.getFrom());
@@ -732,8 +743,8 @@ public class Picocli {
                     .validate(false);
 
             for (PropertyMapper<?> mapper : entry.getValue()) {
-                if (mapper.getOption().isSynthetic()) {
-                    continue;
+                if (mapper.getOption().isSynthetic() || !mapper.getOption().isCli()) {
+                    continue; // not command line options
                 }
                 String name = mapper.getCliFormat();
 
