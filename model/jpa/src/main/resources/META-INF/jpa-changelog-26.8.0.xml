@@ -371,4 +371,24 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
     </changeSet>
 
+    <!-- JpaUserProvider searches a custom attribute with "lower(VALUE) = ?" (exact) or "lower(VALUE) like ?", which
+         cannot use IDX_USER_ATTRIBUTE_NAME (NAME, VALUE). On a realm with a few hundred thousand users an exact
+         attribute search then walks the username index for seconds, on every call (#54609). An index on the
+         expression the query uses makes it a lookup without changing the query. The planner only picks it once the
+         expression has statistics, hence the ANALYZE. PostgreSQL only: the other databases either have no expression
+         indexes (MariaDB, MSSQL) or are not covered by the CI. -->
+    <changeSet author="keycloak" id="26.8.0-54609-user-attribute-name-lower-value-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+            <not>
+                <indexExists tableName="USER_ATTRIBUTE" indexName="IDX_USER_ATTRIBUTE_NAME_LOWER_VALUE"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="USER_ATTRIBUTE" indexName="IDX_USER_ATTRIBUTE_NAME_LOWER_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="lower(VALUE)" valueComputed="lower(VALUE)"/>
+        </createIndex>
+        <sql dbms="postgresql">ANALYZE ${database.defaultSchemaName}.USER_ATTRIBUTE</sql>
+    </changeSet>
+
 </databaseChangeLog>
