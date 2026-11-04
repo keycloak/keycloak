@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -247,7 +248,8 @@ public final class JGroupsConfigurator {
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
             var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", session.getProvider(JpaConnectionProvider.class).getEntityManager());
-            boolean jdbcPing = injectConnectionFactoryIntoCustomStack(holder, session.getKeycloakSessionFactory(), tableName, stackXmlAttribute.get());
+            boolean jdbcPing = injectConnectionFactoryIntoCustomStack(holder, session.getKeycloakSessionFactory(), tableName, stackXmlAttribute.get(),
+                    () -> registerJGroupsAddress(session.getKeycloakSessionFactory(), transportOf(holder).attributes().attribute(CLUSTER_NAME).get()));
             if (!jdbcPing && Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
                 if (isInJvmTestStack(holder, stackXmlAttribute.get())) {
                     // TODO: Remove this case once the model tests have been migrated
@@ -273,24 +275,30 @@ public final class JGroupsConfigurator {
 
         String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
 
-        Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
-                s -> prepareJGroupsAddress(s, clusterName)),
-                50, 10);
+        Address address = registerJGroupsAddress(session.getKeycloakSessionFactory(), clusterName);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(session.getKeycloakSessionFactory(), stackName, stack, connectionFactory, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
     }
 
+    private static Address registerJGroupsAddress(KeycloakSessionFactory sessionFactory, String clusterName) {
+        return Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory,
+                s -> prepareJGroupsAddress(s, clusterName)),
+                50, 10);
+    }
+
     /**
      * If a custom stack uses {@link KEYCLOAK_JDBC_PING2}, wraps it in a configurator that injects the
      * {@link JpaConnectionProviderFactory}, as the protocol is unable to connect to the database without it.
      * The stack is registered under a new name as Infinispan rejects duplicate stack names.
-     * The JGroups address is not pre-registered in the database, as the stack is fully controlled by the user.
+     * The JGroups address is pre-registered in the database like for the default stack, as this prevents multiple
+     * coordinators when nodes start concurrently.
      *
+     * @param addressSupplier creates and registers the address of this node, and is only called when the stack uses {@link KEYCLOAK_JDBC_PING2}
      * @return {@code true} if the stack uses {@link KEYCLOAK_JDBC_PING2}
      */
-    static boolean injectConnectionFactoryIntoCustomStack(ConfigurationBuilderHolder holder, KeycloakSessionFactory sessionFactory, String tableName, String stackName) {
+    static boolean injectConnectionFactoryIntoCustomStack(ConfigurationBuilderHolder holder, KeycloakSessionFactory sessionFactory, String tableName, String stackName, Supplier<Address> addressSupplier) {
         var configurator = transportOf(holder).build().transport().jgroups().configurator(stackName);
         var combined = configurator.getProtocolStack();
         if (combined.stream().noneMatch(p -> KEYCLOAK_JDBC_PING2.class.getName().equals(p.getProtocolName()))) {
@@ -323,7 +331,7 @@ public final class JGroupsConfigurator {
         for (int i = 2; existingNames.contains(wrappedName); i++) {
             wrappedName = stackName + "-keycloak-" + i;
         }
-        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(sessionFactory, wrappedName, stack, embedded.getUncombinedRemoteSites(), null, connectionFactory, null), null);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(sessionFactory, wrappedName, stack, embedded.getUncombinedRemoteSites(), null, connectionFactory, addressSupplier.get()), null);
         transportOf(holder).stack(wrappedName);
         logger.infof("Custom stack '%s' uses %s. Injected the database connection factory.", stackName, KEYCLOAK_JDBC_PING2.class.getSimpleName());
         return true;
