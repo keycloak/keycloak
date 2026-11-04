@@ -327,6 +327,15 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         }
 
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+        if (clientSession == null) {
+            // The client session is gone (e.g. its idle timeout is shorter than the user session's),
+            // so the client has to restart the device flow.
+            String errorMessage = "Session not active";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.SESSION_EXPIRED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage,
+                Response.Status.BAD_REQUEST);
+        }
         if (!client.getClientId().equals(clientSession.getClient().getClientId())) {
             event.error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Auth error",
