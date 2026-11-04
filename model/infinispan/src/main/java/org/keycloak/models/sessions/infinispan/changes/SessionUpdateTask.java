@@ -32,6 +32,16 @@ public interface SessionUpdateTask<S extends SessionEntity> {
 
     CacheOperation getOperation();
 
+    /**
+     * Used in Volatile offline sessions path only. Remove when the volatile path is removed.
+     * Override to return {@code false} when the caller already performed the DB operation directly
+     * via the persister in the current JPA transaction (e.g. {@code detachFromUserSession},
+     * {@code removeOfflineUserSession}), so that {@code JpaChangesPerformer} does not duplicate it.
+     */
+    default boolean requiresDatabasePersistence() {
+        return true;
+    }
+
     enum CacheOperation {
 
         ADD,

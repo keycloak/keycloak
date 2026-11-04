@@ -54,7 +54,10 @@ import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.utils.StreamsUtil;
 
+import org.hibernate.engine.spi.EntityKey;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.jpa.HibernateHints;
+import org.hibernate.persister.entity.EntityPersister;
 import org.jboss.logging.Logger;
 
 import static jakarta.persistence.PersistenceConfiguration.LOCK_TIMEOUT;
@@ -331,9 +334,44 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return handleSingleQuery(entity, offlineStr);
     }
 
+    @Override
+    public boolean isUserSessionCacheImportEligible(String userSessionId, boolean offline) {
+        SharedSessionContractImplementor hibernateSession = em.unwrap(SharedSessionContractImplementor.class);
+        String offlineStr = offlineToString(offline);
+        if (isManaged(hibernateSession, PersistentUserSessionEntity.class,
+                new PersistentUserSessionEntity.Key(userSessionId, offlineStr))) {
+            return false;
+        }
+        return hibernateSession.getPersistenceContextInternal().getEntitiesByKey().values().stream()
+                .filter(PersistentClientSessionEntity.class::isInstance)
+                .map(PersistentClientSessionEntity.class::cast)
+                .noneMatch(entity -> Objects.equals(userSessionId, entity.getUserSessionId())
+                        && Objects.equals(offlineStr, entity.getOffline()));
+    }
+
+    @Override
+    public boolean isClientSessionCacheImportEligible(String userSessionId, String clientId, boolean offline) {
+        SharedSessionContractImplementor hibernateSession = em.unwrap(SharedSessionContractImplementor.class);
+        return !isManaged(hibernateSession, PersistentClientSessionEntity.class,
+                getClientSessionKey(clientId, userSessionId, offline));
+    }
+
+    private static boolean isManaged(SharedSessionContractImplementor session, Class<?> entityType, Object key) {
+        EntityPersister persister = session.getFactory().getMappingMetamodel().getEntityDescriptor(entityType);
+        EntityKey entityKey = session.generateEntityKey(key, persister);
+        return session.getPersistenceContextInternal().containsEntity(entityKey);
+    }
+
     public boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline, boolean isDelete) {
         String offlineStr = offlineToString(offline);
-        PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(userSessionId, offlineStr));
+        PersistentUserSessionEntity.Key key = new PersistentUserSessionEntity.Key(userSessionId, offlineStr);
+        if (!isManaged(em.unwrap(SharedSessionContractImplementor.class), PersistentUserSessionEntity.class, key)) {
+            // Preparation already knows a write is needed. Load and lock a fresh entity in one query.
+            // Missing and skipped locked rows both require fallback, even for deletes.
+            return em.find(PersistentUserSessionEntity.class, key, LockModeType.PESSIMISTIC_WRITE,
+                    Map.of(LOCK_TIMEOUT, -2)) != null;
+        }
+        PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class, key);
         if (entity == null) {
             // If the entity has already been deleted, there is no need to lock it, as this transaction will fail anyway if it is modified concurrently
             // When caches are enabled, this might have been retrieved from the cache, and the entry doesn't exist in the database yet, and it can lead to conflicts if it is not locked.
@@ -484,6 +522,12 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     public boolean lockClientSession(RealmModel realm, String userSessionId, String clientId, boolean offline, boolean isDelete) {
         PersistentClientSessionEntity.Key key = getClientSessionKey(clientId, userSessionId, offline);
 
+        if (!isManaged(em.unwrap(SharedSessionContractImplementor.class), PersistentClientSessionEntity.class, key)) {
+            // As for user sessions, combine the first load with locking only during preparation.
+            // Do not mistake a skipped locked row for a successfully prepared deletion.
+            return em.find(PersistentClientSessionEntity.class, key, LockModeType.PESSIMISTIC_WRITE,
+                    Map.of(LOCK_TIMEOUT, -2)) != null;
+        }
         PersistentClientSessionEntity entity = em.find(PersistentClientSessionEntity.class, key);
         if (entity == null) {
             // If the entity has already been deleted, there is no need to lock it, as this transaction will fail anyway if it is modified concurrently

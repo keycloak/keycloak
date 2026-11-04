@@ -103,6 +103,7 @@ public final class Marshalling {
     // models.sessions.infinispan.changes package
     public static final int SESSION_ENTITY_WRAPPER = 65555;
     public static final int REPLACE_FUNCTION = 65656;
+    public static final int SESSION_COMPARE_AND_SET = 65624;
 
     // models.sessions.infinispan.changes.sessions package
     public static final int LAST_SESSION_REFRESH_EVENT = 65557;

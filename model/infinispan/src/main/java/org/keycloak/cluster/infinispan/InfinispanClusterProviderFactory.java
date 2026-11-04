@@ -49,6 +49,8 @@ import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOCAL_CACHE_NAMES;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME;
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
 /**
@@ -186,11 +188,7 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
             if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
                 // If persistent user sessions are enabled, the reasoning from above is true for the user and client sessions as well.
                 // As the session caches are distributed caches and as this runs on every node, run it locally on each node.
-                localExecutor.execute(() ->
-                        Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
-                                .map(name -> workCache.getCacheManager().getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
-                                .forEach(Cache::clear)
-                );
+                clearDatabaseBackedSessionCaches();
             }
         }
 
@@ -198,14 +196,21 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         public void viewChanged(ViewChangedEvent event) {
             Set<String> removedNodesAddresses = convertAddresses(event.getOldMembers());
             Set<String> newAddresses = convertAddresses(event.getNewMembers());
+            removedNodesAddresses.removeAll(newAddresses);
+
+            if (!removedNodesAddresses.isEmpty()) {
+                // With state transfer disabled and one owner, a topology change already makes
+                // part of these disposable caches cold. Clear all remaining DB-backed entries
+                // as well so a node that died after committing to the DB, but before its cache
+                // invalidation completed, cannot leave stale session state on a surviving owner.
+                clearDatabaseBackedSessionCaches();
+            }
 
             // Use separate thread to avoid potential deadlock
             localExecutor.execute(() -> {
                 try {
                     // Coordinator makes sure that entries for outdated nodes are cleaned up
                     if (workCache.getCacheManager().isCoordinator()) {
-
-                        removedNodesAddresses.removeAll(newAddresses);
 
                         if (removedNodesAddresses.isEmpty()) {
                             return;
@@ -229,5 +234,18 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         private Set<String> convertAddresses(Collection<Address> addresses) {
             return addresses.stream().map(Object::toString).collect(Collectors.toSet());
         }
+    }
+
+    private void clearDatabaseBackedSessionCaches() {
+        localExecutor.execute(() -> {
+            var cacheNames = Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)
+                    ? Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
+                    : Arrays.stream(new String[] { OFFLINE_USER_SESSION_CACHE_NAME, OFFLINE_CLIENT_SESSION_CACHE_NAME });
+
+            cacheNames
+                    .filter(workCache.getCacheManager()::cacheExists)
+                    .map(name -> workCache.getCacheManager().getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
+                    .forEach(Cache::clear);
+        });
     }
 }

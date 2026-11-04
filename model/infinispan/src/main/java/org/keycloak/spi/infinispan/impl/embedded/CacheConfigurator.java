@@ -457,6 +457,8 @@ public final class CacheConfigurator {
     // private methods below
 
     private static void configureSessionExpirationReaper(ConfigurationBuilder builder) {
+        // Store detached values even on the owner. Request mutations must never change cached state.
+        builder.encoding().value().mediaType(MediaType.APPLICATION_PROTOSTREAM_TYPE);
         builder.expiration().enableReaper().wakeUpInterval(InfinispanUserSessionProviderFactory.getExpirationPeriod(TimeUnit.MILLISECONDS));
     }
 
@@ -593,6 +595,7 @@ public final class CacheConfigurator {
                 if (clustered) {
                     builder.clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(1);
                 }
+                builder.encoding().value().mediaType(MediaType.APPLICATION_PROTOSTREAM_TYPE);
                 builder.memory().maxCount(SESSIONS_CACHE_DEFAULT_MAX);
                 return builder;
             case ACTION_TOKEN_CACHE:

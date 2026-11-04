@@ -56,6 +56,14 @@ public interface NonBlockingTransaction {
     void asyncRollback(AggregateCompletionStage<Void> stage);
 
     /**
+     * Executes deferred DB-backed cache operations after database changes are committed
+     * (DB-first ordering). Cache-authoritative transactions may still write during
+     * {@link #asyncCommit(AggregateCompletionStage, Consumer)}.
+     */
+    default void asyncPostDatabaseCommit(AggregateCompletionStage<Void> stage) {
+    }
+
+    /**
      * This transaction connects to entities in the database.
      *
      * @return When this returns true, this has entities in the database
