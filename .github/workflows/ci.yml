@@ -124,6 +124,15 @@ jobs:
       - name: Check base testsuites
         run: tests/base/check-base-suites.sh
 
+      - name: Check old testsuite lists
+        run: |
+          # Fail if a suite list references a test class or package that no longer exists, for example after a migration to the new test framework
+          cd testsuite/integration-arquillian/tests/base/testsuites
+          ./base-suite.sh 1 > /dev/null
+          for f in *-suite; do
+            [ "$f" == "base-suite" ] || ./suite.sh "${f%-suite}" > /dev/null
+          done
+
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
         with:
