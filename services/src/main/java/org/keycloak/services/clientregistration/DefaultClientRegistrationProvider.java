@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -58,7 +59,12 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     public Response createDefault(ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = create(context);
+        ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
         validateClient(client, true);
+        client = ModelToRepresentation.toRepresentation(clientModel, session);
+        client.setSecret(clientModel.getSecret());
+        String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, auth.getRegistrationAuth(), getAllowedOrigins());
+        client.setRegistrationAccessToken(registrationAccessToken);
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }
@@ -82,6 +88,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
         client = update(clientId, context);
         updateAuthorizationSettings(client, authorizationSettings);
         validateClient(client, false);
+        client = get(session.getContext().getRealm().getClientByClientId(clientId));
         return Response.ok(client).build();
     }
 
