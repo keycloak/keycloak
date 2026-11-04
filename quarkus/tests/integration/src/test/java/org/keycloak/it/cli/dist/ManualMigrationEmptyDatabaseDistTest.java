@@ -20,12 +20,17 @@ package org.keycloak.it.cli.dist;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.storage.database.ManualMigrationParity;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
@@ -158,6 +163,34 @@ public class ManualMigrationEmptyDatabaseDistTest {
             assertThat(index + " must be re-created after it is dropped", lastCreate, greaterThan(drop));
         }
     }
+
+    /**
+     * Applies the generated script to an empty database and compares the result with what the automatic migration
+     * creates, which is what the string assertions above cannot show. The server must also accept the result as an
+     * up-to-date database.
+     */
+    @Test
+    void testScriptProducesTheSchemaOfTheAutomaticMigration(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws Exception {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        Path h2Dir = rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath();
+        String url = "jdbc:h2:file:" + h2Dir.resolve("keycloakdb") + ";NON_KEYWORDS=VALUE";
+
+        ManualMigrationParity.Database database = new ManualMigrationParity.Database() {
+            @Override
+            public Connection open() throws Exception {
+                return DriverManager.getConnection(url, "", "");
+            }
+
+            @Override
+            public void reset() throws Exception {
+                FileUtil.deleteDirectory(h2Dir);
+            }
+        };
+
+        ManualMigrationParity.verify(runner, rawDistRootPath, database, List.of("start-dev"),
+                ManualMigrationParity.KNOWN_MISSING_FROM_SCRIPT, ManualMigrationParity.KNOWN_EXTRA_IN_SCRIPT);
+    }
+
 
     private static int countOccurrences(String haystack, String needle) {
         return haystack.split(Pattern.quote(needle), -1).length - 1;
