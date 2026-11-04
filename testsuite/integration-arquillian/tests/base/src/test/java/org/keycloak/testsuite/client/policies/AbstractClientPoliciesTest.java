@@ -1354,7 +1354,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             oauth.httpClient().reset();
         }
         assertEquals(400, accessTokenResponseRefreshed.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponseRefreshed.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, accessTokenResponseRefreshed.getError());
 
         // Check token revoke with other certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
