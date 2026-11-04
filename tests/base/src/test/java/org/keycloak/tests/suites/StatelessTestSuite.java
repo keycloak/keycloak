@@ -17,6 +17,7 @@ import org.keycloak.tests.model.SingleUseProviderTest;
 import org.keycloak.tests.model.UserSessionProviderOfflineTest;
 import org.keycloak.tests.model.UserSessionProviderTest;
 import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
+import org.keycloak.tests.oidc.LightWeightAccessTokenTest;
 import org.keycloak.tests.organization.member.OrganizationMemberTest;
 import org.keycloak.tests.session.SessionTimeoutValidationTest;
 import org.keycloak.tests.sessionlimits.UserSessionLimitsTest;
@@ -42,7 +43,8 @@ import org.junit.platform.suite.api.Suite;
         AsyncCommitHqlTest.class,
         AuthenticationSessionProviderTest.class,
         SingleUseProviderTest.class,
-        JdbcPingReconnectCacheClearTest.class
+        JdbcPingReconnectCacheClearTest.class,
+        LightWeightAccessTokenTest.class
 })
 public class StatelessTestSuite {
 
