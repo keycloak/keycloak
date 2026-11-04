@@ -206,7 +206,11 @@ public class ResourceServerService {
         
         session.setAttribute("ALLOW_CREATE_POLICY", true);
 
-        getPolicyResource().create(defaultPolicy);
+        try {
+            getPolicyResource().create(defaultPolicy);
+        } finally {
+            session.removeAttribute("ALLOW_CREATE_POLICY");
+        }
 
         return defaultPolicy;
     }

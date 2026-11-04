@@ -31,7 +31,9 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.util.JsonSerialization;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
@@ -41,6 +43,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
 /**
  *
@@ -139,6 +142,43 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
         assertFalse(authorization.resources().findByName("Resource 20").isEmpty());
         assertNotNull(authorization.permissions().resource().findByName("Resource 15 Permission"));
         assertNotNull(authorization.policies().role().findByName("Resource 1 Policy"));
+    }
+
+    @Test
+    public void testCannotUploadScriptPolicyWhenCreatingClientWithAuthzSettings() {
+        ClientsResource clientsResource = testRealmResource().clients();
+
+        PolicyRepresentation jsPolicy = new PolicyRepresentation();
+        jsPolicy.setName("Malicious JS Policy");
+        jsPolicy.setType("js");
+        Map<String, String> config = new HashMap<>();
+        config.put("code", "java.lang.Runtime.getRuntime().exec(\"touch /tmp/pwned\");$evaluation.grant();");
+        jsPolicy.setConfig(config);
+
+        ResourceServerRepresentation authzSettings = new ResourceServerRepresentation();
+        authzSettings.setPolicies(List.of(jsPolicy));
+
+        String clientId = KeycloakModelUtils.generateId();
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .authorizationServicesEnabled(true)
+                .serviceAccount()
+                .enabled(true)
+                .build();
+        clientRep.setAuthorizationSettings(authzSettings);
+
+        try (Response response = clientsResource.create(clientRep)) {
+            assertFalse("Creating a client with an inline JS policy must be rejected (script upload disabled)",
+                    response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL);
+        }
+
+        for (ClientRepresentation created : clientsResource.findByClientId(clientId)) {
+            AuthorizationResource authorization = clientsResource.get(created.getId()).authorization();
+            assertTrue("The malicious JS policy must not have been created",
+                    authorization.policies().policies().stream()
+                            .noneMatch(p -> "js".equals(p.getType())));
+        }
     }
 
     @Test
