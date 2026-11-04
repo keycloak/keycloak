@@ -1,6 +1,12 @@
 package org.keycloak.tests.model;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.jpa.entities.ClientScopeEntity;
@@ -15,6 +21,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
+import org.infinispan.Cache;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,6 +78,62 @@ public class ClientScopeLoadQueryCountTest {
             assertThat("attributes are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".attributes").getFetchCount(), lessThanOrEqualTo(MAX_COLLECTION_FETCHES));
             assertThat("scope mappings are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".scopeMappingIds").getFetchCount(), lessThanOrEqualTo(MAX_COLLECTION_FETCHES));
         });
+    }
+
+    @Test
+    public void fewEvictedClientScopesAreLoadedIndividually() {
+        evictScopes(3);
+
+        String realmName = realm.getName();
+        runOnServer.run(session -> {
+            Statistics stats = enabledStatistics(session);
+            session.realms().getRealmByName(realmName).getClientScopesStream().count();
+
+            assertThat("no bulk query for a few missing scopes", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(0L));
+            assertThat("only missing scopes are loaded", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getLoadCount(), is(3L));
+        });
+    }
+
+    @Test
+    public void manyEvictedClientScopesAreLoadedInBatches() {
+        evictScopes(50);
+
+        String realmName = realm.getName();
+        runOnServer.run(session -> {
+            Statistics stats = enabledStatistics(session);
+            session.realms().getRealmByName(realmName).getClientScopesStream().count();
+
+            assertThat("missing scopes are loaded by a single query", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(1L));
+            assertThat("no scope is loaded individually", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getFetchCount(), is(0L));
+            // batches only cover part of the missing scopes, but there must be far fewer fetches than missing scopes
+            assertThat("attributes are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".attributes").getFetchCount(), lessThanOrEqualTo(15L));
+        });
+    }
+
+    // warms the cache, then removes the given number of client scopes from it, as the cache eviction would do
+    private void evictScopes(int count) {
+        String realmName = realm.getName();
+        runOnServer.run(session -> {
+            session.getProvider(CacheRealmProvider.class).clear();
+            session.realms().getRealmByName(realmName).getClientScopesStream().count();
+        });
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            Set<String> names = IntStream.range(0, count).mapToObj(i -> "scope-" + i).collect(Collectors.toSet());
+            Cache<Object, Object> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.REALM_CACHE_NAME);
+            realmModel.getClientScopesStream().filter(s -> names.contains(s.getName())).map(ClientScopeModel::getId).toList().forEach(cache::remove);
+        });
+    }
+
+    private static Statistics enabledStatistics(org.keycloak.models.KeycloakSession session) {
+        Statistics stats = session.getProvider(JpaConnectionProvider.class)
+                .getEntityManager()
+                .getEntityManagerFactory()
+                .unwrap(SessionFactory.class)
+                .getStatistics();
+        stats.setStatisticsEnabled(true);
+        stats.clear();
+        return stats;
     }
 
     private static class ClientScopesRealmConfig implements RealmConfig {

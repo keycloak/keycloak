@@ -148,6 +148,8 @@ import org.jboss.logging.Logger;
  */
 public class RealmCacheSession implements CacheRealmProvider {
     protected static final Logger logger = Logger.getLogger(RealmCacheSession.class);
+    // above this number of uncached client scopes, loading all of them in one batched query is cheaper than loading them one by one
+    private static final int MAX_INDIVIDUAL_CLIENT_SCOPE_LOADS = 10;
     public static final String REALM_CLIENTS_QUERY_SUFFIX = ".realm.clients";
     public static final String ROLES_QUERY_SUFFIX = ".roles";
     private static final String SCOPE_KEY_DEFAULT = "default";
@@ -1400,7 +1402,15 @@ public class RealmCacheSession implements CacheRealmProvider {
             return model.stream();
         }
         Set<ClientScopeModel> list = new HashSet<>();
+        int missing = 0;
         for (String id : query.getClientScopes()) {
+            if (cache.get(id, CachedClientScope.class) == null && ++missing > MAX_INDIVIDUAL_CLIENT_SCOPE_LOADS) {
+                // many scopes are missing from the cache, so load all of them with a single batched query instead of one by one
+                logger.tracev("getClientScopesStream loading all scopes of realm {0} as more than {1} are not cached", realm.getName(), MAX_INDIVIDUAL_CLIENT_SCOPE_LOADS);
+                return getClientScopeDelegate().getClientScopesStream(realm)
+                        .map(scope -> getClientScopeById(realm, scope.getId()))
+                        .filter(Objects::nonNull);
+            }
             ClientScopeModel clientScope = session.clientScopes().getClientScopeById(realm, id);
             if (clientScope == null) {
                 invalidations.add(cacheKey);
