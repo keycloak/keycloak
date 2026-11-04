@@ -388,7 +388,7 @@
             <column name="NAME" type="VARCHAR(255)"/>
             <column name="lower(VALUE)" valueComputed="lower(VALUE)"/>
         </createIndex>
-        <sql dbms="postgresql">ANALYZE ${database.defaultSchemaName}.USER_ATTRIBUTE</sql>
+        <sql dbms="postgresql">ANALYZE "${database.defaultSchemaName}".USER_ATTRIBUTE</sql>
     </changeSet>
 
 </databaseChangeLog>
