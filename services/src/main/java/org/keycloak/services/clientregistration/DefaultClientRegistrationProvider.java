@@ -61,10 +61,7 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
         client = create(context);
         ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
         validateClient(client, true);
-        client = ModelToRepresentation.toRepresentation(clientModel, session);
-        client.setSecret(clientModel.getSecret());
-        String registrationAccessToken = ClientRegistrationTokenUtils.updateRegistrationAccessToken(session, clientModel, auth.getRegistrationAuth(), getAllowedOrigins());
-        client.setRegistrationAccessToken(registrationAccessToken);
+        client.setProtocolMappers(ModelToRepresentation.toRepresentation(clientModel, session).getProtocolMappers());
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }
@@ -88,7 +85,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
         client = update(clientId, context);
         updateAuthorizationSettings(client, authorizationSettings);
         validateClient(client, false);
-        client = get(session.getContext().getRealm().getClientByClientId(clientId));
+        client.setProtocolMappers(ModelToRepresentation.toRepresentation(session.getContext()
+                .getRealm()
+                .getClientByClientId(clientId), session).getProtocolMappers());
         return Response.ok(client).build();
     }
 

@@ -41,13 +41,10 @@ import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
-import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
-import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
 import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
@@ -55,7 +52,6 @@ import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 import static org.keycloak.services.managers.ResourceAdminManager.CLIENT_SESSION_HOST_PROPERTY;
 
 public class DefaultClientValidationProvider implements ClientValidationProvider {
