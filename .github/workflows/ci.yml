@@ -1360,7 +1360,6 @@ jobs:
       - quarkus-unit-tests
       - quarkus-integration-tests
       - jdk-integration-tests
-      - login-v1-tests
       - store-integration-tests
       - store-integration-tests-additional
       - volatile-sessions-tests
