@@ -1,5 +1,7 @@
 package org.keycloak.tests.model;
 
+import java.util.function.Consumer;
+
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
@@ -32,7 +34,7 @@ public class ClientScopeLookupByNameTest {
 
     private static final int CLIENT_SCOPES = 150;
 
-    private static final String SCOPES_QUERY = "select scope from ClientScopeEntity scope where scope.realmId = :realm";
+    private static final String SCOPES_QUERY = "select scope.id from ClientScopeEntity scope where scope.realmId = :realm";
 
     private static final String SCOPE_ID_BY_NAME_QUERY = "select scope.id from ClientScopeEntity scope where scope.realmId = :realm and scope.name = :name";
 
@@ -50,26 +52,24 @@ public class ClientScopeLookupByNameTest {
 
         runOnServer.run(session -> {
             RealmModel realmModel = session.realms().getRealmByName(realmName);
-            Statistics stats = statistics(session);
-            stats.clear();
+            withStatistics(session, stats -> {
+                ClientScopeModel scope = realmModel.getClientScopeByName("scope-42");
+                assertThat(scope, notNullValue());
+                assertThat(scope.getName(), is("scope-42"));
 
-            ClientScopeModel scope = realmModel.getClientScopeByName("scope-42");
-            assertThat(scope, notNullValue());
-            assertThat(scope.getName(), is("scope-42"));
-
-            // only look at the statistics of the client scope entity, as the server runs other queries in parallel
-            assertThat("scope is found by name", stats.getQueryStatistics(SCOPE_ID_BY_NAME_QUERY).getExecutionCount(), is(1L));
-            assertThat("scopes are not enumerated", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(0L));
-            assertThat("only one scope is loaded", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getFetchCount(), lessThanOrEqualTo(1L));
+                // only look at the statistics of the client scope entity, as the server runs other queries in parallel
+                assertThat("scope is found by name", stats.getQueryStatistics(SCOPE_ID_BY_NAME_QUERY).getExecutionCount(), is(1L));
+                assertThat("scopes are not enumerated", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(0L));
+                assertThat("only one scope is loaded", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getLoadCount(), lessThanOrEqualTo(1L));
+            });
         });
 
         runOnServer.run(session -> {
             RealmModel realmModel = session.realms().getRealmByName(realmName);
-            Statistics stats = statistics(session);
-            stats.clear();
-
-            assertThat(realmModel.getClientScopeByName("scope-42"), notNullValue());
-            assertThat("second lookup is served from the cache", stats.getQueryStatistics(SCOPE_ID_BY_NAME_QUERY).getExecutionCount(), is(0L));
+            withStatistics(session, stats -> {
+                assertThat(realmModel.getClientScopeByName("scope-42"), notNullValue());
+                assertThat("second lookup is served from the cache", stats.getQueryStatistics(SCOPE_ID_BY_NAME_QUERY).getExecutionCount(), is(0L));
+            });
         });
     }
 
@@ -123,14 +123,20 @@ public class ClientScopeLookupByNameTest {
         runOnServer.run(session -> assertThat(session.realms().getRealmByName(realmName).getClientScopeById(newId).getProtocol(), is("saml")));
     }
 
-    private static Statistics statistics(org.keycloak.models.KeycloakSession session) {
+    private static void withStatistics(org.keycloak.models.KeycloakSession session, Consumer<Statistics> test) {
         Statistics stats = session.getProvider(JpaConnectionProvider.class)
                 .getEntityManager()
                 .getEntityManagerFactory()
                 .unwrap(SessionFactory.class)
                 .getStatistics();
+        boolean wasEnabled = stats.isStatisticsEnabled();
         stats.setStatisticsEnabled(true);
-        return stats;
+        try {
+            stats.clear();
+            test.accept(stats);
+        } finally {
+            stats.setStatisticsEnabled(wasEnabled);
+        }
     }
 
     private static class ClientScopesRealmConfig implements RealmConfig {
