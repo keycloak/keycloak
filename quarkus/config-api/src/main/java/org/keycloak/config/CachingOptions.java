@@ -38,7 +38,7 @@ public class CachingOptions {
 
     public static final String[] LOCAL_MAX_COUNT_CACHES = new String[]{"authorization", "crl", "keys", "realms", "users", };
 
-    public static final String[] CLUSTERED_MAX_COUNT_CACHES = new String[]{"clientSessions", "offlineSessions", "offlineClientSessions", "sessions"};
+    public static final String[] CLUSTERED_MAX_COUNT_CACHES = new String[]{"clientSessions", "sessions"};
 
     public enum Mechanism {
         ispn,

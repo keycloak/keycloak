@@ -127,8 +127,6 @@ public interface InfinispanConnectionProvider extends Provider {
 
     String[] CLUSTERED_MAX_COUNT_CACHES = new String[]{
             CLIENT_SESSION_CACHE_NAME,
-            OFFLINE_USER_SESSION_CACHE_NAME,
-            OFFLINE_CLIENT_SESSION_CACHE_NAME,
             USER_SESSION_CACHE_NAME
     };
 
