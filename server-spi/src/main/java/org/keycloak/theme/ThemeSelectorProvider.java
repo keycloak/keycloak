@@ -52,7 +52,7 @@ public interface ThemeSelectorProvider extends Provider {
             return DEFAULT_V2;
         }
 
-        if ((type == Theme.Type.LOGIN) && Profile.isFeatureEnabled(Profile.Feature.LOGIN_V2)) {
+        if (type == Theme.Type.LOGIN) {
             return DEFAULT_V2;
         }
 

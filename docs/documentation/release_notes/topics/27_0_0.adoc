@@ -1,3 +1,9 @@
+= User interface
+
+== Login v1 theme removed
+
+The legacy Login v1 theme based on PatternFly 3/4 has been deprecated for a long time and has been removed for this release.
+
 = Administration
 
 == Service account user ID available on client representation

@@ -361,7 +361,7 @@ kcLogoIdP-myProvider = fa fa-lock
 ----
 
 All icons are available on the official website of PatternFly4.
-Icons for social providers are already defined in `base` login theme properties (`themes/keycloak/login/theme.properties`), where you can inspire yourself.
+Icons for social providers are already defined in the built-in login theme properties (`themes/keycloak.v2/login/theme.properties`), where you can inspire yourself.
 
 === Creating a custom HTML template
 
