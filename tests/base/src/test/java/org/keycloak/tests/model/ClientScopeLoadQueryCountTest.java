@@ -2,8 +2,8 @@ package org.keycloak.tests.model;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.jpa.entities.ClientScopeEntity;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
