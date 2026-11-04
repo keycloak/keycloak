@@ -49,6 +49,8 @@ image:images/client-scopes-phone.png[]
 
 When the *phone* client scope is linked to a client, the client automatically inherits all the protocol mappers defined in the *phone* client scope. Access tokens issued for this client contain the phone number information about the user, assuming that the user has a defined phone number.
 
+The `phone_number` and `phone_number_verified` claims are mapped from the `phoneNumber` and `phoneNumberVerified` user attributes. {project_name} does not verify phone numbers itself. However, when users change their own `phoneNumber` in the Account Console, through the update profile required action, or when reviewing their profile during their first login through an identity provider, a `phoneNumberVerified` value of `true` is set to `false`, in the same way the email verification status is reset when users change their email. Values written by identity provider mappers or user federation providers are stored as provided. If you add the `phoneNumberVerified` attribute to the user profile, make sure that only administrators can edit it.
+
 Built-in client scopes contain the protocol mappers as defined in the specification. You are free to edit client scopes and create, update, or remove any protocol mappers or role scope mappings.
 
 == Consent related settings
