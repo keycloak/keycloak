@@ -10,9 +10,8 @@
  * PF5 palette shade used in the light theme (e.g. nav/header). Dark mode is
  * applied separately by writing `styles.dark` under `.pf-v6-theme-dark`.
  *
- * The Admin UI login preview still renders PF5 React components, so callers also
- * emit the original PF5 variables via `pf5VarsToPf5Css` until that preview moves
- * to PF6.
+ * Login preview uses only PF6 tokens. Quick Theme JAR export still emits PF5
+ * variables via `pf5VarsToPf5Css` for the Admin/Account themes that remain on PF5.
  *
  * @see https://www.patternfly.org/foundations-and-styles/design-tokens/develop/
  * @see https://www.patternfly.org/foundations-and-styles/colors/
@@ -81,7 +80,7 @@ export function pf5VarsToPf6Css(obj?: object): string {
     .join("\n");
 }
 
-/** Keep emitting PF5 variables while the Admin UI login preview still uses PF5 components. */
+/** Emit PF5 variables for Admin/Account theme CSS that still consumes `--pf-v5-global--*`. */
 export function pf5VarsToPf5Css(obj?: object): string {
   return Object.entries(obj || {})
     .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)

@@ -33,5 +33,15 @@ test.describe("Realm settings quick theme", () => {
     const href = await stylesheet.getAttribute("href");
     const response = await page.request.get(new URL(href!, page.url()).href);
     expect(response.status()).toBe(200);
+
+    const pf6Stylesheet = page.locator(
+      'link[rel="stylesheet"][href$="/common/keycloak/vendor/patternfly-v6/patternfly.min.css"]',
+    );
+    await expect(pf6Stylesheet).toHaveCount(1);
+
+    await expect(page.getByTestId("login-page-preview")).toBeVisible();
+    await expect(
+      page.locator(".login-preview .pf-v6-c-login__main"),
+    ).toBeVisible();
   });
 });
