@@ -110,7 +110,9 @@ public abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocol
                 // Case when we want to add to existing set of roles
                 Object last = jsonObject.get(component);
                 if (last instanceof Collection && attributeValue instanceof Collection) {
-                    ((Collection) last).addAll((Collection) attributeValue);
+                    // skip roles already added by another mapper writing to the same claim
+                    Collection<Object> existing = (Collection<Object>) last;
+                    ((Collection<?>) attributeValue).stream().filter(role -> !existing.contains(role)).forEach(existing::add);
                 } else {
                     jsonObject.put(component, attributeValue);
                 }
