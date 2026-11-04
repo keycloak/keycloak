@@ -46,7 +46,9 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
+import org.keycloak.protocol.oidc.endpoints.ClientAttestationChallengeEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
@@ -166,6 +168,12 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         if (clientAuthMethodsSupported.contains(ATTEST_JWT_CLIENT_AUTH)) {
             config.setClientAttestationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
             config.setClientAttestationPopSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+
+            CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+            if (cNonceHandler != null && cNonceHandler.supportsCNonceConsumption()) {
+                config.setChallengeEndpoint(ClientAttestationChallengeEndpoint.challengeUrl(backendUriInfo.getBaseUriBuilder())
+                        .build(realm.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL).toString());
+            }
         }
 
         config.setAuthorizationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
