@@ -179,7 +179,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .userId(user.getId())
                     .hasCodeId()
                     .details(Details.USERNAME, USERNAME)
-                    .withoutDetails(Details.CREDENTIAL_TYPE);
+                    .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         }
     }
 
@@ -392,7 +392,8 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .userId(testUser.getId())
                     .hasCodeId()
                     .details(Details.USERNAME, testUser.getUsername())
-                    .withoutDetails(Details.CREDENTIAL_TYPE, WebAuthnConstants.USER_VERIFICATION_CHECKED);
+                    .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                    .withoutDetails(WebAuthnConstants.USER_VERIFICATION_CHECKED);
 
             logout();
         }

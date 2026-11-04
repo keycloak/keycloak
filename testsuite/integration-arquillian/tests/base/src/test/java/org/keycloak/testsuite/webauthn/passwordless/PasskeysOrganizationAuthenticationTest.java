@@ -26,6 +26,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
@@ -234,7 +235,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             EventAssertion.expectLoginSuccess(eventRep)
                     .userId(user.getId())
                     .details(Details.USERNAME, "UserWebAuthn");
-            MatcherAssert.assertThat(eventRep.getDetails().get(Details.CREDENTIAL_TYPE), Matchers.nullValue());
+            MatcherAssert.assertThat(eventRep.getDetails().get(Details.CREDENTIAL_TYPE), Matchers.is(PasswordCredentialModel.TYPE));
         }
     }
 
