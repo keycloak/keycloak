@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JwtProofValidatorTest extends AbstractUtilSessionTest {
@@ -137,6 +138,55 @@ public class JwtProofValidatorTest extends AbstractUtilSessionTest {
 
         assertEquals(ErrorType.INVALID_PROOF, exception.getErrorType());
         assertEquals("JWT proof key is not attested_keys[0]", exception.getMessage());
+    }
+
+    @Test
+    public void testKidResolvesAttestedKeyByKeyId() throws VCIssuerException {
+        JWK firstKey = newEcJwk();
+        firstKey.setKeyId("first");
+        JWK secondKey = newEcJwk();
+        secondKey.setKeyId("second");
+
+        assertSame(secondKey, new JwtProofValidator(session, null)
+                .resolveAttestedKey(List.of(firstKey, secondKey), "second"));
+    }
+
+    @Test
+    public void testKidResolvesAttestedKeyByPosition() throws VCIssuerException {
+        JWK firstKey = newEcJwk();
+        JWK secondKey = newEcJwk();
+        JwtProofValidator validator = new JwtProofValidator(session, null);
+
+        assertSame(firstKey, validator.resolveAttestedKey(List.of(firstKey, secondKey), "0"));
+        assertSame(secondKey, validator.resolveAttestedKey(List.of(firstKey, secondKey), "1"));
+    }
+
+    @Test
+    public void testKidMatchingAttestedKeyIdTakesPrecedenceOverPosition() throws VCIssuerException {
+        JWK firstKey = newEcJwk();
+        firstKey.setKeyId("1");
+        JWK secondKey = newEcJwk();
+
+        assertSame(firstKey, new JwtProofValidator(session, null)
+                .resolveAttestedKey(List.of(firstKey, secondKey), "1"));
+    }
+
+    @Test
+    public void testKidOutsideAttestedKeysRejected() {
+        VCIssuerException exception = assertThrows(VCIssuerException.class,
+                () -> new JwtProofValidator(session, null).resolveAttestedKey(List.of(newEcJwk(), newEcJwk()), "2"));
+
+        assertEquals(ErrorType.INVALID_PROOF, exception.getErrorType());
+        assertEquals("No attested key found matching kid: 2", exception.getMessage());
+    }
+
+    @Test
+    public void testUnknownNonNumericKidRejected() {
+        VCIssuerException exception = assertThrows(VCIssuerException.class,
+                () -> new JwtProofValidator(session, null).resolveAttestedKey(List.of(newEcJwk()), "unknown"));
+
+        assertEquals(ErrorType.INVALID_PROOF, exception.getErrorType());
+        assertEquals("No attested key found matching kid: unknown", exception.getMessage());
     }
 
     private static JWK newEcJwk() {
