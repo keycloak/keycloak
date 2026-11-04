@@ -405,10 +405,11 @@ public class AuthorizationTest extends AbstractScimTest {
         realm.admin().update(realmRep);
         grantAdminRole(AdminRoles.QUERY_GROUPS);
 
+        GroupRepresentation group = createGroup();
+        createGroup("hidden-group");
         ListResponse<Group> groups = noAccessClient.groups().getAll("");
         assertEquals(0, groups.getTotalResults());
 
-        GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
         UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
@@ -425,6 +426,7 @@ public class AuthorizationTest extends AbstractScimTest {
         permissionClient.authorization().permissions().scope().create(permission).close();
         groups = noAccessClient.groups().getAll("");
         assertEquals(1, groups.getTotalResults());
+        assertEquals(group.getId(), groups.getResources().get(0).getId());
     }
 
     @Test
