@@ -28,8 +28,8 @@ import org.keycloak.provider.ProviderEvent;
  *         and connectivity is restored.</li>
  *     <li>Split-brain recovery — this node was in the losing partition ({@code UNHEALTHY})
  *         and has rejoined the correct cluster view.</li>
- *     <li>Coordinator election — no coordinator was present in the database table
- *         ({@code NO_COORDINATOR}) and one has since been elected.</li>
+ *     <li>Discovery publication recovery — no fresh member entry reported a coordinator
+ *         ({@code NO_COORDINATOR}) and a member has since published its cluster view.</li>
  * </ul>
  *
  * <p>Only available when the JDBC-PING cache stack is in use. Listened to by
