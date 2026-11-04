@@ -1,6 +1,7 @@
 package org.keycloak.tests.model;
 
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -55,28 +56,16 @@ public class ClientScopeLoadQueryCountTest {
 
         runOnServer.run(session -> {
             RealmModel realmModel = session.realms().getRealmByName(realmName);
-            Statistics stats = session.getProvider(JpaConnectionProvider.class)
-                    .getEntityManager()
-                    .getEntityManagerFactory()
-                    .unwrap(SessionFactory.class)
-                    .getStatistics();
-            boolean wasEnabled = stats.isStatisticsEnabled();
-            stats.setStatisticsEnabled(true);
-            stats.clear();
-            long scopes;
-            try {
-                scopes = realmModel.getClientScopesStream().count();
-            } finally {
-                stats.setStatisticsEnabled(wasEnabled);
-            }
+            withStatistics(session, stats -> {
+                long scopes = realmModel.getClientScopesStream().count();
+                assertThat(scopes >= CLIENT_SCOPES, is(true));
 
-            assertThat(scopes >= CLIENT_SCOPES, is(true));
-
-            // only look at the statistics of the client scope entity, as the server runs other queries in parallel
-            assertThat("scopes are loaded by a single query", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(1L));
-            assertThat("no scope is loaded individually", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getFetchCount(), is(0L));
-            assertThat("attributes are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".attributes").getFetchCount(), lessThanOrEqualTo(MAX_COLLECTION_FETCHES));
-            assertThat("scope mappings are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".scopeMappingIds").getFetchCount(), lessThanOrEqualTo(MAX_COLLECTION_FETCHES));
+                // only look at the statistics of the client scope entity, as the server runs other queries in parallel
+                assertThat("scopes are loaded by a single query", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(1L));
+                assertThat("no scope is loaded individually", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getFetchCount(), is(0L));
+                assertThat("attributes are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".attributes").getFetchCount(), lessThanOrEqualTo(MAX_COLLECTION_FETCHES));
+                assertThat("scope mappings are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".scopeMappingIds").getFetchCount(), lessThanOrEqualTo(MAX_COLLECTION_FETCHES));
+            });
         });
     }
 
@@ -85,13 +74,12 @@ public class ClientScopeLoadQueryCountTest {
         evictScopes(3);
 
         String realmName = realm.getName();
-        runOnServer.run(session -> {
-            Statistics stats = enabledStatistics(session);
+        runOnServer.run(session -> withStatistics(session, stats -> {
             session.realms().getRealmByName(realmName).getClientScopesStream().count();
 
             assertThat("no bulk query for a few missing scopes", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(0L));
             assertThat("only missing scopes are loaded", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getLoadCount(), is(3L));
-        });
+        }));
     }
 
     @Test
@@ -99,15 +87,14 @@ public class ClientScopeLoadQueryCountTest {
         evictScopes(50);
 
         String realmName = realm.getName();
-        runOnServer.run(session -> {
-            Statistics stats = enabledStatistics(session);
+        runOnServer.run(session -> withStatistics(session, stats -> {
             session.realms().getRealmByName(realmName).getClientScopesStream().count();
 
             assertThat("missing scopes are loaded by a single query", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(1L));
             assertThat("no scope is loaded individually", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getFetchCount(), is(0L));
             // batches only cover part of the missing scopes, but there must be far fewer fetches than missing scopes
             assertThat("attributes are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".attributes").getFetchCount(), lessThanOrEqualTo(15L));
-        });
+        }));
     }
 
     // warms the cache, then removes the given number of client scopes from it, as the cache eviction would do
@@ -125,15 +112,20 @@ public class ClientScopeLoadQueryCountTest {
         });
     }
 
-    private static Statistics enabledStatistics(org.keycloak.models.KeycloakSession session) {
+    private static void withStatistics(org.keycloak.models.KeycloakSession session, Consumer<Statistics> test) {
         Statistics stats = session.getProvider(JpaConnectionProvider.class)
                 .getEntityManager()
                 .getEntityManagerFactory()
                 .unwrap(SessionFactory.class)
                 .getStatistics();
+        boolean wasEnabled = stats.isStatisticsEnabled();
         stats.setStatisticsEnabled(true);
-        stats.clear();
-        return stats;
+        try {
+            stats.clear();
+            test.accept(stats);
+        } finally {
+            stats.setStatisticsEnabled(wasEnabled);
+        }
     }
 
     private static class ClientScopesRealmConfig implements RealmConfig {
