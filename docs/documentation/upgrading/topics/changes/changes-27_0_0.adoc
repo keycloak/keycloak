@@ -246,6 +246,22 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
+=== User Interface
+
+==== Previous Base login theme deprecated
+// https://github.com/keycloak/keycloak/issues/54546
+
+The previous Base login theme is preserved as the deprecated, independent `base-legacy` theme.
+To retain its markup, change `parent=base` to `parent=base-legacy` in your login theme's `theme.properties`.
+The `base-legacy` theme receives only security fixes and will be removed in a future release.
+
+==== New Base login theme
+// https://github.com/keycloak/keycloak/issues/54547
+
+The new Base login theme provides reusable templates and components for current and future login themes, with styling configurable through theme properties.
+Custom themes can override individual macros or properties instead of copying complete pages, reducing maintenance and helping them inherit validation, accessibility, and authentication improvements.
+The `keycloak.v2` login theme now inherits these shared templates and retains its styling through theme properties.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
