@@ -10,6 +10,8 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.operator.ContentSigner;
@@ -23,6 +25,13 @@ final class CrlGenerator {
     }
 
     static byte[] generateCrl(Date nextUpdate) throws Exception {
+        return generateCrl(nextUpdate, 0);
+    }
+
+    /**
+     * Generates a CRL padded with a non-critical extension, so that its encoding is at least {@code paddingBytes} long.
+     */
+    static byte[] generateCrl(Date nextUpdate, int paddingBytes) throws Exception {
         if (!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
@@ -31,12 +40,19 @@ final class CrlGenerator {
         Date thisUpdate = new Date(nextUpdate.getTime() - ONE_DAY_MILLIS);
         X509v2CRLBuilder builder = new X509v2CRLBuilder(X500Name.getInstance(caCert.getSubjectX500Principal().getEncoded()), thisUpdate);
         builder.setNextUpdate(nextUpdate);
+        if (paddingBytes > 0) {
+            builder.addExtension(new ASN1ObjectIdentifier("1.2.3.4.5.6.7.8.9"), false, new DEROctetString(new byte[paddingBytes]));
+        }
         ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BouncyIntegration.PROVIDER).build(keyPair.getPrivate());
         return builder.build(signer).getEncoded();
     }
 
     static byte[] generateValidCrl() throws Exception {
         return generateCrl(new Date(System.currentTimeMillis() + ONE_DAY_MILLIS));
+    }
+
+    static byte[] generateValidCrl(int paddingBytes) throws Exception {
+        return generateCrl(new Date(System.currentTimeMillis() + ONE_DAY_MILLIS), paddingBytes);
     }
 
     static byte[] generateStaleCrl() throws Exception {

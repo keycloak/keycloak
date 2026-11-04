@@ -45,8 +45,8 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
 
     private final static Logger logger = Logger.getLogger(ValidateX509CertificateUsername.class);
 
-    public ValidateX509CertificateUsername(boolean legacyCriticalBehavior) {
-        super(legacyCriticalBehavior);
+    public ValidateX509CertificateUsername(boolean legacyCriticalBehavior, CertificateValidator.LdapContext crlLdapContext) {
+        super(legacyCriticalBehavior, crlLdapContext);
     }
 
     @Override

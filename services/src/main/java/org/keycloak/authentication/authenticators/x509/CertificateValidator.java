@@ -64,6 +64,7 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -196,19 +197,61 @@ public class CertificateValidator {
         return this.certPathBuilderResult;
     }
 
+    /**
+     * Settings for loading CRLs from LDAP.
+     */
     public static class LdapContext {
+        // the same defaults as for the outgoing HTTP client
+        public static final long DEFAULT_MAX_CONSUMED_RESPONSE_SIZE = 10_000_000L;
+        public static final long DEFAULT_SOCKET_TIMEOUT_MILLIS = 5_000L;
+        public static final long DEFAULT_ESTABLISH_CONNECTION_TIMEOUT_MILLIS = -1L;
+
+        private static final String DEFAULT_LDAP_FACTORY_CLASS_NAME = "com.sun.jndi.ldap.LdapCtxFactory";
+
         private final String ldapFactoryClassName;
+        private final long maxConsumedResponseSize;
+        private final long socketTimeoutMillis;
+        private final long establishConnectionTimeoutMillis;
 
         public LdapContext() {
-            ldapFactoryClassName = "com.sun.jndi.ldap.LdapCtxFactory";
+            this(DEFAULT_LDAP_FACTORY_CLASS_NAME);
         }
 
         public LdapContext(String ldapFactoryClassName) {
+            this(ldapFactoryClassName, DEFAULT_MAX_CONSUMED_RESPONSE_SIZE, DEFAULT_SOCKET_TIMEOUT_MILLIS, DEFAULT_ESTABLISH_CONNECTION_TIMEOUT_MILLIS);
+        }
+
+        /**
+         * @param maxConsumedResponseSize maximum number of bytes read from the LDAP server
+         * @param socketTimeoutMillis maximum time of inactivity while waiting for data, a non-positive value for no timeout
+         * @param establishConnectionTimeoutMillis maximum time to connect to the LDAP server, a non-positive value for no timeout
+         */
+        public LdapContext(long maxConsumedResponseSize, long socketTimeoutMillis, long establishConnectionTimeoutMillis) {
+            this(DEFAULT_LDAP_FACTORY_CLASS_NAME, maxConsumedResponseSize, socketTimeoutMillis, establishConnectionTimeoutMillis);
+        }
+
+        private LdapContext(String ldapFactoryClassName, long maxConsumedResponseSize, long socketTimeoutMillis,
+                long establishConnectionTimeoutMillis) {
             this.ldapFactoryClassName = ldapFactoryClassName;
+            this.maxConsumedResponseSize = maxConsumedResponseSize;
+            this.socketTimeoutMillis = socketTimeoutMillis;
+            this.establishConnectionTimeoutMillis = establishConnectionTimeoutMillis;
         }
 
         public String getLdapFactoryClassName() {
             return ldapFactoryClassName;
+        }
+
+        public long getMaxConsumedResponseSize() {
+            return maxConsumedResponseSize;
+        }
+
+        public long getSocketTimeoutMillis() {
+            return socketTimeoutMillis;
+        }
+
+        public long getEstablishConnectionTimeoutMillis() {
+            return establishConnectionTimeoutMillis;
         }
     }
 
@@ -298,10 +341,10 @@ public class CertificateValidator {
 
         private final List<CRLLoaderImpl> delegates;
 
-        public CRLListLoader(KeycloakSession session, String cRLConfigValue, boolean abortIfNonUpdated) {
+        public CRLListLoader(KeycloakSession session, String cRLConfigValue, boolean abortIfNonUpdated, LdapContext ldapContext) {
             String[] delegatePaths = Constants.CFG_DELIMITER_PATTERN.split(cRLConfigValue);
             this.delegates = Arrays.stream(delegatePaths)
-                    .map(cRLPath -> new CRLFileLoader(session, cRLPath, abortIfNonUpdated))
+                    .map(cRLPath -> new CRLFileLoader(session, cRLPath, abortIfNonUpdated, ldapContext))
                     .collect(Collectors.toList());
         }
 
@@ -418,11 +461,18 @@ public class CertificateValidator {
         }
 
         private X509CRL loadCRLFromLDAP(CertificateFactory cf, URI remoteURI) throws GeneralSecurityException {
-            Hashtable<String, String> env = new Hashtable<>(2);
+            Hashtable<String, String> env = new Hashtable<>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, ldapContext.getLdapFactoryClassName());
             env.put(Context.PROVIDER_URL, remoteURI.toString());
+            // JNDI reads the whole LDAP response into memory and has no timeouts, so the socket factory limits both
+            env.put(CrlLdapSocketFactory.JNDI_SOCKET_FACTORY_PROPERTY, CrlLdapSocketFactory.class.getName());
+            SSLSocketFactory sslSocketFactory = "ldaps".equalsIgnoreCase(remoteURI.getScheme())
+                    ? (SSLSocketFactory) SSLSocketFactory.getDefault()
+                    : null;
+            CrlLdapSocketFactory socketFactory = new CrlLdapSocketFactory(ldapContext.getMaxConsumedResponseSize(),
+                    ldapContext.getEstablishConnectionTimeoutMillis(), ldapContext.getSocketTimeoutMillis(), sslSocketFactory);
 
-            try {
+            try (CrlLdapSocketFactory.Binding ignored = socketFactory.bind()) {
                 DirContext ctx = new InitialDirContext(env);
                 try {
                     Attributes attrs = ctx.getAttributes("");
@@ -438,7 +488,9 @@ public class CertificateValidator {
                     ctx.close();
                 }
             } catch (NamingException e) {
-                logger.error(e.getMessage());
+                // JNDI only reports that the connection was closed, the socket factory knows why
+                IOException failure = socketFactory.getFailure();
+                logger.error(failure != null ? failure.getMessage() : e.getMessage());
             } catch(IOException e) {
                 logger.error(e.getMessage());
             }
@@ -493,6 +545,7 @@ public class CertificateValidator {
     boolean _crlAbortIfNonUpdated;
     boolean _crldpEnabled;
     CRLLoaderImpl _crlLoader;
+    LdapContext _crlLdapContext = new LdapContext();
     boolean _ocspEnabled;
     boolean _ocspFailOpen;
     OCSPChecker ocspChecker;
@@ -893,7 +946,8 @@ public class CertificateValidator {
         return new ArrayList<>();
     }
 
-    private static void checkRevocationStatusUsingCRLDistributionPoints(X509Certificate[] certs, KeycloakSession session, boolean abortIfNonUpdated) throws GeneralSecurityException {
+    private static void checkRevocationStatusUsingCRLDistributionPoints(X509Certificate[] certs, KeycloakSession session, boolean abortIfNonUpdated,
+            LdapContext ldapContext) throws GeneralSecurityException {
 
         List<String> distributionPoints = getCRLDistributionPoints(certs[0]);
         if (distributionPoints == null || distributionPoints.isEmpty()) {
@@ -901,7 +955,7 @@ public class CertificateValidator {
         }
         for (String dp : distributionPoints) {
             logger.tracef("CRL Distribution point: \"%s\"", dp);
-            checkRevocationStatusUsingCRL(certs, new CRLFileLoader(session, dp, abortIfNonUpdated), session);
+            checkRevocationStatusUsingCRL(certs, new CRLFileLoader(session, dp, abortIfNonUpdated, ldapContext), session);
         }
     }
 
@@ -913,7 +967,7 @@ public class CertificateValidator {
             if (!_crldpEnabled) {
                 checkRevocationStatusUsingCRL(_certChain, _crlLoader, session);
             } else {
-                checkRevocationStatusUsingCRLDistributionPoints(_certChain, session, _crlAbortIfNonUpdated);
+                checkRevocationStatusUsingCRLDistributionPoints(_certChain, session, _crlAbortIfNonUpdated, _crlLdapContext);
             }
         }
         if (_ocspEnabled) {
@@ -939,6 +993,7 @@ public class CertificateValidator {
         boolean _crlAbortIfNonUpdated;
         boolean _crldpEnabled;
         CRLLoaderImpl _crlLoader;
+        LdapContext _crlLdapContext = new LdapContext();
         boolean _ocspEnabled;
         boolean _ocspFailOpen;
         String _responderUri;
@@ -1089,6 +1144,12 @@ public class CertificateValidator {
                 return this;
             }
 
+            public RevocationStatusCheckBuilder crlLdapContext(LdapContext ldapContext) {
+                if (ldapContext != null)
+                    _crlLdapContext = ldapContext;
+                return this;
+            }
+
             public GotCRL cRLEnabled(boolean value) {
                 _crlCheckingEnabled = value;
                 return new GotCRL();
@@ -1110,7 +1171,7 @@ public class CertificateValidator {
             public class GotCRLDP {
                 public GotCRLRelativePath cRLrelativePath(String value) {
                     if (value != null)
-                        _crlLoader = new CRLListLoader(session, value, _crlAbortIfNonUpdated);
+                        _crlLoader = new CRLListLoader(session, value, _crlAbortIfNonUpdated, _crlLdapContext);
                     return new GotCRLRelativePath();
                 }
 
@@ -1213,10 +1274,12 @@ public class CertificateValidator {
             if (_crlLoader == null) {
                  _crlLoader = new CRLFileLoader(session, "", _crlAbortIfNonUpdated);
             }
-            return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
+            CertificateValidator validator = new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
                     _certificatePolicy, _certificatePolicyMode,
                     _crlCheckingEnabled, _crlAbortIfNonUpdated, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
                     new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled, _caSubjectDN);
+            validator._crlLdapContext = _crlLdapContext;
+            return validator;
         }
     }
 
