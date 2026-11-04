@@ -105,7 +105,7 @@ public class JGroupsConfiguratorCustomStackTest {
         var holder = parse(PING_PROTOCOL);
         var called = new AtomicBoolean();
 
-        assertTrue(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(called), "JGROUPS_PING", "custom"));
+        assertTrue(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(called), "JGROUPS_PING", "custom", () -> null));
 
         var transport = holder.getGlobalConfigurationBuilder().transport();
         assertEquals("custom-keycloak", transport.attributes().attribute(TransportConfiguration.STACK).get());
@@ -145,7 +145,7 @@ public class JGroupsConfiguratorCustomStackTest {
                 </infinispan>
                 """.formatted(PING_PROTOCOL));
 
-        assertTrue(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom"));
+        assertTrue(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom", () -> null));
 
         assertEquals("custom-keycloak-2", holder.getGlobalConfigurationBuilder().transport().attributes().attribute(TransportConfiguration.STACK).get());
     }
@@ -175,7 +175,7 @@ public class JGroupsConfiguratorCustomStackTest {
     public void testStackWithoutKeycloakJdbcPingUntouched() {
         var holder = parse("");
 
-        assertFalse(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom"));
+        assertFalse(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom", () -> null));
 
         var transport = holder.getGlobalConfigurationBuilder().transport();
         assertEquals("custom", transport.attributes().attribute(TransportConfiguration.STACK).get());
@@ -187,6 +187,6 @@ public class JGroupsConfiguratorCustomStackTest {
         var holder = parse(PING_PROTOCOL + "<jg:relay.RELAY2 site=\"LON\"/>");
 
         assertThrows(IllegalStateException.class,
-                () -> JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom"));
+                () -> JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom", () -> null));
     }
 }
