@@ -31,7 +31,7 @@ import org.junit.platform.suite.api.Suite;
         KcOidcUserSessionLimitsBrokerTest.class,
         KcSamlUserSessionLimitsBrokerTest.class,
         SessionTimeoutValidationTest.class,
-        KcAdmSessionTest.class,
+        KcAdmSessionTest.class
 })
 public class ClusterlessTestSuite {
 
