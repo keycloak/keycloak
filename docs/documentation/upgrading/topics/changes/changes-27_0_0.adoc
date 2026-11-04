@@ -332,6 +332,10 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== New index for searching users by attribute
+
+A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
