@@ -17,7 +17,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.email.EmailException;
@@ -334,12 +333,7 @@ public class UserVerifiableCredentialResource {
     }
 
     private void checkOid4VCIEnabled() {
-        if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
-            throw ErrorResponse.error("Feature " + Profile.Feature.OID4VC_VCI.getKey() + " not enabled", Response.Status.BAD_REQUEST);
-        }
-        if (!realm.isVerifiableCredentialsEnabled()) {
-            throw ErrorResponse.error("Verifiable credentials not enabled for the realm", Response.Status.BAD_REQUEST);
-        }
+        OID4VCUtil.checkOid4VCIEnabled(realm);
     }
 
     private CredentialScopeModel checkCredentialScope(String credentialScopeName) {

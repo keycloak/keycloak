@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!-- Indexes for revoking all issued verifiable credentials of a particular wallet client -->
+    <changeSet author="keycloak" id="27.0.0-49817-issued-ver-credential-client-id-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_CLIENT_ID" />
+            </not>
+        </preConditions>
+        <createIndex tableName="ISSUED_VER_CREDENTIAL" indexName="IDX_ISSUED_VER_CREDENTIAL_CLIENT_ID">
+            <column name="CLIENT_ID" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="27.0.0-49817-fed-issued-ver-credential-client-id-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_CLIENT_ID" />
+            </not>
+        </preConditions>
+        <createIndex tableName="FED_ISSUED_VER_CREDENTIAL" indexName="IDX_FED_ISSUED_VC_CLIENT_ID">
+            <column name="CLIENT_ID" />
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

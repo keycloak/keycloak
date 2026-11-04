@@ -109,6 +109,15 @@ public interface UserVerifiableCredentialFederatedStorage {
     boolean removeIssuedVerifiableCredential(String userId, String issuedCredentialId);
 
     /**
+     * Remove all issued verifiable credentials, which were issued by the particular client (OID4VCI wallet),
+     * regardless of the federated user they belong to.
+     *
+     * @param clientId ID of the client, which acts as OID4VCI wallet
+     * @return number of removed issued verifiable credentials
+     */
+    int removeIssuedVerifiableCredentialsByClient(String clientId);
+
+    /**
      *  Remove expired issued verifiable credentials for all users.
      */
     void removeExpiredIssuedVerifiableCredentials();
