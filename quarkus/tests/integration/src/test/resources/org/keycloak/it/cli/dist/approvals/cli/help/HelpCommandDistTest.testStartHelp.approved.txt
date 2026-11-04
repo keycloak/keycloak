@@ -98,14 +98,6 @@ Cache:
                      Name of this node in the embedded cluster. Used in log messages and management
                        tools to identify this instance. If not set, a name is generated
                        automatically. Available only when Infinispan clustered embedded is enabled.
---cache-embedded-offline-client-sessions-max-count <max-count>
-                     The maximum number of entries that can be stored in-memory by the
-                       offlineClientSessions cache. Available only when embedded Infinispan
-                       clusters configured.
---cache-embedded-offline-sessions-max-count <max-count>
-                     The maximum number of entries that can be stored in-memory by the
-                       offlineSessions cache. Available only when embedded Infinispan clusters
-                       configured.
 --cache-embedded-realms-max-count <max-count>
                      The maximum number of entries that can be stored in-memory by the realms cache.
 --cache-embedded-sessions-max-count <max-count>
