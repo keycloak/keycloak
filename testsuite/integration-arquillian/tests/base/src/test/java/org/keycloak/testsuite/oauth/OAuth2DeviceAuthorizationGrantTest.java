@@ -868,6 +868,52 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testExpiredClientSession() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP_PUBLIC);
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.client(DEVICE_APP_PUBLIC);
+        DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
+
+        Assertions.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUriComplete());
+
+        // Make the client session idle timeout shorter than the user session timeout
+        clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT, "5");
+        client.update(clientRepresentation);
+
+        openVerificationPage(response.getVerificationUriComplete());
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.accept();
+
+        try {
+            // Wait until the client session is expired while the user session is still alive
+            timeOffSet.set(10);
+
+            // Token request from device
+            AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
+
+            Assertions.assertEquals(400, tokenResponse.getStatusCode());
+            Assertions.assertEquals("invalid_grant", tokenResponse.getError());
+            Assertions.assertEquals("Session not active", tokenResponse.getErrorDescription());
+        } finally {
+            timeOffSet.set(0);
+            clientRepresentation.getAttributes().remove(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT);
+            client.update(clientRepresentation);
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+        }
+    }
+
+    @Test
     public void testDevicePollingIntervalPerClient() throws Exception {
         getTestingClient().testing().setTestingInfinispanTimeService();
         ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
