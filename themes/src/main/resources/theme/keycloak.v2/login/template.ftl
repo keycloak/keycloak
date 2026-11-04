@@ -1,5 +1,6 @@
 <#import "field.ftl" as field>
 <#import "footer.ftl" as loginFooter>
+<#import "header.ftl" as loginHeader>
 <#import "theme-resources.ftl" as themeResourceTags>
 <#macro username>
   <#assign label>
@@ -156,6 +157,7 @@
               class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
     </header>
     <main class="${properties.kcLoginMain!}">
+      <@loginHeader.content/>
       <div class="${properties.kcLoginMainHeader!}">
         <h1 class="${properties.kcLoginMainTitle!}" id="kc-page-title"><#nested "header"></h1>
         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
