@@ -1376,6 +1376,39 @@ public class RealmCacheSession implements CacheRealmProvider {
         return adapter;
     }
 
+    static String getClientScopeByNameCacheKey(String name, String realmId) {
+        return realmId + ".clientscope.query.by.name." + name;
+    }
+
+    @Override
+    public ClientScopeModel getClientScopeByName(RealmModel realm, String name) {
+        String cacheKey = getClientScopeByNameCacheKey(name, realm.getId());
+        if (invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId())) {
+            return getClientScopeDelegate().getClientScopeByName(realm, name);
+        }
+
+        ClientScopeListQuery query = cache.get(cacheKey, ClientScopeListQuery.class);
+        if (query != null) {
+            ClientScopeModel clientScope = getClientScopeById(realm, query.getClientScopes().iterator().next());
+            // a renamed or removed client scope is detected here as the cached client scope is invalidated on every change
+            if (clientScope != null && Objects.equals(name, clientScope.getName())) {
+                logger.tracev("client scope by name cache hit: {0}", name);
+                return clientScope;
+            }
+            invalidations.add(cacheKey);
+            return getClientScopeDelegate().getClientScopeByName(realm, name);
+        }
+
+        long loaded = cache.getCurrentRevision(cacheKey);
+        ClientScopeModel model = getClientScopeDelegate().getClientScopeByName(realm, name);
+        if (model == null) {
+            return null;
+        }
+        logger.tracev("adding client scope by name cache miss: {0}", name);
+        cache.addRevisioned(new ClientScopeListQuery(loaded, cacheKey, realm, Set.of(model.getId())), startupRevision);
+        return getClientScopeById(realm, model.getId());
+    }
+
     @Override
     public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
         String cacheKey = getClientScopesCacheKey(realm.getId());

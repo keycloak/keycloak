@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -775,6 +776,19 @@ public interface RealmModel extends RoleContainerModel {
      * @return Stream of {@link ClientScopeModel}. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getClientScopesStream();
+
+    /**
+     * Returns the client scope of this realm with the given name.
+     * The default implementation filters {@link #getClientScopesStream()}; implementations should override it with a direct lookup.
+     * @param name name of the client scope
+     * @return Client scope with the given {@code name}, or {@code null} when the scope does not exist.
+     */
+    default ClientScopeModel getClientScopeByName(String name) {
+        return getClientScopesStream()
+                .filter(clientScope -> Objects.equals(name, clientScope.getName()))
+                .findFirst()
+                .orElse(null);
+    }
 
     /**
      * Creates new client scope with the given name. Internal ID is created automatically.

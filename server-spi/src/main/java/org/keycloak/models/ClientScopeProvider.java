@@ -17,6 +17,7 @@
 package org.keycloak.models;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
@@ -33,6 +34,20 @@ public interface ClientScopeProvider extends Provider, ClientScopeLookupProvider
      * @return Stream of the client scopes. Never returns {@code null}.
      */
     Stream<ClientScopeModel> getClientScopesStream(RealmModel realm);
+
+    /**
+     * Returns the client scope with the given name in the given realm.
+     * The default implementation filters {@link #getClientScopesStream(RealmModel)}; providers should override it with a direct lookup.
+     * @param realm Realm.
+     * @param name Name of the client scope.
+     * @return Client scope with the given name, or {@code null} when it does not exist.
+     */
+    default ClientScopeModel getClientScopeByName(RealmModel realm, String name) {
+        return getClientScopesStream(realm)
+                .filter(clientScope -> Objects.equals(name, clientScope.getName()))
+                .findFirst()
+                .orElse(null);
+    }
 
     /**
      * Creates new client scope with given {@code name} to the given realm.
