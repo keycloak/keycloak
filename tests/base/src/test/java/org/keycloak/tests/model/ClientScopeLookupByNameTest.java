@@ -98,6 +98,31 @@ public class ClientScopeLookupByNameTest {
         });
     }
 
+    @Test
+    public void updatesOfScopeFoundByNameAreVisibleAfterRecreation() {
+        String realmName = realm.getName();
+
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            assertThat(realmModel.getClientScopeByName("scope-3"), notNullValue());
+        });
+
+        // recreate the scope under the same name, and cache it by its new ID
+        String newId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            realmModel.removeClientScope(realmModel.getClientScopeByName("scope-3").getId());
+            return realmModel.addClientScope("scope-3").getId();
+        }, String.class);
+        runOnServer.run(session -> assertThat(session.realms().getRealmByName(realmName).getClientScopeById(newId).getProtocol(), nullValue()));
+
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            realmModel.getClientScopeByName("scope-3").setProtocol("saml");
+        });
+
+        runOnServer.run(session -> assertThat(session.realms().getRealmByName(realmName).getClientScopeById(newId).getProtocol(), is("saml")));
+    }
+
     private static Statistics statistics(org.keycloak.models.KeycloakSession session) {
         Statistics stats = session.getProvider(JpaConnectionProvider.class)
                 .getEntityManager()
