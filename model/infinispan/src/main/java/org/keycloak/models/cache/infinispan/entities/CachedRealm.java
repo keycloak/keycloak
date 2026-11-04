@@ -230,7 +230,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessTokenLifespan = model.getAccessTokenLifespan();
         accessTokenLifespanForImplicitFlow = model.getAccessTokenLifespanForImplicitFlow();
         accessCodeLifespan = model.getAccessCodeLifespan();
-        // No fallback is configured; loading device config for a removed realm throws a NullPointerException.
+        // No fallback is configured as there is no safe fallback available. Caller will probably be surprised by the result and it will trigger a NPE on the caller side.
         deviceConfig = new DefaultLazyLoader<>(OAuth2DeviceConfig::new, null);
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
