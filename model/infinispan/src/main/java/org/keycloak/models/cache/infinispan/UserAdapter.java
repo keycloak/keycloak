@@ -491,6 +491,12 @@ public class UserAdapter implements CachedUserModel {
     @Override
     public long getGroupsCountByNameContaining(String search) {
         if (updated != null) return updated.getGroupsCountByNameContaining(search);
+        if (search == null) {
+            // served from the cached group membership to avoid loading the user from the store
+            long count = getGroupsStream().count();
+            // getGroupsStream() falls back to the store (and marks the user for update) if a cached group is gone
+            return updated != null ? updated.getGroupsCountByNameContaining(null) : count;
+        }
         return modelSupplier.get().getGroupsCountByNameContaining(search);
     }
 

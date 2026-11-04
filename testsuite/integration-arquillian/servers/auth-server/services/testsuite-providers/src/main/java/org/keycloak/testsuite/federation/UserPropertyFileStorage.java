@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -63,6 +64,8 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     protected boolean federatedStorageEnabled;
 
     public static Map<String, List<UserPropertyFileStorageCall>> storageCalls = new HashMap<>();
+
+    public static final AtomicInteger userByIdLookups = new AtomicInteger(0);
 
     public static class UserPropertyFileStorageCall implements Serializable {
         private final String method;
@@ -116,6 +119,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
 
     @Override
     public UserModel getUserById(RealmModel realm, String id) {
+        userByIdLookups.incrementAndGet();
         StorageId storageId = new StorageId(id);
         String username = storageId.getExternalId();
         if ("uppercase".equalsIgnoreCase(username)) {

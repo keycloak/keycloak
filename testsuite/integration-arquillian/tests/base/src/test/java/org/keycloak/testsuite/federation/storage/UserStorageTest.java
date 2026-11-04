@@ -31,6 +31,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -58,6 +59,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
+import org.keycloak.testsuite.federation.UserPropertyFileStorage;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -101,6 +103,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -759,6 +762,101 @@ public class UserStorageTest extends AbstractAuthTest {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername(realm, "thor");
             Assertions.assertTrue(user instanceof CachedUserModel);
+        });
+    }
+
+    @Test
+    public void testGroupsCountServedFromUserCache() {
+        GroupRepresentation g = new GroupRepresentation();
+        g.setName("count-group");
+        String gid = ApiUtil.getCreatedId(testRealmResource().groups().add(g));
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            session.users().getUserByUsername(realm, "thor").joinGroup(realm.getGroupById(gid));
+        });
+
+        // warm the cache with the user and its group membership, until a session is served without any provider lookup
+        int lookups = Integer.MAX_VALUE;
+        for (int i = 0; i < 5 && lookups > 0; i++) {
+            lookups = testingClient.server().fetch(session -> {
+                UserPropertyFileStorage.userByIdLookups.set(0);
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserModel user = session.users().getUserByUsername(realm, "thor");
+                assertThat(user, instanceOf(CachedUserModel.class));
+                assertThat(user.getGroupsStream().count(), is(1L));
+                return UserPropertyFileStorage.userByIdLookups.get();
+            }, Integer.class);
+        }
+        assertThat("user and groups should be served from the cache", lookups, is(0));
+
+        testingClient.server().run(session -> {
+            UserPropertyFileStorage.userByIdLookups.set(0);
+
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+            assertThat(user, instanceOf(CachedUserModel.class));
+
+            assertThat(user.getGroupsCount(), is(1L));
+            assertThat(user.getGroupsCountByNameContaining(null), is(1L));
+            assertThat("a cached user must not be loaded from the provider for the groups count",
+                    UserPropertyFileStorage.userByIdLookups.get(), is(0));
+
+            // name filtered counts still delegate to the store
+            assertThat(user.getGroupsCountByNameContaining("count"), is(1L));
+            assertThat(user.getGroupsCountByNameContaining("other"), is(0L));
+        });
+
+        testRealmResource().groups().group(gid).remove();
+    }
+
+    @Test
+    public void testGroupsCountWhenCachedGroupIsRemovedInSameTransaction() {
+        List<String> gids = new ArrayList<>();
+        for (String name : List.of("count-group-1", "count-group-2", "count-group-3")) {
+            GroupRepresentation g = new GroupRepresentation();
+            g.setName(name);
+            gids.add(ApiUtil.getCreatedId(testRealmResource().groups().add(g)));
+        }
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+            gids.forEach(gid -> user.joinGroup(realm.getGroupById(gid)));
+        });
+
+        // warm the cache with the user and its group membership, until a session is served without any provider lookup
+        int lookups = Integer.MAX_VALUE;
+        for (int i = 0; i < 5 && lookups > 0; i++) {
+            lookups = testingClient.server().fetch(session -> {
+                UserPropertyFileStorage.userByIdLookups.set(0);
+                RealmModel realm = session.realms().getRealmByName("test");
+                UserModel user = session.users().getUserByUsername(realm, "thor");
+                assertThat(user.getGroupsStream().count(), is(3L));
+                return UserPropertyFileStorage.userByIdLookups.get();
+            }, Integer.class);
+        }
+        assertThat("user and groups should be served from the cache", lookups, is(0));
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+            assertThat(user, instanceOf(CachedUserModel.class));
+
+            // remove the group in the middle of the order in which the store returns the memberships, which is
+            // the order of the cached ids; the count only goes wrong if groups come both before and after the removed one
+            List<String> storeOrder = UserStorageUtil.userFederatedStorage(session).getGroupsStream(realm, user.getId())
+                    .map(GroupModel::getId).toList();
+            assertThat(storeOrder, hasSize(3));
+            realm.removeGroup(realm.getGroupById(storeOrder.get(1)));
+
+            // the cached user still references the removed group
+            assertThat(user.getGroupsCount(), is(2L));
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            realm.getGroupsStream().filter(g -> g.getName().startsWith("count-group-")).toList().forEach(realm::removeGroup);
         });
     }
 
