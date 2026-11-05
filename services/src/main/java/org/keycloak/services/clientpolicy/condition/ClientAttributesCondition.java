@@ -77,6 +77,7 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
             return ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext clientModelContext) {
             ClientModel client = clientModelContext.getClient();
+            if (client == null) return ClientPolicyVote.ABSTAIN;
             if (isAttributesMatched(client)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         } else {
