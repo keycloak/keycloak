@@ -93,12 +93,12 @@ public class GitHubIssues {
                 .filter(l -> existingLabels.stream().noneMatch(e -> e.startsWith(l.replace("backport/", "release/") + ".")))
                 .collect(Collectors.toSet());
         if (!toAdd.isEmpty()) {
-            builder.label(backportLabels);
+            builder.addLabels(backportLabels);
         }
 
         if (!issue.labels().containsAll(backportLabels)) {
 
-            builder.label(backportLabels);
+            builder.addLabels(backportLabels);
             update = true;
         }
 
@@ -163,7 +163,7 @@ public class GitHubIssues {
             labels.add("area/dependencies/js");
         }
 
-        return gitHubApi.createIssue(title).body(body.toString()).type("cve").label(labels).send();
+        return gitHubApi.createIssue(title).body(body.toString()).type("cve").addLabels(labels).send();
     }
 
     private static Set<String> getBackportLabels(Vuln vuln) {

@@ -47,6 +47,10 @@ class GitHubRequest {
         return sendUpdate(uri, "POST", body, 201);
     }
 
+    JsonNode post(URI uri, Object body, int expectedResponseCode) throws GitHubApiException {
+        return sendUpdate(uri, "POST", body, expectedResponseCode);
+    }
+
     JsonNode patch(URI uri, Object body) throws GitHubApiException {
         return sendUpdate(uri, "PATCH", body, 200);
     }
