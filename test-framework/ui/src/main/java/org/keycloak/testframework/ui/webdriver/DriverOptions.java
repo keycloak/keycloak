@@ -14,6 +14,10 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 class DriverOptions {
 
     static ChromeOptions createChromeOptions(boolean headless) {
+        return createChromeOptions(headless, new String[0]);
+    }
+
+    static ChromeOptions createChromeOptions(boolean headless, String... extraArguments) {
         ChromeOptions options = new ChromeOptions();
         setCommonCapabilities(options);
 
@@ -27,6 +31,10 @@ class DriverOptions {
                     "--remote-allow-origins=*",
                     "--no-sandbox"
             );
+        }
+
+        if (extraArguments.length > 0) {
+            options.addArguments(extraArguments);
         }
 
         return options;
