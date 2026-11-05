@@ -27,8 +27,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import org.keycloak.common.enums.HostnameVerificationPolicy;
@@ -82,6 +84,7 @@ public class HttpClientBuilder {
     protected boolean disableTrustManager;
     protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.DEFAULT;
     protected SSLContext sslContext;
+    protected KeyManager[] keyManagers;
     protected int connectionPoolSize = 128;
     protected int maxPooledPerRoute = 64;
     protected long connectionTTL = -1;
@@ -221,6 +224,17 @@ public class HttpClientBuilder {
         return this;
     }
 
+    /**
+     * Client TLS key material to present for client-certificate authentication (mTLS). Unlike
+     * {@link #sslContext(SSLContext)}, these key managers survive the {@link #disableTrustManager()}
+     * configuration: when trust management is disabled they are combined with the pass-through trust
+     * manager so the client still presents its certificate. Used by per-IdP {@code tls_client_auth}.
+     */
+    public HttpClientBuilder keyManagers(KeyManager[] keyManagers) {
+        this.keyManagers = keyManagers;
+        return this;
+    }
+
     public HttpClientBuilder trustStore(KeyStore truststore) {
         this.truststore = truststore;
         return this;
@@ -266,23 +280,11 @@ public class HttpClientBuilder {
         }
         try {
             SSLConnectionSocketFactory sslsf = null;
-            SSLContext theContext = sslContext;
+            SSLContext theContext = resolveSslContext();
             if (disableTrustManager) {
-                theContext = SSLContext.getInstance("TLS");
-                theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
-                        new SecureRandom());
                 verifier = new NoopHostnameVerifier();
-                sslsf = new SSLConnectionSocketFactory(theContext, verifier);
-            } else if (theContext != null) {
-                sslsf = new SSLConnectionSocketFactory(theContext, verifier);
-            } else if (clientKeyStore != null || truststore != null) {
-                theContext = createSslContext("TLS", clientKeyStore, clientPrivateKeyPassword, truststore, null);
-                sslsf = new SSLConnectionSocketFactory(theContext, verifier);
-            } else {
-                final SSLContext tlsContext = SSLContext.getInstance("TLS");
-                tlsContext.init(null, null, null);
-                sslsf = new SSLConnectionSocketFactory(tlsContext, verifier);
             }
+            sslsf = new SSLConnectionSocketFactory(theContext, verifier);
 
             RequestConfig requestConfig = RequestConfig.custom()
                     .setConnectTimeout((int) TimeUnit.MILLISECONDS.convert(establishConnectionTimeout, establishConnectionTimeoutUnits))
@@ -322,6 +324,45 @@ public class HttpClientBuilder {
         return apacheBuilder;
     }
 
+    /**
+     * Resolves the {@link SSLContext} to use for outbound TLS, honoring the configured key/trust material.
+     * <p>
+     * When {@link #disableTrustManager()} is set, trust verification is bypassed via a pass-through trust
+     * manager, but any configured client TLS {@link #keyManagers(KeyManager[]) key managers} are still
+     * presented so client-certificate authentication (mTLS) keeps working. A verbatim
+     * {@link #sslContext(SSLContext)} takes precedence when trust management is enabled.
+     */
+    SSLContext resolveSslContext() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException, UnrecoverableKeyException {
+        if (disableTrustManager) {
+            SSLContext theContext = SSLContext.getInstance("TLS");
+            theContext.init(effectiveKeyManagers(), new TrustManager[]{new PassthroughTrustManager()}, new SecureRandom());
+            return theContext;
+        }
+        if (sslContext != null) {
+            return sslContext;
+        }
+        if (keyManagers != null) {
+            SSLContext theContext = SSLContext.getInstance("TLS");
+            theContext.init(effectiveKeyManagers(), resolveTrustManagers(truststore), new SecureRandom());
+            return theContext;
+        }
+        if (clientKeyStore != null || truststore != null) {
+            return createSslContext("TLS", clientKeyStore, clientPrivateKeyPassword, truststore, null);
+        }
+        SSLContext tlsContext = SSLContext.getInstance("TLS");
+        tlsContext.init(null, null, null);
+        return tlsContext;
+    }
+
+    /**
+     * The client TLS key managers that will be presented for client-certificate authentication, or
+     * {@code null} when none are configured. Exposed for tests to assert the mTLS key material survives
+     * the {@link #disableTrustManager()} configuration.
+     */
+    KeyManager[] effectiveKeyManagers() {
+        return keyManagers;
+    }
+
     private SSLContext createSslContext(
             final String algorithm,
             final KeyStore keystore,
@@ -335,6 +376,19 @@ public class HttpClientBuilder {
                         .loadKeyMaterial(keystore, keyPassword != null ? keyPassword.toCharArray() : null)
                         .loadTrustMaterial(truststore, null)
                         .build();
+    }
+
+    /**
+     * Resolves the trust managers for the configured truststore, or {@code null} to fall back to the
+     * JVM default trust managers when no truststore is configured.
+     */
+    private TrustManager[] resolveTrustManagers(KeyStore truststore) throws NoSuchAlgorithmException, KeyStoreException {
+        if (truststore == null) {
+            return null;
+        }
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(truststore);
+        return tmf.getTrustManagers();
     }
 
 }
