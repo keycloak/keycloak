@@ -49,6 +49,7 @@ export const RequiredActions = () => {
         method: "GET",
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
       },
+      adminClient.getFetch(),
     );
 
     return (await requiredActionsRequest.json()) as DataType[];

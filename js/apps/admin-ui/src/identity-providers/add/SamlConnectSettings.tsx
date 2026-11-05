@@ -63,6 +63,7 @@ export const SamlConnectSettings = () => {
           body: formData,
           headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
         },
+        adminClient.getFetch(),
       );
       if (response.ok) {
         const result = await response.json();
