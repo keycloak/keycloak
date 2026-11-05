@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+    <persistence-unit name="database-store" transaction-type="JTA">
+        <class>com.acme.provider.multitenancy.DatabaseTenantEntity</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <property name="hibernate.multiTenancy" value="DATABASE"/>
+            <property name="jakarta.persistence.jtaDataSource" value="database-store"/>
+            <property name="hibernate.hbm2ddl.auto" value="create"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="schema-store" transaction-type="JTA">
+        <class>com.acme.provider.multitenancy.SchemaTenantEntity</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <property name="hibernate.multiTenancy" value="SCHEMA"/>
+            <property name="jakarta.persistence.jtaDataSource" value="schema-store"/>
+            <property name="hibernate.hbm2ddl.auto" value="create"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="disc-store" transaction-type="JTA">
+        <class>com.acme.provider.multitenancy.DiscriminatorTenantEntity</class>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+        <properties>
+            <property name="hibernate.multiTenancy" value="DISCRIMINATOR"/>
+            <property name="jakarta.persistence.jtaDataSource" value="disc-store"/>
+            <property name="hibernate.hbm2ddl.auto" value="create"/>
+        </properties>
+    </persistence-unit>
+</persistence>
