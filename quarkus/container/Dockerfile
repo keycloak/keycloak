@@ -1,9 +1,11 @@
-FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+FROM registry.access.redhat.com/ubi9:9.8 AS ubi-micro-build
 
-ENV KEYCLOAK_VERSION 999.0.0-SNAPSHOT
+ENV KEYCLOAK_VERSION=25.0.12-GW
 ARG KEYCLOAK_DIST=https://github.com/keycloak/keycloak/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
+ARG PCRE2_VERSION=10.48
+ARG PCRE2_SHA256=b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed
 
-RUN dnf install -y tar gzip
+RUN dnf install -y tar gzip bzip2 curl-minimal gcc make
 
 ADD $KEYCLOAK_DIST /tmp/keycloak/
 
@@ -19,11 +21,26 @@ RUN chmod -R g+rwX /opt/keycloak
 ADD ubi-null.sh /tmp/
 RUN bash /tmp/ubi-null.sh java-21-openjdk-headless glibc-langpack-en findutils
 
+# UBI 9 provides PCRE2 10.40 through libselinux. Replace that transitive
+# dependency with the upstream release required by the container image.
+RUN rpm -r /tmp/null/rootfs -e --nodeps pcre2-syntax pcre2 && \
+    curl -fsSL "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE2_VERSION}/pcre2-${PCRE2_VERSION}.tar.bz2" \
+        -o /tmp/pcre2.tar.bz2 && \
+    echo "${PCRE2_SHA256}  /tmp/pcre2.tar.bz2" | sha256sum -c - && \
+    tar -xjf /tmp/pcre2.tar.bz2 -C /tmp && \
+    cd "/tmp/pcre2-${PCRE2_VERSION}" && \
+    ./configure --prefix=/usr --libdir=/usr/lib64 --disable-static && \
+    make -j"$(nproc)" && \
+    make DESTDIR=/tmp/pcre2-rootfs install && \
+    cp -a /tmp/pcre2-rootfs/usr/lib64/libpcre2-8.so.* /tmp/null/rootfs/usr/lib64/ && \
+    cp -a /tmp/pcre2-rootfs/usr/lib64/libpcre2-posix.so.* /tmp/null/rootfs/usr/lib64/ && \
+    rm -rf /tmp/pcre2.tar.bz2 /tmp/pcre2-rootfs "/tmp/pcre2-${PCRE2_VERSION}"
+
 FROM registry.access.redhat.com/ubi9-micro
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 # Flag for determining app is running in container
-ENV KC_RUN_IN_CONTAINER true
+ENV KC_RUN_IN_CONTAINER=true
 
 COPY --from=ubi-micro-build /tmp/null/rootfs/ /
 COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
@@ -43,7 +60,7 @@ ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
 ARG KEYCLOAK_VERSION
 ARG KEYCLOAK_URL="https://www.keycloak.org/"
 ARG KEYCLOAK_TAGS="keycloak security identity"
-ARG KEYCLOAK_MAINTAINER=${KEYCLOAK_URL}
+ARG KEYCLOAK_MAINTAINER="https://graphwise.ai/"
 ARG KEYCLOAK_VENDOR=${KEYCLOAK_MAINTAINER}
 
 LABEL maintainer=${KEYCLOAK_MAINTAINER} \
@@ -71,6 +88,7 @@ LABEL name=${KEYCLOAK_SERVER_IMAGE_NAME} \
 # oci
 ARG KEYCLOAK_SOURCE="https://github.com/keycloak/keycloak"
 ARG KEYCLOAK_DOCS=${KEYCLOAK_URL}documentation
+ARG KEYCLOAK_DESCRIPTION="Graphwise security patched version of Keycloak Server"
 
 LABEL org.opencontainers.image.title=${KEYCLOAK_SERVER_DISPLAY_NAME} \
       org.opencontainers.image.url=${KEYCLOAK_URL} \
