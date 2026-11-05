@@ -31,6 +31,15 @@ See the upgrading guide for details.
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
 
+= Themes
+
+== Login and welcome UI upgraded to PatternFly 6
+
+The built-in login theme is now `keycloak.v3`, based on PatternFly 6. The previous `keycloak.v2` login theme has been removed.
+The built-in welcome theme also uses PatternFly 6.
+
+Realms that explicitly used `keycloak.v2` are migrated to `keycloak.v3` during upgrade. If you maintain a custom login theme based on `keycloak.v2`, or a custom welcome theme based on PatternFly 5, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
+
 == OID4VP verifier infers the DCQL query from mappers (experimental)
 
 The OID4VP identity provider no longer requires a hand-written DCQL query.

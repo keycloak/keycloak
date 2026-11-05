@@ -51,7 +51,7 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     private final UpdateProfileErrors errorsPage;
@@ -315,15 +315,23 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         }
 
         private String getTextById(String id) {
-            try {
-                return driver.findElement(By.id(id)).getText();
-            } catch (NoSuchElementException e) {
-                return null;
-            }
+            String error = FieldErrorText.read(driver, id);
+            return error.isBlank() ? null : error;
+        }
+
+        private String getTextByIdNow(String id) {
+            String error = FieldErrorText.readNow(driver, id);
+            return error.isBlank() ? null : error;
         }
 
         public String getFirstNameError() {
-            String text = getTextById("input-error-firstname");
+            // Prefer non-blocking probes so a missing legacy lowercase id does not
+            // burn the full wait timeout before trying the camel-case id.
+            String text = getTextByIdNow("input-error-firstname");
+            if (text != null) {
+                return text;
+            }
+            text = getTextByIdNow("input-error-firstName");
             if (text != null) {
                 return text;
             }
@@ -331,7 +339,11 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         }
 
         public String getLastNameError() {
-            String text = getTextById("input-error-lastname");
+            String text = getTextByIdNow("input-error-lastname");
+            if (text != null) {
+                return text;
+            }
+            text = getTextByIdNow("input-error-lastName");
             if (text != null) {
                 return text;
             }

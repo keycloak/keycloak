@@ -137,6 +137,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     public static final String MIGRATION = "Migration";
     public static final String MIGRATION2 = "Migration2";
+    private static final String PREFERRED_DEFAULT_LOGIN_THEME = "keycloak.v3";
     protected RealmResource migrationRealm;
     protected RealmResource migrationRealm2;
     protected RealmResource masterRealm;
@@ -485,14 +486,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     }
 
     protected void testMigrationTo27_0_0(RealmResource realmWithUnsetTheme) {
-        Assertions.assertEquals("keycloak.v2", migrationRealm.toRepresentation().getLoginTheme(),
-                "Login v1 realm theme was not migrated to keycloak.v2");
+        Assertions.assertEquals(PREFERRED_DEFAULT_LOGIN_THEME, migrationRealm.toRepresentation().getLoginTheme(),
+                "Login v1 realm theme was not migrated to keycloak.v3");
         Assertions.assertEquals("custom-theme", migrationRealm2.toRepresentation().getLoginTheme(),
                 "Custom login theme should be preserved");
         Assertions.assertNull(realmWithUnsetTheme.toRepresentation().getLoginTheme(),
                 "Unset login theme should be preserved");
 
-        assertClientLoginTheme(migrationRealm, "migration-test-client", "keycloak.v2");
+        assertClientLoginTheme(migrationRealm, "migration-test-client", PREFERRED_DEFAULT_LOGIN_THEME);
         assertClientLoginTheme(migrationRealm, "broker", "keycloak-custom");
         assertClientLoginTheme(migrationRealm, "admin-cli", null);
     }
