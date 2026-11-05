@@ -1,6 +1,7 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
-const TABLE_LOAD_TIMEOUT_MS = 5_000;
+// The realm list can load slowly while parallel workers create and delete realms.
+const TABLE_LOAD_TIMEOUT_MS = 15_000;
 
 export async function searchItem(
   page: Page,

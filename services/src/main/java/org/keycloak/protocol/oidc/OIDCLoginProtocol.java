@@ -228,8 +228,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
-        // not at the point of visiting the authorization endpoint (RFC 9126 §4)
-        String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
+        // not at the point of visiting the authorization endpoint (RFC 9126 §4).
+        // Stored as a client note so /login-actions/restart (which clears auth notes) cannot drop it.
+        String requestUri = authSession.getClientNote(Constants.AUTHORIZATION_REQUEST_URI);
         RequestUriType requestUriType = Optional.ofNullable(requestUri)
                 .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
                 .orElse(null);
@@ -487,8 +488,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled application-initiated action.");
             case CANCELLED_BY_USER:
             case CONSENT_DENIED:
-            case LOA_INVALID:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, errorMessage);
+            case LOA_INVALID:
+                return new OAuth2ErrorRepresentation(OAuthErrorException.UNMET_AUTHENTICATION_REQUIREMENTS, errorMessage);
             case PASSIVE_INTERACTION_REQUIRED:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.INTERACTION_REQUIRED, null);
             case PASSIVE_LOGIN_REQUIRED:

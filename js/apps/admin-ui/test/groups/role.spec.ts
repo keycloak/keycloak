@@ -20,30 +20,29 @@ import {
 import { goToRoleMappingTab } from "./role.ts";
 
 test.describe.serial("Role mappings", () => {
+  const realmName = `groups-role-${uuid()}`;
   const predefinedGroup = "group1";
   const predefinedGroup1 = "group2";
 
   const roleName = `remove-role-${uuid()}`;
 
   test.beforeAll(async () => {
-    await adminClient.createGroup(predefinedGroup);
-    const { id } = await adminClient.createGroup(predefinedGroup1);
+    await adminClient.createRealm(realmName);
+    await adminClient.createGroup(predefinedGroup, realmName);
+    const { id } = await adminClient.createGroup(predefinedGroup1, realmName);
 
     await adminClient.createRealmRole({
+      realm: realmName,
       name: roleName,
       clientRole: true,
     });
-    await adminClient.addRealmRoleToGroup(id, roleName);
+    await adminClient.addRealmRoleToGroup(id, roleName, realmName);
   });
 
-  test.afterAll(async () => {
-    await adminClient.deleteRealmRole(roleName);
-    await adminClient.deleteGroups();
-  });
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToGroups(page);
+    await login(page, { to: { pathname: `/${realmName}/groups` } });
     await clickTableRowItem(page, predefinedGroup);
     await goToRoleMappingTab(page);
   });
@@ -54,11 +53,11 @@ test.describe.serial("Role mappings", () => {
 
   test("Assign roles from empty state", async ({ page }) => {
     await pickRoleType(page, "roles");
-    await pickRole(page, "default-roles-master", true);
+    await pickRole(page, `default-roles-${realmName}`, true);
     await confirmModalAssign(page);
 
     await assertNotificationMessage(page, "Role mapping updated");
-    await assertRowExists(page, "default-roles-master");
+    await assertRowExists(page, `default-roles-${realmName}`);
   });
 
   test("Check hide inherited roles option", async ({ page }) => {

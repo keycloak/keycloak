@@ -34,6 +34,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -54,9 +55,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(DistributionTest.WIN)
 public class WindowsServiceDistTest {
 
+    private static final Logger LOG = Logger.getLogger(WindowsServiceDistTest.class);
     private static final String TEST_SERVICE_NAME_PREFIX = "keycloak-test-";
     private static final int SERVICE_START_TIMEOUT_SECONDS = 120;
     private static final int SERVICE_STOP_TIMEOUT_SECONDS = 60;
+    private static final int SERVICE_PROCESS_STOP_TIMEOUT_SECONDS = 1;
 
     private String testServiceName;
     private boolean serviceCreated = false;
@@ -75,7 +78,7 @@ public class WindowsServiceDistTest {
                     Files.copy(Path.of(prunsrvSystemPath), prunsrvPath, StandardCopyOption.REPLACE_EXISTING);
                     prunsrvAvailable = true;
                 } catch (IOException e) {
-                    System.err.println("Could not copy prunsrv.exe to distribution: " + e.getMessage());
+                    LOG.warn("Could not copy prunsrv.exe to distribution", e);
                 }
             }
         } else {
@@ -89,12 +92,17 @@ public class WindowsServiceDistTest {
             try {
                 stopService();
             } catch (Exception e) {
-                System.err.println("Failed to stop service during cleanup: " + e.getMessage());
+                LOG.warn("Failed to stop service during cleanup", e);
             }
             try {
                 deleteService(runner);
             } catch (Exception e) {
-                System.err.println("Failed to delete service during cleanup: " + e.getMessage());
+                LOG.warn("Failed to delete service during cleanup", e);
+            }
+            try {
+                terminateLeftoverServerProcesses(runner.getDistribution(RawKeycloakDistribution.class).getDistPath());
+            } catch (Exception e) {
+                LOG.warn("Failed to terminate leftover processes during cleanup", e);
             }
         }
     }
@@ -118,7 +126,8 @@ public class WindowsServiceDistTest {
                 "--name=" + testServiceName,
                 "--display-name=" + customDisplayName,
                 "--description=" + customDescription,
-                "--startup=manual");
+                "--startup=manual",
+                "--stop-timeout=" + SERVICE_PROCESS_STOP_TIMEOUT_SECONDS);
 
         assertEquals(0, installResult.exitCode(), "Service installation failed: " + installResult.getOutput());
         assertThat(installResult.getOutput(), containsString("installed successfully"));
@@ -142,7 +151,7 @@ public class WindowsServiceDistTest {
 
         // Test service stop
         assertTrue(stopService(), "Service should stop successfully");
-        assertTrue(waitForServiceStopped(), "Service should be in STOPPED state");
+        assertTrue(waitForServiceStopped(), () -> "Service should be in STOPPED state, but was " + getServiceState(testServiceName));
         assertFalse(isKeycloakAccessible(), "Keycloak should not be accessible after service stop");
 
         // Test service uninstall
@@ -223,16 +232,33 @@ public class WindowsServiceDistTest {
         String output = new String(process.getInputStream().readAllBytes());
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            System.err.println("Service start failed with exit code " + exitCode + ": " + output);
+            LOG.errorf("Service start failed with exit code %d: %s", exitCode, output);
         }
         return exitCode == 0;
     }
 
     private boolean stopService() throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder("net", "stop", testServiceName);
+        pb.redirectErrorStream(true);
         Process process = pb.start();
-        process.waitFor(SERVICE_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (!process.waitFor(SERVICE_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            LOG.errorf("'net stop' did not complete within %d seconds", SERVICE_STOP_TIMEOUT_SECONDS);
+            process.destroyForcibly();
+        } else if (process.exitValue() != 0) {
+            LOG.errorf("'net stop' failed with exit code %d: %s", process.exitValue(), new String(process.getInputStream().readAllBytes()));
+        }
         return true;
+    }
+
+    // Procrun stops the server by terminating the process tree, which can leave the server running and holding its port for the following tests
+    private void terminateLeftoverServerProcesses(Path distPath) {
+        String distDir = distPath.toString().toLowerCase();
+        ProcessHandle.allProcesses()
+                .filter(p -> p.info().commandLine().map(c -> c.toLowerCase().contains(distDir)).orElse(false))
+                .forEach(p -> {
+                    LOG.warnf("Terminating leftover process %d: %s", p.pid(), p.info().commandLine().orElse(""));
+                    p.destroyForcibly();
+                });
     }
 
     private void deleteService(KeycloakRunner runner) {

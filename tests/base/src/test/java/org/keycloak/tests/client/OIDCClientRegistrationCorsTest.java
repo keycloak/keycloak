@@ -76,7 +76,7 @@ public class OIDCClientRegistrationCorsTest {
         RoleRepresentation createClientRoleRep = realm.admin().clients().get(realmManagementId).roles().get("create-client").toRepresentation();
         Response response = realm.admin().clients().create(ClientBuilder.create().clientId("testWithServiceAccount").secret("secret").serviceAccountsEnabled(true).webOrigins("https://origin1").build());
         String clientUuid = CreatedResponseUtil.getCreatedId(response);
-        String serviceAccountUuid = realm.admin().clients().get(clientUuid).getServiceAccountUser().getId();
+        String serviceAccountUuid = realm.admin().clients().get(clientUuid).toRepresentation().getServiceAccountUserId();
         realm.admin().users().get(serviceAccountUuid).roles().clientLevel(realmManagementId).add(List.of(createClientRoleRep));
 
         String accessToken = oAuthClient.client("testWithServiceAccount", "secret").doClientCredentialsGrantAccessTokenRequest().getAccessToken();

@@ -11,6 +11,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
@@ -18,8 +20,11 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
@@ -74,6 +79,10 @@ import org.junit.jupiter.api.Test;
  *     <li>Re-adding the subject after a receiver-remove clears the
  *         tombstone — a subsequent receiver-remove starts a fresh
  *         grace window.</li>
+ *     <li>Receiver-driven remove of an admin-ignored subject leaves no
+ *         tombstone — no events for an ignored organization's members
+ *         inside the window, and no grace tail once an admin lifts a
+ *         user's ignore.</li>
  * </ul>
  *
  * <p>The realm uses {@code default_subjects=NONE} so the dispatcher's
@@ -154,11 +163,13 @@ public class SsfSubjectRemovalGraceTests {
             mockReceiverServer.removeContext(PUSH_CONTEXT_NO_GRACE);
         } catch (IllegalArgumentException ignored) {
         }
-        // Admin-remove clears the per-user notify state on both
-        // receivers without leaving a tombstone, so the next test
-        // starts from a clean slate.
+        // Admin add clears any tombstone left by a receiver-driven
+        // remove, and admin remove then clears the per-user notify
+        // state without stamping a new one. The next test starts from
+        // a clean slate.
         bestEffortAdminClear(RECEIVER_GRACE);
         bestEffortAdminClear(RECEIVER_NO_GRACE);
+        bestEffortDeleteAllOrganizations();
     }
 
     // ---- §9.3 grace coverage ----
@@ -262,6 +273,42 @@ public class SsfSubjectRemovalGraceTests {
                 "after re-add → admin-remove the user should be fully unsubscribed, no §9.3 grace tail (tombstone was cleared on re-add)");
     }
 
+    // ---- §9.3 grace vs. admin ignore ----
+
+    @Test
+    public void receiverDrivenRemove_adminIgnoredUser_adminRemoveStopsDeliveryImmediately() throws Exception {
+        adminIgnore(RECEIVER_GRACE, TEST_EMAIL);
+        String token = obtainReceiverToken(RECEIVER_GRACE, RECEIVER_GRACE_SECRET);
+        createPushStream(token, MOCK_PUSH_ENDPOINT_GRACE);
+        receiverRemove(RECEIVER_GRACE, RECEIVER_GRACE_SECRET, token, TEST_EMAIL);
+
+        // Lifting the ignore leaves the user unsubscribed. Since the
+        // receiver never received the user's events, its earlier remove
+        // must not have left a tombstone that delivers them now.
+        adminRemove(RECEIVER_GRACE, TEST_EMAIL);
+
+        triggerUserLogout();
+        Assertions.assertNull(pushesGrace.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "receiver-driven remove of an admin-ignored user must not leave a §9.3 grace tail after an admin remove");
+    }
+
+    @Test
+    public void receiverDrivenRemove_adminIgnoredOrganization_noDeliveryInWindow() throws Exception {
+        // The org carries the exclusion marker the admin console's "Ignore" writes.
+        String orgAlias = createOrgWithReceiverAttribute(RECEIVER_GRACE, false);
+        addUserToOrg(orgAlias, TEST_EMAIL);
+        String token = obtainReceiverToken(RECEIVER_GRACE, RECEIVER_GRACE_SECRET);
+        createPushStream(token, MOCK_PUSH_ENDPOINT_GRACE);
+
+        // Under NONE the org's ignore is not consulted at dispatch, so an
+        // org tombstone alone would deliver every member's events.
+        receiverRemoveOrganization(RECEIVER_GRACE, RECEIVER_GRACE_SECRET, token, orgAlias);
+
+        triggerUserLogout();
+        Assertions.assertNull(pushesGrace.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
+                "receiver-driven remove of an admin-ignored organization must not deliver its members' events inside the §9.3 grace window");
+    }
+
     // ---- helpers ----
 
     protected HttpHandler queueingHandler(BlockingQueue<String> sink) {
@@ -300,11 +347,58 @@ public class SsfSubjectRemovalGraceTests {
         }
     }
 
+    protected void adminIgnore(String clientId, String email) throws IOException {
+        try (SimpleHttpResponse res = adminSubjectRequest(clientId, "subjects/ignore", "user-email", email)) {
+            Assertions.assertEquals(200, res.getStatus(),
+                    "admin subjects/ignore should succeed for " + clientId);
+        }
+    }
+
     protected void bestEffortAdminClear(String clientId) {
         try {
+            adminSubjectRequest(clientId, "subjects/add", "user-email", TEST_EMAIL).close();
             adminSubjectRequest(clientId, "subjects/remove", "user-email", TEST_EMAIL).close();
         } catch (Exception ignored) {
         }
+    }
+
+    protected void bestEffortDeleteAllOrganizations() {
+        try {
+            realm.admin().organizations().getAll().forEach(o ->
+                    realm.admin().organizations().get(o.getId()).delete().close());
+        } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * Creates an organization with {@code ssf.notify.<clientId>=true|false}
+     * set and returns its alias.
+     */
+    protected String createOrgWithReceiverAttribute(String clientId, boolean notify) {
+        String orgAlias = "grace-org-" + System.nanoTime();
+        OrganizationRepresentation rep = new OrganizationRepresentation();
+        rep.setName(orgAlias);
+        rep.setAlias(orgAlias);
+        rep.addDomain(new OrganizationDomainRepresentation(orgAlias + ".local.test"));
+        rep.singleAttribute("ssf.notify." + clientId, Boolean.toString(notify));
+        try (Response response = realm.admin().organizations().create(rep)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "test organization creation should succeed");
+        }
+        return orgAlias;
+    }
+
+    protected void addUserToOrg(String orgAlias, String userEmail) {
+        String orgId = realm.admin().organizations().getAll().stream()
+                .filter(o -> orgAlias.equals(o.getAlias()))
+                .map(OrganizationRepresentation::getId)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("expected org with alias '" + orgAlias + "' to exist"));
+        String userId = realm.admin().users().searchByEmail(userEmail, true).stream()
+                .findFirst()
+                .map(u -> u.getId())
+                .orElseThrow(() -> new AssertionError("expected user '" + userEmail + "' to exist"));
+        realm.admin().organizations().get(orgId).members().addMember(userId).close();
     }
 
     protected void receiverAdd(String clientId, String secret, String token, String email) throws IOException {
@@ -325,10 +419,20 @@ public class SsfSubjectRemovalGraceTests {
     }
 
     protected void receiverRemove(String clientId, String secret, String token, String email) throws IOException {
+        receiverRemoveSubject(clientId, secret, token, Map.of("format", "email", "email", email));
+    }
+
+    protected void receiverRemoveOrganization(String clientId, String secret, String token, String orgAlias) throws IOException {
+        receiverRemoveSubject(clientId, secret, token, Map.of(
+                "format", "complex",
+                "tenant", Map.of("format", "uri", "uri", SubjectResolver.ORG_URN_ALIAS_PREFIX + orgAlias)));
+    }
+
+    protected void receiverRemoveSubject(String clientId, String secret, String token, Map<String, Object> subject) throws IOException {
         String streamId = readStreamId(clientId, secret, token);
         Map<String, Object> body = Map.of(
                 "stream_id", streamId,
-                "subject", Map.of("format", "email", "email", email));
+                "subject", subject);
         String url = realm.getBaseUrl() + "/ssf/transmitter/subjects/remove";
         try (SimpleHttpResponse res = http.doPost(url)
                 .json(body)
@@ -468,6 +572,7 @@ public class SsfSubjectRemovalGraceTests {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("ssf-removal-grace");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
+            realm.organizationsEnabled(true);
 
             realm.eventsEnabled(true);
             realm.adminEventsEnabled(true);

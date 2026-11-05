@@ -136,13 +136,6 @@ public class SecurityEventTokenMapper {
     }
 
     /**
-     * Generates a verification event for a stream.
-     *
-     * @param stream The stream configuration
-     * @param state  The verification state
-     * @return The verification event as a JSON string
-     */
-    /**
      * Generates a stream-updated SET communicating a stream status change to
      * the receiver, per SSF §8.1.5. Subject is the stream itself (opaque
      * {@code stream_id}), event payload carries the new status and the
@@ -177,6 +170,13 @@ public class SecurityEventTokenMapper {
         }
     }
 
+    /**
+     * Generates a verification event for a stream.
+     *
+     * @param stream The stream configuration
+     * @param state  The verification state
+     * @return The verification SET, or {@code null} if it could not be built
+     */
     public SsfSecurityEventToken generateVerificationEvent(StreamConfig stream, String state) {
         try {
             SsfSecurityEventToken verificationEventToken = newSecurityEventToken(stream);

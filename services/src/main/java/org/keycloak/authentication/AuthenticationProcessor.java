@@ -35,7 +35,6 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
-import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -919,6 +918,7 @@ public class AuthenticationProcessor {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
             ServicesLogger.LOGGER.failedClientAuthentication(e);
+            event.detail(Details.AUTHENTICATION_ERROR_DETAIL, e.getEventDetails());
             if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
@@ -1236,8 +1236,6 @@ public class AuthenticationProcessor {
     }
 
     protected Response authenticationComplete() {
-        new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
-
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);
 

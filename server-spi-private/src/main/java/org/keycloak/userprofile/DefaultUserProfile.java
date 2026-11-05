@@ -49,6 +49,7 @@ import static org.keycloak.models.UserModel.DISABLED_REASON;
 import static org.keycloak.models.UserModel.IS_TEMP_ADMIN_ATTR_NAME;
 import static org.keycloak.userprofile.UserProfileUtil.createUserProfileMetadata;
 import static org.keycloak.userprofile.UserProfileUtil.isRootAttribute;
+import static org.keycloak.userprofile.UserProfileUtil.setDefaultValuesForReadOnlyAttributes;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
@@ -108,7 +109,10 @@ public final class DefaultUserProfile implements UserProfile {
 
         user = userSupplier.apply(this.attributes);
 
-        return updateInternal(user, false);
+        updateInternal(user, false);
+        setDefaultValuesForReadOnlyAttributes(user, attributes);
+
+        return user;
     }
 
     @Override

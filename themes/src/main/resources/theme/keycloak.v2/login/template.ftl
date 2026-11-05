@@ -5,7 +5,7 @@
   <#assign label>
     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
   </#assign>
-  <@field.group name="username" label=label>
+  <@field.group name="kc-attempted-username" label=label>
     <div class="${properties.kcInputGroup}">
       <div class="${properties.kcInputGroupItemClass} ${properties.kcFill}">
         <span class="${properties.kcInputClass} ${properties.kcFormReadOnlyClass}">

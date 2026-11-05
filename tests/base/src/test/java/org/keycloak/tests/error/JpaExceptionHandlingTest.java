@@ -11,6 +11,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,7 @@ class JpaExceptionHandlingTest {
      * This tests {@link org.keycloak.connections.jpa.support.EntityManagerProxy#convert}
      */
     @Test
+    @DatabaseTest
     public void convertTableUniqueConstraintsToModelExceptions() {
         String realmName = managedRealm.getName();
 

@@ -135,6 +135,9 @@ public class ClientsResource {
                         StripSecretsUtils.stripClient(representation);
                     }
                     representation.setAccess(auth.clients().getAccess(c));
+                    if (c.isServiceAccountsEnabled()) {
+                        ModelToRepresentation.setServiceAccountUserId(session, c, representation);
+                    }
                     return representation;
                 });
     }

@@ -34,8 +34,7 @@ public class ManagedClientCleanup {
     }
 
     void runCleanupTasks(ClientResource client) {
-        cleanupTasks.forEach(t -> t.cleanup(client));
-        cleanupTasks.clear();
+        CleanupTasks.runAll(cleanupTasks, t -> t.cleanup(client), "client");
     }
 
     public interface ClientCleanup {

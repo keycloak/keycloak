@@ -379,13 +379,13 @@ public class AdminGroupProtectionTest {
         realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
 
         String regularGroupId = getGroupId(REGULAR_GROUP);
-        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
-        realm.admin().users().get(serviceAccount.getId()).joinGroup(regularGroupId);
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
+        realm.admin().users().get(serviceAccountUserId).joinGroup(regularGroupId);
 
         Group group = client.groups().get(regularGroupId, List.of("members"));
         List<org.keycloak.scim.resource.group.Member> members = group.getMembers();
         if (members != null) {
-            boolean exposed = members.stream().anyMatch(m -> serviceAccount.getId().equals(m.getValue()));
+            boolean exposed = members.stream().anyMatch(m -> serviceAccountUserId.equals(m.getValue()));
             assertFalse(exposed, "Service account must not appear in SCIM group members");
         }
     }
@@ -405,11 +405,11 @@ public class AdminGroupProtectionTest {
         realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
 
         String regularGroupId = getGroupId(REGULAR_GROUP);
-        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
 
         try {
             client.groups().patch(regularGroupId, PatchRequest.create()
-                    .add("members", serviceAccount.getId())
+                    .add("members", serviceAccountUserId)
                     .build());
             fail("Should not be able to add a service account to a group via SCIM PATCH");
         } catch (ScimClientException sce) {
@@ -432,14 +432,14 @@ public class AdminGroupProtectionTest {
         realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
 
         String regularGroupId = getGroupId(REGULAR_GROUP);
-        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
 
         // Add service account to group via Admin API (bypassing SCIM protection)
-        realm.admin().users().get(serviceAccount.getId()).joinGroup(regularGroupId);
+        realm.admin().users().get(serviceAccountUserId).joinGroup(regularGroupId);
 
         try {
             client.groups().patch(regularGroupId, PatchRequest.create()
-                    .remove("members[value eq \"" + serviceAccount.getId() + "\"]")
+                    .remove("members[value eq \"" + serviceAccountUserId + "\"]")
                     .build());
             fail("Should not be able to remove a service account from a group via SCIM PATCH");
         } catch (ScimClientException sce) {
@@ -447,7 +447,7 @@ public class AdminGroupProtectionTest {
         }
 
         // Verify service account is still in the group (operation was rejected)
-        UserResource userResource = realm.admin().users().get(serviceAccount.getId());
+        UserResource userResource = realm.admin().users().get(serviceAccountUserId);
         List<String> groups = Optional.ofNullable(userResource.groups()).orElse(List.of()).stream().map(GroupRepresentation::getId).toList();
         assertTrue(groups.contains(regularGroupId), "Service account should still be in group after failed PATCH");
     }
@@ -474,12 +474,12 @@ public class AdminGroupProtectionTest {
         String groupId = group.getId();
         realm.cleanup().add(r -> r.groups().group(groupId).remove());
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
         // Add only the service account to the group via Admin API (bypassing SCIM protection)
-        realm.admin().users().get(serviceAccount.getId()).joinGroup(groupId);
+        realm.admin().users().get(serviceAccountUserId).joinGroup(groupId);
 
         // A service account must not be discoverable by its id (eq)
-        assertGroupNotMatched(groupId, ResourceFilter.filter().eq("members.value", serviceAccount.getId()).build(),
+        assertGroupNotMatched(groupId, ResourceFilter.filter().eq("members.value", serviceAccountUserId).build(),
                 "Service account must not be discoverable via members.value eq");
         // A group whose only member is a service account must appear empty (pr)
         assertGroupNotMatched(groupId, ResourceFilter.filter().pr("members").build(),

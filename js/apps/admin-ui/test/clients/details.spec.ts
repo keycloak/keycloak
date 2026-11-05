@@ -15,6 +15,12 @@ import {
   toggleLogoutConfirmation,
   setResourceUrl,
   assertResourceUrl,
+  setValidRedirectUri,
+  clickAddValidRedirectUri,
+  clickRemoveValidRedirectUri,
+  setValidPostLogoutRedirectUri,
+  clickAddValidPostLogoutRedirectUri,
+  clickRemoveValidPostLogoutRedirectUri,
 } from "./details.ts";
 
 test.describe.serial("Clients details test", () => {
@@ -33,7 +39,6 @@ test.describe.serial("Clients details test", () => {
 
   test.afterAll(async () => {
     await adminClient.deleteRealm(realmName);
-    await adminClient.deleteClient(clientId);
   });
 
   test.beforeEach(async ({ page }) => {
@@ -88,6 +93,55 @@ test.describe.serial("Clients details test", () => {
     await assertNotificationMessage(page, "Client successfully updated");
     await page.reload();
     await assertResourceUrl(page, resourceUrl);
+  });
+
+  test("Should be able to assign valid redirect URIs", async ({ page }) => {
+    const validRedirectUri1 = "https://localhost:8081/app";
+    const validRedirectUri2 = "https://127.0.0.1:8081/app";
+    await clickTableRowItem(page, clientId);
+
+    await setValidRedirectUri(page, 0, validRedirectUri1);
+    await clickAddValidRedirectUri(page);
+    await setValidRedirectUri(page, 1, validRedirectUri2);
+    await save(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    const client1 = await adminClient.getClient(clientId, realmName);
+    expect(client1?.redirectUris).toEqual([
+      validRedirectUri1,
+      validRedirectUri2,
+    ]);
+
+    await clickRemoveValidRedirectUri(page, 1);
+    await setValidRedirectUri(page, 0, "");
+    await save(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    const client2 = await adminClient.getClient(clientId, realmName);
+    expect(client2?.redirectUris).toEqual([]);
+  });
+
+  test("Should be able to assign valid post logout redirect URIs", async ({
+    page,
+  }) => {
+    const validRedirectUri1 = "https://localhost:8081/app";
+    const validRedirectUri2 = "https://127.0.0.1:8081/app";
+    await clickTableRowItem(page, clientId);
+
+    await setValidPostLogoutRedirectUri(page, 0, validRedirectUri1);
+    await clickAddValidPostLogoutRedirectUri(page);
+    await setValidPostLogoutRedirectUri(page, 1, validRedirectUri2);
+    await save(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    const client1 = await adminClient.getClient(clientId, realmName);
+    expect(client1?.attributes?.["post.logout.redirect.uris"]).toEqual(
+      `${validRedirectUri1}##${validRedirectUri2}`,
+    );
+
+    await clickRemoveValidPostLogoutRedirectUri(page, 1);
+    await setValidPostLogoutRedirectUri(page, 0, "");
+    await save(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    const client2 = await adminClient.getClient(clientId, realmName);
+    expect(client2?.attributes?.["post.logout.redirect.uris"]).toBeUndefined();
   });
 });
 

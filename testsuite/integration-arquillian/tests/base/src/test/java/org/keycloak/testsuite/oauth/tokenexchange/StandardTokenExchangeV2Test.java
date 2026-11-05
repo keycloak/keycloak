@@ -583,7 +583,8 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
     @Test
     @UncaughtServerErrorExpected
     public void testExchangeUsingServiceAccount() throws Exception {
-        final UserRepresentation user = AdminApiUtil.findClientResourceByClientId(adminClient.realm(TEST), "subject-client").getServiceAccountUser();
+        final String saUserId = AdminApiUtil.findClientResourceByClientId(adminClient.realm(TEST), "subject-client").toRepresentation().getServiceAccountUserId();
+        final UserRepresentation user = adminClient.realm(TEST).users().get(saUserId).toRepresentation();
         oauth.realm(TEST);
         oauth.client("subject-client", "secret");
 

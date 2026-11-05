@@ -19,7 +19,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
@@ -1167,12 +1166,12 @@ public class GroupTest extends AbstractScimTest {
         }
         realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
 
         // Try to create a group with service account in members
         Group newGroup = new Group();
         newGroup.setDisplayName("test-sa-group-" + KeycloakModelUtils.generateId());
-        newGroup.addMember(serviceAccount.getId());
+        newGroup.addMember(serviceAccountUserId);
 
         try {
             client.groups().create(newGroup);
@@ -1201,10 +1200,10 @@ public class GroupTest extends AbstractScimTest {
         group.setDisplayName("test-group-" + KeycloakModelUtils.generateId());
         group = client.groups().create(group);
 
-        UserRepresentation serviceAccount = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
 
         // Add both service account and regular user to group via Admin API
-        realm.admin().users().get(serviceAccount.getId()).joinGroup(group.getId());
+        realm.admin().users().get(serviceAccountUserId).joinGroup(group.getId());
         realm.admin().users().get(regularUser.getId()).joinGroup(group.getId());
 
         // Verify regular user is removed from group
@@ -1228,7 +1227,7 @@ public class GroupTest extends AbstractScimTest {
         assertNull(updated.getMembers(), "Members list should be null");
 
         // Verify service account is still in the group (using Admin API, since SCIM filters them out)
-        List<String> groupIds = Optional.ofNullable(realm.admin().users().get(serviceAccount.getId()).groups()).orElse(List.of()).stream().map(GroupRepresentation::getId).toList();
+        List<String> groupIds = Optional.ofNullable(realm.admin().users().get(serviceAccountUserId).groups()).orElse(List.of()).stream().map(GroupRepresentation::getId).toList();
         assertTrue(groupIds.contains(group.getId()), "Service account should still be in group");
     }
 

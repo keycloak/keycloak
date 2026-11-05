@@ -69,4 +69,39 @@ test.describe("Signing in", () => {
       "Update password",
     );
   });
+
+  test("shows a confirmation after the password has been set", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed();
+    const user = await findUserByUsername(testBed.realm, DEFAULT_USER.username);
+
+    // Log in and delete the password credential of the user.
+    await login(page, testBed.realm);
+    const credentials = await adminClient.users.getCredentials({
+      realm: testBed.realm,
+      id: user.id as string,
+    });
+    await adminClient.users.deleteCredential({
+      realm: testBed.realm,
+      id: user.id as string,
+      credentialId: credentials[0].id as string,
+    });
+
+    // Start the password update from the signing in section.
+    await page.getByTestId("accountSecurity").click();
+    await page.getByTestId("account-security/signing-in").click();
+    await page.getByTestId("password/create").click();
+    await expect(page.locator("#kc-page-title")).toContainText(
+      "Update password",
+    );
+
+    // Set a new password and verify the user is told about it.
+    await page.locator("#password-new").fill("new-password");
+    await page.locator("#password-confirm").fill("new-password");
+    await page.locator('[type="submit"]').first().click();
+    await expect(
+      page.getByText("Your password has been updated."),
+    ).toBeVisible();
+  });
 });

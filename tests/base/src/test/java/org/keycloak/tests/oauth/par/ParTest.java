@@ -201,6 +201,45 @@ public class ParTest extends AbstractClientPoliciesTest {
     }
 
     /**
+     * Verify that a PAR request_uri is still consumed after {@code /login-actions/restart}.
+     * Restart clears authentication-session notes but must not drop the PAR binding, otherwise the
+     * same request_uri can be replayed for a second authorization code (CVE-2026-117859).
+     */
+    @Test
+    public void testParSingleUseEnforcedAfterAuthenticationRestart() {
+        String origRedirectUri = oauth.getRedirectUri();
+
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+        oauth.loginForm().requestUri(requestUri).open();
+        loginPage.assertCurrent();
+
+        // Restart clears auth notes; PAR request_uri must survive as a client note
+        driver.open(driver.getCurrentUrl().replaceFirst("/login-actions/[^/?]+", "/login-actions/restart"));
+        loginPage.assertCurrent();
+
+        oauth.fillLoginForm(user.getUsername(), user.getPassword());
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        String code = loginResponse.getCode();
+        assertThat(code, notNullValue());
+
+        // Replay must fail — PAR was consumed on the post-restart completion
+        oauth.loginForm().requestUri(requestUri).open();
+        errorPage.assertCurrent();
+
+        oauth.redirectUri(origRedirectUri);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
+
+        driver.cookies().deleteAll();
+    }
+
+    /**
      * Verify that a PAR request_uri is consumed (single-use enforced) even when the authorization
      * endpoint short-circuits via the prompt=none silent authentication path (existing SSO session).
      *

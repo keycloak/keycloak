@@ -128,13 +128,81 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
-    public void testUsersCanQueryIfQueryRoleGranted() {
+    public void testUsersQueryRoleAloneReturnsNoResources() {
+        // query-users admits the caller to the listing endpoint, but every resource still requires view
+        // permission. Without view-users the listing is empty, consistent with the Admin REST API.
         grantAdminRole(AdminRoles.QUERY_USERS);
         ListResponse<User> response = noAccessClient.users().search("");
-        assertEquals(1, response.getTotalResults());
         assertNotNull(response.getResources(), "Resources array should not be null");
-        assertEquals(1, response.getResources().size(), "Resources size should match totalResults");
-        assertEquals(1, response.getItemsPerPage(), "itemsPerPage should match resources size");
+        assertEquals(0, response.getResources().size(), "No user resource may be returned without view permission");
+        assertEquals(0, response.getItemsPerPage(), "itemsPerPage should match resources size");
+        // Without any fine-grained admin permissions in effect, access is all-or-nothing: the caller cannot view
+        // any user, on any page, so totalResults must be zero rather than the unfiltered DB count.
+        assertEquals(0, response.getTotalResults(), "totalResults must be zero when the caller cannot view any resource");
+    }
+
+    @Test
+    public void testUsersQueryRoleAloneDoesNotLeakPersonalData() {
+        createUser("leak-probe");
+        grantAdminRole(AdminRoles.QUERY_USERS);
+
+        // every way of reaching the listing must be covered, not just GET /Users
+        assertNoUsersVisible(noAccessClient.users().getAll());
+        assertNoUsersVisible(noAccessClient.users().search(""));
+        assertNoUsersVisible(noAccessClient.users().search("userName eq \"leak-probe\""));
+        assertNoUsersVisible(noAccessClient.users().getAll("userName sw \"leak\""));
+        assertNoUsersVisible(noAccessClient.users().getAll("emails.value eq \"leak-probe@keycloak.org\""));
+
+        // an attribute projection must not be usable to get around the check either
+        assertNoUsersVisible(noAccessClient.users().getAll(List.of("userName"), null));
+        assertNoUsersVisible(noAccessClient.users().getAll(null, List.of("name", "emails")));
+    }
+
+    @Test
+    public void testGroupsQueryRoleAloneDoesNotLeakGroups() {
+        createGroup("leak-probe-group");
+        grantAdminRole(AdminRoles.QUERY_GROUPS);
+
+        assertNoGroupsVisible(noAccessClient.groups().getAll(""));
+        assertNoGroupsVisible(noAccessClient.groups().getAll("displayName eq \"leak-probe-group\""));
+        assertNoGroupsVisible(noAccessClient.groups().search("displayName sw \"leak\"", null, null));
+    }
+
+    @Test
+    public void testTotalResultsIsZeroAcrossPagesWhenAccessFullyDenied() {
+        // Without fine-grained admin permissions in effect, the per-resource view check evaluates the same way
+        // for every resource of this type, so a caller lacking it cannot view any resource, on any page. The
+        // listing and the count must agree on that: totalResults is zero regardless of which page is requested,
+        // not an unfiltered DB count. See the SCIM pagination documentation.
+        createUser("pagination-probe");
+        grantAdminRole(AdminRoles.QUERY_USERS);
+
+        ListResponse<User> firstPage = noAccessClient.users().search("", 1, 1);
+        assertEquals(0, firstPage.getResources().size(), "no resource may be returned regardless of the page");
+        assertEquals(0, firstPage.getTotalResults(), "totalResults must be zero when the caller cannot view any resource");
+
+        ListResponse<User> secondPage = noAccessClient.users().search("", 2, 1);
+        assertEquals(0, secondPage.getResources().size(), "no resource may be returned regardless of the page");
+        assertEquals(0, secondPage.getTotalResults(), "totalResults must not change from one page to the next");
+    }
+
+    @Test
+    public void testUsersVisibleToQueryRoleOnceViewUsersGranted() {
+        // guards against over-filtering: the per-resource check must not hide resources from callers that
+        // legitimately hold a realm-wide view permission
+        createUser("visible-probe");
+        grantAdminRole(AdminRoles.QUERY_USERS);
+        assertEquals(0, noAccessClient.users().getAll().getResources().size());
+
+        grantAdminRole(AdminRoles.VIEW_USERS);
+
+        ListResponse<User> response = noAccessClient.users().getAll();
+        assertEquals(2, response.getTotalResults());
+        User probe = response.getResources().stream()
+                .filter(u -> "visible-probe".equals(u.getUserName()))
+                .findAny()
+                .orElseThrow(() -> new AssertionError("visible-probe should be returned to a view-users caller"));
+        assertNotNull(probe.getEmails(), "a view-users caller must still receive the full representation");
     }
 
     @Test
@@ -251,14 +319,18 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
-    public void testGroupsCanQueryIfQueryRoleGranted() {
+    public void testGroupsQueryRoleAloneReturnsNoResources() {
+        // query-groups admits the caller to the listing endpoint, but every resource still requires view
+        // permission. Without view-users the listing is empty, consistent with the Admin REST API.
         createGroup();
         grantAdminRole(AdminRoles.QUERY_GROUPS);
         ListResponse<Group> response = noAccessClient.groups().getAll("");
-        assertEquals(1, response.getTotalResults());
         assertNotNull(response.getResources(), "Resources array should not be null");
-        assertEquals(1, response.getResources().size(), "Resources size should match totalResults");
-        assertEquals(1, response.getItemsPerPage(), "itemsPerPage should match resources size");
+        assertEquals(0, response.getResources().size(), "No group resource may be returned without view permission");
+        assertEquals(0, response.getItemsPerPage(), "itemsPerPage should match resources size");
+        // Without any fine-grained admin permissions in effect, access is all-or-nothing: the caller cannot view
+        // any group, on any page, so totalResults must be zero rather than the unfiltered DB count.
+        assertEquals(0, response.getTotalResults(), "totalResults must be zero when the caller cannot view any resource");
     }
 
     @Test
@@ -309,10 +381,10 @@ public class AuthorizationTest extends AbstractScimTest {
         GroupRepresentation group = createGroup();
         managedUser.admin().joinGroup(group.getId());
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
@@ -333,15 +405,16 @@ public class AuthorizationTest extends AbstractScimTest {
         realm.admin().update(realmRep);
         grantAdminRole(AdminRoles.QUERY_GROUPS);
 
+        GroupRepresentation group = createGroup();
+        createGroup("hidden-group");
         ListResponse<Group> groups = noAccessClient.groups().getAll("");
         assertEquals(0, groups.getTotalResults());
 
-        GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
@@ -353,6 +426,7 @@ public class AuthorizationTest extends AbstractScimTest {
         permissionClient.authorization().permissions().scope().create(permission).close();
         groups = noAccessClient.groups().getAll("");
         assertEquals(1, groups.getTotalResults());
+        assertEquals(group.getId(), groups.getResources().get(0).getId());
     }
 
     @Test
@@ -517,12 +591,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM user management");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -622,12 +696,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -664,12 +738,12 @@ public class AuthorizationTest extends AbstractScimTest {
         managedUser.admin().joinGroup(group.getId());
 
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -700,12 +774,12 @@ public class AuthorizationTest extends AbstractScimTest {
         managedUser.admin().joinGroup(group.getId());
 
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -741,12 +815,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -797,12 +871,12 @@ public class AuthorizationTest extends AbstractScimTest {
 
         GroupRepresentation group = createGroup();
         ClientRepresentation client = getScimClient();
-        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(client.getId()).toRepresentation().getServiceAccountUserId();
 
         // Create policy for the SCIM service account
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("Allow SCIM access");
-        policy.addUser(serviceAccount.getId());
+        policy.addUser(serviceAccountUserId);
         ClientResource permissionClient = realm.admin().clients().get(
                 realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
         permissionClient.authorization().policies().user().create(policy).close();
@@ -1115,11 +1189,11 @@ public class AuthorizationTest extends AbstractScimTest {
             clientDbId = ApiUtil.getCreatedId(response);
         }
 
-        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientDbId).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
         ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId()).roles()
                 .get(AdminRoles.MANAGE_USERS).toRepresentation();
-        realm.admin().users().get(serviceAccountUser.getId()).roles()
+        realm.admin().users().get(serviceAccountUserId).roles()
                 .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
         realm.admin().clients().get(clientDbId).getScopeMappings()
                 .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
@@ -1210,11 +1284,11 @@ public class AuthorizationTest extends AbstractScimTest {
             try {
                 ClientRepresentation masterRealmMgmt = adminClient.realm("master").clients()
                         .findByClientId("master-realm").get(0);
-                UserRepresentation scimServiceAccount = adminClient.realm("master").clients()
-                        .get(scimMasterClient.getId()).getServiceAccountUser();
+                String scimServiceAccountUserId = adminClient.realm("master").clients()
+                        .get(scimMasterClient.getId()).toRepresentation().getServiceAccountUserId();
                 RoleRepresentation manageUsersRole = adminClient.realm("master").clients()
                         .get(masterRealmMgmt.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
-                adminClient.realm("master").users().get(scimServiceAccount.getId())
+                adminClient.realm("master").users().get(scimServiceAccountUserId)
                         .roles().clientLevel(masterRealmMgmt.getId()).add(List.of(manageUsersRole));
                 adminClient.realm("master").clients().get(scimMasterClient.getId())
                         .getScopeMappings().clientLevel(masterRealmMgmt.getId()).add(List.of(manageUsersRole));
@@ -1475,6 +1549,35 @@ public class AuthorizationTest extends AbstractScimTest {
         return group;
     }
 
+    private UserRepresentation createUser(String username) {
+        UserRepresentation user = UserBuilder.create()
+                .username(username)
+                .firstName("First")
+                .lastName("Last")
+                .email(username + "@keycloak.org")
+                .enabled(true)
+                .build();
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+        realm.cleanup().add(realm -> realm.users().get(user.getId()).remove());
+        return user;
+    }
+
+    private void assertNoUsersVisible(ListResponse<User> response) {
+        assertNotNull(response.getResources(), "Resources array should not be null");
+        assertEquals(0, response.getResources().size(), "No user resource may be returned without view permission");
+        assertEquals(0, response.getItemsPerPage(), "itemsPerPage should match resources size");
+        assertEquals(0, response.getTotalResults(), "totalResults must be zero when the caller cannot view any resource");
+    }
+
+    private void assertNoGroupsVisible(ListResponse<Group> response) {
+        assertNotNull(response.getResources(), "Resources array should not be null");
+        assertEquals(0, response.getResources().size(), "No group resource may be returned without view permission");
+        assertEquals(0, response.getItemsPerPage(), "itemsPerPage should match resources size");
+        assertEquals(0, response.getTotalResults(), "totalResults must be zero when the caller cannot view any resource");
+    }
+
     private ClientResource getAdminPermissionsClient() {
         String permissionsClientId = realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId();
         return realm.admin().clients().get(permissionsClientId);
@@ -1490,7 +1593,8 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     private UserRepresentation getServiceAccount() {
-        return realm.admin().clients().get(getScimClient().getId()).getServiceAccountUser();
+        String saUserId = realm.admin().clients().get(getScimClient().getId()).toRepresentation().getServiceAccountUserId();
+        return realm.admin().users().get(saUserId).toRepresentation();
     }
 
     private ScopePermissionRepresentation createPermission(String resourceType, Set<String> resources, Set<String> scopes, String policyName) {
@@ -1526,7 +1630,8 @@ public class AuthorizationTest extends AbstractScimTest {
 
     private void grantAdminRole(String role) {
         ClientRepresentation clientRep = getScimClient();
-        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
+        String serviceAccountUserId = realm.admin().clients().get(clientRep.getId()).toRepresentation().getServiceAccountUserId();
+        UserRepresentation serviceAccountUser = realm.admin().users().get(serviceAccountUserId).toRepresentation();
         grantAdminRole(role, serviceAccountUser, clientRep.getId());
     }
 
@@ -1669,7 +1774,7 @@ public class AuthorizationTest extends AbstractScimTest {
         ClientRepresentation realmMgmt = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
         RoleRepresentation role = realm.admin().clients().get(realmMgmt.getId()).roles().get(name).toRepresentation();
         ClientRepresentation clientRep = getScimClient();
-        UserRepresentation serviceAccountUser = realm.admin().clients().get(clientRep.getId()).getServiceAccountUser();
-        realm.admin().users().get(serviceAccountUser.getId()).roles().clientLevel(realmMgmt.getId()).remove(List.of(role));
+        String serviceAccountUserId = realm.admin().clients().get(clientRep.getId()).toRepresentation().getServiceAccountUserId();
+        realm.admin().users().get(serviceAccountUserId).roles().clientLevel(realmMgmt.getId()).remove(List.of(role));
     }
 }
