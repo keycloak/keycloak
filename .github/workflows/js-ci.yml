@@ -54,13 +54,13 @@ jobs:
       - name: Build Keycloak
         run: |
           ./mvnw clean install --errors -DskipTests -DskipTestsuite -DskipExamples -Pdistribution
-          mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
+          mv ./quarkus/dist/target/keycloak-25.0.12-GW.tar.gz ./keycloak-25.0.12-GW.tar.gz
 
       - name: Upload Keycloak dist
         uses: actions/upload-artifact@v4
         with:
           name: keycloak
-          path: keycloak-999.0.0-SNAPSHOT.tar.gz
+          path: keycloak-25.0.12-GW.tar.gz
 
   admin-client:
     name: Admin Client
@@ -171,8 +171,8 @@ jobs:
 
       - name: Start Keycloak server
         run: |
-          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=transient-users,oid4vc-vci &> ~/server.log &
+          tar xfvz keycloak-25.0.12-GW.tar.gz
+          keycloak-25.0.12-GW/bin/kc.sh start-dev --features=transient-users,oid4vc-vci &> ~/server.log &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
@@ -265,8 +265,8 @@ jobs:
 
       - name: Start Keycloak server
         run: |
-          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,transient-users &> ~/server.log &
+          tar xfvz keycloak-25.0.12-GW.tar.gz
+          keycloak-25.0.12-GW/bin/kc.sh start-dev --features=admin-fine-grained-authz,transient-users &> ~/server.log &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin

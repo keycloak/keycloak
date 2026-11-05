@@ -168,7 +168,7 @@ public class DefaultMigrationManager implements MigrationManager {
     public static final ModelVersion RHSSO_VERSION_7_2_KEYCLOAK_VERSION = new ModelVersion("3.4.3");
     public static final ModelVersion RHSSO_VERSION_7_3_KEYCLOAK_VERSION = new ModelVersion("4.8.3");
     public static final ModelVersion RHSSO_VERSION_7_4_KEYCLOAK_VERSION = new ModelVersion("9.0.3");
-    public static final ModelVersion SNAPSHOT_VERSION = new ModelVersion("999.0.0-SNAPSHOT");
+    public static final ModelVersion SNAPSHOT_VERSION = new ModelVersion("25.0.12-GW");
 
     private static final Map<Pattern, ModelVersion> PATTERN_MATCHER = new LinkedHashMap<>();
     static {

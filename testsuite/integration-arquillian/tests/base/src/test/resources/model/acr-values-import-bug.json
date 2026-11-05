@@ -2502,7 +2502,7 @@
     "organizationsEnabled": "false",
     "acr.loa.map": "{\"silver\":\"1\",\"gold\":\"2\"}"
   },
-  "keycloakVersion": "999.0.0-SNAPSHOT",
+  "keycloakVersion": "25.0.12-GW",
   "userManagedAccessAllowed": false,
   "organizationsEnabled": false,
   "clientProfiles": {
