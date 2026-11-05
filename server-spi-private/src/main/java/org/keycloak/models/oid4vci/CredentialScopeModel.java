@@ -169,6 +169,15 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final Integer VC_REFRESH_INTERVAL_IN_SECONDS_DEFAULT = 604800; // 7 days in seconds
 
     /**
+     * The idle timeout in seconds of the refresh token issued for this credential configuration. The token expires
+     * when unused for this long and every refresh restarts the window. If not set, defaults to the smaller of
+     * VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS_DEFAULT (30 days) or the credential lifetime, but never below the refresh interval.
+     */
+    public static final String VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS = "vc.refresh_idle_timeout_in_seconds";
+
+    public static final Integer VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS_DEFAULT = 2592000; // 30 days in seconds
+
+    /**
      * the actual object that is represented by this scope
      */
     private final ClientScopeModel clientScope;
@@ -232,6 +241,18 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setRefreshIntervalInSeconds(Integer refreshIntervalInSeconds) {
         clientScope.setAttribute(VC_REFRESH_INTERVAL_IN_SECONDS, String.valueOf(refreshIntervalInSeconds));
+    }
+
+    public Integer getRefreshIdleTimeoutInSeconds() {
+        return Optional.ofNullable(clientScope.getAttribute(VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS))
+                .map(Integer::parseInt)
+                .orElseGet(() -> Math.max(
+                        Math.min(VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS_DEFAULT, getExpiryInSeconds()),
+                        getRefreshIntervalInSeconds()));
+    }
+
+    public void setRefreshIdleTimeoutInSeconds(Integer refreshIdleTimeoutInSeconds) {
+        clientScope.setAttribute(VC_REFRESH_IDLE_TIMEOUT_IN_SECONDS, String.valueOf(refreshIdleTimeoutInSeconds));
     }
 
     public Integer getSdJwtNumberOfDecoys() {

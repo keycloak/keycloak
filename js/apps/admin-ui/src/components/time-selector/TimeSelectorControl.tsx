@@ -38,12 +38,7 @@ export const TimeSelectorControl = <
   className,
   ...rest
 }: TimeSelectorControlProps<T, P>) => {
-  const {
-    control,
-    formState: { errors },
-  } = useFormContext();
-
-  const error = errors[name];
+  const { control } = useFormContext();
 
   return (
     <FormGroup
@@ -60,26 +55,30 @@ export const TimeSelectorControl = <
         {...controller}
         name={name}
         control={control}
-        render={({ field }) => (
-          <TimeSelector
-            {...rest}
-            className={className}
-            id={name}
-            data-testid={name}
-            value={field.value}
-            onChange={field.onChange}
-            validated={
-              error ? ValidatedOptions.error : ValidatedOptions.default
-            }
-          />
+        render={({ field, fieldState }) => (
+          <>
+            <TimeSelector
+              {...rest}
+              className={className}
+              id={name}
+              data-testid={name}
+              value={field.value}
+              onChange={field.onChange}
+              validated={
+                fieldState.error
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
+            />
+            {fieldState.error && (
+              <FormErrorText
+                data-testid={`${name}-helper`}
+                message={fieldState.error.message as string}
+              />
+            )}
+          </>
         )}
       />
-      {error && (
-        <FormErrorText
-          data-testid={`${name}-helper`}
-          message={error.message as string}
-        />
-      )}
     </FormGroup>
   );
 };

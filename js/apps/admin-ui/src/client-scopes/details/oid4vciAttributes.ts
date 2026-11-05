@@ -21,6 +21,7 @@ export const OID4VC_ATTRIBUTE_KEYS = [
   "vc.key_attestations_required.key_storage",
   "vc.key_attestations_required.user_authentication",
   "vc.refresh_interval_in_seconds",
+  "vc.refresh_idle_timeout_in_seconds",
 ] as const;
 
 const isEmptyValue = (value: unknown) =>
