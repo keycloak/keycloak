@@ -1389,9 +1389,9 @@ public class RealmCacheSession implements CacheRealmProvider {
 
         ClientScopeListQuery query = cache.get(cacheKey, ClientScopeListQuery.class);
         if (query != null) {
-            ClientScopeModel clientScope = getClientScopeById(realm, query.getClientScopes().iterator().next());
             // a renamed or removed client scope is detected here as the cached client scope is invalidated on every change
-            if (clientScope != null && Objects.equals(name, clientScope.getName())) {
+            ClientScopeModel clientScope = getClientScopeByIdAndName(realm, query.getClientScopes().iterator().next(), name);
+            if (clientScope != null) {
                 logger.tracev("client scope by name cache hit: {0}", name);
                 return clientScope;
             }
@@ -1404,15 +1404,25 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (model == null) {
             return null;
         }
+        // a concurrent rename can have committed since the lookup, so only cache the name if it still matches
+        ClientScopeModel clientScope = getClientScopeByIdAndName(realm, model.getId(), name);
+        if (clientScope == null) {
+            return getClientScopeByNameFromDelegate(realm, name);
+        }
         logger.tracev("adding client scope by name cache miss: {0}", name);
         cache.addRevisioned(new ClientScopeListQuery(loaded, cacheKey, realm, Set.of(model.getId())), startupRevision);
-        return getClientScopeById(realm, model.getId());
+        return clientScope;
     }
 
     // resolve the ID through the cache layer, so that updates of the returned scope invalidate the cached entry
     private ClientScopeModel getClientScopeByNameFromDelegate(RealmModel realm, String name) {
         ClientScopeModel model = getClientScopeDelegate().getClientScopeByName(realm, name);
-        return model == null ? null : getClientScopeById(realm, model.getId());
+        return model == null ? null : getClientScopeByIdAndName(realm, model.getId(), name);
+    }
+
+    private ClientScopeModel getClientScopeByIdAndName(RealmModel realm, String id, String name) {
+        ClientScopeModel clientScope = getClientScopeById(realm, id);
+        return clientScope != null && Objects.equals(name, clientScope.getName()) ? clientScope : null;
     }
 
     @Override
