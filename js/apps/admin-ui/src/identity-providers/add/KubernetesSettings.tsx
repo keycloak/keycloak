@@ -4,6 +4,7 @@ import { FormGroupField } from "../component/FormGroupField";
 import { Controller, useFormContext } from "react-hook-form";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 export const KubernetesSettings = () => {
   const { t } = useTranslation();
@@ -28,6 +29,13 @@ export const KubernetesSettings = () => {
         name="config.issuerDiscoveryUrl"
         labelIcon={t("kubernetesIssuerDiscoveryUrlHelp")}
         label={t("kubernetesIssuerDiscoveryUrl")}
+      />
+      <DefaultSwitchControl
+        name="config.forwardTokenToAdditionalEndpoints"
+        label={t("forwardTokenToAdditionalEndpoints")}
+        labelIcon={t("forwardTokenToAdditionalEndpointsHelp")}
+        defaultValue="false"
+        stringify
       />
       <FormGroupField label="fedClientAssertionMaxExp">
         <Controller
