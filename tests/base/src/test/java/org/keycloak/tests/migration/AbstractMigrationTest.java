@@ -456,7 +456,7 @@ public abstract class AbstractMigrationTest {
 
     protected void testMigrationTo27_0_0(RealmResource realmWithUnsetTheme) {
         Assertions.assertEquals(PREFERRED_DEFAULT_LOGIN_THEME, migrationRealm.toRepresentation().getLoginTheme(),
-                "Login v1 realm theme was not migrated to keycloak.v2");
+                "Login v1 realm theme was not migrated to keycloak.v3");
         Assertions.assertEquals("custom-theme", migrationRealm2.toRepresentation().getLoginTheme(),
                 "Custom login theme should be preserved");
         Assertions.assertNull(realmWithUnsetTheme.toRepresentation().getLoginTheme(),
