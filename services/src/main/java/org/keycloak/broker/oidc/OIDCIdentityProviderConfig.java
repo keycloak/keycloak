@@ -17,6 +17,7 @@
 package org.keycloak.broker.oidc;
 
 import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
+import org.keycloak.broker.provider.SingleIssuerIdentityProviderConfig;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
@@ -27,7 +28,7 @@ import static org.keycloak.common.util.UriUtils.checkUrl;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig implements JWTAuthorizationGrantConfig, IssuerValidation {
+public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig implements JWTAuthorizationGrantConfig, IssuerValidation, SingleIssuerIdentityProviderConfig {
 
     public static final String JWKS_URL = "jwksUrl";
 
@@ -166,6 +167,10 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
+        String issuer = getIssuer();
+        if (issuer != null && issuer.contains(",")) {
+            throw new IllegalArgumentException("Only one issuer is supported. Configure a separate identity provider for each issuer.");
+        }
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");

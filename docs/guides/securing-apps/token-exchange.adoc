@@ -1029,6 +1029,7 @@ The `subject_token_type` must either be `urn:ietf:params:oauth:token-type:access
 If the type is `urn:ietf:params:oauth:token-type:access_token` you specify the `subject_issuer` parameter and it must be the
 alias of the configured identity provider.  If the type is `urn:ietf:params:oauth:token-type:jwt`, the provider will be matched via
 the `iss` (issuer) claim within the JWT which must be the alias of the provider, or a registered issuer within the provider's configuration.
+Each OIDC identity provider accepts a single configured issuer. To exchange tokens from multiple issuers, configure a separate identity provider for each issuer.
 
 For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
 will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,
