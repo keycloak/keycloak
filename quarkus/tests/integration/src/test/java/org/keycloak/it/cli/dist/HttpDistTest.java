@@ -146,6 +146,18 @@ public class HttpDistTest {
     }
 
     @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void rawQueryParamNamesResolveLikeInjectedParams(KeycloakDistribution dist) {
+        dist.run("start-dev");
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master/test-resources/query-params?%53AMLResponse=crafted%2B&SAMLResponse=signed%2B")
+                .then().statusCode(200)
+                .body("injectedSAMLResponse", Matchers.contains("crafted+", "signed+"))
+                .body("decoded.SAMLResponse", Matchers.contains("crafted+", "signed+"))
+                .body("raw.SAMLResponse", Matchers.contains("crafted%2B", "signed%2B"));
+    }
+
+    @Test
     @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
     public void testHttpCertificateReloadPeriod(CLIResult result) {
         result.assertError("Invalid duration");
