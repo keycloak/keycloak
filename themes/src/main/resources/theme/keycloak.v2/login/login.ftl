@@ -11,7 +11,7 @@
     <#elseif section = "form">
         <div id="kc-form">
           <div id="kc-form-wrapper">
-            <#if realm.password>
+            <#if realm.password && realm.usernamePasswordFormEnabled>
                 <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post" novalidate="novalidate">
                     <#if !usernameHidden??>
                         <#assign label>
@@ -41,7 +41,8 @@
         <@passkeys.conditionalUIData />
     <#elseif section = "socialProviders" >
         <#if realm.password && social.providers?? && social.providers?has_content>
-            <@identityProviders.show social=social/>
+            <#-- Only show the "or" divider when the username/password form is rendered above the providers. -->
+            <@identityProviders.show social=social showOrDivider=realm.usernamePasswordFormEnabled/>
         </#if>
     <#elseif section = "info" >
         <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
