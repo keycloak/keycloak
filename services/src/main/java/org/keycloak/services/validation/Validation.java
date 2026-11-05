@@ -70,6 +70,23 @@ public class Validation {
         return USERNAME_PATTERN.matcher(username).matches();
     }
 
+    /**
+     * Check if string contains invisible or formatting-only Unicode characters
+     * (Unicode general category Cf), e.g. zero-width space (U+200B), word joiner
+     * (U+2060), soft hyphen (U+00AD), byte order mark (U+FEFF) or bidi controls.
+     * Such characters are not visible, but they are significant for exact string
+     * comparisons, which can silently break matching and authorization logic.
+     *
+     * @param s to check
+     * @return true if the string contains at least one invisible character
+     */
+    public static boolean containsInvisibleCharacters(String s) {
+        if (s == null) {
+            return false;
+        }
+        return s.codePoints().anyMatch(cp -> Character.getType(cp) == Character.FORMAT);
+    }
+
     public static List<FormMessage> getFormErrorsFromValidation(List<ValidationException.Error> errors) {
         List<FormMessage> messages = new ArrayList<>();
         for (ValidationException.Error error : errors) {

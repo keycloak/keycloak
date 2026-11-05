@@ -384,6 +384,128 @@ public class GroupTest extends AbstractGroupTest {
         );
     }
 
+    // Issue #54532: Group names with invisible Unicode characters are accepted without validation
+    @Test
+    public void createGroupWithInvisibleUnicodeNameShouldFail() {
+        GroupRepresentation group = new GroupRepresentation();
+
+        group.setName("UR_EXAMPLE\u2060");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        group.setName("zero\u200Bwidth");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        group.setName("soft\u00ADhyphen");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    // Issue #54532: Renaming a group to a name containing invisible Unicode characters is rejected
+    @Test
+    public void renamingGroupToInvisibleUnicodeNameShouldFail() {
+        RealmResource realm = managedRealm.admin();
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("cleanGroupName");
+
+        Response response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        group.setName("cleanGroupName\u200B");
+        assertThrows(BadRequestException.class,
+                () -> realm.groups().group(groupId).update(group),
+                "Renaming a group to a name with invisible Unicode characters should fail"
+        );
+    }
+
+    // Issue #54532: The subgroup creation path validates names as well
+    @Test
+    public void createSubGroupWithInvisibleUnicodeNameShouldFail() {
+        RealmResource realm = managedRealm.admin();
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("parentGroup");
+        String parentId = ApiUtil.getCreatedId(realm.groups().add(parent));
+        managedRealm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("childGroup\u200B");
+        try (Response response = realm.groups().group(parentId).subGroup(child)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    // Issue #54532: Names containing only visible characters, however unusual, remain valid
+    @Test
+    public void createGroupWithVisibleSpecialCharactersNameSucceeds() {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("Gruppe M\u00FCnchen \u6771\u4EAC \uD83D\uDE80");
+
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            String groupId = ApiUtil.getCreatedId(response);
+            managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+            assertEquals("Gruppe M\u00FCnchen \u6771\u4EAC \uD83D\uDE80",
+                    managedRealm.admin().groups().group(groupId).toRepresentation().getName());
+        }
+    }
+
+    // Issue #54532: Legacy groups whose names already contain invisible characters can still be updated without renaming
+    @Test
+    public void updatingLegacyGroupWithInvisibleCharactersInNameSucceeds() {
+        String realmName = managedRealm.getName();
+        final String groupId = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            GroupModel legacyGroup = realm.createGroup("legacy\u200BGroup");
+            return legacyGroup.getId();
+        }, String.class);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setName("legacy\u200BGroup");
+        managedRealm.admin().groups().group(groupId).update(rep);
+
+        assertEquals("legacy\u200BGroup", managedRealm.admin().groups().group(groupId).toRepresentation().getName());
+    }
+
+    // Review feedback on this PR: moving a legacy group whose unchanged name contains
+    // invisible characters must not be blocked (the move endpoints do not apply the name)
+    @Test
+    public void moveLegacyGroupWithInvisibleCharactersInNameSucceeds() {
+        String realmName = managedRealm.getName();
+        final String groupId = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            GroupModel legacyGroup = realm.createGroup("legacy\u2060Group");
+            return legacyGroup.getId();
+        }, String.class);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("moveParentGroup");
+        String parentId = ApiUtil.getCreatedId(managedRealm.admin().groups().add(parent));
+        managedRealm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setId(groupId);
+        rep.setName("legacy\u2060Group");
+
+        // top-level move endpoint: unchanged legacy name must not be validated
+        try (Response response = managedRealm.admin().groups().add(rep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // subgroup move endpoint: same guarantee
+        try (Response response = managedRealm.admin().groups().group(parentId).subGroup(rep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
     @Test
     public void createAndTestGroups() throws IOException {
         RoleRepresentation topRole = createRealmRole(managedRealm, RoleBuilder.create().name("topRole").build());
