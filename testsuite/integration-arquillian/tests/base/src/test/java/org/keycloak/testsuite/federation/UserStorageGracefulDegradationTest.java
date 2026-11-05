@@ -184,4 +184,47 @@ public class UserStorageGracefulDegradationTest extends AbstractTestRealmKeycloa
         Assertions.assertTrue(userCount >= 3, "User count should be at least 3, but was: " + userCount);
     }
 
+    @Test
+    @ModelTest
+    public void testGracefulDegradationWhenProviderFailsAfterFirstResults(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealm("test");
+
+        // Model test methods run on a fresh instance of the test class on the server, so the
+        // provider set up in addUserStorageProvider() is not addressed by its stored id here but
+        // this test creates its own: a failing provider (highest priority, queried first) that
+        // returns the first results of a search and then fails while the returned stream is
+        // consumed - e.g. an LDAP server that stops responding between the pages of a paginated
+        // search
+        ComponentModel midStreamFailingProvider = new ComponentModel();
+        midStreamFailingProvider.setId(KeycloakModelUtils.generateId());
+        midStreamFailingProvider.setName("mid-stream-failing-user-storage");
+        midStreamFailingProvider.setProviderId("failing-user-storage");
+        midStreamFailingProvider.setProviderType(UserStorageProvider.class.getName());
+        midStreamFailingProvider.setParentId(realm.getId());
+        midStreamFailingProvider.getConfig().putSingle("priority", "0");
+        midStreamFailingProvider.getConfig().putSingle(FailingUserStorageProvider.FAIL_ON_SEARCH_AFTER_FIRST, "true");
+        realm.addComponentModel(midStreamFailingProvider);
+
+        try {
+            Map<String, String> searchParams = new HashMap<>();
+
+            // This should not throw an exception although the provider with the highest priority
+            // fails while its result is consumed, and the users it returned before failing must
+            // not surface as a partial result set: the provider contributes an empty result
+            Stream<UserModel> users = session.users().searchForUserStream(realm, searchParams, 0, 10);
+            List<String> usernames = users.map(UserModel::getUsername).toList();
+
+            Assertions.assertFalse(usernames.contains("lazy-fail-user1"),
+                    "The user returned by the failing provider before it failed must not surface, but was found: " + usernames);
+            Assertions.assertFalse(usernames.contains("lazy-fail-user2"),
+                    "The user returned by the failing provider before it failed must not surface, but was found: " + usernames);
+
+            // users of the working (local) providers should still be returned
+            assertThat("Should still contain the local users", usernames,
+                    hasItems("local-user1", "local-user2", "local-admin"));
+        } finally {
+            realm.removeComponent(midStreamFailingProvider);
+        }
+    }
+
 }
