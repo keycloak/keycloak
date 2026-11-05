@@ -143,7 +143,7 @@ The previous JSON example should be signed and the JWT header should specify the
 }
 ----
 
-NOTE: Following the spec recommendation, the JWT Authorization Grant never issues a refresh token and a link:{adminguide_link}#_transient-session[transient session] is always created. For stored users, the access token can be used normally in {project_name} through the introspection, user-info or any other endpoint. Transient external users have the endpoint limitations described above. It will be valid until expired or explicitly revoked by the revocation endpoint.
+NOTE: Following the spec recommendation, the JWT Authorization Grant never issues a refresh token and a link:{adminguide_link}#_transient-session[transient session] is always created. For stored users, the access token can be used normally in {project_name} through the introspection, user-info or any other endpoint and remains valid until expired or explicitly revoked by the revocation endpoint. Transient external users have the endpoint limitations described above, including lack of support for revocation through the revocation endpoint.
 
 == How to get a valid token for JWT Authorization Grant
 
