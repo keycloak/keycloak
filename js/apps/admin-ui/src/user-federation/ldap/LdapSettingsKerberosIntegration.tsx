@@ -82,7 +82,7 @@ export const LdapSettingsKerberosIntegration = ({
             />
             <FormGroup
               label={t("allowedKerberosRealms")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("allowedKerberosRealmsHelp")}
                   fieldLabelId="allowedKerberosRealms"

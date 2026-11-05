@@ -750,7 +750,7 @@ export const RealmSettingsTokensTab = ({
               hasNoPaddingTop
               label={t("enableDeflateCompression")}
               fieldId="kc-deflate-compression"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("enableDeflateCompressionHelp")}
                   fieldLabelId="enableDeflateCompression"
@@ -768,7 +768,6 @@ export const RealmSettingsTokensTab = ({
                     data-testid="attributes.oid4vci.request.zip.algorithms"
                     aria-label={t("enableDeflateCompression")}
                     label={t("on")}
-                    labelOff={t("off")}
                     isChecked={
                       field.value === "true" ||
                       String(field.value)
