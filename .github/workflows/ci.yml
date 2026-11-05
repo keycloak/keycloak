@@ -49,6 +49,7 @@ jobs:
       ci-aurora: ${{ steps.auroradb-tests.outputs.run-aurora-tests }}
       ci-azure: ${{ steps.azure-tests.outputs.run-azure-tests }}
       ci-additional-dbs: ${{ steps.additional-dbs-tests.outputs.run-additional-dbs-tests }}
+      ci-tidb: ${{ steps.tidb-tests.outputs.run-tidb-tests }}
       ci-admin-v2: ${{ steps.conditional.outputs.admin-v2 }}
       ci-jackson3: ${{ steps.conditional.outputs.ci-jackson3 }}
     permissions:
@@ -98,6 +99,24 @@ jobs:
         env:
           PRIVATE_DBS_QUAY_USERNAME: ${{ secrets.PRIVATE_DBS_QUAY_USERNAME }}
           PRIVATE_DBS_QUAY_TOKEN: ${{ secrets.PRIVATE_DBS_QUAY_TOKEN }}
+      - name: TiDB conditional check
+        id: tidb-tests
+        # Runs for manually or nightly triggered runs, and for pushes/PRs when any commit message in the PR/push contains "[tidb ci]"
+        run: |
+          RUN_TIDB_TESTS=false
+          if [[ $GITHUB_EVENT_NAME == "pull_request" ]]; then
+            COMMIT_MESSAGE="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/commits" --jq '.[].commit.message')"
+          else
+            COMMIT_MESSAGE="${PUSH_COMMIT_MESSAGES}"
+          fi
+          if [[ $GITHUB_EVENT_NAME == "workflow_dispatch" || $GITHUB_EVENT_NAME == "schedule" || "${COMMIT_MESSAGE}" == *"[tidb ci]"* ]]; then
+            RUN_TIDB_TESTS=true
+          fi
+          echo "run-tidb-tests=$RUN_TIDB_TESTS" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PUSH_COMMIT_MESSAGES: ${{ join(github.event.commits.*.message, '\n') }}
   testsuite-deprecation-check:
     name: Testsuite Deprecation Check
     runs-on: ubuntu-latest
@@ -877,6 +896,21 @@ jobs:
         with:
           db: ${{ matrix.db }}
 
+  store-integration-tests-tidb:
+    name: Store IT (TiDB)
+    needs: [build, conditional]
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    if: needs.conditional.outputs.ci-tidb == 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: run-store-tests
+        name: Run Store Integration Tests - tidb
+        uses: ./.github/actions/run-store-tests
+        with:
+          db: tidb
+
   store-model-tests:
     name: Store Model Tests
     runs-on: ubuntu-latest
@@ -1362,6 +1396,7 @@ jobs:
       - jdk-integration-tests
       - store-integration-tests
       - store-integration-tests-additional
+      - store-integration-tests-tidb
       - volatile-sessions-tests
       - http-client-v2-tests
       - store-model-tests
