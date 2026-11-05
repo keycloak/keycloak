@@ -67,7 +67,7 @@ public class GitHubIssueBuilder {
                 JsonNode json = request.patch(uri, requestBody);
                 updatedIssue = GitHubApi.asIssue(json);
             }
-            if (addLabels != null) {
+            if (!addLabels.isEmpty()) {
                 URI uri = GitHubUriBuilder.create("repos", repositoryFullName, "issues", issueNumber, "labels").build();
                 request.post(uri, Map.of("labels", addLabels), 200);
                 updatedIssue.labels().addAll(addLabels);
