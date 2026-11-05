@@ -24,6 +24,7 @@ import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 
@@ -74,6 +75,16 @@ public class HistoryPasswordPolicyProvider implements PasswordPolicyProvider {
                         })) {
                     return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
                 }
+            }
+
+            // Users backed by a user storage provider (e.g. LDAP, or a custom provider implementing
+            // CredentialInputValidator) hold their current password in the federation backend instead of the
+            // locally stored credentials checked above, so the checks above cannot detect reuse of it.
+            // Ask the providers backing the user whether the new password matches their current password.
+            // A storage provider only exposes the validity of the current password, it has no history,
+            // so for federated users only the reuse of the current password can be detected.
+            if (user.isFederated() && user.credentialManager().isValid(UserCredentialModel.password(password))) {
+                return new PolicyError(ERROR_MESSAGE, passwordHistoryPolicyValue);
             }
         }
         return null;
