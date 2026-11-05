@@ -1,0 +1,2 @@
+org.keycloak.schema.generator.UpdatedMariaDBDatabase
+org.keycloak.schema.generator.UpdatedMySqlDatabase

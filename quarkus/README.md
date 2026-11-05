@@ -210,6 +210,14 @@ You should also be able to update a server dependency directly. For that, copy t
 cp services/target/keycloak-services-${KC_VERSION}.jar ${KC_HOME_DIR}/lib/lib/main/org.keycloak.keycloak-services-${KC_VERSION}.jar
 ```
 
+> **Note — database changelog changes:** If you modified a Liquibase changelog in `model/jpa/src/main/resources/META-INF/`,
+> a simple jar copy is **not** sufficient. The `keycloak-schema-generator-maven-plugin` must run to regenerate the
+> migration manifest (including the per-dialect SQL) that is bundled inside `keycloak-model-jpa-*.jar`. Rebuild that module first:
+>
+>     ./mvnw -pl misc/schema-generator-maven-plugin,model/jpa -am install -DskipTests
+>
+> then copy the updated jar into the distribution.
+
 ## Documentation
 
 The documentation is a set of guides available from the [docs](../docs/guides/server) module.

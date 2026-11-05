@@ -146,7 +146,7 @@ public class JpaUtils {
     }
 
     /**
-     * Get the name of custom table for liquibase updates for give ID of JpaEntityProvider
+     * Get the name of custom table for changelog history for given ID of JpaEntityProvider
      * @param jpaEntityProviderFactoryId
      * @return table name
      */

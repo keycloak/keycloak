@@ -40,13 +40,9 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.hibernate.orm.PersistenceUnit;
-import liquibase.GlobalConfiguration;
 import org.hibernate.internal.SessionFactoryImpl;
-import org.jboss.logging.Logger;
 
 public abstract class AbstractJpaConnectionProviderFactory implements JpaConnectionProviderFactory {
-
-    private final Logger logger = Logger.getLogger(getClass());
 
     protected Config.Scope config;
     protected EntityManagerFactory entityManagerFactory;
@@ -69,12 +65,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
 
     @Override
     public String getSchema() {
-        String schema = Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue();
-        if (schema != null && schema.contains("-") && ! Boolean.parseBoolean(System.getProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey()))) {
-            System.setProperty(GlobalConfiguration.PRESERVE_SCHEMA_CASE.getKey(), "true");
-            logger.warnf("The passed schema '%s' contains a dash. Setting liquibase config option PRESERVE_SCHEMA_CASE to true. See https://github.com/keycloak/keycloak/issues/20870 for more information.", schema);
-        }
-        return schema;
+        return Configuration.getConfigValue(DatabaseOptions.DB_SCHEMA).getValue();
     }
 
     @Override

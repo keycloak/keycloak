@@ -35,18 +35,18 @@ For example, creating an index on tables with millions of records can be time-co
 
 On databases that support non-blocking index creation — PostgreSQL, Oracle Enterprise Edition, MySQL/MariaDB, and Microsoft SQL Server Enterprise, Developer, or Azure SQL editions — {project_name} automatically creates the skipped indexes in the background after startup using online index operations that allow concurrent reads and writes. On databases without non-blocking support, a warning is logged with the SQL commands to apply manually. To disable automatic creation and log the SQL instead, set `--spi-connections-jpa--quarkus--auto-create-missing-indexes=false`.
 
-To change the threshold, set the `index-creation-threshold` property, value for the `connections-liquibase` provider:
+To change the threshold, set the `index-creation-threshold` property, value for the `connections-jpa-updater` provider:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-liquibase--quarkus--index-creation-threshold=300000
+kc.[sh|bat] start --spi-connections-jpa-updater--jdbc--index-creation-threshold=300000
 ----
 
 You can disable this feature by setting it to zero or a negative number:
 
 [source,bash]
 ----
-kc.[sh|bat] start --spi-connections-liquibase--quarkus--index-creation-threshold=0
+kc.[sh|bat] start --spi-connections-jpa-updater--jdbc--index-creation-threshold=0
 ----
 
 === Manual relational database migration
@@ -79,6 +79,9 @@ Generating the script is different: even with the manual strategy, {project_name
 itself on the database it generates the script against. Use a database user that is allowed to create tables there,
 or have an administrator create the two tables up front. When they already exist before the server starts, the
 generated script contains no `CREATE TABLE` for them, so it can also be applied to the database it was generated from.
+
+NOTE: {project_name} no longer validates the checksums stored in `DATABASECHANGELOG`. A changeset is considered applied when a row with the same `ID`, `AUTHOR` and `FILENAME` exists, and
+modified checksums in existing rows do not cause the startup or the migration to fail.
 
 For further details on how to run the statements in the file against the database, see the documentation for your relational database.
 

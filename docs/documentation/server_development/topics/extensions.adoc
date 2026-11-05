@@ -104,7 +104,7 @@ or when you have your own REST endpoint, you might want to extend the {project_n
 own JPA entities to the {project_name} JPA `EntityManager` .
 
 To add your own JPA entities, you need to implement `JpaEntityProviderFactory` and `JpaEntityProvider`. The `JpaEntityProvider`
-allows you to return a list of your custom JPA entities and provide the location and id of the Liquibase changelog. An example implementation can look like this:
+allows you to return a list of your custom JPA entities and supply a `MigrationManifest` that describes the schema changes needed. An example implementation:
 
 NOTE: This is an unsupported API, which means you can use it but there is no guarantee that it will not be removed or changed without warning.
 
@@ -112,20 +112,51 @@ NOTE: This is an unsupported API, which means you can use it but there is no gua
 ----
 public class ExampleJpaEntityProvider implements JpaEntityProvider {
 
+    private static final MigrationManifest MANIFEST = buildManifest();
+
+    private static MigrationManifest buildManifest() {
+        // SQL that works on all supported databases.
+        String createTable =
+                "CREATE TABLE EXAMPLE_COMPANY (" +
+                "ID VARCHAR(36) NOT NULL, " +
+                "NAME VARCHAR(255) NOT NULL, " +
+                "REALM_ID VARCHAR(36) NOT NULL, " +
+                "CONSTRAINT PK_COMPANY PRIMARY KEY (ID))";
+
+        ChangeSetStep step = new ChangeSetStep();
+        step.setType("sql");
+        for (String dialect : List.of("h2", "postgresql", "mysql", "mariadb", "oracle", "mssql")) {
+            step.addStatement(dialect, createTable);
+        }
+
+        ChangeSetDescriptor cs = new ChangeSetDescriptor();
+        cs.setId("example-1.0");
+        cs.setAuthor("erik.mulder@docdatapayments.com");
+        // changeLogFile is stored in DATABASECHANGELOG for traceability; use any stable path.
+        cs.setChangeLogFile("META-INF/example-changelog.xml");
+        // checkSum must be stable across restarts (format: "9:<md5>" or any unique token).
+        cs.setCheckSum("9:example-1.0");
+        cs.getSteps().add(step);
+
+        MigrationManifest manifest = new MigrationManifest();
+        manifest.getChangeSets().add(cs);
+        return manifest;
+    }
+
     // List of your JPA entities.
     @Override
     public List<Class<?>> getEntities() {
         return Collections.<Class<?>>singletonList(Company.class);
     }
 
-    // This is used to return the location of the Liquibase changelog file.
-    // You can return null if you don't want Liquibase to create and update the DB schema.
+    // Return the migration manifest describing the schema changes for your entities.
+    // Return null if no schema migration is required.
     @Override
-    public String getChangelogLocation() {
-    	return "META-INF/example-changelog.xml";
+    public MigrationManifest getMigrationManifest() {
+        return MANIFEST;
     }
 
-    // Helper method, which will be used internally by Liquibase.
+    // Helper method used to derive the dedicated history table name (DATABASECHANGELOG_<factoryId>).
     @Override
     public String getFactoryId() {
         return "sample";
@@ -145,13 +176,18 @@ EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityMan
 Company myCompany = em.find(Company.class, "123");
 ----
 
-The methods `getChangelogLocation` and `getFactoryId` are important to support automatic updating of your entities by Liquibase. https://www.liquibase.com/community/contributors[Liquibase]
-is a framework for updating the database schema, which {project_name} internally uses to create the DB schema and update the DB schema among versions. You may need to use
-it as well and create a changelog for your entities. Note that versioning of your own Liquibase changelog is independent
-of {project_name} versions. In other words, when you update to a new {project_name} version, you are not forced to update your
-schema at the same time. And vice versa, you can update your schema even without updating the {project_name} version. The Liquibase update
-is always done at the server startup, so to trigger a DB update of your schema, you just need to add the new changeset to your Liquibase changelog file (in the example above
-it's the file `META-INF/example-changelog.xml` which must be packed in same JAR as the JPA entities and `ExampleJpaEntityProvider`) and then restart server.
-The DB schema will be automatically updated at startup.
+The `getMigrationManifest` and `getFactoryId` methods are important to support automatic updating of your entities. The migration manifest
+describes the SQL change-sets for your schema and is applied by the native JDBC updater at server startup against a dedicated history table
+(`DATABASECHANGELOG_<factoryId>`), tracked independently from the {project_name} master changelog. Versioning of your own change-sets is independent
+of {project_name} versions: when you update to a new {project_name} version, you are not forced to update your schema at the same time.
+To trigger a DB update of your schema, add a new `ChangeSetDescriptor` to your manifest (with a fresh `id`, `checkSum`, and the SQL for each
+supported dialect) and restart the server. The DB schema will be automatically updated at startup.
 
-NOTE: Don't forget to always back up your database before doing any changes in the Liquibase changelog and triggering a DB update.
+NOTE: A change-set is identified only by its `id`, `author` and `changeLogFile`. The `checkSum` is recorded in the history table but is not verified.
+If you modify a change-set that has already been applied, it is neither re-run nor reported, and existing databases keep the old schema.
+Never edit a released change-set; always add a new one instead.
+
+NOTE: Don't forget to always back up your database before applying schema changes.
+
+NOTE: The previous `getChangelogLocation()` method, which pointed to a Liquibase XML changelog, is deprecated, is no longer executed, and will be removed in a future release.
+Migrate your provider to override `getMigrationManifest()` instead.

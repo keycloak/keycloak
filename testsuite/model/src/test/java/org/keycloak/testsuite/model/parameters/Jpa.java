@@ -24,11 +24,10 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderSpi;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
+import org.keycloak.connections.jpa.lock.JdbcDBLockProviderFactory;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.JpaUpdaterSpi;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProviderFactory;
-import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionSpi;
-import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
+import org.keycloak.connections.jpa.updater.jdbc.JdbcJpaUpdaterProviderFactory;
 import org.keycloak.events.jpa.JpaEventStoreProviderFactory;
 import org.keycloak.executors.DefaultExecutorsProviderFactory;
 import org.keycloak.executors.ExecutorsSpi;
@@ -81,7 +80,6 @@ public class Jpa extends KeycloakModelParameters {
       // jpa-specific
       .add(JpaConnectionSpi.class)
       .add(JpaUpdaterSpi.class)
-      .add(LiquibaseConnectionSpi.class)
       .add(UserSessionPersisterSpi.class)
       .add(RevokedTokenPersisterSpi.class)
       .add(AuthenticationSessionSpi.class)
@@ -121,9 +119,9 @@ public class Jpa extends KeycloakModelParameters {
       .add(JpaRealmProviderFactory.class)
       .add(JpaRoleProviderFactory.class)
       .add(JpaUpdaterProviderFactory.class)
+      .add(JdbcJpaUpdaterProviderFactory.class)
       .add(JpaUserProviderFactory.class)
-      .add(LiquibaseConnectionProviderFactory.class)
-      .add(LiquibaseDBLockProviderFactory.class)
+      .add(JdbcDBLockProviderFactory.class)
       .add(JpaUserSessionPersisterProviderFactory.class)
       .add(JpaRevokedTokensPersisterProviderFactory.class)
       .add(JpaAuthenticationSessionProviderFactory.class)

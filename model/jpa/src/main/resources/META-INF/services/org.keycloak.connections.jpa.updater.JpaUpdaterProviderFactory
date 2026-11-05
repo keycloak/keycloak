@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory
+org.keycloak.connections.jpa.updater.jdbc.JdbcJpaUpdaterProviderFactory

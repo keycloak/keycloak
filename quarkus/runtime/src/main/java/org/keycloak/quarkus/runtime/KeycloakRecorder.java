@@ -63,7 +63,6 @@ import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.logging.KeycloakLogFilter;
 import org.keycloak.quarkus.runtime.services.MisdirectedFilter;
 import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
-import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.truststore.TruststoreBuilder;
@@ -79,8 +78,6 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import liquibase.Scope;
-import liquibase.servicelocator.ServiceLocator;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.spi.BootstrapContext;
 import org.hibernate.cfg.AvailableSettings;
@@ -211,13 +208,6 @@ public class KeycloakRecorder {
         TruststoreFormat truststoreType = fipsMode == FipsMode.STRICT ? TruststoreFormat.BCFKS : null;
 
         TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow(), truststoreType);
-    }
-
-    public void configureLiquibase(Map<String, List<String>> services) {
-        ServiceLocator locator = Scope.getCurrentScope().getServiceLocator();
-        if (locator instanceof FastServiceLocator) {
-            ((FastServiceLocator) locator).initServices(services);
-        }
     }
 
     public RuntimeValue<QuarkusKeycloakSessionFactory> createSessionFactory(

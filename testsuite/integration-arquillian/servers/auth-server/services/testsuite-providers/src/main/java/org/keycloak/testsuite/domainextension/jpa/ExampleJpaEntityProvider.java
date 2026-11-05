@@ -21,6 +21,9 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
+import org.keycloak.representations.migration.ChangeSetDescriptor;
+import org.keycloak.representations.migration.ChangeSetStep;
+import org.keycloak.representations.migration.MigrationManifest;
 
 /**
  * @author <a href="mailto:erik.mulder@docdatapayments.com">Erik Mulder</a>
@@ -29,16 +32,44 @@ import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
  */
 public class ExampleJpaEntityProvider implements JpaEntityProvider {
 
+    private static final MigrationManifest MANIFEST = buildManifest();
+
+    private static MigrationManifest buildManifest() {
+        String createTable =
+                "CREATE TABLE EXAMPLE_COMPANY (" +
+                "ID VARCHAR(36) NOT NULL, " +
+                "NAME VARCHAR(255) NOT NULL, " +
+                "REALM_ID VARCHAR(36) NOT NULL, " +
+                "CONSTRAINT PK_COMPANY PRIMARY KEY (ID))";
+
+        ChangeSetStep step = new ChangeSetStep();
+        step.setType("sql");
+        for (String dialect : List.of("h2", "postgresql", "mysql", "mariadb", "oracle", "mssql")) {
+            step.addStatement(dialect, createTable);
+        }
+
+        ChangeSetDescriptor cs = new ChangeSetDescriptor();
+        cs.setId("example-1.0");
+        cs.setAuthor("erik.mulder@docdatapayments.com");
+        cs.setChangeLogFile("META-INF/example-changelog.xml");
+        cs.setCheckSum("9:example-1.0");
+        cs.getSteps().add(step);
+
+        MigrationManifest manifest = new MigrationManifest();
+        manifest.getChangeSets().add(cs);
+        return manifest;
+    }
+
     @Override
     public List<Class<?>> getEntities() {
         return Collections.<Class<?>>singletonList(Company.class);
     }
 
     @Override
-    public String getChangelogLocation() {
-    	return "META-INF/example-changelog.xml";
+    public MigrationManifest getMigrationManifest() {
+        return MANIFEST;
     }
-    
+
     @Override
     public void close() {
     }
