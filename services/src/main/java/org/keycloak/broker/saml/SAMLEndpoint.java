@@ -259,7 +259,11 @@ public class SAMLEndpoint {
         protected abstract String getBindingType();
         protected abstract boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder);
         protected abstract boolean isMessageFullySigned(SAMLDocumentHolder documentHolder);
-        protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
+        /**
+         * @param message the SAML message being processed, as received in the {@code key} parameter
+         * @param relayState the relay state being processed
+         */
+        protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder, String message, String relayState) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
 
@@ -326,7 +330,7 @@ public class SAMLEndpoint {
             }
             if (config.isValidateSignature()) {
                 try {
-                    verifySignature(GeneralConstants.SAML_REQUEST_KEY, holder);
+                    verifySignature(GeneralConstants.SAML_REQUEST_KEY, holder, samlRequest, relayState);
                 } catch (VerificationException e) {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -453,7 +457,7 @@ public class SAMLEndpoint {
                 // validate the signature of the ArtifactResponse
                 if (config.isValidateSignature()) {
                     try {
-                        verifySignature(GeneralConstants.SAML_RESPONSE_KEY, samlDocumentHolder);
+                        verifySignature(GeneralConstants.SAML_RESPONSE_KEY, samlDocumentHolder, null, relayState);
                     } catch (VerificationException e) {
                         logger.error("artifact binding failed: the ArtifactResponse signature is invalid", e);
                         event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -802,7 +806,7 @@ public class SAMLEndpoint {
             }
             if (config.isValidateSignature()) {
                 try {
-                    verifySignature(GeneralConstants.SAML_RESPONSE_KEY, holder);
+                    verifySignature(GeneralConstants.SAML_RESPONSE_KEY, holder, samlResponse, relayState);
                 } catch (VerificationException e) {
                     logger.error("validation failed", e);
                     event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
@@ -865,7 +869,7 @@ public class SAMLEndpoint {
         }
 
         @Override
-        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
+        protected void verifySignature(String key, SAMLDocumentHolder documentHolder, String message, String relayState) throws VerificationException {
             if ((! containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
                 ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
                 List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
@@ -896,6 +900,23 @@ public class SAMLEndpoint {
 
     protected class RedirectBinding extends Binding {
         @Override
+        protected Response basicChecks(String samlRequest, String samlResponse, String samlArt) {
+            Response response = super.basicChecks(samlRequest, samlResponse, samlArt);
+            if (response != null) {
+                return response;
+            }
+            try {
+                SamlProtocolUtils.rejectRepeatedRedirectParameters(session.getContext().getUri().getQueryParameters(false));
+            } catch (VerificationException e) {
+                logger.debug("Invalid SAML redirect parameters", e);
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                event.error(Errors.INVALID_REQUEST);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
+            return null;
+        }
+
+        @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
             MultivaluedMap<String, String> encodedParams = session.getContext().getUri().getQueryParameters(false);
             String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
@@ -909,9 +930,9 @@ public class SAMLEndpoint {
         }
 
         @Override
-        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
+        protected void verifySignature(String key, SAMLDocumentHolder documentHolder, String message, String relayState) throws VerificationException {
             KeyLocator locator = getIDPKeyLocator();
-            SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, session.getContext().getUri(), key);
+            SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, session.getContext().getUri(), key, message, relayState);
         }
 
         @Override
@@ -956,7 +977,7 @@ public class SAMLEndpoint {
         }
 
         @Override
-        protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
+        protected void verifySignature(String key, SAMLDocumentHolder documentHolder, String message, String relayState) throws VerificationException {
             if (verified != null) {
                 // this is the second pass and signatures were already verified in the artifact response time
                 return;

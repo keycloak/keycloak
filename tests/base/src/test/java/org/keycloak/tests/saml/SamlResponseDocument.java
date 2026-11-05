@@ -27,6 +27,7 @@ import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -67,6 +68,44 @@ public class SamlResponseDocument {
 
     public org.w3c.dom.Document getDocument() {
         return document;
+    }
+
+    /**
+     * Returns an independent deep copy of this response, so it can be mutated without affecting the original.
+     */
+    public SamlResponseDocument copy() {
+        return new SamlResponseDocument((org.w3c.dom.Document) document.cloneNode(true));
+    }
+
+    /**
+     * Replaces the value of the first assertion's subject {@code <saml:NameID>}, i.e. the principal the response
+     * claims to authenticate.
+     */
+    public SamlResponseDocument setNameId(String value) {
+        Element nameId = (Element) getFirstAssertionSubject().getElementsByTagNameNS(ASSERTION_NS, "NameID").item(0);
+        if (nameId == null) {
+            throw new IllegalStateException("SAML assertion subject does not contain a NameID");
+        }
+        nameId.setTextContent(value);
+        return this;
+    }
+
+    /**
+     * Turns the response into an unsolicited (IdP-initiated) one addressed to {@code destination}: the response
+     * {@code Destination} and every {@code SubjectConfirmationData Recipient} are set to it, and all
+     * {@code InResponseTo} attributes are removed.
+     */
+    public SamlResponseDocument toUnsolicited(String destination) {
+        Element response = document.getDocumentElement();
+        response.setAttribute("Destination", destination);
+        response.removeAttribute("InResponseTo");
+        NodeList data = document.getElementsByTagNameNS(ASSERTION_NS, "SubjectConfirmationData");
+        for (int i = 0; i < data.getLength(); i++) {
+            Element element = (Element) data.item(i);
+            element.setAttribute("Recipient", destination);
+            element.removeAttribute("InResponseTo");
+        }
+        return this;
     }
 
     private Element getFirstAssertionSubject() {
@@ -217,6 +256,38 @@ public class SamlResponseDocument {
             return Base64.getEncoder().encodeToString(xml.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new RuntimeException("Unable to serialise SAML response document", e);
+        }
+    }
+
+    /**
+     * Serialises the document into an unsigned, deflated and URL-encoded HTTP-Redirect {@code SAMLResponse}
+     * value.
+     */
+    public String toRedirectBinding() {
+        try {
+            return RedirectBindingUtil.deflateBase64URLEncode(DocumentUtil.getDocumentAsString(document));
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to serialise SAML response document", e);
+        }
+    }
+
+    /**
+     * Serialises the document into an HTTP-Redirect query string ({@code SAMLResponse}, optional
+     * {@code RelayState}, {@code SigAlg} and {@code Signature}) whose query signature is computed with the given
+     * key, as an identity provider using the redirect binding would issue it.
+     */
+    public String toSignedRedirectQuery(KeyPair keyPair, String relayState) {
+        try {
+            BaseSAML2BindingBuilder builder = new BaseSAML2BindingBuilder()
+                    .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                    .signWith(null, keyPair)
+                    .signDocument();
+            if (relayState != null) {
+                builder.relayState(relayState);
+            }
+            return builder.redirectBinding(document).responseURI("http://localhost/").getRawQuery();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to sign SAML response", e);
         }
     }
 }

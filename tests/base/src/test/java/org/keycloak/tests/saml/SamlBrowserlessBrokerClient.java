@@ -166,6 +166,18 @@ public class SamlBrowserlessBrokerClient implements AutoCloseable {
         }
     }
 
+    /**
+     * Sends a GET request to {@code url} in this client's browser session, following redirects, and returns
+     * the final status code. The URL is used as is, so percent-encoded characters in it are not re-encoded.
+     */
+    public int get(String url) {
+        try (CloseableHttpResponse response = http.execute(new HttpGet(url), context)) {
+            return response.getStatusLine().getStatusCode();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String findBrokerLoginHref(String page, String brokerAlias) {
         HtmlAnchor anchor = parse(page).getFirstByXPath("//a[contains(@href, 'broker/" + brokerAlias + "/login')]");
         String href = anchor == null ? null : anchor.getAttribute("href");
@@ -242,6 +254,22 @@ public class SamlBrowserlessBrokerClient implements AutoCloseable {
 
         public int submit() {
             return postSamlResponse(form, document.toPostBinding());
+        }
+
+        public SamlResponseDocument document() {
+            return document;
+        }
+
+        public String relayState() {
+            return form.relayState();
+        }
+
+        /**
+         * Delivers the response to the broker endpoint with the HTTP-Redirect binding, sending {@code rawQuery}
+         * as the query string verbatim, and returns the final status code.
+         */
+        public int submitRedirect(String rawQuery) {
+            return get(form.action() + "?" + rawQuery);
         }
     }
 
