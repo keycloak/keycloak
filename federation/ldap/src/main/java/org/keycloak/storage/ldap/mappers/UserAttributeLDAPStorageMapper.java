@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -95,11 +96,19 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         if (userModelProperty != null) {
 
             // we have java property on UserModel
-            String ldapAttrValue = ldapUser.getAttributeAsString(ldapAttrName);
+            String ldapAttrValue = LDAPUtils.resolveLdapAttributeValue(ldapUser, ldapAttrName);
 
             checkDuplicateEmail(userModelAttrName, ldapAttrValue, realm, ldapProvider.getSession(), user);
 
-            setPropertyOnUserModel(userModelProperty, user, ldapAttrValue);
+            String replacedPostfix = mapperModel.getConfig().getFirst(LDAP_ATTRIBUTE);
+            if(ldapAttrValue != null) {
+                replacedPostfix = replacedPostfix.replace("{" + ldapAttrName + "}", ldapAttrValue);
+                if (replacedPostfix.equals(ldapAttrName)) {
+                    replacedPostfix = replacedPostfix.replace(ldapAttrName, ldapAttrValue);
+                }
+            }
+
+            setPropertyOnUserModel(userModelProperty, user, replacedPostfix);
         } else {
 
             // we don't have java property. Let's set attribute
@@ -167,7 +176,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return Collections.singleton(getUserModelAttribute());
     }
 
-    // throw ModelDuplicateException if there is different user in model with same email
+	// throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
         if (email == null || realm.isDuplicateEmailsAllowed()) return;
         if (UserModel.EMAIL.equalsIgnoreCase(userModelAttrName)) {
@@ -499,11 +508,29 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         String userModelAttrName = getUserModelAttribute();
         String ldapAttrName = getLdapAttributeName();
 
-        // Add mapped attribute to returning ldap attributes
-        query.addReturningLdapAttribute(ldapAttrName);
-        if (isReadOnly()) {
-            query.addReturningReadOnlyLdapAttribute(ldapAttrName);
-        }
+		// Request the LDAP attributes referenced by the mapping.
+		Matcher matcher = LDAPUtils.matchVariableInString(ldapAttrName);
+		boolean hasPlaceholders = false;
+
+		while (matcher.find()) {
+			hasPlaceholders = true;
+
+			String attributeName = matcher.group(1);
+			query.addReturningLdapAttribute(attributeName);
+
+			if (isReadOnly()) {
+				query.addReturningReadOnlyLdapAttribute(attributeName);
+			}
+		}
+
+		// Preserve the existing behavior for ordinary attribute mappings.
+		if (!hasPlaceholders) {
+			query.addReturningLdapAttribute(ldapAttrName);
+
+			if (isReadOnly()) {
+				query.addReturningReadOnlyLdapAttribute(ldapAttrName);
+			}
+		}
 
         // Change conditions and use ldapAttribute instead of userModel
         for (Condition condition : query.getConditions()) {
