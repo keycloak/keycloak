@@ -71,6 +71,9 @@ public class ReportParser {
     private static List<Vuln> parseTrivy(String stream, File file) throws IOException {
         List<Vuln> vulns = new LinkedList<>();
         TrivyReport trivyReport = JsonUtil.read(file, TrivyReport.class);
+        if (trivyReport.results() == null) {
+            return vulns;
+        }
         for (TrivyReport.Result r : trivyReport.results()) {
             if (r.vulnerabilities() != null) {
                 for (TrivyReport.Vulnerability tv : r.vulnerabilities()) {
