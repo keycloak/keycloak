@@ -910,6 +910,8 @@ jobs:
         uses: ./.github/actions/run-store-tests
         with:
           db: yugabyte
+          # creating the schema takes several minutes
+          server-start-timeout: 900
 
   store-model-tests:
     name: Store Model Tests
