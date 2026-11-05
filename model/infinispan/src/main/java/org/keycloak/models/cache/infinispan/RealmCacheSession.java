@@ -17,6 +17,7 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1402,15 +1403,28 @@ public class RealmCacheSession implements CacheRealmProvider {
             return model.stream();
         }
         Set<ClientScopeModel> list = new HashSet<>();
-        int missing = 0;
+        // scopes missing from the cache are only resolved once their number is known, to not load some of them individually before switching to a bulk load
+        List<String> missingIds = new ArrayList<>();
         for (String id : query.getClientScopes()) {
-            if (cache.get(id, CachedClientScope.class) == null && ++missing > MAX_INDIVIDUAL_CLIENT_SCOPE_LOADS) {
-                // many scopes are missing from the cache, so load all of them with a single batched query instead of one by one
-                logger.tracev("getClientScopesStream loading all scopes of realm {0} as more than {1} are not cached", realm.getName(), MAX_INDIVIDUAL_CLIENT_SCOPE_LOADS);
-                return getClientScopeDelegate().getClientScopesStream(realm)
-                        .map(scope -> getClientScopeById(realm, scope.getId()))
-                        .filter(Objects::nonNull);
+            if (cache.get(id, CachedClientScope.class) == null) {
+                if (missingIds.size() >= MAX_INDIVIDUAL_CLIENT_SCOPE_LOADS) {
+                    // many scopes are missing from the cache, so load all of them with a single batched query instead of one by one
+                    logger.tracev("getClientScopesStream loading all scopes of realm {0} as more than {1} are not cached", realm.getName(), MAX_INDIVIDUAL_CLIENT_SCOPE_LOADS);
+                    return getClientScopeDelegate().getClientScopesStream(realm)
+                            .map(scope -> getClientScopeById(realm, scope.getId()))
+                            .filter(Objects::nonNull);
+                }
+                missingIds.add(id);
+                continue;
             }
+            ClientScopeModel clientScope = session.clientScopes().getClientScopeById(realm, id);
+            if (clientScope == null) {
+                invalidations.add(cacheKey);
+                return getClientScopeDelegate().getClientScopesStream(realm);
+            }
+            list.add(clientScope);
+        }
+        for (String id : missingIds) {
             ClientScopeModel clientScope = session.clientScopes().getClientScopeById(realm, id);
             if (clientScope == null) {
                 invalidations.add(cacheKey);
