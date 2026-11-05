@@ -127,6 +127,12 @@ public class JwksProvider implements Closeable {
         return getKeysAsPem();
     }
 
+    KeyData getFirstKey() {
+        synchronized (keys) {
+            return keys.isEmpty() ? null : keys.get(0);
+        }
+    }
+
     public Map<String, String> getKeysAsPem() {
         if (keys.isEmpty()) {
             return Collections.emptyMap();
