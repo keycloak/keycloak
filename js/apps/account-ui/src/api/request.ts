@@ -17,6 +17,7 @@ export type RequestOptions = {
 
 async function _request(
   url: URL,
+  keycloak: Keycloak,
   { signal, getAccessToken, method, searchParams, body }: RequestOptions = {},
 ): Promise<Response> {
   if (searchParams) {
@@ -25,7 +26,7 @@ async function _request(
     );
   }
 
-  return fetch(url, {
+  return keycloak.fetch(url, {
     signal,
     method,
     body: body ? JSON.stringify(body) : undefined,
@@ -45,7 +46,7 @@ export async function request(
   if (typeof fullUrl === "undefined") {
     fullUrl = url(environment, path);
   }
-  return _request(fullUrl, {
+  return _request(fullUrl, keycloak, {
     ...opts,
     getAccessToken: token(keycloak),
   });
