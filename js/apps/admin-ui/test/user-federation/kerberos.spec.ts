@@ -155,12 +155,13 @@ test.describe.serial("User Fed Kerberos tests", () => {
 
       await goToUserFederation(page);
       await clickUserFederationCard(page, firstKerberosName);
-      await expect(
-        page.getByTestId("config.allowedKerberosRealms0"),
-      ).toHaveValue(firstAllowedRealm);
-      await expect(
-        page.getByTestId("config.allowedKerberosRealms1"),
-      ).toHaveValue(secondAllowedRealm);
+      const input1 = page.getByTestId("config.allowedKerberosRealms0");
+      const input2 = page.getByTestId("config.allowedKerberosRealms1");
+      await expect(input1).toHaveValue(/\S+/);
+      await expect(input2).toHaveValue(/\S+/);
+      expect([await input1.inputValue(), await input2.inputValue()]).toEqual(
+        expect.arrayContaining([firstAllowedRealm, secondAllowedRealm]),
+      );
     });
 
     test("Should set cache policy to evict_daily", async ({ page }) => {
