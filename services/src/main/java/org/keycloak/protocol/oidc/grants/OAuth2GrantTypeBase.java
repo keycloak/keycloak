@@ -191,6 +191,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         // Sanitize authorization details before they are sent as part of the Token Response
         var authDetailsProcessor = new AuthorizationDetailsProcessorManager(session);
         authDetailsProcessor.sanitizeBeforeSendingTokenResponse(res);
+        authDetailsProcessor.afterTokenResponseCreated(clientSessionCtx,
+                clientSessionCtx.getAttribute(Constants.AUTHORIZATION_DETAILS_RESPONSE, List.class));
 
         event.success();
 
