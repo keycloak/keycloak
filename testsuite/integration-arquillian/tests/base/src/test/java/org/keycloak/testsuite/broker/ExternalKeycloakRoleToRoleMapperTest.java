@@ -13,7 +13,6 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import com.google.common.collect.ImmutableMap;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
@@ -30,11 +29,6 @@ public class ExternalKeycloakRoleToRoleMapperTest extends AbstractRoleMapperTest
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
         return new KcOidcBrokerConfiguration();
-    }
-
-    @Before
-    public void setupRealm() {
-        super.addClients();
     }
 
     @Test

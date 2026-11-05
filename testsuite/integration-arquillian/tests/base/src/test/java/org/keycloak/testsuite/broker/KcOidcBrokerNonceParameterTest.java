@@ -1,22 +1,17 @@
 package org.keycloak.testsuite.broker;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
-import org.keycloak.protocol.ProtocolMapperUtils;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
-import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -41,16 +36,6 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
                         .redirectUris(getConsumerRoot() + "/auth/realms/master/app/auth/*")
                         .publicClient().build();
 
-                // add the federated ID token to the protocol ID token
-                ProtocolMapperRepresentation consumerSessionNoteToClaimMapper = new ProtocolMapperRepresentation();
-                consumerSessionNoteToClaimMapper.setName(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-                consumerSessionNoteToClaimMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-                consumerSessionNoteToClaimMapper.setProtocolMapper(UserSessionNoteMapper.PROVIDER_ID);
-                consumerSessionNoteToClaimMapper.setConfig(Map.of(ProtocolMapperUtils.USER_SESSION_NOTE, OIDCIdentityProvider.FEDERATED_ID_TOKEN,
-                        OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, OIDCIdentityProvider.FEDERATED_ID_TOKEN,
-                        OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, Boolean.TRUE.toString()));
-                client.setProtocolMappers(Arrays.asList(consumerSessionNoteToClaimMapper));
-
                 clients.add(client);
 
                 return clients;
@@ -71,10 +56,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         IDToken idToken = toIdToken(response.getIdToken());
         
         Assert.assertEquals("123456", idToken.getNonce());
-        String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assert.assertNotNull(federatedIdTokenString);
-        IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assert.assertNotNull(federatedIdToken.getNonce());
+        Assert.assertNotNull(brokeredIdToken(idToken.getSessionId()).getNonce());
     }
     
     @Test
@@ -97,10 +79,19 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         IDToken idToken = toIdToken(response.getIdToken());
 
         Assert.assertNull(idToken.getNonce());
-        String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assert.assertNotNull(federatedIdTokenString);
-        IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assert.assertNull(federatedIdToken.getNonce());
+        Assert.assertNull(brokeredIdToken(idToken.getSessionId()).getNonce());
+    }
+
+    /** Read the external provider's credential from the session without exposing it through a protocol mapper. */
+    private IDToken brokeredIdToken(String sessionId) {
+        String encoded = testingClient.server(bc.consumerRealmName()).fetch(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            return userSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
+        }, String.class);
+
+        Assert.assertNotNull("Identity provider did not store an ID token in the user session", encoded);
+        return toIdToken(encoded);
     }
 
     protected IDToken toIdToken(String encoded) {
