@@ -55,7 +55,7 @@ public class Environment {
 
         // Otherwise try to auto-detect
         for (Provider provider : Security.getProviders()) {
-            if (provider.getName().equals("BCFIPS")) continue; // Ignore BCFIPS provider for the detection as we may register it programatically
+            if (provider.getName().contains("BCFIPS")) continue; // Ignore BCFIPS provider for the detection as we may register it programatically
             if (provider.getName().toUpperCase().contains("FIPS")) return true;
         }
         return false;
