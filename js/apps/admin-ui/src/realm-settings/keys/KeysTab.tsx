@@ -53,11 +53,10 @@ export const KeysTab = () => {
     [key],
   );
 
-  const useTab = (tab: KeySubTab) =>
-    useRoutableTab(toKeysTab({ realm: realmName, tab }));
+  const tab = (tab: KeySubTab) => toKeysTab({ realm: realmName, tab });
 
-  const listTab = useTab("list");
-  const providersTab = useTab("providers");
+  const listTab = useRoutableTab(tab("list"));
+  const providersTab = useRoutableTab(tab("providers"));
 
   if (!realmComponents) {
     return <KeycloakSpinner />;
