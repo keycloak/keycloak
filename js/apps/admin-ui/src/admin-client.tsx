@@ -24,7 +24,9 @@ export async function initAdminClient(
   keycloak: Keycloak,
   environment: Environment,
 ) {
-  const adminClient = new KeycloakAdminClient();
+  const adminClient = new KeycloakAdminClient({
+    fetch: (input, init) => keycloak.fetch(input, init),
+  });
 
   adminClient.setConfig({ realmName: environment.realm });
   adminClient.baseUrl = environment.adminBaseUrl;
