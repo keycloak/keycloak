@@ -374,6 +374,20 @@ A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
 
+=== Manual database migration scripts no longer depend on the database used to generate them
+// https://github.com/keycloak/keycloak/issues/54404
+
+In 26.8.0 and 26.8.1, some steps of a database migration script generated with `migration-strategy=manual` were decided by checking the database that the script was generated against, instead of the state the script itself produces. This could make the script fail:
+
+* For an empty database, the script omitted `DROP INDEX` statements for indexes that 26.8.0 replaces, so applying it failed with "index already exists" errors when the indexes were re-created.
+* For an existing database that contains organizations with domains, generating the script failed on the organization domain and identity provider routing migration, because that step read the `ORG_DOMAIN.REALM_ID` column, or for identity providers with the domain setting `ANY` the `ORG_DOMAIN.IDP_ID` column, that the script itself adds. The script that was written in that case was incomplete and must not be applied.
+
+Script generation now emits the `DROP INDEX` statements needed for an empty database or an older release, and the organization steps no longer depend on columns that the script adds.
+A script generated for an empty database applies cleanly.
+
+Automatic migrations are unaffected.
+If you encountered one of these failures, generate a new script with this release, against an empty database or against a database at the version you are upgrading from, and apply it to the target database instead of the earlier script.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
