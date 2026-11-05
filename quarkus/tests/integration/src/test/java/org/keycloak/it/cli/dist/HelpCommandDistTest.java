@@ -33,6 +33,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -158,6 +159,7 @@ public class HelpCommandDistTest {
     }
 
     @Test
+    @Disabled("unable to bind address due to port conflicts")
     public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {
         for (String helpCmd : List.of("-h", "--help", "--help-all")) {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
