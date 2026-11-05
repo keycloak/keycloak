@@ -69,6 +69,10 @@ public class PasswordPage extends AbstractLoginPage {
         tryAnotherWayLink.click();
     }
 
+    public void clickResetPassword() {
+        resetPasswordLink.click();
+    }
+
     @Override
     public String getExpectedPageId() {
         return "login-login-password";

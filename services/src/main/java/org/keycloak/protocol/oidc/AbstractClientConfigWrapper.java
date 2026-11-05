@@ -5,9 +5,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.utils.StringUtil;
 
 public abstract class AbstractClientConfigWrapper {
     protected final ClientModel clientModel;
@@ -65,11 +67,14 @@ public abstract class AbstractClientConfigWrapper {
     public List<String> getAttributeMultivalued(String attrKey) {
         String attrValue = getAttribute(attrKey);
         if (attrValue == null) return Collections.emptyList();
-        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
+        return Arrays.stream(Constants.CFG_DELIMITER_PATTERN.split(attrValue))
+                .map(String::trim)
+                .filter(StringUtil::isNotBlank)
+                .toList();
     }
 
     public void setAttributeMultivalued(String attrKey, List<String> attrValues) {
-        if (attrValues == null || attrValues.size() == 0) {
+        if (CollectionUtil.isEmpty(attrValues)) {
             // Remove attribute
             setAttribute(attrKey, null);
         } else {

@@ -47,7 +47,7 @@ public class IdentityProviderStoreTokenV1Test implements InterfaceIdentityProvid
     @InjectOAuthClient(ref = "external-realm", realmRef = "external-realm", config = TestClientConfig.class)
     OAuthClient oauthExternal;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(config = ExternalClientConfig.class)
     OAuthClient oauth;
 
     @InjectPage

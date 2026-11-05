@@ -105,26 +105,21 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
 
     @Test
     public void testRollingNoUpgradePolicy() {
-        Profile.Feature v1 = Profile.Feature.LOGIN_V1;
         Profile.Feature v3 = Profile.Feature.LOGIN_V3;
 
         FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
 
-        Map<String, String> v1Meta = getMeta(v1, true);
-        Map<String, String> v3Meta = getMeta(v3, true);
-
-        // Test v1 enabled switching to v3
-        Profile.configure(new FeatureResolver(v1, true));
-        assertFeature(v1, true, v1.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertFeature(v3, false, v3.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(v3Meta));
-
-        // Test v3 enabled switching to v1
-        Profile.reset();
         Profile.configure(new FeatureResolver(v3, true));
-        assertFeature(v1, false, v1.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
         assertFeature(v3, true, v3.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(v1Meta));
+
+        // Start from complete current metadata and only rewrite login to an older version so the
+        // assertion isolates the ROLLING_NO_UPGRADE version transition.
+        Map<String, String> oldVersionMeta = new HashMap<>(provider.metadata());
+        oldVersionMeta.put(
+                v3.getUnversionedKey(),
+                "{\"enabled\":true,\"version\":1,\"updatePolicy\":\"ROLLING_NO_UPGRADE\"}"
+        );
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(oldVersionMeta));
     }
 
     @ParameterizedTest
@@ -148,8 +143,7 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         return Stream.of(
               Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.IMPERSONATION),
               Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.Feature.PERSISTENT_USER_SESSIONS),
-              // Expect a RECREATE as the Feature has the ROLLING_NO_UPGRADE policy
-              Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.Feature.LOGIN_V3)
+              Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.LOGIN_V3)
         );
     }
 

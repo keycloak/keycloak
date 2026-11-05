@@ -60,6 +60,16 @@ For example, an unknown client returns `{"error":"invalid_client","error_descrip
 Applications should use `error` rather than matching translated messages. HTTP status codes and HTML error pages retain their existing behavior, and errors sent to a validated redirect URI continue to use that redirect.
 Other JSON error pages, including direct-grant authenticator errors, are unchanged.
 
+=== Identity brokering API V1 token retrieval requires the client to be allowed for the identity provider
+// https://github.com/keycloak/keycloak/issues/53059
+
+The V1 identity brokering token endpoint (`+GET /realms/{realm}/broker/{provider_alias}/token+`) previously only required the user to have the `broker.read-token` role, which allowed a user linked to one identity provider to retrieve stored tokens from any other identity provider in the realm.
+
+The endpoint now additionally requires the client for which the bearer token was issued to be allowed to retrieve external tokens from the requested identity provider, which is the same authorization model as used by the V2 endpoint.
+Existing V1 clients without this configuration receive an HTTP 403 response when retrieving a stored token. To continue using the V1 endpoint, enable *Allow retrieve external tokens* in the client's *Capability config* and add the identity provider to *Allowed Identity Providers for External Tokens*.
+
+While V1 is enabled, these settings are also shown in the Admin Console for public clients. V2 hides them for public clients because it only supports confidential clients.
+
 === Realm-level default client scopes require `manage-realm`
 // https://github.com/keycloak/keycloak/issues/50588
 
@@ -233,11 +243,38 @@ Updates that change other settings, or that use a `${vault.<key>}` expression as
 Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
 Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
 
+=== Login v1 theme removed
+// https://github.com/keycloak/keycloak/issues/43241
+
+The legacy Login v1 theme (`keycloak`) and the `login:v1` feature have been removed.
+PatternFly 3 and PatternFly 4 vendor resources that only served that theme are also removed.
+
+Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v2` on upgrade.
+Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v2` or `base` instead.
+The `--features=login:v1` and `--features-disabled=login:v1` options are no longer valid.
+The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v2` login theme.
+
 === CIBA requires client authentication (CVE-2026-109082)
 // https://github.com/keycloak/keycloak/issues/53937
 
 The Client Initiated Backchannel Authentication (CIBA) grant is now rejected for public clients, as required by the https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA specification], which mandates client authentication on both the backchannel authentication endpoint and the token endpoint.
 Previously, a public client with the CIBA grant enabled could complete the flow without authenticating and obtain tokens for the approving user.
+
+=== SCIM listings respect per-resource view permissions (CVE-2026-116470)
+// https://github.com/keycloak/keycloak/issues/54340
+
+Listing and searching resources through the SCIM API now returns only the resources the caller is allowed to view.
+Previously, the `query-users` and `query-groups` roles were checked when entering `GET /realms/\{realm}/scim/v2/Users`, `GET /realms/\{realm}/scim/v2/Groups`, and their `.search` counterparts, but the resources those endpoints matched were returned in full without a per-resource view check.
+A service account holding only `query-users` could therefore read every user in the realm, including email addresses, names, and custom attributes, which the Admin REST API would not have disclosed to it.
+
+The query roles now behave as they do in the Admin REST API: they grant access to the listing and search endpoints, not read access to the resources those endpoints match.
+After upgrading, a client holding only `query-users` or `query-groups` receives an empty `Resources` array.
+Grant `view-users` in addition, or configure a fine-grained `view` permission on the users and groups the client is allowed to see.
+When fine-grained admin permissions v2 are enabled for the realm, listings were already narrowed to the permitted resources and are unaffected.
+
+With fine-grained admin permissions v2, the listing and the count are restricted by the same authorization filter in the database query, so `totalResults` stays exact.
+With the deprecated fine-grained admin permissions v1, a caller can be allowed to view some resources but not others, so `totalResults` counts the resources matching the query, before the per-resource view check is applied, and should be treated as an upper bound; a page can also be shorter than the requested `count`, or even empty, while later pages still contain resources the caller is allowed to see, so neither a short page nor an empty page means that no further resources exist, and clients should keep incrementing `startIndex` by `count` until `startIndex` exceeds `totalResults`.
+Without any fine-grained admin permissions, the per-resource view check evaluates the same way for every resource of a given type, so access is all-or-nothing: a client holding only a query role and no realm-wide view role gets a `totalResults` of `0`, consistently across every page, rather than the unfiltered database count.
 
 === Service account user endpoint removed from Admin REST API
 // https://github.com/keycloak/keycloak/issues/54047
@@ -260,6 +297,15 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
+
+=== Kerberos password authentication accepts only allowed realms
+// https://github.com/keycloak/keycloak/issues/54271
+
+Username and password authentication through the Kerberos and LDAP user storage providers now accepts only the configured Kerberos realm and the realms listed in the new Allowed Kerberos realms option of the provider.
+A login with any other realm fails as for an unknown user.
+If users from a realm with a cross-realm trust log in with a username and password, add that realm to Allowed Kerberos realms after the upgrade.
+For the LDAP provider the realm comes from the Kerberos principal attribute of the user, so list every realm found there, for example the child domains of an Active Directory forest.
+SPNEGO authentication is not affected.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -362,6 +408,17 @@ An active login in a flow without the condition now always reaches at least leve
 A rejected interactive login ends on an error page.
 A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
 For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
+
+=== Reset credentials flow forces re-authentication by default
+// https://github.com/keycloak/keycloak/issues/12759
+
+The reset credentials flow (*forgot password* feature) now forces all users to log in again after a successful credential reset.
+Previously, the `force-login` (*Force login after reset*) option of the `reset-credential-email` (*Send Reset Email*) authenticator defaulted to `only-federated`, which forced re-authentication only for federated users and kept users stored in {project_name}'s internal database logged in when the same authentication session (same browser) was used.
+The default value of this option is now `true`, so the authenticator terminates the authentication session and requires a new login after the reset, regardless of where the user is stored.
+This change follows the secure-by-default policy.
+
+To restore the previous behavior, click the *Send Reset Email* settings icon in the reset credentials flow, define an *Alias*, and set *Force login after reset* to `false` to keep the user logged in when the same browser is used, or to `only-federated` to force re-authentication only for federated users.
+For more information, see link:{adminguide_link}#enabling-forgot-password[Enable forgot password].
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

@@ -29,6 +29,8 @@ and the client application must have that role within its scope.
 In this case, given that you are accessing a protected service in {project_name}, you need to send the access token issued by {project_name} during the user authentication.
 In the broker configuration page you can automatically assign this role to newly imported users by turning on the `Stored Tokens Readable` switch.
 
+In addition, the client for which the access token was issued must be allowed to retrieve tokens from the identity provider. In the client configuration, **Settings**, section **Capability config**, enable **Allow retrieve external tokens** and add the identity provider alias to **Allowed Identity Providers for External Tokens**. These are the same options as used by V2.
+
 These external tokens can be re-established by either logging in again through the provider, or using the client initiated account linking API.
 
 ==== Identity brokering API V2
@@ -48,7 +50,7 @@ Version 2 or V2 is the new feature that replaces V1. The new feature manages two
 .Configuration options for store tokens at Identity Provider
 image::images/retrieve-external-token-identity-provider.png[Configuration options for store tokens at Identity Provider]
 
-The application continues accessing the same endpoint inside the REST API to retrieve the brokering token, but in V2 the call uses `POST` and requires client authentication. It is then restricted to confidential clients only. Besides, instead of using the `read-token` role for the user, the client should be enabled to retrieve tokens for the specified IDP alias. In the client configuration, **Settings**, section **Capability config**, there are two new configuration options.
+The application continues accessing the same endpoint inside the REST API to retrieve the brokering token, but in V2 the call uses `POST` and requires client authentication. It is then restricted to confidential clients only instead of using the `read-token` role for the user. Similarly to V1, there are two configuration options in the client configuration, **Settings**, section **Capability config**.
 
 * **Allow retrieve external tokens**: Flag that allows the client to retrieve tokens via the brokering API.
 * **Allowed Identity Providers for External Tokens**: List of identity provider aliases from which the client can retrieve external tokens.

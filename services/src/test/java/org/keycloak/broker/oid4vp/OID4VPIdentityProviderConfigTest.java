@@ -44,15 +44,16 @@ public class OID4VPIdentityProviderConfigTest {
 
     @Test
     public void validateTrustedMaterial() {
-         IllegalArgumentException iae = Assert.assertThrows(IllegalArgumentException.class, () -> create(Map.of()).validate(null));
+         IllegalArgumentException iae = Assert.assertThrows(IllegalArgumentException.class,
+                 () -> create(Map.of(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test")).validate(null));
          MatcherAssert.assertThat(iae.getMessage(), Matchers.is("Either a trusted issuer JWKS or trust material identity provider aliases are required"));
 
-         create(Map.of(OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
-         create(Map.of(OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, "other")).validate(null);
+         create(Map.of(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
+         create(Map.of(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, "other")).validate(null);
     }
 
     private void validateWalletSchemeSuccess(String scheme) {
-        create(Map.of(OID4VPIdentityProviderConfig.WALLET_SCHEME, scheme, OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
+        create(Map.of(OID4VPIdentityProviderConfig.WALLET_SCHEME, scheme, OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
     }
 
     private void validateWalletSchemeFailure(String scheme) {
@@ -62,7 +63,7 @@ public class OID4VPIdentityProviderConfigTest {
     }
 
     private void validateResponseModeSuccess(String mode) {
-        create(Map.of(OID4VPIdentityProviderConfig.RESPONSE_MODE, mode, OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
+        create(Map.of(OID4VPIdentityProviderConfig.RESPONSE_MODE, mode, OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
     }
 
     private void validateResponseModeFailure(String mode) {

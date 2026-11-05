@@ -17,10 +17,15 @@
 
 package org.keycloak.federation.kerberos;
 
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Stream;
+
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Common configuration useful for all providers
@@ -50,6 +55,24 @@ public abstract class CommonKerberosConfig {
 
     public String getKerberosRealm() {
         return getConfig().getFirst(KerberosConstants.KERBEROS_REALM);
+    }
+
+    public List<String> getAllowedKerberosRealms() {
+        List<String> realms = getConfig().getList(KerberosConstants.ALLOWED_KERBEROS_REALMS);
+        if (realms == null) {
+            return List.of();
+        }
+        return realms.stream().filter(StringUtil::isNotBlank).map(String::trim).toList();
+    }
+
+    public boolean isAllowedKerberosRealm(String realm) {
+        if (realm == null) {
+            return false;
+        }
+        String canonical = realm.toUpperCase(Locale.ROOT);
+        return Stream.concat(Stream.ofNullable(getKerberosRealm()), getAllowedKerberosRealms().stream())
+                .map(allowed -> allowed.toUpperCase(Locale.ROOT))
+                .anyMatch(canonical::equals);
     }
 
     public String getServerPrincipal() {
