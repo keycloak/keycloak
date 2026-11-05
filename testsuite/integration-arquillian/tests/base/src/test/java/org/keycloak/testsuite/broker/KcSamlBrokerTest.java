@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,15 +19,26 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
+import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlSessionUtils;
+import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.UserSessionNoteStatementMapper;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -38,6 +50,7 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -54,6 +67,7 @@ import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static org.keycloak.broker.provider.UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.saml.RoleMapperTest.ROLE_ATTRIBUTE_NAME;
 import static org.keycloak.testsuite.util.Matchers.bodyHC;
@@ -67,6 +81,7 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -79,6 +94,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private static final String EMPTY_ATTRIBUTE_NAME = "empty.attribute.name";
+    private static final String LEAKED_ATTRIBUTE = "leaked-token";
 
     @Override
     protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode) {
@@ -591,5 +607,64 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
       Element rootElement = orig.getDocumentElement();
       rootElement.setAttribute(SAMLProtocolQNames.ATTR_IN_RESPONSE_TO.getQName().getLocalPart(), "");
       return orig;
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.IDENTITY_BROKERING_API_V2, skipRestart = true)
+    public void shouldNotIssueBrokerCredentialNoteAsSamlAttribute() throws Exception {
+        // SAML only stores the broker credential in the session under the V2 API with this option enabled.
+        IdentityProviderRepresentation idp = identityProviderResource.toRepresentation();
+        idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.TRUE.toString());
+        identityProviderResource.update(idp);
+
+        // Simulate a pre-existing mapper: the admin API now rejects this configuration.
+        testingClient.server(bc.consumerRealmName()).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ProtocolMapperModel mapper = new ProtocolMapperModel();
+            mapper.setName("pre-existing-leak");
+            mapper.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+            mapper.setProtocolMapper(UserSessionNoteStatementMapper.PROVIDER_ID);
+            mapper.setConfig(Map.of(
+                    UserSessionNoteStatementMapper.NOTE_CONFIG_KEY, FEDERATED_ACCESS_TOKEN,
+                    AttributeStatementHelper.SAML_ATTRIBUTE_NAME, LEAKED_ATTRIBUTE,
+                    AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT, AttributeStatementHelper.BASIC));
+            realm.getClientByClientId(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST).addProtocolMapper(mapper);
+        });
+
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(
+                AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getConsumerRoot() + "/sales-post/saml", null);
+        Document doc = SAML2Request.convert(loginRep);
+
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+                .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()
+                .login().idp(bc.getIDPAlias()).build()
+                .processSamlResponse(Binding.POST).build()
+                .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+                .processSamlResponse(Binding.POST).build()
+                .updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).username(bc.getUserLogin()).build()
+                .followOneRedirect()
+                .getSamlResponse(Binding.POST);
+
+        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+
+        String sessionIndex = assertionsUnencrypted(samlResponse.getSamlObject())
+                .flatMap(assertion -> assertion.getStatements().stream())
+                .filter(AuthnStatementType.class::isInstance)
+                .map(AuthnStatementType.class::cast)
+                .map(AuthnStatementType::getSessionIndex)
+                .findFirst().orElseThrow();
+        testingClient.server(bc.consumerRealmName()).run(session -> {
+            AuthenticatedClientSessionModel clientSession = SamlSessionUtils.getClientSession(
+                    session, session.getContext().getRealm(), sessionIndex);
+            assertThat("The issued assertion must refer to an existing client session", clientSession, notNullValue());
+            assertThat("Identity provider did not store an assertion in the user session",
+                    clientSession.getUserSession().getNote(FEDERATED_ACCESS_TOKEN), notNullValue());
+        });
+
+        Set<String> attributeNames = attributesUnecrypted(attributeStatements(assertionsUnencrypted(samlResponse.getSamlObject())))
+                .map(AttributeType::getName)
+                .collect(Collectors.toSet());
+        assertThat("Broker credential note should not be exposed as SAML attribute",
+                attributeNames, not(hasItems(LEAKED_ATTRIBUTE)));
     }
 }

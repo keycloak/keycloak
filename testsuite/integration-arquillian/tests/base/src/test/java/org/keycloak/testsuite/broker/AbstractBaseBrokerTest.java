@@ -173,8 +173,10 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         for (ClientRepresentation client : clients) {
             log.debug("adding client " + client.getClientId() + " to realm " + bc.providerRealmName());
 
-            final Response resp = providerRealm.clients().create(client);
-            resp.close();
+            try (Response resp = providerRealm.clients().create(client)) {
+                assertEquals("Failed to create client " + client.getClientId() + " in realm " + bc.providerRealmName(),
+                        Response.Status.CREATED.getStatusCode(), resp.getStatus());
+            }
         }
 
         clients = bc.createConsumerClients();
@@ -183,8 +185,10 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
             for (ClientRepresentation client : clients) {
                 log.debug("adding client " + client.getClientId() + " to realm " + bc.consumerRealmName());
 
-                Response resp = consumerRealm.clients().create(client);
-                resp.close();
+                try (Response resp = consumerRealm.clients().create(client)) {
+                    assertEquals("Failed to create client " + client.getClientId() + " in realm " + bc.consumerRealmName(),
+                            Response.Status.CREATED.getStatusCode(), resp.getStatus());
+                }
             }
         }
     }

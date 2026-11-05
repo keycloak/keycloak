@@ -15,3 +15,7 @@ Authorization: Bearer <KEYCLOAK ACCESS TOKEN>
 An application must authenticate with {project_name} and receive an access token. This access token must have the `broker` client-level role `read-token` set, so the user must have a role mapping for this role, and the client application must have that role within its scope. In this case, since you are accessing a protected service in {project_name}, send the access token issued by {project_name} during the user authentication. You can assign this role to newly imported users in the broker configuration page by setting the *Stored Tokens Readable* switch to *ON*.
 
 These external tokens can be re-established by logging in again through the provider or using the client-initiated account linking API.
+
+This endpoint is the only supported way for an application to obtain the tokens of an external IDP. Identity Brokering API V1 requires the `read-token` role on the `broker` client, while V2 requires client authentication and permission for the client to retrieve tokens from the specified IDP alias.
+{project_name} stores those tokens as notes on the user session, but a *User Session Note* mapper cannot copy them into a token claim or a SAML attribute.
+Such a mapper is rejected when the client is created or updated, and any mapper that already exists is ignored when a token is issued.

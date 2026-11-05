@@ -30,29 +30,33 @@ import java.util.Set;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
-import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
-import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
 import org.keycloak.protocol.oidc.utils.SubjectType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.StringUtil;
 
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import org.jboss.logging.Logger;
+
 import static org.keycloak.services.managers.ResourceAdminManager.CLIENT_SESSION_HOST_PROPERTY;
 
 public class DefaultClientValidationProvider implements ClientValidationProvider {
+
+    private static final Logger logger = Logger.getLogger(DefaultClientValidationProvider.class);
+
     private enum FieldMessages {
         ROOT_URL("rootUrl",
                 "Root URL is not a valid URL", "clientRootURLInvalid",
@@ -219,7 +223,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     public ValidationResult validate(ValidationContext<ClientModel> context) {
         validateClientId(context);
         validateUrls(context);
-        validatePairwiseInClientModel(context);
+        validateProtocolMappers(context);
         new CibaClientValidation(context).validate();
         validateJwks(context);
         validateAcrLoaMap(context);
@@ -319,6 +323,30 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
     }
 
 
+    /**
+     * Validates every installed mapper through {@link ProtocolMapper#validateConfig} on paths that write a whole
+     * client. Imports must call this after the referenced clients have been created.
+     * Each mapper is validated on its own, because the contract of
+     * {@link ValidationContext} is to collect all errors of a client whereas
+     * {@link ProtocolMapper#validateConfig} reports only the first one it finds.
+     */
+    private void validateProtocolMappers(ValidationContext<ClientModel> context) {
+        KeycloakSession session = context.getSession();
+        ClientModel client = context.getObjectToValidate();
+        RealmModel realm = client.getRealm();
+
+        client.getProtocolMappersStream().toList()
+                .forEach(mapperModel -> {
+                    try {
+                        ProtocolMapperValidationUtil.validateProtocolMapper(session, realm, client, mapperModel);
+                    } catch (ProtocolMapperConfigException e) {
+                        logger.warnf("Invalid configuration for protocol mapper '%s' on client '%s': %s",
+                                mapperModel.getName(), client.getClientId(), e.getMessage());
+                        context.addError("protocolMappers", ProtocolMapperValidationUtil.INVALID_CONFIG_MESSAGE);
+                    }
+                });
+    }
+
     private void checkUri(FieldMessages field, String url, ValidationContext<ClientModel> context, boolean checkValidUrl, boolean checkFragment) {
         if (url == null || url.isEmpty()) {
             return;
@@ -404,15 +432,6 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
         catch (URISyntaxException e) {
             context.addError(field.getFieldId(), field.getInvalid(), field.getInvalidKey());
-        }
-    }
-
-    private void validatePairwiseInClientModel(ValidationContext<ClientModel> context) {
-        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(toRepresentation(context.getObjectToValidate(), context.getSession()));
-
-        for (ProtocolMapperRepresentation foundPairwise : foundPairwiseMappers) {
-            String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwise);
-            validatePairwise(context, sectorIdentifierUri);
         }
     }
 
