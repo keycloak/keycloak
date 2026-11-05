@@ -85,7 +85,7 @@ export class KeycloakAdminClient {
   #accessTokenDecoded?: DecodedToken;
   #refreshTokenDecoded?: DecodedToken;
   #credentials?: Credentials;
-  #fetch: FetchLike;
+  #fetch?: FetchLike;
 
   constructor(connectionConfig?: ConnectionConfig) {
     this.baseUrl = connectionConfig?.baseUrl || defaultBaseUrl;
@@ -95,7 +95,8 @@ export class KeycloakAdminClient {
       connectionConfig?.enableExperimentalApis ?? false;
     this.#requestOptions = connectionConfig?.requestOptions;
     this.#globalRequestArgOptions = connectionConfig?.requestArgOptions;
-    this.#fetch = connectionConfig?.fetch ?? fetch;
+    // Resolve the default at request time so later global fetch stubs still apply.
+    this.#fetch = connectionConfig?.fetch;
 
     // Initialize resources
     this.users = new Users(this);
@@ -220,7 +221,7 @@ export class KeycloakAdminClient {
   }
 
   public getFetch(): FetchLike {
-    return this.#fetch;
+    return this.#fetch ?? fetch;
   }
 
   public getGlobalRequestArgOptions():
