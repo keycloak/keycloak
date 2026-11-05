@@ -83,7 +83,7 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
     public void testSAMLEndpointCreateWithOIDCClient() throws Exception {
         ClientsResource clientsResource = managedRealm.admin().clients();
         ClientRepresentation oidcClient = clientsResource.findByClientId("oidc-client").get(0);
-        String oidcClientServiceId = clientsResource.get(oidcClient.getId()).getServiceAccountUser().getId();
+        String oidcClientServiceId = clientsResource.get(oidcClient.getId()).toRepresentation().getServiceAccountUserId();
 
         String realmManagementId = clientsResource.findByClientId("realm-management").get(0).getId();
         RoleRepresentation role = clientsResource.get(realmManagementId).roles().get("create-client").toRepresentation();

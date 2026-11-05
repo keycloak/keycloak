@@ -168,7 +168,7 @@ public class OrganizationAdapter implements OrganizationModel {
     @Override
     public Stream<IdentityProviderModel> getIdentityProviders() {
         if (isUpdated()) return updated.getIdentityProviders();
-        return cached.getIdentityProviders();
+        return session.identityProviders().getByOrganization(getId(), null, null);
     }
 
     @Override

@@ -10,7 +10,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ScimClient;
 import org.keycloak.scim.client.authorization.OAuth2Bearer;
 import org.keycloak.testframework.injection.DependenciesBuilder;
@@ -58,10 +57,10 @@ public class ScimClientSupplier implements Supplier<ScimClient, InjectScimClient
                             .enabled(true)
                     .build())) {
                 String id = ApiUtil.getCreatedId(response);
-                UserRepresentation serviceAccountUser = managedRealm.admin().clients().get(id).getServiceAccountUser();
+                String serviceAccountUserId = managedRealm.admin().clients().get(id).toRepresentation().getServiceAccountUserId();
                 ClientRepresentation realmMgmtClient = managedRealm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
                 RoleRepresentation manageUsersRole = managedRealm.admin().clients().get(realmMgmtClient.getId()).roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
-                managedRealm.admin().users().get(serviceAccountUser.getId()).roles()
+                managedRealm.admin().users().get(serviceAccountUserId).roles()
                         .clientLevel(realmMgmtClient.getId())
                         .add(List.of(manageUsersRole));
                 managedRealm.admin().clients().get(id).getScopeMappings()

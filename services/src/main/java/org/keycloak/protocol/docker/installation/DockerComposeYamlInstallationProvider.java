@@ -55,7 +55,7 @@ public class DockerComposeYamlInstallationProvider implements ClientInstallation
     }
 
     @Override
-    public Response generateInstallation(final KeycloakSession session, final RealmModel realm, final ClientModel client, final URI serverBaseUri) {
+    public Response generateInstallation(final KeycloakSession session, final RealmModel realm, final ClientModel client, final URI serverBaseUri, boolean includeSecrets) {
         final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         final ZipOutputStream zipOutput = new ZipOutputStream(byteStream);
 

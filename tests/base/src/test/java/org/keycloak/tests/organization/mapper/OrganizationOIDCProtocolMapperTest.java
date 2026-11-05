@@ -486,6 +486,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         MemberRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
         realm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        OrganizationRepresentation orgC = createOrganization("orgc", true);
+        realm.admin().organizations().get(orgC.getId()).members().addMember(member.getId()).close();
         oauth.client("broker-app", "broker-app-secret");
         oauth.scope("organization");
         oauth.realm(realm.getName());
@@ -521,7 +523,11 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.openLoginForm();
         loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
         loginUsernamePage.submit();
-        loginPage.assertCurrent();
+        selectOrganizationPage.assertCurrent();
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        assertFalse(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgC.getAlias()));
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
         loginPage.fillPassword(memberPassword);
         loginPage.submit();
         response = assertSuccessfulCodeGrant();
@@ -2141,7 +2147,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         realm.admin().clients().get(createdClient.getId()).addOptionalClientScope(orgScope.getId());
 
         // make the service account user a member of the organization
-        String serviceAccountUserId = realm.admin().clients().get(createdClient.getId()).getServiceAccountUser().getId();
+        String serviceAccountUserId = realm.admin().clients().get(createdClient.getId()).toRepresentation().getServiceAccountUserId();
         realm.admin().organizations().get(orgA.getId()).members().addMember(serviceAccountUserId).close();
 
         // first, verify organization claim IS present when organizations are enabled

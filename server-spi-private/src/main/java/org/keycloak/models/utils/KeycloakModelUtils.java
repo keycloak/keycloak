@@ -971,6 +971,20 @@ public final class KeycloakModelUtils {
         return sb.toString();
     }
 
+    /**
+     * Returns {@code true} if the given {@code group} is the {@code ancestor} itself or one of its
+     * descendants, i.e. if {@code ancestor} can be reached from {@code group} by walking up the
+     * parent chain. Used to reject group moves that would introduce a cycle in the group hierarchy.
+     */
+    public static boolean isDescendantOfOrSelf(GroupModel group, GroupModel ancestor) {
+        for (GroupModel current = group; current != null; current = current.getParent()) {
+            if (current.getId().equals(ancestor.getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static String getOrgId(GroupModel group) {
         OrganizationModel organization = group.getOrganization();
         return organization != null ? organization.getId() : null;

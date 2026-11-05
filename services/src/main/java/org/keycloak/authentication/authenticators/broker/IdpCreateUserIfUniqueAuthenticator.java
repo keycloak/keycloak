@@ -38,6 +38,10 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.UserProfileUtil;
 
 import org.jboss.logging.Logger;
 
@@ -107,6 +111,9 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
                     federatedUser.setAttribute(attr.getKey(), attr.getValue());
                 }
             }
+
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.IDP_REVIEW, federatedUser);
+            UserProfileUtil.setDefaultValuesForReadOnlyAttributes(federatedUser, profile.getAttributes());
 
             AuthenticatorConfigModel config = context.getAuthenticatorConfig();
             if (config != null && Boolean.parseBoolean(config.getConfig().get(IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION))) {

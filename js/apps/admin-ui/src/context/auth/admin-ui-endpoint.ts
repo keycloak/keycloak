@@ -5,6 +5,18 @@ import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { joinPath } from "../../utils/joinPath";
 import { UiRealmInfo } from "./uiRealmInfo";
 
+function buildHeaders(
+  adminClient: KeycloakAdminClient,
+  accessToken: string | undefined,
+  extraHeaders: Record<string, string> = {},
+): Headers {
+  return new Headers([
+    ...new Headers(adminClient.getRequestOptions()?.headers).entries(),
+    ...Object.entries(getAuthorizationHeaders(accessToken)),
+    ...Object.entries(extraHeaders),
+  ]);
+}
+
 export async function fetchAdminUI<T>(
   adminClient: KeycloakAdminClient,
   endpoint: string,
@@ -22,7 +34,7 @@ export async function fetchAdminUI<T>(
     ) + (query ? "?" + new URLSearchParams(query) : ""),
     {
       method: "GET",
-      headers: getAuthorizationHeaders(accessToken),
+      headers: buildHeaders(adminClient, accessToken),
     },
   );
 
@@ -46,10 +58,9 @@ export async function postAdminUI<T>(
     ),
     {
       method: "POST",
-      headers: {
-        ...getAuthorizationHeaders(accessToken),
+      headers: buildHeaders(adminClient, accessToken, {
         "Content-Type": "application/json",
-      },
+      }),
       body: JSON.stringify(body),
     },
   );

@@ -202,6 +202,15 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assertions.assertNull(client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY), "migration-saml-client login theme was not removed");
     }
 
+    private void assertClientLoginTheme(RealmResource realm, String clientId, String expectedTheme) {
+        List<ClientRepresentation> clients = realm.clients().findByClientId(clientId);
+        Assertions.assertEquals(1, clients.size(), clientId + " client is missing");
+        Map<String, String> attributes = clients.get(0).getAttributes();
+        Assertions.assertEquals(expectedTheme,
+                attributes == null ? null : attributes.get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY),
+                clientId + " login theme was not migrated correctly");
+    }
+
     protected void testHttpChallengeFlow(RealmResource realm) {
         log.info("testing 'http challenge' flow not present");
         Assertions.assertFalse(realm.flows().getFlows()
@@ -473,6 +482,19 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testLdapBinaryAttributeDecoderMigration(migrationRealm2);
         testLdapGroupAttributeDecoderMigration(migrationRealm2);
         testAuthnContextClassRefIsPresent(migrationRealm);
+    }
+
+    protected void testMigrationTo27_0_0(RealmResource realmWithUnsetTheme) {
+        Assertions.assertEquals("keycloak.v2", migrationRealm.toRepresentation().getLoginTheme(),
+                "Login v1 realm theme was not migrated to keycloak.v2");
+        Assertions.assertEquals("custom-theme", migrationRealm2.toRepresentation().getLoginTheme(),
+                "Custom login theme should be preserved");
+        Assertions.assertNull(realmWithUnsetTheme.toRepresentation().getLoginTheme(),
+                "Unset login theme should be preserved");
+
+        assertClientLoginTheme(migrationRealm, "migration-test-client", "keycloak.v2");
+        assertClientLoginTheme(migrationRealm, "broker", "keycloak-custom");
+        assertClientLoginTheme(migrationRealm, "admin-cli", null);
     }
 
     private void testAuthnContextClassRefIsPresent(RealmResource realm) {

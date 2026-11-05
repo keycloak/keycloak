@@ -259,25 +259,27 @@ public class ExportUtils {
         // Message Bundle
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
 
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && !options.isPartial()) {
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             orgProvider.getAllStream().map(model -> {
                 OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model, false);
 
-                orgProvider.getMembersStream(model, (Map<String, String>) null, null, null, null)
-                        .forEach(user -> {
-                            MemberRepresentation member = new MemberRepresentation();
-                            member.setUsername(user.getUsername());
-                            member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
+                if (!options.isPartial()) {
+                    orgProvider.getMembersStream(model, (Map<String, String>) null, null, null, null)
+                            .forEach(user -> {
+                                MemberRepresentation member = new MemberRepresentation();
+                                member.setUsername(user.getUsername());
+                                member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
 
-                            // Export organization group memberships
-                            List<String> groupIds = orgProvider.getOrganizationGroupsByMember(model, user).map(GroupModel::getId).collect(Collectors.toList());
-                            if (!groupIds.isEmpty()) {
-                                member.setGroups(groupIds);
-                            }
+                                // Export organization group memberships
+                                List<String> groupIds = orgProvider.getOrganizationGroupsByMember(model, user).map(GroupModel::getId).collect(Collectors.toList());
+                                if (!groupIds.isEmpty()) {
+                                    member.setGroups(groupIds);
+                                }
 
-                            org.addMember(member);
-                        });
+                                org.addMember(member);
+                            });
+                }
 
                 orgProvider.getIdentityProviders(model)
                         .map(b -> {

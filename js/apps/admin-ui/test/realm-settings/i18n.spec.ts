@@ -88,7 +88,7 @@ test.describe.serial("i18n tests", () => {
   test.afterAll(() => adminClient.deleteRealm(testConfig.realmName));
 
   test.afterEach(async () => {
-    await adminClient.removeAllLocalizationTexts();
+    await adminClient.removeAllLocalizationTexts(testConfig.realmName);
   });
 
   test("should use THEME localization for fallback when no realm localization exists", async ({

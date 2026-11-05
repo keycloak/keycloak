@@ -165,6 +165,63 @@ Proper HTTP headers (especially `tracestate`) filtering and adequate measures of
 
 For more information, see the https://www.w3.org/TR/trace-context/#security-considerations[W3C Trace context] document.
 
+<@profile.ifCommunity>
+
+== Accepting B3 trace context
+
+[NOTE]
+====
+This section has been contributed by the Keycloak community.
+As the {project_name} core team does not test this setup, it is provided as-is.
+If you find this documentation outdated or incomplete, please contribute to improve it.
+
+The setup relies on raw Quarkus properties, which are not supported options of {project_name}.
+For details, see <@links.server id="configuration" anchor="_format_for_raw_quarkus_properties"/>.
+====
+
+When {project_name} receives a request, it continues an existing trace from the trace context headers of the request.
+By default, it accepts the W3C Trace Context and W3C Baggage formats.
+To also accept trace context in the B3 format, for example from a proxy or service mesh that uses B3, complete the following steps:
+
+. Add the `opentelemetry-extension-trace-propagators` JAR to the `providers` directory.
++
+Use the same version as the `opentelemetry-api` JAR in the `lib/lib/main` directory of your {project_name} distribution, for example `/opt/keycloak/lib/lib/main` in the container image.
+The version is part of the file name `io.opentelemetry.opentelemetry-api-<VERSION>.jar`.
+
+. Set the environment variable `QUARKUS_OTEL_PROPAGATORS` to the complete list of propagators, for example `tracecontext,baggage,b3multi`.
++
+Use `b3multi` for B3 trace context sent in multiple headers, and `b3` for B3 trace context sent in a single header.
+
+. Run the `build` command.
+
+IMPORTANT: The value replaces the default list. Keep `tracecontext,baggage` in it to preserve support for W3C Trace Context and W3C Baggage.
+
+The propagators are fixed at build time.
+If `QUARKUS_OTEL_PROPAGATORS` is set only when starting an optimized image, {project_name} ignores the value and logs a warning.
+
+For the {project_name} Operator, use a custom image that is optimized with all build-time options of {project_name} set.
+
+The following example shows a container image with B3 propagation:
+
+[source,dockerfile,subs="attributes+"]
+----
+FROM quay.io/keycloak/keycloak:{containerlabel} AS builder
+
+ENV KC_TRACING_ENABLED=true
+ENV QUARKUS_OTEL_PROPAGATORS=tracecontext,baggage,b3multi
+# Replace <VERSION> with the version of the opentelemetry-api JAR
+ADD --chown=keycloak:keycloak --chmod=644 https://repo1.maven.org/maven2/io/opentelemetry/opentelemetry-extension-trace-propagators/<VERSION>/opentelemetry-extension-trace-propagators-<VERSION>.jar /opt/keycloak/providers/opentelemetry-extension-trace-propagators.jar
+RUN /opt/keycloak/bin/kc.sh build
+
+FROM quay.io/keycloak/keycloak:{containerlabel}
+COPY --from=builder /opt/keycloak/ /opt/keycloak/
+ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+----
+
+*Troubleshooting:* If the extension is missing, {project_name} fails to start with an error that contains `Unrecognized value for otel.propagators`.
+
+</@profile.ifCommunity>
+
 == Tracing in Kubernetes environment
 When the tracing is enabled when using the {project_name} Operator, certain information about the deployment is propagated to the underlying containers.
 
