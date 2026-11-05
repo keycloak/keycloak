@@ -3937,15 +3937,6 @@ packages:
       kerberos:
         optional: true
 
-  proxy-agent-negotiate@1.1.0:
-    resolution: {integrity: sha512-N8IBcM3UgCVzz2L2Lqv8DVntDnnC8/hiV4nEDUPkqq72TPUgYWjQc+bdZlBPZK9LzPAvOY//gAt0S0DApoOXWQ==}
-    engines: {node: '>= 20'}
-    peerDependencies:
-      kerberos: ^2.0.0
-    peerDependenciesMeta:
-      kerberos:
-        optional: true
-
   pump@2.0.1:
     resolution: {integrity: sha512-ruPMNRkN3MHP1cWJc9OWr+T/xDP0jhXYCLfJcBuX54hhfIBnaQmAUMfDcG4DM5UMWByBbJY69QSphm3jtDKIkA==}
 
@@ -8484,8 +8475,6 @@ snapshots:
   property-information@6.5.0: {}
 
   property-information@7.2.0: {}
-
-  proxy-agent-negotiate@1.1.0: {}
 
   proxy-agent-negotiate@1.1.0: {}
 
