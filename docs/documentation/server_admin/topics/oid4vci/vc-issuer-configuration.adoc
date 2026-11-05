@@ -295,6 +295,11 @@ The following table describes the available OID4VCI realm attributes:
 | `oid4vci.issuer_info`
 | Not set
 | JSON array of `issuer_info` elements published in the Credential Issuer Metadata as defined in ETSI TS 119 472-3, Section 4.2.3. Each element has a `format` and `data` member. Example: `[{"format": "registration_cert", "data": "<JWT>"}]`. Used for EUDI registration certificate support.
+
+| Issuer Display
+| `oid4vci.display`
+| Not set
+| JSON array of `display` elements published in the Credential Issuer Metadata as defined in OpenID4VCI 1.0, Section 12.2.4. Each element may have a `name`, a `locale` and a `logo`. A `logo` requires a `uri`. Only one element per `locale` is allowed. Example: `[{"name": "Example Issuer", "locale": "en", "logo": {"uri": "https://example.com/logo.png", "alt_text": "Example logo"}}]`.
 |===
 
 ===== Time Claim Correlation Mitigation

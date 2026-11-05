@@ -102,6 +102,7 @@ import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvide
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ISSUER_DISPLAY_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ISSUER_INFO_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ALG_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_LIFESPAN_ATTR;
@@ -712,6 +713,84 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                 .getMetadata();
 
         assertNull(issuer.getIssuerInfo(), "issuer_info should be omitted when not configured");
+    }
+
+    @Test
+    public void testIssuerDisplayInUnsignedMetadata() throws IOException {
+        String displayJson = "[{\"name\":\"Example Issuer\",\"locale\":\"en\",\"logo\":{\"uri\":\"https://example.com/logo.png\",\"alt_text\":\"Example logo\"}}]";
+        setRealmAttributes(Map.of(ISSUER_DISPLAY_ATTR, displayJson));
+
+        try {
+            CredentialIssuer issuer = oauth.oid4vc()
+                    .doIssuerMetadataRequest()
+                    .getMetadata();
+
+            assertNotNull(issuer.getDisplay(), "display should be present");
+            assertEquals(1, issuer.getDisplay().size(), "display should have one element");
+            DisplayObject display = issuer.getDisplay().get(0);
+            assertEquals("Example Issuer", display.getName());
+            assertEquals("en", display.getLocale());
+            assertEquals("https://example.com/logo.png", display.getLogo().getUri());
+            assertEquals("Example logo", display.getLogo().getAltText());
+        } finally {
+            setRealmAttributes(Map.of(ISSUER_DISPLAY_ATTR, ""));
+        }
+    }
+
+    @Test
+    public void testIssuerDisplayInSignedMetadata() throws IOException {
+        setRealmAttributes(Map.of(
+                SIGNED_METADATA_ALG_ATTR, "RS256",
+                SIGNED_METADATA_LIFESPAN_ATTR, "3600",
+                ISSUER_DISPLAY_ATTR, "[{\"name\":\"Example Issuer\",\"locale\":\"en\"}]"
+        ));
+
+        try {
+            CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                    .issuerMetadataRequest()
+                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                    .send();
+
+            assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+            assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+            JWSInput jwsInput = (JWSInput) response.getContent();
+            assertNotNull(jwsInput, "Response should be signed metadata JWS");
+
+            Map<String, Object> claims = JsonSerialization.readValue(jwsInput.getContent(), Map.class);
+            List<Map<String, Object>> displayList = (List<Map<String, Object>>) claims.get("display");
+            assertNotNull(displayList, "display should be a top-level claim in signed metadata");
+            assertEquals(1, displayList.size());
+            assertEquals("Example Issuer", displayList.get(0).get("name"));
+            assertEquals("en", displayList.get(0).get("locale"));
+        } finally {
+            setRealmAttributes(Map.of(
+                    SIGNED_METADATA_ALG_ATTR, "RS256",
+                    SIGNED_METADATA_LIFESPAN_ATTR, "3600",
+                    ISSUER_DISPLAY_ATTR, ""
+            ));
+        }
+    }
+
+    @Test
+    public void testIssuerDisplayInvalidConfigurationFallsBackToOmitted() throws IOException {
+        for (String invalidDisplay : List.of(
+                "not-valid-json",
+                "[]",
+                "[{\"name\":\"Example Issuer\",\"logo\":{\"alt_text\":\"Example logo\"}}]",
+                "[{\"name\":\"First\",\"locale\":\"en\"},{\"name\":\"Second\",\"locale\":\"en\"}]")) {
+            setRealmAttributes(Map.of(ISSUER_DISPLAY_ATTR, invalidDisplay));
+
+            try {
+                CredentialIssuer issuer = oauth.oid4vc()
+                        .doIssuerMetadataRequest()
+                        .getMetadata();
+
+                assertNull(issuer.getDisplay(), "display should be omitted for " + invalidDisplay);
+            } finally {
+                setRealmAttributes(Map.of(ISSUER_DISPLAY_ATTR, ""));
+            }
+        }
     }
 
     /**
