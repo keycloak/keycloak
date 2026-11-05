@@ -73,6 +73,7 @@ export const DownloadDialog = ({
               await adminClient.getAccessToken(),
             ),
           },
+          adminClient.getFetch(),
         );
 
         return response.arrayBuffer();
