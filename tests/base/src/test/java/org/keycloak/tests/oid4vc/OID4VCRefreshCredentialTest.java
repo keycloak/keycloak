@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,13 +22,16 @@ import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserVerifiableCredentialResource;
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
@@ -674,9 +678,9 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
 
     /**
      * Verifies that a mapper mapping user-controlled data to the reserved 'exp' claim causes the SD-JWT issuance
-     * to be rejected. A mapper persisted via the scope-create path (which, like imports, does not run
-     * config-time validation) could otherwise let a user-controlled value extend the refresh expiration time, so
-     * it must fail the request at issuance.
+     * to be rejected. Such a mapper is rejected when a scope is created, so it can only reach the store as data
+     * written before that validation existed; it could otherwise let a user-controlled value extend the refresh
+     * expiration time, so it must fail the request at issuance.
      */
     @Test
     public void testUserControlledExpAttributeDoesNotExtendRefreshExpiration() throws Exception {
@@ -690,13 +694,31 @@ public class OID4VCRefreshCredentialTest extends OID4VCIssuerTestBase {
                 .setCredentialIdentifier(scopeName)
                 .setVct(scopeName)
                 .setFormat(VCFormat.SD_JWT_VC);
-        scope.setProtocolMappers(List.of(ProtocolMapperUtils.getUserAttributeMapper(CLAIM_NAME_EXP, "some-user-attribute")));
 
         String scopeId;
         try (Response response = testRealm.admin().clientScopes().create(scope)) {
             scopeId = ApiUtil.getCreatedId(response);
         }
         testRealm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+
+        // Creating the scope validates its mappers, so write the reserved-claim mapper straight onto the stored
+        // scope to reproduce data persisted before that validation existed.
+        String realmName = testRealm.getName();
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            ProtocolMapperModel model = new ProtocolMapperModel();
+            model.setName("reserved-exp-mapper");
+            model.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            model.setProtocolMapper("oid4vc-user-attribute-mapper");
+            model.setConfig(new HashMap<>(Map.of(
+                    OID4VCMapper.CLAIM_NAME, CLAIM_NAME_EXP,
+                    OID4VCMapper.USER_ATTRIBUTE_KEY, "some-user-attribute")));
+
+            realm.getClientScopeById(scopeId).addProtocolMapper(model);
+        });
+
         testRealm.admin().clients().get(client.getId()).addOptionalClientScope(scopeId);
 
         // Grant the user a verifiable credential for the new scope so the access token exchange accepts it.

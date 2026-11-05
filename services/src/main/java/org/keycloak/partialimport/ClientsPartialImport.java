@@ -128,11 +128,23 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
             OIDCAdvancedConfigWrapper.fromClientModel(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
         }
         RepresentationToModel.importAuthorizationSettings(clientRep, client, session);
+    }
 
-        ValidationUtil.validateClient(session, client, true, r -> {
-            session.getTransactionManager().setRollbackOnly();
-            throw ErrorResponse.error("Failed to import client " + client.getClientId() + ": " + r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
-        });
+    @Override
+    public PartialImportResults doImport(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) {
+        PartialImportResults results = super.doImport(rep, realm, session);
+        // A mapper may refer to another client in this import. Do not validate until all clients exist.
+        for (PartialImportResult result : results.getResults()) {
+            if (result.getAction() == Action.SKIPPED) {
+                continue;
+            }
+            ClientModel client = realm.getClientById(result.getId());
+            ValidationUtil.validateClient(session, client, true, r -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw ErrorResponse.error("Failed to import client " + client.getClientId() + ": " + r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
+            });
+        }
+        return results;
     }
 
     public static boolean isInternalClient(String clientId) {
