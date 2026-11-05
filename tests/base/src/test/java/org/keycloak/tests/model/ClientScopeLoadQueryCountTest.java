@@ -92,8 +92,9 @@ public class ClientScopeLoadQueryCountTest {
 
             assertThat("missing scopes are loaded by a single query", stats.getQueryStatistics(SCOPES_QUERY).getExecutionCount(), is(1L));
             assertThat("no scope is loaded individually", stats.getEntityStatistics(ClientScopeEntity.class.getName()).getFetchCount(), is(0L));
-            // batches only cover part of the missing scopes, but there must be far fewer fetches than missing scopes
-            assertThat("attributes are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".attributes").getFetchCount(), lessThanOrEqualTo(15L));
+            // the missing scopes fit into one batch, no scope may be fetched individually before the bulk query
+            assertThat("attributes are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".attributes").getFetchCount(), lessThanOrEqualTo(2L));
+            assertThat("scope mappings are batch-fetched", stats.getCollectionStatistics(ClientScopeEntity.class.getName() + ".scopeMappingIds").getFetchCount(), lessThanOrEqualTo(2L));
         }));
     }
 
