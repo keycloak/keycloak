@@ -26,6 +26,26 @@ General validation also preserves the legacy web origin literals `${authAdminUrl
 Trusted Hosts resolves relative logo URLs against the {project_name} frontend URL and checks that host against its allowlist. The client's root URL does not determine where the browser loads a logo.
 The pattern executor continues to match literal configured values, including markers and relative URLs, and respects an explicit field selection. Sector identifier URLs in pairwise protocol mappers remain subject to their separate validation.
 
+=== OIDC identity providers accept a single issuer
+// https://github.com/keycloak/keycloak/issues/54458
+
+Identity providers based on the OpenID Connect provider configuration no longer accept comma-separated lists in the `Issuer` setting.
+This includes the generic OpenID Connect and Keycloak OpenID Connect providers, social providers using that configuration, and custom provider subclasses.
+This affects broker login and legacy external-to-internal token exchange.
+Each identity provider must trust a single issuer, because federated user links identify users by provider alias and subject, without recording the issuer.
+Previously, matching subject identifiers from different trusted issuers could resolve to the same local user.
+
+During a database upgrade, registered providers whose configurations require a single issuer are discovered through their factories.
+Those with issuer lists retain the first nonempty issuer, with surrounding whitespace removed, and are disabled.
+The same migration runs when importing realm JSON exported by a version before 27.0.0, including exports with no version specified.
+A warning identifies each affected provider and its original issuer list.
+New configurations and imports exported by 27.0.0 or later reject issuer lists.
+
+Before enabling a migrated provider, verify the selected issuer and review its existing federated user links.
+The original issuer cannot be recovered from those links, so {project_name} cannot automatically assign them to separate providers.
+Configure a separate provider alias for every additional issuer and establish links to the intended local users after verifying account ownership.
+Update applications that select a provider alias, including callers of legacy external-to-internal token exchange, and grant the appropriate exchange permissions to the new providers.
+
 === Authorization endpoint JSON errors
 // https://github.com/keycloak/keycloak/issues/54134
 
