@@ -167,6 +167,11 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     }
 
     @Override
+    public Set<String> getAdapterConfigurationSecretKeys() {
+        return Set.of();
+    }
+
+    @Override
     public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
         return Collections.emptySet();
     }

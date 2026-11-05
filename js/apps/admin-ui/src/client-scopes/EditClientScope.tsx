@@ -109,14 +109,21 @@ export default function EditClientScope() {
   const eventsTab = useRoutableTab(toClientScope({ realm, id, tab: "events" }));
 
   const onSubmit = async (formData: ClientScopeDefaultOptionalType) => {
-    const clientScope = convertFormValuesToObject({
+    const updatedScope = convertFormValuesToObject({
       ...formData,
       name: formData.name?.trim().replace(/ /g, "_"),
     });
 
     try {
-      await adminClient.clientScopes.update({ id }, clientScope);
-      await changeScope(adminClient, { ...clientScope, id }, clientScope.type);
+      await adminClient.clientScopes.update({ id }, updatedScope);
+      if (updatedScope.type !== clientScope?.type) {
+        await changeScope(
+          adminClient,
+          { ...updatedScope, id, type: clientScope!.type },
+          updatedScope.type,
+        );
+        setClientScope((prev) => (prev ? { ...prev, ...updatedScope } : prev));
+      }
 
       addAlert(t("updateSuccessClientScope"), AlertVariant.success);
     } catch (error) {

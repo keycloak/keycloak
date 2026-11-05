@@ -207,6 +207,7 @@ public final class Constants {
     public static final String MINIMUM_ACR_VALUE = "minimum.acr.value";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
+    public static final int DEFAULT_AUTHENTICATED_LOA = 1;
 
     public static final String SESSION_NOTE_LIGHTWEIGHT_USER = "keycloak.userModel";
 

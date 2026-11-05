@@ -68,7 +68,6 @@ import org.jboss.logging.Logger;
 @Provider
 @Path("/admin")
 public class AdminRoot {
-    private static final String ADMIN_AUTH_KEY = "AdminRoot.adminAuth";
 
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 
@@ -182,7 +181,7 @@ public class AdminRoot {
     }
 
     public static Optional<AdminAuth> getRealmAdminAuth(KeycloakSession session) {
-        return Optional.ofNullable(session.getAttribute(ADMIN_AUTH_KEY, AdminAuth.class));
+        return AdminAuth.getRealmAdminAuth(session);
     }
 
     public static AdminAuth authenticateRealmAdminRequest(KeycloakSession session) {
@@ -218,9 +217,7 @@ public class AdminRoot {
 
         session.getContext().setBearerToken(authResult.token());
 
-        AdminAuth result = new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
-        session.setAttribute(ADMIN_AUTH_KEY, result);
-        return result;
+        return new AdminAuth(session, realm, authResult.token(), authResult.user(), authResult.client());
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {

@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.keycloak.forms.login.freemarker.model.OrganizationBean;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -94,6 +95,7 @@ public class ProfileBean {
                 organizations = Collections.emptyList();
             } else {
                 organizations = Organizations.getProvider(session).getByMember(user)
+                        .filter(OrganizationModel::isEnabled)
                         .map(o -> new OrganizationBean(o, user))
                         .toList();
             }

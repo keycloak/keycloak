@@ -1,3 +1,4 @@
+import { assertNotificationMessage } from "../utils/masthead.ts";
 import { expect, type Page } from "@playwright/test";
 import { clickAddScope } from "./scope.ts";
 import { clickSaveButton, selectItem } from "../utils/form.ts";
@@ -12,7 +13,7 @@ export async function createOid4vciClientScope(
   await selectItem(page, "#kc-protocol", OID4VCI_PROTOCOL);
   await page.getByTestId("name").fill(clientScopeName);
   await clickSaveButton(page);
-  await expect(page.getByText("Client scope created")).toBeVisible();
+  await assertNotificationMessage(page, "Client scope created");
 }
 
 export async function openClientScopeSetupTab(page: Page, clientId: string) {
@@ -41,7 +42,7 @@ export async function assignOptionalOid4vciClientScope(
 
   await clickAddScope(page, "Optional");
 
-  await expect(page.getByText("Scope mapping updated")).toBeVisible();
+  await assertNotificationMessage(page, "Scope mapping updated");
   await expect(
     page.getByRole("row", { name: new RegExp(clientScopeName, "i") }),
   ).toBeVisible();

@@ -1041,8 +1041,10 @@ public class SsfAdminResource {
             //    same format the admin UI role picker produces: plain
             //    "roleName" checks as a realm role, "clientId.roleName"
             //    checks as a client role on the specified client (usually
-            //    the receiver itself, for per-receiver scoping).
-            if (!SsfAuthUtil.hasRole(adminAuth.getToken(), configuredRole)) {
+            //    the receiver itself, for per-receiver scoping). Checked
+            //    against the actual role grant, not the token's role
+            //    claims, which protocol mappers can inject.
+            if (!SsfAuthUtil.hasRole(realm, adminAuth.getUser(), adminAuth.getClient(), configuredRole)) {
                 return Response.status(Response.Status.FORBIDDEN)
                         .entity(new SsfErrorRepresentation("emit_role_missing",
                                 "Caller does not hold the configured emit-events role"))

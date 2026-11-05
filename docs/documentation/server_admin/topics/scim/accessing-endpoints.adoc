@@ -67,8 +67,11 @@ The following table summarizes the permissions required for each type of SCIM op
 | Read-only access to individual user resources.
 
 | Search users
-| `query-users`
-| Ability to list and filter user resources.
+| `query-users` and `view-users`
+| `query-users` grants access to the listing and search endpoints. It does not grant read access to the resources
+those endpoints match: every user is returned only if the client can also view it. Grant `view-users` as well, or
+a fine-grained `view` permission on the users the client is allowed to see. A client holding `query-users` alone
+receives an empty `Resources` array.
 
 | Create, update, delete groups
 | `manage-users`
@@ -79,8 +82,11 @@ The following table summarizes the permissions required for each type of SCIM op
 | Read-only access to individual group resources.
 
 | Search groups
-| `query-groups`
-| Ability to list and filter group resources.
+| `query-groups` and `view-users`
+| `query-groups` grants access to the listing and search endpoints. It does not grant read access to the resources
+those endpoints match: every group is returned only if the client can also view it. Grant `view-users` as well, or
+a fine-grained `view` permission on the groups the client is allowed to see. A client holding `query-groups` alone
+receives an empty `Resources` array.
 
 | Access discovery endpoints
 | `query-users` or `query-groups`

@@ -43,6 +43,9 @@ import org.hibernate.annotations.Nationalized;
 @Entity
 public class GroupAttributeEntity {
 
+    public static final int NAME_MAX_LENGTH = 255;
+    public static final int VALUE_MAX_LENGTH = 255;
+
     @Id
     @Column(name="ID", length = 36)
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
@@ -52,10 +55,10 @@ public class GroupAttributeEntity {
     @JoinColumn(name = "GROUP_ID")
     protected GroupEntity group;
 
-    @Column(name = "NAME")
+    @Column(name = "NAME", length = NAME_MAX_LENGTH)
     protected String name;
     @Nationalized
-    @Column(name = "VALUE")
+    @Column(name = "VALUE", length = VALUE_MAX_LENGTH)
     protected String value;
 
     public String getId() {

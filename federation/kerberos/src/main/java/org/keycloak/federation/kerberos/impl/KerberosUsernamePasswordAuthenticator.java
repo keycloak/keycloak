@@ -71,8 +71,14 @@ public class KerberosUsernamePasswordAuthenticator extends KerberosServerSubject
      */
     public boolean isUserAvailable(String username) {
         logger.debugf("Checking existence of user: %s", username);
+        String principal;
         try {
-            String principal = getKerberosPrincipal(username);
+            principal = getKerberosPrincipal(username);
+        } catch (LoginException le) {
+            logger.debugf("User %s is not available: %s", username, le.getMessage());
+            return false;
+        }
+        try {
             loginContext = new LoginContext("does-not-matter", null,
                     createJaasCallbackHandler(principal, "fake-password-which-nobody-has"),
                     createJaasConfiguration());
@@ -209,11 +215,26 @@ public class KerberosUsernamePasswordAuthenticator extends KerberosServerSubject
 
 
     public String getKerberosPrincipal(String username) throws LoginException {
+        String name = username;
+        String realm = config.getKerberosRealm();
         if (username.contains("@")) {
-            return new KerberosPrincipal(username).toString();
-        } else {
-            return username + "@" + config.getKerberosRealm();
+            KerberosPrincipal principal;
+            try {
+                principal = new KerberosPrincipal(username);
+            } catch (IllegalArgumentException e) {
+                throw new LoginException("Kerberos principal not valid");
+            }
+            name = principal.getPrefix();
+            realm = principal.getRealm();
+            if (!config.isAllowedKerberosRealm(realm)) {
+                logger.debugf("Kerberos realm %s of user %s is not the configured realm nor an allowed realm", realm, username);
+                throw new LoginException("Kerberos realm not allowed");
+            }
         }
+        if (name.isEmpty() || name.endsWith("\\")) {
+            throw new LoginException("Kerberos principal not valid");
+        }
+        return name + "@" + realm;
     }
 
 

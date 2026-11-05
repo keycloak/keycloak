@@ -114,7 +114,8 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
     public void testAmrNone() {
         List<String> expectedAmrs = new ArrayList<>();
         oauth.openLoginForm();
-        authenticatePassword("test-user");
+        authenticatePassword("test-user",PASSWORD);
+        
         Tokens tokens = assertLogin(passwordUser.getId());
 
         assertAmr(tokens.idToken, expectedAmrs);
@@ -135,7 +136,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
             add("password");
         }};
         oauth.openLoginForm();
-        authenticatePassword("test-user");
+        authenticatePassword("test-user",PASSWORD);
         Tokens tokens = assertLogin(passwordUser.getId());
 
         assertAmr(tokens.idToken, expectedAmrs);
@@ -158,7 +159,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
             add("totp");
         }};
         oauth.openLoginForm();
-        authenticatePassword("totp-user");
+        authenticatePassword("totp-user",PASSWORD);
         authenticateTOTP();
         String totpUserId = getTotpUserId();
         Tokens tokens = assertLogin(totpUserId);
@@ -179,7 +180,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
 
         List<String> expectedAmrs = new ArrayList<>();
         oauth.openLoginForm();
-        authenticatePassword("test-user");
+        authenticatePassword("test-user",PASSWORD);
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
                 .userId(passwordUser.getId()).getEvent();
@@ -208,7 +209,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
         }};
 
         oauth.openLoginForm();
-        authenticatePassword("test-user");
+        authenticatePassword("test-user",PASSWORD);
         tokens = assertLogin(passwordUser.getId());
         assertAmr(tokens.idToken, expectedAmrs);
         assertAmr(tokens.accessToken, expectedAmrs);
@@ -245,7 +246,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
 
         // login at level 1
         oauth.loginForm().claims(claims(true, "silver")).open();
-        authenticatePassword("totp-user");
+        authenticatePassword("totp-user",PASSWORD); // Merging First branch logic including "PASSWORD"
         tokens = assertLogin(getTotpUserId());
         assertAcr(tokens.idToken, "silver");
         assertAcr(tokens.accessToken, "silver");
@@ -362,12 +363,6 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
         } else {
             managedRealm.admin().flows().updateAuthenticatorConfig(config.getId(), config);
         }
-    }
-
-    private void authenticatePassword(String username) {
-        loginPage.assertCurrent();
-        loginPage.fillLogin(username, AuthenticationMethodReferenceTest.PASSWORD);
-        loginPage.submit();
     }
 
     private void authenticateTOTP() {

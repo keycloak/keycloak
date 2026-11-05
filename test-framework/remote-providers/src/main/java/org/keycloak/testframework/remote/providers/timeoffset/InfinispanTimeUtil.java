@@ -42,7 +42,9 @@ public class InfinispanTimeUtil implements Serializable {
 
     public static void disableTestingTimeService(KeycloakSession session) {
         if (origTimeService == null) {
-            throw new IllegalStateException("Calling revertTimeService when testing TimeService was not set");
+            // Nothing to revert, for example when resetting the offset after the request that enabled it failed
+            logger.warn("Not reverting the testing TimeService as it was not set");
+            return;
         }
 
         origTimeService.run();

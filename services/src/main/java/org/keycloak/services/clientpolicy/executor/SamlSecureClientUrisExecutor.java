@@ -18,8 +18,8 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.net.URI;
-import java.util.Collection;
-import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -35,6 +35,7 @@ import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.SamlAuthnRequestContext;
 import org.keycloak.services.clientpolicy.context.SamlLogoutRequestContext;
 import org.keycloak.utils.StringUtil;
+import org.keycloak.validation.ClientUriField;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -91,10 +92,10 @@ public class SamlSecureClientUrisExecutor implements ClientPolicyExecutorProvide
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
             case REGISTERED -> {
-                confirmSecureUris(((AdminClientRegisteredContext)context).getTargetClient());
+                confirmSecureUris(((AdminClientRegisteredContext)context).getTargetClient(), OAuthErrorException.INVALID_CLIENT_METADATA);
             }
             case UPDATED -> {
-                confirmSecureUris(((AdminClientUpdatedContext)context).getTargetClient());
+                confirmSecureUris(((AdminClientUpdatedContext)context).getTargetClient(), OAuthErrorException.INVALID_CLIENT_METADATA);
             }
             case SAML_AUTHN_REQUEST -> {
                 confirmLoginRedirectUri((SamlAuthnRequestContext) context);
@@ -110,37 +111,31 @@ public class SamlSecureClientUrisExecutor implements ClientPolicyExecutorProvide
         URI uri = request.getAssertionConsumerServiceURL();
         if (uri != null) {
             confirmSecureUri(uri.toString(), "AssertionConsumerServiceURL", OAuthErrorException.INVALID_REQUEST);
-        } else {
-            // use configuration for login, check URLs for login are all secure
-            ClientModel client = context.getClient();
-            confirmSecureUri(client.getManagementUrl(),
-                    "Master SAML Processing URL", OAuthErrorException.INVALID_REQUEST);
-            confirmSecureUri(client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE),
-                    "Assertion Consumer Service POST Binding URL", OAuthErrorException.INVALID_REQUEST);
-            confirmSecureUri(client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE),
-                    "Assertion Consumer Service Redirect Binding URL", OAuthErrorException.INVALID_REQUEST);
-            confirmSecureUri(client.getAttribute(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE),
-                    "Artifact Binding URL", OAuthErrorException.INVALID_REQUEST);
         }
+        confirmSecureUris(context.getClient(), OAuthErrorException.INVALID_REQUEST);
     }
 
     private void confirmLogoutRedirectUri(SamlLogoutRequestContext context) throws ClientPolicyException {
-        // check logout URLs are all secure
-        ClientModel client = context.getClient();
-        confirmSecureUri(client.getManagementUrl(),
-                "Master SAML Processing URL", OAuthErrorException.INVALID_REQUEST);
-        confirmSecureUri(client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE),
-                "Logout Service POST Binding URL", OAuthErrorException.INVALID_REQUEST);
-        confirmSecureUri(client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE),
-                "Logout Service ARTIFACT Binding URL", OAuthErrorException.INVALID_REQUEST);
-        confirmSecureUri(client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE),
-                "Logout Service Redirect Binding URL", OAuthErrorException.INVALID_REQUEST);
-        confirmSecureUri(client.getAttribute(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE),
-                "Logout Service SOAP Binding URL", OAuthErrorException.INVALID_REQUEST);
+        confirmSecureUris(context.getClient(), OAuthErrorException.INVALID_REQUEST);
     }
 
-    private void confirmSecureUri(String uri, String uriType) throws ClientPolicyException {
-        confirmSecureUri(uri, uriType, OAuthErrorException.INVALID_CLIENT_METADATA);
+    private String getUriType(ClientUriField field) {
+        return switch (field) {
+            case ROOT_URL -> "Root URL";
+            case ADMIN_URL -> "Master SAML Processing URL";
+            case BASE_URL -> "Home URL";
+            case REDIRECT_URIS -> "Valid redirect URIs";
+            case SAML_ASSERTION_CONSUMER_URL_POST_URI -> "Assertion Consumer Service POST Binding URL";
+            case SAML_ASSERTION_CONSUMER_URL_REDIRECT_URI -> "Assertion Consumer Service Redirect Binding URL";
+            case SAML_ASSERTION_CONSUMER_URL_ARTIFACT_URI -> "Artifact Binding URL";
+            case SAML_SINGLE_LOGOUT_SERVICE_URL_POST_URI -> "Logout Service POST Binding URL";
+            case SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_URI -> "Logout Service ARTIFACT Binding URL";
+            case SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_URI -> "Logout Service Redirect Binding URL";
+            case SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_URI -> "Logout Service SOAP Binding URL";
+            case SAML_ARTIFACT_RESOLUTION_SERVICE_URL_URI -> "Artifact Resolution Service";
+            case SAML_METADATA_DESCRIPTOR_URL -> "Metadata descriptor URL";
+            default -> field.getName();
+        };
     }
 
     private void confirmSecureUri(String uri, String uriType, String error) throws ClientPolicyException {
@@ -153,53 +148,35 @@ public class SamlSecureClientUrisExecutor implements ClientPolicyExecutorProvide
         }
     }
 
-    private void confirmNoWildcard(String uri, String uriType) throws ClientPolicyException {
+    private void confirmNoWildcard(String uri, String uriType, String error) throws ClientPolicyException {
         if (uri.endsWith("*") && !uri.contains("?") && !uri.contains("#")) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA,
+            throw new ClientPolicyException(error,
                     "Unsecure wildcard redirect " + uri + " for " + uriType);
         }
     }
 
-    private void confirmRedirectUris(Collection<String> uris, String uriType) throws ClientPolicyException {
-        if (uris == null) {
-            return;
-        }
-
-        for (String uri : uris) {
-            confirmSecureUri(uri, uriType);
-            if (!config.isAllowWildcardResirects()) {
-                confirmNoWildcard(uri, uriType);
-            }
-        }
-    }
-
-    private void confirmSecureUris(ClientModel client) throws ClientPolicyException {
+    private void confirmSecureUris(ClientModel client, String error) throws ClientPolicyException {
         if (!SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
             return;
         }
 
-        confirmSecureUri(client.getRootUrl(), "Root URL");
-        confirmSecureUri(client.getManagementUrl(), "Master SAML Processing URL");
-        confirmSecureUri(client.getBaseUrl(), "Home URL");
-
-        confirmRedirectUris(RedirectUtils.resolveValidRedirects(session, client.getRootUrl(), client.getRedirectUris()),
-                "Valid redirect URIs");
-
-        Map<String, String> attrs = Map.of(
-                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
-                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
-                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
-                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
-                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
-                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
-                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
-                SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service"
-        );
-
-        if (client.getAttributes() != null) {
-            for (Map.Entry<String, String> attr : attrs.entrySet()) {
-                confirmSecureUri(client.getAttribute(attr.getKey()), attr.getValue());
+        ClientUriField.validate(client, (field, values) -> {
+            if (field == ClientUriField.REDIRECT_URIS) {
+                values = List.copyOf(RedirectUtils.resolveValidRedirects(session, client.getRootUrl(), new LinkedHashSet<>(values)));
+            } else if (field == ClientUriField.WEB_ORIGINS || field == ClientUriField.POST_LOGOUT_REDIRECT_URIS) {
+                if (field == ClientUriField.POST_LOGOUT_REDIRECT_URIS) {
+                    values = values.stream().filter(value -> !"-".equals(value)).toList();
+                }
+                values = List.copyOf(RedirectUtils.resolveUrlsWithRedirects(session, values, client.getRootUrl(),
+                        ClientUriField.REDIRECT_URIS.getValues(client), field == ClientUriField.WEB_ORIGINS));
             }
-        }
+            String uriType = getUriType(field);
+            for (String value : values) {
+                confirmSecureUri(value, uriType, error);
+                if (field == ClientUriField.REDIRECT_URIS && !config.isAllowWildcardResirects()) {
+                    confirmNoWildcard(value, uriType, error);
+                }
+            }
+        });
     }
 }

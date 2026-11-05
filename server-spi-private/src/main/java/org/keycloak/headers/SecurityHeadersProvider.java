@@ -18,6 +18,7 @@ package org.keycloak.headers;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.provider.Provider;
 
@@ -26,6 +27,14 @@ public interface SecurityHeadersProvider extends Provider {
     SecurityHeadersOptions options();
 
     void addHeaders(ContainerRequestContext requestContext, ContainerResponseContext responseContext);
+
+    /**
+     * Apply browser security headers to a response header map while a session is available.
+     * Respects {@link #options()} (for example {@code allowFrameSrc} for front-channel logout).
+     * Used when an async response is resumed after the session is closed and the security-headers
+     * filter cannot run.
+     */
+    void addHeaders(MultivaluedMap<String, Object> responseHeaders);
 
     @Override
     default void close() {

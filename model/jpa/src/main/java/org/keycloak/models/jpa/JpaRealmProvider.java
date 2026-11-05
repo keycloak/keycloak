@@ -571,7 +571,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
         predicates.add(builder.equal(root.get("parentId"), parent != null ? parent.getId() : GroupEntity.TOP_PARENT_ID));
         predicates.add(builder.equal(root.get("name"), name));
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, null, realm, builder, queryBuilder, root));
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(root.get("name")));
@@ -588,6 +587,11 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     public void moveGroup(RealmModel realm, GroupModel group, GroupModel toParent) {
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;
+        }
+
+        // Enforce the group hierarchy invariant: a group can never be moved under itself or one of its descendants
+        if (toParent != null && KeycloakModelUtils.isDescendantOfOrSelf(toParent, group)) {
+            throw new ModelValidationException("Cannot move group '" + group.getName() + "' under itself or its descendants");
         }
 
         GroupModel previousParent = group.getParent();

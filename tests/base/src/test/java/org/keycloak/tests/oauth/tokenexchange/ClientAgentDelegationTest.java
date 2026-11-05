@@ -554,7 +554,7 @@ public class ClientAgentDelegationTest {
     }
 
     private String getServiceAccountUserId() {
-        return actorApp.admin().getServiceAccountUser().getId();
+        return actorApp.admin().toRepresentation().getServiceAccountUserId();
     }
 
     private void logout(String refreshToken) {

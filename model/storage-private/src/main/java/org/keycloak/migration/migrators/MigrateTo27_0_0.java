@@ -22,9 +22,18 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
+/**
+ * Migrates admin themes from PatternFly 5 (`keycloak.v2`) to PatternFly 6 (`keycloak.v3`),
+ * and imported realms/clients that still use the removed Login v1 theme (`keycloak`)
+ * to the Login v2 theme (`keycloak.v2`). Persisted login themes are migrated by Liquibase.
+ */
 public class MigrateTo27_0_0 extends RealmMigration {
 
     public static final ModelVersion VERSION = new ModelVersion("27.0.0");
+
+    private static final String LOGIN_THEME_ATTRIBUTE = "login_theme";
+    private static final String LEGACY_LOGIN_THEME = "keycloak";
+    private static final String LOGIN_V2_THEME = "keycloak.v2";
 
     @Override
     public ModelVersion getVersion() {
@@ -39,6 +48,8 @@ public class MigrateTo27_0_0 extends RealmMigration {
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         updateAdminTheme(realm);
+        updateLoginTheme(realm);
+        updateClientLoginThemes(realm);
     }
 
     private void updateAdminTheme(RealmModel realm) {
@@ -46,5 +57,17 @@ public class MigrateTo27_0_0 extends RealmMigration {
         if ("keycloak.v2".equals(adminTheme) || "rh-sso.v2".equals(adminTheme)) {
             realm.setAdminTheme("keycloak.v3");
         }
+    }
+
+    private void updateLoginTheme(RealmModel realm) {
+        if (LEGACY_LOGIN_THEME.equals(realm.getLoginTheme())) {
+            realm.setLoginTheme(LOGIN_V2_THEME);
+        }
+    }
+
+    private void updateClientLoginThemes(RealmModel realm) {
+        realm.getClientsStream()
+                .filter(client -> LEGACY_LOGIN_THEME.equals(client.getAttribute(LOGIN_THEME_ATTRIBUTE)))
+                .forEach(client -> client.setAttribute(LOGIN_THEME_ATTRIBUTE, LOGIN_V2_THEME));
     }
 }

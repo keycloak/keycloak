@@ -568,6 +568,41 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testCachedOrganizationIdentityProvidersSessionBound() {
+        String orgaId = realm.admin().organizations().list(-1, -1).get(0).getId();
+        String realmName = realm.getName();
+
+        // 1. In a background job / task, invalidate cache and populate it using jobSession
+        runOnServer.run(session -> {
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            realmCache.getCache().clear();
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), jobSession -> {
+                RealmModel r = jobSession.realms().getRealmByName(realmName);
+                jobSession.getContext().setRealm(r);
+                OrganizationProvider orgProvider = jobSession.getProvider(OrganizationProvider.class);
+                OrganizationModel orga = orgProvider.getById(orgaId);
+                assertNotNull(orga);
+                assertEquals(1, orgProvider.getIdentityProviders(orga).count());
+                // Once the job finishes, context realm is cleared
+                jobSession.getContext().setRealm(null);
+            });
+        });
+
+        // 2. In a subsequent session, retrieve the cached organization and call isEnabled() on its identity providers
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel orga = orgProvider.getById(orgaId);
+            assertNotNull(orga);
+            List<IdentityProviderModel> idps = orga.getIdentityProviders().toList();
+            assertEquals(1, idps.size());
+            for (IdentityProviderModel idp : idps) {
+                assertTrue(idp.isEnabled());
+            }
+        });
+    }
+
+    @Test
     public void testCacheGetIdentityProviders() {
         String orgaId = realm.admin().organizations().list(-1, -1).get(0).getId();
 
@@ -581,9 +616,10 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             assertEquals(1, count);
 
             RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
-            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
-            assertNotNull(cachedOrg);
-            assertEquals(1, cachedOrg.getIdentityProviders().count());
+            RealmModel realm = session.getContext().getRealm();
+            IdentityProviderListQuery query = realmCache.getCache().get(cacheKeyOrgId(realm, orgaId), IdentityProviderListQuery.class);
+            assertNotNull(query);
+            assertEquals(1, query.getIDPs("-1.-1").size());
         });
 
         // 2. Update org domain to trigger invalidation
@@ -603,9 +639,10 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             assertEquals(1, count);
 
             RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
-            CachedOrganization cachedOrg = realmCache.getCache().get(orgaId, CachedOrganization.class);
-            assertNotNull(cachedOrg);
-            assertEquals(1, cachedOrg.getIdentityProviders().count());
+            RealmModel realm = session.getContext().getRealm();
+            IdentityProviderListQuery query = realmCache.getCache().get(cacheKeyOrgId(realm, orgaId), IdentityProviderListQuery.class);
+            assertNotNull(query);
+            assertEquals(1, query.getIDPs("-1.-1").size());
         });
     }
 

@@ -255,6 +255,9 @@ public class GroupResource {
                     throw new NotFoundException("Could not find child by id");
                 }
                 auth.groups().requireManage(child);
+                if (KeycloakModelUtils.isDescendantOfOrSelf(group, child)) {
+                    throw ErrorResponse.error("Cannot move group '" + child.getName() + "' under itself or its descendants", Response.Status.BAD_REQUEST);
+                }
                 if (!Objects.equals(child.getParentId(), group.getId())) {
                     realm.moveGroup(child, group);
                 }

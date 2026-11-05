@@ -21,9 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.support.EntityManagers;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 
 /**
  * This class manages the PartialImport handlers.
@@ -65,7 +69,24 @@ public class PartialImportManager {
             results.addAllResults(partialImport.doImport(rep, realm, session));
         }
 
+        ensureServiceAccountsExist(results);
+
         return results;
+    }
+
+    private void ensureServiceAccountsExist(PartialImportResults results) {
+        ClientManager clientManager = new ClientManager(new RealmManager(session));
+        for (PartialImportResult result : results.getResults()) {
+            if (result.getResourceType() != ResourceType.CLIENT
+                    || (result.getAction() != Action.ADDED && result.getAction() != Action.OVERWRITTEN)) {
+                continue;
+            }
+            ClientRepresentation clientRep = (ClientRepresentation) result.getRepresentation();
+            ClientModel client = realm.getClientByClientId(clientRep.getClientId());
+            if (client != null && client.isServiceAccountsEnabled() && session.users().getServiceAccount(client) == null) {
+                clientManager.enableServiceAccount(client);
+            }
+        }
     }
 
 }
