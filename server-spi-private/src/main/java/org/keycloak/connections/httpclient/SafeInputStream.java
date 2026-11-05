@@ -20,6 +20,9 @@ package org.keycloak.connections.httpclient;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.checkerframework.checker.calledmethods.qual.EnsuresCalledMethods;
+import org.checkerframework.checker.mustcall.qual.Owning;
+
 /**
  * Limit the amount of data read to prevent a {@link OutOfMemoryError}.
  *
@@ -28,10 +31,10 @@ import java.io.InputStream;
 public class SafeInputStream extends InputStream {
 
     private long bytesConsumed;
-    private final InputStream delegate;
+    @Owning private final InputStream delegate;
     private final long maxBytesToConsume;
 
-    public SafeInputStream(InputStream delegate, long maxBytesToConsume) {
+    public SafeInputStream(@Owning InputStream delegate, long maxBytesToConsume) {
         this.delegate = delegate;
         this.maxBytesToConsume = maxBytesToConsume;
     }
@@ -63,6 +66,7 @@ public class SafeInputStream extends InputStream {
     }
 
     @Override
+    @EnsuresCalledMethods(value = "delegate", methods = "close")
     public void close() throws IOException {
         delegate.close();
     }

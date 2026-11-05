@@ -394,9 +394,10 @@ public class LDAPEmbeddedServer {
         }
 
         // Find LDIF file on filesystem or classpath ( if it's like classpath:ldap/users.ldif )
-        InputStream is = FindFile.findFile(ldifFile);
-
-        final String ldifContent = StrSubstitutor.replace(StreamUtil.readString(is), map);
+        final String ldifContent;
+        try (InputStream is = FindFile.findFile(ldifFile)) {
+            ldifContent = StrSubstitutor.replace(StreamUtil.readString(is), map);
+        }
         log.info("Content of LDIF: " + ldifContent);
 
         importLdifContent(directoryService, ldifContent);

@@ -17,6 +17,7 @@
 
 package org.keycloak.theme;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,11 @@ public class ClasspathThemeProviderFactory implements ThemeProviderFactory {
 
     public ClasspathThemeProviderFactory(String id, ClassLoader classLoader) {
         this.id = id;
-        loadThemes(classLoader, classLoader.getResourceAsStream(KEYCLOAK_THEMES_JSON));
+        try (InputStream is = classLoader.getResourceAsStream(KEYCLOAK_THEMES_JSON)) {
+            loadThemes(classLoader, is);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load themes", e);
+        }
     }
 
     public static class ThemeRepresentation {

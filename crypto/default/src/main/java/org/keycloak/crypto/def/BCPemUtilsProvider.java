@@ -52,12 +52,11 @@ public class BCPemUtilsProvider extends PemUtilsProvider {
 
         try {
             StringWriter writer = new StringWriter();
-            JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
-            pemWriter.writeObject(obj);
-            pemWriter.flush();
-            pemWriter.close();
-            String s = writer.toString();
-            return removeBeginEnd(s);
+            try (JcaPEMWriter pemWriter = new JcaPEMWriter(writer)) {
+                pemWriter.writeObject(obj);
+                pemWriter.flush();
+            }
+            return removeBeginEnd(writer.toString());
         } catch (Exception e) {
             throw new PemException(e);
         }
