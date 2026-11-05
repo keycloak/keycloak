@@ -49,7 +49,7 @@ class YugabyteTestDatabase extends AbstractContainerTestDatabase {
         String ysqlsh = "PGPASSWORD='" + getPassword() + "' ysqlsh -h \"$(hostname)\" -U " + getUsername() + " -d " + DEFAULT_DATABASE;
         return List.of("bash", "-c",
                 ysqlsh + " -tAc \"SELECT 1 FROM pg_database WHERE datname = '" + getDatabase() + "'\" | grep -q 1"
-                        + " || " + ysqlsh + " -c 'CREATE DATABASE " + getDatabase() + " WITH COLOCATION = true'");
+                        + " || " + ysqlsh + " -c 'CREATE DATABASE \"" + getDatabase() + "\" WITH COLOCATION = true'");
     }
 
     @Override

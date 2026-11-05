@@ -234,6 +234,12 @@ public class DatabaseIndexChecker implements Runnable {
                         logger.infov("Dropping invalid index {0} before recreating", qualifiedIndex);
                         try (var stmt = connection.createStatement()) {
                             stmt.execute("DROP INDEX CONCURRENTLY IF EXISTS " + qualifiedIndex);
+                        } catch (SQLException e) {
+                            // PostgreSQL-compatible databases like YugabyteDB don't support DROP INDEX CONCURRENTLY.
+                            logger.debugv(e, "DROP INDEX CONCURRENTLY failed for {0}, retrying without CONCURRENTLY", qualifiedIndex);
+                            try (var stmt = connection.createStatement()) {
+                                stmt.execute("DROP INDEX IF EXISTS " + qualifiedIndex);
+                            }
                         }
                     }
                     String sql = addOnlineSyntax(info.sql, isPostgres, isOracle, isMssql);
