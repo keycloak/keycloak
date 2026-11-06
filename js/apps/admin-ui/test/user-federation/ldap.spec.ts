@@ -64,6 +64,7 @@ test.describe.serial("User Federation LDAP tests", () => {
   const realmName = `user-federation-ldap-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

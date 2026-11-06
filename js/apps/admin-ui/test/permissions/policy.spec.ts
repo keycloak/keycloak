@@ -18,6 +18,7 @@ test.describe.serial("Policy section tests", () => {
   test.beforeAll(() =>
     adminClient.createRealm(realmName, { adminPermissionsEnabled: true }),
   );
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

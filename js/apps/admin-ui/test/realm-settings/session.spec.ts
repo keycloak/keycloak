@@ -19,6 +19,7 @@ test.describe.serial("Sessions", () => {
   const realmName = `sessions-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
@@ -45,6 +46,7 @@ test.describe.serial("Sessions", () => {
     await assertSsoSessionIdleInput(page, "5");
     await assertSsoSessionMaxInput(page, "2");
   });
+
   test("Add session data when Remember Me is enabled", async ({ page }) => {
     //Enable Remember Me and save realm
     await page.getByTestId("rs-login-tab").click();

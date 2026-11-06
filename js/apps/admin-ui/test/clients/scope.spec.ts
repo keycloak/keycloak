@@ -141,6 +141,7 @@ test.describe.serial("Client details - Client scopes subtab", () => {
   });
 
   const itemName = clientScopeName + 0;
+
   test(`Should change item AssignedType to default from search bar`, async ({
     page,
   }) => {
