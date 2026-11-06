@@ -90,6 +90,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.ui.extend.UiScriptProviderFactory;
 import org.keycloak.theme.Theme;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -227,6 +228,18 @@ public class ServerInfoAdminResource {
                         List<ProviderConfigProperty> configClientProperties = ((ConfiguredPerClientProvider) pi).getConfigPropertiesPerClient();
                         rep.setClientProperties(ModelToRepresentation.toRepresentation(configClientProperties));
                     }
+                    List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
+                    if (reps == null) {
+                        reps = new LinkedList<>();
+                        info.getComponentTypes().put(spi.getProviderClass().getName(), reps);
+                    }
+                    reps.add(rep);
+                } else if (pi instanceof UiScriptProviderFactory scriptFactory) {
+                    ComponentTypeRepresentation rep = new ComponentTypeRepresentation();
+                    rep.setId(pi.getId());
+                    Map<String, Object> metadata = new HashMap<>();
+                    metadata.put("url", scriptFactory.getUrl());
+                    rep.setMetadata(metadata);
                     List<ComponentTypeRepresentation> reps = info.getComponentTypes().get(spi.getProviderClass().getName());
                     if (reps == null) {
                         reps = new LinkedList<>();
