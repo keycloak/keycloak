@@ -74,7 +74,7 @@ import { toCreateRole } from "./routes/NewRole";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
 import { ServiceAccount } from "./service-account/ServiceAccount";
-import { getProtocolName, isRealmClient } from "./utils";
+import { getProtocolName, isRealmClient, omitClientScopes } from "./utils";
 import { UserEvents } from "../events/UserEvents";
 import { useIsAdminPermissionsClient } from "../utils/useIsAdminPermissionsClient";
 import { AdminEvents } from "../events/AdminEvents";
@@ -419,7 +419,10 @@ export default function ClientDetails() {
 
       newClient.clientId = newClient.clientId?.trim();
 
-      await adminClient.clients.update({ id: clientId }, newClient);
+      await adminClient.clients.update(
+        { id: clientId },
+        omitClientScopes(newClient),
+      );
       setupForm(newClient);
       setClient(newClient);
       addAlert(t(messageKey), AlertVariant.success);

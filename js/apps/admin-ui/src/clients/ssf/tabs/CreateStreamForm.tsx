@@ -36,6 +36,7 @@ import {
   DELIVERY_METHOD_PUSH_URI,
   isValidPushEndpointUrl,
 } from "../utils";
+import { omitClientScopes } from "../../utils";
 
 export type CreateStreamFormFields = {
   profile: "SSF_1_0" | "SSE_CAEP";
@@ -120,13 +121,13 @@ const CreateStreamFormBody = ({
       if (profile !== savedProfile) {
         await adminClient.clients.update(
           { id: client.id },
-          {
+          omitClientScopes({
             ...client,
             attributes: {
               ...(client.attributes ?? {}),
               "ssf.profile": profile,
             },
-          },
+          }),
         );
       }
 
