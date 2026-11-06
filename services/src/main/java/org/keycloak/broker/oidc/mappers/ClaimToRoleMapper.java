@@ -30,6 +30,7 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.social.google.GoogleIdentityProviderFactory;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -37,7 +38,11 @@ import org.keycloak.provider.ProviderConfigProperty;
  */
 public class ClaimToRoleMapper extends AbstractClaimToRoleMapper {
 
-    public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
+    public static final String[] COMPATIBLE_PROVIDERS = {
+            KeycloakOIDCIdentityProviderFactory.PROVIDER_ID,
+            OIDCIdentityProviderFactory.PROVIDER_ID,
+            GoogleIdentityProviderFactory.PROVIDER_ID
+    };
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
