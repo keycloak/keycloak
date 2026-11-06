@@ -36,8 +36,6 @@ public class IdentityProviderWorkflowConditionProvider implements WorkflowCondit
 
     @Override
     public boolean evaluate(WorkflowExecutionContext context) {
-        validate();
-
         RealmModel realm = session.getContext().getRealm();
         UserModel user = session.users().getUserById(realm, context.getResourceId());
         if (user == null) {
