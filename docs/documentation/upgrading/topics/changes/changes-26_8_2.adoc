@@ -48,7 +48,7 @@ registration flow requires and add only those specific mapper types to BOTH the 
 To align with the OAuth 2.0 security recommendations (RFC 9700), the Admin REST API now verifies that bearer access tokens were issued specifically for the Admin API.
 Previously, any access token was accepted regardless of its intended audience, as long as its subject had administrative access to the target realm, whether granted through realm admin roles or Fine-Grained Admin Permissions.
 
-A new built-in client scope, `kc-admin-api`, provides this capability. The scope adds the realm's Admin REST API base URL (for example, `https://auth.example.com/admin/realms/my-realm`, resolved from the configured frontend URL)
+A new built-in client scope, `kc-admin-api`, provides this capability. The scope adds the realm's Admin REST API base URL (for example, `+https://auth.example.com/admin/realms/my-realm+`, resolved from the configured frontend URL)
 as an audience to the tokens issued for clients that have the scope.
 The Admin REST API now requires the token to both carry this audience and include the `kc-admin-api` scope, so access is tied to this specific built-in scope rather than to any token that happens to carry a matching audience.
 On upgrade, this client scope is created in every realm and assigned as a default client scope to the built-in clients used to access the Admin API (`admin-cli` and `security-admin-console`), so out-of-the-box access keeps working.
