@@ -450,6 +450,22 @@ public class AuthenticationManager {
         return logoutAuthSession;
     }
 
+    /**
+     * Notifies backchannel clients while an existing browser logout owns session cleanup.
+     * Retains the logout authentication session, including the application's redirect and client logout state.
+     */
+    public static BackchannelLogoutResponse backchannelLogoutClientsDuringBrowserLogout(KeycloakSession session, RealmModel realm,
+            UserSessionModel userSession, UriInfo uriInfo, HttpHeaders headers) {
+        AuthenticationSessionModel logoutAuthSession = createOrJoinLogoutSession(session, realm,
+                new AuthenticationSessionManager(session), userSession, false, false);
+        BackchannelLogoutResponse response = backchannelLogoutAll(session, realm, userSession, logoutAuthSession,
+                uriInfo, headers, false);
+        // The session remains LOGGING_OUT until browser completion; downstream failures are
+        // represented separately in the client responses.
+        response.setLocalLogoutSucceeded(true);
+        return response;
+    }
+
     private static BackchannelLogoutResponse backchannelLogoutAll(KeycloakSession session, RealmModel realm,
             UserSessionModel userSession, AuthenticationSessionModel logoutAuthSession, UriInfo uriInfo,
             HttpHeaders headers, boolean logoutBroker) {

@@ -706,8 +706,18 @@ public class LogoutEndpoint {
     }
 
     private BackchannelLogoutResponse logoutUserSession(UserSessionModel userSession) {
-        BackchannelLogoutResponse backchannelLogoutResponse = AuthenticationManager.backchannelLogout(session, realm,
-                userSession, session.getContext().getUri(), clientConnection, headers, false);
+        BackchannelLogoutResponse backchannelLogoutResponse;
+        if (userSession.getState() == LOGGING_OUT) {
+            // Notify downstream clients now, while retaining the state needed by the browser callback.
+            backchannelLogoutResponse = AuthenticationManager.backchannelLogoutClientsDuringBrowserLogout(session, realm,
+                    userSession, session.getContext().getUri(), headers);
+        } else if (userSession.getState() == LOGGED_OUT) {
+            backchannelLogoutResponse = new BackchannelLogoutResponse();
+            backchannelLogoutResponse.setLocalLogoutSucceeded(true);
+        } else {
+            backchannelLogoutResponse = AuthenticationManager.backchannelLogout(session, realm,
+                    userSession, session.getContext().getUri(), clientConnection, headers, false);
+        }
 
         if (backchannelLogoutResponse.getLocalLogoutSucceeded()) {
             event.user(userSession.getUser())
