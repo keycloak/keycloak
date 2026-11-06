@@ -468,3 +468,19 @@ Communication between nodes is encrypted using TLS by default.
 Remove the `cache-stack` setting from your configuration to use the default `jdbc-ping` stack.
 If your cache configuration XML explicitly selects another transport stack, remove that selection as well.
 Remove any discovery settings specific to the previous stack, such as `jgroups.dns.query`.
+
+=== Offline session cache sizing options removed
+// https://github.com/keycloak/keycloak/issues/40981
+
+The following configuration options have been removed:
+
+* `cache-embedded-offline-sessions-max-count`
+* `cache-embedded-offline-client-sessions-max-count`
+* `--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`
+* `--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override`
+
+These options were deprecated in Keycloak 26.4 and were only relevant when using volatile user sessions (disabled persistent sessions).
+Since the `persistent-user-sessions` feature is now mandatory and volatile sessions have been removed in Keycloak 27, these configuration options are no longer applicable.
+
+If you have these options in your configuration, remove them before upgrading to Keycloak 27.
+With persistent user sessions, offline sessions are managed in the database and do not require memory-based cache sizing configuration.
