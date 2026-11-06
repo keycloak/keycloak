@@ -29,6 +29,8 @@ public class CredentialRepresentation {
     public static final String TOTP = "totp";
     public static final String HOTP = "hotp";
     public static final String KERBEROS = "kerberos";
+    public static final String OTP = "otp";
+    public static final String RECOVERY_AUTHN_CODES = "recovery-authn-codes";
 
     private String id;
     private String type;
