@@ -15,19 +15,15 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc;
+package org.keycloak.tests.oidc;
 
 import java.io.IOException;
 
-import jakarta.ws.rs.core.Response;
-
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
-import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.events.EventType;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.NonceBackwardsCompatibleMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
@@ -38,34 +34,44 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ProtocolMapperBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
  * @author rmartinc
  */
-public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class NonceBackwardsCompatibleMapperTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm(config = NonceBackwardsCompatibleMapperTestRealmConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedRealm managedRealm;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-    }
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectEvents
+    Events events;
 
     @Test
     public void testNonceWithoutMapper() throws IOException {
@@ -74,55 +80,36 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testNonceWithMapper() throws IOException {
-        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        String mapperId = createNonceMapper(testApp);
-        try {
-            testNonce(true, false);
-        } finally {
-            testApp.getProtocolMappers().delete(mapperId);
-        }
+        createNonceMapper();
+        testNonce(true, false);
     }
 
     @Test
     public void testOfflineSessionNonceWithMapper() throws IOException {
-        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        String mapperId = createNonceMapper(testApp);
-        try {
-            testNonce(true, true);
-        } finally {
-            testApp.getProtocolMappers().delete(mapperId);
-        }
+        createNonceMapper();
+        testNonce(true, true);
     }
 
     @Test
     public void testImplicitFlowWithoutMapper() throws Exception {
-        try (ClientAttributeUpdater client = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "test-app")
-                .setImplicitFlowEnabled(true)
-                .update()) {
-            testNonceImplicit(false);
-        }
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.implicitFlowEnabled(true));
+        testNonceImplicit(false);
     }
 
     @Test
     public void testImplicitFlowWithMapper() throws Exception {
-        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        String mapperId = createNonceMapper(testApp);
-        try (ClientAttributeUpdater client = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "test-app")
-                .setImplicitFlowEnabled(true)
-                .update()) {
-            testNonceImplicit(true);
-        } finally {
-            testApp.getProtocolMappers().delete(mapperId);
-        }
+        createNonceMapper();
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.implicitFlowEnabled(true));
+        testNonceImplicit(true);
     }
 
-    private String createNonceMapper(ClientResource testApp) {
-        ProtocolMapperModel nonceMapper = NonceBackwardsCompatibleMapper.create("nonce");
-        ProtocolMapperRepresentation nonceMapperRep = ModelToRepresentation.toRepresentation(nonceMapper);
-        try (Response res = testApp.getProtocolMappers().createMapper(nonceMapperRep)) {
-            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
-            return ApiUtil.getCreatedId(res);
-        }
+    private void createNonceMapper() {
+        ProtocolMapperRepresentation nonceMapper = ProtocolMapperBuilder.create()
+                .name("nonce")
+                .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .protocolMapper(NonceBackwardsCompatibleMapper.PROVIDER_ID)
+                .build();
+        ApiUtil.getCreatedId(oauth.clientResource().getProtocolMappers().createMapper(nonceMapper));
     }
 
     private void checkNonce(String expectedNonce, String nonce, boolean expected) {
@@ -134,7 +121,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
     }
 
     private void testIntrospection(String accessToken, String expectedNonce, boolean expected) throws IOException {
-        JsonNode nonce = oauth.client("test-app", "password").doIntrospectionAccessTokenRequest(accessToken).asJsonNode().get(OIDCLoginProtocol.NONCE_PARAM);
+        JsonNode nonce = oauth.doIntrospectionAccessTokenRequest(accessToken).asJsonNode().get(OIDCLoginProtocol.NONCE_PARAM);
         checkNonce(expectedNonce, nonce != null? nonce.asText() : null, expected);
     }
 
@@ -142,7 +129,8 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         String nonce = KeycloakModelUtils.generateId();
         oauth.responseMode(OIDCResponseMode.JWT.value());
         oauth.responseType(OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN);
-        AuthorizationEndpointResponse response = oauth.loginForm().nonce(nonce).doLogin("test-user@localhost", "password");
+        AuthorizationEndpointResponse response = oauth.loginForm().nonce(nonce)
+                .doLogin(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
 
         Assertions.assertTrue(response.isRedirected());
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(response.getResponse());
@@ -163,7 +151,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         if (offlineSession) {
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         }
-        oauth.loginForm().nonce(nonce).doLogin("test-user@localhost", "password");
+        oauth.loginForm().nonce(nonce).doLogin(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String code = oauth.parseLoginResponse().getCode();
@@ -197,5 +185,18 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
         checkNonce(nonce, refreshToken.getNonce(), mapper);
 
         testIntrospection(response.getAccessToken(), nonce, mapper);
+    }
+
+    public static class NonceBackwardsCompatibleMapperTestRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.users(UserBuilder.create(BasicRealmWithUserConfig.USERNAME)
+                    .password(BasicRealmWithUserConfig.PASSWORD)
+                    .email("basic@localhost")
+                    .name("First", "Last")
+                    .realmRoles(OAuth2Constants.OFFLINE_ACCESS))
+                    .enabledEventTypes(EventType.LOGIN.name(), EventType.CODE_TO_TOKEN.name(), EventType.REFRESH_TOKEN.name());
+        }
     }
 }
