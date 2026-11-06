@@ -525,6 +525,7 @@ public class RealmRepresentation {
     }
 
     @Schema(name = "oauth2DeviceCodeLifespan")
+    @JsonProperty("oauth2DeviceCodeLifespan")
     public Integer getOAuth2DeviceCodeLifespan() {
         return oauth2DeviceCodeLifespan;
     }
@@ -534,6 +535,7 @@ public class RealmRepresentation {
     }
 
     @Schema(name = "oauth2DevicePollingInterval")
+    @JsonProperty("oauth2DevicePollingInterval")
     public Integer getOAuth2DevicePollingInterval() {
         return oauth2DevicePollingInterval;
     }

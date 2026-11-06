@@ -1,4 +1,4 @@
-package org.keycloak.admin.client.jackson3;
+package org.keycloak.json.jackson3;
 
 import java.util.ArrayList;
 
@@ -7,7 +7,7 @@ import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ValueDeserializer;
 
-class StringOrArrayDeserializer3 extends ValueDeserializer<Object> {
+public class StringOrArrayDeserializer3 extends ValueDeserializer<Object> {
 
     @Override
     public Object deserialize(JsonParser p, DeserializationContext ctxt) {
@@ -15,11 +15,11 @@ class StringOrArrayDeserializer3 extends ValueDeserializer<Object> {
         if (jsonNode.isArray()) {
             ArrayList<String> a = new ArrayList<>(1);
             for (JsonNode child : jsonNode) {
-                a.add(child.stringValue());
+                a.add(child.isString() ? child.stringValue() : null);
             }
             return a.toArray(new String[0]);
         } else {
-            return new String[] { jsonNode.stringValue() };
+            return new String[] { jsonNode.isString() ? jsonNode.stringValue() : null };
         }
     }
 }

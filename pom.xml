@@ -312,6 +312,7 @@
         <module>boms</module>
         <module>common</module>
         <module>core</module>
+        <module>core-jackson3</module>
         <module>crypto</module>
         <module>dependencies</module>
         <module>server-spi</module>
@@ -924,6 +925,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-core-jackson3</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

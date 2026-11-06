@@ -24,6 +24,10 @@
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core-jackson3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -41,6 +45,24 @@
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-client</artifactId>
             <version>${resteasy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core-jackson3</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <!-- Required only by the shared wire-contract parity tests. -->
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
