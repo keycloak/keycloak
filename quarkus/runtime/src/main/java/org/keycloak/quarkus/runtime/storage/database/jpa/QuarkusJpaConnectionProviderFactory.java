@@ -110,6 +110,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
         checkMySQLWaitTimeout();
         checkMySQLBinlogFormat();
+        checkMySQLInvisiblePrimaryKey();
         checkGaleraSyncWait();
         checkMSSQLIsolationLevel();
         checkUtf8Encoding();
@@ -384,6 +385,25 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             }
         } catch (SQLException e) {
             logger.warnf(e, "Unable to validate %s 'binlog_format' due to database exception", vendor);
+        }
+    }
+
+    private void checkMySQLInvisiblePrimaryKey() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (Database.Vendor.MYSQL != vendor) {
+            return;
+        }
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SHOW VARIABLES LIKE 'sql_generate_invisible_primary_key'")) {
+            if (rs.next() && "ON".equalsIgnoreCase(rs.getString(2))) {
+                logger.errorf("%s 'sql_generate_invisible_primary_key' is set to 'ON', which makes the database schema initialization and migrations fail with 'Multiple primary key defined'. "
+                        + "Set it to 'OFF' in the MySQL server configuration before installing or upgrading Keycloak.", vendor);
+            }
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate %s 'sql_generate_invisible_primary_key' due to database exception", vendor);
         }
     }
 

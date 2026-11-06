@@ -51,6 +51,7 @@ public abstract class BasicDatabaseTest {
     protected void testSuccessful(CLIResult cliResult) {
         cliResult.assertStarted();
         cliResult.assertNoMessage("charset encoding");
+        cliResult.assertNoMessage("sql_generate_invisible_primary_key");
     }
 
     @Test
