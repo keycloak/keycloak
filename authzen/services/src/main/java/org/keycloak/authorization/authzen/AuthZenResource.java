@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -57,6 +56,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.OAuth2Error;
 
 public class AuthZenResource {
 
@@ -131,14 +131,27 @@ public class AuthZenResource {
     }
 
     private AccessToken authenticateClient() {
+        // OAuth2Error attaches the WWW-Authenticate challenge (RFC 6750 section 3) to the response itself;
+        // a plain NotAuthorizedException would lose it in the error handler
+        OAuth2Error error = new OAuth2Error().json(false)
+                .session(session)
+                .realm(session.getContext().getRealm());
+        AppAuthManager.AuthHeader authHeader = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(
+                session.getContext().getRequestHeaders());
+        if (authHeader == null) {
+            // No credentials or an unsupported scheme: a challenge without an error code (RFC 6750 section 3.1)
+            throw error.unauthorized();
+        }
+        error.authScheme(authHeader.getScheme());
+
         AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
         if (authResult == null) {
-            throw new NotAuthorizedException("Bearer");
+            throw error.invalidToken("Token verification failed");
         }
         // The evaluation of policies must only be called from a confidential client with its service account user.
         // Only with that, we ensure that reveal an authorization result to the appropriate caller.
         if (!authResult.client().getId().equals(authResult.user().getServiceAccountClientLink()) || !Objects.equals(authResult.session().getAuthMethod(), ServiceAccountConstants.CLIENT_AUTH)) {
-            throw new NotAuthorizedException("Bearer");
+            throw error.invalidToken("Token not issued to a client via client credentials");
         }
         return authResult.token();
     }

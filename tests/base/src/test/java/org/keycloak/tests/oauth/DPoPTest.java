@@ -297,6 +297,24 @@ public class DPoPTest {
     }
 
     @Test
+    public void testDPoPAuthorizationCaseSensitivityOnUserInfoChallenge() throws Exception {
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
+
+        // Without a DPoP proof; the lower-case scheme must still get a DPoP challenge
+        get = new HttpGet(oauth.getEndpoints().getUserInfo());
+        get.addHeader("Accept", MediaType.APPLICATION_JSON);
+        String authorization = "dpop" + " " + response.getAccessToken();
+        get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
+
+        UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
+        assertEquals(401, userInfoResponse.getStatusCode());
+        testWWWAuthenticateHeaderError(userInfoResponse);
+
+        oauth.doLogout(response.getRefreshToken());
+    }
+
+    @Test
     public void testDPoPByPublicClientWithDpopJkt() throws Exception {
         // use pre-computed EC key
 
