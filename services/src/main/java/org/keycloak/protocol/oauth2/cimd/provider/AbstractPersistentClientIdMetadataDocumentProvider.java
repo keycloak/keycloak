@@ -3,10 +3,7 @@ package org.keycloak.protocol.oauth2.cimd.provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.Time;
@@ -17,8 +14,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientRegisterContext;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientRegisteredContext;
@@ -158,37 +153,17 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
             session.clientPolicy().triggerOnEvent(new CimdClientRegisterContext(clientRep));
             ClientModel clientModel = ClientManager.createClient(session, realm, clientRep);
 
-            if (clientRep.getDefaultRoles() != null) {
-                for (String name : clientRep.getDefaultRoles()) {
-                    addDefaultRole(clientModel, name);
-                }
-            }
-
             if (clientModel.isServiceAccountsEnabled()) {
                 new ClientManager(new RealmManager(session)).enableServiceAccount(clientModel);
-            }
-
-            if (Boolean.TRUE.equals(clientRep.getAuthorizationServicesEnabled())) {
-                RepresentationToModel.createResourceServer(clientModel, session, true);
             }
 
             session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new CimdClientRegisteredContext(clientModel));
 
-            clientRep = ModelToRepresentation.toRepresentation(clientModel, session);
+            event.client(clientModel.getClientId()).success();
 
-            clientRep.setDirectAccessGrantsEnabled(clientModel.isDirectAccessGrantsEnabled());
-
-            Stream<String> defaultRolesNames = getDefaultRolesStream(clientModel);
-            if (defaultRolesNames != null) {
-                clientRep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
-            }
-
-            event.client(clientRep.getClientId()).success();
-
-            clientModel = realm.getClientByClientId(clientRep.getClientId());
+            clientModel = realm.getClientByClientId(clientModel.getClientId());
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());
-            updateClientRepWithProtocolMappers(clientModel, clientRep);
 
             validateClient(clientModel, clientOIDC, true);
 
@@ -243,21 +218,13 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
             RepresentationToModel.updateClientProtocolMappers(clientRep, clientModel);
             RepresentationToModel.updateClientScopes(clientRep, clientModel);
 
-            clientRep = ModelToRepresentation.toRepresentation(clientModel, session);
-
-            Stream<String> defaultRolesNames = getDefaultRolesStream(clientModel);
-            if (defaultRolesNames != null) {
-                clientRep.setDefaultRoles(defaultRolesNames.toArray(String[]::new));
-            }
-
-            event.client(clientRep.getClientId()).success();
+            event.client(clientModel.getClientId()).success();
 
             session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new CimdClientUpdatedContext(clientModel));
 
-            clientModel = realm.getClientByClientId(clientRep.getClientId());
+            clientModel = realm.getClientByClientId(clientModel.getClientId());
             updatePairwiseSubMappers(clientModel, SubjectType.parse(clientOIDC.getSubjectType()), clientOIDC.getSectorIdentifierUri());
-            updateClientRepWithProtocolMappers(clientModel, clientRep);
 
             validateClient(clientModel, clientOIDC, false);
 
@@ -272,27 +239,6 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
 
     private static ClientPolicyException invalidClientMetadata(String errorDetail) {
         return new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, errorDetail);
-    }
-
-    // the same as AbstractClientRegistrationProvider.addDefaultRole
-    private void addDefaultRole(ClientModel client, String name) {
-        client.getRealm().getDefaultRole().addCompositeRole(getOrAddRoleId(client, name));
-    }
-
-    // the same as AbstractClientRegistrationProvider.getOrAddRoleId
-    private RoleModel getOrAddRoleId(ClientModel client, String name) {
-        RoleModel role = client.getRole(name);
-        if (role == null) {
-            role = client.addRole(name);
-        }
-        return role;
-    }
-
-    // the same as AbstractClientRegistrationProvider.getDefaultRolesStream
-    private Stream<String> getDefaultRolesStream(ClientModel client) {
-        return client.getRealm().getDefaultRole().getCompositesStream()
-                .filter(role -> role.isClientRole() && Objects.equals(role.getContainerId(), client.getId()))
-                .map(RoleModel::getName);
     }
 
     // the same as OIDCClientRegistrationProvider.updatePairwiseSubMappers
@@ -327,13 +273,6 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
                     .toList()
                     .forEach(clientModel::removeProtocolMapper);
         }
-    }
-
-    // the same as OIDCClientRegistrationProvider.updateClientRepWithProtocolMappers
-    private void updateClientRepWithProtocolMappers(ClientModel clientModel, ClientRepresentation rep) {
-        List<ProtocolMapperRepresentation> mappings =
-                clientModel.getProtocolMappersStream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
-        rep.setProtocolMappers(mappings);
     }
 
     // the same as AbstractClientRegistrationProvider.updateClientRepWithProtocolMappers except for error handling
