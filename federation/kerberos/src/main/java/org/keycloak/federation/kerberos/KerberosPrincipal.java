@@ -26,18 +26,51 @@ import java.util.Locale;
  */
 public class KerberosPrincipal {
 
+    private static final char REALM_SEPARATOR = '@';
+    private static final char ESCAPE_CHAR = '\\';
+    private static final int INVALID_SEPARATOR_INDEX = -1;
+
     // Full principal name like "john@KEYCLOAK.ORG"
     private final String kerberosPrincipal;
     private final String prefix; // Something like "john"
     private final String realm; // Something like "KEYCLOAK.ORG"
     public KerberosPrincipal(String kerberosPrincipal) {
-        String[] parts = kerberosPrincipal.split("@");
-        if (parts.length != 2) {
+        int separatorIndex = findRealmSeparatorIndex(kerberosPrincipal);
+        if (separatorIndex == INVALID_SEPARATOR_INDEX || separatorIndex == kerberosPrincipal.length() - 1) {
             throw new IllegalArgumentException("Kerberos principal '" + kerberosPrincipal + "' not valid");
         }
-        this.prefix = parts[0];
-        this.realm = parts[1].toUpperCase(Locale.ROOT);
-        this.kerberosPrincipal = prefix + "@" + realm;
+        this.prefix = kerberosPrincipal.substring(0, separatorIndex);
+        this.realm = kerberosPrincipal.substring(separatorIndex + 1).toUpperCase(Locale.ROOT);
+        this.kerberosPrincipal = prefix + REALM_SEPARATOR + realm;
+    }
+
+    /**
+     * Finds the index of the single unescaped '{@code @}' separating the principal name from the
+     * realm. An '{@code @}' inside the principal name is escaped as "{@code \@}" (RFC 1964, section
+     * 2.1.1) and is not treated as the realm separator. Returns {@code -1} when the principal does
+     * not contain exactly one unescaped '{@code @}', i.e. it is not a valid {@code name@REALM}.
+     */
+    private static int findRealmSeparatorIndex(String principal) {
+        int separatorIndex = INVALID_SEPARATOR_INDEX;
+        for (int i = 0; i < principal.length(); i++) {
+            if (principal.charAt(i) == REALM_SEPARATOR && !isEscaped(principal, i)) {
+                if (separatorIndex != INVALID_SEPARATOR_INDEX) {
+                    // more than one unescaped '@' -> ambiguous, not a valid principal
+                    return INVALID_SEPARATOR_INDEX;
+                }
+                separatorIndex = i;
+            }
+        }
+        return separatorIndex;
+    }
+
+    // A character is escaped when preceded by an odd number of consecutive escape characters.
+    private static boolean isEscaped(String value, int index) {
+        int backslashes = 0;
+        for (int i = index - 1; i >= 0 && value.charAt(i) == ESCAPE_CHAR; i--) {
+            backslashes++;
+        }
+        return backslashes % 2 != 0;
     }
 
     public String getKerberosPrincipal() {
