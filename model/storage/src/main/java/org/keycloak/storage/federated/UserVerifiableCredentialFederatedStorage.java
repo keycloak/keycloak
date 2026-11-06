@@ -92,6 +92,15 @@ public interface UserVerifiableCredentialFederatedStorage {
     Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId);
 
     /**
+     * Mark an issued verifiable credential as completed, meaning the credential was successfully delivered
+     * to the holder by the OID4VCI issuance flow.
+     *
+     * @param issuedCredentialId the ID of the issued verifiable credential to mark as completed
+     * @return true if the credential was found and marked, false if not found
+     */
+    boolean markIssuedVerifiableCredentialCompleted(String issuedCredentialId);
+
+    /**
      * Remove an issued verifiable credential by its ID.
      *
      * @param issuedCredentialId the ID of the issued verifiable credential to remove

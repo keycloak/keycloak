@@ -10,6 +10,8 @@ public class IssuedVerifiableCredentialModel {
     // This represents UUID of the client, which acts as OID4VCI wallet
     private String clientId;
     private String revision;
+    // True only once the OID4VCI issuance flow has delivered the credential to the holder
+    private boolean completed;
 
     public IssuedVerifiableCredentialModel() {
     }
@@ -74,5 +76,13 @@ public class IssuedVerifiableCredentialModel {
 
     public void setRevision(String revision) {
         this.revision = revision;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.completed = completed;
     }
 }

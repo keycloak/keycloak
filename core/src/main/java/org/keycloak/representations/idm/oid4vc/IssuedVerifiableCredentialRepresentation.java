@@ -13,6 +13,8 @@ public class IssuedVerifiableCredentialRepresentation {
     private String clientId;
     private String clientName;
     private String clientBaseUrl;
+    // True only once the OID4VCI issuance flow has delivered the credential to the holder
+    private boolean completed;
 
     public String getClientName() {
         return clientName;
@@ -88,6 +90,14 @@ public class IssuedVerifiableCredentialRepresentation {
         this.revision = revision;
     }
 
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.completed = completed;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -98,11 +108,12 @@ public class IssuedVerifiableCredentialRepresentation {
                 Objects.equals(issuedAt, that.issuedAt) &&
                 Objects.equals(expiresAt, that.expiresAt) &&
                 Objects.equals(clientId, that.clientId) &&
-                Objects.equals(revision, that.revision);
+                Objects.equals(revision, that.revision) &&
+                completed == that.completed;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, userId, credentialType, issuedAt, expiresAt, clientId, revision);
+        return Objects.hash(id, userId, credentialType, issuedAt, expiresAt, clientId, revision, completed);
     }
 }

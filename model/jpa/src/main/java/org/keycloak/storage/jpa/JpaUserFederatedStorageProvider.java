@@ -1177,6 +1177,8 @@ public class JpaUserFederatedStorageProvider implements
         }
         entity.setRevision(revision);
 
+        entity.setCompleted(issuedVc.isCompleted());
+
         long issuedAt = issuedVc.getIssuedAt() == null ? Time.currentTimeMillis() : issuedVc.getIssuedAt();
         entity.setIssuedAt(issuedAt);
         entity.setExpiresAt(issuedVc.getExpiresAt());
@@ -1193,6 +1195,17 @@ public class JpaUserFederatedStorageProvider implements
         TypedQuery<FederatedUserIssuedVerifiableCredentialEntity> query = em.createNamedQuery("federatedIssuedVcsByUser", FederatedUserIssuedVerifiableCredentialEntity.class);
         query.setParameter("userId", userId);
         return closing(query.getResultStream()).map(this::toModel);
+    }
+
+    @Override
+    public boolean markIssuedVerifiableCredentialCompleted(String issuedCredentialId) {
+        FederatedUserIssuedVerifiableCredentialEntity entity = em.find(FederatedUserIssuedVerifiableCredentialEntity.class, issuedCredentialId);
+        if (entity == null) {
+            return false;
+        }
+        entity.setCompleted(true);
+        em.flush();
+        return true;
     }
 
     @Override
@@ -1236,6 +1249,7 @@ public class JpaUserFederatedStorageProvider implements
         model.setRevision(entity.getRevision());
         model.setIssuedAt(entity.getIssuedAt());
         model.setExpiresAt(entity.getExpiresAt());
+        model.setCompleted(entity.isCompleted());
         return model;
     }
 }

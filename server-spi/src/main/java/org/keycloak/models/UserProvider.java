@@ -374,6 +374,15 @@ public interface UserProvider extends Provider,
     Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId);
 
     /**
+     * Mark an issued verifiable credential as completed, meaning the credential was successfully delivered
+     * to the holder by the OID4VCI issuance flow.
+     *
+     * @param credentialId the ID of the issued credential to mark as completed
+     * @return {@code true} if the credential was found and marked, {@code false} if it was not found
+     */
+    boolean markIssuedVerifiableCredentialCompleted(String credentialId);
+
+    /**
      * Remove an issued verifiable credential by its ID.
      *
      * @param credentialId the ID of the issued credential to remove

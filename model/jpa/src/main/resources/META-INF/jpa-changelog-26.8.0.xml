@@ -371,4 +371,32 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_BackfillGroupOrgId"/>
     </changeSet>
 
+    <!-- Tag issued credentials whose OID4VCI issuance completed successfully. Rows left over from an
+         incomplete attempt stay untagged. Existing rows default to false. -->
+    <changeSet author="keycloak" id="26.8.0-issued-ver-credential-completed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="ISSUED_VER_CREDENTIAL" columnName="COMPLETED"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ISSUED_VER_CREDENTIAL">
+            <column name="COMPLETED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.8.0-federated-issued-ver-credential-completed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="FED_ISSUED_VER_CREDENTIAL" columnName="COMPLETED"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="FED_ISSUED_VER_CREDENTIAL">
+            <column name="COMPLETED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
