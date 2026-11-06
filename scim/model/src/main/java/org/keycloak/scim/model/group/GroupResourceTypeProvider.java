@@ -158,6 +158,10 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
     @Override
     public Long count(SearchOptions searchRequest, int resourceSize) {
+        if (isViewFullyDenied()) {
+            return 0L;
+        }
+
         if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
             return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
         }
