@@ -147,17 +147,17 @@ public class ScheduledWorkflowRunner implements ScheduledTask {
         return val == null ? 0 : Integer.parseInt(val);
     }
 
-    static int computeInitialDelay(Workflow workflow, int intervalSecs) {
+    static long computeInitialDelay(Workflow workflow, int intervalSecs) {
         return computeInitialDelay(getLastScheduleRun(workflow), intervalSecs);
     }
 
-    static int computeInitialDelay(int lastRunSecs, int intervalSecs) {
+    static long computeInitialDelay(int lastRunSecs, int intervalSecs) {
         if (lastRunSecs <= 0) {
             return intervalSecs;
         }
 
-        int nextFireTime = lastRunSecs + intervalSecs;
-        int delay = nextFireTime - Time.currentTime();
-        return Math.max(0, delay);
+        long nextFireTime = (long) lastRunSecs + intervalSecs;
+        long delay = nextFireTime - Time.currentTime();
+        return Math.max(0L, delay);
     }
 }
