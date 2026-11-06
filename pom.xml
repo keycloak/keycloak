@@ -1772,6 +1772,16 @@
             </modules>
         </profile>
 
+        <!-- Includes all modules that are not part of the default build, so that spotless:check / spotless:apply covers every Java source -->
+        <profile>
+            <id>spotless</id>
+            <modules>
+                <module>docs</module>
+                <module>distribution</module>
+                <module>operator</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>operator-prod</id>
             <activation>
