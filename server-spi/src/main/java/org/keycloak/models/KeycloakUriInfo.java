@@ -156,6 +156,12 @@ public class KeycloakUriInfo implements UriInfo {
         return delegate.getQueryParameters();
     }
 
+    /**
+     * With {@code decode == false}, parameter values are returned as received, but parameter names are still decoded.
+     * Names must resolve the same way as for {@code @QueryParam} injection, otherwise a parameter such as
+     * {@code %53AMLResponse} would be processed as {@code SAMLResponse} while being invisible to code that reads the
+     * raw values, for example to verify a redirect binding signature.
+     */
     @Override
     public MultivaluedMap<String, String> getQueryParameters(boolean decode) {
         if (decode) {
@@ -169,7 +175,7 @@ public class KeycloakUriInfo implements UriInfo {
             return result;
         }
 
-        for (Map.Entry<String, List<String>> entry : parseQueryParameters(rawQuery, false).entrySet()) {
+        for (Map.Entry<String, List<String>> entry : parseQueryParameters(rawQuery, true, false).entrySet()) {
             result.put(entry.getKey(), entry.getValue());
         }
 

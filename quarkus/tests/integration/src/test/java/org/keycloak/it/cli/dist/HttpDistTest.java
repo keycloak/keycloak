@@ -18,6 +18,7 @@
 package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -77,6 +78,18 @@ public class HttpDistTest {
         when().get("/realms/xxx/../master").then().statusCode(200);
         given().urlEncodingEnabled(false)
                 .when().get("/realms/master;xxx").then().statusCode(200);
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void rawQueryParamNamesResolveLikeInjectedParams(KeycloakDistribution dist) {
+        dist.run("start-dev");
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master/test-resources/query-params?%53AMLResponse=crafted%2B&SAMLResponse=signed%2B")
+                .then().statusCode(200)
+                .body("injectedSAMLResponse", Matchers.contains("crafted+", "signed+"))
+                .body("decoded.SAMLResponse", Matchers.contains("crafted+", "signed+"))
+                .body("raw.SAMLResponse", Matchers.contains("crafted%2B", "signed%2B"));
     }
 
     @Test
