@@ -129,7 +129,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
         // Rebuilding the end user certificate chain using Keycloak Truststore
         X509Certificate[] certChain = buildChain(clientCert);
         if (certChain == null || certChain.length == 0) {
-            log.info("Impossible to rebuild end user cert chain : client certificate authentication will fail." );
+            log.debug("Could not rebuild the end user cert chain from the Keycloak truststore, continuing with the end user certificate only");
             chain.add(clientCert);
         } else {
             for (X509Certificate caCert : certChain) {
@@ -198,7 +198,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             if (log.isEnabled(Level.TRACE)) {
                 log.debug(e.getLocalizedMessage(),e);
             } else {
-                log.warn(e.getLocalizedMessage());
+                log.debug(e.getLocalizedMessage());
             }
         } finally {
             if (isTruststoreLoaded) {
