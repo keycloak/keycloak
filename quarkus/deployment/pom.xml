@@ -80,14 +80,6 @@
             <exclusions>
                 <exclusion>
                     <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-devservices-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.quarkus</groupId>
-                    <artifactId>quarkus-devservices-deployment</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.quarkus</groupId>
                     <artifactId>quarkus-datasource-dev</artifactId>
                 </exclusion>
                 <exclusion>
