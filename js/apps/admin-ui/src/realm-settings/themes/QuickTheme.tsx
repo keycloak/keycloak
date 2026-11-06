@@ -87,7 +87,7 @@ styles=css/theme-styles.css
     zip.file(
       `theme/${themeNameClean}/account/theme.properties`,
       `
-parent=keycloak.v3
+parent=keycloak.v4
 import=common/${themeNameClean}
 
 ${logo ? "logo=" + logoName : ""}
