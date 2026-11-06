@@ -4,6 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Removal of the unsafe setting for multiple non-XA datasources
+// https://github.com/keycloak/keycloak/issues/54620
+
+Quarkus 4 removes the `quarkus.transaction-manager.unsafe-multiple-last-resources` property.
+If you used this property to bypass datasource validation, {project_name} now rejects configurations with more than one non-XA datasource at build time.
+This includes configurations with a read-only secondary datasource, such as the user storage provider described in issue https://github.com/keycloak/keycloak/issues/34880[#34880].
+
+Before upgrading, remove the obsolete property from `conf/quarkus.properties` or your environment and configure at most one datasource to use non-XA transactions.
+If the secondary datasource cannot use XA and the default datasource supports it, enable XA on the default datasource with `--transaction-xa-enabled=true`.
+To enable XA on a named datasource that supports it, use `--transaction-xa-enabled-<datasource>=true`.
+
 === Validation of client URI fields
 // https://github.com/keycloak/keycloak/issues/54046
 
