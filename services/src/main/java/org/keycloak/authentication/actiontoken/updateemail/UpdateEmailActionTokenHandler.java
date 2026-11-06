@@ -28,12 +28,14 @@ import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.requiredactions.UpdateEmail;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -80,6 +82,14 @@ public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<Up
         } catch (ValidationException pve) {
             List<FormMessage> errors = Validation.getFormErrorsFromValidation(pve.getErrors());
             return forms.setErrors(errors).createErrorPage(Response.Status.BAD_REQUEST);
+        }
+
+        // This handler ends with an info page instead of completing required actions, so the single-use check in
+        // AuthenticationManager.finishedRequiredActions is never reached. Consume the token before changing the email.
+        long lifespan = token.getExp() - Time.currentTimeSeconds();
+        if (lifespan < 0 || !session.revokedTokens().put(token.serializeKey(), lifespan + AuthenticationManager.CLOCK_SKEW_SECONDS)) {
+            tokenContext.getEvent().error(Errors.EXPIRED_CODE);
+            return forms.setError(Messages.EXPIRED_ACTION).createErrorPage(Response.Status.BAD_REQUEST);
         }
 
         UpdateEmail.updateEmailNow(tokenContext.getEvent(), user, emailUpdateValidationResult);
