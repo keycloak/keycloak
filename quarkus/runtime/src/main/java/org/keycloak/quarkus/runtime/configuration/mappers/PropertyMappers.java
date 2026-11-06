@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -313,20 +314,28 @@ public final class PropertyMappers {
         }
 
         public void sanitizeDisabledMappers(AbstractCommand command) {
-            // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
-            if (isRebuildCheck()) {
-                PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
-            } else {
+            // For a build (explicit, or a potential auto-build) the feature profile and the enabled state of the
+            // mappers must not be influenced by the persisted values, so disable the Persisted CS
+            boolean build = isRebuildCheck() || Build.NAME.equals(command.getName());
+
+            Supplier<Void> sanitize = () -> {
+                // Initialize profile in order to check state of features
                 Environment.getCurrentOrCreateFeatureProfile();
-                if (!command.shouldStart() && !Build.NAME.equals(command.getName())) {
+                if (!build && !command.shouldStart()) {
                     // this will use the deferred logger, which means it may not be seen in some circumstances
                     Profile.getInstance().logUnsupportedFeatures();
                 }
+
+                sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
+                sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
+                return null;
+            };
+            if (build) {
+                PersistedConfigSource.getInstance().runWithDisabled(sanitize);
+            } else {
+                sanitize.get();
             }
 
-            sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
-            sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
-            
             // enforce single mappings - by dropping multiple mapping synthetics
             entrySet().stream().forEach(e -> {
                 if (e.getValue().size() <= 1) {
