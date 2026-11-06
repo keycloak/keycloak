@@ -31,6 +31,8 @@ import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.LockTimeoutException;
+import jakarta.persistence.PessimisticLockException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 
@@ -333,14 +335,22 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     /**
-     * Don't wait for rows locked by others, as the caller will retry in a separate transaction. If the database
-     * ignores skip locked, wait for the lock instead; the version comparison afterward detects the changed row.
-     * TODO: NOWAIT might avoid waiting (and deadlocks) on such a database, but it raises an exception instead of
-     * returning no row, and it has not been tested.
+     * Lock the row and return its version, or null if the row doesn't exist or is locked by someone else.
+     * Don't wait for rows locked by others, as the caller will retry in a separate transaction.
+     * If the database ignores skip locked, use NOWAIT instead, which fails immediately if the row is locked.
+     * Waiting would risk deadlocks when rows are locked in different orders.
      */
-    private void setSkipLocked(TypedQuery<?> query) {
-        if (!JpaUtils.isSkipLockedUnsupported(em)) {
+    private Integer lockVersion(TypedQuery<Integer> query) {
+        if (JpaUtils.isSkipLockedSupported(em)) {
             query.setHint(LOCK_TIMEOUT, -2);
+            return query.getSingleResultOrNull();
+        }
+        query.setHint(LOCK_TIMEOUT, 0);
+        try {
+            return query.getSingleResultOrNull();
+        } catch (PessimisticLockException | LockTimeoutException e) {
+            logger.debugf("Row is locked by another transaction: %s", e.getMessage());
+            return null;
         }
     }
 
@@ -360,8 +370,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .setParameter("userSessionId", userSessionId)
                 .setParameter("offline", offlineStr);
-        setSkipLocked(lockQuery);
-        Integer currentVersion = lockQuery.getSingleResultOrNull();
+        Integer currentVersion = lockVersion(lockQuery);
 
         boolean result = currentVersion != null && knownVersion == currentVersion;
         logger.debugf("User session %s/%s lock status: %b", userSessionId, offlineStr, result);
@@ -513,8 +522,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                 .setParameter("clientStorageProvider", key.getClientStorageProvider())
                 .setParameter("externalClientId", key.getExternalClientId())
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE);
-        setSkipLocked(lockQuery);
-        Integer currentVersion = lockQuery.getSingleResultOrNull();
+        Integer currentVersion = lockVersion(lockQuery);
 
         boolean locked = currentVersion != null && knownVersion == currentVersion;
         logger.debugf("User session %s/%s/%s lock status: %b", userSessionId, clientId, offline, locked);
