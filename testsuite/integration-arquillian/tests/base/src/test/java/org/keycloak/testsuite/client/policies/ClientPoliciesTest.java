@@ -1557,6 +1557,57 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         revertToBuiltinPolicies();
     }
 
+    @Test
+    public void testPKCEEnforcerDoesNotApplyToResponseTypeNone() throws Exception {
+        try {
+            String pkceProfileName = "PKCE profile";
+            String json = new ClientProfilesBuilder()
+                    .addProfile(
+                            new ClientProfileBuilder()
+                                    .createProfile(pkceProfileName, "PKCE profile")
+                                    .addExecutor(
+                                            PKCEEnforcerExecutorFactory.PROVIDER_ID,
+                                            createPKCEEnforceExecutorConfig(Boolean.TRUE))
+                                    .toRepresentation())
+                    .toString();
+            updateProfiles(json);
+
+            json = new ClientPoliciesBuilder()
+                    .addPolicy(
+                            new ClientPolicyBuilder()
+                                    .createPolicy(POLICY_NAME, "PKCE policy", Boolean.TRUE)
+                                    .addCondition(
+                                            AnyClientConditionFactory.PROVIDER_ID,
+                                            createAnyClientConditionConfig())
+                                    .addProfile(pkceProfileName)
+                                    .toRepresentation())
+                    .toString();
+            updatePolicies(json);
+
+            String clientId = generateSuffixedName(CLIENT_NAME);
+
+            createClientByAdmin(clientId, clientRep -> {
+                clientRep.setPublicClient(true);
+                clientRep.setStandardFlowEnabled(true);
+            });
+
+            oauth.client(clientId);
+            oauth.responseType(OIDCResponseType.NONE);
+
+            oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_NONE).open();
+
+            AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+
+            assertNull(response.getCode());
+            // The request is not rejected by the PKCE enforcer and reaches prompt=none handling.
+            assertEquals(OAuthErrorException.LOGIN_REQUIRED, response.getError());
+        } finally {
+            oauth.responseType(OIDCResponseType.CODE);
+            revertToBuiltinPolicies();
+            revertToBuiltinProfiles();
+        }
+    }
+
     private void assertGrantTypeBlock(AccessTokenResponse response, ClientPolicyEvent event){
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(event.toString(), response.getError());
