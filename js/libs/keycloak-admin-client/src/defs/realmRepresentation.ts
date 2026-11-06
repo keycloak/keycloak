@@ -133,6 +133,8 @@ export default interface RealmRepresentation {
   verifyEmail?: boolean;
   waitIncrementSeconds?: number;
   webAuthnPolicyPasswordlessPasskeysEnabled?: boolean;
+  webAuthnPolicyBackupEligibility?: string;
+  webAuthnPolicyPasswordlessBackupEligibility?: string;
   scimApiEnabled?: boolean;
 }
 

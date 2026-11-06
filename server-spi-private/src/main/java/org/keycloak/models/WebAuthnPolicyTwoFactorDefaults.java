@@ -48,6 +48,7 @@ public class WebAuthnPolicyTwoFactorDefaults extends WebAuthnPolicy {
         this.extraOrigins = Collections.emptyList();
         this.passkeysEnabled = null;
         this.mediation = null;
+        this.backupEligibility = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
     }
 
     @Override
@@ -117,6 +118,11 @@ public class WebAuthnPolicyTwoFactorDefaults extends WebAuthnPolicy {
 
     @Override
     public void setMediation(String mediation) {
+        throwReadOnlyException();
+    }
+
+    @Override
+    public void setBackupEligibility(String backupEligibility) {
         throwReadOnlyException();
     }
 

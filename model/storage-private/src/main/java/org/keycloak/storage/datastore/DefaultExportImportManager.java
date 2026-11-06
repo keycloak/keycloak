@@ -1416,6 +1416,11 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         webAuthnPolicy.setExtraOrigins(webAuthnPolicyExtraOrigins);
 
+        String webAuthnPolicyBackupEligibility = rep.getWebAuthnPolicyBackupEligibility();
+        if (webAuthnPolicyBackupEligibility == null || webAuthnPolicyBackupEligibility.isEmpty())
+            webAuthnPolicyBackupEligibility = defaultConfig.getBackupEligibility();
+        webAuthnPolicy.setBackupEligibility(webAuthnPolicyBackupEligibility);
+
         return webAuthnPolicy;
     }
 
@@ -1499,6 +1504,11 @@ public class DefaultExportImportManager implements ExportImportManager {
             webAuthnPolicyPasswordlessMediation = defaultConfig.getMediation();
         }
         webAuthnPolicy.setMediation(webAuthnPolicyPasswordlessMediation);
+
+        String webAuthnPolicyPasswordlessBackupEligibility = rep.getWebAuthnPolicyPasswordlessBackupEligibility();
+        if (webAuthnPolicyPasswordlessBackupEligibility == null || webAuthnPolicyPasswordlessBackupEligibility.isEmpty())
+            webAuthnPolicyPasswordlessBackupEligibility = defaultConfig.getBackupEligibility();
+        webAuthnPolicy.setBackupEligibility(webAuthnPolicyPasswordlessBackupEligibility);
 
         return webAuthnPolicy;
     }

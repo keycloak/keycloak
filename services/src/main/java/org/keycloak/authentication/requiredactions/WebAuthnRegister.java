@@ -105,6 +105,8 @@ import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_INVALID
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_NOT_ALLOWED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_API_SECURITY;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_AUTH_VERIFICATION;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_CHALLENGE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_ORIGIN;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_RPID;
@@ -333,6 +335,9 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             credential.setCount(registrationData.getAttestationObject().getAuthenticatorData().getSignCount());
             credential.setAttestationStatementFormat(registrationData.getAttestationObject().getFormat());
             credential.setTransports(registrationData.getTransports());
+            AuthenticatorData<?> authenticatorData = registrationData.getAttestationObject().getAuthenticatorData();
+            credential.setBackupEligible(authenticatorData.isFlagBE());
+            credential.setBackupState(authenticatorData.isFlagBS());
 
             // Save new webAuthn credential
             WebAuthnCredentialProvider webAuthnCredProvider = (WebAuthnCredentialProvider) this.session.getProvider(CredentialProvider.class, getCredentialProviderId());
@@ -348,7 +353,9 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             context.getEvent()
                 .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, publicKeyCredentialId)
                 .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, label)
-                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, aaguid);
+                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, aaguid)
+                .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_ELIGIBLE_ATTR, Boolean.toString(authenticatorData.isFlagBE()))
+                .detail(WebAuthnConstants.PUBKEY_CRED_BACKUP_STATE_ATTR, Boolean.toString(authenticatorData.isFlagBS()));
             context.getEvent().clone().event(originalEventType).success();
             // the deprecated event is emitted first, so that it keeps carrying the same details as before
             if (createdCredential != null) {
@@ -514,6 +521,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         case WEBAUTHN_ERROR_REGISTRATION_NOT_ALLOWED_AAGUID:
         case WEBAUTHN_ERROR_REGISTRATION_AAGUID_ATTESTATION_REQUIRED:
         case WEBAUTHN_ERROR_REGISTRATION_ATTACHMENT_MISMATCH:
+        case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_NOT_ALLOWED:
+        case WEBAUTHN_ERROR_BACKUP_ELIGIBLE_REQUIRED:
         case WEBAUTHN_ERROR_USER_NOT_PRESENT:
         case WEBAUTHN_ERROR_USER_NOT_VERIFIED:
         case WEBAUTHN_ERROR_BAD_ORIGIN:
@@ -578,7 +587,9 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
      * Maps server side webauthn4j verifier exceptions to localizable Keycloak message keys
      */
     public static String getWebAuthnErrorMessageKey(WebAuthnException exception, boolean isRegistration) {
-        if (exception instanceof UserNotPresentException) {
+        if (exception instanceof WebAuthnPolicyException policyException) {
+            return policyException.getMessageKey();
+        } else if (exception instanceof UserNotPresentException) {
             return WEBAUTHN_ERROR_USER_NOT_PRESENT;
         } else if (exception instanceof UserNotVerifiedException) {
             return WEBAUTHN_ERROR_USER_NOT_VERIFIED;
@@ -609,6 +620,18 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         static void verifyCompliance(RegistrationData registrationData, WebAuthnPolicy policy, String authenticatorAttachment) {
             verifyAcceptableAaguids(registrationData, policy);
             verifyAuthenticatorAttachment(authenticatorAttachment, policy);
+            verifyBackupEligibility(registrationData, policy);
+        }
+
+        // The BE flag is part of the authenticator data. Like the AAGUID it is only cryptographically bound to the
+        // authenticator when an attestation statement other than 'none' is verified; combine with attestation for
+        // a tamper-proof check.
+        private static void verifyBackupEligibility(RegistrationData registrationData, WebAuthnPolicy policy) {
+            if (!WebAuthnBackupEligibilityVerifier.isConfigured(policy)) {
+                return;
+            }
+            boolean backupEligible = registrationData.getAttestationObject().getAuthenticatorData().isFlagBE();
+            WebAuthnBackupEligibilityVerifier.verify(backupEligible, policy);
         }
 
         private static void verifyAcceptableAaguids(RegistrationData registrationData, WebAuthnPolicy policy) {
@@ -647,30 +670,6 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 throw new WebAuthnPolicyException(WEBAUTHN_ERROR_REGISTRATION_ATTACHMENT_MISMATCH,
                         "Policy requires '" + requiredAttachment + "' authenticator attachment but got '" + authenticatorAttachment + "'", authenticatorAttachment);
             }
-        }
-    }
-
-    /**
-     * Carries a localizable message key, allowing the
-     * error to be displayed using a specific, translatable string rather than the raw exception text.
-     */
-    static class WebAuthnPolicyException extends WebAuthnException {
-
-        private final String messageKey;
-        private final Object[] parameters;
-
-        WebAuthnPolicyException(String messageKey, String technicalDetail, Object... parameters) {
-            super(technicalDetail);
-            this.messageKey = messageKey;
-            this.parameters = parameters;
-        }
-
-        String getMessageKey() {
-            return messageKey;
-        }
-
-        Object[] getParameters() {
-            return parameters;
         }
     }
 }

@@ -1141,6 +1141,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         }
         policy.setMediation(mediation);
 
+        String backupEligibility = getAttribute(RealmAttributes.WEBAUTHN_POLICY_BACKUP_ELIGIBILITY + attributePrefix);
+        if (backupEligibility == null || backupEligibility.isEmpty()) {
+            backupEligibility = defaultConfig.getBackupEligibility();
+        }
+        policy.setBackupEligibility(backupEligibility);
+
         return policy;
     }
 
@@ -1208,6 +1214,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             setAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix, mediation);
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix);
+        }
+
+        String backupEligibility = policy.getBackupEligibility();
+        if (backupEligibility != null && !backupEligibility.isBlank()) {
+            setAttribute(RealmAttributes.WEBAUTHN_POLICY_BACKUP_ELIGIBILITY + attributePrefix, backupEligibility);
+        } else {
+            removeAttribute(RealmAttributes.WEBAUTHN_POLICY_BACKUP_ELIGIBILITY + attributePrefix);
         }
     }
 
