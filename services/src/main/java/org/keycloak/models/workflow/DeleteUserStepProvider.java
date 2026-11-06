@@ -23,6 +23,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
 
@@ -53,6 +54,8 @@ public class DeleteUserStepProvider implements WorkflowStepProvider {
         if (user == null) {
             return;
         }
+
+        UserSessionUtil.logoutAllUserSessions(session, realm, user);
 
         UserManager userManager = new UserManager(session);
         if (!user.isFederated() || stepModel.get(PROPAGATE_TO_SP, false)) {
