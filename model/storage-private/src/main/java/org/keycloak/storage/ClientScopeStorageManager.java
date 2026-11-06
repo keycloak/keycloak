@@ -62,6 +62,11 @@ public class ClientScopeStorageManager extends AbstractStorageManager<ClientScop
     }
 
     @Override
+    public ClientScopeModel getClientScopeByName(RealmModel realm, String name) {
+        return localStorage().getClientScopeByName(realm, name);
+    }
+
+    @Override
     public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
         return localStorage().addClientScope(realm, id, name);
     }
