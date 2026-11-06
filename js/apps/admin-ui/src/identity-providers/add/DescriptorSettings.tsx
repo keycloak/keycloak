@@ -49,7 +49,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   });
 
   return (
-    <div className="pf-v5-c-form pf-m-horizontal">
+    <div className="pf-v6-c-form pf-m-horizontal">
       <FormProvider {...form}>
         <TextControl
           name="config.entityId"

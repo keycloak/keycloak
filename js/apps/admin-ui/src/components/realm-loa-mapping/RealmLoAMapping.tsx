@@ -53,16 +53,16 @@ export const RealmLoAMapping = ({
   return fields.length > 0 ? (
     <>
       <Grid hasGutter>
-        <GridItem className="pf-v5-c-form__label" span={spanAcr}>
-          <span className="pf-v5-c-form__label-text">{t("acr")}</span>
+        <GridItem className="pf-v6-c-form__label" span={spanAcr}>
+          <span className="pf-v6-c-form__label-text">{t("acr")}</span>
         </GridItem>
         {uri && (
-          <GridItem className="pf-v5-c-form__label" span={spanAcr}>
-            <span className="pf-v5-c-form__label-text">{t("uri")}</span>
+          <GridItem className="pf-v6-c-form__label" span={spanAcr}>
+            <span className="pf-v6-c-form__label-text">{t("uri")}</span>
           </GridItem>
         )}
-        <GridItem className="pf-v5-c-form__label" span={spanLoA}>
-          <span className="pf-v5-c-form__label-text">{t("loa")}</span>
+        <GridItem className="pf-v6-c-form__label" span={spanLoA}>
+          <span className="pf-v6-c-form__label-text">{t("loa")}</span>
         </GridItem>
         {fields.map((attribute, index) => {
           const error = getError()?.[index];
@@ -128,13 +128,12 @@ export const RealmLoAMapping = ({
               </GridItem>
               <GridItem span={2}>
                 <Button
+                  icon={<MinusCircleIcon />}
                   variant="link"
                   title={t("removeAttribute")}
                   onClick={() => remove(index)}
                   data-testid={`${name}-remove`}
-                >
-                  <MinusCircleIcon />
-                </Button>
+                ></Button>
               </GridItem>
             </Fragment>
           );
@@ -144,7 +143,7 @@ export const RealmLoAMapping = ({
         <ActionListItem>
           <Button
             data-testid={`${name}-add-row`}
-            className="pf-v5-u-px-0 pf-v5-u-mt-sm"
+            className="pf-v6-u-px-0 pf-v6-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
             onClick={appendNew}
@@ -157,7 +156,7 @@ export const RealmLoAMapping = ({
   ) : (
     <EmptyState
       data-testid={`${name}-empty-state`}
-      className="pf-v5-u-p-0"
+      className="pf-v6-u-p-0"
       variant="xs"
     >
       <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>

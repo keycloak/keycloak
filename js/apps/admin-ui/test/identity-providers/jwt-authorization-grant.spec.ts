@@ -113,7 +113,7 @@ test.describe.serial("JWT Authorization Grant identity provider test", () => {
     await chooseFileByLocator(
       page,
       "../utils/files/key.pem",
-      page.locator("#importFile-browse-button"),
+      page.getByTestId("file").getByRole("button", { name: "Browse" }),
     );
     await confirmModal(page);
 
@@ -130,7 +130,7 @@ test.describe.serial("JWT Authorization Grant identity provider test", () => {
     await chooseFileByLocator(
       page,
       "../utils/files/key.jwks",
-      page.locator("#importFile-browse-button"),
+      page.getByTestId("file").getByRole("button", { name: "Browse" }),
     );
     await confirmModal(page);
 

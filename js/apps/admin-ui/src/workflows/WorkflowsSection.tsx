@@ -92,7 +92,7 @@ export default function WorkflowsSection() {
         subKey="workflowsExplain"
         helpUrl={helpUrls.workflowsUrl}
       />
-      <PageSection variant="light" padding={{ default: "noPadding" }}>
+      <PageSection hasBodyWrapper={false} padding={{ default: "noPadding" }}>
         <DeleteConfirm />
         <KeycloakDataTable
           key={key}
@@ -131,8 +131,9 @@ export default function WorkflowsSection() {
               cellRenderer: (workflow: WorkflowRepresentation) => (
                 <Switch
                   data-testid={`toggle-enabled-${workflow.name}`}
-                  label={t("enabled")}
-                  labelOff={t("disabled")}
+                  label={
+                    (workflow.enabled ?? true) ? t("enabled") : t("disabled")
+                  }
                   isChecked={workflow.enabled ?? true}
                   onChange={() => toggleEnabled(workflow)}
                 />

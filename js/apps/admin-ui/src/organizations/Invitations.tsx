@@ -1,18 +1,22 @@
 import type { OrganizationInvitationRepresentation } from "@keycloak/keycloak-admin-client";
 import { OrganizationInvitationStatus } from "@keycloak/keycloak-admin-client";
 import {
+  Label,
   Button,
   ButtonVariant,
-  Chip,
   Dropdown,
   DropdownItem,
   DropdownList,
   Form,
   MenuToggle,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   ToolbarItem,
 } from "@patternfly/react-core";
+
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -41,9 +45,9 @@ const InvitationStatusBadge = ({
   const { t } = useTranslation();
 
   return (
-    <Chip isReadOnly>
+    <Label variant="outline">
       {status ? t(`organizationInvitationStatus.${status.toLowerCase()}`) : ""}
-    </Chip>
+    </Label>
   );
 };
 
@@ -75,10 +79,26 @@ const SelectClientModal = ({ onSelect, onClose }: SelectClientModalProps) => {
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("selectInvitationClient")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t("selectInvitationClient")}
+    >
+      <ModalHeader title={t("selectInvitationClient")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form
+            id="select-client-form"
+            onSubmit={handleSubmit((data) => onSelect(data.clientId))}
+          >
+            <ClientSelect
+              name="clientId"
+              label="client"
+              helpText="invitationClientHelp"
+            />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="next"
           key="confirm"
@@ -86,24 +106,11 @@ const SelectClientModal = ({ onSelect, onClose }: SelectClientModalProps) => {
           onClick={handleSubmit((data) => onSelect(data.clientId))}
         >
           {clientId ? t("next") : t("SKIP")}
-        </Button>,
+        </Button>
         <Button key="cancel" variant={ButtonVariant.link} onClick={onClose}>
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form
-          id="select-client-form"
-          onSubmit={handleSubmit((data) => onSelect(data.clientId))}
-        >
-          <ClientSelect
-            name="clientId"
-            label="client"
-            helpText="invitationClientHelp"
-          />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

@@ -74,7 +74,7 @@ export const OrganizationForm = ({
         <FormGroup
           label={t("domain")}
           fieldId="domain"
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("organizationDomainHelp")}
               fieldLabelId="domain"

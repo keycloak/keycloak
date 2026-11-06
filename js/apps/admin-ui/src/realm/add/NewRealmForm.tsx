@@ -4,7 +4,13 @@ import {
   TextControl,
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
-import { Button, Modal } from "@patternfly/react-core";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -61,11 +67,39 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
   return (
     <Modal
       variant="medium"
-      title={t("createRealm")}
-      description={t("realmExplain")}
       onClose={onClose}
       isOpen
-      actions={[
+      aria-label={t("createRealm")}
+    >
+      <ModalHeader title={t("createRealm")} description={t("realmExplain")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <FormAccess
+            id="realm-form"
+            isHorizontal
+            onSubmit={handleSubmit(save)}
+            role="query-realms"
+            isReadOnly={!whoAmI.createRealm}
+          >
+            <JsonFileUpload
+              id="kc-realm-filename"
+              allowEditingUploadedText
+              onChange={handleFileChange}
+            />
+            <TextControl
+              name="realm"
+              label={t("realmNameField")}
+              rules={{ required: t("required") }}
+            />
+            <DefaultSwitchControl
+              name="enabled"
+              label={t("enabled")}
+              defaultValue={true}
+            />
+          </FormAccess>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <FormSubmitButton
           form="realm-form"
           data-testid="create"
@@ -75,7 +109,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
           key="confirm"
         >
           {t("create")}
-        </FormSubmitButton>,
+        </FormSubmitButton>
         <Button
           variant="link"
           onClick={onClose}
@@ -83,34 +117,8 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
           data-testid="cancel"
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <FormAccess
-          id="realm-form"
-          isHorizontal
-          onSubmit={handleSubmit(save)}
-          role="query-realms"
-          isReadOnly={!whoAmI.createRealm}
-        >
-          <JsonFileUpload
-            id="kc-realm-filename"
-            allowEditingUploadedText
-            onChange={handleFileChange}
-          />
-          <TextControl
-            name="realm"
-            label={t("realmNameField")}
-            rules={{ required: t("required") }}
-          />
-          <DefaultSwitchControl
-            name="enabled"
-            label={t("enabled")}
-            defaultValue={true}
-          />
-        </FormAccess>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 }

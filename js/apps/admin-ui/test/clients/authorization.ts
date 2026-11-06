@@ -149,13 +149,12 @@ export function getEvaluateResourceKeyInput(page: Page, rowIndex = 0) {
     .getByRole("combobox", { name: "Select or type a key" });
 }
 
-// The evaluate form renders several selects, so option queries have to be
-// scoped to the key select rather than run against the whole page.
-export function getEvaluateResourceKeyOptions(page: Page, rowIndex = 0) {
-  return page
-    .locator(".kc-attribute-key-selectable")
-    .nth(rowIndex)
-    .getByRole("option");
+// PF6 renders typeahead options in a portaled listbox referenced by aria-controls.
+export async function getEvaluateResourceKeyOptions(page: Page, rowIndex = 0) {
+  const input = getEvaluateResourceKeyInput(page, rowIndex);
+  await expect(input).toHaveAttribute("aria-controls", /.+/);
+  const listboxId = await input.getAttribute("aria-controls");
+  return page.locator(`[id="${listboxId}"]`).getByRole("option");
 }
 
 export async function goToExportSubTab(page: Page) {

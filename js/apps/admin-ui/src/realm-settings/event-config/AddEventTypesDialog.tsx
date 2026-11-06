@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
-
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { EventsTypeTable, EventType } from "./EventsTypeTable";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
@@ -23,10 +29,21 @@ export const AddEventTypesDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("addTypes")}
       isOpen={true}
       onClose={onClose}
-      actions={[
+      aria-label={t("addTypes")}
+    >
+      <ModalHeader title={t("addTypes")} />
+      <ModalBody>
+        <EventsTypeTable
+          ariaLabelKey="addTypes"
+          onSelect={(selected) => setSelectedTypes(selected)}
+          eventTypes={enums!["eventType"].filter(
+            (type) => !configured.includes(type),
+          )}
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="addEventTypeConfirm"
           key="confirm"
@@ -34,7 +51,7 @@ export const AddEventTypesDialog = ({
           onClick={() => onConfirm(selectedTypes)}
         >
           {t("add")}
-        </Button>,
+        </Button>
         <Button
           data-testid="moveCancel"
           key="cancel"
@@ -42,16 +59,8 @@ export const AddEventTypesDialog = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <EventsTypeTable
-        ariaLabelKey="addTypes"
-        onSelect={(selected) => setSelectedTypes(selected)}
-        eventTypes={enums!["eventType"].filter(
-          (type) => !configured.includes(type),
-        )}
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

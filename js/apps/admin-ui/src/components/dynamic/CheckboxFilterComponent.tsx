@@ -46,7 +46,7 @@ export const CheckboxFilterComponent = ({
     >
       {filterPlaceholderText}
       {selectedItems.length > 0 && (
-        <Badge isRead className="pf-v5-u-m-xs">
+        <Badge isRead className="pf-v6-u-m-xs">
           {selectedItems.length}
         </Badge>
       )}

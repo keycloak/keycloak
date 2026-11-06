@@ -49,18 +49,17 @@ const WorkflowYAMLAccordion = ({ id, name }: { id: string; name: string }) => {
 
   return (
     <Accordion asDefinitionList={true} isBordered togglePosition="start">
-      <AccordionItem>
+      <AccordionItem isExpanded={expanded}>
         <AccordionToggle
           onClick={() => {
             onToggleWorkflowYaml();
           }}
-          isExpanded={expanded}
           id={`yaml-ex-toggle-${name}`}
           data-testid={`yaml-ex-toggle-${name}`}
         >
           {t("workflowYAML")}
         </AccordionToggle>
-        <AccordionContent id={`ex-expand1-content-${id}`} isHidden={!expanded}>
+        <AccordionContent id={`ex-expand1-content-${id}`}>
           <CodeEditor
             id={`workflowYAML-${name}`}
             data-testid={`workflowYAML-${name}`}

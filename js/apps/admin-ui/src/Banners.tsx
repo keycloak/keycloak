@@ -18,7 +18,7 @@ const WarnBanner = ({ msg, className }: WarnBannerProps) => {
   return (
     <Banner
       screenReaderText={t(msg)}
-      variant="gold"
+      color="yellow"
       className={className || style.banner}
     >
       <Flex
@@ -44,5 +44,5 @@ export const EventsBanners = ({ type }: { type: EventsBannerType }) => {
   const msg =
     type === "userEvents" ? "savingUserEventsOff" : "savingAdminEventsOff";
 
-  return <WarnBanner msg={msg} className="pf-v5-u-mt-md pf-v5-u-mx-md" />;
+  return <WarnBanner msg={msg} className="pf-v6-u-mt-md pf-v6-u-mx-md" />;
 };

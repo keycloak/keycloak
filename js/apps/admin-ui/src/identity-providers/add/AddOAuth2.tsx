@@ -67,7 +67,7 @@ export default function AddOpenIdConnect() {
   return (
     <>
       <ViewHeader titleKey={t("addOAuth2Provider")} />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-identity-providers"

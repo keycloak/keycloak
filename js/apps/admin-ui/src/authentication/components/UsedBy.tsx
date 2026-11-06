@@ -1,12 +1,14 @@
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
+  Content,
+  ContentVariants,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   Popover,
-  Text,
-  TextContent,
-  TextVariants,
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
 import { Fragment, useMemo } from "react";
@@ -86,21 +88,45 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
   };
 
   return (
-    <Modal
-      header={
-        <TextContent>
-          <Text component={TextVariants.h1}>{t("flowUsedBy")}</Text>
-          <Text>
+    <Modal variant={ModalVariant.medium} isOpen onClose={onClose}>
+      <ModalHeader>
+        <Content>
+          <Content component={ContentVariants.h1}>{t("flowUsedBy")}</Content>
+          <Content component="p">
             {t("flowUsedByDescription", {
               value: isSpecificClient ? t("clients") : t("identiyProviders"),
             })}
-          </Text>
-        </TextContent>
-      }
-      variant={ModalVariant.medium}
-      isOpen
-      onClose={onClose}
-      actions={[
+          </Content>
+        </Content>
+      </ModalHeader>
+      <ModalBody>
+        <KeycloakDataTable
+          loader={loader}
+          isPaginated
+          ariaLabelKey="usedBy"
+          searchPlaceholderKey="search"
+          columns={[
+            isSpecificClient
+              ? {
+                  name: "name",
+                  displayKey: "name",
+                  cellRenderer: (row: FlowUsedByRow) => (
+                    <ClientUsedByLink
+                      id={row.id ?? undefined}
+                      clientId={row.label}
+                    />
+                  ),
+                }
+              : {
+                  name: "name",
+                  cellRenderer: (row: FlowUsedByRow) => (
+                    <strong>{row.label}</strong>
+                  ),
+                },
+          ]}
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="cancel"
           id="modal-cancel"
@@ -108,34 +134,8 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
           onClick={onClose}
         >
           {t("close")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        loader={loader}
-        isPaginated
-        ariaLabelKey="usedBy"
-        searchPlaceholderKey="search"
-        columns={[
-          isSpecificClient
-            ? {
-                name: "name",
-                displayKey: "name",
-                cellRenderer: (row: FlowUsedByRow) => (
-                  <ClientUsedByLink
-                    id={row.id ?? undefined}
-                    clientId={row.label}
-                  />
-                ),
-              }
-            : {
-                name: "name",
-                cellRenderer: (row: FlowUsedByRow) => (
-                  <strong>{row.label}</strong>
-                ),
-              },
-        ]}
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

@@ -1,4 +1,4 @@
-import { Text, TextContent, Title } from "@patternfly/react-core";
+import { Content, Title } from "@patternfly/react-core";
 
 import "./wizard-section-header.css";
 
@@ -27,9 +27,9 @@ export const WizardSectionHeader = ({
         {title}
       </Title>
       {showDescription && (
-        <TextContent className="kc-wizard-section-header__description">
-          <Text>{description}</Text>
-        </TextContent>
+        <Content className="kc-wizard-section-header__description">
+          <Content component="p">{description}</Content>
+        </Content>
       )}
     </>
   );

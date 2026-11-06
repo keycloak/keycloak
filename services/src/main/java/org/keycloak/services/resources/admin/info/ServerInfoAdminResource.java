@@ -292,12 +292,12 @@ public class ServerInfoAdminResource {
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
         LinkedList<String> filteredNames = new LinkedList<>(themeNames);
-        boolean filterAdminV2 = (type == Theme.Type.ADMIN) &&
-                !Profile.isFeatureEnabled(Profile.Feature.ADMIN_V2);
+        boolean filterAdminV3 = (type == Theme.Type.ADMIN) &&
+                !Profile.isFeatureEnabled(Profile.Feature.ADMIN_V3);
 
-        if (filterAdminV2) {
-            filteredNames.remove("keycloak.v2");
-            filteredNames.remove("rh-sso.v2");
+        if (filterAdminV3) {
+            filteredNames.remove("keycloak.v3");
+            filteredNames.remove("rh-sso.v3");
         }
 
         boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) &&

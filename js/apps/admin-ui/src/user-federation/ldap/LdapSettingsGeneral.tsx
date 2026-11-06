@@ -126,7 +126,7 @@ export const LdapSettingsGeneral = ({
         />
         <FormGroup
           label={t("vendor")}
-          labelIcon={
+          labelHelp={
             <HelpItem helpText={t("vendorHelp")} fieldLabelId="vendor" />
           }
           fieldId="kc-vendor"

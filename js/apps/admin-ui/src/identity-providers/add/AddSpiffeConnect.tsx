@@ -64,7 +64,7 @@ export default function AddSamlConnect() {
   return (
     <>
       <ViewHeader titleKey={t("addSpiffeProvider")} />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-identity-providers"

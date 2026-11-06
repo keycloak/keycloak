@@ -52,7 +52,7 @@ export const IdpDomainsTab = ({ alias }: IdpDomainsTabProps) => {
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <KeycloakDataTable
         loader={loader}
         ariaLabelKey="domains"

@@ -14,6 +14,9 @@ import {
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   PageSection,
   ToolbarItem,
@@ -102,10 +105,45 @@ const DomainModal = ({ orgId, domain, onClose }: DomainModalProps) => {
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t(isEdit ? "editDomain" : "addDomain")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t(isEdit ? "editDomain" : "addDomain")}
+    >
+      <ModalHeader title={t(isEdit ? "editDomain" : "addDomain")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form id="domain-form" onSubmit={handleSubmit(submitForm)}>
+            {isEdit ? (
+              <FormGroup label={t("domain")} fieldId="domain-name">
+                <span id="domain-name" data-testid="domain-name">
+                  {domain.name}
+                </span>
+              </FormGroup>
+            ) : (
+              <TextControl
+                name="name"
+                label={t("domain")}
+                labelIcon={t("domainHelp")}
+                rules={{ required: t("required") }}
+              />
+            )}
+            <SelectControl
+              name="identityProviderAlias"
+              label={t("identityProvider")}
+              labelIcon={t("domainIdentityProviderHelp")}
+              options={idpOptions}
+              controller={{ defaultValue: "" }}
+            />
+            <DefaultSwitchControl
+              name="autoRedirect"
+              label={t("autoRedirect")}
+              labelIcon={t("autoRedirectHelp")}
+              defaultValue={false}
+            />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <FormSubmitButton
           formState={formState}
           data-testid="confirm"
@@ -115,7 +153,7 @@ const DomainModal = ({ orgId, domain, onClose }: DomainModalProps) => {
           allowNonDirty
         >
           {t("save")}
-        </FormSubmitButton>,
+        </FormSubmitButton>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -124,40 +162,8 @@ const DomainModal = ({ orgId, domain, onClose }: DomainModalProps) => {
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form id="domain-form" onSubmit={handleSubmit(submitForm)}>
-          {isEdit ? (
-            <FormGroup label={t("domain")} fieldId="domain-name">
-              <span id="domain-name" data-testid="domain-name">
-                {domain.name}
-              </span>
-            </FormGroup>
-          ) : (
-            <TextControl
-              name="name"
-              label={t("domain")}
-              labelIcon={t("domainHelp")}
-              rules={{ required: t("required") }}
-            />
-          )}
-          <SelectControl
-            name="identityProviderAlias"
-            label={t("identityProvider")}
-            labelIcon={t("domainIdentityProviderHelp")}
-            options={idpOptions}
-            controller={{ defaultValue: "" }}
-          />
-          <DefaultSwitchControl
-            name="autoRedirect"
-            label={t("autoRedirect")}
-            labelIcon={t("autoRedirectHelp")}
-            defaultValue={false}
-          />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
@@ -206,7 +212,7 @@ export const DomainsTab = () => {
   });
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <DeleteConfirm />
       {domainModalOpen && (
         <DomainModal

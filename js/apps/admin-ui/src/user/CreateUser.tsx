@@ -74,7 +74,7 @@ export default function CreateUser() {
         titleKey={t("createUser")}
         className="kc-username-view-header"
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <UserForm
           form={form}
           realm={realm}
