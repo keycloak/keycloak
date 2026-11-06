@@ -32,6 +32,7 @@ import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticationAssertionExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -40,6 +41,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -65,8 +68,12 @@ public class SecureClientAuthenticationAssertionExecutorTest extends AbstractCli
     @InjectRealm(config = ClientAuthRealmConfig.class)
     ManagedRealm realm;
 
-    @InjectOAuthClient(config = ClientAuthClientConfig.class)
+    // method-scoped OAuth client and web driver so that a SSO session from one test does not skip the login form of the next test
+    @InjectOAuthClient(config = ClientAuthClientConfig.class, lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
+
+    @InjectWebDriver(lifecycle = LifeCycle.METHOD)
+    ManagedWebDriver webDriver;
 
     @AfterEach
     void resetPolicies() {
