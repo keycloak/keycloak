@@ -106,6 +106,12 @@ test.describe.serial("Masthead tests", () => {
       await assertIsMobileView(page);
     });
 
+    test("Mobile menu toggle has an accessible name", async ({ page }) => {
+      await expect(
+        page.getByTestId("options-kebab-toggle"),
+      ).toHaveAccessibleName("Options");
+    });
+
     test("Enable/disable help mode in mobile view", async ({ page }) => {
       await assertIsMobileView(page);
       await toggleUsernameDropdown(page);
