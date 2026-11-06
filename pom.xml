@@ -247,7 +247,8 @@
         </testframework.surefire.args>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.30.3.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.32.0.RELEASE</webauthn4j.version>
+        <version.tools.jackson>3.2.4</version.tools.jackson>
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
         <version.org.wildfly.glow>1.5.2.Final</version.org.wildfly.glow>
@@ -340,6 +341,14 @@
     <dependencyManagement>
 
         <dependencies>
+            <!-- Jackson 3 requires newer shared annotations than the Quarkus BOM provides. -->
+            <dependency>
+                <groupId>tools.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.tools.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-bom</artifactId>
