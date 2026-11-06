@@ -523,15 +523,15 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testX509TrustMaterialRejectsNonRootAnchors() {
+    public void testX509TrustMaterialRequiresCaAnchors() {
         X509Certificate leafCertificate = PemUtils.decodeCertificate(X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem());
         X509Certificate intermediateCertificate = PemUtils.decodeCertificate(
                 X5C_TEST_CERTIFICATE_CHAIN.caSignerCertificatePem());
 
         assertThrows(IllegalArgumentException.class,
                 () -> new X509TrustMaterial(Set.of(leafCertificate), List.of(TEST_ATTESTATION_EKU)));
-        assertThrows(IllegalArgumentException.class,
-                () -> new X509TrustMaterial(Set.of(intermediateCertificate), List.of(TEST_ATTESTATION_EKU)));
+        assertEquals(Set.of(intermediateCertificate),
+                new X509TrustMaterial(Set.of(intermediateCertificate), List.of(TEST_ATTESTATION_EKU)).trustAnchors());
     }
 
     @Test

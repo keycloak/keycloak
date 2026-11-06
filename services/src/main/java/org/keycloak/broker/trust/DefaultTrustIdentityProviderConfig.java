@@ -74,7 +74,7 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
                         getRequiredExtendedKeyUsages());
             } catch (RuntimeException e) {
                 throw new IllegalArgumentException(
-                        "Trusted X.509 certificates must be a valid PEM bundle of self-signed CA roots", e);
+                        "Trusted X.509 certificates must be a valid PEM bundle of CA certificates", e);
             }
         } else {
             if (hasTrustedCertificates) {

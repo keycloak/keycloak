@@ -107,9 +107,10 @@ Trusted attester keys are configured per client because different wallets can re
 
 ===== Admin Console
 
-. Create or configure a trust-material identity provider, such as **Default Trust**, that exposes the trusted attester public keys or X.509 trust anchors.
+. Create or configure a trust-material identity provider, such as **Default Trust** or **ETSI Trust List**, that exposes the trusted attester public keys or X.509 trust anchors.
 ** For `kid`-based attestations, configure a JWKS URL or validating public key.
-** For `x5c`-based attestations, enable **Use X.509 attestation trust**, provide a PEM bundle containing only self-signed device-vendor attestation CA roots, and configure **Required extended key usages** with the accepted Extended Key Usage (EKU) OIDs. When at least one OID is configured, the attestation end-entity certificate must contain an EKU extension with at least one OID that exactly matches a configured value; otherwise, validation fails. When the list is empty, no EKU restriction is applied and the trust anchors alone decide trust.
+** For trust from an ETSI TS 119 602 List of Trusted Entities (LoTE), see <<_oid4vci_etsi_trust_list,ETSI trust lists>>.
+** For `x5c`-based attestations, enable **Use X.509 attestation trust**, provide a PEM bundle containing the device-vendor attestation CA certificates, and configure **Required extended key usages** with the accepted Extended Key Usage (EKU) OIDs. When at least one OID is configured, the attestation end-entity certificate must contain an EKU extension with at least one OID that exactly matches a configured value; otherwise, validation fails. When the list is empty, no EKU restriction is applied and the trust anchors alone decide trust.
 . Go to *Clients* and select the wallet client that requests credentials.
 . Open the *Advanced* tab.
 . In the *OpenID Verifiable Credentials* section, enable **Enable OID4VCI**.
@@ -118,11 +119,29 @@ Trusted attester keys are configured per client because different wallets can re
 
 OID4VCI does not define a universal EKU OID for key attestation. Use the OID specified by the device vendor or the applicable attestation trust framework. For example, a private test PKI could place `1.3.6.1.4.1.32473.1.1` in both the certificate and the configuration to demonstrate exact matching. The `32473` private enterprise number is reserved for documentation and must not be used in production.
 
-WARNING: The built-in OIDC identity provider exposes only JWK trust material and cannot provide X.509 trust anchors for `x5c`-based attestations. Use **Default Trust**, or a custom trust-material identity provider that implements X.509 trust resolution, for `x5c`-based attestations.
+WARNING: The built-in OIDC identity provider exposes only JWK trust material and cannot provide X.509 trust anchors for `x5c`-based attestations. Use **Default Trust**, **ETSI Trust List**, or a custom trust-material identity provider that implements X.509 trust resolution, for `x5c`-based attestations.
 
 WARNING: Certificate revocation checking is not currently supported for `x5c` key-attestation certificate chains. Before trusting an attestation CA, ensure that revoked attestation certificates are rejected by a mandatory revocation mechanism outside {project_name}.
 
 The **OID4VCI Attester Trust Identity Providers** option is only shown when **Enable OID4VCI** is enabled for the client. It accepts only trust-material identity providers from the current realm. If no trust-material identity provider is configured, the dropdown has no values to select.
+
+[[_oid4vci_etsi_trust_list]]
+===== ETSI trust lists
+
+The **ETSI Trust List** identity provider derives trust from a signed ETSI TS 119 602 V1.1.1 List of Trusted Entities (LoTE), such as the Wallet Providers list of the EUDI Wallet ecosystem. Configure these settings:
+
+Trust list URL:: The URL of the signed list in its JSON Web Signature form.
+Trust list signing certificates:: A PEM bundle of the certificates allowed to sign the list. A list is used only when one of these certificates verifies its signature. To rotate the signing key, configure the old and the new certificate.
+LoTE type:: The required type of the list, for example `+http://uri.etsi.org/19602/LoTEType/EUWalletProvidersList+`. {project_name} rejects a list whose `LoTEType` value does not match.
+Service types:: The service type identifiers whose certificates are trusted, for example `+http://uri.etsi.org/19602/SvcType/WalletSolution/Issuance+`.
+Service statuses:: Services with one of these statuses are trusted. Services without a status are always trusted.
+Refresh interval:: The maximum number of seconds between two downloads, 3600 by default. This value decides how soon a withdrawn certificate stops being trusted.
+
+An attestation must include its signing certificate in the `x5c` header, and that certificate must chain to a CA certificate on the list. Attestations without `x5c` are rejected, and a key cannot be selected by `kid`. End entity certificates on the list are ignored.
+
+{project_name} downloads the list when it is needed and reuses it until the refresh interval or its `NextUpdate` time has passed. When the list cannot be downloaded or verified, trust decisions that depend on it fail until a valid list is available. A list without a `NextUpdate` value has been discontinued by its operator, so none of its certificates are trusted.
+
+{project_name} uses the configured certificates as the only trust source for the list. It does not follow pointers to other lists.
 
 ===== Client Attribute
 
