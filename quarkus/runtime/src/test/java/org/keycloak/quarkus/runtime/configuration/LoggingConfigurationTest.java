@@ -54,33 +54,33 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     public void logHandlerConfig() {
         ConfigArgsConfigSource.setCliArgs("--log=console,file");
         SmallRyeConfig config = createConfig();
-        assertEquals("true", config.getConfigValue("quarkus.log.console.enable").getValue());
-        assertEquals("true", config.getConfigValue("quarkus.log.file.enable").getValue());
-        assertEquals("false", config.getConfigValue("quarkus.log.syslog.enable").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.log.console.enabled").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.log.file.enabled").getValue());
+        assertEquals("false", config.getConfigValue("quarkus.log.syslog.enabled").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--log=file");
         SmallRyeConfig config2 = createConfig();
-        assertEquals("false", config2.getConfigValue("quarkus.log.console.enable").getValue());
-        assertEquals("true", config2.getConfigValue("quarkus.log.file.enable").getValue());
-        assertEquals("false", config2.getConfigValue("quarkus.log.syslog.enable").getValue());
+        assertEquals("false", config2.getConfigValue("quarkus.log.console.enabled").getValue());
+        assertEquals("true", config2.getConfigValue("quarkus.log.file.enabled").getValue());
+        assertEquals("false", config2.getConfigValue("quarkus.log.syslog.enabled").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--log=console");
         SmallRyeConfig config3 = createConfig();
-        assertEquals("true", config3.getConfigValue("quarkus.log.console.enable").getValue());
-        assertEquals("false", config3.getConfigValue("quarkus.log.file.enable").getValue());
-        assertEquals("false", config3.getConfigValue("quarkus.log.syslog.enable").getValue());
+        assertEquals("true", config3.getConfigValue("quarkus.log.console.enabled").getValue());
+        assertEquals("false", config3.getConfigValue("quarkus.log.file.enabled").getValue());
+        assertEquals("false", config3.getConfigValue("quarkus.log.syslog.enabled").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--log=console,syslog");
         SmallRyeConfig config5 = createConfig();
-        assertEquals("true", config5.getConfigValue("quarkus.log.console.enable").getValue());
-        assertEquals("false", config5.getConfigValue("quarkus.log.file.enable").getValue());
-        assertEquals("true", config5.getConfigValue("quarkus.log.syslog.enable").getValue());
+        assertEquals("true", config5.getConfigValue("quarkus.log.console.enabled").getValue());
+        assertEquals("false", config5.getConfigValue("quarkus.log.file.enabled").getValue());
+        assertEquals("true", config5.getConfigValue("quarkus.log.syslog.enabled").getValue());
 
         ConfigArgsConfigSource.setCliArgs("--log=syslog");
         SmallRyeConfig config6 = createConfig();
-        assertEquals("false", config6.getConfigValue("quarkus.log.console.enable").getValue());
-        assertEquals("false", config6.getConfigValue("quarkus.log.file.enable").getValue());
-        assertEquals("true", config6.getConfigValue("quarkus.log.syslog.enable").getValue());
+        assertEquals("false", config6.getConfigValue("quarkus.log.console.enabled").getValue());
+        assertEquals("false", config6.getConfigValue("quarkus.log.file.enabled").getValue());
+        assertEquals("true", config6.getConfigValue("quarkus.log.syslog.enabled").getValue());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         assertThat(Configuration.getOptionalKcValue(LoggingOptions.LOG_SYSLOG_MAX_LENGTH).orElse(null), CoreMatchers.nullValue());
 
         assertExternalConfig(Map.of(
-                "quarkus.log.syslog.enable", "false",
+                "quarkus.log.syslog.enabled", "false",
                 "quarkus.log.syslog.endpoint", "localhost:514",
                 "quarkus.log.syslog.syslog-type", "rfc5424",
                 "quarkus.log.syslog.app-name", "keycloak",
@@ -143,7 +143,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         ));
 
         assertExternalConfig(Map.of(
-                "quarkus.log.syslog.enable", "true",
+                "quarkus.log.syslog.enabled", "true",
                 "quarkus.log.syslog.endpoint", "192.168.0.42:515",
                 "quarkus.log.syslog.syslog-type", "rfc3164",
                 "quarkus.log.syslog.max-length", "4096",
@@ -201,7 +201,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "log-syslog-counting-framing", countingFraming.toString()
         ));
         assertExternalConfig(Map.of(
-                "quarkus.log.syslog.enable", "true",
+                "quarkus.log.syslog.enabled", "true",
                 "quarkus.log.syslog.use-counting-framing", countingFraming.toString()
         ));
         onAfter();
@@ -393,7 +393,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     public void testNestedBuildTimeLogging() {
         Environment.setRebuildCheck(true); // will be reset by the system properties logic
         ConfigArgsConfigSource.setCliArgs("");
-        assertEquals("true", createConfig().getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("true", createConfig().getConfigValue("quarkus.log.console.enabled").getValue());
     }
 
     @Test
@@ -510,7 +510,7 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     protected void assertAsyncLoggingEnabled(LoggingOptions.Handler handler, Boolean expectedEnabled) {
         var handlerName = handler.toString();
         assertConfig("log-%s-async".formatted(handlerName), expectedEnabled.toString());
-        assertExternalConfig("quarkus.log.%s.async".formatted(handlerName), expectedEnabled.toString());
+        assertExternalConfig("quarkus.log.%s.async.enabled".formatted(handlerName), expectedEnabled.toString());
     }
 
     protected void assertAsyncProperties(LoggingOptions.Handler handler, Boolean enabled, Integer queueLength) {

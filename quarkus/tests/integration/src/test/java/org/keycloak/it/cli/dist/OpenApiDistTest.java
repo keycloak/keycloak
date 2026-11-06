@@ -69,6 +69,9 @@ public class OpenApiDistTest {
     when().get(OPENAPI_ENDPOINT)
         .then()
         .statusCode(200);
+    when().get(OPENAPI_UI_ENDPOINT)
+        .then()
+        .statusCode(404);
   }
 
   @Test
