@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -49,6 +50,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -322,11 +324,26 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         var storageProviders = getEnabledStorageProviders(realm, UserQueryMethodsProvider.class).toList();
 
-        if (AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS)) {
-            requiresFederatedStorage = false;
-            storageProviders = storageProviders.stream()
-                    .filter(PartialEvaluationStorageProvider.class::isInstance)
-                    .toList();
+        boolean partialEvaluationActive = AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS);
+        if (partialEvaluationActive) {
+            PaginatedQuery unfilteredQuery = pagedQuery;
+            CountQuery unfilteredCountQuery = countQuery;
+            pagedQuery = (provider, firstResultInQuery, maxResultsInQuery) -> {
+                if (provider instanceof PartialEvaluationStorageProvider) {
+                    return unfilteredQuery.query(provider, firstResultInQuery, maxResultsInQuery);
+                }
+
+                return createFilteredStream(provider, unfilteredQuery, firstResultInQuery, maxResultsInQuery);
+            };
+            countQuery = (provider, firstResultInQuery, maxResultsInQuery) -> {
+                if (provider instanceof PartialEvaluationStorageProvider) {
+                    return unfilteredCountQuery.query(provider, firstResultInQuery, maxResultsInQuery);
+                }
+
+                try (Stream<UserModel> authorizedUsers = createFilteredStream(provider, unfilteredQuery, firstResultInQuery, maxResultsInQuery)) {
+                    return (int) authorizedUsers.count();
+                }
+            };
         }
 
         if (firstResult == null || firstResult <= 0) {
@@ -369,7 +386,8 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         for (; startIdx < lastProviderToCount; ++startIdx) {
             var provider = storageProviders.get(startIdx);
-            if (!(provider instanceof UserCountMethodsProvider)) {
+            if (!(provider instanceof UserCountMethodsProvider)
+                    || (partialEvaluationActive && !(provider instanceof PartialEvaluationStorageProvider))) {
                 assert firstResult > 0;
                 Stream<?> providers = concatExternalWithFederated(storageProviders, startIdx, requiresFederatedStorage);
                 return queryProviders(providers, pagedQuery, firstResult, maxResults, true);
@@ -390,6 +408,23 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         var providers = concatExternalWithFederated(storageProviders, startIdx, requiresFederatedStorage);
         return queryProviders(providers, pagedQuery, firstResult, maxResults, false);
+    }
+
+    private Stream<UserModel> createFilteredStream(Object provider, PaginatedQuery query, Integer firstResult, Integer maxResults) {
+        if (maxResults != null && maxResults == 0) {
+            return Stream.empty();
+        }
+
+        Permissions permissions = session.getContext().getPermissions();
+        Stream<UserModel> authorizedUsers = new FilteredUserQueryBatchIterator((offset, batchSize) -> {
+            try (Stream<UserModel> batch = queryWithGracefulDegradation(provider, query, offset, batchSize)) {
+                return batch.toList();
+            }
+        }, user -> permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW),
+                firstResult, maxResults)
+                .stream();
+
+        return paginatedStream(authorizedUsers, firstResult, maxResults);
     }
 
     private Stream<UserModel> queryLocalAndFederatedStorage(PaginatedQuery pagedQuery, CountQuery countQuery, int firstResult, Integer maxResults) {
@@ -494,23 +529,44 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
      * with graceful degradation.
      */
     private int getTotalUserCountWithGracefulDegradation(RealmModel realm,
-                                                        java.util.function.Function<Object, Integer> countFunction) {
+                                                        java.util.function.Function<Object, Integer> countFunction,
+                                                        PaginatedQuery query) {
         // Count users from local storage
         int localCount = countFunction.apply(localStorage());
 
         // Count users from all enabled storage providers with graceful degradation
         Stream<Object> providers = getEnabledStorageProviders(realm, Object.class);
 
-        if (AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS)) {
-            providers = providers.filter(PartialEvaluationStorageProvider.class::isInstance);
-        }
+        boolean partialEvaluationActive = AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS);
 
         int federatedCount = providers
-            .mapToInt(provider -> countQueryWithGracefulDegradation(provider,
-                (p, firstResult, maxResults) -> countFunction.apply(p), null, null))
+            .mapToInt(provider -> {
+                if (partialEvaluationActive && !(provider instanceof PartialEvaluationStorageProvider)) {
+                    // Check each candidate so direct user grants are counted as well as group-based grants.
+                    return countQueryWithGracefulDegradation(provider, (p, firstResult, maxResults) -> {
+                        try (Stream<UserModel> authorizedUsers = createFilteredStream(p, query, null, null)) {
+                            return (int) authorizedUsers.count();
+                        }
+                    }, null, null);
+                }
+                return countQueryWithGracefulDegradation(provider,
+                        (p, firstResult, maxResults) -> countFunction.apply(p), null, null);
+            })
             .sum();
 
         return localCount + federatedCount;
+    }
+
+    private static Stream<UserModel> queryUsersInGroups(Supplier<Stream<UserModel>> query, Set<String> groupIds,
+                                                        Integer firstResult, Integer maxResults) {
+        if (groupIds == null || groupIds.isEmpty()) {
+            return Stream.empty();
+        }
+
+        Stream<UserModel> usersInGroups = query.get()
+                .filter(Objects::nonNull)
+                .filter(user -> user.getGroupsStream().map(GroupModel::getId).anyMatch(groupIds::contains));
+        return paginatedStream(usersInGroups, firstResult, maxResults);
     }
 
     // removeDuplicates method may cause concurrent issues, it should not be used on parallel streams
@@ -633,6 +689,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 // modify this if UserGroupMembershipFederatedStorage adds a getMembershipStream variant with search option.
                 return StreamsUtil.paginatedStream(((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, null, null)
                         .map(id -> getUserById(realm, id))
+                        .filter(Objects::nonNull)
                         .filter(user -> {
                             if (StringUtil.isBlank(search)) return true;
                             if (Boolean.TRUE.equals(exact)) {
@@ -690,64 +747,77 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public int getUsersCount(RealmModel realm, Set<String> groupIds) {
         return getTotalUserCountWithGracefulDegradation(realm, provider -> {
-            if (provider instanceof UserCountMethodsProvider) {
-                return ((UserCountMethodsProvider) provider).getUsersCount(realm, groupIds);
+            if (provider instanceof UserCountMethodsProvider p) {
+                return p.getUsersCount(realm, groupIds);
             }
             return 0;
-        });
+        }, (provider, firstResult, maxResults) -> provider instanceof UserQueryMethodsProvider queryProvider
+                ? queryUsersInGroups(() -> queryProvider.searchForUserStream(realm, Collections.emptyMap()), groupIds,
+                        firstResult, maxResults)
+                : Stream.empty());
     }
 
     @Override
     public int getUsersCount(RealmModel realm, String search) {
         return getTotalUserCountWithGracefulDegradation(realm, provider -> {
-            if (provider instanceof UserCountMethodsProvider) {
-                return ((UserCountMethodsProvider) provider).getUsersCount(realm, search);
+            if (provider instanceof UserCountMethodsProvider p) {
+                return p.getUsersCount(realm, search);
             }
             return 0;
-        });
+        }, (provider, firstResult, maxResults) -> provider instanceof UserQueryMethodsProvider queryProvider
+                ? queryProvider.searchForUserStream(realm, search, firstResult, maxResults)
+                : Stream.empty());
     }
 
     @Override
     public int getUsersCount(RealmModel realm, String search, Set<String> groupIds) {
         return getTotalUserCountWithGracefulDegradation(realm, provider -> {
-            if (provider instanceof UserCountMethodsProvider) {
-                return ((UserCountMethodsProvider) provider).getUsersCount(realm, search, groupIds);
+            if (provider instanceof UserCountMethodsProvider p) {
+                return p.getUsersCount(realm, search, groupIds);
             }
             return 0;
-        });
+        }, (provider, firstResult, maxResults) -> provider instanceof UserQueryMethodsProvider queryProvider
+                ? queryUsersInGroups(() -> queryProvider.searchForUserStream(realm, search), groupIds,
+                        firstResult, maxResults)
+                : Stream.empty());
     }
 
     @Override
     public int getUsersCount(RealmModel realm, Map<String, String> params) {
         return getTotalUserCountWithGracefulDegradation(realm, provider -> {
-            if (provider instanceof UserCountMethodsProvider) {
-                return ((UserCountMethodsProvider) provider).getUsersCount(realm, params);
+            if (provider instanceof UserCountMethodsProvider p) {
+                return p.getUsersCount(realm, params);
             }
             return 0;
-        });
+        }, (provider, firstResult, maxResults) -> provider instanceof UserQueryMethodsProvider queryProvider
+                ? queryProvider.searchForUserStream(realm, params, firstResult, maxResults)
+                : Stream.empty());
     }
 
     @Override
     public int getUsersCount(RealmModel realm, Map<String, String> params, Set<String> groupIds) {
         return getTotalUserCountWithGracefulDegradation(realm, provider -> {
-            if (provider instanceof UserCountMethodsProvider) {
-                return ((UserCountMethodsProvider) provider).getUsersCount(realm, params, groupIds);
+            if (provider instanceof UserCountMethodsProvider p) {
+                return p.getUsersCount(realm, params, groupIds);
             }
             return 0;
-        });
+        }, (provider, firstResult, maxResults) -> provider instanceof UserQueryMethodsProvider queryProvider
+                ? queryUsersInGroups(() -> queryProvider.searchForUserStream(realm, params), groupIds,
+                        firstResult, maxResults)
+                : Stream.empty());
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
-            if (provider instanceof UserQueryMethodsProvider) {
-                return ((UserQueryMethodsProvider)provider).searchForUserStream(realm, attributes, firstResultInQuery, maxResultsInQuery);
+            if (provider instanceof UserQueryMethodsProvider p) {
+                return p.searchForUserStream(realm, attributes, firstResultInQuery, maxResultsInQuery);
             }
             return Stream.empty();
         },
         (provider, firstResultInQuery, maxResultsInQuery) -> {
-            if (provider instanceof UserCountMethodsProvider) {
-                return ((UserCountMethodsProvider)provider).getUsersCount(realm, attributes);
+            if (provider instanceof UserCountMethodsProvider p) {
+                return p.getUsersCount(realm, attributes);
             }
             return 0;
         }
@@ -758,10 +828,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
-            if (provider instanceof UserQueryMethodsProvider) {
-                return paginatedStream(((UserQueryMethodsProvider)provider).searchForUserByUserAttributeStream(realm, attrName, attrValue), firstResultInQuery, maxResultsInQuery);
-            } else if (provider instanceof UserFederatedStorageProvider) {
-                return  paginatedStream(((UserFederatedStorageProvider)provider).getUsersByUserAttributeStream(realm, attrName, attrValue)
+            if (provider instanceof UserQueryMethodsProvider p) {
+                return paginatedStream(p.searchForUserByUserAttributeStream(realm, attrName, attrValue), firstResultInQuery, maxResultsInQuery);
+            } else if (provider instanceof UserFederatedStorageProvider p) {
+                return  paginatedStream(p.getUsersByUserAttributeStream(realm, attrName, attrValue)
                         .map(id -> getUserById(realm, id))
                         .filter(Objects::nonNull), firstResultInQuery, maxResultsInQuery);
 
