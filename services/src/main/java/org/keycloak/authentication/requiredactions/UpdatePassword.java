@@ -28,6 +28,7 @@ import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
@@ -47,6 +48,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -119,6 +121,15 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
                 .client(authSession.getClient())
                 .user(authSession.getAuthenticatedUser());
         EventBuilder deprecatedErrorEvent = errorEvent.clone().event(EventType.UPDATE_PASSWORD_ERROR);
+
+        // the reset-credentials link was validated against the email when opened; make sure it did not change since then
+        String resetEmail = authSession.getAuthNote(ResetCredentialsActionToken.RESET_CREDENTIALS_EMAIL_NOTE);
+        if (resetEmail != null && !resetEmail.equals(user.getEmail())) {
+            errorEvent.error(Errors.INVALID_EMAIL);
+            deprecatedErrorEvent.error(Errors.INVALID_EMAIL);
+            context.challenge(ErrorPage.error(context.getSession(), authSession, Response.Status.BAD_REQUEST, Messages.INVALID_EMAIL));
+            return;
+        }
 
         if (Validation.isBlank(passwordNew)) {
             Response challenge = context.form()
