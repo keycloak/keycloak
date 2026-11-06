@@ -34,8 +34,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -51,6 +53,7 @@ import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
@@ -59,12 +62,15 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.util.Strings;
 import org.keycloak.utils.MediaType;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
+import static org.keycloak.OID4VCConstants.OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY;
+import static org.keycloak.OID4VCConstants.OID4VCI_PRE_AUTH_ANONYMOUS_CLIENT_ATTRIBUTE_KEY;
 import static org.keycloak.events.Details.REASON;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.getCredentialOfferLifespan;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
@@ -81,6 +87,18 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     public Response process(Context context) {
         LOGGER.debug("Process grant request for preauthorized.");
         setContext(context);
+
+        if (client == null) {
+            // Without a client the allowed origins are unknown
+            cors.allowAllOrigins();
+
+            // Matches the response for a missing client_id at the token endpoint
+            if (!isAnonymousAccessEnabled(realm)) {
+                event.error(Errors.INVALID_CLIENT);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT,
+                        "Missing client_id parameter", Response.Status.BAD_REQUEST);
+            }
+        }
 
         // Check if OID4VCI functionality is enabled for the realm
         if (!realm.isVerifiableCredentialsEnabled()) {
@@ -133,6 +151,17 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         validateOriginatingSession(offerState, offerStorage);
+
+        if (client == null) {
+            client = getAnonymousAccessClient(offerState);
+            clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+            session.getContext().setClient(client);
+
+            // The token endpoint did not know this client, so its DPoP requirement is checked here
+            if (session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE) == null) {
+                DPoPUtil.handleDPoPHeader(session, event, cors, clientConfig);
+            }
+        }
 
         // Checked before the code is marked as used, so that another client cannot invalidate the offer
         if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(client.getClientId())) {
@@ -292,6 +321,32 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public Set<String> getTokenParameterNames() {
         return Collections.emptySet();
+    }
+
+    @Override
+    public boolean isAnonymousAccessAllowed() {
+        return true;
+    }
+
+    public static boolean isAnonymousAccessEnabled(RealmModel realm) {
+        return Boolean.parseBoolean(realm.getAttribute(OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY));
+    }
+
+    /**
+     * Anonymous token requests act on behalf of the client the credential offer was issued to,
+     * or on behalf of the client configured for anonymous access if the offer is not bound to a client.
+     */
+    private ClientModel getAnonymousAccessClient(CredentialOfferState offerState) {
+        String clientId = Optional.ofNullable(offerState.getTargetClientId())
+                .orElse(realm.getAttribute(OID4VCI_PRE_AUTH_ANONYMOUS_CLIENT_ATTRIBUTE_KEY));
+        ClientModel anonymousClient = clientId != null ? realm.getClientByClientId(clientId) : null;
+        if (anonymousClient == null || !anonymousClient.isEnabled()) {
+            var errorMessage = "No enabled client configured for anonymous access";
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CLIENT);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+        return anonymousClient;
     }
 
     /**

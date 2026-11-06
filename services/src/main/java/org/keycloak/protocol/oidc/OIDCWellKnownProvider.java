@@ -49,6 +49,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
+import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
@@ -240,6 +241,12 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             if (!clientAuthMethodsSupported.contains("none")) {
                 clientAuthMethodsSupported.add("none");
             }
+        }
+
+        // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-12.3
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_PREAUTH_CODE) && realm.isVerifiableCredentialsEnabled()
+                && PreAuthorizedCodeGrantType.isAnonymousAccessEnabled(realm)) {
+            config.setPreAuthorizedGrantAnonymousAccessSupported(true);
         }
 
         config = checkConfigOverride(config);

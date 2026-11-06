@@ -286,6 +286,16 @@ The following table describes the available OID4VCI realm attributes:
 | Off
 | Only available when request encryption is required. Enabling this advertises DEFLATE compression support in the issuer metadata. The wallet can compress the JWE payload using the `DEF` algorithm.
 
+| Allow Anonymous Pre-Authorized Code Grant
+| `oid4vci.pre_authorized_grant_anonymous_access_supported`
+| Off
+| Only available when the `oid4vc-vci-preauth-code` feature is enabled. When enabled, wallets can redeem pre-authorized codes without client authentication. Anyone who has a pre-authorized code can then redeem it.
+
+| Anonymous Access Client
+| `oid4vci.pre_authorized_grant_anonymous_access_client`
+| Not set
+| Client used for anonymous token requests when the credential offer is not bound to a client. Assign the credential client scopes to this client.
+
 | Batch Issuance Size
 | `oid4vci.batch_credential_issuance.batch_size`
 | `2`

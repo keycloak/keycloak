@@ -11,6 +11,8 @@ import java.util.Set;
 public class OID4VCConstants {
 
     public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+    public static final String OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY = "oid4vci.pre_authorized_grant_anonymous_access_supported";
+    public static final String OID4VCI_PRE_AUTH_ANONYMOUS_CLIENT_ATTRIBUTE_KEY = "oid4vci.pre_authorized_grant_anonymous_access_client";
 
     // Sd-JWT constants
     public static final String SDJWT_DELIMITER = "~";
