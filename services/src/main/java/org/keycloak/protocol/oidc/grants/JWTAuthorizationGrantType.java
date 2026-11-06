@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 
@@ -29,6 +33,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -41,6 +46,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -143,7 +149,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             authorizationGrantContext.validateTokenActive(jwtAuthorizationGrantProvider.getAllowedClockSkew(), jwtAuthorizationGrantProvider.getMaxAllowedExpiration(), jwtAuthorizationGrantProvider.isAssertionReuseAllowed());
 
-            //user must exist in keycloak
+            // Resolve a linked user, or construct a transient user for an explicitly configured provider.
             FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(identityProviderModel.getAlias(), brokeredIdentityContext.getId(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getToken());
             UserModel user = lookupUserByFederatedIdentity(federatedIdentityModel, clientAssertionState);
             if (user == null) {
@@ -209,7 +215,34 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
     }
 
     protected UserModel lookupUserByFederatedIdentity(FederatedIdentityModel federatedIdentityModel, ClientAssertionState clientAssertionState) {
+        IdentityProviderModel identityProvider = session.identityProviders().getByAlias(federatedIdentityModel.getIdentityProvider());
+        if (identityProvider != null && Boolean.parseBoolean(identityProvider.getConfig().get(IdentityProviderModel.DO_NOT_STORE_USERS))) {
+            if (!Profile.isFeatureEnabled(Profile.Feature.TRANSIENT_USERS)) {
+                throw new IllegalStateException("Transient users are not enabled");
+            }
+            String actorId = transientSubject(clientAssertionState.getToken().getIssuer(), clientAssertionState.getToken().getSubject());
+            LightweightUserAdapter user = new LightweightUserAdapter(session, realm, actorId);
+            user.setUsername("ext." + HexFormat.of().formatHex(Base64Url.decode(actorId)));
+            user.setCreatedTimestamp(System.currentTimeMillis());
+            user.setEnabled(true);
+            user.setReadonly(true);
+            return user;
+        }
         return this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+    }
+
+    private static String transientSubject(String issuer, String subject) {
+        if (!StandardCharsets.UTF_8.newEncoder().canEncode(issuer) || !StandardCharsets.UTF_8.newEncoder().canEncode(subject)) {
+            throw new IllegalArgumentException("Issuer and subject must be valid Unicode");
+        }
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            // Preserve opaque, case-sensitive subjects and avoid depending on the provider alias.
+            digest.update((issuer.length() + ":" + issuer).getBytes(StandardCharsets.UTF_8));
+            return Base64Url.encode(digest.digest(subject.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     protected AuthenticationSessionModel createSessionModel(RootAuthenticationSessionModel rootAuthSession, UserModel targetUser, ClientModel client, String scope) {
