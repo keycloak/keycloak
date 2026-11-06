@@ -185,7 +185,7 @@ hr {
     gap: 0.875rem;
 }
 /* OTP device pickers (login and reset): the radio is visually hidden, so the tile shows its checked state and keyboard focus */
-input[name="selectedCredentialId"]:checked + .pf-v5-c-tile {
+.kc-login-otp-radio:checked + .pf-v5-c-tile {
     --pf-v5-c-tile__title--Color: var(--pf-v5-c-tile--m-selected__title--Color);
     --pf-v5-c-tile__icon--Color: var(--pf-v5-c-tile--m-selected__icon--Color);
     --pf-v5-c-tile--TranslateY: var(--pf-v5-c-tile--m-selected--TranslateY);
@@ -196,7 +196,7 @@ input[name="selectedCredentialId"]:checked + .pf-v5-c-tile {
     --pf-v5-c-tile--after--ScaleY: var(--pf-v5-c-tile--m-selected--after--ScaleY);
 }
 
-input[name="selectedCredentialId"]:focus-visible + .pf-v5-c-tile {
+.kc-login-otp-radio:focus-visible + .pf-v5-c-tile {
     outline: var(--pf-v5-global--BorderWidth--md) solid var(--pf-v5-global--primary-color--100);
     outline-offset: var(--pf-v5-global--spacer--xs);
 }
