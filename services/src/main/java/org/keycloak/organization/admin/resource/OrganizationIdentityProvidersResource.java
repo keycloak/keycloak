@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -52,7 +53,9 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -101,7 +104,18 @@ public class OrganizationIdentityProvidersResource {
     public Response addIdentityProvider(String id) {
         auth.orgs().requireManage(organization);
         auth.realm().requireManageIdentityProviders();
-        id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
+        id = id.trim();
+        if (id.startsWith("\"") && id.endsWith("\"")) {
+            try {
+                id = JsonSerialization.mapper.readerFor(String.class)
+                        .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readValue(id);
+            } catch (IOException e) {
+                // Keep accepting legacy unescaped aliases surrounded by quotes.
+                id = id.replaceAll("^\"|\"$", "");
+            }
+        } else {
+            id = id.replaceAll("^\"|\"$", "");
+        }
 
         try {
             IdentityProviderModel identityProvider = session.identityProviders().getByIdOrAlias(id);

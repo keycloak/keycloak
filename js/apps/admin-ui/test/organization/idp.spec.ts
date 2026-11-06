@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
@@ -47,7 +47,15 @@ test.describe.serial("Identity providers", () => {
     await assertEmptyTable(page);
     await clickAddIdentityProvider(page);
     await fillForm(page, { name: "bitbucket" });
+    const linkRequest = page.waitForRequest(
+      (request) =>
+        request.method() === "POST" &&
+        new URL(request.url()).pathname.endsWith("/identity-providers"),
+    );
     await confirmModal(page);
+    const request = await linkRequest;
+    expect(request.headers()["content-type"]).toContain("application/json");
+    expect(request.postDataJSON()).toBe("bitbucket");
     await assertNotificationMessage(
       page,
       "Identity provider successfully linked to organization",

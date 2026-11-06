@@ -18,6 +18,7 @@
 package org.keycloak.tests.organization.admin;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
@@ -33,6 +34,9 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -41,6 +45,35 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class OrganizationIdentityProviderLinkTest extends AbstractOrganizationTest {
+
+    @ParameterizedTest
+    @MethodSource("identityProviderAliasPayloads")
+    public void testLinkIdentityProviderAliasPayload(String payload, String alias) {
+        OrganizationRepresentation org = createOrganization("test-alias-payload");
+        OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
+        IdentityProviderRepresentation idp = createOrgBroker("additional");
+        idp.setAlias(alias);
+        try (Response response = realm.admin().identityProviders().create(idp)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        realm.cleanup().add(r -> r.identityProviders().get(alias).remove());
+
+        try (Response response = orgResource.identityProviders().addIdentityProvider(payload)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        assertEquals(alias, orgResource.identityProviders().get(alias).toRepresentation().getAlias());
+    }
+
+    private static Stream<Arguments> identityProviderAliasPayloads() {
+        return Stream.of(
+                Arguments.of("plain", "plain"),
+                Arguments.of("  plain  ", "plain"),
+                Arguments.of("\"plain\"", "plain"),
+                Arguments.of("a\"b", "a\"b"),
+                Arguments.of("\"a\\\"b\"", "a\"b"),
+                Arguments.of("\"a\"\"b\"", "a\"\"b"),
+                Arguments.of("123", "123"));
+    }
 
     private OrganizationIdentityProviderLinkRepresentation getOrgLink(IdentityProviderRepresentation idpRep, String orgId) {
         assertNotNull(idpRep.getOrganizationLinks());
