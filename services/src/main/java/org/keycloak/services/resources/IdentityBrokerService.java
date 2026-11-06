@@ -47,6 +47,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkAuthenticator;
@@ -1114,6 +1115,16 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             logger.debugf("Performing local authentication for user [%s].", federatedUser);
         }
 
+        // Record the authentication time (as AuthenticationProcessor does for other flows), so the max_auth_age check of
+        // application-initiated actions can be done when the action is committed. The upstream broker timestamp is preferred
+        // when available (OIDC auth_time with "Pass max_age"), otherwise the current time is used.
+        // SSO (cookie only) logins are not credentials presented.
+        if (!AuthenticatorUtil.isSSOAuthentication(authSession)) {
+            String authTime = Optional.ofNullable(authSession.getClientNote(AuthenticationManager.AUTH_TIME_BROKER))
+                    .orElse(String.valueOf(Time.currentTime()));
+            authSession.setAuthNote(AuthenticationManager.AUTH_TIME, authTime);
+        }
+
         AuthenticationManager.setClientScopesInSession(session, authSession);
 
         String nextRequiredAction = AuthenticationManager.nextRequiredAction(session, authSession, request, event);
@@ -1225,6 +1236,16 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             return redirectToErrorWhenLinkingFailed(authSession, Errors.NOT_ALLOWED, Messages.FEDERATED_IDENTITY_BOUND_ORGANIZATION);
         }
 
+        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+
+        // The external IdP round trip may have outlasted max_auth_age of the idp_link action. Check it before the link is persisted,
+        // so that a rejected action never leaves a committed link behind. The completion call of the action skips this check.
+        if (Boolean.parseBoolean(authSession.getAuthNote(IdpLinkAction.KC_ACTION_LINKING_IDENTITY_PROVIDER))
+                && AuthenticatorUtil.isReAuthRequiredForKcAction(session, userSession != null ? userSession : AuthenticatorUtil.getUserSessionForKcAction(session, authSession), authSession, null, IdpLinkAction.PROVIDER_ID)) {
+            logger.debugf("Re-authentication required before linking identity provider [%s] to user [%s]", context.getIdpConfig().getAlias(), authenticatedUser.getUsername());
+            return new LoginActionsService(session, event).resetFlowAndRedirectToAuthenticate(authSession);
+        }
+
         if (federatedUser != null) {
             if (Booleans.isTrue(context.getIdpConfig().isStoreToken())) {
                 FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
@@ -1258,7 +1279,6 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         // we do this to make sure that the parent IDP is logged out when this user session is complete.
         // But for the case when userSession was previously authenticated with broker1 and now is linked to another broker2, we shouldn't override broker1 notes with the broker2 for sure.
         // Maybe broker logout should be rather always skiped in case of broker-linking
-        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
         if (userSession != null && userSession.getNote(Details.IDENTITY_PROVIDER) == null) {
             userSession.setNote(Details.IDENTITY_PROVIDER, context.getIdpConfig().getAlias());
             userSession.setNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());

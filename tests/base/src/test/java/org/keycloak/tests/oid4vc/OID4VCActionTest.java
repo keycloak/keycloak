@@ -1,23 +1,29 @@
 package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.oid4vc.VerifiableCredentialOfferActionConfig;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -25,6 +31,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 
 import org.apache.http.HttpStatus;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +62,9 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
     @InjectPage
     OID4VCCredentialOfferPage credentialOfferPage;
 
+    @InjectPage
+    LoginPage loginPage;
+
     @InjectUser(config = OID4VCTestUserConfig.class)
     ManagedUser user;
 
@@ -64,6 +74,36 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
     void beforeEach() {
         ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
         user.admin().logout();
+    }
+
+    @AfterEach
+    void afterEach() {
+        timeOffSet.set(0);
+        clearMaxAuthAge(testRealm);
+    }
+
+    /**
+     * Configures max_auth_age on the verifiable_credential_offer required action. The realm is shared by all tests of a class,
+     * so callers must undo it with {@link #clearMaxAuthAge(ManagedRealm)}.
+     */
+    public static void setMaxAuthAge(ManagedRealm realm, int maxAuthAge) {
+        for (RequiredActionProviderRepresentation a : realm.admin().flows().getRequiredActions()) {
+            if (VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID.equals(a.getProviderId())) {
+                Map<String, String> config = a.getConfig() == null ? new HashMap<>() : new HashMap<>(a.getConfig());
+                config.put(Constants.MAX_AUTH_AGE_KEY, String.valueOf(maxAuthAge));
+                a.setConfig(config);
+                realm.admin().flows().updateRequiredAction(a.getAlias(), a);
+            }
+        }
+    }
+
+    public static void clearMaxAuthAge(ManagedRealm realm) {
+        for (RequiredActionProviderRepresentation a : realm.admin().flows().getRequiredActions()) {
+            if (VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID.equals(a.getProviderId())
+                    && a.getConfig() != null && a.getConfig().remove(Constants.MAX_AUTH_AGE_KEY) != null) {
+                realm.admin().flows().updateRequiredAction(a.getAlias(), a);
+            }
+        }
     }
 
     public static String getKcActionParameter(String clientId, String credentialConfigId, boolean preAuthorized) {
@@ -397,6 +437,46 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .details(REASON, "User 'test-user@localhost' does not have verifiable credential 'oid4vc_natural_person_sd'.")
                 .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR);
         events.clear();
+    }
+
+    @Test
+    public void testCredentialOfferAIAReAuthRequiredWhenMaxAuthAgeElapsed() {
+        setMaxAuthAge(testRealm, 30);
+
+        oauth.client(client.getClientId(), "test-secret");
+        oauth.loginForm()
+                .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
+
+        credentialOfferPage.assertCurrent();
+
+        timeOffSet.set(35);
+        credentialOfferPage.clickContinueButton();
+
+        loginPage.assertCurrent();
+    }
+
+    // The offer was created by the challenge, so it must be removed when the stale submit is rejected
+    @Test
+    public void testCredentialOfferRemovedWhenReAuthRequiredWhenMaxAuthAgeElapsed() {
+        setMaxAuthAge(testRealm, 30);
+
+        oauth.client(client.getClientId(), "test-secret");
+        oauth.loginForm()
+                .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
+
+        credentialOfferPage.assertCurrent();
+        String credentialOfferNonce = getNonceFromCredentialOfferUri(credentialOfferPage.getCredentialOfferUri());
+
+        timeOffSet.set(35);
+        credentialOfferPage.clickContinueButton();
+        loginPage.assertCurrent();
+
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest(credentialOfferNonce).send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialOfferResponse.getStatusCode());
     }
 
     public static class OID4VCTestUserConfig implements UserConfig {

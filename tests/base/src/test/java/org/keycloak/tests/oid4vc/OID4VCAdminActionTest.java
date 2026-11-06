@@ -41,11 +41,14 @@ import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.oid4vc.OID4VCActionTest.clearMaxAuthAge;
 import static org.keycloak.tests.oid4vc.OID4VCActionTest.getNonceFromCredentialOfferUri;
+import static org.keycloak.tests.oid4vc.OID4VCActionTest.setMaxAuthAge;
 import static org.keycloak.tests.oid4vc.OID4VCActionTest.verifyVCActionCredentialResponse;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,6 +94,12 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
         ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
         user.admin().logout();
         adminEvents.clear();
+    }
+
+    @AfterEach
+    void afterEach() {
+        timeOffSet.set(0);
+        clearMaxAuthAge(testRealm);
     }
 
     @Test
@@ -249,6 +258,25 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
             credRep.setCredentialScopeName(minimalJwtTypeCredentialScopeName);
             user.admin().verifiableCredentials().createCredential(credRep);
         }
+    }
+
+    @Test
+    public void testAdminCredentialOfferNotSubjectToMaxAuthAge() throws Exception {
+        setMaxAuthAge(testRealm, 0);
+        // Configuring the required action emits an admin event that would precede the send-credential-offer event
+        adminEvents.clear();
+
+        String link = sendEmailAndGetLink(null, null, null, "This link will expire within 12 hours");
+
+        driver.open(link);
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+
+        credentialOfferPage.assertCurrent();
+        credentialOfferPage.clickContinueButton();
+
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     private String sendEmailAndGetLink(String clientId, String redirectUri, Integer lifespan, String expectedLifespanMessage) throws IOException {

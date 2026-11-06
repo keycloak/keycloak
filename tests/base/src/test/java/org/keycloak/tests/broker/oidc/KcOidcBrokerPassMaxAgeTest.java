@@ -1,17 +1,27 @@
 package org.keycloak.tests.broker.oidc;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 import org.keycloak.tests.common.CustomProvidersServerConfig;
 import org.keycloak.tests.providers.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
@@ -24,6 +34,8 @@ import org.junit.jupiter.api.Test;
 @KeycloakIntegrationTest(config = CustomProvidersServerConfig.class)
 public class KcOidcBrokerPassMaxAgeTest extends AbstractKcOidcBrokerTest {
 
+    private static final int MAX_AUTH_AGE = 30;
+
     @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD,
             config = PassMaxAgeConsumerRealmConfig.class)
     ManagedRealm consumerRealm;
@@ -31,8 +43,14 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractKcOidcBrokerTest {
     @InjectPage
     ErrorPage errorPage;
 
+    @InjectPage
+    LoginPasswordUpdatePage changePasswordPage;
+
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     // The standard login flow doesn't apply cleanly to this config (no client-forwarded prompt, custom
     // provider factory) - legacy disabled the same inherited test for this exact configuration and
@@ -142,6 +160,77 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractKcOidcBrokerTest {
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(),
                 "Should be logged in; a huge max_age must not overflow and wrongly reject the response");
+    }
+
+    @Test
+    void kcActionRequiresReAuthenticationWhenUpstreamLoginIsOlderThanMaxAuthAge() {
+        setMaxAuthAge(UserModel.RequiredAction.UPDATE_PASSWORD.name(), MAX_AUTH_AGE);
+        createUserInConsumerRealmAndLogoutFromConsumerOnly();
+
+        // The upstream (provider realm) session stays alive and becomes older than max_auth_age of the action
+        timeOffSet.set(MAX_AUTH_AGE + 10);
+
+        // The broker callback is recent, but the upstream login it reuses (SSO at the provider realm) is not
+        oauth.loginForm().kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).open();
+        loginPage.assertCurrent();
+        logInWithBroker();
+
+        changePasswordPage.assertCurrent();
+        changePasswordPage.changePassword("New-password1!", "New-password1!");
+
+        // The action must not be committed. The user has to authenticate again
+        loginPage.assertCurrent();
+        Assertions.assertTrue(webDriver.getCurrentUrl().contains("/realms/" + CONSUMER_REALM + "/"),
+                "Driver should be back on the consumer realm page");
+    }
+
+    @Test
+    void kcActionSucceedsWhenUpstreamLoginIsFresh() {
+        setMaxAuthAge(UserModel.RequiredAction.UPDATE_PASSWORD.name(), MAX_AUTH_AGE);
+        createUserInConsumerRealmAndLogoutFromConsumerOnly();
+        AccountHelper.logout(providerRealm.admin(), getUserLogin());
+
+        // Time passes, but the user authenticates upstream again, so the upstream login is fresh
+        timeOffSet.set(MAX_AUTH_AGE + 10);
+
+        oauth.loginForm().kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).open();
+        loginPage.assertCurrent();
+        logInWithBroker();
+        loginPage.fillLogin(getUserLogin(), getUserPassword());
+        loginPage.submit();
+
+        changePasswordPage.assertCurrent();
+        changePasswordPage.changePassword("New-password1!", "New-password1!");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+    }
+
+    private void createUserInConsumerRealmAndLogoutFromConsumerOnly() {
+        logInAsUserInIDP();
+        updateAccountInformation();
+        assertUserCreatedInConsumerRealm();
+
+        oauth.openLoginForm();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), "Should be logged in");
+
+        // Remove the consumer user sessions directly. The admin logout would also log the user out of the provider realm
+        // (backchannel logout of the IdP), but the upstream SSO session has to stay alive for these tests.
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(CONSUMER_REALM);
+            session.getContext().setRealm(realm);
+            UserModel user = session.users().getUserByUsername(realm, USER_LOGIN);
+            session.sessions().removeUserSessions(realm, user);
+        });
+    }
+
+    private void setMaxAuthAge(String providerId, int maxAuthAge) {
+        RequiredActionProviderRepresentation action = consumerRealm.admin().flows().getRequiredActions().stream()
+                .filter(a -> providerId.equals(a.getProviderId()))
+                .findFirst()
+                .orElseThrow();
+        Map<String, String> config = action.getConfig() == null ? new HashMap<>() : new HashMap<>(action.getConfig());
+        config.put(Constants.MAX_AUTH_AGE_KEY, String.valueOf(maxAuthAge));
+        action.setConfig(config);
+        consumerRealm.admin().flows().updateRequiredAction(action.getAlias(), action);
     }
 
     static class PassMaxAgeConsumerRealmConfig implements RealmConfig {
