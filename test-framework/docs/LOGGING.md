@@ -49,8 +49,7 @@ Some useful categories include:
   any issues with the test framework itself, or custom suppliers.
 * `org.keycloak` - Logging from the Keycloak server. If you set this to `DEBUG` for example, but don't want debug from 
   the test framework, also explicitly set `org.keycloak.testframework` to for example `INFO`
-* `managed.keycloak` - Log output from the managed Keycloak server if you are running the server in `distribution` mode 
-  (which is the default)
+* `managed.keycloak` - Log output from the managed Keycloak server if you are running the server in `distribution` mode (which is the default). The original logger name of each record is appended, for example `managed.keycloak.org.keycloak.services`.
 * `managed.db` - Output from database containers are included in this category. Standard out is logged with `DEBUG` 
   level, while standard error is logged with `WARN` level
 * `managed.infinispan` - Output from the external Infinispan container is included in this category. Standard out is 
