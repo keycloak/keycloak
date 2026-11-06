@@ -146,15 +146,15 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
 
     public boolean failure(String error, String errorDescription, int statusCode) {
         Response challengeResponse = ClientAuthUtil.errorResponse(statusCode, error, errorDescription);
-        return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+        return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse, errorDescription);
     }
 
     protected boolean failure(AuthenticationFlowError error) {
-        return failure(error, null);
+        return failure(error, null, null);
     }
 
-    protected boolean failure(AuthenticationFlowError error, Response response) {
-        context.failure(error, response);
+    protected boolean failure(AuthenticationFlowError error, Response response, String errorDescription) {
+        context.failure(error, response, errorDescription, null);
         return false;
     }
 
