@@ -25,10 +25,12 @@ import org.keycloak.common.util.Time;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -421,6 +423,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         ClientModel clientModel;
         if (fetchOp == FetchOperation.CREATE) {
+            // Serialize the check of max clients per realm and the creation across cluster nodes until the current
+            // transaction completes, so that a concurrent creation cannot pass the check before this one is committed.
+            lockClientCreationUntilTransactionCompletion();
+            // Check max clients per realm before creating a new client
+            checkClientsLimit();
             // Create Client Metadata
             clientModel = provider.createClientMetadata(clientOIDCWithCacheControl);
         } else {
@@ -473,6 +480,91 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     private static final ObjectMapper clientMetadataObjectMapper = JsonSerialization.createObjectMapperWithDefaults()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    // Max Clients per realm
+    public static final String ERR_CLIENTS_LIMIT_REACHED = "Max clients per realm reached";
+
+    /**
+     * Checks the max clients per realm limit. It must be called after
+     * {@link #lockClientCreationUntilTransactionCompletion()} so that the count includes every client created by a
+     * concurrent request, on any cluster node, that passed this check before.
+     *
+     * @throws ClientPolicyException when the limit is reached.
+     */
+    private void checkClientsLimit() throws ClientPolicyException {
+        int maxClients = providerConfig.getMaxClients();
+        if (maxClients <= 0) {
+            // 0 or negative means unlimited
+            return;
+        }
+        long currentCount = session.getContext().getRealm().getClientsCount();
+        if (currentCount >= maxClients) {
+            getLogger().warnv("Max clients per realm reached: max={0}, current={1}", maxClients, currentCount);
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, ERR_CLIENTS_LIMIT_REACHED);
+        }
+    }
+
+    /**
+     * Acquires the cluster-wide database lock for CIMD client creation, and holds it until the current transaction
+     * completes (commit or rollback), so that checking the max clients per realm limit and creating a client are
+     * serialized across cluster nodes. Otherwise, the check could not see a client created by another transaction that
+     * has not been committed yet, and concurrent creations could exceed the limit.
+     *
+     * <p>The lock is acquired in a separate session, whose database connection is independent of the current
+     * transaction, and is released after the current transaction has completed. It is not acquired if the limit is
+     * unlimited.
+     */
+    private void lockClientCreationUntilTransactionCompletion() {
+        if (providerConfig.getMaxClients() <= 0) {
+            return;
+        }
+
+        KeycloakSession lockSession = session.getKeycloakSessionFactory().create();
+        DBLockProvider dbLock = null;
+        try {
+            dbLock = lockSession.getProvider(DBLockProvider.class);
+            if (dbLock == null) {
+                getLogger().warn("No database lock provider available, concurrent client creations may exceed the max clients per realm limit.");
+                lockSession.close();
+                return;
+            }
+            dbLock.waitForLock(DBLockProvider.Namespace.CIMD_CLIENT_CREATION);
+            session.getTransactionManager().enlistAfterCompletion(new ClientCreationLockRelease(lockSession, dbLock));
+        } catch (RuntimeException e) {
+            releaseClientCreationLock(lockSession, dbLock);
+            throw e;
+        }
+    }
+
+    private void releaseClientCreationLock(KeycloakSession lockSession, DBLockProvider dbLock) {
+        try {
+            if (dbLock != null && dbLock.getCurrentLock() != null) {
+                dbLock.releaseLock();
+            }
+        } finally {
+            lockSession.close();
+        }
+    }
+
+    private class ClientCreationLockRelease extends AbstractKeycloakTransaction {
+        private final KeycloakSession lockSession;
+        private final DBLockProvider dbLock;
+
+        private ClientCreationLockRelease(KeycloakSession lockSession, DBLockProvider dbLock) {
+            this.lockSession = lockSession;
+            this.dbLock = dbLock;
+        }
+
+        @Override
+        protected void commitImpl() {
+            releaseClientCreationLock(lockSession, dbLock);
+        }
+
+        @Override
+        protected void rollbackImpl() {
+            releaseClientCreationLock(lockSession, dbLock);
+        }
+    }
 
     /**
      * Verifies an authorization request to check if the request includes required parameters and follows the expected format.

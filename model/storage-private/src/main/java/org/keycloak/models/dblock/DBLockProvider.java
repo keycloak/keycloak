@@ -43,8 +43,9 @@ public interface DBLockProvider extends Provider {
     enum Namespace {
 
         DATABASE(1),
-        KEYCLOAK_BOOT(1000)
+        KEYCLOAK_BOOT(1000),
         // OFFLINE_SESSIONS(1001) -- Not used anymore. Keeping to avoid reusing the number.
+        CIMD_CLIENT_CREATION(1002)
         ;
 
         private final int id;
