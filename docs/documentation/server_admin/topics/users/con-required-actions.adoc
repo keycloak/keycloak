@@ -21,6 +21,8 @@ Configure OTP::
 
 Verify Email::
    The user must verify their email account. An email will be sent to the user with a validation link that they must click. Once this workflow is successfully completed, the user will be allowed to log in.
+   Adding this action to an existing user from the Admin Console or the Admin REST API also switches *Email verified* off, so a user whose email address was already verified must verify it again.
+   In the Admin Console, you confirm this when you add the action to a user whose email address is verified.
 
 Update Profile::
    The user must update profile information, such as name, address, email, and phone number.

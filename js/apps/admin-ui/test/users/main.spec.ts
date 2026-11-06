@@ -1,5 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
-import { expect, test } from "@playwright/test";
+import { type Page, expect, test } from "@playwright/test";
 import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
 import { toAddUser } from "../../src/user/routes/AddUser.tsx";
 import { toUser } from "../../src/user/routes/User.tsx";
@@ -19,7 +19,7 @@ import {
   assertNotificationMessage,
   selectActionToggleItem,
 } from "../utils/masthead.ts";
-import { confirmModal } from "../utils/modal.ts";
+import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal.ts";
 import { goToUsers } from "../utils/sidebar.ts";
 import {
   assertNoResults,
@@ -355,6 +355,82 @@ test.describe("Existing users", () => {
     await joinGroup(page, ["test-group"], true);
     await assertNotificationMessage(page, "Added group membership");
     await assertRowExists(page, "test-group");
+  });
+
+  test.describe("Verify Email for a user with a verified email", () => {
+    const verifiedUserName = "verified-user";
+    const verifiedUser: RealmRepresentation = {
+      users: [
+        {
+          username: verifiedUserName,
+          email: "verified-user@example.com",
+          firstName: "Verified",
+          lastName: "User",
+          emailVerified: true,
+        },
+      ],
+    };
+
+    async function addVerifyEmail(page: Page) {
+      await page.locator("#requiredActions").click();
+      await page.getByRole("option", { name: "Verify Email" }).click();
+      await assertModalTitle(page, "Ask for email verification again?");
+    }
+
+    test("switches Email verified off when confirmed", async ({ page }) => {
+      await using testBed = await createTestBed(verifiedUser);
+      const user = await adminClient.findUserByUsername(
+        testBed.realm,
+        verifiedUserName,
+      );
+
+      await login(page, {
+        to: toUser({ realm: testBed.realm, id: user.id!, tab: "settings" }),
+      });
+
+      await addVerifyEmail(page);
+      await confirmModal(page);
+      await expect(page.locator("#emailVerified")).not.toBeChecked();
+
+      await clickSaveButton(page);
+      await assertNotificationMessage(page, "The user has been saved");
+
+      const updatedUser = await adminClient.findUserByUsername(
+        testBed.realm,
+        verifiedUserName,
+      );
+      expect(updatedUser.emailVerified).toBe(false);
+      expect(updatedUser.requiredActions).toEqual(["VERIFY_EMAIL"]);
+    });
+
+    test("removes Verify Email again when cancelled", async ({ page }) => {
+      await using testBed = await createTestBed(verifiedUser);
+      const user = await adminClient.findUserByUsername(
+        testBed.realm,
+        verifiedUserName,
+      );
+
+      await login(page, {
+        to: toUser({ realm: testBed.realm, id: user.id!, tab: "settings" }),
+      });
+
+      await addVerifyEmail(page);
+      await cancelModal(page);
+      await expect(
+        page.locator("#requiredActions").getByText("Verify Email"),
+      ).toHaveCount(0);
+      await expect(page.locator("#emailVerified")).toBeChecked();
+
+      await clickSaveButton(page);
+      await assertNotificationMessage(page, "The user has been saved");
+
+      const updatedUser = await adminClient.findUserByUsername(
+        testBed.realm,
+        verifiedUserName,
+      );
+      expect(updatedUser.emailVerified).toBe(true);
+      expect(updatedUser.requiredActions).toEqual([]);
+    });
   });
 });
 
