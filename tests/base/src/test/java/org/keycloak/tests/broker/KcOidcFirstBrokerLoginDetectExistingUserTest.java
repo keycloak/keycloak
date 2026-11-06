@@ -1,6 +1,7 @@
 package org.keycloak.tests.broker;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.mail.MessagingException;
@@ -11,14 +12,20 @@ import org.keycloak.admin.client.resource.AuthenticationManagementResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.broker.IdpAutoLinkAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.IdpDetectExistingBrokerUserAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticatorFactory;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -30,6 +37,8 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.IdpConfirmOverrideLinkPage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
@@ -51,6 +60,12 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
 
     @InjectPage
     ErrorPage errorPage;
+
+    @InjectPage
+    IdpConfirmOverrideLinkPage idpConfirmOverrideLinkPage;
+
+    @InjectPage
+    LoginUpdateProfilePage loginUpdateProfilePage;
 
     // Injecting the mail server also configures the SMTP settings of the realms created for the test,
     // so Keycloak can send the account linking emails to it.
@@ -187,6 +202,213 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractKcOidc
         assertEquals(email, userRepresentation.getEmail(), "Email is not correct");
         assertEquals(firstname, userRepresentation.getFirstName(), "Firstname is not correct");
         assertEquals(lastname, userRepresentation.getLastName(), "Lastname is not correct");
+    }
+
+    /**
+     * The link on the consumer user holds the provider user ID in a different case than the ID the
+     * provider sends, so the returning user is not found and the first-broker-login flow links the
+     * existing user by email again. The login then fails with the already-linked error, and the
+     * events must carry the ID as sent by the provider and the ID the user is already linked with,
+     * so the conflict can be diagnosed from the events instead of the server log.
+     */
+    @Test
+    public void loginWhenIncomingFederatedUserIdDiffersOnlyInCase() {
+        disableUpdateProfileOnFirstLogin();
+        consumerRealm.updateWithCleanup(r -> r.eventsEnabled(true));
+
+        final String username = "casedrift";
+        final String email = "casedrift@example.org";
+        createUser(providerRealm, username, USER_PASSWORD, "CaseDrift", "Test", email);
+
+        // The OIDC sub sent by the provider is the provider user ID.
+        UserRepresentation providerUser = providerRealm.admin().users().search(username).get(0);
+        String incomingFederatedUserId = providerUser.getId();
+
+        String consumerUserId;
+        try (Response response = consumerRealm.admin().users().create(UserBuilder.create(username)
+                .email(email)
+                .password("THIS PASSWORD IS USELESS")
+                .enabled(true)
+                .build())) {
+            assertEquals(201, response.getStatus());
+            consumerUserId = ApiUtil.getCreatedId(response);
+            consumerRealm.cleanup().add(r -> r.users().get(consumerUserId).remove());
+        }
+
+        FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
+        link.setIdentityProvider(IDP_OIDC_ALIAS);
+        link.setUserId(incomingFederatedUserId.toUpperCase());
+        link.setUserName(username);
+        try (Response response = consumerRealm.admin().users().get(consumerUserId).addFederatedIdentity(IDP_OIDC_ALIAS, link)) {
+            assertEquals(204, response.getStatus());
+        }
+
+        logInWithIdp(username, USER_PASSWORD);
+
+        errorPage.assertCurrent();
+        assertTrue(errorPage.getError().contains("Your account is already linked to the identity provider"),
+                "Unexpected error: " + errorPage.getError());
+
+        List<EventRepresentation> events = consumerRealm.admin().getEvents();
+
+        EventRepresentation firstBrokerLogin = findEvent(events, EventType.IDENTITY_PROVIDER_FIRST_LOGIN.name());
+        assertEquals(incomingFederatedUserId, firstBrokerLogin.getDetails().get(Details.IDENTITY_PROVIDER_USER_ID),
+                "The first-broker-login event should carry the federated user ID as sent by the provider");
+
+        EventRepresentation loginError = findEvent(events, EventType.IDENTITY_PROVIDER_LOGIN_ERROR.name());
+        assertEquals(Errors.IDENTITY_PROVIDER_ERROR, loginError.getError());
+        assertEquals(incomingFederatedUserId, loginError.getDetails().get(Details.IDENTITY_PROVIDER_USER_ID),
+                "The login error event should carry the federated user ID as sent by the provider");
+        assertEquals(incomingFederatedUserId.toUpperCase(),
+                loginError.getDetails().get(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID),
+                "The login error event should carry the ID the user is already linked with");
+    }
+
+    /**
+     * The link on the consumer user holds the provider user ID in a different case than the ID the
+     * provider sends, and the user confirms overriding the existing link. The events must then carry
+     * the ID of the removed link as well, as the previous username alone does not reveal an ID that
+     * differs from the incoming one only in case.
+     */
+    @Test
+    public void loginWhenIncomingFederatedUserIdDiffersOnlyInCaseAndOverrideIsConfirmed() {
+        disableUpdateProfileOnFirstLogin();
+        consumerRealm.updateWithCleanup(r -> r.eventsEnabled(true));
+        addConfirmOverrideLinkExecution(consumerRealm.admin().flows());
+
+        final String username = "casedriftoverride";
+        final String email = "casedriftoverride@example.org";
+        createUser(providerRealm, username, USER_PASSWORD, "CaseDrift", "Override", email);
+
+        // The OIDC sub sent by the provider is the provider user ID.
+        UserRepresentation providerUser = providerRealm.admin().users().search(username).get(0);
+        String incomingFederatedUserId = providerUser.getId();
+
+        String consumerUserId;
+        try (Response response = consumerRealm.admin().users().create(UserBuilder.create(username)
+                .email(email)
+                .password("THIS PASSWORD IS USELESS")
+                .enabled(true)
+                .build())) {
+            assertEquals(201, response.getStatus());
+            consumerUserId = ApiUtil.getCreatedId(response);
+            consumerRealm.cleanup().add(r -> r.users().get(consumerUserId).remove());
+        }
+
+        FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
+        link.setIdentityProvider(IDP_OIDC_ALIAS);
+        link.setUserId(incomingFederatedUserId.toUpperCase());
+        link.setUserName(username);
+        try (Response response = consumerRealm.admin().users().get(consumerUserId).addFederatedIdentity(IDP_OIDC_ALIAS, link)) {
+            assertEquals(204, response.getStatus());
+        }
+
+        logInWithIdp(username, USER_PASSWORD);
+
+        idpConfirmOverrideLinkPage.assertCurrent();
+        idpConfirmOverrideLinkPage.clickConfirmOverride();
+
+        assertTrue(oauth.parseLoginResponse().isSuccess(), "Broker login should complete successfully");
+
+        List<EventRepresentation> events = consumerRealm.admin().getEvents();
+
+        EventRepresentation overrideLink = findEvent(events, EventType.FEDERATED_IDENTITY_OVERRIDE_LINK.name());
+        assertEquals(username,
+                overrideLink.getDetails().get(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME),
+                "The override-link event should carry the username of the removed link");
+        assertEquals(incomingFederatedUserId.toUpperCase(),
+                overrideLink.getDetails().get(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID),
+                "The override-link event should carry the ID of the removed link");
+
+        EventRepresentation login = findEvent(events, EventType.LOGIN.name());
+        assertEquals(incomingFederatedUserId, login.getDetails().get(Details.IDENTITY_PROVIDER_USER_ID),
+                "The login event should carry the federated user ID as sent by the provider");
+        assertEquals(incomingFederatedUserId.toUpperCase(),
+                login.getDetails().get(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID),
+                "The login event should carry the ID of the removed link");
+
+        // The override replaced the link, so the user is now linked with the ID as sent by the provider.
+        FederatedIdentityRepresentation updatedLink = consumerRealm.admin().users().get(consumerUserId)
+                .getFederatedIdentity().stream()
+                .filter(fi -> IDP_OIDC_ALIAS.equals(fi.getIdentityProvider()))
+                .findFirst().orElseThrow();
+        assertEquals(incomingFederatedUserId, updatedLink.getUserId(),
+                "The confirmed override should replace the stored link");
+    }
+
+    /**
+     * When the brokered authentication is followed by a required action, the login event is rebuilt
+     * in the next request from the user session notes (LoginActionsService.initLoginEvent), which
+     * restored only the provider and the username. The federated user ID must be persisted alongside
+     * them, otherwise the completed login event lacks identity_provider_user_id and a user ID that
+     * differs from the stored link is only visible in the events of the first request.
+     */
+    @Test
+    public void loginWithRequiredActionKeepsFederatedUserIdInLoginEvent() {
+        disableUpdateProfileOnFirstLogin();
+        consumerRealm.updateWithCleanup(r -> r.eventsEnabled(true));
+
+        final String username = "requiredaction";
+        final String email = "requiredaction@example.org";
+        createUser(providerRealm, username, USER_PASSWORD, "Required", "Action", email);
+        createUser(consumerRealm, username, "THIS PASSWORD IS USELESS", null, null, email);
+
+        // The OIDC sub sent by the provider is the provider user ID.
+        UserRepresentation providerUser = providerRealm.admin().users().search(username).get(0);
+        String incomingFederatedUserId = providerUser.getId();
+
+        // The user has to pass the update-profile required action during the broker login, so the
+        // login event is rebuilt from the user session notes in a separate request.
+        UserRepresentation consumerUser = consumerRealm.admin().users().search(username).get(0);
+        consumerUser.setRequiredActions(List.of("UPDATE_PROFILE"));
+        consumerRealm.admin().users().get(consumerUser.getId()).update(consumerUser);
+
+        logInWithIdp(username, USER_PASSWORD);
+
+        loginUpdateProfilePage.assertCurrent();
+        loginUpdateProfilePage.update("Updated", "Profile");
+
+        assertTrue(oauth.parseLoginResponse().isSuccess(), "The login should complete after the required action");
+
+        List<EventRepresentation> events = consumerRealm.admin().getEvents();
+
+        assertTrue(events.stream().anyMatch(e -> EventType.UPDATE_PROFILE.name().equals(e.getType())),
+                "The login should have gone through the update-profile required action");
+
+        EventRepresentation login = events.stream()
+                .filter(e -> EventType.LOGIN.name().equals(e.getType()))
+                .reduce((first, second) -> second.getTime() >= first.getTime() ? second : first)
+                .orElseThrow(() -> new AssertionError("Expected a LOGIN event, but events were: " + events));
+        assertEquals(IDP_OIDC_ALIAS, login.getDetails().get(Details.IDENTITY_PROVIDER),
+                "The rebuilt login event should carry the provider");
+        assertEquals(username, login.getDetails().get(Details.IDENTITY_PROVIDER_USERNAME),
+                "The rebuilt login event should carry the broker username");
+        assertEquals(incomingFederatedUserId, login.getDetails().get(Details.IDENTITY_PROVIDER_USER_ID),
+                "The rebuilt login event should carry the federated user ID as sent by the provider");
+    }
+
+    private void addConfirmOverrideLinkExecution(AuthenticationManagementResource authMgmtResource) {
+        authMgmtResource.addExecution(DETECT_EXISTING_FLOW_ALIAS,
+                Map.of("provider", IdpConfirmOverrideLinkAuthenticatorFactory.PROVIDER_ID));
+
+        AuthenticationExecutionInfoRepresentation addedExecution = authMgmtResource.getExecutions(DETECT_EXISTING_FLOW_ALIAS).stream()
+                .filter(execution -> IdpConfirmOverrideLinkAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId()))
+                .findFirst()
+                .orElseThrow();
+
+        addedExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
+        addedExecution.setPriority(15);
+        authMgmtResource.updateExecutions(DETECT_EXISTING_FLOW_ALIAS, addedExecution);
+
+        // revert the flow change once the test is done
+        consumerRealm.cleanup().add(realm -> realm.flows().removeExecution(addedExecution.getId()));
+    }
+
+    private EventRepresentation findEvent(List<EventRepresentation> events, String type) {
+        return events.stream()
+                .filter(e -> type.equals(e.getType()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Expected event " + type + ", but events were: " + events));
     }
 
 
