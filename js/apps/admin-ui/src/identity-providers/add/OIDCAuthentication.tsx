@@ -1,4 +1,5 @@
 import { SelectControl } from "@keycloak/keycloak-ui-shared";
+import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -16,15 +17,40 @@ const clientAuthentications = [
 ];
 
 export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
-  const providers = useServerInfo().providers!.clientSignature.providers;
+  const { providers: serverProviders, cryptoInfo } = useServerInfo();
+  const providers = serverProviders!.clientSignature.providers;
   const { t } = useTranslation();
 
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
 
   const clientAuthMethod = useWatch({
     control: control,
     name: "config.clientAuthMethod",
   });
+  const isClientSecretJwt = clientAuthMethod === "client_secret_jwt";
+
+  const clientAssertionAlg = useWatch({
+    control: control,
+    name: "config.clientAssertionSigningAlg",
+  });
+
+  const symmetricAlgorithms = cryptoInfo?.clientSignatureSymmetricAlgorithms;
+  const algorithmOptions = isClientSecretJwt
+    ? (symmetricAlgorithms ?? [])
+    : sortProviders(providers);
+
+  // An algorithm selected for another authentication method (e.g. RS256) is
+  // not valid for client_secret_jwt, so reset it instead of submitting it.
+  useEffect(() => {
+    if (
+      isClientSecretJwt &&
+      symmetricAlgorithms &&
+      clientAssertionAlg &&
+      !symmetricAlgorithms.includes(clientAssertionAlg)
+    ) {
+      setValue("config.clientAssertionSigningAlg", "", { shouldDirty: true });
+    }
+  }, [isClientSecretJwt, symmetricAlgorithms, clientAssertionAlg, setValue]);
 
   return (
     <>
@@ -46,11 +72,19 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
       />
       <SelectControl
         name="config.clientAssertionSigningAlg"
-        label={t("clientAssertionSigningAlg")}
-        labelIcon={t("clientAssertionSigningAlgHelp")}
+        label={
+          isClientSecretJwt
+            ? t("clientAssertionMacAlg")
+            : t("clientAssertionSigningAlg")
+        }
+        labelIcon={
+          isClientSecretJwt
+            ? t("macAlgorithmHelp")
+            : t("clientAssertionSigningAlgHelp")
+        }
         options={[
           { key: "", value: t("algorithmNotSpecified") },
-          ...sortProviders(providers).map((p) => ({ key: p, value: p })),
+          ...algorithmOptions.map((p) => ({ key: p, value: p })),
         ]}
         controller={{
           defaultValue: "",

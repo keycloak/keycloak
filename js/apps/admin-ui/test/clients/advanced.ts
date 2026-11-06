@@ -57,6 +57,30 @@ export async function assertAccessTokenSignatureAlgorithm(
   await assertSelectValue(getAccessTokenSignatureAlgorithm(page), value);
 }
 
+export async function assertAccessTokenAlgorithmLabel(
+  page: Page,
+  label: string,
+  help: string,
+) {
+  const labels = [
+    "Access token algorithm",
+    "Access token MAC algorithm",
+    "Access token signature algorithm",
+  ];
+  for (const other of labels.filter((l) => l !== label)) {
+    await expect(page.getByText(other, { exact: true })).toHaveCount(0);
+  }
+  await expect(page.getByText(label, { exact: true })).toBeVisible();
+
+  const helpButton = page.getByTestId(
+    "help-label-attributes.access🍺token🍺signed🍺response🍺alg",
+  );
+  await helpButton.click();
+  await expect(page.getByText(help, { exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByText(help, { exact: true })).toBeHidden();
+}
+
 export async function saveFineGrain(page: Page) {
   await page.getByTestId("fineGrainSave").click();
 }
