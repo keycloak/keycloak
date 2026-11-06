@@ -69,6 +69,10 @@ public class JpaUtils {
      * no-op update on an active row is indistinguishable from a successful insert (both return 1).
      */
     public static boolean isUpsertRowCountUnreliable(EntityManager em) {
+        return isMySQLDialect(em);
+    }
+
+    public static boolean isMySQLDialect(EntityManager em) {
         return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
                 .getJdbcServices().getDialect() instanceof MySQLDialect;
     }
@@ -81,7 +85,7 @@ public class JpaUtils {
      * See <a href="https://github.com/pingcap/tidb/issues/18207">pingcap/tidb#18207</a>.
      */
     public static boolean isSkipLockedSupported(EntityManager em) {
-        if (!isUpsertRowCountUnreliable(em)) {
+        if (!isMySQLDialect(em)) {
             // not a MySQL dialect
             return true;
         }
