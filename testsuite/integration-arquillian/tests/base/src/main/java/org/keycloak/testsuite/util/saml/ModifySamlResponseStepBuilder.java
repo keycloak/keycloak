@@ -21,18 +21,23 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.SAML2Object;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.testsuite.util.SamlClient.Binding;
@@ -55,6 +60,9 @@ import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 
@@ -73,6 +81,9 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
     private String targetAttribute;
     private Binding targetBinding;
     private Supplier<String> documentSupplier;
+    private String signingPrivateKey;
+    private String signingPublicKey;
+    private boolean signAssertions;
 
     public ModifySamlResponseStepBuilder(Binding binding, SamlClientBuilder clientBuilder) {
         super(clientBuilder);
@@ -80,7 +91,6 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
         this.targetBinding = binding;
     }
 
-    // TODO: support for signing
     @Override
     public HttpUriRequest perform(CloseableHttpClient client, URI currentURI, CloseableHttpResponse currentResponse, HttpClientContext context) throws Exception {
         switch (binding) {
@@ -95,6 +105,17 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
         }
 
         throw new RuntimeException("Unknown binding for " + ModifySamlResponseStepBuilder.class.getName());
+    }
+
+    public ModifySamlResponseStepBuilder signWith(String privateKey, String publicKey) {
+        signingPrivateKey = privateKey;
+        signingPublicKey = publicKey;
+        return this;
+    }
+
+    public ModifySamlResponseStepBuilder signAssertions() {
+        signAssertions = true;
+        return this;
     }
 
     public Supplier<String> documentSupplier() {
@@ -258,6 +279,32 @@ public class ModifySamlResponseStepBuilder extends SamlDocumentStepBuilder<SAML2
         String transformed = getTransformer().transform(samlDoc);
         if (transformed == null) {
             return null;
+        }
+
+        if (signingPrivateKey != null) {
+            Document document = DocumentUtil.getDocument(transformed);
+            if (signAssertions) {
+                NodeList signatures = document.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature");
+                while (signatures.getLength() > 0) {
+                    Node signature = signatures.item(0);
+                    signature.getParentNode().removeChild(signature);
+                }
+                org.w3c.dom.Element assertion = (org.w3c.dom.Element) document.getElementsByTagNameNS(
+                        "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion").item(0);
+                if (assertion != null) {
+                    assertion.setIdAttribute("ID", true);
+                XMLSignatureUtil.sign(assertion, assertion.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer").item(0).getNextSibling(), "test-idp",
+                        new KeyPair(PemUtils.decodePublicKey(signingPublicKey), PemUtils.decodePrivateKey(signingPrivateKey)),
+                        SignatureAlgorithm.RSA_SHA256.getXmlSignatureDigestMethod(), SignatureAlgorithm.RSA_SHA256.getXmlSignatureMethod(),
+                        "#" + assertion.getAttribute("ID"), CanonicalizationMethod.EXCLUSIVE);
+                }
+            }
+            String relayState = parameters.stream()
+                    .filter(p -> GeneralConstants.RELAY_STATE.equals(p.getName()))
+                    .map(NameValuePair::getValue).findFirst().orElse(null);
+            return GeneralConstants.SAML_RESPONSE_KEY.equals(attributeName)
+                    ? targetBinding.createSamlSignedResponse(locationUri, relayState, document, signingPrivateKey, signingPublicKey)
+                    : targetBinding.createSamlSignedRequest(locationUri, relayState, document, signingPrivateKey, signingPublicKey);
         }
 
         switch (this.targetBinding) {

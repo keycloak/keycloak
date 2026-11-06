@@ -62,6 +62,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_SIGNING_CERTIFICATE;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -137,7 +140,17 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.SUBJECT.name());
+        rep.getConfig().put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "true");
+        rep.getConfig().remove(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY);
         rep.setEnabled(true);
+        idp.update(rep);
+    }
+
+    private void trustResponseSigningKey() {
+        IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
+        IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.getConfig().put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "false");
+        rep.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, REALM_SIGNING_CERTIFICATE);
         idp.update(rep);
     }
 
@@ -452,6 +465,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     // KEYCLOAK-7969
     @Test
     public void testProviderIdpInitiatedLoginWithPrincipalAttribute() throws Exception {
+        trustResponseSigningKey();
         IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.ATTRIBUTE.name());
@@ -465,6 +479,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
           // Send the response to the consumer realm
           .processSamlResponse(Binding.POST)
+          .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
           .transformObject(ob -> {
               assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
               ResponseType resp = (ResponseType) ob;
@@ -507,6 +522,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
     @Test
     public void testProviderTransientIdpInitiatedLogin() throws Exception {
+        trustResponseSigningKey();
         IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get());
@@ -521,6 +537,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
           // Send the response to the consumer realm
           .processSamlResponse(Binding.POST)
+            .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
             .transformObject(ob -> {
                 assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
                 ResponseType resp = (ResponseType) ob;
@@ -555,6 +572,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
           .login().sso(true).build()
 
           .processSamlResponse(Binding.POST)
+          .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
           .transformObject(ob -> {
               assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
               ResponseType resp = (ResponseType) ob;

@@ -70,7 +70,8 @@
       "postBindingResponse" : "true",
       "singleLogoutServiceUrl" : "${url.realm.provider}/protocol/saml",
       "singleSignOnServiceUrl" : "${url.realm.provider}/protocol/saml",
-      "validateSignature" : "false",
+      "useMetadataDescriptorUrl" : "true",
+      "metadataDescriptorUrl" : "${url.realm.provider}/protocol/saml/descriptor",
       "wantAuthnRequestsSigned" : "false"
     }
   } ],

@@ -35,6 +35,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
@@ -77,7 +78,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import static org.keycloak.saml.SignatureAlgorithm.RSA_SHA1;
+import static org.keycloak.saml.SignatureAlgorithm.RSA_SHA256;
 import static org.keycloak.testsuite.util.Matchers.isSamlStatusResponse;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
 import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
@@ -106,6 +107,7 @@ public class BrokerTest extends AbstractSamlTest {
           .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
           .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
           .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
+          .attribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, REALM_SIGNING_CERTIFICATE)
           .build();
         return identityProvider;
     }
@@ -181,6 +183,7 @@ public class BrokerTest extends AbstractSamlTest {
               // Virtually perform login at IdP (return artificial SAML response)
               .processSamlResponse(REDIRECT)
                 .transformObject(this::createAuthnResponse)
+                .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
                 .targetAttributeSamlResponse()
                 .targetUri(getSamlBrokerUrl(REALM_NAME))
                 .build()
@@ -217,6 +220,7 @@ public class BrokerTest extends AbstractSamlTest {
               // Virtually perform login at IdP (return artificial SAML response)
               .processSamlResponse(REDIRECT)
                 .transformObject(this::createAuthnResponse)
+                .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
                 .targetAttributeSamlResponse()
                 .targetUri(getSamlBrokerUrl(REALM_NAME))
                 .build()
@@ -255,6 +259,7 @@ public class BrokerTest extends AbstractSamlTest {
                     // Virtually perform login at IdP (return artificial SAML response)
                     .processSamlResponse(REDIRECT)
                     .transformObject(this::createAuthnResponse)
+                .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
                     .transformObject(resp -> {
                         final ResponseType rt = (ResponseType) resp;
 
@@ -345,9 +350,9 @@ public class BrokerTest extends AbstractSamlTest {
 
         BaseSAML2BindingBuilder<BaseSAML2BindingBuilder> sb = new BaseSAML2BindingBuilder();
         try {
-            KeyPair keyPair = new KeyPair(SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY_PK, SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY_PK);
+            KeyPair keyPair = new KeyPair(PemUtils.decodePublicKey(REALM_PUBLIC_KEY), PemUtils.decodePrivateKey(REALM_PRIVATE_KEY));
             sb.signWith("kn", keyPair)
-              .signatureAlgorithm(RSA_SHA1)
+              .signatureAlgorithm(RSA_SHA256)
               .signAssertions()
               .signAssertion(doc);
         } catch (ProcessingException ex) {
@@ -376,6 +381,7 @@ public class BrokerTest extends AbstractSamlTest {
               // Virtually perform login at IdP (return artificial SAML response)
               .processSamlResponse(REDIRECT)
                 .transformObject(this::createAuthnResponse)
+                .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY)
                 .transformDocument(BrokerTest::signAndAddCustomNamespaceElementToSignature)
                 .targetAttributeSamlResponse()
                 .targetUri(getSamlBrokerUrl(REALM_NAME))
@@ -429,6 +435,7 @@ public class BrokerTest extends AbstractSamlTest {
               // Virtually perform login at IdP (return artificial SAML response)
               .processSamlResponse(REDIRECT)
               .transformObject(this::createAuthnResponse)
+                .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
               .transformObject(resp -> {  // always invent a new user identified by a different email address
                   ResponseType rt = (ResponseType) resp;
                   AssertionType a = rt.getAssertions().get(0).getAssertion();
@@ -466,9 +473,11 @@ public class BrokerTest extends AbstractSamlTest {
 
         try (SamlBackchannelArtifactResolveReceiver samlBackchannelArtifactResolveReceiver = new SamlBackchannelArtifactResolveReceiver(
                 8082,
-                realm.clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0)
+                realm.clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0),
+                REALM_PUBLIC_KEY, REALM_PRIVATE_KEY
         )) {
 
+            samlBackchannelArtifactResolveReceiver.setSignResponse(true);
             samlBackchannelArtifactResolveReceiver.setDestination(getSamlBrokerUrl(REALM_NAME).toString());
 
             IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/saml");

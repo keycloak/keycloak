@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -34,6 +35,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -71,6 +73,12 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
             sigProviderId = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName())).getProviderId();
             encProviderId = KeyUtils.findActiveEncryptingKey(adminClient.realm(bc.consumerRealmName()), Algorithm.RSA_OAEP).getProviderId();
             assertThat(sigProviderId, not(equalTo(encProviderId)));
+            var idp = identityProviderResource.toRepresentation();
+            idp.getConfig().put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "false");
+            idp.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY,
+                    KeyUtils.findActiveSigningKey(adminClient.realm(bc.providerRealmName()), Algorithm.RS256).getCertificate()
+                            + "," + AbstractSamlTest.REALM_SIGNING_CERTIFICATE);
+            identityProviderResource.update(idp);
 
         }
 
@@ -131,6 +139,7 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
                     .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
                     .processSamlResponse(SamlClient.Binding.POST)    // Response from producer IdP
+                    .signWith(AbstractSamlTest.REALM_PRIVATE_KEY, AbstractSamlTest.REALM_PUBLIC_KEY).signAssertions()
                     .transformDocument(encryptDocument(publicKey, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm))
                     .build();
 

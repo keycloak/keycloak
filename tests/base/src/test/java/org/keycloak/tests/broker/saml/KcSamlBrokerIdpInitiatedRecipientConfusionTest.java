@@ -18,18 +18,15 @@ package org.keycloak.tests.broker.saml;
 
 import java.net.URI;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
@@ -72,7 +69,6 @@ public class KcSamlBrokerIdpInitiatedRecipientConfusionTest extends AbstractKcSa
     void setUp() {
         // error events of the broker endpoint are not saved by default, so they are invisible to the test events otherwise
         consumerRealm.updateWithCleanup(realm -> realm.enabledEventTypes(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR.name()));
-        updateIdp(idp -> idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false"));
 
         String consumerBaseUrl = consumerRealm.getBaseUrl();
         String consumerServerRoot = consumerBaseUrl.substring(0, consumerBaseUrl.indexOf("/realms/"));
@@ -168,7 +164,7 @@ public class KcSamlBrokerIdpInitiatedRecipientConfusionTest extends AbstractKcSa
 
     private CloseableHttpResponse post(Document samlResponse, String ssoUrlName) throws Exception {
         URI brokerEndpoint = URI.create(getIdpInitiatedBrokerEndpoint(ssoUrlName));
-        return httpClient.execute(SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, samlResponse));
+        return httpClient.execute(SamlClient.Binding.POST.createSamlUnsignedResponse(brokerEndpoint, null, signSamlResponse(samlResponse)));
     }
 
     private String getIdpInitiatedBrokerEndpoint(String ssoUrlName) {
@@ -191,9 +187,4 @@ public class KcSamlBrokerIdpInitiatedRecipientConfusionTest extends AbstractKcSa
                 .buildModel();
     }
 
-    private void updateIdp(Consumer<IdentityProviderRepresentation> update) {
-        IdentityProviderRepresentation idp = consumerRealm.admin().identityProviders().get(getIdpAlias()).toRepresentation();
-        update.accept(idp);
-        consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idp);
-    }
 }

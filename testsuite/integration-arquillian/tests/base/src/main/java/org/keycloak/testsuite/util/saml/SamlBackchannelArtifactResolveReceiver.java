@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
@@ -25,12 +27,14 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.response.SAML2Response;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
 
@@ -44,6 +48,7 @@ public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
     private final PrivateKey privateKey;
     private String inResponseTo;
     private String destination;
+    private boolean signResponse;
 
     public SamlBackchannelArtifactResolveReceiver(int port, ClientRepresentation samlClient, String publicKeyStr, String privateKeyStr) {
         this.samlClient = samlClient;
@@ -86,6 +91,10 @@ public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
      * Sets the Destination of the login Response, which is also used as the Recipient of the
      * assertion's Bearer SubjectConfirmationData (i.e. the SP endpoint that receives the response).
      */
+    public void setSignResponse(boolean signResponse) {
+        this.signResponse = signResponse;
+    }
+
     public void setDestination(String destination) {
         this.destination = destination;
     }
@@ -129,12 +138,20 @@ public class SamlBackchannelArtifactResolveReceiver implements AutoCloseable {
                 ArtifactResponseType artifactResponse = SamlProtocolUtils.buildArtifactResponse(loginResponseBuilderAsDoc);
                 artifactResponse.setInResponseTo(artifactResolve.getID());
                 JaxrsSAML2BindingBuilder soapBinding = new JaxrsSAML2BindingBuilder(null);
-                if (requiresClientSignature(samlClient)) {
+                if (signResponse || requiresClientSignature(samlClient)) {
                     soapBinding.signatureAlgorithm(getSignatureAlgorithm(samlClient))
                             .signWith(KeyUtils.createKeyId(privateKey), privateKey, publicKey, null)
                             .signDocument();
                 }
                 Document artifactResponseAsDoc = SAML2Response.convert(artifactResponse);
+                if (signResponse) {
+                    Element assertion = (Element) artifactResponseAsDoc.getElementsByTagNameNS(
+                            "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion").item(0);
+                    assertion.setIdAttribute("ID", true);
+                    XMLSignatureUtil.sign(assertion, assertion.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer").item(0).getNextSibling(), KeyUtils.createKeyId(privateKey),
+                            new KeyPair(publicKey, privateKey), SignatureAlgorithm.RSA_SHA256.getXmlSignatureDigestMethod(),
+                            SignatureAlgorithm.RSA_SHA256.getXmlSignatureMethod(), "#" + assertion.getAttribute("ID"), CanonicalizationMethod.EXCLUSIVE);
+                }
                 Document soapDoc = soapBinding.soapBinding(artifactResponseAsDoc).getDocument();
 
                 LOG.infof("Sending ArtifactResponse: %s", DocumentUtil.asString(soapDoc));

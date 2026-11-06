@@ -172,7 +172,8 @@ public class SamlClient {
 
             @Override
             public HttpUriRequest createSamlSignedResponse(URI samlEndpoint, String relayState, Document samlRequest, String realmPrivateKey, String realmPublicKey, String certificateStr) {
-                return null;
+                return createSamlPostMessage(samlEndpoint, relayState, samlRequest, GeneralConstants.SAML_RESPONSE_KEY,
+                        realmPrivateKey, realmPublicKey, certificateStr);
             }
 
             @Override

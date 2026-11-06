@@ -299,6 +299,7 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
             config.put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
             config.put(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "true");
             config.put(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true");
+            config.put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "false");
             config.put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, providerCert);
 
             return result;

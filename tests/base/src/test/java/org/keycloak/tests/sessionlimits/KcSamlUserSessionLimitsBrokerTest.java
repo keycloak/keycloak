@@ -106,8 +106,8 @@ public class KcSamlUserSessionLimitsBrokerTest extends AbstractUserSessionLimits
                             "http://localhost:8080/realms/" + CONSUMER_REALM + "/broker/" + IDP_ALIAS + "/endpoint")
                     .attribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true")
                     .attribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username")
-                    .attribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false")
-                    .attribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false")
+                    .attribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true")
+                    .attribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
                     .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
                     .attribute(SamlConfigAttributes.SAML_ENCRYPT, "false")
                     .protocolMappers(emailMapper, firstNameMapper, lastNameMapper));
@@ -123,6 +123,9 @@ public class KcSamlUserSessionLimitsBrokerTest extends AbstractUserSessionLimits
                     .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
                     .attribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
+                    .attribute(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "true")
+                    .attribute(IdentityProviderModel.METADATA_DESCRIPTOR_URL,
+                            "http://localhost:8080/realms/" + PROVIDER_REALM + "/protocol/saml/descriptor")
                     .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL,
                             "http://localhost:8080/realms/" + PROVIDER_REALM + "/protocol/saml")
                     .attribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL,
@@ -131,7 +134,6 @@ public class KcSamlUserSessionLimitsBrokerTest extends AbstractUserSessionLimits
                             "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
                     .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "true")
                     .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
-                    .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
                     .attribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "false")
                     .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
                     .attribute(SAMLIdentityProviderConfig.FORCE_AUTHN, "false")

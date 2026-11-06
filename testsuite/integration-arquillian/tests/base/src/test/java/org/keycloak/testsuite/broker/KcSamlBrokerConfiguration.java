@@ -36,7 +36,7 @@ import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_A
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_RESPONSE;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL;
-import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.VALIDATE_SIGNATURE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME;
@@ -114,8 +114,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
                 getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_SAML_ALIAS + "/endpoint");
         attributes.put(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true");
         attributes.put(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username");
-        attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
-        attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false");
+        attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true");
+        attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true");
         attributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false");
         attributes.put(SamlConfigAttributes.SAML_ENCRYPT, "false");
         attributes.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
@@ -247,8 +247,10 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
         config.put(IdentityProviderModel.LOGIN_HINT, String.valueOf(loginHint));
         config.put(POST_BINDING_RESPONSE, "true");
         config.put(POST_BINDING_AUTHN_REQUEST, "true");
-        config.put(VALIDATE_SIGNATURE, "false");
         config.put(WANT_AUTHN_REQUESTS_SIGNED, "false");
+        config.put(USE_METADATA_DESCRIPTOR_URL, "true");
+        config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL,
+                getProviderRoot() + "/auth/realms/" + providerRealmName() + "/protocol/saml/descriptor");
         config.put(BACKCHANNEL_SUPPORTED, "false");
         config.put(ARTIFACT_BINDING_RESPONSE, "false");
 

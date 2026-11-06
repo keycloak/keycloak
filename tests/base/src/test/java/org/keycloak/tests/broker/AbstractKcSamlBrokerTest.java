@@ -1,11 +1,18 @@
 package org.keycloak.tests.broker;
 
+import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
@@ -15,7 +22,13 @@ import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -26,6 +39,10 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL;
@@ -34,12 +51,14 @@ import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.FORCE_AUTHN;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.POST_BINDING_RESPONSE;
+import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL;
-import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.VALIDATE_SIGNATURE;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE;
 import static org.keycloak.protocol.saml.SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
 
@@ -79,12 +98,20 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
         return IDP_SAML_ALIAS;
     }
 
+    protected static String activeRs256SigCert(ManagedRealm realm) {
+        return realm.admin().keys().getKeyMetadata().getKeys().stream()
+                .filter(k -> k.getCertificate() != null && KeyUse.SIG.equals(k.getUse())
+                        && Algorithm.RS256.equals(k.getAlgorithm()))
+                .map(KeysMetadataRepresentation.KeyMetadataRepresentation::getCertificate)
+                .findFirst().orElseThrow();
+    }
+
     // Mirrors the OIDC config's configureBrokerEndpoints(): the SAML broker endpoints and the consumer's
     // SAML entity id depend on the runtime realm base URLs, which are only available once the realms exist.
     // Rewrite them here from ManagedRealm#getBaseUrl() instead of hard-coding localhost:8080, so the tests
     // hold under non-default host/port/scheme (as the legacy suite did via getConsumerRoot()/getProviderRoot()).
     @BeforeEach
-    void configureSamlBrokerEndpoints() {
+    void configureSamlBrokerEndpoints() throws Exception {
         String providerSamlEndpoint = getProviderRealm().getBaseUrl() + "/protocol/saml";
         String consumerBaseUrl = getConsumerRealm().getBaseUrl();
         String consumerBrokerEndpoint = consumerBaseUrl + "/broker/" + IDP_SAML_ALIAS + "/endpoint";
@@ -99,6 +126,10 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
         idpConfig.put(SINGLE_SIGN_ON_SERVICE_URL, providerSamlEndpoint);
         idpConfig.put(ARTIFACT_RESOLUTION_SERVICE_URL, providerSamlEndpoint);
         idpConfig.put(SINGLE_LOGOUT_SERVICE_URL, providerSamlEndpoint);
+        responseSigningKey = KeyUtils.generateRsaKeyPair(2048);
+        String responseSigningCertificate = PemUtils.encodeCertificate(
+                CertificateUtils.generateV1SelfSignedCertificate(responseSigningKey, "test-idp"));
+        idpConfig.put(SIGNING_CERTIFICATE_KEY, activeRs256SigCert(providerRealm) + "," + responseSigningCertificate);
         idpResource.update(idp);
 
         // Provider-side client representing the consumer: its SAML entity id and broker endpoints must
@@ -140,6 +171,32 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
         }
     }
 
+    private KeyPair responseSigningKey;
+
+    protected Document signSamlResponse(Document document) {
+        try {
+            NodeList signatures = document.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature");
+            while (signatures.getLength() > 0) {
+                Node signature = signatures.item(0);
+                signature.getParentNode().removeChild(signature);
+            }
+            Element assertion = (Element) document.getElementsByTagNameNS(
+                    "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion").item(0);
+            assertion.setIdAttribute("ID", true);
+            XMLSignatureUtil.sign(assertion, assertion.getElementsByTagNameNS("urn:oasis:names:tc:SAML:2.0:assertion", "Issuer").item(0).getNextSibling(), "test-idp", responseSigningKey,
+                    SignatureAlgorithm.RSA_SHA256.getXmlSignatureDigestMethod(), SignatureAlgorithm.RSA_SHA256.getXmlSignatureMethod(),
+                    "#" + assertion.getAttribute("ID"), CanonicalizationMethod.EXCLUSIVE);
+            Document signed = DocumentUtil.getDocument(DocumentUtil.getDocumentAsString(document));
+            assertion = (Element) signed.getElementsByTagNameNS(
+                    "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion").item(0);
+            assertTrue(AssertionUtil.isSignatureValid(assertion,
+                    new HardcodedKeyLocator(responseSigningKey.getPublic())), "Fixture assertion signature must be valid");
+            return signed;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     static ProtocolMapperRepresentation createSamlProtocolMapper(String name, String protocolMapper,
             String userAttribute, String samlAttributeName, String nameFormat, String friendlyName) {
         ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
@@ -170,8 +227,8 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
             clientAttributes.put(SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, consumerBrokerEndpoint);
             clientAttributes.put(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true");
             clientAttributes.put(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username");
-            clientAttributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
-            clientAttributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false");
+            clientAttributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "true");
+            clientAttributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true");
             clientAttributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false");
             clientAttributes.put(SamlConfigAttributes.SAML_ENCRYPT, "false");
 
@@ -230,7 +287,6 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
                     .attribute(FORCE_AUTHN, "false")
                     .attribute(POST_BINDING_RESPONSE, "true")
                     .attribute(POST_BINDING_AUTHN_REQUEST, "true")
-                    .attribute(VALIDATE_SIGNATURE, "false")
                     .attribute(WANT_AUTHN_REQUESTS_SIGNED, "false")
                     .attribute(BACKCHANNEL_SUPPORTED, "false")
                     .attribute(ARTIFACT_BINDING_RESPONSE, "false")
@@ -240,6 +296,11 @@ public abstract class AbstractKcSamlBrokerTest extends AbstractBrokerLoginTest {
 
             return realm.name(CONSUMER_REALM)
                     .eventsListeners("jboss-logging")
+                    .eventsEnabled(true)
+                    .enabledEventTypes("LOGIN", "LOGIN_ERROR",
+                            "IDENTITY_PROVIDER_LOGIN", "IDENTITY_PROVIDER_LOGIN_ERROR",
+                            "IDENTITY_PROVIDER_RESPONSE", "IDENTITY_PROVIDER_RESPONSE_ERROR",
+                            "IDENTITY_PROVIDER_FIRST_LOGIN", "IDENTITY_PROVIDER_FIRST_LOGIN_ERROR")
                     .resetPasswordAllowed(true)
                     .identityProviders(idpBuilder.build())
                     // The broker-app client used to drive the login flow is created by the injected

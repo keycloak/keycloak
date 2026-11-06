@@ -318,6 +318,21 @@ Updating an existing client scope does not revalidate its stored mappers.
 Existing deployments continue to start, because mappers that are read from the database at startup are not validated.
 If you provision realms from an exported JSON file, import the file once after upgrading to find out whether it contains a mapper that is now rejected.
 
+=== SAML identity provider signature validation defaults to enabled
+
+When signature settings are absent from a SAML identity provider's configuration, {project_name} now treats them as enabled.
+This applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`).
+Assertions are also verified when *Want Assertions Signed* is enabled and *Validate Signature* is explicitly disabled, which requires a trusted signing key.
+
+After upgrading, logins may fail for providers that send unsigned assertions, or whose signatures {project_name} cannot verify.
+Configure the provider to sign its assertions and configure the corresponding signing certificates in {project_name}, either in *Validating X509 Certificates* or through *Use metadata descriptor URL*.
+
+If unsigned responses are required for compatibility, explicitly disable the relevant setting.
+Disable *Want Assertions Signed* if the provider does not sign assertions; if signatures are not to be verified, also disable *Validate Signature*.
+Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remain respected.
+
+Disabling signature validation reduces protection against forged identity-provider responses.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
