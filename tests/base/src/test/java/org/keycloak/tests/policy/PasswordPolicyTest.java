@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.policy.DenylistPasswordPolicyProvider;
 import org.keycloak.policy.DenylistPasswordPolicyProviderFactory;
 import org.keycloak.policy.MaximumLengthPasswordPolicyProviderFactory;
+import org.keycloak.policy.PasswordPolicyContext;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.provider.ProviderFactory;
@@ -225,6 +226,42 @@ public class PasswordPolicyTest {
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "notUsername"));
             Assertions.assertEquals("invalidPasswordNotUsernameMessage", policyManager.validate("jdoe", "jdoe").getMessage());
             assertNull(policyManager.validate("jdoe", "ab&d1234"));
+        });
+    }
+
+    @Test
+    public void testNotEmail() {
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.getContext().getRealm();
+            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
+
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "notEmail"));
+            PasswordPolicyContext context = PasswordPolicyContext.builder()
+                    .username("jdoe")
+                    .email("jdoe@example.com")
+                    .build();
+            assertNull(policyManager.validate(context, "jdoe"));
+            assertEquals("invalidPasswordNotEmailMessage", policyManager.validate(context, "jdoe@example.com").getMessage());
+            assertEquals("invalidPasswordNotEmailMessage", policyManager.validate(context, "JDOE@EXAMPLE.COM").getMessage());
+            assertNull(policyManager.validate(PasswordPolicyContext.builder().username("jdoe").build(), "jdoe@example.com"));
+            assertNull(policyManager.validate("jdoe", "jdoe"));
+        });
+    }
+
+    @Test
+    public void testNotEmailAndNotUsername() {
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.getContext().getRealm();
+            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
+
+            realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "notEmail and notUsername"));
+            PasswordPolicyContext context = PasswordPolicyContext.builder()
+                    .username("jdoe")
+                    .email("jdoe@example.com")
+                    .build();
+            assertEquals("invalidPasswordNotUsernameMessage", policyManager.validate(context, "jdoe").getMessage());
+            assertEquals("invalidPasswordNotEmailMessage", policyManager.validate(context, "jdoe@example.com").getMessage());
+            assertNull(policyManager.validate(context, "ab&d1234"));
         });
     }
 
