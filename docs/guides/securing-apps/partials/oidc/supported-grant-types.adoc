@@ -99,6 +99,8 @@ Device Authorization Grant is used by clients running on internet-connected devi
 . If user authentication is complete, the application obtains the device code.
 . The application uses the device code along with its credentials to obtain an Access Token, Refresh Token and ID Token from {project_name}.
 
+To prevent brute-force attacks on user codes, {project_name} limits the number of failed verification attempts per source IP address (by default, 20 attempts). Once exceeded, further verification attempts from that IP are rejected until the device code lifespan window expires.
+
 For more details, see  the https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
 
 [[_client_initiated_backchannel_authentication_grant]]
