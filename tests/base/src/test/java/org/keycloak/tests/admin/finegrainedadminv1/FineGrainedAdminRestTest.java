@@ -24,6 +24,7 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -46,6 +47,33 @@ import org.junit.jupiter.api.Test;
  */
 @KeycloakIntegrationTest(config = AbstractFineGrainedAdminTest.FineGrainedAdminServerConf.class)
 public class FineGrainedAdminRestTest extends AbstractFineGrainedAdminTest {
+
+    @Test
+    public void testDelegatedClientManagerScopeAssignments() {
+        runOnServer.run(FineGrainedAdminRestTest::setupPolices);
+        runOnServer.run(FineGrainedAdminRestTest::setupUsers);
+
+        ClientRepresentation client = managedRealm.admin().clients().findByClientId(CLIENT_NAME).get(0);
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("delegated-manager-scope");
+        scope.setProtocol("openid-connect");
+        String scopeId;
+        try (Response response = managedRealm.admin().clientScopes().create(scope)) {
+            scopeId = ApiUtil.getCreatedId(response);
+        }
+        managedRealm.admin().clients().get(client.getId()).addDefaultClientScope(scopeId);
+
+        try (Keycloak delegatedAdmin = adminClientFactory.create()
+                .realm(REALM_NAME).username("clientManager").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()) {
+            ClientResource resource = delegatedAdmin.realm(REALM_NAME).clients().get(client.getId());
+            Assertions.assertTrue(resource.getDefaultClientScopes().stream().anyMatch(s -> scopeId.equals(s.getId())));
+            Assertions.assertTrue(resource.getAvailableClientScopes().stream().anyMatch(s -> scopeId.equals(s.getId())));
+            resource.removeDefaultClientScope(scopeId);
+            Assertions.assertTrue(resource.getDefaultClientScopes().stream().noneMatch(s -> scopeId.equals(s.getId())));
+            resource.addOptionalClientScope(scopeId);
+            Assertions.assertTrue(resource.getOptionalClientScopes().stream().anyMatch(s -> scopeId.equals(s.getId())));
+        }
+    }
 
     @Test
     public void testRestEvaluation() throws Exception {
