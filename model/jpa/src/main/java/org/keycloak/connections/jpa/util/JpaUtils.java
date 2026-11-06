@@ -38,6 +38,7 @@ import jakarta.persistence.ValidationMode;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.models.KeycloakSession;
 
+import org.hibernate.Session;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.dialect.OracleDialect;
@@ -59,6 +60,7 @@ public class JpaUtils {
     public static final String QUERY_NATIVE_SUFFIX = "[native]";
     public static final String QUERY_JPQL_SUFFIX = "[jpql]";
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
+    private static final String SKIP_LOCKED_SUPPORTED_PROPERTY = "keycloak.skip-locked-supported";
 
     /**
      * MySQL/MariaDB drivers default to CLIENT_FOUND_ROWS, which makes ON DUPLICATE KEY UPDATE
@@ -67,8 +69,38 @@ public class JpaUtils {
      * no-op update on an active row is indistinguishable from a successful insert (both return 1).
      */
     public static boolean isUpsertRowCountUnreliable(EntityManager em) {
+        return isMySQLDialect(em);
+    }
+
+    public static boolean isMySQLDialect(EntityManager em) {
         return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
                 .getJdbcServices().getDialect() instanceof MySQLDialect;
+    }
+
+    /**
+     * TiDB is used via the MySQL dialect, and accepts {@code FOR UPDATE SKIP LOCKED} but silently ignores the
+     * {@code SKIP LOCKED} part: rows locked by other transactions are returned instead of being skipped, so a query
+     * using it doesn't prove that the row is locked by the current transaction.
+     * TiDB can only be identified by its version string, which looks like {@code 8.0.11-TiDB-v8.5.8}.
+     * See <a href="https://github.com/pingcap/tidb/issues/18207">pingcap/tidb#18207</a>.
+     */
+    public static boolean isSkipLockedSupported(EntityManager em) {
+        if (!isMySQLDialect(em)) {
+            // not a MySQL dialect
+            return true;
+        }
+        Map<String, Object> properties = em.getEntityManagerFactory().getProperties();
+        Object cached = properties.get(SKIP_LOCKED_SUPPORTED_PROPERTY);
+        if (cached != null) {
+            return (Boolean) cached;
+        }
+        boolean supported = em.unwrap(Session.class).doReturningWork(connection -> {
+            String version = connection.getMetaData().getDatabaseProductVersion();
+            return version == null || !version.contains("-TiDB-");
+        });
+        // the result is stored with the factory, as the database is the same for all entity managers created from it
+        properties.put(SKIP_LOCKED_SUPPORTED_PROPERTY, supported);
+        return supported;
     }
 
     /**

@@ -14,6 +14,9 @@ import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -361,8 +364,12 @@ public class DistributionKeycloakServer implements KeycloakServer {
         private static final Pattern LOG_PATTERN = Pattern.compile("([^ ]*) ([^ ]*) ([A-Z]*)([ ]*)(.*)");
         private static final Logger LOGGER = Logger.getLogger("managed.keycloak");
 
+        private static final long FLUSH_DELAY_MS = 100;
+
         private boolean startedInPrinted = false;
         private final Process process;
+        private Logger.Level recordLevel;
+        private StringBuilder record;
 
         private CountDownLatch startupLatch = new CountDownLatch(1);
 
@@ -374,33 +381,70 @@ public class DistributionKeycloakServer implements KeycloakServer {
         public void run() {
             InputStream is = process.getInputStream();
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            // A log record can span multiple lines (for example a stack trace), collect them and log them as one statement.
+            // As the reader blocks, a record that has not received a new line for a short time is flushed by a timer.
+            ScheduledExecutorService flusher = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "managed-keycloak-log-flusher");
+                t.setDaemon(true);
+                return t;
+            });
+            ScheduledFuture<?> pendingFlush = null;
             try {
                 for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
                     if (!startedInPrinted && line.matches(".*Keycloak.* started in.*")) {
                         startupLatch.countDown();
                     }
 
+                    Logger.Level level = null;
+                    String message = null;
                     Matcher matcher = LOG_PATTERN.matcher(line);
-                    if (matcher.matches()) {
-                        String levelString = matcher.group(3);
-                        String message = matcher.group(5);
-                        if (levelString != null && message != null) {
-                            for (Logger.Level l : Logger.Level.values()) {
-                                if (l.name().equals(levelString)) {
-                                    LOGGER.log(l, message);
-                                    break;
-                                }
+                    if (matcher.matches() && matcher.group(5) != null) {
+                        for (Logger.Level l : Logger.Level.values()) {
+                            if (l.name().equals(matcher.group(3))) {
+                                level = l;
+                                message = matcher.group(5);
+                                break;
                             }
                         }
                     }
-                    LOGGER.info(line);
+
+                    synchronized (this) {
+                        if (pendingFlush != null) {
+                            pendingFlush.cancel(false);
+                        }
+                        if (level != null) {
+                            flush();
+                            recordLevel = level;
+                            record = new StringBuilder(message);
+                        } else if (record != null) {
+                            record.append('\n').append(line);
+                        } else if (recordLevel != null) {
+                            record = new StringBuilder(line);
+                        } else {
+                            LOGGER.info(line);
+                        }
+                        pendingFlush = flusher.schedule(this::flushSynchronized, FLUSH_DELAY_MS, TimeUnit.MILLISECONDS);
+                    }
                 }
+                flushSynchronized();
             } catch (IOException e) {
                 // Ignored
             } finally {
+                flusher.shutdown();
                 if (startupLatch.getCount() != 0) {
                     startupLatch.countDown();
                 }
+            }
+        }
+
+        private synchronized void flushSynchronized() {
+            flush();
+        }
+
+        private void flush() {
+            if (record != null) {
+                LOGGER.log(recordLevel, record.toString());
+                record = null;
             }
         }
 

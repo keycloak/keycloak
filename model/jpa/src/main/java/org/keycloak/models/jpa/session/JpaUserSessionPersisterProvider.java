@@ -31,11 +31,14 @@ import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.LockTimeoutException;
+import jakarta.persistence.PessimisticLockException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -331,6 +334,35 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         return handleSingleQuery(entity, offlineStr);
     }
 
+    /**
+     * Lock the row and return its version, or null if the row doesn't exist or is locked by someone else.
+     * Don't wait for rows locked by others, as the caller will retry in a separate transaction.
+     * <p>
+     * The NOWAIT fallback is intended only for TiDB (see {@link JpaUtils#isSkipLockedSupported(EntityManager)}),
+     * which ignores SKIP LOCKED. It is not generic: it relies on Hibernate not marking the transaction as
+     * rollback-only when a lock with a timeout of 0 fails, which holds for the MySQL dialect but not for others
+     * (for example, the PostgreSQL dialect always marks the transaction for rollback, as the database aborts it anyway).
+     * See {@code UserSessionPersisterLockTest}, which verifies this behavior.
+     * Waiting instead would risk deadlocks when rows are locked in different orders.
+     */
+    private Integer lockVersion(TypedQuery<Integer> query) {
+        if (JpaUtils.isSkipLockedSupported(em)) {
+            query.setHint(LOCK_TIMEOUT, -2);
+            return query.getSingleResultOrNull();
+        }
+        if (!JpaUtils.isMySQLDialect(em)) {
+            // the fallback is not generic and may break transactions in other databases
+            throw new UnsupportedOperationException("Locking rows without skip locked is not supported for this database");
+        }
+        query.setHint(LOCK_TIMEOUT, 0);
+        try {
+            return query.getSingleResultOrNull();
+        } catch (PessimisticLockException | LockTimeoutException e) {
+            logger.debugf("Row is locked by another transaction: %s", e.getMessage());
+            return null;
+        }
+    }
+
     public boolean lockUserSession(RealmModel realm, String userSessionId, boolean offline, boolean isDelete) {
         String offlineStr = offlineToString(offline);
         PersistentUserSessionEntity entity = em.find(PersistentUserSessionEntity.class, new PersistentUserSessionEntity.Key(userSessionId, offlineStr));
@@ -343,12 +375,11 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         int knownVersion = entity.getVersion();
 
         // Fetch the entry and lock the row but only if it is not locked already
-        Integer currentVersion = em.createQuery("select version from PersistentUserSessionEntity where userSessionId = :userSessionId and offline = :offline", Integer.class)
+        TypedQuery<Integer> lockQuery = em.createQuery("select version from PersistentUserSessionEntity where userSessionId = :userSessionId and offline = :offline", Integer.class)
                 .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-                .setHint(LOCK_TIMEOUT, -2)
                 .setParameter("userSessionId", userSessionId)
-                .setParameter("offline", offlineStr)
-                .getSingleResultOrNull();
+                .setParameter("offline", offlineStr);
+        Integer currentVersion = lockVersion(lockQuery);
 
         boolean result = currentVersion != null && knownVersion == currentVersion;
         logger.debugf("User session %s/%s lock status: %b", userSessionId, offlineStr, result);
@@ -493,15 +524,14 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         }
         int knownVersion = entity.getVersion();
 
-        Integer currentVersion = em.createQuery("select version from PersistentClientSessionEntity where userSessionId = :userSessionId and offline = :offline and clientId = :clientId and externalClientId = :externalClientId and clientStorageProvider = :clientStorageProvider", Integer.class)
+        TypedQuery<Integer> lockQuery = em.createQuery("select version from PersistentClientSessionEntity where userSessionId = :userSessionId and offline = :offline and clientId = :clientId and externalClientId = :externalClientId and clientStorageProvider = :clientStorageProvider", Integer.class)
                 .setParameter("userSessionId", key.userSessionId)
                 .setParameter("offline", key.offline)
                 .setParameter("clientId", key.clientId)
                 .setParameter("clientStorageProvider", key.getClientStorageProvider())
                 .setParameter("externalClientId", key.getExternalClientId())
-                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-                .setHint(LOCK_TIMEOUT, -2)
-                .getSingleResultOrNull();
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        Integer currentVersion = lockVersion(lockQuery);
 
         boolean locked = currentVersion != null && knownVersion == currentVersion;
         logger.debugf("User session %s/%s/%s lock status: %b", userSessionId, clientId, offline, locked);
