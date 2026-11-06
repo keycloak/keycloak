@@ -151,10 +151,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             return;
         }
 
-        if ("on".equals(formData.getFirst("logout-sessions"))) {
-            AuthenticatorUtil.logoutOtherSessions(context);
-        }
-
         try {
             if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
                 Response challenge = context.form()
@@ -175,6 +171,10 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
             return;
+        }
+
+        if ("on".equals(formData.getFirst("logout-sessions"))) {
+            AuthenticatorUtil.logoutOtherSessions(context);
         }
 
         if (context.getConfig() != null &&
