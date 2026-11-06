@@ -20,6 +20,8 @@ package org.keycloak.util;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
+import org.keycloak.jose.jwk.AKPPublicJWK;
+import org.keycloak.jose.jwk.AKPSamples;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -65,6 +67,21 @@ public abstract class JWKSUtilsTest {
 
         JWK publicKey = JsonSerialization.readValue(keyA, JWK.class);
         assertThrows(UnsupportedOperationException.class, () -> JWKSUtils.computeThumbprint(publicKey));
+    }
+
+    @Test
+    public void publicAkpUsesCanonicalThumbprintMembers() throws Exception {
+        assertAkpThumbprint(AKPSamples.ML_DSA_44, "T4xl70S7MT6Zeq6r9V9fPJGVn76wfnXJ21-gyo0Gu6o");
+        assertAkpThumbprint(AKPSamples.ML_DSA_65, "Suiu29qbfuaBaR4Ats-c6XQBePB_OpAxAwcTR_0KXVM");
+        assertAkpThumbprint(AKPSamples.ML_DSA_87, "tRn1JNIkgMsABVQBlXeDHxAIcclh-2IX0UdDEzPt5XU");
+    }
+
+    private void assertAkpThumbprint(String json, String expected) throws Exception {
+        JWK genericJwk = JsonSerialization.readValue(json, JWK.class);
+        AKPPublicJWK akpJwk = JsonSerialization.readValue(json, AKPPublicJWK.class);
+
+        assertEquals(expected, JWKSUtils.computeThumbprint(genericJwk));
+        assertEquals(expected, JWKSUtils.computeThumbprint(akpJwk));
     }
 
     @Test

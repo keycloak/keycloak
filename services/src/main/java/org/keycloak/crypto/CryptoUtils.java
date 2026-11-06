@@ -57,6 +57,21 @@ public class CryptoUtils {
     }
 
     /**
+     * Looks up an asymmetric {@link SignatureProvider} for the given algorithm.
+     */
+    public static SignatureProvider getAsymmetricSignatureProvider(KeycloakSession session, String algorithm) throws VerificationException {
+        if ("none".equalsIgnoreCase(algorithm)) {
+            throw new VerificationException("Unsigned tokens are not supported");
+        }
+
+        SignatureProvider signatureProvider = getSignatureProvider(session, algorithm);
+        if (!signatureProvider.isAsymmetricAlgorithm()) {
+            throw new VerificationException("Only asymmetric signature algorithms are supported: " + algorithm);
+        }
+        return signatureProvider;
+    }
+
+    /**
      * Returns the supported asymmetric signature algorithms.
      * This method discovers all available SignatureProvider implementations and filters
      * for those that support asymmetric algorithms (RSA, EC, EdDSA, etc.).
