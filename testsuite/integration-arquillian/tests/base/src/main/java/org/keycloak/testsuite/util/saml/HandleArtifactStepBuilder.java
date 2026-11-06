@@ -60,6 +60,8 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
     private boolean replayArtifact;
     private AtomicReference<String> providedArtifact;
     private AtomicReference<String> storeArtifact;
+    private URI destination;
+    private boolean destinationSet;
 
     private Runnable beforeStepChecker;
     private Runnable afterStepChecker;
@@ -91,6 +93,18 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
         return this;
     }
     
+    /**
+     * Builder method. Sets the Destination of the generated ArtifactResolve. By default a signed ArtifactResolve
+     * carries the artifact resolution endpoint as its Destination and an unsigned one carries none.
+     * @param destination the Destination to use, or {@code null} to omit it
+     * @return this HandleArtifactStepBuilder
+     */
+    public HandleArtifactStepBuilder destination(URI destination) {
+        this.destination = destination;
+        this.destinationSet = true;
+        return this;
+    }
+
     public HandleArtifactStepBuilder issuer(String issuer) {
         this.issuer = issuer;
         return this;
@@ -173,6 +187,9 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
         String artifact = getArtifactFromResponse(currentResponse);
         if (storeArtifact != null) storeArtifact.set(artifact);
         artifactResolve.setArtifact(artifact);
+        boolean signed = signingPrivateKeyPem != null && signingPublicKeyPem != null;
+        URI resolveDestination = destinationSet ? destination : (signed ? authServerSamlUrl : null);
+        if (resolveDestination != null) artifactResolve.setDestination(resolveDestination);
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         XMLStreamWriter xmlStreamWriter = StaxUtil.getXMLStreamWriter(bos);
@@ -181,7 +198,7 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
 
         BaseSAML2BindingBuilder binding = new BaseSAML2BindingBuilder();
 
-        if (signingPrivateKeyPem != null && signingPublicKeyPem != null) {
+        if (signed) {
             PrivateKey privateKey = org.keycloak.testsuite.util.KeyUtils.privateKeyFromString(signingPrivateKeyPem);
             PublicKey publicKey = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(signingPublicKeyPem);
             binding
