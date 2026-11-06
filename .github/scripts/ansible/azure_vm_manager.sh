@@ -18,7 +18,10 @@ IMAGE="Ubuntu2404"
 
 if [[ "$ACTION" == "create" ]]; then
   # 1. Resource group
-  az group create --name "$CLUSTER" --location "$REGION"
+  GROUP_EXISTS=$(az group exists --name "$CLUSTER")
+  if [[ "$GROUP_EXISTS" == "false" ]]; then
+    az group create --name "$CLUSTER" --location "$REGION"
+  fi
 
   # 2. SSH key
   if [[ ! -f "${SSH_KEY}" ]]; then

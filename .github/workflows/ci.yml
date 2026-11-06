@@ -701,7 +701,8 @@ jobs:
 
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Login to Azure
+      - id: azure-login
+        name: Login to Azure
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -828,7 +829,7 @@ jobs:
           path: .github/scripts/ansible/files
 
       - name: Delete all Azure resources (resource group)
-        if: always()
+        if: always() && steps.azure-login.outcome == 'success'
         working-directory: .github/scripts/ansible
         run: |
           ./azure_vm_manager.sh delete ${{ steps.azure-init.outputs.region }} ${{ steps.azure-init.outputs.azure-cluster-name }}
