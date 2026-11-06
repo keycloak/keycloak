@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 const ALERT_TIMEOUT = 15_000;
 
@@ -15,7 +15,18 @@ function getActionToggleButton(page: Page) {
 
 export async function selectActionToggleItem(page: Page, item: string) {
   await getActionToggleButton(page).click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
+  const menuItem = page.getByRole("menuitem", { name: item, exact: true });
+  try {
+    await expect(menuItem).toBeVisible({ timeout: 5_000 });
+  } catch (cause) {
+    throw new Error(
+      `Menu item "${item}" did not appear after clicking the action dropdown. ` +
+        "The dropdown of the previous page might have been clicked while navigation was still in progress: " +
+        "wait for the new page (for example its view-header) to be visible before calling this helper.",
+      { cause },
+    );
+  }
+  await menuItem.click();
 }
 
 export async function assertAxeViolations(page: Page) {
