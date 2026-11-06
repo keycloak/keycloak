@@ -525,6 +525,7 @@ public class LoginPageTest {
             realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("saml")
                         .alias("mysaml")
+                        .attribute("validateSignature", "false")
                         .build());
             realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("oidc")

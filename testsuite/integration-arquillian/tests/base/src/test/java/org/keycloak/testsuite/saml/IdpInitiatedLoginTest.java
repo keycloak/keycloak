@@ -218,6 +218,8 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                     .providerId("saml")
                     .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml-idp-sso-service/")
                     .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
+                    .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
+                    .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
                     .build())) {
             new SamlClientBuilder()
                 .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()
