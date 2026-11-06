@@ -30,6 +30,7 @@ public class ClientPolicyException extends Exception {
     private String error = OAuthErrorException.INVALID_REQUEST;
     private String errorDetail ="NA";
     private Status errorStatus = Response.Status.BAD_REQUEST;
+    private boolean errorRedirectAllowed = true;
 
     public ClientPolicyException(String error) {
         super(error);
@@ -84,6 +85,18 @@ public class ClientPolicyException extends Exception {
 
     public void setErrorStatus(Status errorStatus) {
         this.errorStatus = errorStatus;
+    }
+
+    /**
+     * Whether the authorization endpoint may redirect this error to the already matched redirect URI.
+     * Executors that reject the redirect URI itself must disable error redirects.
+     */
+    public boolean isErrorRedirectAllowed() {
+        return errorRedirectAllowed;
+    }
+
+    public void setErrorRedirectAllowed(boolean errorRedirectAllowed) {
+        this.errorRedirectAllowed = errorRedirectAllowed;
     }
 
     /**

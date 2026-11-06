@@ -27,6 +27,8 @@ import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestRedirectUriContext;
+import org.keycloak.services.clientpolicy.executor.AuthorizationRequestRedirectUriValidator;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
@@ -56,7 +58,15 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
 
         doPolicyOperation(
                 (ClientPolicyConditionProvider condition) -> condition.applyPolicy(context),
-                (ClientPolicyExecutorProvider executor) -> executor.executeOnEvent(context),
+                (ClientPolicyExecutorProvider executor) -> {
+                    if (context instanceof AuthorizationRequestRedirectUriContext redirectUriContext) {
+                        if (executor instanceof AuthorizationRequestRedirectUriValidator validator) {
+                            validator.validateRedirectUri(redirectUriContext);
+                        }
+                    } else {
+                        executor.executeOnEvent(context);
+                    }
+                },
                 realm
         );
     }

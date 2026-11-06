@@ -1,2 +1,4 @@
 127.0.0.1 localtest.me admin.localtest.me localhost-myapp.localtest.me localhost-sso.localtest.me realmFrontend.localtest.me proxy.kc.localtest.me
 ::1 localtest.me admin.localtest.me localhost-myapp.localtest.me localhost-sso.localtest.me realmFrontend.localtest.me proxy.kc.localtest.me
+127.0.0.1 redirect-loopback-v4.kc.test
+::1 redirect-loopback-v6.kc.test
