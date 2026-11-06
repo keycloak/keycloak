@@ -1156,9 +1156,26 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
     
     @Test
-    public void testSniNotSetViaConfig() {
-        // SNI is enabled via KeycloakHttpServerOptionsCustomizer, not via config property
+    public void testSniEnabledForDirectHttps() {
         var config = createConfigFromCliArguments("--https-certificate-file=\\some\\file");
+        assertEquals("true", config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
+    }
+
+    @Test
+    public void testSniDisabledWithForwardedProxyHeaders() {
+        var config = createConfigFromCliArguments("--https-certificate-file=/cert.pem", "--proxy-headers=forwarded");
+        assertEquals("false", config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
+    }
+
+    @Test
+    public void testSniDisabledWithXForwardedProxyHeaders() {
+        var config = createConfigFromCliArguments("--https-certificate-file=/cert.pem", "--proxy-headers=xforwarded");
+        assertEquals("false", config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
+    }
+
+    @Test
+    public void testSniNotSetWithoutHttps() {
+        var config = createConfigFromCliArguments();
         assertNull(config.getConfigValue(HttpPropertyMappers.QUARKUS_HTTPS_SNI).getValue());
     }
 

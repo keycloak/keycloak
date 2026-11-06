@@ -16,6 +16,7 @@ import org.keycloak.config.ManagementOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionsUtil;
+import org.keycloak.config.ProxyOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -150,10 +151,12 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         addKeyStoreMappers(mappers);
         addTrustStoreMappers(mappers);
 
-        // SNI is enabled via KeycloakHttpServerOptionsCustomizer to bypass TLS Registry's
-        // overly strict validation that rejects SNI with single-alias keystores (quarkusio/quarkus#55943).
-        // Keycloak uses SNI for misdirected request detection (HTTP 421), not for cert selection.
-        // Once that issue is fixed, move SNI back to a config property mapper here.
+        mappers.add(fromOption(HttpOptions.HTTPS_SNI_ENABLED)
+                .to(QUARKUS_HTTPS_SNI)
+                .transformer((v, c) -> isHttpsEnabled()
+                        ? Boolean.toString(Configuration.getConfigValue(ProxyOptions.PROXY_HEADERS).getValue() == null)
+                        : null)
+                .build());
 
         mappers.addAll(List.of(
                 fromOption(HttpOptions.HTTP_MAX_QUEUED_REQUESTS)
