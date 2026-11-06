@@ -4,6 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Escaping in server configuration values
+
+The upgrade to SmallRye Config 4 changes how {project_name} interprets dollar signs and backslashes in server configuration values.
+
+* Two consecutive dollar signs (`&#36;&#36;`) are now preserved. If you set `KC_DB_PASSWORD='has&#36;&#36;dollar'` to supply the password `has$dollar`, change it to `KC_DB_PASSWORD='has$dollar'` before upgrading.
+* If you used `&#36;&#36;` to prevent an expression from expanding, escape the opening dollar sign with a backslash instead. For example, change `KC_DB_PASSWORD='&#36;&#36;{vault.secret}'` to `KC_DB_PASSWORD='\${vault.secret}'` in a shell that supports single quotes.
+* When a value contains an expression, backslash escapes are processed throughout the value. Double each backslash that must be preserved when the value reaches expression processing. For example, with `KEYSTORE_NAME=server.p12`, set `KC_HTTPS_KEY_STORE_FILE='C:\\certs\\${KEYSTORE_NAME}'` in a shell that supports single quotes to obtain `C:\certs\server.p12`. In `conf/keycloak.conf`, write `https-key-store-file=C:\\\\certs\\\\${KEYSTORE_NAME}` because the properties file processes escapes before expression expansion.
+
+To pass an environment value through exactly as written, use the `KCRAW_` prefix. For example, replace `KC_DB_PASSWORD` with `KCRAW_DB_PASSWORD='has$dollar'` to supply that password literally.
+For details, see the link:{server_guide_base_link}/configuration#kcraw-prefix[Preserving literal values with the KCRAW_ prefix] section in the Server Configuration guide.
+
 === Validation of client URI fields
 // https://github.com/keycloak/keycloak/issues/54046
 

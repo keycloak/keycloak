@@ -665,7 +665,7 @@ public class PropertyMapper<T> {
                         throw new PropertyException("Invalid empty value for option %s".formatted(getOptionAndSourceMessage(configValue)));
                     }
                     try {
-                        Configuration.getConfig().convert(v, option.getComponentType());
+                        Configuration.getConfig().requireConverter(option.getComponentType()).convert(v);
                     } catch (Exception e) {
                         // strip the smallrye code if possible
                         String message = e.getMessage();
