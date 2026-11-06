@@ -15,8 +15,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -32,7 +30,9 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testframework.util.FileUtils;
 import org.keycloak.testframework.util.ProcessUtils;
 import org.keycloak.testframework.util.TmpDir;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.quarkus.fs.util.ZipUtils;
 import org.jboss.logging.Logger;
 
@@ -156,6 +156,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(new File(keycloakHomeDir, "bin"));
+        pb.environment().putIfAbsent("KC_LOG_CONSOLE_OUTPUT", "json");
+        pb.environment().putIfAbsent("KC_LOG_CONSOLE_JSON_FORMAT", "ecs");
 
         if (debug) {
             pb.environment().put("DEBUG", "true");
@@ -358,8 +360,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
     private class OutputHandler implements Runnable {
 
-        private static final Pattern LOG_PATTERN = Pattern.compile("([^ ]*) ([^ ]*) ([A-Z]*)([ ]*)(.*)");
-        private static final Logger LOGGER = Logger.getLogger("managed.keycloak");
+        private static final String LOGGER_NAME = "managed.keycloak";
+        private static final Logger LOGGER = Logger.getLogger(LOGGER_NAME);
 
         private boolean startedInPrinted = false;
         private final Process process;
@@ -376,24 +378,11 @@ public class DistributionKeycloakServer implements KeycloakServer {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             try {
                 for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
-                    if (!startedInPrinted && line.matches(".*Keycloak.* started in.*")) {
-                        startupLatch.countDown();
+                    if (line.startsWith("{")) {
+                        logJson(line);
+                    } else {
+                        LOGGER.info(line);
                     }
-
-                    Matcher matcher = LOG_PATTERN.matcher(line);
-                    if (matcher.matches()) {
-                        String levelString = matcher.group(3);
-                        String message = matcher.group(5);
-                        if (levelString != null && message != null) {
-                            for (Logger.Level l : Logger.Level.values()) {
-                                if (l.name().equals(levelString)) {
-                                    LOGGER.log(l, message);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    LOGGER.info(line);
                 }
             } catch (IOException e) {
                 // Ignored
@@ -402,6 +391,40 @@ public class DistributionKeycloakServer implements KeycloakServer {
                     startupLatch.countDown();
                 }
             }
+        }
+
+        // The server logs in JSON (ECS) format, so a record with a stack trace arrives as a single line.
+        private void logJson(String line) {
+            JsonNode node;
+            try {
+                node = JsonSerialization.mapper.readTree(line);
+            } catch (IOException e) {
+                LOGGER.info(line);
+                return;
+            }
+
+            String message = node.path("message").asText("");
+            if (!startedInPrinted && message.matches(".*Keycloak.* started in.*")) {
+                startupLatch.countDown();
+            }
+
+            JsonNode stackTrace = node.get("error.stack_trace");
+            if (stackTrace != null && !stackTrace.isNull()) {
+                message = message + "\n" + stackTrace.asText();
+            }
+
+            Logger.Level level = Logger.Level.INFO;
+            String levelString = node.path("log.level").asText("");
+            for (Logger.Level l : Logger.Level.values()) {
+                if (l.name().equals(levelString)) {
+                    level = l;
+                    break;
+                }
+            }
+            // Nested under the managed logger to keep its configured level, while preserving the original logger name
+            String loggerName = node.path("log.logger").asText("");
+            Logger logger = loggerName.isEmpty() ? LOGGER : Logger.getLogger(LOGGER_NAME + "." + loggerName);
+            logger.log(level, message);
         }
 
         public boolean waitForStarted() {
