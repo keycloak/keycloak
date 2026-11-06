@@ -1,5 +1,6 @@
 package org.keycloak.testframework.tests;
 
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -27,8 +28,7 @@ public class ManagedServerLogTest {
 
     @Test
     public void multiLineRecordIsLoggedAsSingleRecordWithOriginalLevel() throws Exception {
-        String selected = Config.getSelectedSupplier(KeycloakServer.class);
-        Assumptions.assumeTrue(selected == null || "distribution".equals(selected), "Only applies to the distribution server");
+        Assumptions.assumeTrue(isDistributionSelected(), "Only applies to the distribution server");
 
         BlockingQueue<LogRecord> records = new LinkedBlockingQueue<>();
         Handler handler = new Handler() {
@@ -65,6 +65,20 @@ public class ManagedServerLogTest {
         } finally {
             managedLogger.removeHandler(handler);
         }
+    }
+
+    // Distribution is the first registered server supplier, so it is the default unless filtered out
+    private static boolean isDistributionSelected() {
+        String selected = Config.getSelectedSupplier(KeycloakServer.class);
+        if (selected != null && !"distribution".equals(selected)) {
+            return false;
+        }
+        String included = Config.getIncludedSuppliers(KeycloakServer.class);
+        if (included != null && Arrays.stream(included.split(",")).noneMatch("distribution"::equals)) {
+            return false;
+        }
+        String excluded = Config.getExcludedSuppliers(KeycloakServer.class);
+        return excluded == null || Arrays.stream(excluded.split(",")).noneMatch("distribution"::equals);
     }
 
 }

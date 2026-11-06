@@ -156,8 +156,9 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(new File(keycloakHomeDir, "bin"));
-        pb.environment().putIfAbsent("KC_LOG_CONSOLE_OUTPUT", "json");
-        pb.environment().putIfAbsent("KC_LOG_CONSOLE_JSON_FORMAT", "ecs");
+        // The output handler requires ECS JSON records, so don't allow overriding these from the environment
+        pb.environment().put("KC_LOG_CONSOLE_OUTPUT", "json");
+        pb.environment().put("KC_LOG_CONSOLE_JSON_FORMAT", "ecs");
 
         if (debug) {
             pb.environment().put("DEBUG", "true");
@@ -381,6 +382,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
                     if (line.startsWith("{")) {
                         logJson(line);
                     } else {
+                        detectStartup(line);
                         LOGGER.info(line);
                     }
                 }
@@ -393,20 +395,31 @@ public class DistributionKeycloakServer implements KeycloakServer {
             }
         }
 
+        private void detectStartup(String text) {
+            if (!startedInPrinted && text.matches(".*Keycloak.* started in.*")) {
+                startupLatch.countDown();
+            }
+        }
+
         // The server logs in JSON (ECS) format, so a record with a stack trace arrives as a single line.
         private void logJson(String line) {
             JsonNode node;
             try {
                 node = JsonSerialization.mapper.readTree(line);
             } catch (IOException e) {
+                detectStartup(line);
                 LOGGER.info(line);
                 return;
             }
 
-            String message = node.path("message").asText("");
-            if (!startedInPrinted && message.matches(".*Keycloak.* started in.*")) {
-                startupLatch.countDown();
+            // JSON that is not a log record is forwarded unchanged
+            if (!node.hasNonNull("message")) {
+                LOGGER.info(line);
+                return;
             }
+
+            String message = node.get("message").asText();
+            detectStartup(message);
 
             JsonNode stackTrace = node.get("error.stack_trace");
             if (stackTrace != null && !stackTrace.isNull()) {
