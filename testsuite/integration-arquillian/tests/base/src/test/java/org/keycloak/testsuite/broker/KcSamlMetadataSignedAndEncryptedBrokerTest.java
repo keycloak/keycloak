@@ -79,6 +79,7 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
                 }
 
                 attributes.put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true");
+                attributes.put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
                 attributes.put(SamlConfigAttributes.SAML_ENCRYPT, "true");
                 attributes.put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "true");
                 attributes.put(SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.name());
@@ -100,8 +101,10 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
             Map<String, String> config = result.getConfig();
 
             config.put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
+            config.put(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false");
             config.put(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true");
             config.put(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "true");
+            config.put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "false");
             config.put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, providerCert);
 
             return result;

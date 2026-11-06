@@ -1,6 +1,7 @@
 package org.keycloak.tests.broker.saml;
 
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -10,6 +11,9 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
@@ -24,6 +28,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2LoginResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.testframework.annotations.InjectHttpServer;
@@ -90,13 +95,20 @@ public class SamlBrokerEmptyNameIdTest {
     // The subject the external IdP authenticates for the next authentication request it receives
     private final AtomicReference<IdpSubject> idpSubject = new AtomicReference<>();
 
+    private KeyPair signingKey;
+
     @BeforeEach
-    public void startExternalIdp() {
+    public void startExternalIdp() throws Exception {
+        signingKey = KeyUtils.generateRsaKeyPair(2048);
         httpServer.createContext(IDP_SSO_PATH, this::authenticate);
 
         // localhost keeps the IdP same-site with Keycloak, so browsers send the auth session cookie with its POST back
         String ssoUrl = "http://localhost:" + httpServer.getAddress().getPort() + IDP_SSO_PATH;
-        realm.updateIdentityProvider(IDP_ALIAS, idp -> idp.getConfig().put(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, ssoUrl));
+        String certificate = PemUtils.encodeCertificate(CertificateUtils.generateV1SelfSignedCertificate(signingKey, "test-idp"));
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.getConfig().put(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, ssoUrl);
+            idp.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, certificate);
+        });
     }
 
     @AfterEach
@@ -186,6 +198,10 @@ public class SamlBrokerEmptyNameIdTest {
         try {
             String form = new BaseSAML2BindingBuilder<>()
                     .relayState(parameters.get(GeneralConstants.RELAY_STATE))
+                    .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
+                    .signWith("test-idp", signingKey)
+                    .signAssertions()
+                    .signDocument()
                     .postBinding(createLoginResponse(authnRequest, idpSubject.get()))
                     .getHtmlResponse(assertionConsumerUrl);
             HttpServerUtil.sendResponse(exchange, 200, Map.of("Content-Type", List.of("text/html")), form);

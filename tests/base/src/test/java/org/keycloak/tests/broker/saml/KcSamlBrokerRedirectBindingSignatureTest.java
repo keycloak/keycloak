@@ -14,6 +14,8 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -316,12 +318,18 @@ public class KcSamlBrokerRedirectBindingSignatureTest extends AbstractKcSamlBrok
         }
     }
 
-    // Called per test rather than from @BeforeEach, so the inherited browser login tests keep the unsigned setup.
+    // Called per test rather than from @BeforeEach, so the inherited browser login tests keep the signed setup.
     private void enableRedirectSignatureValidation() {
         configureRedirectSignatureValidation(true);
     }
 
     private void configureRedirectSignatureValidation(boolean validateSignature) {
+        ClientRepresentation client = getProviderRealm().admin().clients()
+                .findByClientId(getConsumerRealm().getBaseUrl()).get(0);
+        client.getAttributes().put(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false");
+        client.getAttributes().put(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "false");
+        getProviderRealm().admin().clients().get(client.getId()).update(client);
+
         IdentityProviderResource idpResource = getConsumerRealm().admin().identityProviders().get(getIdpAlias());
         IdentityProviderRepresentation idp = idpResource.toRepresentation();
         idp.getConfig().put(VALIDATE_SIGNATURE, Boolean.toString(validateSignature));
