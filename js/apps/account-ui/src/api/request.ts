@@ -17,6 +17,7 @@ export type RequestOptions = {
 
 async function _request(
   url: URL,
+  keycloak: Keycloak,
   { signal, getAccessToken, method, searchParams, body }: RequestOptions = {},
 ): Promise<Response> {
   if (searchParams) {
@@ -25,13 +26,17 @@ async function _request(
     );
   }
 
-  return fetch(url, {
+  // Refresh first, then read keycloak.token at the last moment so a concurrent
+  // refresh cannot make keycloak.fetch skip the Bearer→DPoP upgrade.
+  await getAccessToken?.();
+
+  return keycloak.fetch(url, {
     signal,
     method,
     body: body ? JSON.stringify(body) : undefined,
     headers: {
       [CONTENT_TYPE_HEADER]: CONTENT_TYPE_JSON,
-      authorization: `Bearer ${await getAccessToken?.()}`,
+      authorization: `Bearer ${keycloak.token}`,
     },
   });
 }
@@ -45,7 +50,7 @@ export async function request(
   if (typeof fullUrl === "undefined") {
     fullUrl = url(environment, path);
   }
-  return _request(fullUrl, {
+  return _request(fullUrl, keycloak, {
     ...opts,
     getAccessToken: token(keycloak),
   });

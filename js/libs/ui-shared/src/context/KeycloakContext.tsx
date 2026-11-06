@@ -125,6 +125,7 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
         pkceMethod: "S256",
         responseMode: "query",
         scope: environment.scope,
+        dpopConfig: { mode: "auto" },
       });
 
     init()

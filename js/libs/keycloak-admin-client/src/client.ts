@@ -20,6 +20,7 @@ import { WhoAmI } from "./resources/whoAmI.js";
 import { Credentials, getToken, Settings } from "./utils/auth.js";
 import { defaultBaseUrl, defaultRealm } from "./utils/constants.js";
 import { DecodedToken, decodeToken } from "./utils/decode.js";
+import type { FetchLike } from "./utils/fetchWithError.js";
 
 export type RequestOptions = Omit<RequestInit, "signal">;
 
@@ -33,6 +34,11 @@ export interface ConnectionConfig {
   requestOptions?: RequestOptions;
   requestArgOptions?: Pick<RequestArgs, "catchNotFound">;
   timeout?: number;
+  /**
+   * Custom fetch implementation used for Admin REST calls.
+   * Pass `keycloak.fetch` to attach DPoP proofs when using keycloak-js.
+   */
+  fetch?: FetchLike;
   /**
    * Enable experimental APIs (e.g., v2 API).
    * These APIs are not yet stable and may change without notice.
@@ -79,6 +85,7 @@ export class KeycloakAdminClient {
   #accessTokenDecoded?: DecodedToken;
   #refreshTokenDecoded?: DecodedToken;
   #credentials?: Credentials;
+  #fetch?: FetchLike;
 
   constructor(connectionConfig?: ConnectionConfig) {
     this.baseUrl = connectionConfig?.baseUrl || defaultBaseUrl;
@@ -88,6 +95,8 @@ export class KeycloakAdminClient {
       connectionConfig?.enableExperimentalApis ?? false;
     this.#requestOptions = connectionConfig?.requestOptions;
     this.#globalRequestArgOptions = connectionConfig?.requestArgOptions;
+    // Resolve the default at request time so later global fetch stubs still apply.
+    this.#fetch = connectionConfig?.fetch;
 
     // Initialize resources
     this.users = new Users(this);
@@ -211,6 +220,10 @@ export class KeycloakAdminClient {
     return this.#requestOptions;
   }
 
+  public getFetch(): FetchLike {
+    return this.#fetch ?? fetch;
+  }
+
   public getGlobalRequestArgOptions():
     | Pick<RequestArgs, "catchNotFound">
     | undefined {
@@ -231,6 +244,11 @@ export class KeycloakAdminClient {
     ) {
       this.realmName = connectionConfig.realmName;
     }
-    this.#requestOptions = connectionConfig.requestOptions;
+    if (connectionConfig.requestOptions !== undefined) {
+      this.#requestOptions = connectionConfig.requestOptions;
+    }
+    if (connectionConfig.fetch !== undefined) {
+      this.#fetch = connectionConfig.fetch;
+    }
   }
 }

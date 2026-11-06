@@ -2,7 +2,10 @@ import {
   type AuthenticationProvider,
   type RequestInformation,
 } from "@microsoft/kiota-abstractions";
-import { FetchRequestAdapter } from "@microsoft/kiota-http-fetchlibrary";
+import {
+  FetchRequestAdapter,
+  HttpClient,
+} from "@microsoft/kiota-http-fetchlibrary";
 
 import type { KeycloakAdminClient } from "../client.js";
 import { createAdminClient } from "../generated/adminClient.js";
@@ -44,7 +47,17 @@ function createClientsV2Endpoint(
   client: KeycloakAdminClient,
 ): V2RequestBuilder {
   const authProvider = new KeycloakAuthProvider(() => client.getAccessToken());
-  const adapter = new FetchRequestAdapter(authProvider);
+  const fetchImpl = client.getFetch();
+  const httpClient =
+    fetchImpl === fetch
+      ? undefined
+      : new HttpClient((request, init) => fetchImpl(request, init));
+  const adapter = new FetchRequestAdapter(
+    authProvider,
+    undefined,
+    undefined,
+    httpClient,
+  );
   adapter.baseUrl = client.baseUrl;
 
   const adminClient = createAdminClient(adapter);
