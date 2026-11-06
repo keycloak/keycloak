@@ -36,31 +36,48 @@ export const TextControl = <
 >(
   props: TextControlProps<T, P>,
 ) => {
-  const { labelIcon, helperText, ...rest } = props;
-  const required = !!getRuleValue(props.rules?.required);
-  const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
+  const {
+    labelIcon,
+    helperText,
+    label,
+    name,
+    rules,
+    defaultValue: defaultValueProp,
+    control,
+    shouldUnregister,
+    disabled,
+    isDisabled,
+    "data-testid": dataTestId,
+    ...rest
+  } = props;
+  const required = !!getRuleValue(rules?.required);
+  const defaultValue = defaultValueProp ?? ("" as PathValue<T, P>);
 
   const { field, fieldState } = useController({
-    ...props,
+    name,
+    rules,
     defaultValue,
+    control,
+    shouldUnregister,
+    disabled,
   });
 
   return (
     <FormLabel
-      name={props.name}
-      label={props.label}
+      name={name}
+      label={label}
       labelIcon={labelIcon}
       isRequired={required}
       error={fieldState.error}
     >
       <TextInput
         isRequired={required}
-        id={props.name}
-        data-testid={props["data-testid"] || props.name}
+        id={name}
+        data-testid={dataTestId || name}
         validated={
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
-        isDisabled={props.isDisabled}
+        isDisabled={isDisabled}
         {...rest}
         {...field}
       />

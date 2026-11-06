@@ -55,6 +55,7 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
         onSelect(selection as PasswordPolicyTypeRepresentation);
         setOpen(false);
       }}
+      onOpenChange={(isOpen) => setOpen(isOpen)}
       toggle={(ref) => (
         <MenuToggle
           ref={ref}
@@ -81,7 +82,7 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
 };
 
 type PasswordPolicyProps = {
-  realm: RealmRepresentation;
+  realm?: RealmRepresentation;
   realmUpdated: (realm: RealmRepresentation) => void;
 };
 
@@ -122,9 +123,16 @@ export const PasswordPolicy = ({
     setRows(values);
   };
 
-  useEffect(() => setupForm(realm), []);
+  useEffect(() => {
+    if (realm) {
+      setupForm(realm);
+    }
+  }, []);
 
   const save = async (values: SubmittedValues) => {
+    if (!realm) {
+      return;
+    }
     const updatedRealm = {
       ...realm,
       passwordPolicy: serializePolicy(rows, values),
@@ -139,6 +147,10 @@ export const PasswordPolicy = ({
       addError("updatePasswordPolicyError", error);
     }
   };
+
+  if (!realm) {
+    return null;
+  }
 
   return (
     <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
@@ -182,6 +194,7 @@ export const PasswordPolicy = ({
                   <Button
                     data-testid="reload"
                     variant={ButtonVariant.link}
+                    type="button"
                     onClick={() => setupForm(realm)}
                   >
                     {t("reload")}

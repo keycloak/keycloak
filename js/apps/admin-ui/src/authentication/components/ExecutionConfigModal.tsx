@@ -192,6 +192,7 @@ export const ExecutionConfigModal = ({
                     <Button
                       data-testid="cancel"
                       variant={ButtonVariant.link}
+                      type="button"
                       onClick={() => {
                         setShow(false);
                       }}
@@ -199,18 +200,25 @@ export const ExecutionConfigModal = ({
                       {t("cancel")}
                     </Button>
                   </div>
+                  {/* Keep Clear outside form submit semantics: PF Button
+                      defaults to type=button, but stay explicit and avoid
+                      racing form onSubmit when deleting a config. */}
                   {config && (
                     <Button
                       icon={<TrashIcon />}
                       iconPosition="end"
                       data-testid="clear"
                       variant={ButtonVariant.link}
-                      onClick={async () => {
+                      type="button"
+                      formNoValidate
+                      onClick={async (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
                         await adminClient.authenticationManagement.delConfig({
                           id: config.id!,
                         });
                         setConfig(undefined);
-                        reset();
+                        reset({ alias: "", config: {} });
                         setShow(false);
                       }}
                     >

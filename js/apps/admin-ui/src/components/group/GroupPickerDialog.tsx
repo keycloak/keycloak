@@ -412,7 +412,7 @@ export const GroupPickerDialog = ({
           data-testid={`${text.ok}-button`}
           key="confirm"
           variant="primary"
-          form="group-form"
+          type="button"
           onClick={() => {
             onConfirm(
               type === "selectMany"

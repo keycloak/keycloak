@@ -242,6 +242,7 @@ export const AddTranslationsDialog = ({
           key="ok"
           data-testid="okTranslationBtn"
           variant="primary"
+          type="button"
           form="add-translation"
           isDisabled={!isValid}
           onClick={toggleDialog}

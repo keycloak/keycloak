@@ -417,7 +417,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
               className="kc-setPasswordBtn-tbl"
               data-testid="setPasswordBtn-table"
               variant="primary"
-              form="userCredentials-form"
+              type="button"
               onClick={() => {
                 setIsOpen(true);
               }}
