@@ -37,14 +37,14 @@ To effectively prevent SSRF, Regular Expressions should be designed to exclude I
 
 This pattern ensures that the {project_name} server only communicates with official domains, preventing the use of `localhost` or numerical IP addresses.
 
-* **Pattern:** `^https://([a-zA-Z0-9-]+\.)?mycompany\.com(/.*)?$`
+* **Pattern:** `+^https://([a-zA-Z0-9-]+\.)?mycompany\.com(/.*)?$+`
 * **Effect:** Blocks attempts to use loopback addresses (e.g., `http://localhost:8080`) or cloud metadata endpoints.
 
 **2. Enforcing HTTPS**
 
 SSRF often exploits unencrypted protocols to bypass internal security controls. Enforcing HTTPS via patterns reduces the attack surface.
 
-* **Pattern:** `^https://[a-zA-Z0-9.-]+(/.*)?$`
+* **Pattern:** `+^https://[a-zA-Z0-9.-]+(/.*)?$+`
 * **Result:** Rejects the use of the `http://` scheme, which is frequently used to probe internal services.
 
 NOTE: https can be enforced also with the *Secure Client Uris* executor but only together with wildcards and for all the client URIs
@@ -53,7 +53,7 @@ NOTE: https can be enforced also with the *Secure Client Uris* executor but only
 
 If your clients use JWKS URI from third-party providers, only add the specific domains belonging to those providers.
 
-* **Pattern:** `^https://trusted-provider\.io/.*`
+* **Pattern:** `+^https://trusted-provider\.io/.*+`
 * **Result:** All other domains will be rejected for JWKS requests.
 
 
