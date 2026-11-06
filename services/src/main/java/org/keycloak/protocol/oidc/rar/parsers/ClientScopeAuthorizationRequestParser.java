@@ -27,9 +27,12 @@ import java.util.stream.Collectors;
 
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeDecorator;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.model.IntermediaryScopeRepresentation;
@@ -83,21 +86,32 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
 
     @Override
     public AuthorizationRequestContext parseScopes(UserModel user, ClientModel client, AuthenticatedClientSessionModel clientSession, String scopeParam) {
-        // Process all the default ClientScopeModels for the current client, and maps them to the IntermediaryScopeRepresentation to make use of a HashSet
-        Set<IntermediaryScopeRepresentation> clientScopeModelSet = client.getClientScopes(true).values().stream()
-                .filter(clientScopeModel -> !clientScopeModel.isParameterizedScope()) // not strictly needed as Parameterized Scopes are going to be Optional scopes for now
-                .map(IntermediaryScopeRepresentation::new)
-                .collect(Collectors.toSet());
-
         Set<IntermediaryScopeRepresentation> intermediaryScopeRepresentations = new HashSet<>();
         if (scopeParam != null) {
+            OrganizationScope orgScope = TokenManager.tryResolveOrganizationScope(session, scopeParam, user);
             // Go through the parsed requested scopes and attempt to match them against the optional scopes list
             intermediaryScopeRepresentations = TokenManager.parseScopeParameter(scopeParam).collect(Collectors.toSet()).stream()
-                    .map((String requestScope) -> getMatchingClientScope(user, requestScope, client.getClientScopes(false).values(), clientSession))
+                    .map((String requestScope) -> getMatchingClientScope(user, requestScope, client.getClientScopes(false).values(), clientSession)
+                            .or(() -> getMatchingOrganizationScope(user, requestScope, orgScope)))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
         }
+
+        // organization scopes requested with a value (e.g. organization:<alias>) are resolved as decorators of the organization client scope
+        Set<String> requestedOrganizationScopeIds = intermediaryScopeRepresentations.stream()
+                .map(IntermediaryScopeRepresentation::getScope)
+                .filter(ClientScopeDecorator.class::isInstance)
+                .map(ClientScopeModel::getId)
+                .collect(Collectors.toSet());
+
+        // Process all the default ClientScopeModels for the current client, and maps them to the IntermediaryScopeRepresentation to make use of a HashSet
+        // Skip the organization scopes requested with a value, we don't want parameterized and default client scopes duplicated
+        Set<IntermediaryScopeRepresentation> clientScopeModelSet = client.getClientScopes(true).values().stream()
+                .filter(clientScopeModel -> !clientScopeModel.isParameterizedScope()) // not strictly needed as Parameterized Scopes are going to be Optional scopes for now
+                .filter(clientScopeModel -> !requestedOrganizationScopeIds.contains(clientScopeModel.getId()))
+                .map(IntermediaryScopeRepresentation::new)
+                .collect(Collectors.toSet());
 
         // merge both sets, avoiding duplicates
         intermediaryScopeRepresentations.addAll(clientScopeModelSet);
@@ -175,6 +189,26 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * The built-in organization scope is not a parameterized scope, so values like {@code organization:<alias>} or
+     * {@code organization:*} do not match any client scope by name. Resolve them as organization client scopes instead,
+     * the same way {@link TokenManager#getRequestedClientScopes} does when parameterized scopes are disabled. They are
+     * skipped when organizations are disabled for the realm, and for parameterized client scopes, which are validated
+     * by their own parameter type.
+     *
+     * @param requestScope one of the requested OAuth scopes
+     * @param orgScope the organization scope resolved from all the requested scopes, or {@code null}
+     * @return see description
+     */
+    private Optional<IntermediaryScopeRepresentation> getMatchingOrganizationScope(UserModel user, String requestScope, OrganizationScope orgScope) {
+        if (orgScope == null || !Organizations.isEnabled(session)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(orgScope.toClientScope(requestScope, user, session))
+                .filter(clientScope -> !clientScope.isParameterizedScope())
+                .map(IntermediaryScopeRepresentation::new);
     }
 
     private ParameterizedScopeTypeProvider resolveType(ClientScopeModel clientScopeModel) {
