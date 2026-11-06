@@ -26,6 +26,7 @@ import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -51,6 +52,12 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
             return;
         }
 
+        ExistingUserInfo duplicationInfo = ExistingUserInfo.deserialize(existingUserInfo);
+
+        if (sendErrorIfExistingUserDisabled(context, duplicationInfo)) {
+            return;
+        }
+
         // hide the review button if the idp review execution was not successfully executed before
         boolean hideReviewButton = authSession.getExecutionStatus().entrySet().stream()
                 .filter(entry -> CommonClientSessionModel.ExecutionStatus.SUCCESS.equals(entry.getValue()))
@@ -59,7 +66,6 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
                 .findAny()
                 .isEmpty();
 
-        ExistingUserInfo duplicationInfo = ExistingUserInfo.deserialize(existingUserInfo);
         Response challenge = context.form()
                 .setStatus(Response.Status.OK)
                 .setAttribute(LoginFormsProvider.IDENTITY_PROVIDER_BROKER_CONTEXT, brokerContext)
@@ -82,11 +88,35 @@ public class IdpConfirmLinkAuthenticator extends AbstractIdpAuthenticator {
                 authSession.setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
             });
         } else if (action != null && action.equals("linkAccount")) {
+            // the existing account might have been disabled after the confirm link page was shown
+            String existingUserInfo = context.getAuthenticationSession().getAuthNote(EXISTING_USER_INFO);
+            if (existingUserInfo != null && sendErrorIfExistingUserDisabled(context, ExistingUserInfo.deserialize(existingUserInfo))) {
+                return;
+            }
             context.success();
         } else {
             throw new AuthenticationFlowException("Unknown action: " + action,
                     AuthenticationFlowError.INTERNAL_ERROR);
         }
+    }
+
+    /**
+     * Linking to a disabled account can never complete, so report it with an error page instead of continuing with the link.
+     *
+     * @return {@code true} if the existing account is disabled and the error page was sent
+     */
+    private boolean sendErrorIfExistingUserDisabled(AuthenticationFlowContext context, ExistingUserInfo duplicationInfo) {
+        UserModel existingUser = context.getSession().users().getUserById(context.getRealm(), duplicationInfo.getExistingUserId());
+        if (existingUser == null || existingUser.isEnabled()) {
+            return false;
+        }
+
+        context.getEvent().clone().user(existingUser).error(Errors.USER_DISABLED);
+        Response challenge = context.form()
+                .setError(Messages.ACCOUNT_DISABLED)
+                .createErrorPage(Response.Status.BAD_REQUEST);
+        context.failureChallenge(AuthenticationFlowError.USER_DISABLED, challenge);
+        return true;
     }
 
     @Override
