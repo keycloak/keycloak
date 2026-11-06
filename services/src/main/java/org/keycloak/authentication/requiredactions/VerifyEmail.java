@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.requiredactions;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +71,10 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     // Auth note to set that verifyEmail is triggered during registration
     private static final String VERIFY_EMAIL_DURING_REGISTRATION = "VERIFY_EMAIL_DURING_REGISTRATION";
 
+    // Absolute expiry shared by every polling token issued for the current verification email, so that
+    // re-rendering the page (a refresh, or the resend cooldown) cannot extend it past that email's own link.
+    private static final String VERIFY_EMAIL_POLLING_EXPIRATION = "VERIFY_EMAIL_POLLING_EXPIRATION";
+
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
         if (context.getRealm().isVerifyEmail() && !context.getUser().isEmailVerified()) {
@@ -104,12 +107,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         if (context.getUser().isEmailVerified()) {
             if ("true".equals(context.getAuthenticationSession().getAuthNote(NEW_USER_REGISTERED))) {
-                // If registration of the user happened in this authSession, but email was later verified in different authSession, this authSession should not continue
-                URI redirectToRestartUrl = Urls.realmLoginRestartPage(context.getUriInfo().getBaseUri(), context.getRealm().getName(),
-                        authSession.getClient().getClientId(),
-                        authSession.getTabId(),
-                        AuthenticationProcessor.getClientData(context.getSession(), authSession), false);
-                Response response = Response.status(302).location(redirectToRestartUrl).build();
+                // Email was verified in a different browser/tab while this registration session was still open.
+                // Show a success page rather than silently redirecting to the login restart page.
+                Response response = context.form()
+                        .setUser(context.getUser())
+                        .createVerifyEmailSuccessPage();
                 context.challenge(response);
                 return;
             }
@@ -134,6 +136,8 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         Response challenge;
         authSession.setClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW, null);
 
+        configureRegistrationSessionPolling(context, loginFormsProvider);
+
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
             // Adding the cooldown entry first to prevent concurrent operations
@@ -148,6 +152,64 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         context.challenge(challenge);
     }
 
+    /**
+     * Points the session polling of a registration's verify-email page at the verify-email-success endpoint,
+     * instead of the default ssoLoginInOtherTabsUrl. Once the email is verified in another tab there is no
+     * required action left to run, so anything that re-enters the authentication flow just completes it and
+     * redirects to the client. Polling only knows that some session appeared, so the endpoint re-checks the
+     * verified status of the user named by the signed token. The auth-session check is suppressed for the same
+     * reason: it would reload this page into that same flow once the other tab changes the auth session cookie.
+     *
+     * Must be applied to every rendering of the verify-email page. The resend cooldown page in
+     * {@link #processAction} is a separate request, so it builds its own form and would otherwise fall back to
+     * the default scripts.
+     */
+    private void configureRegistrationSessionPolling(RequiredActionContext context, LoginFormsProvider form) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        if (!"true".equals(authSession.getAuthNote(NEW_USER_REGISTERED))) {
+            return;
+        }
+
+        KeycloakSession session = context.getSession();
+        RealmModel realm = context.getRealm();
+
+        String tokenString = session.tokens()
+                .encode(new VerifyEmailSuccessToken(context.getUser().getId(), pollingExpiration(context)));
+
+        String pollingRedirectUrl = Urls.loginActionsVerifyEmailSuccess(context.getUriInfo().getBaseUri(),
+                realm.getName(), tokenString, authSession.getClient().getClientId(), authSession.getTabId(),
+                AuthenticationProcessor.getClientData(session, authSession)).toString();
+
+        form.setAttribute(LoginFormsProvider.SESSION_POLLING_REDIRECT_URL, pollingRedirectUrl);
+        form.setAttribute(LoginFormsProvider.SKIP_CHECK_AUTH_SESSION, Boolean.TRUE);
+    }
+
+    /**
+     * Absolute expiry for the polling tokens of the current verification email, given the same lifespan the
+     * email's own link gets. It is created once and then reused, so that re-rendering the verify-email page
+     * cannot keep pushing it out.
+     *
+     * Reuse is tied to the address the pending email was sent to. Whenever that no longer matches the user's
+     * current email a fresh link is about to be issued - because the address changed, or because a resend
+     * cleared the note - and the polling tokens have to follow the new link rather than the replaced one.
+     */
+    private int pollingExpiration(RequiredActionContext context) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
+        String existing = authSession.getAuthNote(VERIFY_EMAIL_POLLING_EXPIRATION);
+        boolean sameEmailStillPending = Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY),
+                context.getUser().getEmail());
+        if (existing != null && sameEmailStillPending) {
+            return Integer.parseInt(existing);
+        }
+
+        int expiration = Time.currentTime()
+                + context.getRealm().getActionTokenGeneratedByUserLifespan(VerifyEmailActionToken.TOKEN_TYPE);
+        authSession.setAuthNote(VERIFY_EMAIL_POLLING_EXPIRATION, String.valueOf(expiration));
+
+        return expiration;
+    }
+
     private boolean isCurrentActionTriggeredFromAIA(RequiredActionContext context) {
         return Objects.equals(context.getAuthenticationSession().getClientNote(Constants.KC_ACTION), getId());
     }
@@ -158,15 +220,17 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         Long remaining = EmailCooldownManager.retrieveCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
         if (remaining != null) {
-            Response retryPage = context.form()
-                    .setError(Messages.COOLDOWN_VERIFICATION_EMAIL, remaining)
-                    .createResponse(UserModel.RequiredAction.VERIFY_EMAIL); // re-render same verify email page
+            LoginFormsProvider retryForm = context.form()
+                    .setError(Messages.COOLDOWN_VERIFICATION_EMAIL, remaining);
+            configureRegistrationSessionPolling(context, retryForm);
 
-            context.challenge(retryPage);
+            // re-render same verify email page
+            context.challenge(retryForm.createResponse(UserModel.RequiredAction.VERIFY_EMAIL));
             return;
         }
 
-        // This will allow user to re-send email again
+        // This will allow user to re-send email again. Clearing the note also re-bases the polling token expiry
+        // on the new email's link, see pollingExpiration.
         context.getAuthenticationSession().removeAuthNote(Constants.VERIFY_EMAIL_KEY);
 
         process(context, false);
