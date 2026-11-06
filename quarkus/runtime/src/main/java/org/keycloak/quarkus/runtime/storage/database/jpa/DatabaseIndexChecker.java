@@ -272,7 +272,8 @@ public class DatabaseIndexChecker implements Runnable {
 
     static String addOnlineSyntax(String sql, boolean isPostgres, boolean isOracle, boolean isMssql) {
         if (isPostgres) {
-            return sql.replaceFirst("(?i)(CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+)", "$1CONCURRENTLY ");
+            // YugabyteDB migrations generate NONCONCURRENTLY, which must be replaced here
+            return sql.replaceFirst("(?i)(CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+)(?:NONCONCURRENTLY\\s+)?", "$1CONCURRENTLY ");
         }
         if (isOracle) {
             return sql + " ONLINE";
