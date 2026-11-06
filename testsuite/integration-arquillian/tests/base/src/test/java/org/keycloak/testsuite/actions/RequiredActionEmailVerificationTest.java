@@ -611,7 +611,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         Assertions.assertNotEquals(oauth.getRedirectUri(), eventRep.getDetails().get(Details.REDIRECT_URI));
 
         infoPage.assertCurrent();
-        assertEquals("Your email address has been verified.", infoPage.getInfo());
+        assertEquals("Your email address has been verified. You completed verification in a different browser session, and the original sign-in is no longer active. Return to the application and sign in again.", infoPage.getInfo());
 
         oauth.openLoginForm();
         loginPage.assertCurrent();
