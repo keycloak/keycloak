@@ -39,3 +39,8 @@ Configure the accepted credential types (`vct`) in the new *Default Credential T
 A DCQL query can still be configured for requests that mappers cannot express, such as claim sets.
 It takes precedence over the inferred query and is now validated when the identity provider is saved.
 Only a single credential in the `dc+sd-jwt` format can be requested.
+
+== SPIFFE bundle maps supported
+
+SPIFFE identity providers can now read https://spiffe.io/docs/latest/spiffe-specs/spiffe_trust_domain_and_bundle/[SPIFFE bundle maps] and select the bundle for the configured trust domain.
+Single-bundle endpoints also now honor https://spiffe.io/docs/latest/spiffe-specs/spiffe_trust_domain_and_bundle/[`spiffe_refresh_hint`] as a refresh duration in seconds.

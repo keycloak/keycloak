@@ -53,17 +53,39 @@ public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
     }
 
     @Test
-    public void testKeysCached() {
-        int initialKeyRequests = identityProvider.getKeysRequestCount();
-        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
-        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
-        Assertions.assertEquals(initialKeyRequests + 1, identityProvider.getKeysRequestCount());
+    public void testKeysCachedBeforeRefreshHint() {
+        // given
+        realm.dirty();
+        var warmupResponse = doClientGrant(createDefaultToken());
+        int keyRequestsAfterWarmup = identityProvider.getKeysRequestCount();
+        timeOffSet.set(150);
+        var token = createDefaultToken();
 
+        // when
+        var response = doClientGrant(token);
+
+        // then
+        Assertions.assertTrue(warmupResponse.isSuccess());
+        Assertions.assertTrue(response.isSuccess());
+        Assertions.assertEquals(keyRequestsAfterWarmup, identityProvider.getKeysRequestCount());
+    }
+
+    @Test
+    public void testKeysReloadAfterRefreshHint() {
+        // given
+        realm.dirty();
+        var warmupResponse = doClientGrant(createDefaultToken());
+        int keyRequestsAfterWarmup = identityProvider.getKeysRequestCount();
         timeOffSet.set(350);
+        var token = createDefaultToken();
 
-        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
-        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
-        Assertions.assertEquals(initialKeyRequests + 2, identityProvider.getKeysRequestCount());
+        // when
+        var response = doClientGrant(token);
+
+        // then
+        Assertions.assertTrue(warmupResponse.isSuccess());
+        Assertions.assertTrue(response.isSuccess());
+        Assertions.assertEquals(keyRequestsAfterWarmup + 1, identityProvider.getKeysRequestCount());
     }
 
     @Test
