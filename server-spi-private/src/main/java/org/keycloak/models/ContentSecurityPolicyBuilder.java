@@ -17,6 +17,7 @@
 package org.keycloak.models;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class ContentSecurityPolicyBuilder {
@@ -98,7 +99,8 @@ public class ContentSecurityPolicyBuilder {
     private ContentSecurityPolicyBuilder add(String name, String value) {
         if (name != null && value != null) {
             String current = directives.get(name);
-            if (current != null && !current.isEmpty()) {
+            // 'none' must be the only source expression, so adding a source replaces it
+            if (current != null && !current.isEmpty() && !DIRECTIVE_VALUE_NONE.equalsIgnoreCase(current)) {
                 value = current + " " + value;
             }
             directives.put(name, value);
@@ -117,11 +119,12 @@ public class ContentSecurityPolicyBuilder {
             for (String directive : values) {
                 directive = directive.trim();
                 int idx = directive.indexOf(' ');
-                if (idx > 0) {
-                    add(directive.substring(0, idx), directive.substring(idx + 1, directive.length()).trim());
-                } else if (!directive.isEmpty()) {
-                    add(directive, "");
+                String name = (idx > 0 ? directive.substring(0, idx) : directive).toLowerCase(Locale.ROOT);
+                // as browsers do, a duplicate directive is ignored and the first one is kept
+                if (name.isEmpty() || directives.containsKey(name)) {
+                    continue;
                 }
+                put(name, idx > 0 ? directive.substring(idx + 1).trim() : "");
             }
         }
         return this;
