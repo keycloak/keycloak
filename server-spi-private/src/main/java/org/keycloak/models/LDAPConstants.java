@@ -81,6 +81,9 @@ public class LDAPConstants {
 
     public static final String VALIDATE_PASSWORD_POLICY = "validatePasswordPolicy";
 
+    // Validate imported users against the realm's User Profile configuration during sync/import
+    public static final String VALIDATE_USER_PROFILE = "validateUserProfile";
+
     public static final String TRUST_EMAIL = "trustEmail";
 
     // Count of users processed per single transaction during sync process
