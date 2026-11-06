@@ -171,7 +171,7 @@ This is the externally trusted certificate that browsers verify.
 <3> The public certificates of each {project_name} backend server.
 Traefik verifies each backend server's TLS certificate against these entries, ensuring the connection goes to a trusted {project_name} instance and not an impersonator.
 <4> To remove an HTTP header from requests forwarded to {project_name}, define a key-value entry in `customRequestHeaders` where the key is the name of the HTTP header and the value is an empty string to indicate the header should be removed.
-Removing specific HTTP headers prevents external clients from spoofing proxy identity headers (such as `Forwarded`, `X-Forwarded-*`, and `X-Real-IP`), injecting authentication-related headers (such as `X-Forwarded-Access-Token`), or injecting distributed tracing context (such as W3C Trace Context, Zipkin B3, or Jaeger headers).
+Removing specific HTTP headers prevents external clients from spoofing proxy identity headers (such as `Forwarded`, `+X-Forwarded-*+`, and `X-Real-IP`), injecting authentication-related headers (such as `X-Forwarded-Access-Token`), or injecting distributed tracing context (such as W3C Trace Context, Zipkin B3, or Jaeger headers).
 Unlike HAProxy, Traefik does not support regex-based header matching, so each header variant must be listed explicitly.
 For the full list of recommended headers to filter, see the <@links.server id="reverseproxy" anchor="header-filtering-recommendations"/> {section}.
 <5> Restricts access so that only public {project_name} paths are reachable from external networks.
@@ -197,8 +197,8 @@ With TLS re-encrypt, {project_name} requires the following configuration:
 <@kc.start parameters="--proxy-headers xforwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none"/>
 
 `--proxy-headers xforwarded`::
-Instructs {project_name} to read the client IP address and protocol from the `X-Forwarded-*` headers set by Traefik.
-In re-encrypt mode, Traefik overwrites any incoming `X-Forwarded-*` headers with the correct client values before forwarding requests to {project_name}, preventing clients from injecting misleading header values.
+Instructs {project_name} to read the client IP address and protocol from the `+X-Forwarded-*+` headers set by Traefik.
+In re-encrypt mode, Traefik overwrites any incoming `+X-Forwarded-*+` headers with the correct client values before forwarding requests to {project_name}, preventing clients from injecting misleading header values.
 Do not set `--proxy-protocol-enabled` when using TLS re-encrypt.
 The PROXY protocol is only relevant for TLS passthrough (TCP mode).
 
