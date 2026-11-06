@@ -17,12 +17,15 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Version;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.Attributes;
+import org.keycloak.keys.GeneratedMlDsaKeyProviderFactory;
 import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
@@ -79,11 +82,17 @@ public class ServerInfoTest {
         assertNotNull(info.getCryptoInfo());
         Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), cryptoHelper.getExpectedSupportedKeyStoreTypes());
         Assert.assertNames(info.getCryptoInfo().getClientSignatureSymmetricAlgorithms(), Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
-        Assert.assertNames(info.getCryptoInfo().getClientSignatureAsymmetricAlgorithms(),
+        List<String> expectedAsymmetricAlgorithms = new ArrayList<>(List.of(
                 Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
                 Algorithm.EdDSA, Algorithm.PS256, Algorithm.PS384,
                 Algorithm.PS512, Algorithm.RS256, Algorithm.RS384,
-                Algorithm.RS512);
+                Algorithm.RS512));
+        if (info.getComponentTypes().get(KeyProvider.class.getName()).stream()
+                .anyMatch(componentType -> GeneratedMlDsaKeyProviderFactory.ID.equals(componentType.getId()))) {
+            expectedAsymmetricAlgorithms.addAll(List.of(Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87));
+        }
+        Assert.assertNames(info.getCryptoInfo().getClientSignatureAsymmetricAlgorithms(),
+                expectedAsymmetricAlgorithms.toArray(String[]::new));
 
         ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
                 .stream()

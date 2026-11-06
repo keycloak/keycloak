@@ -31,6 +31,7 @@ import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
+import org.keycloak.jose.jwk.AKPPublicJWK;
 import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
@@ -56,6 +57,7 @@ public class JWKSUtils {
         JWK_THUMBPRINT_REQUIRED_MEMBERS.put(KeyType.RSA, new String[] { RSAPublicJWK.MODULUS, RSAPublicJWK.PUBLIC_EXPONENT });
         JWK_THUMBPRINT_REQUIRED_MEMBERS.put(KeyType.EC, new String[] { ECPublicJWK.CRV, ECPublicJWK.X, ECPublicJWK.Y });
         JWK_THUMBPRINT_REQUIRED_MEMBERS.put(KeyType.OKP, new String[] { OKPPublicJWK.CRV, OKPPublicJWK.X });
+        JWK_THUMBPRINT_REQUIRED_MEMBERS.put(KeyType.AKP, new String[] { JWK.ALGORITHM, AKPPublicJWK.PUB });
     }
 
     /**
@@ -168,7 +170,11 @@ public class JWKSUtils {
 
         try {
             for (String member : requiredMembers) {
-                members.put(member, key.getOtherClaim(member, String.class));
+                if (JWK.ALGORITHM.equals(member)) {
+                    members.put(member, key.getAlgorithm());
+                } else {
+                    members.put(member, key.getOtherClaim(member, String.class));
+                }
             }
 
             byte[] bytes = KeycloakJsonMapperFactory.mapper().writeValueAsBytes(members);
