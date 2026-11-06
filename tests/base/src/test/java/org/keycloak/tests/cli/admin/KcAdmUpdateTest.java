@@ -51,6 +51,8 @@ class KcAdmUpdateTest extends AbstractAdmCliTest {
                 .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
                 .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
                 .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
+                .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
+                .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
                 .build();
 
         realmResource.identityProviders().create(identityProvider).close();

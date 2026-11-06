@@ -71,6 +71,7 @@
       "singleLogoutServiceUrl" : "${url.realm.provider}/protocol/saml",
       "singleSignOnServiceUrl" : "${url.realm.provider}/protocol/saml",
       "validateSignature" : "false",
+      "wantAssertionsSigned" : "false",
       "wantAuthnRequestsSigned" : "false"
     }
   } ],
