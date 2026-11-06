@@ -646,6 +646,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
                 "authorizationUrl", providerBaseUrl + "/protocol/openid-connect/auth",
                 "tokenUrl", providerBaseUrl + "/protocol/openid-connect/token",
                 "userInfoUrl", providerBaseUrl + "/protocol/openid-connect/userinfo",
+                "jwksUrl", providerBaseUrl + "/protocol/openid-connect/certs",
+                "useJwksUrl", "true",
                 "defaultScope", "email profile",
                 "syncMode", "IMPORT"
         )));

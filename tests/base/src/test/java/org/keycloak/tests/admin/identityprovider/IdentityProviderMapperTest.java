@@ -19,6 +19,7 @@ import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -49,6 +50,16 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
+
+    @Override
+    protected IdentityProviderRepresentation createRep(String alias, String displayName, String providerId, boolean enabled, Map<String, String> config) {
+        IdentityProviderRepresentation idp = super.createRep(alias, displayName, providerId, enabled, config);
+        if (!"saml".equals(providerId)) {
+            idp.getConfig().putIfAbsent("useJwksUrl", "true");
+            idp.getConfig().putIfAbsent("jwksUrl", "https://localhost/jwks");
+        }
+        return idp;
+    }
 
     @Test
     public void testMapperTypes() {

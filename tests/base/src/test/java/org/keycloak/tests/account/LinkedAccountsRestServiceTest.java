@@ -395,12 +395,17 @@ public class LinkedAccountsRestServiceTest {
                 String[] providers = new String[] {"saml:mysaml:saml-idp", "oidc:myoidc:oidc-idp", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
                 for (int i = 0; i < providers.length; i++) {
                     String[] idpInfo = providers[i].split(":");
-                    testRealm.addIdentityProvider(IdentityProviderBuilder.create()
+                    String alias = idpInfo.length == 1 ? idpInfo[0] : idpInfo[1];
+                    IdentityProviderBuilder idp = IdentityProviderBuilder.create()
                             .providerId(idpInfo[0])
-                            .alias(idpInfo.length == 1 ? idpInfo[0] : idpInfo[1])
+                            .alias(alias)
                             .displayName(idpInfo.length == 1 ? null : idpInfo[2])
-                            .attribute("guiOrder", String.valueOf(i))
-                            .build());
+                            .attribute("guiOrder", String.valueOf(i));
+                    if ("myoidc".equals(alias)) {
+                        // dummy provider without verification keys
+                        idp.attribute("validateSignature", "false");
+                    }
+                    testRealm.addIdentityProvider(idp.build());
                 }
 
                 addFederatedIdentities(testRealm, "github", "gitlab", "mysaml");

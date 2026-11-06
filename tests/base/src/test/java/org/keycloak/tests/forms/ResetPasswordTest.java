@@ -140,6 +140,7 @@ public class ResetPasswordTest {
                 .attribute("tokenUrl", providerRealm.getBaseUrl() + "/protocol/openid-connect/token")
                 .attribute("jwksUrl", providerRealm.getBaseUrl() + "/protocol/openid-connect/certs")
                 .attribute("logoutUrl", providerRealm.getBaseUrl() + "/protocol/openid-connect/logout")
+                .attribute("useJwksUrl", "true")
                 .build();
         consumerRealm.admin().identityProviders().create(idp).close();
         consumerRealm.cleanup().add(r -> r.identityProviders().get(IDP_ALIAS).remove());

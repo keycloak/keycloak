@@ -51,6 +51,16 @@ public class OIDCIdentityProviderTest {
     private static final ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
 
     @Test
+    public void validateSignature_defaultsToTrueWhenAbsent() {
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(new IdentityProviderModel());
+
+        Assert.assertTrue(config.isValidateSignature());
+
+        config.setValidateSignature(false);
+        Assert.assertFalse(config.isValidateSignature());
+    }
+
+    @Test
     public void extractIdentity_sidInIdToken_noSessionState_usesSid() throws IOException {
         TestOIDCIdentityProvider provider = createProvider();
 
