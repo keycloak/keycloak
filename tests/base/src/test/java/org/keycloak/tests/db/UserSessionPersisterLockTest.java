@@ -19,6 +19,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 import org.keycloak.tests.suites.DatabaseTest;
 
+import org.hibernate.dialect.MySQLDialect;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,8 +29,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The persister locks rows without waiting, and treats a row locked by someone else as "not locked".
  * Locking must not wait, fail or mark the transaction as rollback-only, as the caller continues in the same
- * transaction and retries in a separate one. This is not the case for every database and Hibernate version
- * (for example when NOWAIT is used on a database that doesn't support SKIP LOCKED).
+ * transaction and retries in a separate one.
+ * <p>
+ * TiDB ignores SKIP LOCKED, so the persister uses NOWAIT there. This works only because of how Hibernate converts
+ * the failure of a lock (checked in Hibernate 7.4, see {@code ExceptionConverterImpl}):
+ * <ul>
+ * <li>The error of a failed NOWAIT lock (MySQL error 3572) is mapped to a {@code LockAcquisitionException}.
+ * <li>Hibernate marks the transaction as rollback-only for every exception it converts, except for a
+ * {@code LockTimeoutException}, {@code QueryTimeoutException}, {@code NoResultException} and {@code NonUniqueResultException}.
+ * <li>A lock failure is converted to a {@code LockTimeoutException} only if a lock timeout (including NOWAIT) was set on the query
+ * and the dialect doesn't report that the failure rolls back the transaction ({@code Dialect.causesRollback}).
+ * <li>Without a timeout, it becomes a {@code PessimisticLockException} and the transaction is marked rollback-only,
+ * for example for a deadlock.
+ * <li>The MySQL dialect doesn't roll back on a failed lock; the PostgreSQL dialect always does.
+ * </ul>
+ * This test fails if a Hibernate upgrade changes this, and is therefore limited to MySQL variants.
  */
 @KeycloakIntegrationTest
 @DatabaseTest
@@ -39,12 +55,9 @@ public class UserSessionPersisterLockTest {
     public void testLockOfRowLockedByOtherTransactionKeepsTransactionUsable(KeycloakSession session) throws Exception {
         var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(JpaConnectionProvider.class);
-        String product;
-        try (Connection connection = factory.getConnection()) {
-            product = connection.getMetaData().getDatabaseProductName().toLowerCase();
-        }
-        if (product.contains("microsoft")) {
-            // different syntax for locking a row
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        if (!(em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class).getJdbcServices().getDialect() instanceof MySQLDialect)) {
+            // The behavior is specific to the MySQL dialect, which is also used for TiDB
             return;
         }
 
@@ -90,7 +103,6 @@ public class UserSessionPersisterLockTest {
 
             assertThat(session.getTransactionManager().getRollbackOnly(), is(false));
             // the transaction can still be used
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             em.createQuery("select count(e) from PersistentUserSessionEntity e", Long.class).getSingleResult();
         } finally {
             release.countDown();

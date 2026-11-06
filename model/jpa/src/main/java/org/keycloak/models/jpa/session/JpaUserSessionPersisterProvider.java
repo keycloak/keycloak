@@ -337,13 +337,22 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     /**
      * Lock the row and return its version, or null if the row doesn't exist or is locked by someone else.
      * Don't wait for rows locked by others, as the caller will retry in a separate transaction.
-     * If the database ignores skip locked, use NOWAIT instead, which fails immediately if the row is locked.
-     * Waiting would risk deadlocks when rows are locked in different orders.
+     * <p>
+     * The NOWAIT fallback is intended only for TiDB (see {@link JpaUtils#isSkipLockedSupported(EntityManager)}),
+     * which ignores SKIP LOCKED. It is not generic: it relies on Hibernate not marking the transaction as
+     * rollback-only when a lock with a timeout of 0 fails, which holds for the MySQL dialect but not for others
+     * (for example, the PostgreSQL dialect always marks the transaction for rollback, as the database aborts it anyway).
+     * See {@code UserSessionPersisterLockTest}, which verifies this behavior.
+     * Waiting instead would risk deadlocks when rows are locked in different orders.
      */
     private Integer lockVersion(TypedQuery<Integer> query) {
         if (JpaUtils.isSkipLockedSupported(em)) {
             query.setHint(LOCK_TIMEOUT, -2);
             return query.getSingleResultOrNull();
+        }
+        if (!JpaUtils.isMySQLDialect(em)) {
+            // the fallback is not generic and may break transactions in other databases
+            throw new UnsupportedOperationException("Locking rows without skip locked is not supported for this database");
         }
         query.setHint(LOCK_TIMEOUT, 0);
         try {
