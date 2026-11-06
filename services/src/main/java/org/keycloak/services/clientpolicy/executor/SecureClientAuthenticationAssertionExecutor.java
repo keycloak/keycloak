@@ -18,9 +18,6 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
@@ -37,6 +34,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 /**
@@ -96,23 +94,21 @@ public class SecureClientAuthenticationAssertionExecutor implements ClientPolicy
         // Decode the client assertion
         String encodedContent = parts[1];
         byte[] content = Base64Url.decode(encodedContent);
-        JsonWebToken token;
+        JsonNode payload;
         try {
-            token = JsonSerialization.readValue(content, JsonWebToken.class);
+            payload = JsonSerialization.readValue(content, JsonNode.class);
         } catch (IOException e) {
             logger.warnf("client assertion parse error: %s", e.getMessage());
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "invalid client assertion");
         }
 
-        // Validate the client assertion audience
+        // Validate the client assertion audience. The aud claim is required to contain only the issuer identifier
+        // as a single string value. Array forms are rejected, including single-element arrays such as ["<issuer>"],
+        // as required by FAPI 2.0 Security Profile section 5.3.2.1.
         String issuerUrl = Urls.realmIssuer(session.getContext().getUri().getBaseUri(), session.getContext().getRealm().getName());
-        List<String> expectedAudiences = new ArrayList<>(Collections.singletonList(issuerUrl));
-        if (token.getAudience() == null || token.getAudience().length != 1) {
-            logger.warnf("invalid audience in client assertion - no audience or multiple audiences found");
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "invalid audience in client assertion");
-        }
-        if (!token.hasAnyAudience(expectedAudiences)) {
-            logger.warnf("invalid audience in client assertion - audience not issuer URL");
+        JsonNode audNode = payload.get(JsonWebToken.AUD);
+        if (audNode == null || !audNode.isTextual() || !issuerUrl.equals(audNode.asText())) {
+            logger.warnf("invalid audience in client assertion - no audience, multiple audiences, array-valued audience or audience not issuer URL found");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "invalid audience in client assertion");
         }
     }
