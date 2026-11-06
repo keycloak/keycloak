@@ -14,6 +14,20 @@ where the `key` is the name of the secret recognized by the vault.
 
 To prevent secrets from leaking across realms, {project_name} combines the realm name with the `key` obtained from the vault expression. This method means that the `key` does not directly map to an entry in the vault but creates the final entry name according to the algorithm used to combine the `key` with the realm name. In case of the file-based vault, such combination reflects to a specific filename, for the Java KeyStore-based vault it's a specific alias name.
 
+[IMPORTANT]
+====
+{project_name} isolates vault secrets between realms, but not between the components inside one realm. Any administrator who can enter a `${vault.key}` expression in one of the fields listed below can make {project_name} use the secret stored under that `key`, regardless of which client, identity provider, user federation provider, or SMTP configuration the secret was originally intended for. For example, an administrator who can manage identity providers but not clients can enter the vault expression of a client secret as the client secret of an identity provider and have {project_name} send that secret to the token URL configured for that identity provider.
+
+To reduce this risk:
+
+* Use a separate, unique `key` for each secret and do not reuse a `key` across components.
+* Use keys that are hard to guess. Avoid predictable names such as `${vault.<client-id>.secret}` or `${vault.smtp_password}`.
+* Grant roles that can edit vault-enabled fields, such as `manage-identity-providers`, `manage-clients`, and `manage-realm`, only to administrators who you trust with all secrets stored in the realm's vault.
+* Do not rely on the secrecy of the vault `key` as an access control mechanism.
+====
+
+Clients that register through client registration endpoints without administrator privileges cannot set vault expressions, and the client installation (adapter configuration) output always returns the vault expression rather than the secret it resolves to.
+
 You can obtain the secret from the vault in the following fields:
 
 SMTP password::
