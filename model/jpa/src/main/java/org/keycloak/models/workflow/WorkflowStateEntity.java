@@ -103,11 +103,11 @@ public class WorkflowStateEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         WorkflowStateEntity that = (WorkflowStateEntity) o;
-        return Objects.equals(resourceId, that.resourceId) && Objects.equals(workflowId, that.workflowId);
+        return Objects.equals(executionId, that.executionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(resourceId, workflowId);
+        return Objects.hashCode(executionId);
     }
 }
