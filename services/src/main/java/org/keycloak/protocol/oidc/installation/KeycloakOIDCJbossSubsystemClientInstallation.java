@@ -37,7 +37,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
  */
 public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInstallationProvider {
     @Override
-    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
+    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, boolean includeSecrets) {
         StringBuffer buffer = new StringBuffer();
         buffer.append("<secure-deployment name=\"WAR MODULE NAME.war\">\n");
         buffer.append("    <realm>").append(realm.getName()).append("</realm>\n");
@@ -56,7 +56,7 @@ public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInsta
         }
 
         if (KeycloakOIDCClientInstallation.showClientCredentialsAdapterConfig(client)) {
-            Map<String, Object> adapterConfig = KeycloakOIDCClientInstallation.getClientCredentialsAdapterConfig(session, client);
+            Map<String, Object> adapterConfig = KeycloakOIDCClientInstallation.getClientCredentialsAdapterConfig(session, client, includeSecrets);
             for (Map.Entry<String, Object> entry : adapterConfig.entrySet()) {
                 buffer.append("    <credential name=\"" + entry.getKey() + "\">");
 

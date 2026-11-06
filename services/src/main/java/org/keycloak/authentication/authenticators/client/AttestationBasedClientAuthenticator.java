@@ -189,6 +189,11 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
     }
 
     @Override
+    public Set<String> getAdapterConfigurationSecretKeys() {
+        return Set.of();
+    }
+
+    @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_ABCA);
     }
