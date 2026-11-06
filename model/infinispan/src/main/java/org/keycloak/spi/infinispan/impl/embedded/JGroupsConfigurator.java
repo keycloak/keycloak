@@ -25,10 +25,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -245,8 +247,11 @@ public final class JGroupsConfigurator {
         var stackXmlAttribute = transportStackOf(holder);
         if (stackXmlAttribute.isModified() && !isJdbcPingStack(stackXmlAttribute.get())) {
             logger.debugf("Custom stack configured (%s). JDBC_PING discovery disabled.", stackXmlAttribute.get());
-            if (Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
-                if (Objects.equals("test", stackXmlAttribute.get())) {
+            var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", session.getProvider(JpaConnectionProvider.class).getEntityManager());
+            boolean jdbcPing = injectConnectionFactoryIntoCustomStack(holder, session.getKeycloakSessionFactory(), tableName, stackXmlAttribute.get(),
+                    () -> registerJGroupsAddress(session.getKeycloakSessionFactory(), transportOf(holder).attributes().attribute(CLUSTER_NAME).get()));
+            if (!jdbcPing && Profile.isFeatureEnabled(Profile.Feature.STATELESS)) {
+                if (isInJvmTestStack(holder, stackXmlAttribute.get())) {
                     // TODO: Remove this case once the model tests have been migrated
                     logger.error("The stateless feature must hast JDBC_PING discovery enabled");
                 } else {
@@ -270,13 +275,66 @@ public final class JGroupsConfigurator {
 
         String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
 
-        Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
-                s -> prepareJGroupsAddress(s, clusterName)),
-                50, 10);
+        Address address = registerJGroupsAddress(session.getKeycloakSessionFactory(), clusterName);
         holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(session.getKeycloakSessionFactory(), stackName, stack, connectionFactory, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
+    }
+
+    private static Address registerJGroupsAddress(KeycloakSessionFactory sessionFactory, String clusterName) {
+        return Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory,
+                s -> prepareJGroupsAddress(s, clusterName)),
+                50, 10);
+    }
+
+    /**
+     * If a custom stack uses {@link KEYCLOAK_JDBC_PING2}, wraps it in a configurator that injects the
+     * {@link JpaConnectionProviderFactory}, as the protocol is unable to connect to the database without it.
+     * The stack is registered under a new name as Infinispan rejects duplicate stack names.
+     * The JGroups address is pre-registered in the database like for the default stack, as this prevents multiple
+     * coordinators when nodes start concurrently.
+     *
+     * @param addressSupplier creates and registers the address of this node, and is only called when the stack uses {@link KEYCLOAK_JDBC_PING2}
+     * @return {@code true} if the stack uses {@link KEYCLOAK_JDBC_PING2}
+     */
+    static boolean injectConnectionFactoryIntoCustomStack(ConfigurationBuilderHolder holder, KeycloakSessionFactory sessionFactory, String tableName, String stackName, Supplier<Address> addressSupplier) {
+        var configurator = transportOf(holder).build().transport().jgroups().configurator(stackName);
+        var combined = configurator.getProtocolStack();
+        if (combined.stream().noneMatch(p -> KEYCLOAK_JDBC_PING2.class.getName().equals(p.getProtocolName()))) {
+            return false;
+        }
+        // Fail fast instead of starting with a protocol that has no database connection, or with a silently altered stack
+        if (!(configurator instanceof EmbeddedJGroupsChannelConfigurator embedded)) {
+            throw new IllegalStateException("%s is only supported in a stack defined in the XML configuration, not in stack '%s' defined by a file"
+                    .formatted(KEYCLOAK_JDBC_PING2.class.getSimpleName(), stackName));
+        }
+        var sites = embedded.getUncombinedRemoteSites();
+        if ((sites != null && !sites.getRemoteSites().isEmpty())
+                || combined.stream().anyMatch(p -> p.getProtocolName().contains("RELAY2"))) {
+            throw new IllegalStateException("Cross-site replication (RELAY2 or remote sites) is not supported in stack '%s' using %s"
+                    .formatted(stackName, KEYCLOAK_JDBC_PING2.class.getSimpleName()));
+        }
+        var stack = new ArrayList<ProtocolConfiguration>(combined.size());
+        for (var protocol : combined) {
+            var properties = new HashMap<>(protocol.getProperties());
+            if (KEYCLOAK_JDBC_PING2.class.getName().equals(protocol.getProtocolName())) {
+                // values set in the XML take precedence
+                jdbcPingProperties(tableName).forEach(properties::putIfAbsent);
+            }
+            stack.add(new ProtocolConfiguration(protocol.getProtocolName(), properties));
+        }
+        var connectionFactory = (JpaConnectionProviderFactory) sessionFactory.getProviderFactory(JpaConnectionProvider.class);
+        var existingNames = transportOf(holder).build().transport().jgroups().stacks().stream()
+                .map(s -> s.name()).toList();
+        var wrappedName = stackName + "-keycloak";
+        for (int i = 2; existingNames.contains(wrappedName); i++) {
+            wrappedName = stackName + "-keycloak-" + i;
+        }
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(sessionFactory, wrappedName, stack, embedded.getUncombinedRemoteSites(), null, connectionFactory, addressSupplier.get()), null);
+        transportOf(holder).stack(wrappedName);
+        logger.infof("Custom stack '%s' uses %s. Injected the database connection factory.", stackName, KEYCLOAK_JDBC_PING2.class.getSimpleName());
+        return true;
     }
 
     /**
@@ -342,29 +400,32 @@ public final class JGroupsConfigurator {
         return address;
     }
 
+    private static Map<String, String> jdbcPingProperties(String tableName) {
+        return Map.ofEntries(
+                // Leave initialize_sql blank as table is already created by Keycloak
+                Map.entry("initialize_sql", ""),
+                // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
+                // "cluster" cannot be used with Oracle DB as it's a reserved word.
+                Map.entry("clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName)),
+                Map.entry("delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName)),
+                Map.entry("insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName)),
+                Map.entry("select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName)),
+                Map.entry("select_other_clusters_count_sql", String.format("SELECT COUNT(*) FROM %s WHERE cluster_name != ? AND last_update >= ?", tableName)),
+                Map.entry("allow_multiple_clusters", String.valueOf(Profile.isFeatureEnabled(Profile.Feature.STATELESS))),
+                // This guarantees cleanup of stale data
+                Map.entry("remove_all_data_on_view_change", "true"),
+                // This guarantees that merging happens even after the info writer completed
+                Map.entry("write_data_on_find", "true"),
+                Map.entry("register_shutdown_hook", "false")
+        );
+    }
+
     private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean tracingEnabled, boolean fdSockEnabled) {
         var list = new ArrayList<ProtocolConfiguration>(4);
-        list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
-              Map.ofEntries(
-                    // Leave initialize_sql blank as table is already created by Keycloak
-                    Map.entry("initialize_sql", ""),
-                    // Explicitly specify clear and select_all SQL to ensure "cluster_name" column is used, as the default
-                    // "cluster" cannot be used with Oracle DB as it's a reserved word.
-                    Map.entry("clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName)),
-                    Map.entry("delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName)),
-                    Map.entry("insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName)),
-                    Map.entry("select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName)),
-                    Map.entry("select_other_clusters_count_sql", String.format("SELECT COUNT(*) FROM %s WHERE cluster_name != ? AND last_update >= ?", tableName)),
-                    Map.entry("allow_multiple_clusters", String.valueOf(Profile.isFeatureEnabled(Profile.Feature.STATELESS))),
-                    // This guarantees cleanup of stale data
-                    Map.entry("remove_all_data_on_view_change", "true"),
-                    // This guarantees that merging happens even after the info writer completed
-                    Map.entry("write_data_on_find", "true"),
-                    Map.entry("register_shutdown_hook", "false"),
-                    Map.entry("stack.combine", "REPLACE"),
-                    Map.entry("stack.position", "MPING")
-              ))
-        );
+        var pingProperties = new HashMap<>(jdbcPingProperties(tableName));
+        pingProperties.put("stack.combine", "REPLACE");
+        pingProperties.put("stack.position", "MPING");
+        list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(), pingProperties));
 
         list.add(new ProtocolConfiguration(TCP.class.getSimpleName(),
                 // Using per-destination bundler is important to not block the communication to other nodes
@@ -439,6 +500,14 @@ public final class JGroupsConfigurator {
         }
     }
 
+    // The model tests use a stack named "test" that has no network transport, as all nodes are in the same JVM.
+    static boolean isInJvmTestStack(ConfigurationBuilderHolder holder, String stackName) {
+        return "test".equals(stackName)
+                && transportOf(holder).build().transport().jgroups().configurator(stackName).getProtocolStack().stream()
+                        .anyMatch(p -> "SHARED_LOOPBACK".equals(p.getProtocolName())
+                                || "org.jgroups.protocols.SHARED_LOOPBACK".equals(p.getProtocolName()));
+    }
+
     private static boolean isJdbcPingStack(String stackName) {
         return "jdbc-ping".equals(stackName);
     }
@@ -457,7 +526,11 @@ public final class JGroupsConfigurator {
         private final Address address;
 
         public JpaFactoryAwareJGroupsChannelConfigurator(KeycloakSessionFactory factory, String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory jpaConnectionProviderFactory, Address address) {
-            super(name, stack, null, "tcp");
+            this(factory, name, stack, null, "tcp", jpaConnectionProviderFactory, address);
+        }
+
+        public JpaFactoryAwareJGroupsChannelConfigurator(KeycloakSessionFactory factory, String name, List<ProtocolConfiguration> stack, RemoteSites remoteSites, String parent, JpaConnectionProviderFactory jpaConnectionProviderFactory, Address address) {
+            super(name, stack, remoteSites, parent);
             this.factory = factory;
             this.jpaConnectionProviderFactory = Objects.requireNonNull(jpaConnectionProviderFactory);
             this.address = address;
@@ -465,7 +538,9 @@ public final class JGroupsConfigurator {
 
         @Override
         protected JChannel amendChannel(JChannel channel) {
-            channel.addAddressGenerator(() -> address);
+            if (address != null) {
+                channel.addAddressGenerator(() -> address);
+            }
             return super.amendChannel(channel);
         }
 
