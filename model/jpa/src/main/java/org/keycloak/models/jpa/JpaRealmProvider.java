@@ -83,6 +83,7 @@ import org.keycloak.models.jpa.entities.RealmLocalizationTextsEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.storage.UserStorageProvider;
 
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
@@ -206,6 +207,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         }
         final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
+
+        // User storage providers are removed with the realm without going through removeComponent, which
+        // would be the usual place where preRemove(RealmModel, ComponentModel) fires the StoreSyncEvent that
+        // cancels their periodic sync tasks. Trigger it for each of them here, otherwise the tasks keep
+        // running after the realm is gone.
+        adapter.getComponentsStream(id, UserStorageProvider.class.getName())
+                .forEach(component -> session.users().preRemove(adapter, component));
 
         realm.getDefaultGroupIds().clear();
         em.flush();
