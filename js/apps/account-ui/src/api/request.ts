@@ -26,13 +26,17 @@ async function _request(
     );
   }
 
+  // Refresh first, then read keycloak.token at the last moment so a concurrent
+  // refresh cannot make keycloak.fetch skip the Bearer→DPoP upgrade.
+  await getAccessToken?.();
+
   return keycloak.fetch(url, {
     signal,
     method,
     body: body ? JSON.stringify(body) : undefined,
     headers: {
       [CONTENT_TYPE_HEADER]: CONTENT_TYPE_JSON,
-      authorization: `Bearer ${await getAccessToken?.()}`,
+      authorization: `Bearer ${keycloak.token}`,
     },
   });
 }
