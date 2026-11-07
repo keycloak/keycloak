@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
@@ -33,6 +34,12 @@ import org.jboss.logging.Logger;
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class ClientIdMetadataDocumentExecutor extends AbstractClientIdMetadataDocumentExecutor<ClientIdMetadataDocumentExecutor.Configuration> {
+
+    // DescriptionConverter rejects these grants for public clients even when their factories are disabled.
+    private static final Set<String> BUILT_IN_CONFIDENTIAL_ONLY_GRANT_TYPES = Set.of(
+            OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE,
+            OAuth2Constants.JWT_AUTHORIZATION_GRANT
+    );
 
     private static final Logger logger = Logger.getLogger(ClientIdMetadataDocumentExecutor.class);
 
@@ -137,7 +144,7 @@ public class ClientIdMetadataDocumentExecutor extends AbstractClientIdMetadataDo
     ));
 
     private Set<String> getConfidentialOnlyGrantTypes() {
-        Set<String> confidentialOnlyGrantTypes = new LinkedHashSet<>();
+        Set<String> confidentialOnlyGrantTypes = new LinkedHashSet<>(BUILT_IN_CONFIDENTIAL_ONLY_GRANT_TYPES);
         session.getKeycloakSessionFactory().getProviderFactoriesStream(OAuth2GrantType.class)
                 .map(factory -> (OAuth2GrantTypeFactory) factory)
                 .filter(factory -> {
