@@ -18,6 +18,9 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,6 +36,8 @@ import liquibase.ThreadLocalScopeManager;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseConnection;
+import liquibase.database.core.CockroachDatabase;
+import liquibase.database.core.PostgresDatabase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
@@ -171,6 +176,9 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         } catch (Exception e) {
             throw new RuntimeException("Failed to create instance of " + liquibaseDatabaseClazz.getName());
         }
+        if (liquibaseDatabase.getClass() == PostgresDatabase.class && isCockroachDB(connection)) {
+            liquibaseDatabase = new CockroachDatabase();
+        }
         DatabaseConnection liquibaseConnection = new JdbcConnection(connection);
         try {
             logger.debugf("DB Product Name: %s", liquibaseConnection.getDatabaseProductName());
@@ -180,6 +188,16 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         liquibaseDatabase.setConnection(liquibaseConnection);
 
         return liquibaseDatabase;
+    }
+
+    // CockroachDB reports itself as PostgreSQL, only the result of version() identifies it
+    private boolean isCockroachDB(Connection connection) {
+        try (Statement statement = connection.createStatement(); ResultSet rs = statement.executeQuery("SELECT version()")) {
+            return rs.next() && rs.getString(1).startsWith("CockroachDB");
+        } catch (SQLException e) {
+            logger.debug("Failed to detect DB product version", e);
+            return false;
+        }
     }
 
 }
