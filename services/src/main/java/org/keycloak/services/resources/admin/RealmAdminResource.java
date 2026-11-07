@@ -69,6 +69,7 @@ import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -87,6 +88,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.admin.resource.OrganizationsResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
+import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -114,6 +116,7 @@ import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.SMTPUtil;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.workflow.admin.resource.WorkflowsResource;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -529,6 +532,13 @@ public class RealmAdminResource {
             if (rep.getAccessCodeLifespanLogin() != null && rep.getAccessCodeLifespanUserAction() != null) {
                 if (rep.getAccessCodeLifespanLogin() < 1 || rep.getAccessCodeLifespanUserAction() < 1) {
                     throw ErrorResponse.error("AccessCodeLifespanLogin or AccessCodeLifespanUserAction cannot be 0", Status.BAD_REQUEST);
+                }
+            }
+
+            if (rep.getAttributes() != null) {
+                String cibaChannelUri = rep.getAttributes().get(CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI);
+                if (!StringUtil.isBlank(cibaChannelUri) && !HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri(cibaChannelUri)) {
+                    throw ErrorResponse.error("Invalid CIBA authentication channel URI", Status.BAD_REQUEST);
                 }
             }
 

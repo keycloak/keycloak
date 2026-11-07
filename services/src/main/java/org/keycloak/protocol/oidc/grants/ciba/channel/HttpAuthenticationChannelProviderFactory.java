@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.grants.ciba.channel;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -32,16 +33,23 @@ public class HttpAuthenticationChannelProviderFactory implements AuthenticationC
 
     public static final String PROVIDER_ID = "ciba-http-auth-channel";
 
+    public static final String HTTP_AUTHENTICATION_CHANNEL_URI = "httpAuthenticationChannelUri";
+
+    public static final String ALLOW_REALM_OVERRIDE = "allowRealmOverride";
+
     protected String httpAuthenticationChannelUri;
+
+    protected boolean allowRealmOverride;
 
     @Override
     public AuthenticationChannelProvider create(KeycloakSession session) {
-        return new HttpAuthenticationChannelProvider(session, httpAuthenticationChannelUri);
+        return new HttpAuthenticationChannelProvider(session, httpAuthenticationChannelUri, allowRealmOverride);
     }
 
     @Override
     public void init(Scope config) {
-        httpAuthenticationChannelUri = config.get("httpAuthenticationChannelUri");
+        httpAuthenticationChannelUri = config.get(HTTP_AUTHENTICATION_CHANNEL_URI);
+        allowRealmOverride = config.getBoolean(ALLOW_REALM_OVERRIDE, false);
     }
 
     @Override
@@ -61,9 +69,16 @@ public class HttpAuthenticationChannelProviderFactory implements AuthenticationC
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
                 .property()
-                .name("httpAuthenticationChannelUri")
+                .name(HTTP_AUTHENTICATION_CHANNEL_URI)
                 .type("string")
                 .helpText("The HTTP(S) URI of the authentication channel.")
+                .add()
+                .property()
+                .name(ALLOW_REALM_OVERRIDE)
+                .type("boolean")
+                .helpText("Allow realm administrators to override the authentication channel URI per realm via the '"
+                        + CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI + "' realm attribute.")
+                .defaultValue(false)
                 .add()
                 .build();
     }

@@ -143,6 +143,9 @@ The configurable items and their description follow.
 |The way of identifying the end-user for whom authentication is being requested. The default setting is "login_hint". There are three modes, "login_hint", "login_hint_token" and "id_token_hint". {project_name} only supports "login_hint". This configuration is required.
  For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA Specification].
 
+|Authentication Channel URI
+|Optional. Overrides the server-wide `http-authentication-channel-uri` of the HTTP Authentication Channel Provider for this realm. Must be an absolute `http` or `https` URI. Leave empty to use the server default. The value is only used if the server administrator enabled `allow-realm-override` for the provider; otherwise it is ignored and a warning is logged.
+
 |===
 
 ====== Provider Setting
@@ -166,6 +169,10 @@ The configurable items and their description follow.
 
 |http-authentication-channel-uri
 |Specifying URI of the entity that actually authenticates the user via AD (Authentication Device).
+
+|allow-realm-override
+|If `true`, realm administrators can override `http-authentication-channel-uri` for their realm with the *Authentication Channel URI* setting of the CIBA policy. The default is `false`.
+Keep this disabled unless you trust all realm administrators: the authentication channel receives a token that can complete CIBA authentication for the requested user, and {project_name} sends requests to the configured URI.
 
 |===
 

@@ -17,6 +17,8 @@
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -26,17 +28,23 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class HttpAuthenticationChannelProvider implements AuthenticationChannelProvider{
+
+    private static final Logger logger = Logger.getLogger(HttpAuthenticationChannelProvider.class);
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";
 
@@ -48,9 +56,45 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
     protected final String httpAuthenticationChannelUri;
 
     public HttpAuthenticationChannelProvider(KeycloakSession session, String httpAuthenticationRequestUri) {
+        this(session, httpAuthenticationRequestUri, false);
+    }
+
+    public HttpAuthenticationChannelProvider(KeycloakSession session, String httpAuthenticationRequestUri, boolean allowRealmOverride) {
         this.session = session;
         this.realm = session.getContext().getRealm();
-        this.httpAuthenticationChannelUri = httpAuthenticationRequestUri;
+        String realmUri = realm == null ? null : realm.getAttribute(CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI);
+        if (!allowRealmOverride && !StringUtil.isBlank(realmUri)) {
+            logger.warnf("Ignoring realm attribute '%s' in realm '%s' because realm override is not allowed for the '%s' authentication channel provider.",
+                    CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI, realm.getName(), HttpAuthenticationChannelProviderFactory.PROVIDER_ID);
+        }
+        this.httpAuthenticationChannelUri = resolveHttpAuthenticationChannelUri(realmUri, httpAuthenticationRequestUri, allowRealmOverride);
+    }
+
+    /**
+     * Returns the realm-level authentication channel URI if set and realm override is allowed, otherwise the server-wide URI.
+     */
+    static String resolveHttpAuthenticationChannelUri(String realmUri, String serverUri, boolean allowRealmOverride) {
+        if (!allowRealmOverride || StringUtil.isBlank(realmUri)) {
+            return serverUri;
+        }
+        return realmUri;
+    }
+
+    /**
+     * Checks that the given URI is usable as an HTTP authentication channel URI.
+     */
+    public static boolean isValidHttpAuthenticationChannelUri(String uri) {
+        if (StringUtil.isBlank(uri)) {
+            return false;
+        }
+        try {
+            URI parsed = new URI(uri);
+            return parsed.isAbsolute()
+                    && ("http".equalsIgnoreCase(parsed.getScheme()) || "https".equalsIgnoreCase(parsed.getScheme()))
+                    && !StringUtil.isBlank(parsed.getHost());
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 
     @Override
