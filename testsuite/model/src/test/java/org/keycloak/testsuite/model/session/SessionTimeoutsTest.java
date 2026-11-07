@@ -406,6 +406,92 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
         testUserClientIdleTimeoutSmallerThanSession(1, false, false);
     }
 
+    @Test
+    public void testOnlineReloginWithSameSessionIdAfterSsoMaxLifespanExpired() {
+        testReloginWithSameSessionIdAfterSsoMaxLifespanExpired(false);
+    }
+
+    @Test
+    public void testOfflineReloginWithSameSessionIdAfterSsoMaxLifespanExpired() {
+        testReloginWithSameSessionIdAfterSsoMaxLifespanExpired(true);
+    }
+
+    /**
+     * Tests that a re-login with an already existing (but expired) session ID does not fail with a
+     * {@link org.keycloak.models.ModelIllegalStateException}. The expired session is only hidden and not removed
+     * once its lifespan (SSO session max) has passed, so creating a new session with the same ID must replace
+     * the aged session. This replicates the forced re-authentication scenario of issue #54063.
+     */
+    protected void testReloginWithSameSessionIdAfterSsoMaxLifespanExpired(boolean offline) {
+        // SSO session max lifespan of 60 seconds, idle timeout large enough to not interfere
+        configureTimeouts(60, 7200, false, true, 7200);
+
+        final String sessionId = "relogin-same-session-id";
+        try {
+            withRealm(realmId, (session, realm) -> {
+                // create the initial session with a well-known ID
+                UserModel user = session.users().getUserByUsername(realm, "user1");
+                UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, "user1", "127.0.0.1",
+                        "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                if (offline) {
+                    userSession = session.sessions().createOfflineUserSession(userSession);
+                }
+                Assert.assertEquals(offline, userSession.isOffline());
+                return userSession.getId();
+            });
+
+            // move time beyond the 60 seconds lifespan => the session is hidden but not removed
+            setTimeOffset(120);
+
+            withRealm(realmId, (session, realm) -> {
+                // ensure the session is considered expired
+                Assert.assertNull(getUserSession(session, realm, sessionId, offline));
+                return null;
+            });
+
+            withRealm(realmId, (session, realm) -> {
+                // re-login with the same session ID, this must not throw a ModelIllegalStateException
+                UserModel user = session.users().getUserByUsername(realm, "user1");
+                UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, "user1", "127.0.0.1",
+                        "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                if (offline) {
+                    userSession = session.sessions().createOfflineUserSession(userSession);
+                }
+                return userSession.getId();
+            });
+
+            Retry.executeWithBackoff(iteration -> {
+                withRealm(realmId, (session, realm) -> {
+                    // the session must exist again with the new start time (the aged session was replaced, not merged)
+                    UserSessionModel userSession = getUserSession(session, realm, sessionId, offline);
+                    Assert.assertNotNull(userSession);
+                    // the start time must be the time of the re-login, proving the aged session was replaced
+                    Assert.assertTrue("expected a fresh session start, but was: " + userSession.getStarted(),
+                            Math.abs(userSession.getStarted() - Time.currentTime()) <= 5);
+                    return null;
+                });
+            }, 10, 10);
+
+            if (MultiSiteUtils.isPersistentSessionsEnabled()) {
+                // With persistent sessions and caching enabled the lookup above can already return the
+                // entry written by asyncCommit, so read the persisted session to assert the stored
+                // replacement, as the idle-timeout tests do.
+                Retry.executeWithBackoff(iteration -> {
+                    withRealm(realmId, (session, realm) -> {
+                        UserSessionPersisterProvider provider = session.getProvider(UserSessionPersisterProvider.class);
+                        UserSessionModel persistedSession = provider.loadUserSession(realm, sessionId, offline);
+                        Assert.assertNotNull(persistedSession);
+                        Assert.assertTrue("expected a fresh persisted session start, but was: " + persistedSession.getStarted(),
+                                Math.abs(persistedSession.getStarted() - Time.currentTime()) <= 5);
+                        return null;
+                    });
+                }, 10, 10);
+            }
+        } finally {
+            setTimeOffset(0);
+        }
+    }
+
     /**
      * This method introduces a delay to allow replication of clientSession cache on site 1 and site 2.
      * Without the delay these test fails from time to time. This has no effect when tests run without remote Infinispan
