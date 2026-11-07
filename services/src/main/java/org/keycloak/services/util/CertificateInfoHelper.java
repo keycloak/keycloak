@@ -191,7 +191,7 @@ public class CertificateInfoHelper {
         }
     }
 
-    private static Set<String> getAllJwkPrivateKeyClaims(KeycloakSessionFactory sessionFactory) {
+    public static Set<String> getAllJwkPrivateKeyClaims(KeycloakSessionFactory sessionFactory) {
         return sessionFactory.getProviderFactoriesStream(SignatureProvider.class)
                 .filter(SignatureProviderFactory.class::isInstance)
                 .map(SignatureProviderFactory.class::cast)
