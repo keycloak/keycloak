@@ -66,7 +66,7 @@ public class UsernameMutationValidator implements SimpleValidator {
         RealmModel realm = context.getSession().getContext().getRealm();
 
         String valueLowercased = value.toLowerCase();
-        if (!realm.isEditUsernameAllowed() && user != null && !valueLowercased.equals(user.getFirstAttribute(UserModel.USERNAME))) {
+        if (!realm.isEditUsernameAllowed() && user != null && !value.equalsIgnoreCase(user.getFirstAttribute(UserModel.USERNAME))) {
             Attributes attributes = attributeContext.getAttributes();
             if (realm.isRegistrationEmailAsUsername() && valueLowercased.equals(attributes.getFirst(UserModel.EMAIL))) {
                 // if username changed is because email as username is allowed so no validation should happen for update profile
