@@ -15,6 +15,10 @@ TESTSUITE_NAME="FipsNonStrictTestSuite"
 if [ "$1" = "strict" ]; then
   STRICT_OPTIONS="-Dauth.server.fips.mode=strict -Dauth.server.supported.keystore.types=BCFKS -Dauth.server.keystore.type=bcfks -Dauth.server.supported.rsa.key.sizes=2048,3072,4096"
   TESTSUITE_NAME="FipsStrictTestSuite"
+else
+  # RH OpenJDK ships cacerts as JKS, but merging the default truststore assumes PKCS12, which BCFIPS rejects in non-strict mode
+  # Remove or modify once a proper fix is merged eg https://github.com/keycloak/keycloak/pull/54171
+  export JAVA_OPTS_APPEND="-Djavax.net.ssl.trustStore=/etc/alternatives/java_sdk_${JAVA_VERSION}/lib/security/cacerts -Djavax.net.ssl.trustStoreType=JKS -Djavax.net.ssl.trustStorePassword=changeit"
 fi
 echo "STRICT_OPTIONS: $STRICT_OPTIONS"
 TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`

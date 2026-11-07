@@ -114,6 +114,11 @@ public class OIDCProviderConfigTest {
         }
 
         @Override
+        public V computeIfAbsent(K key, java.util.function.Function<K, V> mapper) {
+            return map.computeIfAbsent(key, mapper);
+        }
+
+        @Override
         public void close() {
             map.clear();
         }

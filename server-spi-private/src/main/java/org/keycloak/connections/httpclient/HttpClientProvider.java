@@ -41,6 +41,24 @@ public interface HttpClientProvider extends Provider {
     CloseableHttpClient getHttpClient();
 
     /**
+     * Returns the {@code CloseableHttpClient} that presents the given client certificate in TLS connections for
+     * mutual TLS client authentication. Redirects are not followed as the certificate must only be presented to the configured endpoints.
+     * <p>
+     * <b>The returned {@code HttpClient} instance must never be {@code close()}d by the caller.</b>
+     * <p>
+     * Closing the {@code HttpClient} instance is responsibility of this provider. However,
+     * the objects created via the returned {@code HttpClient} need to be closed properly
+     * by the code that instantiated them.
+     *
+     * @param certificate the client certificate
+     * @return the client
+     * @throws UnsupportedOperationException if the provider does not support client certificates
+     */
+    default CloseableHttpClient getHttpClient(ClientCertificate certificate) {
+        throw new UnsupportedOperationException("This HttpClientProvider does not support client certificates");
+    }
+
+    /**
      * Helper method
      *
      * @param uri
