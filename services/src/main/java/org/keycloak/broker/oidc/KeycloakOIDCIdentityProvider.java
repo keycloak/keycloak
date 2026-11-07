@@ -52,7 +52,6 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
     public KeycloakOIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
-        config.setAccessTokenJwt(true); // force access token JWT
     }
 
     @Override
