@@ -132,6 +132,18 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             controller={{ defaultValue: "" }}
             isDisabled
           />
+          <TextControl
+            name="attributes.cibaHttpAuthenticationChannelUri"
+            type="url"
+            label={t("cibaHttpAuthenticationChannelUri")}
+            labelIcon={t("cibaHttpAuthenticationChannelUriHelp")}
+            rules={{
+              pattern: {
+                value: /^https?:\/\/[^\s/?#]+\S*$/i,
+                message: t("cibaHttpAuthenticationChannelUriInvalid"),
+              },
+            }}
+          />
         </FormProvider>
         <ActionGroup>
           <Button
