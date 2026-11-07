@@ -20,6 +20,8 @@ package org.keycloak.connections.jpa.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,7 +40,6 @@ import jakarta.persistence.ValidationMode;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.models.KeycloakSession;
 
-import org.hibernate.Session;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.dialect.OracleDialect;
@@ -60,7 +61,7 @@ public class JpaUtils {
     public static final String QUERY_NATIVE_SUFFIX = "[native]";
     public static final String QUERY_JPQL_SUFFIX = "[jpql]";
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
-    private static final String SKIP_LOCKED_SUPPORTED_PROPERTY = "keycloak.skip-locked-supported";
+    private static final String TIDB_PROPERTY = "keycloak.tidb";
 
     /**
      * MySQL/MariaDB drivers default to CLIENT_FOUND_ROWS, which makes ON DUPLICATE KEY UPDATE
@@ -89,18 +90,23 @@ public class JpaUtils {
             // not a MySQL dialect
             return true;
         }
-        Map<String, Object> properties = em.getEntityManagerFactory().getProperties();
-        Object cached = properties.get(SKIP_LOCKED_SUPPORTED_PROPERTY);
-        if (cached != null) {
-            return (Boolean) cached;
-        }
-        boolean supported = em.unwrap(Session.class).doReturningWork(connection -> {
+        return !Boolean.TRUE.equals(em.getEntityManagerFactory().getProperties().get(TIDB_PROPERTY));
+    }
+
+    /**
+     * Detects database products that are used via the dialect of another database and can only be identified by their
+     * version string. Needs to be called once while the server starts, before any request is handled, so the result can be
+     * read without synchronization afterwards.
+     */
+    public static void detectDatabaseProduct(EntityManagerFactory emf, Connection connection) throws SQLException {
+        SessionFactoryImplementor factory = emf.unwrap(SessionFactoryImplementor.class);
+        boolean tidb = false;
+        if (factory.getJdbcServices().getDialect() instanceof MySQLDialect) {
+            // TiDB reports a version like 8.0.11-TiDB-v8.5.8
             String version = connection.getMetaData().getDatabaseProductVersion();
-            return version == null || !version.contains("-TiDB-");
-        });
-        // the result is stored with the factory, as the database is the same for all entity managers created from it
-        properties.put(SKIP_LOCKED_SUPPORTED_PROPERTY, supported);
-        return supported;
+            tidb = version != null && version.contains("-TiDB-");
+        }
+        emf.getProperties().put(TIDB_PROPERTY, tidb);
     }
 
     /**
