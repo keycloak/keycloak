@@ -1,7 +1,10 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -30,6 +33,7 @@ import org.keycloak.config.database.Database.Vendor;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.ValueMapper;
 import org.keycloak.utils.StringUtil;
@@ -74,6 +78,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
     static final String AWS_JDBC_WRAPPER_DRIVER = "software.amazon.jdbc.Driver";
+    private static final String AWS_JDBC_WRAPPER_PLUGINS = "wrapperPlugins";
+    private static final Set<String> AWS_JDBC_WRAPPER_FAILOVER_PLUGINS = Set.of("failover", "failover2", "gdbFailover");
 
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
@@ -360,6 +366,40 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                                 .formatted(DB_POOL_MAX_SIZE.getKey(), JDBC_PING_MIN_POOL_MAX_SIZE, poolMaxSize));
             }
         });
+        if (picocli.getParsedCommand().filter(AbstractCommand::isServing).isPresent()) {
+            validateAwsJdbcWrapperPlugins(picocli);
+        }
+    }
+
+    private static void validateAwsJdbcWrapperPlugins(Picocli picocli) {
+        if (!AWS_JDBC_WRAPPER_DRIVER.equals(Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue())) {
+            return;
+        }
+        String[] urlAndQuery = Configuration.getConfigValue(DB_URL).getValueOrDefault("").split("\\?", 2);
+        if (urlAndQuery.length < 2) {
+            return;
+        }
+        // read the parameter like the wrapper: the name is case-sensitive by default, no value means empty, the last one wins
+        String plugins = null;
+        for (String parameter : urlAndQuery[1].split("&")) {
+            String[] nameAndValue = parameter.split("=", 2);
+            if (nameAndValue[0].equals(AWS_JDBC_WRAPPER_PLUGINS)) {
+                plugins = nameAndValue.length == 2 ? nameAndValue[1] : "";
+            }
+        }
+        if (plugins == null) {
+            return;
+        }
+        try {
+            plugins = URLDecoder.decode(plugins, StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException e) {
+            // keep the raw value, as the wrapper does
+        }
+        if (Arrays.stream(plugins.split(",")).map(String::trim).noneMatch(AWS_JDBC_WRAPPER_FAILOVER_PLUGINS::contains)) {
+            picocli.warn(("The AWS JDBC Wrapper parameter 'wrapperPlugins=%s' in '%s' replaces the default plugins and does not include the 'failover' or 'failover2' plugin. " +
+                    "Keycloak might connect to a reader instance after a failover or switchover. Add 'failover2' to 'wrapperPlugins'.")
+                    .formatted(plugins, DB_URL.getKey()));
+        }
     }
 
     private static boolean isJdbcPingStack() {
