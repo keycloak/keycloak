@@ -975,45 +975,6 @@ public class Reflections {
     }
 
     /**
-     * <p>Creates a new instance of a class.</p>
-     *
-     * <p>This method will use the same class loader of the given class to create the new instance.</p>
-     *
-     * @param fromClass The class from where the instance should be created.
-     *
-     * @return A newly allocated instance of the class.
-     *
-     * @throws ClassNotFoundException
-     * @throws IllegalAccessException
-     * @throws InstantiationException
-     * @deprecated for removal in Keycloak 27
-     */
-    @Deprecated
-    public static <T> T newInstance(final Class<T> fromClass) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        return newInstance(fromClass, fromClass.getName());
-    }
-
-    /**
-     * <p>Creates a new instance of a class given its <code>fullQualifiedName</code>.</p>
-     *
-     * <p>This method will use the same class loader of <code>type</code> to create the new instance.</p>
-     *
-     * @param type The class that will be used to get the class loader from.
-     * @param fullQualifiedName The full qualified name of the class from which the instance will be created.
-     *
-     * @return A newly allocated instance of the class.
-     *
-     * @throws ClassNotFoundException
-     * @throws IllegalAccessException
-     * @throws InstantiationException
-     * @deprecated for removal in Keycloak 27
-     */
-    @Deprecated
-    public static <T> T newInstance(final Class<?> type, final String fullQualifiedName) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        return (T) classForName(fullQualifiedName, type.getClassLoader()).newInstance();
-    }
-
-    /**
      * <p>Resolves the type of items for a {@link Field} declared as a {@link List}.
      *
      * <p>This method will first try to check the parametrized type of the field type. If none is defined, it will try to infer

@@ -520,3 +520,13 @@ Communication between nodes is encrypted using TLS by default.
 Remove the `cache-stack` setting from your configuration to use the default `jdbc-ping` stack.
 If your cache configuration XML explicitly selects another transport stack, remove that selection as well.
 Remove any discovery settings specific to the previous stack, such as `jgroups.dns.query`.
+
+=== Deprecated reflection utilities removed
+// https://github.com/keycloak/keycloak/issues/31015
+
+The following items in `keycloak-common` were deprecated for removal in {project_name} 26.0 and have been removed with no replacement:
+
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<T>)`
+- `org.keycloak.common.util.reflections.Reflections.newInstance(java.lang.Class<?>, java.lang.String)`
+- `org.keycloak.common.util.reflections.SetAccessiblePrivilegedAction`
+- `org.keycloak.common.util.reflections.UnSetAccessiblePrivilegedAction`
