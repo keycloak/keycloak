@@ -6,13 +6,12 @@ import liquibase.changelog.ChangeSet;
 import liquibase.database.Database;
 import liquibase.database.core.CockroachDatabase;
 import liquibase.sql.Sql;
-import liquibase.sql.UnparsedSql;
 import liquibase.sqlgenerator.SqlGeneratorChain;
 import liquibase.sqlgenerator.core.AddPrimaryKeyGenerator;
 import liquibase.statement.core.AddPrimaryKeyStatement;
 
 /**
- * Replaces the primary key of a table whose primary key drop was skipped by {@link CockroachDropPrimaryKeyGenerator}.
+ * Skips the primary key that was already created by {@link CockroachDropPrimaryKeyGenerator} when it processed the preceding {@code dropPrimaryKey} for the same table.
  */
 public class CockroachAddPrimaryKeyGenerator extends AddPrimaryKeyGenerator {
 
@@ -28,17 +27,13 @@ public class CockroachAddPrimaryKeyGenerator extends AddPrimaryKeyGenerator {
 
     @Override
     public Sql[] generateSql(AddPrimaryKeyStatement statement, Database database, SqlGeneratorChain sqlGeneratorChain) {
-        if (!hasSkippedDrop(statement.getTableName())) {
-            return super.generateSql(statement, database, sqlGeneratorChain);
+        if (hasDropInChangeSet(statement.getTableName())) {
+            return new Sql[0];
         }
-        String table = database.escapeTableName(statement.getCatalogName(), statement.getSchemaName(), statement.getTableName());
-        String columns = database.escapeColumnNameList(statement.getColumnNames());
-        return new Sql[] {
-                new UnparsedSql("ALTER TABLE " + table + " ALTER PRIMARY KEY USING COLUMNS (" + columns + ")", getAffectedPrimaryKey(statement))
-        };
+        return super.generateSql(statement, database, sqlGeneratorChain);
     }
 
-    private boolean hasSkippedDrop(String tableName) {
+    private boolean hasDropInChangeSet(String tableName) {
         ChangeSet changeSet = Scope.getCurrentScope().get(Scope.Attr.changeSet, ChangeSet.class);
         return changeSet != null && changeSet.getChanges().stream()
                 .anyMatch(c -> c instanceof DropPrimaryKeyChange drop && tableName.equalsIgnoreCase(drop.getTableName()));

@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.keycloak.Config;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.connections.jpa.updater.liquibase.KeycloakCockroachDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -36,7 +37,6 @@ import liquibase.ThreadLocalScopeManager;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseConnection;
-import liquibase.database.core.CockroachDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
@@ -177,7 +177,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
             throw new RuntimeException("Failed to create instance of " + liquibaseDatabaseClazz.getName());
         }
         if (liquibaseDatabase.getClass() == PostgresDatabase.class && isCockroachDB(connection)) {
-            liquibaseDatabase = new CockroachDatabase();
+            liquibaseDatabase = new KeycloakCockroachDatabase();
         }
         DatabaseConnection liquibaseConnection = new JdbcConnection(connection);
         try {

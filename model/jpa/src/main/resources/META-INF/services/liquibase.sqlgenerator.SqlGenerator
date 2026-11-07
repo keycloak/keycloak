@@ -20,3 +20,4 @@ org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogG
 org.keycloak.connections.jpa.updater.liquibase.custom.CreateTableAsSelectGuard
 org.keycloak.connections.jpa.updater.liquibase.custom.CockroachDropPrimaryKeyGenerator
 org.keycloak.connections.jpa.updater.liquibase.custom.CockroachAddPrimaryKeyGenerator
+org.keycloak.connections.jpa.updater.liquibase.custom.CockroachModifyDataTypeGenerator
