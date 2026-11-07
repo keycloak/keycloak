@@ -27,6 +27,7 @@ import jakarta.persistence.LockModeType;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
@@ -99,6 +100,7 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
         // could remove it between the INSERT and the subsequent find. Retry if this happens.
         LoginFailureEntity entity;
         boolean inserted;
+        JpaUtils.lockForUpsert(em, LoginFailureEntity.class, realm.getId(), userId);
         for (;;) {
             int rows = em.createNamedQuery("insertLoginFailure")
                     .setParameter("realmId", realm.getId())

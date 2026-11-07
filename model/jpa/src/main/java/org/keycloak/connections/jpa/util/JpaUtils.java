@@ -20,6 +20,8 @@ package org.keycloak.connections.jpa.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +43,8 @@ import org.keycloak.models.KeycloakSession;
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.dialect.OracleDialect;
+import org.hibernate.dialect.PostgreSQLDialect;
+import org.hibernate.engine.jdbc.connections.spi.JdbcConnectionAccess;
 import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.internal.SessionFactoryImpl;
@@ -79,6 +83,57 @@ public class JpaUtils {
     public static boolean isConflictUpdateRacy(EntityManager em) {
         return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
                 .getJdbcServices().getDialect() instanceof OracleDialect;
+    }
+
+    private static final String YUGABYTE_PROPERTY = "keycloak.yugabyte";
+
+    /**
+     * Concurrent {@code insert ... on conflict} statements for the same new key deadlock on YugabyteDB when the table has a
+     * secondary index, and the query layer can't retry the aborted READ COMMITTED transaction. This
+     * serializes them with a transaction-scoped advisory lock on the key, before the statement is executed.
+     * Does nothing on other databases.
+     *
+     * @param entityClass the entity the upsert writes to
+     * @param key the values of the unique key the upsert conflicts on
+     */
+    public static void lockForUpsert(EntityManager em, Class<?> entityClass, String... key) {
+        if (!isYugabyte(em)) {
+            return;
+        }
+        // the lock is only a mutex on this string, not on the table; sharing it across schemas only adds harmless contention
+        em.createNativeQuery("select 1 from (select pg_advisory_xact_lock(hashtext(?1))) l")
+                .setParameter(1, entityClass.getSimpleName() + ":" + String.join(":", key))
+                .getSingleResult();
+    }
+
+    /**
+     * Detects database products that are used via the dialect of another database and can only be identified by their
+     * version string. Needs to be called once while the server starts, before any request is handled, so the result can be
+     * read without synchronization afterwards.
+     */
+    public static void detectDatabaseProduct(EntityManagerFactory emf) {
+        SessionFactoryImplementor factory = emf.unwrap(SessionFactoryImplementor.class);
+        boolean yugabyte = false;
+        if (factory.getJdbcServices().getDialect() instanceof PostgreSQLDialect) {
+            JdbcConnectionAccess access = factory.getJdbcServices().getBootstrapJdbcConnectionAccess();
+            try {
+                Connection connection = access.obtainConnection();
+                try {
+                    // YugabyteDB reports a version like 15.12-YB-2025.2.8.1-b0
+                    String version = connection.getMetaData().getDatabaseProductVersion();
+                    yugabyte = version != null && version.contains("-YB-");
+                } finally {
+                    access.releaseConnection(connection);
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException("Failed to detect the database product", e);
+            }
+        }
+        emf.getProperties().put(YUGABYTE_PROPERTY, yugabyte);
+    }
+
+    private static boolean isYugabyte(EntityManager em) {
+        return Boolean.TRUE.equals(em.getEntityManagerFactory().getProperties().get(YUGABYTE_PROPERTY));
     }
 
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
