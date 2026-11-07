@@ -19,6 +19,8 @@ package org.keycloak.tests.admin.client;
 
 import java.util.List;
 
+import jakarta.ws.rs.core.HttpHeaders;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -64,6 +66,8 @@ public class SessionTest {
     // Dedicated public direct-access-grant client used only to authenticate the role-restricted admin
     // clients. Kept separate from "test-app" so admin logins do not pollute the user-session lists under test.
     private static final String ADMIN_AUTH_CLIENT_ID = "test-admin-client";
+    private static final String MOBILE_USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) "
+            + "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
 
     @InjectRealm(config = SessionTestRealmConfig.class)
     ManagedRealm managedRealm;
@@ -105,9 +109,10 @@ public class SessionTest {
     public void testGetUserSessions() {
         ClientResource account = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
 
-        oauth.openLoginForm();
-        loginPage.fillLogin(user.getUsername(), user.getPassword());
-        loginPage.submit();
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest(user.getUsername(), user.getPassword())
+                .header(HttpHeaders.USER_AGENT, MOBILE_USER_AGENT)
+                .send();
+        assertEquals(200, tokenResponse.getStatusCode());
 
         List<UserSessionRepresentation> sessions = account.getUserSessions(0, 5);
         assertEquals(1, sessions.size());
@@ -124,6 +129,11 @@ public class SessionTest {
         assertTrue(rep.getLastAccess() > 0);
         assertTrue(rep.getStart() > 0);
         assertFalse(rep.isRememberMe());
+        assertNotNull(rep.getOs());
+        assertNotNull(rep.getOsVersion());
+        assertNotNull(rep.getBrowser());
+        assertNotNull(rep.getDevice());
+        assertTrue(rep.isMobile());
 
         AccountHelper.logout(managedRealm.admin(), user.getUsername());
     }
