@@ -42,6 +42,12 @@ public class IdentityProviderWorkflowConditionProvider implements WorkflowCondit
             return false;
         }
 
+        // a federated identity might reference a provider that no longer exists as the link allows unknown aliases;
+        // in that case the condition is simply not matched
+        if (session.identityProviders().getByAlias(expectedAlias) == null) {
+            return false;
+        }
+
         Stream<FederatedIdentityModel> federatedIdentities = session.users().getFederatedIdentitiesStream(realm, user);
         return federatedIdentities
                 .map(FederatedIdentityModel::getIdentityProvider)
@@ -50,6 +56,10 @@ public class IdentityProviderWorkflowConditionProvider implements WorkflowCondit
 
     @Override
     public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> path) {
+        if (session.identityProviders().getByAlias(expectedAlias) == null) {
+            return cb.disjunction(); // always false
+        }
+
         Subquery<Integer> subquery = query.subquery(Integer.class);
         Root<FederatedIdentityEntity> from = subquery.from(FederatedIdentityEntity.class);
 

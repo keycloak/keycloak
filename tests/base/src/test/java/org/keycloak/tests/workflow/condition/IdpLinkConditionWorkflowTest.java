@@ -22,19 +22,24 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
+import org.keycloak.models.workflow.WorkflowEvent;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
+import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionProvider;
 import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.models.workflow.events.UserFedIdentityAddedWorkflowEventFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -55,11 +60,13 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -242,6 +249,78 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
                         });
                     });
                 });
+    }
+
+    @Test
+    public void testConditionForNonExistingIdp() {
+        // create a workflow with a condition on an identity provider that does not exist - the workflow is accepted
+        // as the IdP existence is not checked when creating or updating a workflow
+        managedRealm.admin().workflows().create(WorkflowRepresentation.withName("missing-idp-workflow")
+                .schedule(WorkflowScheduleRepresentation.create().after("1s").build())
+                .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(missing-idp)")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("attribute", "attr1")
+                                .build()
+                ).build()).close();
+
+        List<WorkflowRepresentation> workflows = managedRealm.admin().workflows().list();
+        assertThat(workflows, hasSize(1));
+
+        // create a user with a federated identity link to the non-existent provider - links to unknown
+        // aliases are allowed, so the user exists and holds a matching federated identity
+        String userId;
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
+                .username("user-missing-idp")
+                .federatedLink("missing-idp", UUID.randomUUID().toString(), "fed-user-123").build())) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            userId = ApiUtil.getCreatedId(response);
+        }
+
+        runOnServer.run((RunOnServer) session -> {
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            Workflow workflow = provider.getWorkflows().findFirst().orElse(null);
+            assertNotNull(workflow);
+
+            // resolving the eligible resources must not throw even though the identity provider does not exist
+            provider.activateForAllEligibleResources(workflow);
+
+            // the condition must simply not match when the identity provider does not exist, even though the
+            // user holds a federated identity with the same alias; assert the result directly on the condition
+            // as activate() catches and logs evaluation exceptions, which would let the state assertions
+            // below pass even when the condition throws
+            RealmModel realm = session.getContext().getRealm();
+            UserModel user = session.users().getUserById(realm, userId);
+            assertNotNull(user);
+            IdentityProviderWorkflowConditionProvider condition = new IdentityProviderWorkflowConditionProvider(session, "missing-idp");
+            assertFalse(condition.evaluate(createConditionContext(user.getId())));
+
+            // activating the workflow for the user must not throw; the condition is simply not matched
+            provider.activate(workflow, ResourceType.USERS, user.getId());
+
+            // the user must not be activated for the workflow as the identity provider does not exist
+            WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+            assertThat(stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList(), is(empty()));
+        });
+    }
+
+    private static WorkflowExecutionContext createConditionContext(String resourceId) {
+        return new WorkflowExecutionContext() {
+            @Override
+            public String getResourceId() {
+                return resourceId;
+            }
+
+            @Override
+            public WorkflowEvent getEvent() {
+                return null;
+            }
+
+            @Override
+            public WorkflowStep getNextStep() {
+                return null;
+            }
+        };
     }
 
     private void setupIdentityProvider() {
