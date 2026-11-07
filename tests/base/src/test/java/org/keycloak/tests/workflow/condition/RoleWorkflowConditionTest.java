@@ -16,10 +16,14 @@ import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
+import org.keycloak.models.workflow.WorkflowEvent;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
+import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
+import org.keycloak.models.workflow.conditions.RoleWorkflowConditionProvider;
 import org.keycloak.models.workflow.events.UserRoleGrantedWorkflowEventFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -156,16 +160,42 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
             // resolving the eligible resources must not throw even though the role no longer exists
             provider.activateForAllEligibleResources(workflow);
 
-            // activating the workflow for a user must not throw; the condition is simply not matched
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, "user-missing-role");
             assertNotNull(user);
+
+            // the condition must simply not match when the role does not exist; assert the result directly
+            // on the condition as activate() catches and logs evaluation exceptions, which would let the
+            // state assertions below pass even when the condition throws
+            RoleWorkflowConditionProvider condition = new RoleWorkflowConditionProvider(session, "missing-role");
+            assertFalse(condition.evaluate(createConditionContext(user.getId())));
+
+            // activating the workflow for the user must not throw; the condition is simply not matched
             provider.activate(workflow, ResourceType.USERS, user.getId());
 
             // the user must not be activated for the workflow as the role does not exist
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
             assertThat(stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList(), is(empty()));
         });
+    }
+
+    private static WorkflowExecutionContext createConditionContext(String resourceId) {
+        return new WorkflowExecutionContext() {
+            @Override
+            public String getResourceId() {
+                return resourceId;
+            }
+
+            @Override
+            public WorkflowEvent getEvent() {
+                return null;
+            }
+
+            @Override
+            public WorkflowStep getNextStep() {
+                return null;
+            }
+        };
     }
 
     private void assertUserRoles(String username, boolean shouldExist, String... roles) {

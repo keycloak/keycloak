@@ -13,9 +13,13 @@ import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
+import org.keycloak.models.workflow.WorkflowExecutionContext;
+import org.keycloak.models.workflow.WorkflowEvent;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
+import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionFactory;
+import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionProvider;
 import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -40,6 +44,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
@@ -181,12 +186,38 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserByUsername(realm, "user-missing-group");
             assertNotNull(user);
+
+            // the condition must simply not match when the group does not exist; assert the result directly
+            // on the condition as activate() catches and logs evaluation exceptions, which would let the
+            // state assertions below pass even when the condition throws
+            GroupMembershipWorkflowConditionProvider condition = new GroupMembershipWorkflowConditionProvider(session, "missing-group");
+            assertFalse(condition.evaluate(createConditionContext(user.getId())));
+
             provider.activate(workflow, ResourceType.USERS, user.getId());
 
             // the user must not be activated for the workflow as the group does not exist
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
             assertThat(stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList(), is(empty()));
         });
+    }
+
+    private static WorkflowExecutionContext createConditionContext(String resourceId) {
+        return new WorkflowExecutionContext() {
+            @Override
+            public String getResourceId() {
+                return resourceId;
+            }
+
+            @Override
+            public WorkflowEvent getEvent() {
+                return null;
+            }
+
+            @Override
+            public WorkflowStep getNextStep() {
+                return null;
+            }
+        };
     }
 
 }
