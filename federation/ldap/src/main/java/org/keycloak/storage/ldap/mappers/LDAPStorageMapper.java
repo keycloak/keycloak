@@ -104,6 +104,16 @@ public interface LDAPStorageMapper extends Provider {
     Set<String> getUserAttributes();
 
     /**
+     * Returns user model attributes that can be used to build LDAP search conditions.
+     * By default, all attributes mapped by this mapper are searchable in LDAP.
+     *
+     * @return user model attributes backed by LDAP. Never returns null.
+     */
+    default Set<String> getSearchableUserAttributes() {
+        return getUserAttributes();
+    }
+
+    /**
      * Called when invoke proxy on LDAP federation provider
      *
      * @param ldapUser

@@ -74,6 +74,11 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
     }
 
     @Override
+    public Set<String> getSearchableUserAttributes() {
+        return Collections.emptySet();
+    }
+
+    @Override
     public UserModel proxy(final LDAPObject ldapUser, UserModel delegate, RealmModel realm) {
         String userModelAttrName = getUserModelAttribute();
         String attributeValue = getAttributeValue();
