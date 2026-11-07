@@ -36,7 +36,8 @@ class CockroachDBTestDatabase extends AbstractContainerTestDatabase {
                 + " CREATE USER IF NOT EXISTS " + getUsername() + ";"
                 + " GRANT ALL ON DATABASE \\\"" + getDatabase() + "\\\" TO " + getUsername() + ";"
                 + " ALTER ROLE " + getUsername() + " SET default_transaction_isolation = 'read committed';"
-                + " ALTER ROLE " + getUsername() + " SET create_table_with_schema_locked = false;";
+                + " ALTER ROLE " + getUsername() + " SET create_table_with_schema_locked = false;"
+                + " ALTER ROLE " + getUsername() + " SET multiple_active_portals_enabled = true;";
         return List.of("bash", "-c", "./cockroach sql --insecure -e \"" + sql + "\"");
     }
 
