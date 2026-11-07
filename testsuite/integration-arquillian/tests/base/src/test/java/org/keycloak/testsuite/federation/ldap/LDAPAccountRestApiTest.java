@@ -20,6 +20,7 @@ package org.keycloak.testsuite.federation.ldap;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -29,11 +30,15 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.account.UserRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -121,6 +126,61 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         assertEquals("Doe", user.getLastName());
         assertEquals("john@email.org", user.getEmail());
         assertFalse(user.isEmailVerified());
+    }
+
+    @Test
+    public void testUpdateLocalAttributesWithReadOnlyLdap() throws IOException {
+        ComponentRepresentation originalProvider = managedRealm.admin().components().component(ldapModelId).toRepresentation();
+        UPConfig originalConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        try {
+            ComponentRepresentation provider = managedRealm.admin().components().component(ldapModelId).toRepresentation();
+            provider.getConfig().putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.name());
+            managedRealm.admin().components().component(ldapModelId).update(provider);
+            UPConfig config = managedRealm.admin().users().userProfile().getConfiguration();
+            Set<String> roles = Set.of("admin", "user");
+            config.addOrReplaceAttribute(new UPAttribute("localAttribute", new UPAttributePermissions(roles, roles)));
+            config.addOrReplaceAttribute(new UPAttribute("adminOnlyAttribute", new UPAttributePermissions(roles, Set.of("admin"))));
+            config.addOrReplaceAttribute(new UPAttribute("protectedAttribute", new UPAttributePermissions(roles, Set.of())));
+            managedRealm.admin().users().userProfile().update(config);
+
+            UserRepresentation user = getProfile();
+            user.singleAttribute("localAttribute", "first");
+            updateProfileExpectSuccess(user);
+            user = getProfile();
+            assertEquals(List.of("first"), user.getAttributes().get("localAttribute"));
+            user.singleAttribute("localAttribute", "second");
+            updateProfileExpectSuccess(user);
+            user = getProfile();
+            assertEquals(List.of("second"), user.getAttributes().get("localAttribute"));
+            user.getAttributes().remove("localAttribute");
+            updateProfileExpectSuccess(user);
+            user = getProfile();
+            assertTrue(user.getAttributes() == null || !user.getAttributes().containsKey("localAttribute"));
+            assertEquals("John", user.getFirstName());
+            assertEquals("Doe", user.getLastName());
+            assertEquals("john@email.org", user.getEmail());
+
+            user.singleAttribute("adminOnlyAttribute", "forbidden");
+            assertEquals(400, SimpleHttpDefault.doPost(getAccountUrl(null), httpClient)
+                    .auth(tokenUtil.getToken()).json(user).asStatus());
+            user = getProfile();
+            assertTrue(user.getAttributes() == null || !user.getAttributes().containsKey("adminOnlyAttribute"));
+
+            user = getProfile();
+            user.singleAttribute("protectedAttribute", "forbidden");
+            assertEquals(400, SimpleHttpDefault.doPost(getAccountUrl(null), httpClient)
+                    .auth(tokenUtil.getToken()).json(user).asStatus());
+            user = getProfile();
+            assertTrue(user.getAttributes() == null || !user.getAttributes().containsKey("protectedAttribute"));
+
+            user.setFirstName("Changed");
+            assertEquals(400, SimpleHttpDefault.doPost(getAccountUrl(null), httpClient)
+                    .auth(tokenUtil.getToken()).json(user).asStatus());
+            assertEquals("John", getProfile().getFirstName());
+        } finally {
+            managedRealm.admin().components().component(ldapModelId).update(originalProvider);
+            managedRealm.admin().users().userProfile().update(originalConfig);
+        }
     }
 
     @Test

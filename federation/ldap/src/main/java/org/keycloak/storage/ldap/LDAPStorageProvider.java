@@ -228,7 +228,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
         switch (editMode) {
             case READ_ONLY:
                 if (model.isImportEnabled()) {
-                    proxied = new ReadonlyLDAPUserModelDelegate(local);
+                    Set<String> readOnlyAttributes = getReadOnlyAttributes(getMappedUserAttributes(realm));
+                    proxied = new ReadonlyLDAPUserModelDelegate(local, readOnlyAttributes::contains);
                 } else {
                     proxied = new ReadOnlyUserModelDelegate(local);
                 }
@@ -1233,12 +1234,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .count();
         RealmModel realm = session.getContext().getRealm();
         // 1 - get configured attributes from LDAP mappers and add them to the user profile (if they not already present)
-        List<String> attributes = realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
-                .sorted(ldapMappersComparator.sortAsc())
-                .flatMap(mapperModel -> {
-                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    return ldapMapper.getUserAttributes().stream();
-                }).toList();
+        List<String> attributes = getMappedUserAttributes(realm);
 
         List<AttributeMetadata> metadatas = new ArrayList<>();
 
@@ -1269,14 +1265,35 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         }
 
-        // 3 - make all attributes read-only for LDAP users in case that LDAP itself is read-only
+        // 3 - protect LDAP-owned attributes, leaving local attributes subject to User Profile permissions
         if (getEditMode() == EditMode.READ_ONLY) {
+            Set<String> readOnlyAttributes = getReadOnlyAttributes(attributes);
             Stream.concat(metadata.getAttributes().stream(), metadatas.stream())
-                    .filter((m) -> !INTERNAL_ATTRIBUTES.contains(m.getName()))
+                    .filter(m -> model.isImportEnabled() ? readOnlyAttributes.contains(m.getName()) : !INTERNAL_ATTRIBUTES.contains(m.getName()))
                     .forEach(attrMetadata -> attrMetadata.addWriteCondition(AttributeMetadata.ALWAYS_FALSE));
         }
 
         return metadatas;
+    }
+
+    private List<String> getMappedUserAttributes(RealmModel realm) {
+        return realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortAsc())
+                .flatMap(mapperModel -> mapperManager.getMapper(mapperModel).getUserAttributes().stream())
+                .toList();
+    }
+
+    private Set<String> getReadOnlyAttributes(Collection<String> mappedAttributes) {
+        Set<String> attributes = new HashSet<>(mappedAttributes);
+        attributes.addAll(List.of(UserModel.USERNAME, LDAPConstants.LDAP_ID, LDAPConstants.LDAP_ENTRY_DN,
+                KerberosConstants.KERBEROS_PRINCIPAL));
+        // Attribute mappers resolve UserModel properties without regard to case.
+        for (String property : List.of(UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL)) {
+            if (mappedAttributes.stream().anyMatch(property::equalsIgnoreCase)) {
+                attributes.add(property);
+            }
+        }
+        return attributes;
     }
 
     @Override

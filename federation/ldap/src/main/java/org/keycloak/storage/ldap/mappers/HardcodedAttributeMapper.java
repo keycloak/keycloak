@@ -18,7 +18,9 @@
 package org.keycloak.storage.ldap.mappers;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
@@ -64,6 +66,11 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
     @Override
     public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
 
+    }
+
+    @Override
+    public Set<String> getUserAttributes() {
+        return Collections.singleton(getUserModelAttribute());
     }
 
     @Override
