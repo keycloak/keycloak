@@ -104,6 +104,7 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
         var currentTime = Time.currentTimeSeconds();
         var em = getEntityManager();
         int rows;
+        JpaUtils.lockForUpsert(em, SingleUseObjectEntity.class, key);
         if (JpaUtils.isUpsertRowCountUnreliable(em)) {
             String table = JpaUtils.getTableNameForNativeQuery("SINGLE_USE_OBJECT", em);
             em.createNativeQuery("DELETE FROM " + table + " WHERE ID = ?1 AND EXPIRE <= ?2")

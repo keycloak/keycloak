@@ -103,6 +103,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
+        JpaUtils.detectDatabaseProduct(entityManagerFactory);
         if (config.getBoolean("asyncCommit", true)) {
             boolean xaEnabled = Configuration.isKcPropertyTrue(TransactionOptions.TRANSACTION_XA_ENABLED.getKey());
             AsyncCommitIntegrator.registerListeners(entityManagerFactory, xaEnabled);
