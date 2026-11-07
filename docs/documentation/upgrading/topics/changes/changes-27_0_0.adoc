@@ -552,6 +552,13 @@ the error above instead of silently storing it. Correct the URI before re-import
 the end of the pattern or as a file-extension suffix, for example `+/api/*+` or `+/api/*.json+`, never in the
 middle of a path such as `+/api/*/info+`.
 
+=== Attribute ownership in custom LDAP mappers
+
+When *Import Users* is enabled for a read-only LDAP provider, User Profile permissions apply to attributes stored only in {project_name}.
+Previously, the read-only provider blocked most attribute writes even if no mapper declared the attribute.
+If you maintain a custom LDAP mapper, return every attribute it manages from `getUserAttributes()` to keep those attributes read-only. The base implementation returns an empty set.
+Override `managesUserAttribute(String)` if the mapper recognizes names beyond exact matches, and use `getSearchableUserAttributes()` to exclude attributes that cannot be searched in LDAP.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

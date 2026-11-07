@@ -167,6 +167,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
         return Collections.singleton(getUserModelAttribute());
     }
 
+    @Override
+    public boolean managesUserAttribute(String name) {
+        return getUserModelAttribute().equalsIgnoreCase(name);
+    }
+
     // throw ModelDuplicateException if there is different user in model with same email
     protected void checkDuplicateEmail(String userModelAttrName, String email, RealmModel realm, KeycloakSession session, UserModel user) {
         if (email == null || realm.isDuplicateEmailsAllowed()) return;
@@ -417,7 +422,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public String getFirstAttribute(String name) {
-                    if (name.equalsIgnoreCase(userModelAttrName)) {
+                    if (managesUserAttribute(name)) {
                         return decodeValue(ldapUser.getAttributeAsString(ldapAttrName));
                     } else {
                         return super.getFirstAttribute(name);
@@ -426,7 +431,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
                 @Override
                 public Stream<String> getAttributeStream(String name) {
-                    if (name.equalsIgnoreCase(userModelAttrName)) {
+                    if (managesUserAttribute(name)) {
                         Collection<String> ldapAttrValue = ldapUser.getAttributeAsSet(ldapAttrName);
                         if (ldapAttrValue == null) {
                             return Stream.empty();
