@@ -217,6 +217,10 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
                             .detail(Details.PREF_UPDATED + UserModel.USERNAME, profile.getAttributes().getFirst(UserModel.USERNAME))
                             .success();
                 } else if (attributeName.equals(UserModel.EMAIL)) {
+                    if (isCaseOnlyChange(oldValue, profile.getAttributes().getFirst(UserModel.EMAIL))) {
+                        // The user profile lower-cases the e-mail address of the brokered user, which is not a change made by the user
+                        return;
+                    }
                     context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED, "true");
                     event.clone().event(EventType.UPDATE_EMAIL)
                             .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
@@ -251,6 +255,10 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
 
         context.success();
+    }
+
+    private boolean isCaseOnlyChange(List<String> oldValue, String newValue) {
+        return oldValue != null && oldValue.size() == 1 && newValue != null && oldValue.get(0).equalsIgnoreCase(newValue);
     }
 
     @Override
