@@ -144,11 +144,13 @@
         <dropForeignKeyConstraint baseTableName="RESOURCE_SERVER_SCOPE" constraintName="FK_FRSRSO213XCX4WNKOG82SSRFY"/>
         <dropColumn tableName="RESOURCE_SERVER_SCOPE" columnName="RESOURCE_SERVER_ID"/>
 
-        <!-- CockroachDB can neither drop a primary key without a replacement nor drop a column that is part of it -->
-        <sql>ALTER TABLE ${database.defaultSchemaName}.RESOURCE_SERVER ALTER PRIMARY KEY USING COLUMNS (CLIENT_ID)</sql>
+        <!-- CockroachDB can neither drop a primary key without a replacement nor drop a column that is part of it.
+             CockroachDropPrimaryKeyGenerator therefore turns the following dropPrimaryKey/addPrimaryKey pair into a single ALTER PRIMARY KEY, after which ID is no longer part of the key and can be dropped. -->
+        <dropPrimaryKey tableName="RESOURCE_SERVER"/>
+        <addPrimaryKey tableName="RESOURCE_SERVER" columnNames="CLIENT_ID"/>
         <dropUniqueConstraint tableName="RESOURCE_SERVER" constraintName="UK_AU8TT6T700S9V50BU18WS5HA6"/>
 
-        <sql>ALTER TABLE ${database.defaultSchemaName}.RESOURCE_SERVER DROP COLUMN ID CASCADE</sql>
+        <dropColumn tableName="RESOURCE_SERVER" columnName="ID"/>
 
         <renameColumn tableName="RESOURCE_SERVER" oldColumnName="CLIENT_ID" newColumnName="ID" columnDataType="VARCHAR(36)"/>
         <renameColumn tableName="RESOURCE_SERVER_POLICY" oldColumnName="RESOURCE_SERVER_CLIENT_ID" newColumnName="RESOURCE_SERVER_ID" columnDataType="VARCHAR(36)"/>
