@@ -40,6 +40,10 @@ public class InviteOrgActionToken extends DefaultActionToken {
     private String orgId;
 
     public InviteOrgActionToken(String userId, int absoluteExpirationInSecs, String email, String clientId) {
+        this(userId, (long) absoluteExpirationInSecs, email, clientId);
+    }
+
+    public InviteOrgActionToken(String userId, long absoluteExpirationInSecs, String email, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
         setEmail(email);
         this.issuedFor = clientId;
