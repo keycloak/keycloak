@@ -43,6 +43,10 @@ public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
             if (dbType().equals(PostgresTestDatabase.NAME) || dbType().equals(EnterpriseDbTestDatabase.NAME)) {
                 return database.initScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
             }
+            if (dbType().equals("cockroachdb")) {
+                // CockroachDB resolves "keycloak-t".table to a database of that name if no such schema exists, which Liquibase doesn't see
+                return database.initScript("org/keycloak/tests/db/preserve-schema-case-liquibase-cockroachdb.sql");
+            }
             return database.database("keycloak-t");
         }
     }
