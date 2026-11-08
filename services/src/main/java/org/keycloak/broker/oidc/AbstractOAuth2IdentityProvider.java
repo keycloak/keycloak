@@ -68,7 +68,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
-import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -457,7 +456,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(getConfig().getTokenUrl())
+        SimpleHttpRequest refreshTokenRequest = MtlsAwareHttp.create(session, getConfig()).doPost(getConfig().getEffectiveTokenUrl())
                 .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
                 .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
         return authenticateTokenRequest(refreshTokenRequest);
@@ -931,6 +930,9 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     .param(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT)
                     .param(OAuth2Constants.CLIENT_ASSERTION, jws)
                     .param(OAuth2Constants.CLIENT_ID, getConfig().getClientId());
+        } else if (getConfig().isTlsClientAuthentication()) {
+            // the client is authenticated by the client certificate presented during the TLS handshake (RFC 8705)
+            return tokenRequest.param(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId());
         } else {
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
                 if (getConfig().isBasicAuthentication()) {
@@ -1097,7 +1099,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         public SimpleHttpRequest generateTokenRequest(String authorizationCode) {
             KeycloakContext context = session.getContext();
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
-            SimpleHttpRequest tokenRequest = SimpleHttp.create(session).doPost(providerConfig.getTokenUrl())
+            SimpleHttpRequest tokenRequest = MtlsAwareHttp.create(session, providerConfig).doPost(providerConfig.getEffectiveTokenUrl())
                     .param(OAUTH2_PARAMETER_CODE, authorizationCode)
                     .param(OAUTH2_PARAMETER_REDIRECT_URI, Urls.identityProviderAuthnResponse(context.getUri().getBaseUri(),
                             providerConfig.getAlias(), context.getRealm().getName()).toString())
@@ -1185,7 +1187,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected SimpleHttpRequest buildUserInfoRequest(String subjectToken, String userInfoUrl) {
-        return SimpleHttp.create(session).doGet(userInfoUrl)
+        return MtlsAwareHttp.create(session, getConfig()).doGet(userInfoUrl)
                   .header("Authorization", "Bearer " + subjectToken);
     }
 
@@ -1280,7 +1282,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
      * @throws ErrorResponseException in case that introspection response was not correct for any reason (other status than 200) or the token was not active
      */
     protected TokenMetadataRepresentation sendTokenIntrospectionRequest(String idpAccessToken, EventBuilder event) {
-        String introspectionEndointUrl = getConfig().getTokenIntrospectionUrl();
+        String introspectionEndointUrl = getConfig().getEffectiveTokenIntrospectionUrl();
         if (introspectionEndointUrl == null) {
             throwErrorResponse(event, Errors.INVALID_CONFIG, OAuthErrorException.INVALID_REQUEST, "Introspection endpoint not configured for IDP");
         }
@@ -1288,7 +1290,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         try {
 
             // Supporting only access-tokens for now
-            SimpleHttpRequest introspectionRequest = SimpleHttp.create(session).doPost(introspectionEndointUrl)
+            SimpleHttpRequest introspectionRequest = MtlsAwareHttp.create(session, getConfig()).doPost(introspectionEndointUrl)
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN, idpAccessToken)
                     .param(TokenIntrospectionEndpoint.PARAM_TOKEN_TYPE_HINT, AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE);
             introspectionRequest = authenticateTokenRequest(introspectionRequest);

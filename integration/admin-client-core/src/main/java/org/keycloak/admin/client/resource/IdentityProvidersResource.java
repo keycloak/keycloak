@@ -30,6 +30,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.representations.idm.ClientCertificateRepresentation;
+import org.keycloak.representations.idm.ClientCertificateTestRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
@@ -112,4 +114,15 @@ public interface IdentityProvidersResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     Map<String, String> importFrom(Map<String, Object> data);
+
+    @GET
+    @Path("mtls/client-certificates")
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ClientCertificateRepresentation> getClientCertificates();
+
+    @POST
+    @Path("mtls/test")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    Response testClientCertificate(ClientCertificateTestRepresentation request);
 }

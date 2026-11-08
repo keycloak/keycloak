@@ -1,4 +1,6 @@
 import type { KeycloakAdminClient } from "../client.js";
+import type ClientCertificateRepresentation from "../defs/clientCertificateRepresentation.js";
+import type { ClientCertificateTestRepresentation } from "../defs/clientCertificateRepresentation.js";
 import type IdentityProviderMapperRepresentation from "../defs/identityProviderMapperRepresentation.js";
 import type { IdentityProviderMapperTypeRepresentation } from "../defs/identityProviderMapperTypeRepresentation.js";
 import type IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
@@ -58,6 +60,23 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
   >({
     method: "POST",
     path: "/upload-certificate",
+  });
+
+  public listClientCertificates = this.makeRequest<
+    {},
+    ClientCertificateRepresentation[]
+  >({
+    method: "GET",
+    path: "/mtls/client-certificates",
+  });
+
+  public testClientCertificate = this.makeUpdateRequest<
+    {},
+    ClientCertificateTestRepresentation,
+    { authenticated: boolean } | void
+  >({
+    method: "POST",
+    path: "/mtls/test",
   });
 
   public update = this.makeUpdateRequest<

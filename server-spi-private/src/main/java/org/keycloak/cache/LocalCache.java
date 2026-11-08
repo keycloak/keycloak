@@ -1,5 +1,7 @@
 package org.keycloak.cache;
 
+import java.util.function.Function;
+
 /**
  * A {@link LocalCache} should be used when a local, non-clustered, cache is required to optimise data access.
  *
@@ -35,6 +37,17 @@ public interface LocalCache<K, V> extends AutoCloseable {
      * @throws NullPointerException if the specified key is null
      */
     void invalidate(K key);
+
+    /**
+     * Returns the value associated with the {@code key}, computing and caching it with the {@code mapper} if there is
+     * none.
+     *
+     * @param key the key whose associated value is to be returned
+     * @param mapper computes the value if none is cached
+     * @return the cached or computed value
+     * @throws NullPointerException if the specified key is null
+     */
+    V computeIfAbsent(K key, Function<K, V> mapper);
 
     /**
      * Closes all resources associated with the cache.

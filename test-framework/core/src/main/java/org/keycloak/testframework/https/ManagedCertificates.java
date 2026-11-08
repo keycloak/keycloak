@@ -15,11 +15,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import javax.net.ssl.SSLContext;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 
 import org.apache.http.conn.ssl.TrustAllStrategy;
@@ -126,6 +128,43 @@ public class ManagedCertificates {
      */
     public String getServerTrustStorePassword() {
         return mTlsEnabled ? STORE_PASSWORD : null;
+    }
+
+    /**
+     * The password used for the client keystore and its keys
+     *
+     * @return keystore password
+     */
+    public String getClientKeyStorePassword() {
+        return tlsEnabled ? STORE_PASSWORD : null;
+    }
+
+    /**
+     * Writes the certificates of the client truststore to a PEM file for the <code>truststore-paths</code> option.
+     *
+     * @param additionalPemPath optional PEM file whose content is appended
+     * @return path to the PEM file
+     */
+    public String getClientTrustStorePemPath(String additionalPemPath) {
+        if (!tlsEnabled) {
+            return null;
+        }
+        try {
+            Path pemPath = clientTruststorePath.resolveSibling(clientTruststorePath.getFileName() + ".pem");
+            StringBuilder pem = new StringBuilder();
+            if (additionalPemPath != null) {
+                pem.append(Files.readString(Path.of(additionalPemPath))).append("\n");
+            }
+            for (String alias : Collections.list(clientTrustStore.aliases())) {
+                if (clientTrustStore.isCertificateEntry(alias)) {
+                    pem.append(PemUtils.addCertificateBeginEnd(PemUtils.encodeCertificate(clientTrustStore.getCertificate(alias)))).append("\n");
+                }
+            }
+            Files.writeString(pemPath, pem.toString());
+            return pemPath.toString();
+        } catch (KeyStoreException | IOException e) {
+            throw new ManagedCertificatesException(e);
+        }
     }
 
     /**
