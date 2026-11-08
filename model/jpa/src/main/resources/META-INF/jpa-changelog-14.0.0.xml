@@ -73,6 +73,7 @@
                 <dbms type="mysql"/>
                 <dbms type="mariadb"/>
                 <dbms type="postgresql"/>
+                <dbms type="cockroachdb"/>
                 <dbms type="oracle"/>
             </or>
         </preConditions>
@@ -80,7 +81,7 @@
             <column name="NAME" type="VARCHAR(255)"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)" />
         </createIndex>
-        <modifySql dbms="postgresql">
+        <modifySql dbms="postgresql,cockroachdb">
             <replace replace="VALUE(255)" with="(value::varchar(250))" />
         </modifySql>
         <modifySql dbms="oracle">
@@ -96,6 +97,7 @@
                     <dbms type="mysql"/>
                     <dbms type="mariadb"/>
                     <dbms type="postgresql"/>
+                    <dbms type="cockroachdb"/>
                     <dbms type="oracle"/>
                 </or>
             </not>
