@@ -19,12 +19,14 @@ package org.keycloak.protocol.saml;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -86,6 +88,10 @@ import org.w3c.dom.Element;
 public class SamlProtocolUtils {
 
     private static final Logger logger = Logger.getLogger(SamlProtocolUtils.class);
+
+    private static final List<String> REDIRECT_SIGNATURE_PARAMETERS = List.of(GeneralConstants.SAML_REQUEST_KEY,
+            GeneralConstants.SAML_RESPONSE_KEY, GeneralConstants.RELAY_STATE, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY,
+            GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
 
     /**
      * Verifies a signature of the given SAML document using settings for the given client.
@@ -213,12 +219,30 @@ public class SamlProtocolUtils {
         return cert.getPublicKey();
     }
 
-    public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, UriInfo uriInformation, String paramKey) throws VerificationException {
+    /**
+     * Verifies the signature of an HTTP-Redirect binding message and checks that the signed message and relay state
+     * are the ones being processed.
+     *
+     * @param processedMessage the URL-decoded {@code SAMLRequest} or {@code SAMLResponse} value being processed
+     * @param processedRelayState the URL-decoded {@code RelayState} value being processed, or {@code null} if none
+     */
+    public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, UriInfo uriInformation, String paramKey,
+            String processedMessage, String processedRelayState) throws VerificationException {
         MultivaluedMap<String, String> encodedParams = uriInformation.getQueryParameters(false);
+        verifyRedirectSignature(documentHolder, locator, encodedParams, paramKey, processedMessage, processedRelayState);
+    }
+
+    public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, MultivaluedMap<String, String> encodedParams, String paramKey,
+            String processedMessage, String processedRelayState) throws VerificationException {
+        rejectRepeatedRedirectParameters(encodedParams);
+        verifySignedValueIsProcessed(encodedParams, paramKey, processedMessage);
+        verifySignedValueIsProcessed(encodedParams, GeneralConstants.RELAY_STATE, processedRelayState);
         verifyRedirectSignature(documentHolder, locator, encodedParams, paramKey);
     }
 
     public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, MultivaluedMap<String, String> encodedParams, String paramKey) throws VerificationException {
+        rejectRepeatedRedirectParameters(encodedParams);
+
         String request = encodedParams.getFirst(paramKey);
         String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
         String signature = encodedParams.getFirst(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
@@ -251,6 +275,28 @@ public class SamlProtocolUtils {
             }
         } catch (Exception e) {
             throw new VerificationException(e);
+        }
+    }
+
+    public static void rejectRepeatedRedirectParameters(MultivaluedMap<String, String> encodedParams) throws VerificationException {
+        for (String name : REDIRECT_SIGNATURE_PARAMETERS) {
+            List<String> values = encodedParams.get(name);
+            if (values != null && values.size() > 1) {
+                throw new VerificationException("Query parameter " + name + " is present more than once");
+            }
+        }
+    }
+
+    private static void verifySignedValueIsProcessed(MultivaluedMap<String, String> encodedParams, String paramKey, String processedValue) throws VerificationException {
+        String signedValue = encodedParams.getFirst(paramKey);
+        String decodedSignedValue;
+        try {
+            decodedSignedValue = signedValue == null ? null : RedirectBindingUtil.urlDecode(signedValue);
+        } catch (IOException | IllegalArgumentException e) {
+            throw new VerificationException("Invalid encoding of query parameter " + paramKey, e);
+        }
+        if (!Objects.equals(decodedSignedValue, processedValue)) {
+            throw new VerificationException("Query parameter " + paramKey + " being processed is not the signed one");
         }
     }
 
