@@ -45,6 +45,22 @@ public interface LoginFormsProvider extends Provider {
 
     String REGISTRATION_DISABLED = "registrationDisabled";
 
+    /**
+     * URL the login page redirects to when session polling detects a session started elsewhere, overriding the
+     * default "logged in on another tab" target.
+     */
+    String SESSION_POLLING_REDIRECT_URL = "sessionPollingRedirectUrl";
+
+    /**
+     * Suppresses the login page's session polling entirely.
+     */
+    String SKIP_SESSION_POLLING = "skipSessionPolling";
+
+    /**
+     * Suppresses the login page's authentication session check, which reloads the page when another tab changes
+     * the authentication session cookie.
+     */
+    String SKIP_CHECK_AUTH_SESSION = "skipCheckAuthSession";
 
     /**
      * Adds a script to the html header
@@ -78,6 +94,20 @@ public interface LoginFormsProvider extends Provider {
     Response createRegistration();
 
     Response createInfoPage();
+
+    /**
+     * Confirmation shown to a tab still waiting on the verify-email page once the email has been verified
+     * elsewhere. It is terminal, so both session scripts are suppressed - either would navigate back into the
+     * authentication flow, which by then has no required action left to run and simply redirects to the client.
+     *
+     * Defaulted rather than abstract so that providers compiled against earlier versions keep working; the
+     * built-in provider overrides this to render the page through its own page handling.
+     */
+    default Response createVerifyEmailSuccessPage() {
+        return setAttribute(SKIP_SESSION_POLLING, true)
+                .setAttribute(SKIP_CHECK_AUTH_SESSION, true)
+                .createForm("login-verify-email-success.ftl");
+    }
 
     Response createUpdateProfilePage();
 
