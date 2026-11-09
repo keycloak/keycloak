@@ -12,6 +12,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
@@ -39,6 +40,7 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -1733,6 +1735,107 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                 .filter(scope -> Constants.KEYCLOAK_ADMIN_API_SCOPE.equals(scope.getName()))
                 .findFirst()
                 .ifPresent(scope -> realm.clients().get(clientDbId).addDefaultClientScope(scope.getId()));
+    }
+
+    @Test
+    public void testManageUsersAdminCannotMoveGroupUnderAdminGroup() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        UserRepresentation attacker = createUser(testRealm, "limited-admin");
+        grantRealmManagementRole(testRealm, attacker.getUsername(), AdminRoles.MANAGE_USERS);
+        UserRepresentation realmAdmin = createUser(testRealm, "realm-admin");
+        grantRealmManagementRole(testRealm, realmAdmin.getUsername(), AdminRoles.REALM_ADMIN);
+
+        String realmManagementId = testRealm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation realmAdminRole = testRealm.clients().get(realmManagementId).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        testRealm.roles().create(RoleBuilder.create().name("admin-composite").build());
+        testRealm.roles().get("admin-composite").addComposites(List.of(realmAdminRole));
+
+        GroupRepresentation adminGroup = GroupBuilder.create("admin-ancestor").build();
+        adminGroup.setId(ApiUtil.getCreatedId(testRealm.groups().add(adminGroup)));
+        testRealm.groups().group(adminGroup.getId()).roles().realmLevel()
+                .add(List.of(testRealm.roles().get("admin-composite").toRepresentation()));
+        // The destination has no direct roles: its ancestor grants realm-admin through a composite.
+        GroupRepresentation destination = GroupBuilder.create("destination").build();
+        destination.setId(ApiUtil.getCreatedId(testRealm.groups().group(adminGroup.getId()).subGroup(destination)));
+        GroupRepresentation ordinaryParent = GroupBuilder.create("ordinary-parent").build();
+        ordinaryParent.setId(ApiUtil.getCreatedId(testRealm.groups().add(ordinaryParent)));
+
+        GroupRepresentation source = GroupBuilder.create("source").build();
+        source.setId(ApiUtil.getCreatedId(testRealm.groups().add(source)));
+        testRealm.users().get(attacker.getId()).joinGroup(source.getId());
+
+        runAs(realmName, attacker.getUsername(), client -> {
+            try (Response response = client.realm(realmName).groups().group(ordinaryParent.getId()).subGroup(source)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+            try (Response response = client.realm(realmName).groups().group(destination.getId()).subGroup(source)) {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            }
+        });
+
+        assertEquals(ordinaryParent.getId(), testRealm.groups().group(source.getId()).toRepresentation().getParentId());
+        assertFalse(testRealm.users().get(attacker.getId()).roles().clientLevel(realmManagementId).listEffective().stream()
+                .anyMatch(role -> AdminRoles.REALM_ADMIN.equals(role.getName())));
+
+        // A realm-local administrator can still move the group and grant the inherited roles.
+        runAs(realmName, realmAdmin.getUsername(), client -> {
+            try (Response response = client.realm(realmName).groups().group(destination.getId()).subGroup(source)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+        });
+        assertEquals(destination.getId(), testRealm.groups().group(source.getId()).toRepresentation().getParentId());
+        assertTrue(testRealm.users().get(attacker.getId()).roles().clientLevel(realmManagementId).listEffective().stream()
+                .anyMatch(role -> AdminRoles.REALM_ADMIN.equals(role.getName())));
+    }
+
+    @Test
+    public void testDelegatedAdminCannotMoveOrganizationGroupUnderAdminGroup() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        RealmRepresentation rep = testRealm.toRepresentation();
+        rep.setOrganizationsEnabled(true);
+        testRealm.update(rep);
+
+        UserRepresentation attacker = createUser(testRealm, "limited-admin");
+        grantRealmManagementRole(testRealm, attacker.getUsername(), AdminRoles.MANAGE_USERS);
+        grantRealmManagementRole(testRealm, attacker.getUsername(), AdminRoles.MANAGE_ORGANIZATIONS);
+
+        OrganizationRepresentation organizationRep = new OrganizationRepresentation();
+        organizationRep.setName("test-org");
+        organizationRep.setEnabled(true);
+        String organizationId = ApiUtil.getCreatedId(testRealm.organizations().create(organizationRep));
+        OrganizationResource organization = testRealm.organizations().get(organizationId);
+        ApiUtil.getCreatedId(organization.members().addMember(attacker.getId()));
+
+        GroupRepresentation adminGroup = GroupBuilder.create("admin-group").build();
+        adminGroup.setId(ApiUtil.getCreatedId(organization.groups().addTopLevelGroup(adminGroup)));
+        ClientRepresentation realmManagement = testRealm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdmin = testRealm.clients().get(realmManagement.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        organization.groups().group(adminGroup.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(realmAdmin));
+
+        GroupRepresentation source = GroupBuilder.create("source").build();
+        source.setId(ApiUtil.getCreatedId(organization.groups().addTopLevelGroup(source)));
+        organization.groups().group(source.getId()).addMember(attacker.getId());
+        GroupRepresentation ordinaryParent = GroupBuilder.create("ordinary-parent").build();
+        ordinaryParent.setId(ApiUtil.getCreatedId(organization.groups().addTopLevelGroup(ordinaryParent)));
+
+        runAs(realmName, attacker.getUsername(), client -> {
+            try (Response response = client.realm(realmName).organizations().get(organizationId).groups()
+                    .group(ordinaryParent.getId()).addSubGroup(source)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+            try (Response response = client.realm(realmName).organizations().get(organizationId).groups()
+                    .group(adminGroup.getId()).addSubGroup(source)) {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            }
+        });
+
+        assertEquals(ordinaryParent.getId(), organization.groups().group(source.getId()).toRepresentation(false).getParentId());
+        try (Response response = organization.groups().group(adminGroup.getId()).addSubGroup(source)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        assertEquals(adminGroup.getId(), organization.groups().group(source.getId()).toRepresentation(false).getParentId());
     }
 
     private void grantRealmManagementRole(RealmResource testRealm, GroupRepresentation group, String role) {
