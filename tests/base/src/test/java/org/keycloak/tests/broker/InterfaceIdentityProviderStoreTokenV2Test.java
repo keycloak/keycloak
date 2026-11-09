@@ -12,7 +12,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
@@ -58,28 +57,10 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         Assertions.assertFalse(externalTokens.isSuccess());
     }
 
-    @Test
-    default void testPublicClient() {
-        ManagedRealm realm = getRealm();
-        OAuthClient oauth = getOAuthClient();
-
-        oauth.openLoginForm();
-        loginWithIdP();
-
-        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
-        Assertions.assertTrue(internalTokens.isSuccess());
-
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
-        ClientRepresentation clientRep = clientResource.toRepresentation();
-        realm.cleanup().add(r -> {
-            clientRep.setPublicClient(false);
-            clientResource.update(clientRep);
-        });
-        clientRep.setPublicClient(true);
-        clientResource.update(clientRep);
-        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
-        Assertions.assertEquals(403, externalTokens.getStatusCode());
-        Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT, ((AccessTokenResponse) externalTokens).getError());
+    @Override
+    default void assertPublicClientTokenResponse(AbstractHttpResponse response) {
+        Assertions.assertEquals(403, response.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT, ((AccessTokenResponse) response).getError());
     }
 
     @Test

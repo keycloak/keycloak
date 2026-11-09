@@ -918,6 +918,7 @@ public class AuthenticationProcessor {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
             ServicesLogger.LOGGER.failedClientAuthentication(e);
+            event.detail(Details.AUTHENTICATION_ERROR_DETAIL, e.getEventDetails());
             if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");

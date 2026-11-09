@@ -42,6 +42,12 @@ public class XMLTimeUtil {
 
     private static final PicketLinkLogger logger = PicketLinkLoggerFactory.getLogger();
 
+    // DatatypeFactory.newXMLGregorianCalendar() and newDuration() internally parse numeric components
+    // via BigDecimal(String)/BigInteger(String) which have O(n^2) complexity for large inputs.
+    // A valid ISO 8601 dateTime or duration never exceeds ~40 characters; 100 is a generous upper bound.
+    // See CVE-2026-68497 (Jackson) for the underlying JDK issue.
+    static final int MAX_TIME_STRING_LENGTH = 100;
+
     /**
      * Add additional time in milliseconds
      *
@@ -180,8 +186,9 @@ public class XMLTimeUtil {
      */
     public static Duration parseAsDuration(String timeValue) {
         if (timeValue == null) {
-            PicketLinkLoggerFactory.getLogger().nullArgumentError("duration time");
+            throw logger.nullArgumentError("duration time");
         }
+        validateLength(timeValue, "duration");
 
         DatatypeFactory factory = DATATYPE_FACTORY.get();
 
@@ -193,7 +200,7 @@ public class XMLTimeUtil {
                 return factory.newDuration(Long.parseLong(timeValue));
             }
         } catch (Exception e) {
-            throw logger.samlMetaDataFailedToCreateCacheDuration(timeValue);
+            throw logger.samlMetaDataFailedToCreateCacheDuration();
         }
     }
 
@@ -205,8 +212,20 @@ public class XMLTimeUtil {
      * @return
      */
     public static XMLGregorianCalendar parse(String timeString) {
+        if (timeString == null) {
+            throw logger.nullArgumentError("timeString");
+        }
+
+        validateLength(timeString, "dateTime");
         DatatypeFactory factory = DATATYPE_FACTORY.get();
         return factory.newXMLGregorianCalendar(timeString);
+    }
+
+    private static void validateLength(String value, String type) {
+        if (value != null && value.length() > MAX_TIME_STRING_LENGTH) {
+            throw new IllegalArgumentException("XML " + type + " value length (" + value.length()
+                    + ") exceeds the maximum allowed (" + MAX_TIME_STRING_LENGTH + ")");
+        }
     }
 
     private static final ThreadLocal<DatatypeFactory> DATATYPE_FACTORY = new ThreadLocal<DatatypeFactory>() {

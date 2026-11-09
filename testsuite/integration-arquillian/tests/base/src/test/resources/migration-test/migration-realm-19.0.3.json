@@ -43,7 +43,7 @@
   "quickLoginCheckMilliSeconds" : 1000,
   "maxDeltaTimeSeconds" : 43200,
   "failureFactor" : 30,
-  "loginTheme" : "rh-sso",
+  "loginTheme" : "keycloak",
   "emailTheme" : "rh-sso",
   "accountTheme" : "rh-sso.v2",
   "roles" : {
@@ -550,7 +550,9 @@
     "publicClient" : false,
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
-    "attributes" : { },
+    "attributes" : {
+      "login_theme" : "keycloak-custom"
+    },
     "authenticationFlowBindingOverrides" : { },
     "fullScopeAllowed" : false,
     "nodeReRegistrationTimeout" : 0,
@@ -637,6 +639,7 @@
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
     "attributes" : {
+      "login_theme" : "keycloak",
       "backchannel.logout.session.required" : "true",
       "backchannel.logout.revoke.offline.tokens" : "false"
     },
@@ -1974,6 +1977,7 @@
   "quickLoginCheckMilliSeconds" : 1000,
   "maxDeltaTimeSeconds" : 43200,
   "failureFactor" : 30,
+  "loginTheme" : "custom-theme",
   "roles" : {
     "realm" : [ {
       "id" : "fe0dfd49-a60d-4d36-8469-6c396b2b2613",

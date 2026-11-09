@@ -101,14 +101,23 @@ public class OID4VPSdJwtUserSessionAttributeMapper extends AbstractOID4VPClaimMa
     }
 
     protected void applySessionNote(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String attribute = mapperModel.getConfig().get(ATTRIBUTE);
-        if (StringUtil.isBlank(attribute)) {
-            logger.warnf("No user session attribute configured for mapper %s", mapperModel.getName());
+        String attribute = attribute(mapperModel);
+        if (attribute == null) {
             return;
         }
         List<String> values = claimValues(mapperModel, context);
         // A null note value means removal, so a claim that disappeared from the presentation does
         // not leave a stale note on the session.
-        context.setSessionNote(attribute.trim(), values == null || values.isEmpty() ? null : String.join(",", values));
+        context.setSessionNote(attribute, values == null || values.isEmpty() ? null : String.join(",", values));
+    }
+
+    @Override
+    protected String attribute(IdentityProviderMapperModel mapperModel) {
+        String attribute = mapperModel.getConfig().get(ATTRIBUTE);
+        if (StringUtil.isBlank(attribute)) {
+            logger.warnf("No user session attribute configured for mapper %s", mapperModel.getName());
+            return null;
+        }
+        return attribute.trim();
     }
 }

@@ -44,6 +44,9 @@ public abstract class AbstractLoginPage extends AbstractPage {
     @FindBy(id = "kc-attempted-username") // Username during re-authentication
     private WebElement attemptedUsernameLabel;
 
+    @FindBy(className = "pf-m-success")
+    private WebElement loginSuccessMessage;
+
     @FindBy(className = "pf-m-info")
     private WebElement loginInfoMessage;
 
@@ -82,6 +85,14 @@ public abstract class AbstractLoginPage extends AbstractPage {
             return text;
         } catch (NoSuchElementException e) {
             return null;
+        }
+    }
+
+    public Optional<String> getSuccessMessage() {
+        try {
+            return Optional.of(loginSuccessMessage.getText());
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
         }
     }
 

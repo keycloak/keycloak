@@ -107,10 +107,23 @@ the target user currently belongs to.
 [NOTE]
 ====
 This feature does not support enforcing access to federated resources.
-Users from external storage providers (such as LDAP with import disabled) are not visible
-in search results when access is controlled through fine-grained permissions.
-To include federated users in search results, grant the administrator the `view-users` role,
-or enable user import on the federation provider.
+Partial evaluation decorates database queries, so a resource must be represented in {project_name}'s own
+database for the filtering to take it into account. Users from external storage providers (such as LDAP)
+with import disabled are never represented in the database and are therefore never visible in search
+results when access is controlled through fine-grained permissions.
+
+Enabling user import on the federation provider is not enough on its own. Group membership has to be
+imported as well. If a group's LDAP mapper is configured with mode `LDAP_ONLY` or `READ_ONLY`, the
+membership itself is kept only in LDAP and is never written to the database, even for imported users. As
+a result, a federated user can still be invisible in a search that is scoped by group-based permissions,
+even though the user record itself was imported. Set the group's LDAP mapper mode to `IMPORT` so that
+memberships are persisted locally and can be taken into account by partial evaluation. The mapper must
+already be in `IMPORT` mode when the user is first created locally (for example, on first login), since
+switching an existing mapper to `IMPORT` later, or running a group sync, does not backfill memberships for
+users already imported.
+
+To include federated users in search results regardless of their import or group mapper configuration,
+grant the administrator the `view-users` role instead of relying on fine-grained permissions.
 ====
 
 ===== Groups Resource Type
@@ -193,7 +206,10 @@ set of management operations:
 
 | *view*                    | Defines if a realm administrator can view clients. This scope should be set whenever you want
                               to make clients available from queries.
+                              When granted on a specific client instance, the administrator can also view the client scopes currently assigned to that client.
 | *manage*                  | Defines if a realm administrator can manage clients.
+                              When granted on a specific client instance, the administrator can assign any existing realm client scope to that client, remove assigned scopes, and change their type (default ↔ optional).
+                              This does not grant permission to edit shared client scope definitions. Grant `view` as well to manage assignments through the Admin Console.
 | *map-roles*               | Defines if a realm administrator can assign any role defined by a client to a user.
 | *map-roles-composite*     | Defines if a realm administrator can assign any role defined by a client as a composite to
                               another role.

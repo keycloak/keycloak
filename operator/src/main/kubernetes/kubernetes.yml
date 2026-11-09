@@ -25,4 +25,3 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: keycloak-operator
-    namespace: keycloak

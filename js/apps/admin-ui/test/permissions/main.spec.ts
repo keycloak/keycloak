@@ -131,6 +131,10 @@ test.describe.serial("Permissions section tests", () => {
     await clickCreatePolicySaveButton(page);
     await assertNotificationMessage(page, "Successfully created the policy");
     await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully created the permission",
+    );
     await removeGroup(page, "one");
     await clickSaveButton(page);
     await assertNotificationMessage(
@@ -167,6 +171,10 @@ test.describe.serial("Permissions section tests", () => {
     await clickCreatePolicySaveButton(page);
     await assertNotificationMessage(page, "Successfully created the policy");
     await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully created the permission",
+    );
     await removeOrganization(page, "one");
     await clickSaveButton(page);
     await assertNotificationMessage(
@@ -217,6 +225,10 @@ test.describe.serial("Permissions section tests", () => {
     await clickCreatePolicySaveButton(page);
     await assertNotificationMessage(page, "Successfully created the policy");
     await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully created the permission",
+    );
     await removeRole(page, "account view-profile");
     await expect(
       page.getByRole("button", {

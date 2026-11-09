@@ -269,6 +269,34 @@ public class LinkedAccountsRestServiceTest {
         assertEquals(1, accounts.size());
         linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
         assertThat(linkedAccountAliases, contains("myoidc"));
+
+        // non-exact searches are case-insensitive on both branches
+        accounts = linkedAccountsRep("linked=true&search=GIT*");
+        assertEquals(2, accounts.size());
+        linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
+        assertThat(linkedAccountAliases, contains("github", "gitlab"));
+
+        accounts = linkedAccountsRep("linked=false&search=*O*");
+        assertEquals(3, accounts.size());
+        linkedAccountAliases = accounts.stream().map(LinkedAccountRepresentation::getProviderAlias).toList();
+        assertThat(linkedAccountAliases, contains("facebook", "microsoft", "myoidc"));
+    }
+
+    @Test
+    public void testGetLinkedAccountsWithEdgeCaseSearchValues() throws IOException {
+        // a lone '*' is the "contains everything" wildcard, equivalent to no search at all
+        List<LinkedAccountRepresentation> accounts = linkedAccountsRep("linked=true&search=*");
+        assertEquals(3, accounts.size());
+
+        accounts = linkedAccountsRep("linked=false&search=*");
+        assertEquals(5, accounts.size());
+
+        // a lone '"' must not crash the endpoint; it matches nothing on either branch
+        accounts = linkedAccountsRep("linked=true&search=%22");
+        assertEquals(0, accounts.size());
+
+        accounts = linkedAccountsRep("linked=false&search=%22");
+        assertEquals(0, accounts.size());
     }
 
     @Test

@@ -50,3 +50,44 @@ export async function setResourceUrl(page: Page, value: string) {
 export async function assertResourceUrl(page: Page, value: string) {
   await expect(page.getByTestId("attributes.resource_url")).toHaveValue(value);
 }
+
+export async function setValidRedirectUri(
+  page: Page,
+  idx: number,
+  value: string,
+) {
+  await page.getByTestId("redirectUris" + idx).fill(value);
+}
+
+export async function clickAddValidRedirectUri(page: Page) {
+  await page.getByTestId("redirectUris-addValue").click();
+}
+
+export async function clickRemoveValidRedirectUri(page: Page, idx: number) {
+  await page.getByTestId("redirectUris-remove" + idx).click();
+}
+
+export async function setValidPostLogoutRedirectUri(
+  page: Page,
+  idx: number,
+  value: string,
+) {
+  await page
+    .getByTestId("attributes.post🍺logout🍺redirect🍺uris" + idx)
+    .fill(value);
+}
+
+export async function clickAddValidPostLogoutRedirectUri(page: Page) {
+  await page
+    .getByTestId("attributes.post🍺logout🍺redirect🍺uris-addValue")
+    .click();
+}
+
+export async function clickRemoveValidPostLogoutRedirectUri(
+  page: Page,
+  idx: number,
+) {
+  await page
+    .getByTestId("attributes.post🍺logout🍺redirect🍺uris-remove" + idx)
+    .click();
+}

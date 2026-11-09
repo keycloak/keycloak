@@ -219,8 +219,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setBackchannelAuthenticationEndpoint(CibaGrantType.authorizationUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
         config.setBackchannelAuthenticationRequestSigningAlgValuesSupported(getSupportedBackchannelAuthenticationRequestSigningAlgorithms());
 
-        config.setPushedAuthorizationRequestEndpoint(ParEndpoint.parUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
-        config.setRequirePushedAuthorizationRequests(Boolean.FALSE);
+        if (Profile.isFeatureEnabled(Profile.Feature.PAR)) {
+            config.setPushedAuthorizationRequestEndpoint(ParEndpoint.parUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
+            config.setRequirePushedAuthorizationRequests(Boolean.FALSE);
+        }
 
         MTLSEndpointAliases mtlsEndpointAliases = getMtlsEndpointAliases(config);
         config.setMtlsEndpointAliases(mtlsEndpointAliases);

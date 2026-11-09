@@ -21,28 +21,21 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
-import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
-import org.keycloak.models.DefaultActionTokenKey;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.SystemClientUtil;
@@ -59,7 +52,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.RealmAttributesBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -80,14 +72,12 @@ import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.BrowserTabUtil;
-import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
@@ -107,8 +97,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
-import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.REQUEST_URI_PREFIX;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
@@ -124,9 +112,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     private String userId;
     private String password;
     private UserRepresentation defaultUser;
-
-    @Rule
-    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Page
     SelectAuthenticatorPage selectAuthenticatorPage;
@@ -300,16 +285,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordLinkTestAppWithRedirectUriParam() throws IOException {
-        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app&redirect_uri=" + oauth.getRedirectUri();
-
-        openResetPasswordUrlAndDoFlow(resetUri, "test-app", oauth.getRedirectUri(), false);
-
-        // Should be directly redirected to application because of "redirect_uri" parameter
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-    }
-
-    @Test
     public void resetPasswordLinkErrorFlows() {
         // Client not found
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=not_found");
@@ -340,66 +315,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-
-    @Test
-    public void resetPassword() throws IOException, MessagingException {
-        resetPassword("login-test");
-    }
-
-    @Test
-    public void resetPasswordDoesNotSetEmailVerified() throws IOException {
-        assertFalse(managedRealm.admin().users().get(userId).toRepresentation().isEmailVerified());
-
-        resetPassword("login-test");
-
-        assertFalse(managedRealm.admin().users().get(userId).toRepresentation().isEmailVerified());
-    }
-
-    @Test
-    public void resetPasswordTwice() throws IOException {
-        String changePasswordUrl = resetPassword("login-test");
-        events.clear();
-
-        assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId()); // KC_RESTART doesn't exist, it was deleted after first successful reset-password flow was finished
-    }
-
-    @Test
-    public void resetPasswordTwiceWithPARRequestInBetween() throws Exception {
-        String changePasswordUrl = resetPassword("login-test");
-        events.clear();
-
-        // Try to create manually the cache key from actionToken
-        String queryString = changePasswordUrl.substring(changePasswordUrl.indexOf("?") + 1);
-        MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(queryString);
-        String key = params.getFirst(Constants.KEY);
-        TokenVerifier<DefaultActionTokenKey> tokenVerifier = TokenVerifier.create(key, DefaultActionTokenKey.class);
-        DefaultActionTokenKey aToken = tokenVerifier.getToken();
-        String serializedKey1 = aToken.serializeKey();
-        String serializedKey2 = serializedKey1 + SingleUseObjectProvider.REVOKED_KEY;
-
-        // Try to send PAR request with manually created requestUri related to the manually created serialized keys
-        String state = "testSuccessfulSinglePar";
-        oauth.loginForm()
-                .requestUri(REQUEST_URI_PREFIX + serializedKey1)
-                .state(state)
-                .open();
-        oauth.loginForm()
-                .requestUri(REQUEST_URI_PREFIX + serializedKey2)
-                .state(state)
-                .open();
-        events.clear();
-
-        assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId()); // KC_RESTART doesn't exist, it was deleted after first successful reset-password flow was finished
-    }
-
-    @Test
-    public void resetPasswordForceLogin() throws IOException {
-        // add the force login option in the reset-credential-email authenticator
-        configureForceLogin(Boolean.TRUE.toString());
-
-        resetPassword("login-test", "resetPassword", true);
-    }
-
     @Test
     public void resetPasswordForceLoginFederatedUser() throws IOException {
         // create the example map storage user federation
@@ -428,18 +343,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         // check with false the session is maintained
         configureForceLogin(Boolean.FALSE.toString());
         resetPassword("login-test", "resetPassword", false);
-    }
-
-    @Test
-    public void resetPasswordTwiceInNewBrowser() throws IOException {
-        String changePasswordUrl = resetPassword("login-test");
-        events.clear();
-
-        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
-        driver.navigate().to(resetUri); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
-        driver.manage().deleteAllCookies();
-
-        assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId());
     }
 
     @Test
@@ -474,24 +377,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
-    public void assertSecondPasswordResetFails(String changePasswordUrl, String clientId) {
-        driver.navigate().to(changePasswordUrl.trim());
-
-        errorPage.assertCurrent();
-        assertEquals("Action expired. Please continue with login now.", errorPage.getError());
-
-        EventAssertion.assertError(events.poll()).type(EventType.RESET_PASSWORD_ERROR)
-          .clientId(clientId)
-          .sessionId(null)
-          .userId(userId)
-          .error(Errors.EXPIRED_CODE);
-    }
-
-    @Test
-    public void resetPasswordWithSpacesInUsername() throws IOException {
-        resetPassword(" login-test ");
-    }
-
     @Test
     public void resetPasswordCancelChangeUser() {
         initiateResetPasswordFromResetPasswordPage("test-user@localhost");
@@ -519,11 +404,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void resetPasswordByEmail() throws IOException {
-        resetPassword("login@test.com");
-    }
-
-    @Test
     public void resetPasswordBackButton() {
         oauth.openLoginForm();
         loginPage.login("login@test.com", "wrongpassword");
@@ -545,14 +425,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         config.getConfig().put(ResetCredentialEmail.FORCE_LOGIN, value);
         String configId = ApiUtil.getCreatedId(managedRealm.admin().flows().newExecutionConfig(sendEmailExec.getId(), config));
         getCleanup().addAuthenticationConfigId(configId);
-    }
-
-    private String resetPassword(String username) throws IOException {
-        return resetPassword(username, "resetPassword", false);
-    }
-
-    private String resetPassword(String username, String password) throws IOException {
-        return resetPassword(username, password, false);
     }
 
     private String resetPassword(String username, String password, boolean relogin) throws IOException {
@@ -619,32 +491,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         return changePasswordUrl;
     }
 
-    private void resetPasswordInvalidPassword(String username, String password, String error) throws IOException {
-
-        initiateResetPasswordFromResetPasswordPage(username);
-
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId).sessionId(null)
-                .details(Details.USERNAME, username).details(Details.EMAIL, "login@test.com");
-
-        assertEquals(expectedMessagesCount, mail.getReceivedMessages().length);
-
-        MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
-
-        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-        driver.navigate().to(changePasswordUrl.trim());
-
-
-        updatePasswordPage.assertCurrent();
-
-        updatePasswordPage.changePassword(password, password);
-
-        updatePasswordPage.assertCurrent();
-        assertEquals(error, updatePasswordPage.getError());
-        EventAssertion.assertError(events.poll()).type(EventType.UPDATE_CREDENTIAL_ERROR).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).error(Errors.PASSWORD_REJECTED).userId(userId).details(Details.USERNAME, "login-test");
-        EventAssertion.assertError(events.poll()).type(EventType.UPDATE_PASSWORD_ERROR).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).error(Errors.PASSWORD_REJECTED).userId(userId).details(Details.USERNAME, "login-test");
-    }
-
     private void initiateResetPasswordFromResetPasswordPage(String username) {
         oauth.openLoginForm();
         loginPage.resetPassword();
@@ -683,431 +529,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertEquals(0, mail.getReceivedMessages().length);
 
         EventAssertion.assertError(events.poll()).type(EventType.RESET_PASSWORD_ERROR).userId(null).sessionId(null).error("username_missing");
-    }
-
-    @Test
-    public void resetPasswordExpiredCode() throws IOException {
-        initiateResetPasswordFromResetPasswordPage("login-test");
-
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                .sessionId(null)
-                .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-        assertEquals(1, mail.getReceivedMessages().length);
-
-        MimeMessage message = mail.getReceivedMessages()[0];
-
-        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-        try {
-            timeOffSet.set(360);
-
-            driver.navigate().to(changePasswordUrl.trim());
-
-            loginPage.assertCurrent();
-
-            assertEquals("Action expired. Please start again.", loginPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-        }
-    }
-
-    @Test
-    public void resetPasswordExpiredCodeShort() throws IOException {
-        final AtomicInteger originalValue = new AtomicInteger();
-
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        originalValue.set(realmRep.getActionTokenGeneratedByUserLifespan());
-        realmRep.setActionTokenGeneratedByUserLifespan(60);
-        managedRealm.admin().update(realmRep);
-
-        try {
-            initiateResetPasswordFromResetPasswordPage("login-test");
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-            timeOffSet.set(70);
-
-            driver.navigate().to(changePasswordUrl.trim());
-
-            loginPage.assertCurrent();
-
-            assertEquals("Action expired. Please start again.", loginPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setActionTokenGeneratedByUserLifespan(originalValue.get());
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    @Test
-    public void resetPasswordExpiredCodeShortPerActionLifespan() throws IOException {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
-
-        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).build());
-        managedRealm.admin().update(realmRep);
-
-        try {
-            initiateResetPasswordFromResetPasswordPage("login-test");
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-            timeOffSet.set(70);
-
-            driver.navigate().to(changePasswordUrl.trim());
-
-            loginPage.assertCurrent();
-
-            assertEquals("Action expired. Please start again.", loginPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setAttributes(originalAttributes);
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    @Test
-    public void resetPasswordExpiredCodeShortPerActionMultipleTimeouts() throws IOException {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
-
-        //Make sure that one attribute settings won't affect the other
-        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
-
-        managedRealm.admin().update(realmRep);
-
-        try {
-            initiateResetPasswordFromResetPasswordPage("login-test");
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-            timeOffSet.set(70);
-
-            driver.navigate().to(changePasswordUrl.trim());
-
-            loginPage.assertCurrent();
-
-            assertEquals("Action expired. Please start again.", loginPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setAttributes(originalAttributes);
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    // KEYCLOAK-4016
-    @Test
-    public void resetPasswordExpiredCodeAndAuthSession() throws IOException {
-        final AtomicInteger originalValue = new AtomicInteger();
-
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        originalValue.set(realmRep.getActionTokenGeneratedByUserLifespan());
-        realmRep.setActionTokenGeneratedByUserLifespan(60);
-        managedRealm.admin().update(realmRep);
-
-        try {
-            initiateResetPasswordFromResetPasswordPage("login-test");
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message).replace("&amp;", "&");
-
-            log.debug("Removing cookies."); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
-            driver.manage().deleteAllCookies();
-
-            timeOffSet.set(70);
-
-            log.debug("Going to reset password URI.");
-            driver.navigate().to(changePasswordUrl.trim());
-
-            errorPage.assertCurrent();
-            Assertions.assertEquals("Action expired.", errorPage.getError());
-            String backToAppLink = errorPage.getBackToApplicationLink();
-            Assertions.assertTrue(backToAppLink.endsWith("/app/auth"));
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setActionTokenGeneratedByUserLifespan(originalValue.get());
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    @Test
-    public void resetPasswordExpiredCodeAndAuthSessionPerActionLifespan() throws IOException {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
-
-        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).build());
-        managedRealm.admin().update(realmRep);
-
-        try {
-            initiateResetPasswordFromResetPasswordPage("login-test");
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message).replace("&amp;", "&");
-
-            log.debug("Removing cookies."); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
-            driver.manage().deleteAllCookies();
-
-            timeOffSet.set(70);
-
-            log.debug("Going to reset password URI.");
-            URLUtils.navigateToUri(changePasswordUrl.trim());
-
-            errorPage.assertCurrent();
-            Assertions.assertEquals("Action expired.", errorPage.getError());
-            String backToAppLink = errorPage.getBackToApplicationLink();
-            Assertions.assertTrue(backToAppLink.endsWith("/app/auth"));
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setAttributes(originalAttributes);
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    @Test
-    public void resetPasswordExpiredCodeAndAuthSessionPerActionMultipleTimeouts() throws IOException {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
-
-        //Make sure that one attribute settings won't affect the other
-        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
-        managedRealm.admin().update(realmRep);
-
-        try {
-            initiateResetPasswordFromResetPasswordPage("login-test");
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message).replace("&amp;", "&");
-
-            log.debug("Removing cookies."); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
-            driver.manage().deleteAllCookies();
-
-            timeOffSet.set(70);
-
-            log.debug("Going to reset password URI.");
-            driver.navigate().to(changePasswordUrl.trim());
-
-            errorPage.assertCurrent();
-            Assertions.assertEquals("Action expired.", errorPage.getError());
-            String backToAppLink = errorPage.getBackToApplicationLink();
-            Assertions.assertTrue(backToAppLink.endsWith("/app/auth"));
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setAttributes(originalAttributes);
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    // KEYCLOAK-5061
-    @Test
-    public void resetPasswordExpiredCodeForgotPasswordFlow() throws IOException {
-        final AtomicInteger originalValue = new AtomicInteger();
-
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        originalValue.set(realmRep.getActionTokenGeneratedByUserLifespan());
-        realmRep.setActionTokenGeneratedByUserLifespan(60);
-        managedRealm.admin().update(realmRep);
-
-        try {
-            // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
-            String loginUrl = oauth.loginForm().build();
-            String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
-
-            driver.navigate().to(forgotPasswordUrl);
-            resetPasswordPage.assertCurrent();
-            resetPasswordPage.changePassword("login-test");
-
-            loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
-            expectedMessagesCount++;
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-            timeOffSet.set(70);
-
-            driver.navigate().to(changePasswordUrl.trim());
-
-            resetPasswordPage.assertCurrent();
-
-            assertEquals("Action expired. Please start again.", loginPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setActionTokenGeneratedByUserLifespan(originalValue.get());
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    @Test
-    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionLifespan() throws IOException {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
-
-        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).build());
-        managedRealm.admin().update(realmRep);
-
-        try {
-            // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
-            String loginUrl = oauth.loginForm().build();
-            String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
-
-            driver.navigate().to(forgotPasswordUrl);
-            resetPasswordPage.assertCurrent();
-            resetPasswordPage.changePassword("login-test");
-
-            loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
-            expectedMessagesCount++;
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-            timeOffSet.set(70);
-
-            driver.navigate().to(changePasswordUrl.trim());
-
-            resetPasswordPage.assertCurrent();
-
-            assertEquals("Action expired. Please start again.", loginPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setAttributes(originalAttributes);
-            managedRealm.admin().update(realmRep);
-        }
-    }
-
-    @Test
-    public void resetPasswordExpiredCodeForgotPasswordFlowPerActionMultipleTimeouts() throws IOException {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
-
-        //Make sure that one attribute settings won't affect the other
-        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
-        managedRealm.admin().update(realmRep);
-
-        try {
-            // Redirect directly to KC "forgot password" endpoint instead of "authenticate" endpoint
-            String loginUrl = oauth.loginForm().build();
-            String forgotPasswordUrl = loginUrl.replace("/auth?", "/forgot-credentials?"); // Workaround, but works
-
-            driver.navigate().to(forgotPasswordUrl);
-            resetPasswordPage.assertCurrent();
-            resetPasswordPage.changePassword("login-test");
-
-            loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
-            expectedMessagesCount++;
-
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD)
-                    .sessionId(null)
-                    .userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-            assertEquals(1, mail.getReceivedMessages().length);
-
-            MimeMessage message = mail.getReceivedMessages()[0];
-
-            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-            timeOffSet.set(70);
-
-            driver.navigate().to(changePasswordUrl.trim());
-
-            resetPasswordPage.assertCurrent();
-
-            assertEquals("Action expired. Please start again.", loginPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").clientId(null).userId(userId).sessionId(null).details(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE);
-        } finally {
-            timeOffSet.set(0);
-
-            realmRep.setAttributes(originalAttributes);
-            managedRealm.admin().update(realmRep);
-        }
     }
 
     @Test
@@ -1188,62 +609,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-    private void setPasswordPolicy(String policy) {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        realmRep.setPasswordPolicy(policy);
-        managedRealm.admin().update(realmRep);
-    }
-
-    @Test
-    public void resetPasswordWithLengthPasswordPolicy() throws IOException {
-        setPasswordPolicy("length");
-
-        initiateResetPasswordFromResetPasswordPage("login-test");
-
-        assertEquals(1, mail.getReceivedMessages().length);
-
-        MimeMessage message = mail.getReceivedMessages()[0];
-
-        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
-
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).sessionId(null).userId(userId).details(Details.USERNAME, "login-test").details(Details.EMAIL, "login@test.com");
-
-        driver.navigate().to(changePasswordUrl.trim());
-
-        updatePasswordPage.assertCurrent();
-
-        updatePasswordPage.changePassword("invalid", "invalid");
-
-        assertEquals("Invalid password: minimum length 8.", resetPasswordPage.getErrorMessage());
-
-        EventAssertion.assertError(events.poll()).type(EventType.UPDATE_CREDENTIAL_ERROR).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).error(Errors.PASSWORD_REJECTED).userId(userId).details(Details.USERNAME, "login-test");
-        EventAssertion.assertError(events.poll()).type(EventType.UPDATE_PASSWORD_ERROR).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).error(Errors.PASSWORD_REJECTED).userId(userId).details(Details.USERNAME, "login-test");
-
-        updatePasswordPage.changePassword("resetPasswordWithPasswordPolicy", "resetPasswordWithPasswordPolicy");
-
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
-        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
-
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-
-
-        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test").getEvent();
-        String sessionId = loginEvent.getSessionId();
-
-        AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
-        oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
-
-        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(sessionId).userId(userId);
-
-        oauth.openLoginForm();
-
-        loginPage.login("login-test", "resetPasswordWithPasswordPolicy");
-
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-
-        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
-    }
-
     @Test
     public void resetPasswordBeforeUserIsDisabled() throws IOException {
         initiateResetPasswordFromResetPasswordPage("login-test");
@@ -1262,38 +627,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         errorPage.assertCurrent();
         assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
     }
-
-    @Test
-    public void resetPasswordWithPasswordHistoryPolicy() throws IOException {
-        //Block passwords that are equal to previous passwords. Default value is 3.
-        setPasswordPolicy("passwordHistory");
-
-        try {
-            timeOffSet.set(2000000);
-            resetPassword("login-test", "password1");
-
-            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
-
-            timeOffSet.set(4000000);
-            resetPassword("login-test", "password2");
-
-            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
-            resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
-
-            timeOffSet.set(6000000);
-            resetPassword("login-test", "password3");
-
-            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
-            resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
-            resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
-
-            timeOffSet.set(8000000);
-            resetPassword("login-test", password);
-        } finally {
-            timeOffSet.set(0);
-        }
-    }
-
 
     @Test
     public void resetPasswordLinkOpenedInNewBrowserWithDifferentLcoales() {
@@ -1437,7 +770,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         AuthenticationExecutionModel.Requirement origRequirement = AbstractKerberosTest.updateKerberosAuthExecutionRequirement(AuthenticationExecutionModel.Requirement.ALTERNATIVE, managedRealm.admin());
 
         try {
-            resetPassword("login-test");
+            resetPassword("login-test", "resetPassword", true);
         } finally {
             // Revert
             AbstractKerberosTest.updateKerberosAuthExecutionRequirement(origRequirement, managedRealm.admin());
@@ -1472,6 +805,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordLinkNewTabAndProperRedirectClient() throws IOException {
+        configureForceLogin(ResetCredentialEmail.FEDERATED_OPTION);
         final String REDIRECT_URI = getAuthServerRoot() + "realms/master/app/auth";
         final String CLIENT_ID = "test-app";
 

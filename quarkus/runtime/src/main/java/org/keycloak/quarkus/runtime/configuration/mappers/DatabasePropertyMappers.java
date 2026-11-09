@@ -78,7 +78,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     /**
-     * Minimum {@code db-pool-max-size} required for {@link Stack#jdbc_ping} and {@link Stack#jdbc_ping_udp}.
+     * Minimum {@code db-pool-max-size} required for {@link Stack#jdbc_ping}.
      * Determined experimentally — lower values cause startup failures due to connection pool exhaustion.
      * Verified by {@code KeycloakDeploymentTest#testDocumentedMinimalPoolMaxSizeWorks}.
      */
@@ -367,7 +367,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             return false;
         }
         String stack = getOptionalKcValue(CachingOptions.CACHE_STACK).orElse(Stack.jdbc_ping.toString());
-        return Stack.jdbc_ping.toString().equals(stack) || Stack.jdbc_ping_udp.toString().equals(stack);
+        return Stack.jdbc_ping.toString().equals(stack);
     }
 
     public static boolean isPostgresqlTargetServerTypeEnabled() {

@@ -228,6 +228,9 @@ manage::
     even if the admin does not have privileges to map the role to the client's scope.
     This is currently the limitation of protocol mappers as they don't have a way
     to assign individual permissions to them like roles do.
+    +
+    When granted on a specific client, the administrator can view its assigned client scopes, assign any existing realm client scope to that client, remove assigned scopes, and change their type (default ↔ optional).
+    This does not grant permission to edit shared client scope definitions.
 configure::
     Reduced set of privileges to manage the client.  It is like the `manage` scope except
     the admin is not allowed to define protocol mappers, change the client template,
