@@ -28,7 +28,7 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
 
     public InputStream getEncodedStream(StreamSupplier producer, String... path) {
         try {
-            File encodedFile = ResourceLoader.getFile(cacheDir, String.join("/", path) +  ".gz");
+            File encodedFile = getResourceFile(path);
             if (encodedFile == null) {
                 return null;
             }
@@ -40,6 +40,15 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
             return createEncodedStream(producer, encodedFile);
         } catch (Exception e) {
             logger.warn("Failed to encode resource", e);
+            return null;
+        }
+    }
+
+    public File getResourceFile(String... path) {
+        try {
+            return ResourceLoader.getFile(cacheDir, String.join("/", path) + ".gz");
+        } catch (Exception e) {
+            logger.warn("Failed to get encoded resource file", e);
             return null;
         }
     }
