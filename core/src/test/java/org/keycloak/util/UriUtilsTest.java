@@ -18,7 +18,9 @@
 package org.keycloak.util;
 
 import java.net.URI;
+import java.util.Arrays;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 
 import org.junit.Test;
@@ -140,5 +142,24 @@ public class UriUtilsTest {
         assertEquals("http://localhost?param=test",UriUtils.stripQueryParam("http://localhost?login_hint=michael@me.com&param=test","login_hint"));
         assertEquals("http://localhost?pre=test&param=test",UriUtils.stripQueryParam("http://localhost?pre=test&login_hint=michael&param=test","login_hint"));
         assertEquals("http://localhost?pre=test&param=test",UriUtils.stripQueryParam("http://localhost?pre=test&login_hint=michael@me.com&param=test","login_hint"));
+    }
+
+    @Test
+    public void testParseQueryParametersDecodesNamesOnly() {
+        MultivaluedHashMap<String, String> params = UriUtils.parseQueryParameters(
+                "%53AMLResponse=crafted%2B&SAMLResponse=signed%2B&%52elayState=a&RelayState=b", true, false);
+
+        assertEquals(Arrays.asList("crafted%2B", "signed%2B"), params.get("SAMLResponse"));
+        assertEquals(Arrays.asList("a", "b"), params.get("RelayState"));
+        assertFalse(params.containsKey("%53AMLResponse"));
+        assertFalse(params.containsKey("%52elayState"));
+    }
+
+    @Test
+    public void testParseQueryParametersRawKeepsNamesAndValues() {
+        MultivaluedHashMap<String, String> params = UriUtils.parseQueryParameters("%53AMLResponse=crafted%2B&SAMLResponse=signed%2B", false);
+
+        assertEquals(Arrays.asList("crafted%2B"), params.get("%53AMLResponse"));
+        assertEquals(Arrays.asList("signed%2B"), params.get("SAMLResponse"));
     }
 }
