@@ -40,6 +40,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public final class ConformanceApiClient {
 
+    private static final Duration BROWSER_QUIET_PERIOD = Duration.ofSeconds(5);
+    private static final Duration BROWSER_STOP_TIMEOUT = Duration.ofMinutes(1);
+
     private final URI baseUri;
     private final HttpClient httpClient;
 
@@ -133,24 +136,31 @@ public final class ConformanceApiClient {
 
         JsonNode moduleNode = createModule(planId, module.name(), module.moduleVariant());
         String moduleId = requiredText(moduleNode, "id");
-        JsonNode info = waitForRunnableOrFinished(planId, moduleId);
-        if ("CONFIGURED".equals(info.path("status").asText())) {
-            if (beforeStart != null) {
-                beforeStart.run();
+        try {
+            JsonNode info = waitForRunnableOrFinished(planId, moduleId);
+            if ("CONFIGURED".equals(info.path("status").asText())) {
+                if (beforeStart != null) {
+                    beforeStart.run();
+                }
+                startModule(planId, moduleId);
             }
-            startModule(planId, moduleId);
-        }
-        if (interaction != null) {
-            info = waitForState(planId, moduleId, List.of("WAITING", "FINISHED"), Duration.ofMinutes(4));
-            if (!"FINISHED".equals(info.path("status").asText())) {
-                interaction.accept(new ModuleRun(moduleNode, info));
+            if (interaction != null) {
+                info = waitForState(planId, moduleId, List.of("WAITING", "FINISHED"), Duration.ofMinutes(4));
+                if (!"FINISHED".equals(info.path("status").asText())) {
+                    interaction.accept(new ModuleRun(moduleNode, info));
+                }
             }
-        }
-        info = waitForFinished(planId, moduleId);
-        JsonNode logs = getLogs(planId, moduleId);
+            info = waitForFinished(planId, moduleId);
+            JsonNode logs = getLogs(planId, moduleId);
 
-        return new ConformanceModuleResult(module.plan(), module.planVariant(), module.name(), module.moduleVariant(),
-                planId, moduleId, info.path("status").asText(), info.path("result").asText("UNKNOWN"), logs);
+            return new ConformanceModuleResult(module.plan(), module.planVariant(), module.name(), module.moduleVariant(),
+                    planId, moduleId, info.path("status").asText(), info.path("result").asText("UNKNOWN"), logs);
+        } catch (RuntimeException e) {
+            // A module that did not finish, e.g. it timed out, would otherwise keep running, with its browser, against
+            // the same alias and realm as a module run after it, e.g. when the test runs it again
+            cancelModule(planId, moduleId, e);
+            throw e;
+        }
     }
 
     /**
@@ -193,6 +203,50 @@ public final class ConformanceApiClient {
         // not replayed on IO failures as a lost response would start the module a second time
         expectJson(request("/api/runner/" + moduleId).POST(HttpRequest.BodyPublishers.noBody()).build(), 200,
                 idContext(planId, moduleId), false);
+    }
+
+    /**
+     * Stops a module that is still running and waits until it and its browser have stopped. The suite answers 404 for
+     * a module that is not running any more. A failure to stop it is added to {@code failure}, the reason for stopping
+     * it.
+     */
+    private void cancelModule(String planId, String moduleId, RuntimeException failure) {
+        try {
+            HttpRequest request = request("/api/runner/" + moduleId).DELETE().build();
+            HttpResponse<String> response = send(request);
+            if (response.statusCode() == 200) {
+                // the suite stops the module in the background
+                waitForState(planId, moduleId, List.of("FINISHED"), Duration.ofMinutes(1));
+                waitForBrowserStopped(planId, moduleId);
+            } else if (response.statusCode() != 404) {
+                throw new IllegalStateException("Conformance API DELETE " + request.uri() + idContext(planId, moduleId)
+                        + " returned HTTP " + response.statusCode() + ": " + response.body());
+            }
+        } catch (RuntimeException e) {
+            failure.addSuppressed(e);
+        }
+    }
+
+    /**
+     * The browser of a stopped module may still complete the page it is on, e.g. send an authorization response to the
+     * callback of the alias, which a module run after it would receive. The suite has no API to stop it or to report
+     * it once the module stopped, but it logs every page and task of the browser, so this waits until the module's log
+     * stays unchanged for {@link #BROWSER_QUIET_PERIOD}, at most {@link #BROWSER_STOP_TIMEOUT}.
+     */
+    private void waitForBrowserStopped(String planId, String moduleId) {
+        long deadline = System.nanoTime() + BROWSER_STOP_TIMEOUT.toNanos();
+        int entries = -1;
+        long unchangedSince = System.nanoTime();
+        while (System.nanoTime() < deadline) {
+            int current = getLogs(planId, moduleId).size();
+            if (current != entries) {
+                entries = current;
+                unchangedSince = System.nanoTime();
+            } else if (System.nanoTime() - unchangedSince >= BROWSER_QUIET_PERIOD.toNanos()) {
+                return;
+            }
+            sleep(Duration.ofSeconds(1));
+        }
     }
 
     private JsonNode waitForRunnableOrFinished(String planId, String moduleId) {

@@ -128,6 +128,7 @@ public final class OpenIdConformanceServer implements AutoCloseable {
                 .withLogConsumer(new JBossContainerLogConsumer(Logger.getLogger("managed.conformance.nginx")))
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(2)));
 
+        OpenIdConformanceServer suite = null;
         try {
             mongo.start();
             server.start();
@@ -136,11 +137,14 @@ public final class OpenIdConformanceServer implements AutoCloseable {
             URI baseUri = URI.create("https://" + nginx.getHost() + ":" + nginx.getMappedPort(8443));
             X509Certificate nginxCertificate = nginxCertificate(nginx);
             SSLContext sslContext = sslContextTrusting(nginxCertificate);
-            OpenIdConformanceServer suite =
-                    new OpenIdConformanceServer(network, mongo, server, nginx, baseUri, sslContext, nginxCertificate);
+            suite = new OpenIdConformanceServer(network, mongo, server, nginx, baseUri, sslContext, nginxCertificate);
             suite.client().waitUntilAvailable(Duration.ofMinutes(4));
             return suite;
         } catch (RuntimeException e) {
+            // the tunnel the suite started already, unlike the containers below, has nothing else closing it
+            if (suite != null) {
+                suite.tunnel.close();
+            }
             List.of(nginx, server, mongo).forEach(GenericContainer::stop);
             network.close();
             throw e;

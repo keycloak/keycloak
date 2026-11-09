@@ -21,12 +21,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,6 +55,8 @@ final class SuiteTunnel implements AutoCloseable {
     private final String targetHost;
     private final int targetPort;
     private final ServerSocket serverSocket;
+    private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
+    private volatile boolean closed;
     private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
         Thread thread = new Thread(runnable, "conformance-suite-tunnel");
         thread.setDaemon(true);
@@ -79,14 +84,17 @@ final class SuiteTunnel implements AutoCloseable {
      * suite's internal host through this proxy.
      */
     String keycloakProxyMapping() {
+        InetAddress address = serverSocket.getInetAddress();
+        // an IPv6 address, e.g. the loopback address with java.net.preferIPv6Addresses, needs brackets in a URI
+        String host = address instanceof Inet6Address ? "[" + address.getHostAddress() + "]" : address.getHostAddress();
         return internalAuthority.substring(0, internalAuthority.indexOf(':')).replace(".", "\\.") + ";http://"
-                + serverSocket.getInetAddress().getHostAddress() + ":" + serverSocket.getLocalPort();
+                + host + ":" + serverSocket.getLocalPort();
     }
 
     private void accept() {
         while (!serverSocket.isClosed()) {
             try {
-                Socket client = serverSocket.accept();
+                Socket client = track(serverSocket.accept());
                 executor.execute(() -> tunnel(client));
             } catch (IOException e) {
                 if (!serverSocket.isClosed()) {
@@ -105,7 +113,8 @@ final class SuiteTunnel implements AutoCloseable {
                 client.getOutputStream().write("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
                 return;
             }
-            try (Socket target = new Socket(targetHost, targetPort)) {
+            Socket target = track(new Socket(targetHost, targetPort));
+            try (target) {
                 client.getOutputStream().write("HTTP/1.1 200 Connection Established\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
                 client.getOutputStream().flush();
                 Future<?> response = executor.submit(() -> pipe(target, client));
@@ -113,12 +122,29 @@ final class SuiteTunnel implements AutoCloseable {
                 // Both sockets are closed only once the response is forwarded as well, as closing them while the
                 // suite is still answering would cut off its response
                 response.get();
+            } finally {
+                sockets.remove(target);
             }
         } catch (IOException | ExecutionException e) {
             LOGGER.debug("Conformance suite tunnel connection closed: " + e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } finally {
+            sockets.remove(client);
         }
+    }
+
+    /**
+     * Keeps the socket for {@link #close()}, as closing the listening socket does not close the accepted connections,
+     * and a worker blocked reading a socket does not stop on an interrupt. A socket opened while the tunnel closes is
+     * closed right away.
+     */
+    private Socket track(Socket socket) {
+        sockets.add(socket);
+        if (closed) {
+            closeQuietly(socket);
+        }
+        return socket;
     }
 
     // Reads the request line and headers of the CONNECT request, which ends with an empty line
@@ -167,11 +193,14 @@ final class SuiteTunnel implements AutoCloseable {
 
     @Override
     public void close() {
+        closed = true;
         try {
             serverSocket.close();
         } catch (IOException e) {
             // closing anyway
         }
+        // unblocks the workers reading these sockets, so they exit
+        sockets.forEach(SuiteTunnel::closeQuietly);
         executor.shutdownNow();
     }
 }
