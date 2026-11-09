@@ -19,7 +19,6 @@ package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -253,41 +252,84 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testSignedMetadataWithJavaKeystoreChainExcludesSelfSignedRoot() {
-        assertDoesNotThrow(this::ensureMdocCompliantSigningConfiguration,
-                "A Java keystore containing the leaf and self-signed root should pass certificate-chain validation");
-        setRealmAttributes(Map.of(
-                SIGNED_METADATA_ALG_ATTR, Algorithm.ES256,
-                SIGNED_METADATA_LIFESPAN_ATTR, "3600"
-        ));
+        // V1: [leaf, self-signed root] -> only the topmost (root) is removed, leaf kept.
+        testSignedMetadataChain(MdocTestSigningKey.Variant.V1, "mdoc-v1-key-provider",
+                List.of("CN=Mdoc Test Signer"));
+    }
 
-        CredentialIssuerMetadataResponse response = oauth.oid4vc()
-                .issuerMetadataRequest()
-                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
-                .send();
+    @Test
+    public void testSignedMetadataExcludesNonSelfSignedCaTrueTrustAnchor() {
+        // V2: [leaf, CA:TRUE intermediate] where the intermediate is not self-signed -> only the leaf is kept.
+        testSignedMetadataChain(MdocTestSigningKey.Variant.V2, "mdoc-v2-key-provider",
+                List.of("CN=Mdoc Test Signer"));
+    }
 
-        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
-        assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+    @Test
+    public void testSignedMetadataKeepsLeafAndIntermediateBelowSelfSignedRoot() {
+        // V3: [leaf, intermediate, self-signed root] -> only the topmost (root) is removed, leaf and intermediate kept.
+        testSignedMetadataChain(MdocTestSigningKey.Variant.V3, "mdoc-v3-key-provider",
+                List.of("CN=Mdoc Test Signer", "CN=Mdoc Test Intermediate CA"));
+    }
 
-        JWSInput jwsInput = (JWSInput) response.getContent();
-        assertNotNull(jwsInput, "Response should be signed metadata JWS");
-        List<String> x5c = jwsInput.getHeader().getX5c();
-        assertNotNull(x5c);
-        assertEquals(1, x5c.size(), "The self-signed root must be omitted from the x5c header");
+    @Test
+    public void testSignedMetadataKeepsNonCaIntermediate() {
+        // V4: [leaf, non-CA intermediate] -> the intermediate is not a trust anchor, so it is kept.
+        testSignedMetadataChain(MdocTestSigningKey.Variant.V4, "mdoc-v4-key-provider",
+                List.of("CN=Mdoc Test Signer", "CN=Mdoc Test Intermediate"));
+    }
 
-        X509Certificate leaf = PemUtils.decodeCertificate(x5c.get(0));
-        assertEquals("CN=Mdoc Test Signer", leaf.getSubjectX500Principal().getName());
+    /**
+     * Registers the signing key of the given keystore {@link MdocTestSigningKey.Variant}, requests the signed issuer
+     * metadata and verifies the certificates embedded in the x5c header as well as the JWS signature.
+     *
+     * @param expectedX5cSubjects the expected certificate subject names embedded in the x5c header, in order
+     */
+    private void testSignedMetadataChain(MdocTestSigningKey.Variant variant, String providerName,
+            List<String> expectedX5cSubjects) {
+        try {
+            assertDoesNotThrow(() -> addMdocSigningKeyProvider(variant, providerName, 400),
+                    "A Java keystore with the configured certificate chain should pass certificate-chain validation");
+            setRealmAttributes(Map.of(
+                    SIGNED_METADATA_ALG_ATTR, Algorithm.ES256,
+                    SIGNED_METADATA_LIFESPAN_ATTR, "3600"
+            ));
 
-        byte[] encodedSignatureInput = jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
-        byte[] signature = jwsInput.getSignature();
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            KeyWrapper keyWrapper = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
-            assertNotNull(keyWrapper, "Active ES256 signing key should exist");
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.ES256);
-            assertNotNull(signatureProvider, "ES256 signature provider should exist");
-            SignatureVerifierContext verifier = signatureProvider.verifier(keyWrapper);
-            assertTrue(verifier.verify(encodedSignatureInput, signature), "JWS signature should be valid");
-        });
+            CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                    .issuerMetadataRequest()
+                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                    .send();
+
+            assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+            assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+            JWSInput jwsInput = (JWSInput) response.getContent();
+            assertNotNull(jwsInput, "Response should be signed metadata JWS");
+            List<String> x5c = jwsInput.getHeader().getX5c();
+            assertNotNull(x5c);
+
+            // Verify the exact certificates embedded in the x5c header, not just their number.
+            List<String> actualSubjects = x5c.stream()
+                    .map(PemUtils::decodeCertificate)
+                    .map(cert -> cert.getSubjectX500Principal().getName())
+                    .toList();
+            assertEquals(expectedX5cSubjects, actualSubjects,
+                    "The certificates embedded in the x5c header must match");
+
+            // Verify the JWS signature.
+            byte[] encodedSignatureInput = jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
+            byte[] signature = jwsInput.getSignature();
+            runOnServer.run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                KeyWrapper keyWrapper = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
+                assertNotNull(keyWrapper, "Active ES256 signing key should exist");
+                SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, Algorithm.ES256);
+                assertNotNull(signatureProvider, "ES256 signature provider should exist");
+                SignatureVerifierContext verifier = signatureProvider.verifier(keyWrapper);
+                assertTrue(verifier.verify(encodedSignatureInput, signature), "JWS signature should be valid");
+            });
+        } finally {
+            removeMdocSigningKeyProvider(providerName);
+        }
     }
 
     @Test

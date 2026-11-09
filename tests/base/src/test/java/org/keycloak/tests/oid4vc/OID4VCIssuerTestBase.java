@@ -618,24 +618,38 @@ public abstract class OID4VCIssuerTestBase {
             return;
         }
 
+        addMdocSigningKeyProvider(MdocTestSigningKey.Variant.V1, providerName, 300);
+    }
+
+    /**
+     * Registers an ES256 signing key from the given keystore {@link MdocTestSigningKey.Variant}, so that it is selected
+     * as the active ES256 signing key for the realm.
+     */
+    protected void addMdocSigningKeyProvider(MdocTestSigningKey.Variant variant, String providerName, int priority) {
         ComponentRepresentation component = new ComponentRepresentation();
         component.setProviderType(KeyProvider.class.getName());
         component.setName(providerName);
         component.setId(UUID.randomUUID().toString());
         component.setProviderId("java-keystore");
         component.setConfig(new MultivaluedHashMap<>(Map.of(
-                "keystore", List.of(MdocTestSigningKey.keyStorePath()),
+                "keystore", List.of(MdocTestSigningKey.keyStorePath(variant)),
                 "keystorePassword", List.of(MdocTestSigningKey.PASSWORD),
                 "keystoreType", List.of("PKCS12"),
                 "keyAlias", List.of(MdocTestSigningKey.KEY_ALIAS),
                 "keyPassword", List.of(MdocTestSigningKey.PASSWORD),
                 "algorithm", List.of(Algorithm.ES256),
                 "keyUse", List.of(KeyUse.SIG.name()),
-                "priority", List.of("300"),
+                "priority", List.of(String.valueOf(priority)),
                 "enabled", List.of("true"),
                 "active", List.of("true")
         )));
-        components.add(component).close();
+        testRealm.admin().components().add(component).close();
+    }
+
+    protected void removeMdocSigningKeyProvider(String providerName) {
+        var components = testRealm.admin().components();
+        components.query(testRealm.getId(), KeyProvider.class.getName(), providerName)
+                .forEach(rep -> components.component(rep.getId()).remove());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
