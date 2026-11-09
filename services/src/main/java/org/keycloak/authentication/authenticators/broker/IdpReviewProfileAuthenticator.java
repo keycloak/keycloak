@@ -40,6 +40,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.validation.Validation;
@@ -258,7 +259,11 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
     }
 
     private boolean isCaseOnlyChange(List<String> oldValue, String newValue) {
-        return oldValue != null && oldValue.size() == 1 && newValue != null && oldValue.get(0).equalsIgnoreCase(newValue);
+        // Compare with the same lower-casing the user profile applies to the e-mail, so that a different
+        // address is still a change. equalsIgnoreCase also treats some distinct letters as equal, such as
+        // the dotless 'ı' and 'i', which the lower-casing does not
+        return oldValue != null && oldValue.size() == 1 && newValue != null
+                && KeycloakModelUtils.toLowerCaseSafe(oldValue.get(0)).equals(newValue);
     }
 
     @Override

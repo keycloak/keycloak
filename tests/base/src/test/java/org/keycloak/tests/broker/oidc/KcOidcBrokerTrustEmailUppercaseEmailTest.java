@@ -9,12 +9,16 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.mail.MailServer;
+import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ProtocolMapperBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.page.VerifyEmailPage;
 import org.keycloak.tests.broker.AbstractKcOidcBrokerTest;
 
 import org.junit.jupiter.api.Assertions;
@@ -24,21 +28,34 @@ import org.junit.jupiter.api.Test;
 /**
  * The e-mail sent by the identity provider is stored in lower case, which must not be treated as an e-mail
  * change made by the user in the first-broker-login review-profile form. Otherwise the address of a trusted
- * provider is created as unverified and the user has to verify it again.
+ * provider is created as unverified and the user has to verify it again. A different address must still be
+ * treated as a change, even when it differs by characters that a case-insensitive comparison considers equal.
  */
 @KeycloakIntegrationTest
 public class KcOidcBrokerTrustEmailUppercaseEmailTest extends AbstractKcOidcBrokerTest {
 
-    // The provider sends the address with uppercase letters, which is what directories such as
-    // Firstname.Lastname@example.com do. A user attribute cannot hold it because e-mails are
-    // lower-cased on save, so the claim is hardcoded on the provider client instead
-    private static final String IDP_EMAIL = "Case-Probe@example.test";
+    // The provider sends the address with an uppercase letter, which is what directories such as
+    // Firstname.Lastname@example.com do, and with the dotless 'ı', which equalsIgnoreCase treats as equal
+    // to 'i'. A user attribute cannot hold the address because e-mails are lower-cased on save, so the
+    // claim is hardcoded on the provider client instead
+    private static final String IDP_EMAIL = "Probe@gıthub.test";
+
+    // Differs from the address the provider sends only by 'ı' and 'i', which equalsIgnoreCase considers
+    // equal although the lower-casing done by the user profile keeps them distinct
+    private static final String CHANGED_EMAIL = "probe@github.test";
 
     @InjectRealm(ref = "provider", lifecycle = LifeCycle.METHOD, config = UppercaseEmailProviderRealmConfig.class)
     ManagedRealm providerRealm;
 
     @InjectRealm(ref = "consumer", lifecycle = LifeCycle.METHOD, config = TrustEmailConsumerRealmConfig.class)
     ManagedRealm consumerRealm;
+
+    // Configures an SMTP server in the realms, so the verification e-mail of the changed address is sent
+    @InjectMailServer
+    MailServer mailServer;
+
+    @InjectPage
+    VerifyEmailPage verifyEmailPage;
 
     // The shared broker tests expect the user name and the profile of the default provider user, which this
     // fixture does not send, so they are replaced by the scenario below
@@ -72,6 +89,21 @@ public class KcOidcBrokerTrustEmailUppercaseEmailTest extends AbstractKcOidcBrok
         UserRepresentation user = users.get(0);
         Assertions.assertEquals(IDP_EMAIL.toLowerCase(), user.getEmail());
         Assertions.assertTrue(user.isEmailVerified(), "The e-mail of the trusted provider should be verified");
+    }
+
+    @Test
+    public void testChangedEmailRequiresVerification() {
+        oauth.openLoginForm();
+        logInWithBroker();
+        logInAsUserInIDPForFirstTime();
+
+        // the provider user has no first and last name, so the review-profile form is shown
+        updateProfilePage.assertCurrent();
+        updateProfilePage.update("Firstname", "Lastname", CHANGED_EMAIL);
+
+        verifyEmailPage.assertCurrent();
+        Assertions.assertTrue(mailServer.waitForIncomingEmail(5000, 1),
+                "The changed e-mail address should receive a verification e-mail");
     }
 
     // Only the e-mail claim is needed here, so the provider client keeps the basic client scope and the
