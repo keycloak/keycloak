@@ -11,7 +11,9 @@ import type Keycloak from "keycloak-js";
  */
 export function createKeycloakFetch(keycloak: Keycloak): typeof fetch {
   return (input, init) => {
-    const headers = new Headers(init?.headers);
+    const headers = new Headers(
+      init?.headers ?? (input instanceof Request ? input.headers : undefined),
+    );
 
     if (headers.has("Authorization") && keycloak.token) {
       headers.set("Authorization", `Bearer ${keycloak.token}`);
