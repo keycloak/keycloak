@@ -141,7 +141,7 @@ public class ClientRegistrationAuth {
         return jwt;
     }
 
-    private boolean isBearerToken() {
+    boolean isBearerToken() {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
