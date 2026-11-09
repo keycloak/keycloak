@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 public final class AuthZen {
 
+    public static final String SCOPE = "authzen";
     public static final String AUTHZEN_ACCESS_PATH = "access/v1";
     public static final String EVALUATION_PATH = AUTHZEN_ACCESS_PATH + "/evaluation";
     public static final String EVALUATIONS_PATH = AUTHZEN_ACCESS_PATH + "/evaluations";

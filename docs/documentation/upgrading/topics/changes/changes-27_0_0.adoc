@@ -434,6 +434,13 @@ When upgrading, existing `aes-generated` key providers without an explicit `secr
 This ensures the Admin Console displays the actual key size and saving a provider without changes preserves its key and key ID.
 Providers with an explicitly configured size are preserved.
 
+=== AuthZEN requires the `authzen` client scope and audience
+// https://github.com/keycloak/keycloak/issues/50527
+
+When calling {project_name}'s experimental AuthZEN endpoints, the access token now needs to contain the `authzen` scope and the AuthZEN audience, which is the realm URL followed by `/authzen`.
+Previously, a token from any confidential client with authorization services enabled was accepted.
+Create an `authzen` client scope with an audience mapper and assign it to the clients that query the PDP, as described in the link:{securing_apps_base_link}/authzen-authorization[AuthZEN Authorization] guide.
+
 === SAML assertions with a OneTimeUse condition are no longer replayable
 // https://github.com/keycloak/keycloak/issues/46325
 

@@ -26,6 +26,7 @@ import java.util.stream.StreamSupport;
 import org.keycloak.authorization.authzen.AuthZen;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.authzen.client.AuthZenClient;
 import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationResult;
 import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationsResult;
@@ -71,6 +72,11 @@ public class AuthZenEvaluationInteropTest {
 
     @InjectAuthZenClient
     AuthZenClient authZenClient;
+
+    @TestSetup
+    public void setup() {
+        AuthZenScope.create(realm, PDP_CLIENT_ID);
+    }
 
     @TestFactory
     Stream<DynamicTest> interopEvaluationTests() throws IOException {

@@ -28,6 +28,7 @@ bin/kc.[sh|bat] start --features=authzen
 AuthZEN exposes {project_name}'s existing authorization services. Before using AuthZEN, you must configure the following in your realm:
 
 . link:{authorizationguide_link}#_resource_server_enable_authorization[A client with authorization enabled]-- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
+. <<authzen-client-scope,The `authzen` client scope>> -- The client must have the `authzen` client scope assigned.
 . link:{authorizationguide_link}#_resource_create[Resources] -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
 . link:{authorizationguide_link}#_resource_create[Scopes] -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
 . link:{authorizationguide_link}#_policy_overview[Policies] and link:{authorizationguide_link}#_permissions_overview[Permissions] -- Create policies and permissions that associate resources and scopes with authorization decisions.
@@ -54,8 +55,11 @@ For example, a realm called `myrealm` will return the following metadata:
 
 == Authentication
 
-All AuthZEN endpoints require a valid bearer token in the `Authorization` header and the token must be issued for a
-client that has authorization services enabled.
+All AuthZEN endpoints require a valid bearer token in the `Authorization` header.
+The token must be obtained with the client credentials grant by a client that has authorization services enabled, and it must contain:
+
+* `authzen` in its `scope` claim.
+* The AuthZEN audience in its `aud` claim. The audience is the realm URL followed by `/authzen`, for example `https://keycloak.example.com/realms/myrealm/authzen`.
 
 [source,bash]
 ----
@@ -64,7 +68,24 @@ Authorization: Bearer <access-token>
 Content-Type: application/json
 ----
 
-If no valid token is provided, the server returns a `401 Unauthorized` response.
+If no valid token is provided, or the token does not meet these requirements, the server returns a `401 Unauthorized` response.
+
+[[authzen-client-scope]]
+=== Adding the `authzen` client scope
+
+{project_name} does not create the `authzen` client scope.
+Create it once per realm and assign it to each client that queries the PDP:
+
+. Click *Client scopes* in the menu and click *Create client scope*.
+. Enter `authzen` as the *Name*, make sure *Include in token scope* is on, and click *Save*.
+. In the *Mappers* tab, click *Configure a new mapper* and select *Audience*.
+. Enter `authzen-audience` as the *Name*, leave *Included Client Audience* empty, and enter the AuthZEN audience as the *Included Custom Audience*, for example `https://keycloak.example.com/realms/myrealm/authzen`.
+Make sure *Add to access token* is on and click *Save*.
+. Click *Clients* in the menu and select the client that queries the PDP.
+. In the *Client scopes* tab, click *Add client scope*, select `authzen`, and add it as *Default*.
+
+The audience is derived from the frontend URL of {project_name}.
+Configure a stable hostname so that the audience in the token matches the URL of the AuthZEN endpoints.
 
 == Evaluation API
 
@@ -411,7 +432,8 @@ AuthZEN endpoints return standard HTTP error codes for invalid requests:
 value, uses an empty namespace prefix (e.g., `id:` with no value), or contains malformed JSON.
 
 |`401 Unauthorized`
-|The request does not include a valid bearer token in the `Authorization` header.
+|The request does not include a valid bearer token in the `Authorization` header, or the token does not contain the
+`authzen` scope and the AuthZEN audience.
 |===
 
 == Request tracing
