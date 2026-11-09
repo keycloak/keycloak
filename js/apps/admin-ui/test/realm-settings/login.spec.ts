@@ -42,6 +42,7 @@ test.describe.serial("Realm settings tabs tests", () => {
   };
 
   test("Go to login tab", async ({ page }) => {
+    await testToggle(page, "username-password-form-switch", true);
     await testToggle(page, "user-reg-switch", true);
     await testToggle(page, "forgot-pw-switch", true);
     await testToggle(page, "remember-me-switch", true);
