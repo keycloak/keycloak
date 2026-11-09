@@ -1,6 +1,8 @@
 {
-  "changeSets" : [ ],
-  "migrations" : [ {
-    "class" : "org.keycloak.migration.migrators.MigrateTo26_8_2"
-  } ]
+  "changeSets": [],
+  "migrations": [
+    {
+      "class": "org.keycloak.migration.migrators.MigrateTo26_8_2"
+    }
+  ]
 }
