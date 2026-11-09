@@ -266,8 +266,18 @@ public class MultipleRealmsTest {
                 Assertions.assertEquals(0, realm.getAuthenticationExecutionsStream(from.getId()).count());
                 Assertions.assertEquals(1, realm.getAuthenticationExecutionsStream(to.getId()).count());
             });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession s) -> {
+                RealmModel realm = s.realms().getRealm(realmId);
+                Assertions.assertEquals(0, realm.getAuthenticationExecutionsStream(realm.getFlowByAlias("from").getId()).count());
+                Assertions.assertEquals(1, realm.getAuthenticationExecutionsStream(realm.getFlowByAlias("to").getId()).count());
+            });
         } finally {
-            removeRealm(session, realmId);
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession s) -> {
+                RealmModel realm = s.realms().getRealm(realmId);
+                s.getContext().setRealm(realm);
+                new RealmManager(s).removeRealm(realm);
+            });
         }
     }
 

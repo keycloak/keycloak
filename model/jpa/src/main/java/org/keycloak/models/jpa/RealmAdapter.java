@@ -1744,14 +1744,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         if (model.getParentFlow() != null) {
             AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
             AuthenticationFlowEntity oldFlow = entity.getParentFlow();
-            if (oldFlow != flow) {
-                // keep the (possibly already loaded) executions collections consistent, as reading them doesn't trigger a flush
-                if (oldFlow != null) {
-                    oldFlow.getExecutions().remove(entity);
-                }
-                flow.getExecutions().add(entity);
-            }
             entity.setParentFlow(flow);
+            if (oldFlow != flow) {
+                // Reading a lazy collection doesn't flush, and removing the execution from the old collection would orphan-delete it.
+                // Instead, flush the changed parent and reload the collections.
+                em.flush();
+                if (oldFlow != null) {
+                    em.refresh(oldFlow);
+                }
+                em.refresh(flow);
+            }
         }
     }
 
