@@ -62,6 +62,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -169,6 +170,33 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         try (Response response = realmAdminClient.realm(realm.getName()).groups().add(childGroup)) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
         }
+    }
+
+    @Test
+    public void testMoveGroupRequiresPermissionToGrantAdminRoles() {
+        GroupRepresentation source = createGroup("source");
+        GroupRepresentation destination = createGroup("destination");
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy",
+                realm.admin().users().search("myadmin").get(0).getId());
+        createGroupPermission(Set.of(source, destination), Set.of(VIEW, MANAGE), policy);
+
+        // Resource permissions allow the move while the destination grants no administrative roles.
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(destination.getId()).subGroup(source)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        try (Response response = realm.admin().groups().add(source)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        String realmManagementId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmManagementId).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        realm.admin().groups().group(destination.getId()).roles().clientLevel(realmManagementId).add(List.of(realmAdminRole));
+
+        // The same resource permissions do not authorize granting the destination's administrative roles.
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(destination.getId()).subGroup(source)) {
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+        assertNull(realm.admin().groups().group(source.getId()).toRepresentation().getParentId());
     }
 
     @Test
