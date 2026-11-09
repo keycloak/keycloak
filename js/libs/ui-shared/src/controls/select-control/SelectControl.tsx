@@ -20,7 +20,7 @@ export enum SelectVariant {
 export type SelectControlOption = {
   key: string;
   value: string;
-  description?: ReactNode;
+  description?: string;
 };
 
 export type OptionType = string[] | SelectControlOption[];

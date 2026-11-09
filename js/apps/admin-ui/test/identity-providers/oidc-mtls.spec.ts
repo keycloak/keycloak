@@ -48,10 +48,9 @@ test.describe("OIDC identity provider with mutual TLS client authentication", ()
     await page.locator(field).click();
     const option = page.getByRole("option", { name: /^rsa-generated/ });
     await expect(option).toBeVisible();
-    // the subject and the expiry of the certificate are shown with the name
+    // the subject of the certificate is shown with the name
     await expect(option).toContainText("Subject: ");
     await expect(option).toContainText("CN=");
-    await expect(option).toContainText("Expires: ");
     await expect(
       page.getByRole("option", { name: /^(hmac|aes)-generated/ }),
     ).toHaveCount(0);

@@ -61,33 +61,10 @@ const label = (
 const describe = (
   certificate: ClientCertificateRepresentation,
   t: TFunction,
-  formatDate: ReturnType<typeof useFormatDate>,
-) => {
-  return (
-    <>
-      {certificate.subjectDn && (
-        <div>
-          {t("clientCertificateSubject")}: {certificate.subjectDn}
-        </div>
-      )}
-      {certificate.issuerDn && (
-        <div>
-          {t("clientCertificateIssuer")}: {certificate.issuerDn}
-        </div>
-      )}
-      {certificate.validTo && (
-        <div>
-          {t(
-            isExpired(certificate)
-              ? "clientCertificateExpired"
-              : "clientCertificateExpires",
-            { date: formatDate(new Date(certificate.validTo)) },
-          )}
-        </div>
-      )}
-    </>
-  );
-};
+) =>
+  certificate.subjectDn
+    ? `${t("clientCertificateSubject")}: ${certificate.subjectDn}`
+    : undefined;
 
 const CertificateDetailsModal = ({
   certificate,
@@ -161,7 +138,6 @@ const CertificateDetailsModal = ({
 export const ClientCertificateKeyProvider = () => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const formatDate = useFormatDate();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const { control, getValues } = useFormContext();
@@ -219,7 +195,7 @@ export const ClientCertificateKeyProvider = () => {
     ...certificates.map((certificate) => ({
       key: certificate.providerId!,
       value: label(certificate, statusOf(certificate), t),
-      description: describe(certificate, t, formatDate),
+      description: describe(certificate, t),
     })),
     ...(selected && !selectedCertificate
       ? [
