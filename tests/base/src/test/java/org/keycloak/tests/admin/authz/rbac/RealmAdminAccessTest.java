@@ -31,6 +31,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -1808,6 +1809,52 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         assertEquals(destination.getId(), testRealm.groups().group(source.getId()).toRepresentation().getParentId());
         assertTrue(testRealm.users().get(attacker.getId()).roles().clientLevel(realmManagementId).listEffective().stream()
                 .anyMatch(role -> AdminRoles.REALM_ADMIN.equals(role.getName())));
+    }
+
+    @Test
+    public void testManageUsersAdminCannotMoveOrganizationGroupViaRealmEndpoint() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        RealmRepresentation rep = testRealm.toRepresentation();
+        rep.setOrganizationsEnabled(true);
+        testRealm.update(rep);
+
+        UserRepresentation limitedAdmin = createUser(testRealm, "limited-admin");
+        grantRealmManagementRole(testRealm, limitedAdmin.getUsername(), AdminRoles.MANAGE_USERS);
+
+        String organizationId = ApiUtil.getCreatedId(testRealm.organizations().create(OrganizationBuilder.create("test-org").build()));
+        OrganizationResource organization = testRealm.organizations().get(organizationId);
+
+        GroupRepresentation organizationParent = GroupBuilder.create("organization-parent").build();
+        organizationParent.setId(ApiUtil.getCreatedId(organization.groups().addTopLevelGroup(organizationParent)));
+        GroupRepresentation organizationChild = GroupBuilder.create("organization-child").build();
+        try (Response response = organization.groups().group(organizationParent.getId()).addSubGroup(organizationChild)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            organizationChild.setId(response.readEntity(GroupRepresentation.class).getId());
+        }
+
+        GroupRepresentation realmParent = GroupBuilder.create("realm-parent").build();
+        realmParent.setId(ApiUtil.getCreatedId(testRealm.groups().add(realmParent)));
+        GroupRepresentation realmChild = GroupBuilder.create("realm-child").build();
+        realmChild.setId(ApiUtil.getCreatedId(testRealm.groups().add(realmChild)));
+
+        runAs(realmName, limitedAdmin.getUsername(), client -> {
+            try (Response response = client.realm(realmName).groups().group(realmParent.getId()).subGroup(realmChild)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+
+            for (GroupRepresentation organizationGroup : List.of(organizationParent, organizationChild)) {
+                String originalParentId = organization.groups().group(organizationGroup.getId()).toRepresentation(false).getParentId();
+                try (Response response = client.realm(realmName).groups().group(realmParent.getId()).subGroup(organizationGroup)) {
+                    assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                    ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+                    assertEquals("Cannot manage organization related group via non Organization API.", error.getErrorMessage());
+                }
+                assertEquals(originalParentId, organization.groups().group(organizationGroup.getId()).toRepresentation(false).getParentId());
+            }
+        });
+
+        assertEquals(realmParent.getId(), testRealm.groups().group(realmChild.getId()).toRepresentation().getParentId());
     }
 
     @Test

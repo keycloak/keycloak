@@ -254,6 +254,9 @@ public class GroupResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
+                if (GroupModel.Type.ORGANIZATION.equals(child.getType())) {
+                    throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Response.Status.BAD_REQUEST);
+                }
                 auth.groups().requireManage(child);
                 if (KeycloakModelUtils.isDescendantOfOrSelf(group, child)) {
                     throw ErrorResponse.error("Cannot move group '" + child.getName() + "' under itself or its descendants", Response.Status.BAD_REQUEST);
