@@ -32,6 +32,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
@@ -891,6 +893,143 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
                 masterRealmAdminClient.realm(realm.getName()).workflows().list();
                 fail("Should not have access to manage workflows if user is master realm admin with manage-realm role in a realm");
             } catch (ForbiddenException ignore) {}
+        }
+    }
+
+    @Test
+    public void testManageUsersCannotMapCompositeWrappingRealmAdmin() {
+        String realmName = realm.getName();
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+
+        RoleRepresentation wrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper", realmAdminRole);
+        RoleRepresentation outerWrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper-outer", wrapper);
+
+        ClientRepresentation wrapperClient = ClientBuilder.create("wrapper-client").build();
+        try (Response response = realm.admin().clients().create(wrapperClient)) {
+            wrapperClient.setId(ApiUtil.getCreatedId(response));
+        }
+        RoleRepresentation clientWrapper = createCompositeRole(realm.admin().clients().get(wrapperClient.getId()).roles(), "client-composite-wrapper", realmAdminRole);
+
+        RoleRepresentation plainRole = new RoleRepresentation();
+        plainRole.setName("plain-role");
+        realm.admin().roles().create(plainRole);
+        plainRole = realm.admin().roles().get(plainRole.getName()).toRepresentation();
+        RoleRepresentation harmlessWrapper = createCompositeRole(realm.admin().roles(), "harmless-wrapper", plainRole);
+
+        UserRepresentation manageUsersAdmin = createUser("manage-users-admin", "password");
+        realm.admin().users().get(manageUsersAdmin.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
+
+        UserRepresentation target = createUser("target-user", "password");
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .username("manage-users-admin")
+                .password("password")
+                .build()) {
+            RoleMappingResource targetRoles = client.realm(realmName).users().get(target.getId()).roles();
+
+            assertDenied("manage-users admin should not be able to map realm-admin directly",
+                    () -> targetRoles.clientLevel(realmMgmt.getId()).add(List.of(realmAdminRole)));
+            assertDenied("manage-users admin should not be able to map a composite role wrapping realm-admin",
+                    () -> targetRoles.realmLevel().add(List.of(wrapper)));
+            assertDenied("manage-users admin should not be able to map a nested composite role wrapping realm-admin",
+                    () -> targetRoles.realmLevel().add(List.of(outerWrapper)));
+            assertDenied("manage-users admin should not be able to map a client composite role wrapping realm-admin",
+                    () -> targetRoles.clientLevel(wrapperClient.getId()).add(List.of(clientWrapper)));
+
+            targetRoles.realmLevel().add(List.of(harmlessWrapper));
+        }
+
+        List<RoleRepresentation> effective = realm.admin().users().get(target.getId()).roles()
+                .clientLevel(realmMgmt.getId()).listEffective();
+        assertThat(effective.stream().map(RoleRepresentation::getName).toList(), not(hasItem(AdminRoles.REALM_ADMIN)));
+        assertThat(realm.admin().users().get(target.getId()).roles().realmLevel().listAll().stream().map(RoleRepresentation::getName).toList(),
+                hasItem(harmlessWrapper.getName()));
+    }
+
+    @Test
+    public void testManageRealmCannotAddCompositeWrappingRealmAdminToExistingRole() {
+        String realmName = realm.getName();
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        RoleRepresentation manageRealmRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
+
+        RoleRepresentation employee = new RoleRepresentation();
+        employee.setName("employee");
+        realm.admin().roles().create(employee);
+        employee = realm.admin().roles().get(employee.getName()).toRepresentation();
+        UserRepresentation existingHolder = createUser("existing-employee", "password");
+        realm.admin().users().get(existingHolder.getId()).roles().realmLevel().add(List.of(employee));
+
+        RoleRepresentation wrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper", realmAdminRole);
+        RoleRepresentation outerWrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper-outer", wrapper);
+
+        ClientRepresentation wrapperClient = ClientBuilder.create("wrapper-client").build();
+        try (Response response = realm.admin().clients().create(wrapperClient)) {
+            wrapperClient.setId(ApiUtil.getCreatedId(response));
+        }
+        RoleRepresentation clientWrapper = createCompositeRole(realm.admin().clients().get(wrapperClient.getId()).roles(), "client-composite-wrapper", realmAdminRole);
+
+        RoleRepresentation plainRole = new RoleRepresentation();
+        plainRole.setName("plain-role");
+        realm.admin().roles().create(plainRole);
+        plainRole = realm.admin().roles().get(plainRole.getName()).toRepresentation();
+        RoleRepresentation harmlessWrapper = createCompositeRole(realm.admin().roles(), "harmless-wrapper", plainRole);
+
+        UserRepresentation manageRealmAdmin = createUser("manage-realm-admin", "password");
+        realm.admin().users().get(manageRealmAdmin.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(manageRealmRole));
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .username("manage-realm-admin")
+                .password("password")
+                .build()) {
+            RoleResource employeeRole = client.realm(realmName).roles().get(employee.getName());
+
+            assertDenied("manage-realm admin should not be able to add realm-admin as a composite directly",
+                    () -> employeeRole.addComposites(List.of(realmAdminRole)));
+            assertDenied("manage-realm admin should not be able to add a composite role wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(wrapper)));
+            assertDenied("manage-realm admin should not be able to add a nested composite role wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(outerWrapper)));
+            assertDenied("manage-realm admin should not be able to add a client composite role wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(clientWrapper)));
+
+            employeeRole.addComposites(List.of(harmlessWrapper));
+        }
+
+        List<RoleRepresentation> effective = realm.admin().users().get(existingHolder.getId()).roles()
+                .clientLevel(realmMgmt.getId()).listEffective();
+        assertThat(effective.stream().map(RoleRepresentation::getName).toList(), not(hasItem(AdminRoles.REALM_ADMIN)));
+        assertThat(realm.admin().roles().get(employee.getName()).getRoleComposites().stream().map(RoleRepresentation::getName).toList(),
+                hasItem(harmlessWrapper.getName()));
+    }
+
+    private RoleRepresentation createCompositeRole(RolesResource roles, String name, RoleRepresentation... children) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        roles.create(role);
+        roles.get(name).addComposites(List.of(children));
+        return roles.get(name).toRepresentation();
+    }
+
+    private void assertDenied(String message, Runnable runnable) {
+        try {
+            runnable.run();
+            fail(message);
+        } catch (ForbiddenException expected) {
         }
     }
 
