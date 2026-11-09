@@ -141,6 +141,7 @@ const KeycloakMasthead = ({
               <KeycloakDropdown
                 data-testid="options-kebab"
                 isKebab
+                toggleLabel={t("options")}
                 dropDownItems={[
                   ...(kebabDropdownItems || dropdownItems),
                   extraItems,
