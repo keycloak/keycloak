@@ -20,6 +20,8 @@ package org.keycloak.services.resteasy;
 import java.util.HashSet;
 import java.util.Set;
 
+import jakarta.ws.rs.ext.ContextResolver;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
@@ -40,7 +42,8 @@ import org.keycloak.services.resources.ServerMetadataResource;
 import org.keycloak.services.resources.ThemeResource;
 import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.util.ObjectMapperResolver;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ResteasyKeycloakApplication extends KeycloakApplication {
 
@@ -65,7 +68,6 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
         classes.add(KcUnrecognizedPropertyExceptionHandler.class);
         classes.add(KeycloakMismatchedInputExceptionHandler.class);
 
-        singletons.add(new ObjectMapperResolver());
         classes.add(WelcomeResource.class);
         classes.add(ServerMetadataResource.class);
 
@@ -75,6 +77,15 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
             classes.add(LoadBalancerResource.class);
         }
         startup();
+
+        // anonymous class rather than a lambda so that RESTEasy can resolve the ContextResolver type argument
+        ObjectMapper mapper = getSessionFactory().getObjectMapper();
+        singletons.add(new ContextResolver<ObjectMapper>() {
+            @Override
+            public ObjectMapper getContext(Class<?> type) {
+                return mapper;
+            }
+        });
     }
 
     @Override
