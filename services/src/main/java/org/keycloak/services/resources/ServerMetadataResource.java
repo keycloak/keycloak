@@ -57,7 +57,6 @@ public class ServerMetadataResource {
 
     @GET
     @Path("{provider}/realms/{realm}")
-    @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
     public Response getWellKnown(final @PathParam("provider") String alias,
                                  final @PathParam("realm") String realm) {
         if (!isValidProvider(alias)) {
