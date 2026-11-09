@@ -232,9 +232,9 @@ public class UpdateCompatibilityPicocliTest extends AbstractConfigurationTest {
         info.remove(FeatureCompatibilityMetadataProvider.ID);
         assertEquals(defaultMeta(), info);
 
-        result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--cache-stack", "kubernetes");
+        result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--cache-stack", "jdbc-ping");
         assertEquals(CompatibilityResult.ExitCode.RECREATE.value(), result.exitCode);
-        assertThat(result.getErrString(), containsString("[%1$s] Rolling Update is not available. '%1$s.stack' is incompatible: null -> kubernetes".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME)));
+        assertThat(result.getErrString(), containsString("[%1$s] Rolling Update is not available. '%1$s.stack' is incompatible: null -> jdbc-ping".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME)));
     }
 
     @Test

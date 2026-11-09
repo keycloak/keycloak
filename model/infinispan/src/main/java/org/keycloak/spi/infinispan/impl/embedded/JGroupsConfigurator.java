@@ -156,7 +156,6 @@ public final class JGroupsConfigurator {
         var fdSockEnabled = config.getBoolean(FD_SOCK_ENABLED_NAME, FD_SOCK_ENABLED_DEFAULT);
         configureDiscovery(holder, session, tracingEnabled, fdSockEnabled);
         configureTls(holder, session);
-        errorUnsupportedStack(holder);
     }
 
     /**
@@ -387,27 +386,6 @@ public final class JGroupsConfigurator {
             list.add(new ProtocolConfiguration(FD_SOCK2.class.getSimpleName(), Map.of("stack.combine", "REMOVE")));
         }
         return list;
-    }
-
-    private static void errorUnsupportedStack(ConfigurationBuilderHolder holder) {
-        var stackName = transportStackOf(holder).get();
-        switch (stackName) {
-            // Hard error on those exotic stacks that are no longer supported. The user should migrate to jdbc-ping or a custom stack.
-            case "jdbc-ping-udp":
-                throw new RuntimeException(String.format(
-                        "Cache stack '%s' has been removed. Use 'jdbc-ping' or configure a custom stack. " +
-                                "See https://www.keycloak.org/docs/latest/upgrading/index.html for migration instructions.",
-                        stackName));
-            // Log an error for the other stacks that are no longer supported, but still allow them to be used as they are provided by Infinispan.
-            // The user should migrate to jdbc-ping or a custom stack.
-            case "azure":
-            case "ec2":
-            case "google":
-            case "tcp":
-            case "udp":
-            case "kubernetes":
-                logger.errorf("Stack '%s' is no longer supported. Use 'jdbc-ping' instead", stackName);
-        }
     }
 
     private static TransportConfigurationBuilder transportOf(ConfigurationBuilderHolder holder) {
