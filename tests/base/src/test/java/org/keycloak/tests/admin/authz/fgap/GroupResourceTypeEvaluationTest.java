@@ -158,6 +158,48 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testMoveGroupToTopLevelRequiresManagePermissionOnChild() {
+        // create parentGroup and childGroup, with childGroup nested under parentGroup
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("parent_group");
+        try (Response response = realm.admin().groups().add(parentGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(parentGroup.getId()).remove());
+        }
+
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child_group");
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(childGroup.getId()).remove());
+        }
+
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, adminPermissionsClient, "Allow My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        UserPolicyRepresentation denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Deny My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+
+        // positive: allow manage on all groups
+        createAllPermission(adminPermissionsClient, GROUPS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
+
+        // negative: deny manage on childGroup specifically
+        ScopePermissionRepresentation denyPermission = createGroupPermission(childGroup, Set.of(VIEW, MANAGE), denyPolicy);
+
+        // moving childGroup to top-level should be forbidden — myadmin is denied manage on childGroup
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // remove the deny permission
+        getScopePermissionsResource(adminPermissionsClient).findById(denyPermission.getId()).remove();
+
+        // moving childGroup to top-level should now succeed
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+    }
+
+    @Test
     public void testCanViewUserByViewGroupMembers() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
