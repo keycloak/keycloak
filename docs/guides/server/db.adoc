@@ -412,6 +412,7 @@ Secure the connection by adding the options:
 
 Beginning with MySQL 8.0.30, MySQL supports generated invisible primary keys for any InnoDB table that is created without an explicit primary key (more information https://dev.mysql.com/doc/refman/8.0/en/create-table-gipks.html[here]).
 If this feature is enabled, the database schema initialization and also migrations will fail with the error message `Multiple primary key defined (1068)`.
+{project_name} logs an error at startup when it detects this setting.
 You then need to disable it by setting the parameter `sql_generate_invisible_primary_key` to `OFF` in your MySQL server configuration before installing or upgrading {project_name}.
 
 [#mysql-mariadb-transaction-isolation-level-in-stateless-mode]
