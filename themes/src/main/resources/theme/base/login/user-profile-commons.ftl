@@ -83,7 +83,8 @@
 		<@inputTagSelects attribute=attribute/>
 		<#break>
 	<#default>
-		<#if attribute.multivalued && attribute.values?has_content>
+		<#assign inferredMultivalued = !attribute.annotations.inputType?? && (attribute.values?size > 1)>
+		<#if (attribute.multivalued || inferredMultivalued) && attribute.values?has_content>
 			<#list attribute.values as value>
 				<@inputTag attribute=attribute value=value!''/>
 			</#list>
