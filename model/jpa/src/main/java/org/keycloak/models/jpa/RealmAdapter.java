@@ -1743,6 +1743,14 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         entity.setFlowId(model.getFlowId());
         if (model.getParentFlow() != null) {
             AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
+            AuthenticationFlowEntity oldFlow = entity.getParentFlow();
+            if (oldFlow != flow) {
+                // keep the (possibly already loaded) executions collections consistent, as reading them doesn't trigger a flush
+                if (oldFlow != null) {
+                    oldFlow.getExecutions().remove(entity);
+                }
+                flow.getExecutions().add(entity);
+            }
             entity.setParentFlow(flow);
         }
     }

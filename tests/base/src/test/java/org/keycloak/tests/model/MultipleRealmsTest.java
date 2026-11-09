@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -33,6 +35,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -234,6 +237,47 @@ public class MultipleRealmsTest {
 
         removeRealm(session, id1);
         removeRealm(session, id2);
+    }
+
+    @TestOnServer
+    public void testMoveExecutionBetweenFlowsInSameTransaction(KeycloakSession session) {
+        String realmId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), (KeycloakSession s) -> {
+            RealmModel realm = new RealmManager(s).createRealm("move-execution-realm");
+            AuthenticationFlowModel from = addFlow(realm, "from");
+            AuthenticationFlowModel to = addFlow(realm, "to");
+            AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(from.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+            execution.setAuthenticator("auth-cookie");
+            realm.addAuthenticatorExecution(execution);
+            return realm.getId();
+        });
+
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession s) -> {
+                RealmModel realm = s.realms().getRealm(realmId);
+                AuthenticationFlowModel from = realm.getFlowByAlias("from");
+                AuthenticationFlowModel to = realm.getFlowByAlias("to");
+                AuthenticationExecutionModel execution = realm.getAuthenticationExecutionsStream(from.getId()).findFirst().orElseThrow();
+
+                execution.setParentFlow(to.getId());
+                realm.updateAuthenticatorExecution(execution);
+
+                Assertions.assertEquals(0, realm.getAuthenticationExecutionsStream(from.getId()).count());
+                Assertions.assertEquals(1, realm.getAuthenticationExecutionsStream(to.getId()).count());
+            });
+        } finally {
+            removeRealm(session, realmId);
+        }
+    }
+
+    private AuthenticationFlowModel addFlow(RealmModel realm, String alias) {
+        AuthenticationFlowModel flow = new AuthenticationFlowModel();
+        flow.setAlias(alias);
+        flow.setProviderId("basic-flow");
+        flow.setTopLevel(true);
+        flow.setBuiltIn(false);
+        return realm.addAuthenticationFlow(flow);
     }
 
     private void assertAttrRealm(RealmModel realm, Stream<String> attr) {
