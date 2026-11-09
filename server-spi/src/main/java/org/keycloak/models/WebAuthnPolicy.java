@@ -45,6 +45,7 @@ public class WebAuthnPolicy implements Serializable {
     protected List<String> extraOrigins;
     protected Boolean passkeysEnabled; // only used for passwordless
     protected String mediation; // only used for passwordless
+    protected String backupEligibility;
 
     public WebAuthnPolicy() {
     }
@@ -177,5 +178,17 @@ public class WebAuthnPolicy implements Serializable {
 
     public void setMediation(String mediation) {
         this.mediation = mediation;
+    }
+
+    /**
+     * Whether registered credentials must be device-bound (backup eligible flag not set), backup eligible
+     * (synced passkeys) or either. One of {@code not specified}, {@code device-bound} or {@code backup-eligible}.
+     */
+    public String getBackupEligibility() {
+        return backupEligibility;
+    }
+
+    public void setBackupEligibility(String backupEligibility) {
+        this.backupEligibility = backupEligibility;
     }
 }
