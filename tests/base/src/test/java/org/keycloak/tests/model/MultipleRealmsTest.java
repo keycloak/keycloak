@@ -241,7 +241,7 @@ public class MultipleRealmsTest {
 
     @TestOnServer
     public void testMoveExecutionBetweenFlowsInSameTransaction(KeycloakSession session) {
-        String realmId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), (KeycloakSession s) -> {
+        String[] ids = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), (KeycloakSession s) -> {
             RealmModel realm = new RealmManager(s).createRealm("move-execution-realm");
             AuthenticationFlowModel from = addFlow(realm, "from");
             AuthenticationFlowModel to = addFlow(realm, "to");
@@ -249,16 +249,17 @@ public class MultipleRealmsTest {
             execution.setParentFlow(from.getId());
             execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
             execution.setAuthenticator("auth-cookie");
-            realm.addAuthenticatorExecution(execution);
-            return realm.getId();
+            execution = realm.addAuthenticatorExecution(execution);
+            return new String[] {realm.getId(), execution.getId()};
         });
 
+        String realmId = ids[0];
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession s) -> {
                 RealmModel realm = s.realms().getRealm(realmId);
                 AuthenticationFlowModel from = realm.getFlowByAlias("from");
                 AuthenticationFlowModel to = realm.getFlowByAlias("to");
-                AuthenticationExecutionModel execution = realm.getAuthenticationExecutionsStream(from.getId()).findFirst().orElseThrow();
+                AuthenticationExecutionModel execution = realm.getAuthenticationExecutionById(ids[1]);
 
                 execution.setParentFlow(to.getId());
                 realm.updateAuthenticatorExecution(execution);
