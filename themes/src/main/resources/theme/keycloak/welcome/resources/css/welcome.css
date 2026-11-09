@@ -1,3 +1,11 @@
+:root {
+  --keycloak-form-padding: var(--pf-v5-global--spacer--xl);
+}
+
+.gray-text {
+  color: var(--pf-v5-global--Color--200);
+}
+
 .pf-v5-c-background-image {
   /* Change background size so that the image covers the entire background. */
   --pf-v5-c-background-image--BackgroundSize: cover;
@@ -7,6 +15,20 @@
   /* Change the grid layout so that the header is always above the main area. */
   grid-template-areas: "header" "main";
   --pf-v5-c-login__container--xl--GridTemplateColumns: minmax(auto, 34rem);
+}
+
+.pf-v5-c-login__main-header {
+  --pf-v5-c-login__main-header--RowGap: 0;
+  --pf-v5-c-login__main-header--PaddingTop: var(--keycloak-form-padding);
+  --pf-v5-c-login__main-header--PaddingBottom: var(--pf-v5-global--gutter--md);
+}
+
+.pf-v5-c-login__main {
+  --pf-v5-c-login__main-footer--PaddingBottom: var(--keycloak-form-padding);
+}
+
+.pf-v5-c-login__main-body {
+  --pf-v5-c-login__main-body--PaddingBottom: var(--keycloak-form-padding);
 }
 
 .kc-brand {
