@@ -66,6 +66,7 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
@@ -171,14 +172,18 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
     }
 
     /**
-     * Test the AMR protocol mapper when the max age of the stored amr value has been exceeded.
-     * Expected: AMR = []
+     * Test the AMR protocol mapper when the token is requested after the max age of the stored amr value has passed,
+     * but within the same authentication that completed the execution. The max age only applies to executions
+     * carried over from an earlier authentication in the SSO session, so the value is still reported.
+     * Expected: AMR = ["password"]
      */
     @Test
-    public void testAmrPastMaxAge() {
-        setAmr("browser", "auth-username-password-form", "password", 10);
+    public void testAmrPastMaxAgeWithinCurrentAuthentication() {
+        setAmr("browser", "auth-username-password-form", "password", 0);
 
-        List<String> expectedAmrs = new ArrayList<>();
+        List<String> expectedAmrs = new ArrayList<>() {{
+            add("password");
+        }};
         oauth.openLoginForm();
         authenticatePassword("test-user",PASSWORD);
 
@@ -193,6 +198,78 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
         assertAmr(tokens.accessToken, expectedAmrs);
 
         logout(passwordUser.getId(), tokens);
+    }
+
+    /**
+     * Test the AMR protocol mapper when the user authenticates again through the SSO session after the max age
+     * of the stored amr value has been exceeded.
+     * Expected: AMR = ["password"] for the first authentication, AMR = [] for the second one
+     */
+    @Test
+    public void testAmrPastMaxAge() {
+        Tokens tokens;
+
+        setAmr("browser", "auth-username-password-form", "password", 10);
+
+        oauth.openLoginForm();
+        authenticatePassword("test-user",PASSWORD);
+        tokens = assertLogin(passwordUser.getId());
+        assertAmr(tokens.idToken, new ArrayList<>() {{
+            add("password");
+        }});
+
+        timeOffSet.set(20);
+
+        List<String> expectedAmrs = new ArrayList<>();
+        oauth.openLoginForm();
+        tokens = assertLogin(passwordUser.getId());
+        assertAmr(tokens.idToken, expectedAmrs);
+        assertAmr(tokens.accessToken, expectedAmrs);
+
+        logout(passwordUser.getId(), tokens);
+    }
+
+    /**
+     * Test that the methods a token reports are fixed when the authentication completes. A later authentication through
+     * the SSO session within the max age reports the carried over password, and so do the tokens refreshed with it after
+     * the max age has passed: they describe the same authentication, as their auth_time does.
+     * Expected: AMR = ["password"] at the code exchange and after the refresh
+     */
+    @Test
+    public void testAmrFixedForRefreshedTokens() {
+        Tokens tokens;
+        List<String> expectedAmrs = new ArrayList<>() {{
+            add("password");
+        }};
+
+        setAmr("browser", "auth-username-password-form", "password", 10);
+
+        oauth.openLoginForm();
+        authenticatePassword("test-user",PASSWORD);
+        tokens = assertLogin(passwordUser.getId());
+        assertAmr(tokens.idToken, expectedAmrs);
+
+        timeOffSet.set(5);
+
+        oauth.openLoginForm();
+        tokens = assertLogin(passwordUser.getId());
+        assertAmr(tokens.idToken, expectedAmrs);
+        assertAmr(tokens.accessToken, expectedAmrs);
+
+        timeOffSet.set(30);
+
+        AccessTokenResponse refreshed = oauth.doRefreshTokenRequest(tokens.refreshToken);
+        Assertions.assertEquals(200, refreshed.getStatusCode());
+        assertAmr(oauth.verifyIDToken(refreshed.getIdToken()), expectedAmrs);
+        assertAmr(oauth.verifyToken(refreshed.getAccessToken()), expectedAmrs);
+
+        oauth.doLogout(refreshed.getRefreshToken());
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(tokens.idToken.getSessionId())
+                .clientId(CLIENT_ID)
+                .userId(passwordUser.getId())
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     /**
