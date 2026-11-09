@@ -59,15 +59,12 @@ import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
 import org.hamcrest.Matchers;
-import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
