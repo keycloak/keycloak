@@ -27,8 +27,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.jboss.logging.Logger;
 
@@ -106,11 +108,16 @@ final class SuiteTunnel implements AutoCloseable {
             try (Socket target = new Socket(targetHost, targetPort)) {
                 client.getOutputStream().write("HTTP/1.1 200 Connection Established\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
                 client.getOutputStream().flush();
-                executor.execute(() -> pipe(target, client));
+                Future<?> response = executor.submit(() -> pipe(target, client));
                 pipe(client, target);
+                // Both sockets are closed only once the response is forwarded as well, as closing them while the
+                // suite is still answering would cut off its response
+                response.get();
             }
-        } catch (IOException e) {
+        } catch (IOException | ExecutionException e) {
             LOGGER.debug("Conformance suite tunnel connection closed: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -130,7 +137,9 @@ final class SuiteTunnel implements AutoCloseable {
         return text.substring(0, text.indexOf("\r\n"));
     }
 
-    // Copies one direction of the tunnel until either side closes, then closes the other side's output
+    // Copies one direction of the tunnel until its source closes, then closes the output of the other side, which the
+    // other direction still uses for the answer. On an error both sockets are closed, as the other direction would
+    // otherwise wait for data that never comes.
     private static void pipe(Socket from, Socket to) {
         try {
             InputStream input = from.getInputStream();
@@ -142,7 +151,17 @@ final class SuiteTunnel implements AutoCloseable {
             }
             to.shutdownOutput();
         } catch (IOException e) {
-            // the other side closed the connection
+            LOGGER.debug("Conformance suite tunnel forwarding failed: " + e.getMessage());
+            closeQuietly(from);
+            closeQuietly(to);
+        }
+    }
+
+    private static void closeQuietly(Socket socket) {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            // closing anyway
         }
     }
 

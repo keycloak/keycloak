@@ -101,7 +101,7 @@ module are printed to the test output to aid debugging.
 ### Retries
 
 Modules occasionally fail for reasons outside of Keycloak, e.g. network errors or the timing of the suite's waits, so
-a module that does not finish with its expected result is run again, in a new plan, up to 3 times. Only if all
+a module that does not finish with its expected result, or whose run fails with an exception, is run again, in a new plan, up to 3 times. Only if all
 attempts fail does the test fail, with the result of the last attempt. Every retry is printed to the test output,
 prefixed with `[conformance retry]`, also when a later attempt passes, so modules that pass only when run again stay
 visible.

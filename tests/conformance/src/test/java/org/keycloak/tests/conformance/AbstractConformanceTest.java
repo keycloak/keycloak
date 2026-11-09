@@ -52,8 +52,9 @@ public abstract class AbstractConformanceTest {
     private static final Logger LOGGER = Logger.getLogger(AbstractConformanceTest.class);
 
     /**
-     * How often a module not finishing as expected is run again before the test fails, as modules occasionally fail
-     * for reasons outside of Keycloak, e.g. network errors or the timing of the suite's waits. Set it with the
+     * How often a module not finishing as expected, or whose run fails with an exception, is run again before the test
+     * fails, as modules occasionally fail for reasons outside of Keycloak, e.g. network errors or the timing of the
+     * suite's waits. Set it with the
      * {@value} test framework option (system property, {@code KC_TEST_CONFORMANCE_RETRIES} environment variable or
      * keycloak-test.properties); 0 disables the retries.
      */
@@ -129,8 +130,20 @@ public abstract class AbstractConformanceTest {
         int attempts = 1 + Math.max(0, Config.get(RETRIES_PROPERTY, DEFAULT_RETRIES, Integer.class));
         for (int attempt = 1; ; attempt++) {
             // Each run creates a new plan, so an attempt does not depend on the previous one
-            ConformanceModuleResult result = server.client()
-                    .run(moduleVariant, suiteConfig(moduleVariant), beforeStart(moduleVariant), interaction(moduleVariant));
+            ConformanceModuleResult result;
+            try {
+                result = server.client()
+                        .run(moduleVariant, suiteConfig(moduleVariant), beforeStart(moduleVariant), interaction(moduleVariant));
+            } catch (RuntimeException e) {
+                // e.g. the suite's API not answering or the module not reaching a state in time, which is retried like
+                // a module not finishing as expected; the last attempt fails with the exception itself
+                if (attempt < attempts) {
+                    printRetryNotice("Attempt " + attempt + " of " + attempts + " of conformance module "
+                            + moduleVariant.name() + " failed, running it again: " + e);
+                    continue;
+                }
+                throw e;
+            }
             String failure = failure(result, expectedResult);
             if (failure == null) {
                 if (attempt > 1) {
