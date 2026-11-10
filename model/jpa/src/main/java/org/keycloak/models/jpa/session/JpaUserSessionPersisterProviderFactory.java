@@ -49,11 +49,12 @@ public class JpaUserSessionPersisterProviderFactory implements UserSessionPersis
     public static final int DEFAULT_EXPIRATION_BATCH = 512;
 
     private int expirationBatch = DEFAULT_EXPIRATION_BATCH;
+    private final EmptyRealmWatermarks emptyRealmWatermarks = new EmptyRealmWatermarks();
 
     @Override
     public UserSessionPersisterProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaUserSessionPersisterProvider(session, em, expirationBatch);
+        return new JpaUserSessionPersisterProvider(session, em, expirationBatch, emptyRealmWatermarks);
     }
 
     @Override
