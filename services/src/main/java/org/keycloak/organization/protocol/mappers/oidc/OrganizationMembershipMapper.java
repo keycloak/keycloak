@@ -95,6 +95,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue(Boolean.FALSE.toString());
         property.setHelpText(ADD_ORGANIZATION_NAME + ".help");
+        properties.add(property);
         property = new ProviderConfigProperty();
         property.setName(ADD_ORGANIZATION_DOMAIN);
         property.setLabel(ADD_ORGANIZATION_DOMAIN + ".label");
@@ -238,6 +239,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         if (!OIDCAttributeMapperHelper.isMultivalued(copy)) {
             config.put(ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
             config.put(ADD_ORGANIZATION_ID, Boolean.FALSE.toString());
+            config.put(ADD_ORGANIZATION_NAME, Boolean.FALSE.toString());
         }
 
         if (isAddOrganizationAttributes(copy) || isAddOrganizationId(copy)) {
