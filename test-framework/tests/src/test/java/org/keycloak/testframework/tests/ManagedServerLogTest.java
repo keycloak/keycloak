@@ -29,6 +29,8 @@ public class ManagedServerLogTest {
     @Test
     public void multiLineRecordIsLoggedAsSingleRecordWithOriginalLevel() throws Exception {
         Assumptions.assumeTrue(isDistributionSelected(), "Only applies to the distribution server");
+        // A re-used server was started by another JVM, so its output is not read by this test run
+        Assumptions.assumeFalse(Config.getValueTypeConfig(KeycloakServer.class, "reuse", "false", Boolean.class), "Requires a freshly started server");
 
         BlockingQueue<LogRecord> records = new LinkedBlockingQueue<>();
         Handler handler = new Handler() {

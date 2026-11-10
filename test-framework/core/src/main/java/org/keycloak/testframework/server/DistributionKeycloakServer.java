@@ -13,6 +13,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HttpsURLConnection;
@@ -30,9 +31,7 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testframework.util.FileUtils;
 import org.keycloak.testframework.util.ProcessUtils;
 import org.keycloak.testframework.util.TmpDir;
-import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.quarkus.fs.util.ZipUtils;
 import org.jboss.logging.Logger;
 
@@ -379,12 +378,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             try {
                 for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
-                    if (line.startsWith("{")) {
-                        logJson(line);
-                    } else {
-                        detectStartup(line);
-                        LOGGER.info(line);
-                    }
+                    logLine(line);
                 }
             } catch (IOException e) {
                 // Ignored
@@ -401,43 +395,18 @@ public class DistributionKeycloakServer implements KeycloakServer {
             }
         }
 
-        // The server logs in JSON (ECS) format, so a record with a stack trace arrives as a single line.
-        private void logJson(String line) {
-            JsonNode node;
-            try {
-                node = JsonSerialization.mapper.readTree(line);
-            } catch (IOException e) {
+        private void logLine(String line) {
+            Optional<EcsLogRecord> record = line.startsWith("{") ? EcsLogRecord.parse(line) : Optional.empty();
+            if (record.isEmpty()) {
+                // Output that is not an ECS log record is forwarded unchanged
                 detectStartup(line);
                 LOGGER.info(line);
                 return;
             }
 
-            // JSON that is not a log record is forwarded unchanged
-            if (!node.hasNonNull("message")) {
-                LOGGER.info(line);
-                return;
-            }
-
-            String message = node.get("message").asText();
-            detectStartup(message);
-
-            JsonNode stackTrace = node.get("error.stack_trace");
-            if (stackTrace != null && !stackTrace.isNull()) {
-                message = message + "\n" + stackTrace.asText();
-            }
-
-            Logger.Level level = Logger.Level.INFO;
-            String levelString = node.path("log.level").asText("");
-            for (Logger.Level l : Logger.Level.values()) {
-                if (l.name().equals(levelString)) {
-                    level = l;
-                    break;
-                }
-            }
+            detectStartup(record.get().message());
             // Nested under the managed logger to keep its configured level, while preserving the original logger name
-            String loggerName = node.path("log.logger").asText("");
-            Logger logger = loggerName.isEmpty() ? LOGGER : Logger.getLogger(LOGGER_NAME + "." + loggerName);
-            logger.log(level, message);
+            Logger.getLogger(LOGGER_NAME + "." + record.get().loggerName()).log(record.get().level(), record.get().fullMessage());
         }
 
         public boolean waitForStarted() {
