@@ -55,7 +55,16 @@ class FGAPEvaluation implements Evaluation {
         Set<Scope> policyScopes = grantedPolicy.getScopes();
 
         if (isForResourceType(grantedPolicy, resourceType) && policyScopes.contains(grantedScope)) {
-            scopesGrantedByResource.computeIfAbsent(grantedScope, k -> new HashSet<>()).addAll(grantedPolicy.getResources());
+            Set<Resource> grantedResources = scopesGrantedByResource.computeIfAbsent(grantedScope, k -> new HashSet<>());
+
+            grantedResources.addAll(grantedPolicy.getResources());
+
+            if (SCHEMA.isExtendChildren(grantedPolicy) && !grantedPolicy.getResources().contains(permission.getResource())) {
+                // permission inherited from an ancestor group, it grants access to the group being evaluated as if it
+                // was associated with it so that it takes precedence over permissions for all groups
+                grantedResources.add(permission.getResource());
+            }
+
             return true;
         }
 

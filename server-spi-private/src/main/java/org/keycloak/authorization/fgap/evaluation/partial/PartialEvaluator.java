@@ -55,6 +55,8 @@ public final class PartialEvaluator {
     private static final String ID_FIELD = "id";
     private static final String PARTIAL_EVALUATION_CONTEXT_CACHE = "kc.authz.fgap.partial.evaluation.cache";
 
+    private final ExtendChildrenPartialEvaluator extendChildrenEvaluator = new ExtendChildrenPartialEvaluator();
+
     /**
      * @param adminUser the admin bound to the current management request, or {@code null} if none, in which case no filtering is applied
      */
@@ -91,8 +93,12 @@ public final class PartialEvaluator {
     private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         Map<String, Map<String, PartialEvaluationContext>> cache = session.getAttributeOrDefault(PARTIAL_EVALUATION_CONTEXT_CACHE, Map.of());
 
-        if (cache.getOrDefault(adminUser.getId(), Map.of()).containsKey(resourceType.getType())) {
-            PartialEvaluationContext evaluationContext = cache.get(adminUser.getId()).get(resourceType.getType());
+        // the same resource type is evaluated differently when evaluating it as the group of another resource type
+        // (e.g.: groups filtering users by membership), so both evaluations are cached separately
+        String cacheKey = groupResourceType == null ? resourceType.getType() : resourceType.getType() + ":group";
+
+        if (cache.getOrDefault(adminUser.getId(), Map.of()).containsKey(cacheKey)) {
+            PartialEvaluationContext evaluationContext = cache.get(adminUser.getId()).get(cacheKey);
             evaluationContext.setStorage(storage);
             evaluationContext.setCriteriaBuilder(builder);
             evaluationContext.setCriteriaQuery(queryBuilder);
@@ -102,6 +108,8 @@ public final class PartialEvaluator {
 
         Set<String> allowedResources = new HashSet<>();
         Set<String> deniedResources = new HashSet<>();
+        // outcome for the admin of each permission, used to resolve permissions extended to children groups
+        Map<String, Boolean> permissionOutcomes = new HashMap<>();
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
 
@@ -115,6 +123,7 @@ public final class PartialEvaluator {
 
                     if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
                         deniedResources.addAll(ids);
+                        permissionOutcomes.put(permission.getId(), false);
                         continue;
                     }
 
@@ -132,6 +141,7 @@ public final class PartialEvaluator {
 
                     if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {
                         deniedResources.addAll(ids);
+                        permissionOutcomes.put(permission.getId(), false);
                         continue;
                     }
 
@@ -141,11 +151,31 @@ public final class PartialEvaluator {
 
                     if (Outcome.GRANT.equals(granted)) {
                         allowedResources.addAll(ids);
+                        permissionOutcomes.putIfAbsent(permission.getId(), true);
                     } else {
                         deniedResources.addAll(ids);
+                        permissionOutcomes.put(permission.getId(), false);
                     }
                 }
             });
+        }
+
+        if (AdminPermissionsSchema.GROUPS.equals(resourceType)) {
+            // when evaluating groups to filter users by membership, the member scope is what protects the members
+            boolean memberScope = groupResourceType != null;
+            String scope = memberScope ? AdminPermissionsSchema.VIEW_MEMBERS : AdminPermissionsSchema.VIEW;
+            Set<String> grantedPermissions = new HashSet<>();
+
+            permissionOutcomes.forEach((id, granted) -> {
+                if (granted) {
+                    grantedPermissions.add(id);
+                }
+            });
+
+            ExtendChildrenPartialEvaluator.Result inherited = extendChildrenEvaluator.evaluate(session, scope, memberScope, grantedPermissions);
+
+            allowedResources.addAll(inherited.allowed());
+            deniedResources.addAll(inherited.denied());
         }
 
         allowedResources.removeAll(deniedResources);
@@ -156,13 +186,13 @@ public final class PartialEvaluator {
             cache = new HashMap<>();
         }
 
-        cache.computeIfAbsent(adminUser.getId(), s -> new HashMap<>()).computeIfAbsent(resourceType.getType(), s -> context);
+        cache.computeIfAbsent(adminUser.getId(), s -> new HashMap<>()).computeIfAbsent(cacheKey, s -> context);
 
         if (session.getAttribute(PARTIAL_EVALUATION_CONTEXT_CACHE) == null) {
             session.setAttribute(PARTIAL_EVALUATION_CONTEXT_CACHE, cache);
         }
 
-        return cache.get(adminUser.getId()).get(resourceType.getType());
+        return cache.get(adminUser.getId()).get(cacheKey);
     }
 
     public List<Predicate> buildPredicates(PartialEvaluationContext context) {
