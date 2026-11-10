@@ -120,7 +120,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         final String lastname = "Lastname_loginWhenUserExistsOnConsumer";
         final String username = "firstandlastname";
         final String email = "firstnamelastname@example.org";
-        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email);
+        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email, user -> user.setEmailVerified(Boolean.TRUE));
         createUser(bc.consumerRealmName(), username, "THIS PASSWORD IS USELESS", null, null, email);
 
         oauth.client("broker-app");

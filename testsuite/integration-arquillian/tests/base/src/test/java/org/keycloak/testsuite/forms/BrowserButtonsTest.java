@@ -18,12 +18,15 @@
 package org.keycloak.testsuite.forms;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -387,4 +390,22 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         registerPage.assertCurrent();
     }
 
+    @Test
+     public void executeActionInAnotherFlow() {
+         // open the login page
+         oauth.openLoginForm();
+         loginPage.assertCurrent();
+
+         // execute the action specified but in another flow like reset-credentials
+         String loginUrl = loginPage.getFormUrl();
+         KeycloakUriBuilder resetCredentialsBuilder = KeycloakUriBuilder.fromUri(loginUrl, false);
+         resetCredentialsBuilder.replacePath(Paths.get(resetCredentialsBuilder.getPath()).getParent()
+                 .resolve(LoginActionsService.RESET_CREDENTIALS_PATH).toString(), false);
+         oauth.getDriver().navigate().to(resetCredentialsBuilder.buildAsString());
+         resetPasswordPage.assertCurrent();
+
+         // go back to initial login url, page is expired because flow was reset
+         oauth.getDriver().navigate().to(loginUrl);
+         loginExpiredPage.assertCurrent();
+     }
 }

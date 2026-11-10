@@ -200,7 +200,6 @@ public abstract class AbstractRestServiceTest {
                             ClientBuilder.create("root-url-client")
                                     .id(KeycloakModelUtils.generateId())
                                     .rootUrl("http://localhost:8180/foo/bar")
-                                    .adminUrl("http://localhost:8180/foo/bar")
                                     .baseUrl("/baz")
                                     .redirectUris(
                                             "http://localhost:8180/foo/bar/*",

@@ -214,6 +214,11 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         return Collections.emptyMap();
     }
 
+    @Override
+    public Set<String> getAdapterConfigurationSecretKeys() {
+        return Set.of();
+    }
+
    @Override
     public Set<String> getProtocolAuthenticatorMethods(String loginProtocol) {
         if (loginProtocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {

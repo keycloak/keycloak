@@ -32,6 +32,7 @@ import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
 import org.keycloak.services.clientregistration.policy.impl.ClientScopesClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ConsentRequiredClientRegistrationPolicyFactory;
+import org.keycloak.services.clientregistration.policy.impl.DefaultRolesClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.RegistrationWebOriginsPolicyFactory;
@@ -43,7 +44,7 @@ import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientReg
  */
 public class DefaultClientRegistrationPolicies {
 
-    private static String[] DEFAULT_ALLOWED_PROTOCOL_MAPPERS = {
+    private static final String[] DEFAULT_ALLOWED_PROTOCOL_MAPPERS = {
             UserAttributeStatementMapper.PROVIDER_ID,
             UserAttributeMapper.PROVIDER_ID,
             UserPropertyAttributeStatementMapper.PROVIDER_ID,
@@ -99,10 +100,16 @@ public class DefaultClientRegistrationPolicies {
 
 
     private static void addAuthPolicies(RealmModel realm, String policyTypeKey) {
+        ComponentModel scopeModel = createModelInstance("Full Scope Disabled", realm, ScopeClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
+        realm.addComponentModel(scopeModel);
+
         addGenericPolicies(realm, policyTypeKey);
     }
 
     private static void addGenericPolicies(RealmModel realm, String policyTypeKey) {
+        ComponentModel defaultRolesModel = createModelInstance("Default Roles Disabled", realm, DefaultRolesClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
+        realm.addComponentModel(defaultRolesModel);
+
         ComponentModel protMapperModel = createModelInstance("Allowed Protocol Mapper Types", realm, ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
         protMapperModel.getConfig().put(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, Arrays.asList(DEFAULT_ALLOWED_PROTOCOL_MAPPERS));
         realm.addComponentModel(protMapperModel);

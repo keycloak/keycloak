@@ -34,7 +34,7 @@
         <RoleIdentifiers>
             <Attribute name="Role"/>
         </RoleIdentifiers>
-        <IDP entityID="idp">
+        <IDP entityID="http://localhost:8080/auth/realms/demo">
             <SingleSignOnService signRequest="true"
                                  validateResponseSignature="true"
                                  requestBinding="POST"

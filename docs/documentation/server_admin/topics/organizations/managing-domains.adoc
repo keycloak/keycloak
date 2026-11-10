@@ -31,8 +31,8 @@ Exact::
 Matches only the specified value. `example.com` matches `user@example.com` but not `user@sub.example.com`.
 
 Wildcard::
-Prefix the base domain with `*.` to match the base domain and all its subdomains at any depth.
-`*.example.com` matches `user@example.com`, `user@sub.example.com`, and `user@deep.sub.example.com`.
+Prefix the base domain with `+*.+` to match the base domain and all its subdomains at any depth.
+`+*.example.com+` matches `user@example.com`, `user@sub.example.com`, and `user@deep.sub.example.com`.
 
 == Mapping email addresses to organizations
 
@@ -41,8 +41,8 @@ organization using the following rules:
 
 . Matching is case-insensitive.
 . The most specific match wins, measured by the number of domain parts. For example, when resolving `user@deep.sub.example.com`:
-  * `deep.sub.example.com` (4 parts, exact) wins over `*.sub.example.com` (4 parts, wildcard) and `*.example.com` (3 parts, wildcard).
-  * `*.sub.example.com` (4 parts) wins over `*.example.com` (3 parts).
+  * `deep.sub.example.com` (4 parts, exact) wins over `+*.sub.example.com+` (4 parts, wildcard) and `+*.example.com+` (3 parts, wildcard).
+  * `+*.sub.example.com+` (4 parts) wins over `+*.example.com+` (3 parts).
 . When two domains have the same number of parts, an exact match wins over a wildcard.
 
 The same rules determine which domain is reported in token claims such as the `domain` claim from the
@@ -98,9 +98,9 @@ For the full membership algorithm, see <<authenticating-members_{context},Authen
 
 * A domain cannot be shared across organizations in the same realm.
 * Domains are stored and compared in lowercase.
-* Wildcard domains must have at least 2 parts after the `*.` prefix (e.g. `*.example.com`). Wildcards over bare TLDs such as `*.com` or `*.org` are rejected.
+* Wildcard domains must have at least 2 parts after the `+*.+` prefix (e.g. `+*.example.com+`). Wildcards over bare TLDs such as `+*.com+` or `+*.org+` are rejected.
 * A domain cannot have more than 10 parts.
-* The `*.` wildcard prefix may appear only once and only at the start of the value (e.g. `sub.*.example.com` is rejected).
+* The `+*.+` wildcard prefix may appear only once and only at the start of the value (e.g. `+sub.*.example.com+` is rejected).
 
 == Considerations
 
@@ -109,12 +109,12 @@ Use an exact domain for a single, well-known address. Use a wildcard when new su
 all map to the same organization.
 
 Overlapping domains across organizations are allowed but resolved deterministically::
-An organization may own `*.example.com` while another owns `sub.example.com`. Only one organization is returned per lookup,
+An organization may own `+*.example.com+` while another owns `sub.example.com`. Only one organization is returned per lookup,
 always the most specific match, with exact winning over wildcard at equal specificity. Verify the intended mapping
 before relying on overlapping configurations.
 
 Use exact domains to model exceptions::
-An organization can hold both `*.example.com` and `vip.example.com`. Addresses under `vip.example.com` resolve to the
+An organization can hold both `+*.example.com+` and `vip.example.com`. Addresses under `vip.example.com` resolve to the
 exact entry; all other subdomains fall back to the wildcard.
 
 Domains without routing::
