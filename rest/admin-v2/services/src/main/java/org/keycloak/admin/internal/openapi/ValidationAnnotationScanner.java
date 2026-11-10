@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -81,7 +82,7 @@ public class ValidationAnnotationScanner {
 
     private ResourceBundle loadValidationMessages() {
         try {
-            return ResourceBundle.getBundle("org.hibernate.validator.ValidationMessages");
+            return ResourceBundle.getBundle("org.hibernate.validator.ValidationMessages", Locale.ROOT);
         } catch (MissingResourceException e) {
             log.warn("Could not load ValidationMessages resource bundle", e);
             return null;
