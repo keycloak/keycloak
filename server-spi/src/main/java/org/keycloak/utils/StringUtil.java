@@ -100,7 +100,7 @@ public class StringUtil {
      *
      * @param str The string to normalize
      * @param quotes The quotes to escape (for example " or '). It can be null.
-     * @return The string without weird whitespaces and quotes escaped
+     * @return The string without weird whitespaces and with quotes and backslashes escaped
      */
     public static String sanitizeSpacesAndQuotes(String str, Character quotes) {
         // idea taken from commons-lang StringUtils.normalizeSpace
@@ -115,7 +115,7 @@ public class StringUtil {
                     sb = new StringBuilder(str.length() + 10).append(str.substring(0, i));
                 }
                 sb.append(' ');
-            } else if (quotes != null && actualChar == quotes) {
+            } else if (quotes != null && (actualChar == quotes || actualChar == '\\')) {
                 if (sb == null) {
                     sb = new StringBuilder(str.length() + 10).append(str.substring(0, i));
                 }
