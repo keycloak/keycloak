@@ -3,6 +3,7 @@ package org.keycloak.tests.admin.identityprovider;
 import java.util.List;
 
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderConfig;
 import org.keycloak.broker.spiffe.SpiffeIdentityProviderFactory;
@@ -78,6 +79,8 @@ public class IdentityProviderTypeTest {
                     .identityProviders(IdentityProviderBuilder.create()
                         .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                         .alias("mysaml")
+                        .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
+                        .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
                         .build());
         }
     }

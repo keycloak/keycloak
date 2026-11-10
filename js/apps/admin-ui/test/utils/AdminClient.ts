@@ -507,6 +507,17 @@ class AdminClient {
     );
   }
 
+  async getIdentityProvider(
+    idpAlias: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return await this.#client.identityProviders.findOne({
+      alias: idpAlias,
+      realm,
+    });
+  }
+
   async deleteIdentityProvider(
     idpAlias: string,
     realm: string = this.#client.realmName,

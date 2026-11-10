@@ -1,9 +1,13 @@
 package org.keycloak.tests.admin.partialimport;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.admin.client.resource.IdentityProviderResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.partialimport.ResourceType;
@@ -15,10 +19,34 @@ import org.keycloak.tests.suites.DatabaseTest;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = AbstractPartialImportTest.PartialImportServerConfig.class)
 public class PartialImportProvidersTest extends AbstractPartialImportTest {
+
+    @Test
+    public void testAddProvidersWithoutSignatureSettingsKeepsThemAbsent() {
+        setFail();
+
+        IdentityProviderRepresentation saml = new IdentityProviderRepresentation();
+        saml.setAlias("saml-without-signature-settings");
+        saml.setProviderId(SAMLIdentityProviderFactory.PROVIDER_ID);
+        saml.setEnabled(true);
+        Map<String, String> samlConfig = new HashMap<>();
+        samlConfig.put(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://localhost/saml");
+        saml.setConfig(samlConfig);
+
+        piRep.setIdentityProviders(List.of(saml));
+
+        PartialImportResults results = doImport();
+        assertEquals(1, results.getAdded(), results.getErrorMessage());
+
+        Map<String, String> storedSaml = managedRealm.admin().identityProviders().get(saml.getAlias()).toRepresentation().getConfig();
+
+        assertFalse(storedSaml.containsKey(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+        assertFalse(storedSaml.containsKey(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED));
+    }
 
     @Test
     @DatabaseTest

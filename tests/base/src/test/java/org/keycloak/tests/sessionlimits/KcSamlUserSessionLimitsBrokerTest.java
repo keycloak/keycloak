@@ -130,6 +130,7 @@ public class KcSamlUserSessionLimitsBrokerTest extends AbstractUserSessionLimits
                     .attribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT,
                             "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
                     .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "true")
+                    .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
                     .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
                     .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
                     .attribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "false")

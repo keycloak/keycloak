@@ -231,6 +231,8 @@ public class SamlBrokerEmptyNameIdTest {
                     .identityProviders(IdentityProviderBuilder.create()
                             .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
+                            .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false")
+                            .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
                             // Brokered profiles are kept in sync with the IdP on every login
                             .attribute(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name()))
                     .identityProviderMappers(
