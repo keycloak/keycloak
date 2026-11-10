@@ -241,12 +241,6 @@ export const RealmOverrides = ({
     onConfirm: async () => {
       try {
         for (const key of selectedRowKeys) {
-          delete (
-            i18n.store.data[whoAmI.locale][currentRealm] as Record<
-              string,
-              string
-            >
-          )[key];
           await adminClient.realms.deleteRealmLocalizationTexts({
             realm: currentRealm!,
             selectedLocale: selectMenuLocale,
@@ -256,6 +250,7 @@ export const RealmOverrides = ({
         setAreAllRowsSelected(false);
         setSelectedRowKeys([]);
         refreshTable();
+        await i18n.reloadResources();
 
         addAlert(t("deleteAllTranslationsSuccess"), AlertVariant.success);
       } catch (error) {

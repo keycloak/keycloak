@@ -153,13 +153,16 @@ export default function EditUser() {
         throw new Error(t("notFound"));
       }
 
-      const { userProfileMetadata, ...user } = userData;
+      const { userProfileMetadata, ...userWithoutMetadata } = userData;
       setUserProfileMetadata(userProfileMetadata);
-      user.unmanagedAttributes = unmanagedAttributes;
-      user.attributes = filterManagedAttributes(
-        user.attributes,
+      const user = {
+        ...userWithoutMetadata,
         unmanagedAttributes,
-      );
+        attributes: filterManagedAttributes(
+          userWithoutMetadata.attributes,
+          unmanagedAttributes,
+        ),
+      };
 
       if (upConfig.unmanagedAttributePolicy !== undefined) {
         setUnmanagedAttributesEnabled(true);
