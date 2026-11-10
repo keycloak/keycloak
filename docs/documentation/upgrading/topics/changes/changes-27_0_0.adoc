@@ -548,6 +548,17 @@ Existing users are not updated automatically.
 Users created before the upgrade have no stored value for these attributes unless an administrator has since saved the user.
 To store the default value for such users, save each user in the Admin Console, or update the attribute through the Admin REST API.
 
+=== Backslashes are escaped in `jboss-logging` event messages
+// https://github.com/keycloak/keycloak/issues/54917
+
+The `jboss-logging` event listener now escapes the backslash character in quoted values as `\\`, in the same way as it already escapes the quote character.
+Previously, a value ending in `\"`, such as a user name sent in a failed login request, was logged as `\\"`.
+Log parsers that interpret backslash escapes read this as the end of the value and read the rest of it as additional fields, so an unauthenticated request could forge fields such as `type` or `userId` in the parsed event.
+After upgrading, a value such as the user name `DOMAIN\alice` is logged as `username="DOMAIN\\alice"` instead of `username="DOMAIN\alice"`.
+Log parsers that interpret backslash escapes still read the original value and need no change.
+Log parsers that match on the exact logged text must be updated to expect the doubled backslash.
+The change does not apply when the listener is configured with `--spi-events-listener--jboss-logging--quotes=none` or `--spi-events-listener--jboss-logging--sanitize=false`.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
