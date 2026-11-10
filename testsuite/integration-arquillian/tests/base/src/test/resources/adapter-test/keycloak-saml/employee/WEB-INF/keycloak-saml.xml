@@ -28,7 +28,7 @@
             <Attribute name="memberOf"/>
             <Attribute name="Role"/>
         </RoleIdentifiers>
-        <IDP entityID="idp">
+        <IDP entityID="http://localhost:8080/auth/realms/demo">
             <SingleSignOnService requestBinding="POST"
                                  bindingUrl="http://localhost:8080/auth/realms/demo/protocol/saml"
                     />

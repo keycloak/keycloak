@@ -1082,6 +1082,8 @@ public class DPoPTest {
                 .directAccessGrantsEnabled(true)
                 .attribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, Boolean.TRUE.toString()));
 
+        AdminApiUtil.addAdminApiClientScope(realm.admin(), TEST_CONFIDENTIAL_CLIENT_ID);
+
         try (Keycloak adminClientDPoP = KeycloakBuilder.builder()
                 .serverUrl(keycloakUrls.getBaseUrl().toString())
                 .realm(realm.getName())

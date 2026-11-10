@@ -70,6 +70,7 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -163,6 +164,13 @@ public class ClientResource {
     })
     public Response update(final ClientRepresentation rep) {
         auth.clients().requireConfigure(client);
+        if (rep.getProtocolMappers() != null) {
+            Set<String> changedMapperTypes = ProtocolMapperUtils.getChangedOrDeletedMapperTypes(
+                    client.getProtocolMappersStream(), rep.getProtocolMappers());
+            if (!changedMapperTypes.isEmpty()) {
+                ProtocolMappersResource.requireManageProtocolMappers(auth, realm, changedMapperTypes);
+            }
+        }
 
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(rep, client, auth.adminAuth()));
@@ -259,7 +267,8 @@ public class ClientResource {
 
         ClientInstallationProvider provider = session.getProvider(ClientInstallationProvider.class, providerId);
         if (provider == null) throw new NotFoundException("Unknown Provider");
-        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri());
+        return provider.generateInstallation(session, realm, client, session.getContext().getUri().getBaseUri(),
+                auth.clients().canManage(client));
     }
 
     /**

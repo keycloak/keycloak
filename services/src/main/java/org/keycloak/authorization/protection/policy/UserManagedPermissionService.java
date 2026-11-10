@@ -167,6 +167,10 @@ public class UserManagedPermissionService {
         }
 
         if (representation != null) {
+            if (representation.getResourceType() != null) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource type cannot be set on a user-managed permission", Response.Status.BAD_REQUEST);
+            }
+
             Set<String> resourceScopes = resource.getScopes().stream().map(scope -> scope.getName()).collect(Collectors.toSet());
             Set<String> scopes = representation.getScopes();
 

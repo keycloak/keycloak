@@ -62,6 +62,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -127,6 +128,75 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         try (Response response = realmAdminClient.realm(realm.getName()).groups().group(parentGroup.getId()).subGroup(childGroup)) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
         }
+    }
+
+    @Test
+    public void testMoveGroupToTopLevelRequiresManagePermissionOnChild() {
+        // create parentGroup and childGroup, with childGroup nested under parentGroup
+        GroupRepresentation parentGroup = new GroupRepresentation();
+        parentGroup.setName("parent_group");
+        try (Response response = realm.admin().groups().add(parentGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            parentGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(parentGroup.getId()).remove());
+        }
+
+        GroupRepresentation childGroup = new GroupRepresentation();
+        childGroup.setName("child_group");
+        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            childGroup.setId(ApiUtil.getCreatedId(response));
+            realm.cleanup().add(r -> r.groups().group(childGroup.getId()).remove());
+        }
+
+        UserPolicyRepresentation allowPolicy = createUserPolicy(realm, adminPermissionsClient, "Allow My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+        UserPolicyRepresentation denyPolicy = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Deny My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
+
+        // positive: allow manage on all groups
+        createAllPermission(adminPermissionsClient, GROUPS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW, MANAGE));
+
+        // negative: deny manage on childGroup specifically
+        ScopePermissionRepresentation denyPermission = createGroupPermission(childGroup, Set.of(VIEW, MANAGE), denyPolicy);
+
+        // moving childGroup to top-level should be forbidden — myadmin is denied manage on childGroup
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+        }
+
+        // remove the deny permission
+        getScopePermissionsResource(adminPermissionsClient).findById(denyPermission.getId()).remove();
+
+        // moving childGroup to top-level should now succeed
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().add(childGroup)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testMoveGroupRequiresPermissionToGrantAdminRoles() {
+        GroupRepresentation source = createGroup("source");
+        GroupRepresentation destination = createGroup("destination");
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy",
+                realm.admin().users().search("myadmin").get(0).getId());
+        createGroupPermission(Set.of(source, destination), Set.of(VIEW, MANAGE), policy);
+
+        // Resource permissions allow the move while the destination grants no administrative roles.
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(destination.getId()).subGroup(source)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        try (Response response = realm.admin().groups().add(source)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        String realmManagementId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmManagementId).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        realm.admin().groups().group(destination.getId()).roles().clientLevel(realmManagementId).add(List.of(realmAdminRole));
+
+        // The same resource permissions do not authorize granting the destination's administrative roles.
+        try (Response response = realmAdminClient.realm(realm.getName()).groups().group(destination.getId()).subGroup(source)) {
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+        assertNull(realm.admin().groups().group(source.getId()).toRepresentation().getParentId());
     }
 
     @Test

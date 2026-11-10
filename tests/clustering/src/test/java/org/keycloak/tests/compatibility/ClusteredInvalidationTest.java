@@ -17,7 +17,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = CompatibilityServerConfig.class)
 public class ClusteredInvalidationTest {
 
     @InjectRealm

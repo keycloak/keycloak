@@ -8,6 +8,7 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
@@ -25,6 +26,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.Constants.REALM_MANAGEMENT_CLIENT_ID;
@@ -40,6 +42,12 @@ public class ClientRegistrationPermissionsTest extends AbstractClientRegistratio
     @InjectUser(config = UserWithoutRoles.class)
     ManagedUser userWithoutRoles;
 
+    @BeforeEach
+    public void allowProtocolMappersInDCR() {
+        // Protocol mapper types must be allowed both in the realm attribute for client admins and in the DCR policy
+        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS,
+                String.join(",", UserPropertyMapper.PROVIDER_ID, UserAttributeMapper.PROVIDER_ID)));
+    }
 
     // Test for scenario when userPropertyMapper is added with admin roles being added to the token, but UserModel does not have any admin roles
     @Test

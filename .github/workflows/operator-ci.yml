@@ -10,7 +10,6 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   MINIKUBE_VERSION: v1.38.0
   KUBERNETES_VERSION: v1.35.0
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
@@ -123,7 +122,7 @@ jobs:
       - name: Build Keycloak Docker images
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ env.version_remote }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
@@ -327,6 +326,12 @@ jobs:
           name: keycloak-dist
           path: quarkus/container
 
+      - name: Wait for Minikube registry
+        run: |
+          # minikube start can return before the registry addon accepts connections on port 5000
+          kubectl -n kube-system wait --for=condition=ready pod -l kubernetes.io/minikube-addons=registry --timeout=120s
+          timeout 120 bash -c 'until curl -sf "http://$(minikube ip):5000/v2/" > /dev/null; do sleep 2; done'
+
       - name: Arrange OLM test installation
         working-directory: operator
         run: |
@@ -437,7 +442,7 @@ jobs:
       - name: Build Keycloak Docker image
         run: |
           eval $(minikube -p minikube docker-env)
-          (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
+          (cd quarkus/container && docker build --ulimit nofile=1024000:1024000 --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ env.version_remote }})
           
       - name: Arrange kustomize test installation for own namespace
         run: |

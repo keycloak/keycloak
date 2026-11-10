@@ -35,11 +35,13 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Encode;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
@@ -55,9 +57,12 @@ import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.TokenUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.protocol.oidc.mappers.AdminApiAudienceMapper.getAdminApiAudience;
 
 /**
  * Root resource for admin console and admin REST API
@@ -205,14 +210,24 @@ public class AdminRoot {
         }
         session.getContext().setRealm(realm);
 
-        AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
                 .setConnection(session.getContext().getConnection())
-                .setHeaders(headers)
-                .authenticate();
+                .setHeaders(headers);
+
+        if (isAudienceCheckEnabled()) {
+            authenticator.setAudience(getAdminApiAudience(session, realm));
+        }
+
+        AuthenticationManager.AuthResult authResult = authenticator.authenticate();
 
         if (authResult == null) {
             logger.debug("Token not valid");
+            throw new NotAuthorizedException("Bearer");
+        }
+
+        if (isAudienceCheckEnabled() && !TokenUtil.hasScope(authResult.token().getScope(), Constants.KEYCLOAK_ADMIN_API_SCOPE)) {
+            logger.debug("Token is missing the required admin API scope");
             throw new NotAuthorizedException("Bearer");
         }
 
@@ -344,6 +359,10 @@ public class AdminRoot {
 
     private static boolean isAdminApiEnabled() {
         return Profile.isFeatureEnabled(Profile.Feature.ADMIN_API);
+    }
+
+    private static boolean isAudienceCheckEnabled() {
+        return Config.scope("admin").getBoolean("audienceCheckEnabled", true);
     }
 
     private static boolean isAdminConsoleEnabled() {

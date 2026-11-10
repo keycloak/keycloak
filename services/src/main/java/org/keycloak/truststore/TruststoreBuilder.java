@@ -47,6 +47,7 @@ public class TruststoreBuilder {
     public static final String SYSTEM_TRUSTSTORE_KEY = "javax.net.ssl.trustStore";
     public static final String SYSTEM_TRUSTSTORE_PASSWORD_KEY = "javax.net.ssl.trustStorePassword";
     public static final String SYSTEM_TRUSTSTORE_TYPE_KEY = "javax.net.ssl.trustStoreType";
+    public static final String SYSTEM_TRUSTSTORE_PROVIDER_KEY = "javax.net.ssl.trustStoreProvider";
     private static final String CERT_PROTECTION_ALGORITHM_KEY = "keystore.pkcs12.certProtectionAlgorithm";
     public static final String DUMMY_PASSWORD = "keycloakchangeit"; // fips length compliant dummy password
     static final String PKCS12 = "PKCS12";
@@ -78,6 +79,7 @@ public class TruststoreBuilder {
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY, file.getAbsolutePath());
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, truststoreType.name());
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, DUMMY_PASSWORD);
+        System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY, truststore.getProvider().getName());
     }
 
     /**
@@ -211,10 +213,12 @@ public class TruststoreBuilder {
         String originalTruststoreKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY + ".orig";
         String originalTruststoreTypeKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY + ".orig";
         String originalTruststorePasswordKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY + ".orig";
+        String originalTruststoreProviderKey = TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY + ".orig";
 
         String trustStorePath = System.getProperty(originalTruststoreKey);
         String type = PKCS12;
         String password = null;
+        String provider = null;
         File defaultTrustStore = null;
         if (trustStorePath == null) {
             trustStorePath = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY);
@@ -223,9 +227,15 @@ public class TruststoreBuilder {
             } else {
                 type = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, KeyStore.getDefaultType());
                 password = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY);
+                provider = System.getProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PROVIDER_KEY);
                 // save the original information
                 System.setProperty(originalTruststoreKey, trustStorePath);
                 System.setProperty(originalTruststoreTypeKey, type);
+                if (provider == null) {
+                    System.clearProperty(originalTruststoreProviderKey);
+                } else {
+                    System.setProperty(originalTruststoreProviderKey, provider);
+                }
                 if (password == null) {
                     System.getProperties().remove(originalTruststorePasswordKey);
                 } else {
@@ -236,12 +246,13 @@ public class TruststoreBuilder {
         } else {
             type = System.getProperty(originalTruststoreTypeKey);
             password = System.getProperty(originalTruststorePasswordKey);
+            provider = System.getProperty(originalTruststoreProviderKey);
             defaultTrustStore = new File(trustStorePath);
         }
 
         if (defaultTrustStore.exists()) {
             String path = defaultTrustStore.getAbsolutePath();
-            mergeTrustStore(truststore, path, loadStore(path, type, password));
+            mergeTrustStore(truststore, path, loadStore(path, type, password, provider));
         } else {
             LOGGER.warnf("Default truststore was to be included, but could not be found at: %s", defaultTrustStore);
         }
@@ -259,8 +270,12 @@ public class TruststoreBuilder {
     }
 
     static KeyStore loadStore(String path, String type, String password) {
+        return loadStore(path, type, password, null);
+    }
+
+    static KeyStore loadStore(String path, String type, String password, String provider) {
         try {
-            return KeystoreUtil.loadKeyStore(path, password, type);
+            return KeystoreUtil.loadKeyStore(path, password, type, provider);
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to initialize truststore: " + new File(path).getAbsolutePath() + ", type: " + type, e);

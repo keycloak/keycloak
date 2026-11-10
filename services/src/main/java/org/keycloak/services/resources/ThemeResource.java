@@ -162,7 +162,9 @@ public class ThemeResource {
 
             InputStream resource = null;
             if (encodingProvider != null) {
-                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path), themeType, themeName, path.replace('/', File.separatorChar));
+                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path),
+                        theme.getType().toString().toLowerCase(), theme.getName(),
+                        path.replace('/', File.separatorChar));
             }
             if (resource == null) {
                 // Encoding failures should not prevent serving the original resource
