@@ -29,7 +29,10 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
@@ -172,11 +175,51 @@ public class JBossLoggingEventListenerProviderTest {
         });
     }
 
+    @Test
+    public void testAdminSanitizedBackslash() {
+        AdminEvent adminEvent = createEvent("error with \\ backslash and \\\"quote");
+        test(adminEvent, false, message -> {
+            MatcherAssert.assertThat(message, Matchers.startsWith("WARN "));
+            adminEvent.setError("error with \\\\ backslash and \\\\\\\"quote");
+            assertAdminEvent(adminEvent, message);
+        });
+    }
+
+    @Test
+    public void testEventBackslashCannotCloseQuotedValue() {
+        Event event = createUserEvent("user_not_found");
+        event.setDetails(Map.of(Details.USERNAME, "a\\\", type=LOGIN, userId=forged, error=none, z=\\\""));
+        test(Map.of(), event, message -> {
+            MatcherAssert.assertThat(message, Matchers.startsWith("WARN "));
+            assertAdminEventKey(message, "type", "LOGIN_ERROR");
+            assertAdminEventKey(message, "error", "user_not_found");
+            assertAdminEventKey(message, "username", "a\\\\\\\", type=LOGIN, userId=forged, error=none, z=\\\\\\\"");
+        });
+    }
+
+    @Test
+    public void testEventBackslashNoQuote() {
+        Event event = createUserEvent("user_not_found");
+        event.setDetails(Map.of(Details.USERNAME, "DOMAIN\\user"));
+        test(Map.of("quotes", "none"), event, message -> {
+            MatcherAssert.assertThat(message, Matchers.startsWith("WARN "));
+            assertAdminEventKey(message, "username", "DOMAIN\\user", "");
+        });
+    }
+
     private static void test(AdminEvent adminEvent, boolean includeRepresentation, Consumer<String> assertMessage) {
         test(Map.of(), adminEvent, includeRepresentation, assertMessage);
     }
 
     private static void test(Map<String, String> config, AdminEvent adminEvent, boolean includeRepresentation, Consumer<String> assertMessage) {
+        test(config, prov -> prov.logAdminEvent(adminEvent, includeRepresentation), assertMessage);
+    }
+
+    private static void test(Map<String, String> config, Event event, Consumer<String> assertMessage) {
+        test(config, prov -> prov.logEvent(event), assertMessage);
+    }
+
+    private static void test(Map<String, String> config, Consumer<JBossLoggingEventListenerProvider> log, Consumer<String> assertMessage) {
         KeycloakSession session = createSession(config);
         Logger logger = Logger.getLogger("org.keycloak.events");
         StringWriter sw = new StringWriter();
@@ -184,7 +227,7 @@ public class JBossLoggingEventListenerProviderTest {
         try {
             JBossLoggingEventListenerProvider prov = (JBossLoggingEventListenerProvider) session.getProvider(
                     EventListenerProvider.class, JBossLoggingEventListenerProviderFactory.ID);
-            prov.logAdminEvent(adminEvent, includeRepresentation);
+            log.accept(prov);
 
             assertMessage.accept(sw.toString());
         } finally {
@@ -253,6 +296,17 @@ public class JBossLoggingEventListenerProviderTest {
         adminEvent.setResourcePath("resource-path");
         adminEvent.setError(error);
         return adminEvent;
+    }
+
+    private static Event createUserEvent(String error) {
+        Event event = new Event();
+        event.setType(EventType.LOGIN_ERROR);
+        event.setRealmId("realm-id");
+        event.setRealmName("realm-name");
+        event.setClientId("client-id");
+        event.setIpAddress("localhost");
+        event.setError(error);
+        return event;
     }
 
     private static void assertAdminEvent(AdminEvent adminEvent, String message) {
