@@ -60,6 +60,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     public static final String ADD_ORGANIZATION_ATTRIBUTES = "addOrganizationAttributes";
     public static final String ADD_ORGANIZATION_ID = "addOrganizationId";
     public static final String ADD_ORGANIZATION_DOMAIN = "addOrganizationDomain";
+    public static final String ADD_ORGANIZATION_NAME = "addOrganizationName";
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -88,6 +89,12 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         property.setDefaultValue(Boolean.FALSE.toString());
         property.setHelpText(ADD_ORGANIZATION_ID + ".help");
         properties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(ADD_ORGANIZATION_NAME);
+        property.setLabel(ADD_ORGANIZATION_NAME + ".label");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(Boolean.FALSE.toString());
+        property.setHelpText(ADD_ORGANIZATION_NAME + ".help");
         property = new ProviderConfigProperty();
         property.setName(ADD_ORGANIZATION_DOMAIN);
         property.setLabel(ADD_ORGANIZATION_DOMAIN + ".label");
@@ -194,6 +201,9 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
                 claims.put("domain", domain == null ? null : domain.getName());
             }
+            if (isAddOrganizationName(model)) {
+               claims.put("name", o.getName());
+            }
 
             value.put(o.getAlias(), claims);
         }
@@ -259,6 +269,9 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_ID, Boolean.FALSE.toString()));
     }
 
+    private boolean isAddOrganizationName(ProtocolMapperModel model) {
+        return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_NAME, Boolean.FALSE.toString()));
+    }
     private boolean isAddOrganizationDomain(ProtocolMapperModel model) {
         return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_DOMAIN, Boolean.FALSE.toString()));
     }
