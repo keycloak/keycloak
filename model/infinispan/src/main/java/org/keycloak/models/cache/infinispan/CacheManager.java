@@ -57,8 +57,14 @@ import org.jboss.logging.Logger;
     the revision is set to the next value of the node's local counter, which is higher than any value that node has used before.
     Revisions are only compared on the same node, so they don't need to match across nodes.
  8. Node 1 tries to cache the user it read in step 2.
-    addRevisioned() sees that the current revision is newer than the revision recorded in step 1 and skips caching,
-    so the stale entry is not stored.
+    addRevisioned() skips caching if the user's current revision is newer than the revision of the transaction start,
+    or newer than the revision recorded in step 1.
+    The stale entry is therefore not stored.
+
+ The revision cache is local and bounded, so a user's revision entry can be evicted at any time.
+ In that case addRevisioned() falls back to the node's current counter.
+ That counter is newer than the transaction start if any invalidation happened on this node since then, so caching is skipped.
+ This can skip caching unnecessarily, but it never caches a stale entry.
 
  No extra marker key is added to the invalidation cache.
  The revision bump on every node, whether or not it cached the entry, prevents the stale entry from being cached.
