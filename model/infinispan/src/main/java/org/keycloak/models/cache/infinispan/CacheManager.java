@@ -42,15 +42,24 @@ import org.jboss.logging.Logger;
 
  The issue is that Node 1 doesn't have an entry for the user, so it never receives an invalidation listener event from Node 2 thus it can't bump the version.  So, when node 1 goes to cache the user it is stale as the version number was never bumped.
 
- So how is this issue fixed?  here is pseudo code:
+ How is this issue fixed with the current implementation?
 
- 1. Node 1 calls cacheManager.getCurrentRevision() to get the current local version counter of that User
- 2. Node 1 getCurrentRevision() pulls current counter for that user
- 3. Node 1 getCurrentRevision() adds a "invalidation.key.userid" to invalidation cache.  Its just a marker. nothing else
- 4. Node 2 update user
- 5. Node 2 does a cache.remove(user) cache.remove(invalidation.key.userid)
- 6. Node 1 receives invalidation event for invalidation.key.userid. Bumps the version counter for that user
- 7. node 1 version check fails, it doesn't cache the user
+ 1. Node 1 starts a transaction and records the current revision of the user
+    (getCurrentRevision(); if no revision exists yet, it uses the node's local counter).
+ 2. Node 1 reads the user from the DB.
+ 3. Node 2 updates the user in the DB.
+ 4. Node 2 calls invalidateObject(userId). This removes the entry from the local cache.
+ 5. Node 2 then bumps the user's revision in its local revision cache.
+ 6. Node 2 sends an InvalidationEvent to the cluster.
+ 7. Node 1 receives the InvalidationEvent and calls invalidateObject(userId).
+    This removes the entry from its local cache if one exists.
+    It also bumps the user's revision in its local revision cache, even if there was no entry.
+ 8. Node 1 tries to cache the user it read in step 2.
+    addRevisioned() sees that the current revision is newer than the revision recorded in step 1 and skips caching,
+    so the stale entry is not stored.
+
+ No extra marker key is added to the invalidation cache.
+ The revision bump on every node, whether or not it cached the entry, prevents the stale entry from being cached.
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
