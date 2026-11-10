@@ -472,6 +472,9 @@ importers:
       '@patternfly-v5/patternfly':
         specifier: npm:@patternfly/patternfly@^5.4.2
         version: '@patternfly/patternfly@5.4.2'
+      '@patternfly-v6/patternfly':
+        specifier: npm:@patternfly/patternfly@^6.6.1
+        version: '@patternfly/patternfly@6.7.0'
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1163,6 +1166,9 @@ packages:
 
   '@patternfly/patternfly@5.4.2':
     resolution: {integrity: sha512-+BaokNR8/AmTYMESxby9UtQXPGACg449BXQd0KejAvW/uGxlgO6mY1X1205DeBEHoK3e/vXkYXjvZPpv/tcxSA==}
+
+  '@patternfly/patternfly@6.7.0':
+    resolution: {integrity: sha512-jV7bPxypppPtZA1XaJOz/uZsrIy2TA6Av18PLqAbHpZXDtzyHmFUEk3Sl21dQXEJmlMqniOh5Pv/6PHmmamJ9w==}
 
   '@patternfly/react-core@5.4.14':
     resolution: {integrity: sha512-oXVMzLs9Pa+xmdc39L2u05zbXfY3mWuOFi4GDv44GPdDexZUFy5W69+Nv5P8cwfMim55Nf5kKYpcqmatD2bBXw==}
@@ -5509,6 +5515,8 @@ snapshots:
   '@opentelemetry/api@1.9.1': {}
 
   '@patternfly/patternfly@5.4.2': {}
+
+  '@patternfly/patternfly@6.7.0': {}
 
   '@patternfly/react-core@5.4.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:

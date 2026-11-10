@@ -25,6 +25,7 @@
   "dependencies": {
     "@noble/hashes": "^2.0.1",
     "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
+    "@patternfly-v6/patternfly": "npm:@patternfly/patternfly@^6.6.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "rfc4648": "^1.5.4"
