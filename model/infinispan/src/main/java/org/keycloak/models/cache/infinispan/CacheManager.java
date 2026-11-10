@@ -45,7 +45,7 @@ import org.jboss.logging.Logger;
  How is this issue fixed with the current implementation?
 
  1. Node 1 starts a transaction and records the current revision of the user
-    (getCurrentRevision(); if no revision exists yet, it uses the node's local counter).
+    (getCurrentRevision(); if no revision exists yet, it uses the current value of the node's local counter).
  2. Node 1 reads the user from the DB.
  3. Node 2 updates the user in the DB.
  4. Node 2 calls invalidateObject(userId). This removes the entry from the local cache.
@@ -53,7 +53,9 @@ import org.jboss.logging.Logger;
  6. Node 2 sends an InvalidationEvent to the cluster.
  7. Node 1 receives the InvalidationEvent and calls invalidateObject(userId).
     This removes the entry from its local cache if one exists.
-    It also bumps the user's revision in its local revision cache, even if there was no entry.
+    It also bumps the user's revision in its local revision cache, even if there was no entry:
+    the revision is set to the next value of the node's local counter, which is higher than any value that node has used before.
+    Revisions are only compared on the same node, so they don't need to match across nodes.
  8. Node 1 tries to cache the user it read in step 2.
     addRevisioned() sees that the current revision is newer than the revision recorded in step 1 and skips caching,
     so the stale entry is not stored.
