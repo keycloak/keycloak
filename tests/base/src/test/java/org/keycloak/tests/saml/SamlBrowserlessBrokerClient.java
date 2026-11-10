@@ -21,6 +21,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
@@ -244,6 +245,11 @@ public class SamlBrowserlessBrokerClient implements AutoCloseable {
         private IdentityProviderResponse(SamlPostForm form) {
             this.form = form;
             this.document = form.responseDocument();
+        }
+
+        public IdentityProviderResponse onResponse(Consumer<SamlResponseDocument> mutation) {
+            mutation.accept(document);
+            return this;
         }
 
         public int submit() {

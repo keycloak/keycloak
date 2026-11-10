@@ -75,6 +75,8 @@ public class ConditionsValidator {
 
         private OneTimeUseHandler oneTimeUseHandler;
 
+        private boolean rejectProxyRestriction = false;
+
         public Builder(String assertionId, CommonConditionsType conditions, DestinationValidator destinationValidator) {
             this.assertionId = assertionId;
             this.conditions = conditions;
@@ -96,8 +98,13 @@ public class ConditionsValidator {
             return this;
         }
 
+        public Builder rejectProxyRestriction(boolean rejectProxyRestriction) {
+            this.rejectProxyRestriction = rejectProxyRestriction;
+            return this;
+        }
+
         public ConditionsValidator build() {
-            return new ConditionsValidator(assertionId, conditions, clockSkewInMillis, allowedAudiences, destinationValidator, oneTimeUseHandler);
+            return new ConditionsValidator(assertionId, conditions, clockSkewInMillis, allowedAudiences, destinationValidator, oneTimeUseHandler, rejectProxyRestriction);
         }
 
     }
@@ -120,13 +127,16 @@ public class ConditionsValidator {
 
     private final OneTimeUseHandler oneTimeUseHandler;
 
-    private ConditionsValidator(String assertionId, CommonConditionsType conditions, int clockSkewInMillis, Set<URI> allowedAudiences, DestinationValidator destinationValidator, OneTimeUseHandler oneTimeUseHandler) {
+    private final boolean rejectProxyRestriction;
+
+    private ConditionsValidator(String assertionId, CommonConditionsType conditions, int clockSkewInMillis, Set<URI> allowedAudiences, DestinationValidator destinationValidator, OneTimeUseHandler oneTimeUseHandler, boolean rejectProxyRestriction) {
         this.assertionId = assertionId;
         this.conditions = conditions;
         this.clockSkewInMillis = clockSkewInMillis;
         this.allowedAudiences = allowedAudiences;
         this.destinationValidator = destinationValidator;
         this.oneTimeUseHandler = oneTimeUseHandler;
+        this.rejectProxyRestriction = rejectProxyRestriction;
     }
 
     public boolean isValid() {
@@ -252,6 +262,11 @@ public class ConditionsValidator {
 
         if (proxyRestrictionsCount > 1) {   // line 992
             LOG.info("Invalid conditions: Multiple <ProxyRestriction/> conditions found.");
+            return Result.INVALID;
+        }
+
+        if (rejectProxyRestriction) {
+            LOG.debugf("Invalid conditions: assertion %s carries an unsupported <ProxyRestriction/> condition", assertionId);
             return Result.INVALID;
         }
 
