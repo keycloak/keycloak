@@ -60,6 +60,22 @@ public interface AuthenticationSessionProvider extends Provider {
     void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
 
     /**
+     * Removes the root authentication session specified by the provided realm and id if it exists.
+     * Does nothing if {@code authenticationSessionId} is {@code null} or no such session exists.
+     * @param realm {@code RealmModel} Can't be {@code null}.
+     * @param authenticationSessionId String id of root authentication session. May be {@code null}.
+     */
+    default void removeRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
+        if (authenticationSessionId == null) {
+            return;
+        }
+        RootAuthenticationSessionModel rootAuthSession = getRootAuthenticationSession(realm, authenticationSessionId);
+        if (rootAuthSession != null) {
+            removeRootAuthenticationSession(realm, rootAuthSession);
+        }
+    }
+
+    /**
      * Remove expired authentication sessions in all the realms
      *
      * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store

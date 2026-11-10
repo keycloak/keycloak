@@ -21,9 +21,14 @@ import java.lang.reflect.Method;
 import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ClientSessionContext;
@@ -31,8 +36,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.util.DPoPUtil;
 
 /**
@@ -176,5 +183,55 @@ public class ProtocolMapperUtils {
 
     public static boolean isEnabled(KeycloakSession session, ProtocolMapperModel mapper) {
         return session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapper.getProtocolMapper()) != null;
+    }
+
+    /**
+     * Returns the set of protocol-mapper provider IDs that require a permission check when
+     * {@code incomingMappers} are applied to the existing mappers supplied via {@code existingMappers}.
+     *
+     * @param existingMappers stream of the currently persisted protocol mappers
+     * @param incomingMappers the list of mappers carried by the incoming representation
+     * @return the protocol-mapper provider IDs of all mappers that are new, changed, or deleted
+     */
+    public static Set<String> getChangedOrDeletedMapperTypes(Stream<ProtocolMapperModel> existingMappers,
+                                                              List<ProtocolMapperRepresentation> incomingMappers) {
+        Map<String, ProtocolMapperModel> existingByKey = existingMappers
+                .collect(Collectors.toMap(
+                        m -> m.getProtocol() + "%" + m.getName(),
+                        m -> m));
+
+        Set<String> changedTypes = new HashSet<>();
+        Set<String> incomingKeys = new HashSet<>();
+
+        for (ProtocolMapperRepresentation pmr : incomingMappers) {
+            String key = pmr.getProtocol() + "%" + pmr.getName();
+            incomingKeys.add(key);
+            ProtocolMapperModel existing = existingByKey.get(key);
+            if (existing == null) {
+                // New mapper — must be checked.
+                changedTypes.add(pmr.getProtocolMapper());
+            } else {
+                // Existing mapper — only check if something actually changed.
+                // Note: the id is intentionally NOT normalised here. If the incoming representation
+                // carries a null id (e.g. a second mapper added by the client without an id) or a
+                // different id, that mismatch is itself treated as a change and both types are checked.
+                ProtocolMapperModel proposed = RepresentationToModel.toModel(pmr);
+                if (!existing.equals(proposed)) {
+                    changedTypes.add(pmr.getProtocolMapper());
+                    // Include the stored provider type as well in case that type changed. When the type is unchanged this is a no-op because
+                    // changedTypes is a Set.
+                    changedTypes.add(existing.getProtocolMapper());
+                }
+            }
+        }
+
+        // Any existing mapper absent from the incoming list will be deleted — check those too.
+        for (Map.Entry<String, ProtocolMapperModel> entry : existingByKey.entrySet()) {
+            if (!incomingKeys.contains(entry.getKey())) {
+                changedTypes.add(entry.getValue().getProtocolMapper());
+            }
+        }
+
+        return changedTypes;
     }
 }

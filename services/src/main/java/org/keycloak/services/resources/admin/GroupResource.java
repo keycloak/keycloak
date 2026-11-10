@@ -253,6 +253,7 @@ public class GroupResource {
                 }
                 auth.groups().requireManage(child);
                 if (!Objects.equals(child.getParentId(), group.getId())) {
+                    GroupUtils.checkAdminGroupRoles(group, auth);
                     realm.moveGroup(child, group);
                 }
                 adminEvent.operation(OperationType.UPDATE);

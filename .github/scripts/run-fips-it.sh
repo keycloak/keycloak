@@ -24,6 +24,10 @@ if [ $? -ne 0 ]; then
 fi
 echo "Tests: $TESTS"
 export JAVA_HOME="/etc/alternatives/java_sdk_${JAVA_VERSION}"
+# JDK 25.0.5+ offers the X25519MLKEM768 hybrid TLS group, which fails in FIPS mode when resolving from Maven Central,
+# and with the BouncyCastle 1.79 bundled in WildFly 35 (used by the SAML adapter tests). JAVA_TOOL_OPTIONS is used so
+# it also applies to the JVMs forked by Maven (surefire, app server).
+export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS -Djdk.tls.namedGroups=secp256r1,secp384r1,secp521r1,x25519,ffdhe2048,ffdhe3072"
 set -o pipefail
 
 # Build adapter distributions

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -556,6 +555,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String familyName = (String)idToken.getOtherClaims().get(IDToken.FAMILY_NAME);
         String preferredUsername = (String) idToken.getOtherClaims().get(getusernameClaimNameForIdToken());
         String email = (String) idToken.getOtherClaims().get(IDToken.EMAIL);
+        Boolean emailVerified = getEmailVerifiedClaim(idToken);
 
         if (!getConfig().isDisableUserInfoService()) {
             String userInfoUrl = getUserInfoUrl();
@@ -588,11 +588,24 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                         givenName = getJsonProperty(userInfo, IDToken.GIVEN_NAME);
                         familyName = getJsonProperty(userInfo, IDToken.FAMILY_NAME);
                         preferredUsername = getUsernameFromUserInfo(userInfo);
-                        email = getJsonProperty(userInfo, "email");
-                    AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());}
+                        String userInfoEmail = getJsonProperty(userInfo, "email");
+                        Boolean userInfoEmailVerified = Boolean.parseBoolean(getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED));
+
+                        if (userInfoEmail != null) {
+                            email = userInfoEmail;
+                            emailVerified = userInfoEmailVerified;
+                        }
+
+                        AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
+                    }
                 }
             }
         }
+
+        if (emailVerified != null) {
+            identity.getContextData().put(IDToken.EMAIL_VERIFIED, emailVerified);
+        }
+
         identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
 
         identity.setId(id);
@@ -1134,9 +1147,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected void setEmailVerified(UserModel user, BrokeredIdentityContext context) {
         OIDCIdentityProviderConfig config = getConfig();
         Map<String, Object> contextData = context.getContextData();
-        JsonWebToken token = (JsonWebToken) Optional.ofNullable(contextData.get(VALIDATED_ID_TOKEN))
-                .orElseGet(() -> contextData.get(VALIDATED_ACCESS_TOKEN));
-        Boolean emailVerified = getEmailVerifiedClaim(token);
+        Boolean emailVerified = (Boolean) contextData.get(IDToken.EMAIL_VERIFIED);
 
         if (Booleans.isFalse(config.isTrustEmail()) || emailVerified == null) {
             // fallback to the default behavior if trust is disabled or there is no email_verified claim

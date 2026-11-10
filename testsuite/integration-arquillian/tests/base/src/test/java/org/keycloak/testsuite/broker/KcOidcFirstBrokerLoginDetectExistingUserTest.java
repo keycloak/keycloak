@@ -57,6 +57,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         IdentityProviderRepresentation identityProviderRepresentation = consumerRealm.identityProviders().findAll().get(0);
         identityProviderRepresentation.setFirstBrokerLoginFlowAlias(detectExistingFlowAlias);
         identityProviderRepresentation.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.toString());
+        identityProviderRepresentation.setTrustEmail(true);
         identityConsumerResource.update(identityProviderRepresentation);
 
         assertEquals("Two executions must have been created", 2, getFlow(authMgmtResource, detectExistingFlowAlias).getAuthenticationExecutions().size());
@@ -119,7 +120,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         final String lastname = "Lastname_loginWhenUserExistsOnConsumer";
         final String username = "firstandlastname";
         final String email = "firstnamelastname@example.org";
-        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email);
+        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email, user -> user.setEmailVerified(Boolean.TRUE));
         createUser(bc.consumerRealmName(), username, "THIS PASSWORD IS USELESS", null, null, email);
 
         oauth.clientId("broker-app");
@@ -135,4 +136,75 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         assertEquals("Firstname is not correct", userRepresentation.getFirstName(), firstname);
         assertEquals("Lastname is not correct", userRepresentation.getLastName(), lastname);
     }
+
+    @Test
+    public void loginBlockedWhenEmailNotVerifiedAndTrustDisabled() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+
+        final String username = "unverified-user";
+        final String email = "unverified@example.org";
+
+        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, "First", "Last", email);
+        String consumerId = createUser(username, email);
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(false);
+        identityProviderResource.update(idpRep);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
+
+        loginPage.assertCurrent(bc.consumerRealmName());
+        assertNumFederatedIdentities(consumerId, 0);
+    }
+
+    @Test
+    public void loginSucceedsWhenEmailVerifiedAndTrustDisabled() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+
+        final String username = "verified-user";
+        final String email = "verified@example.org";
+
+        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, "First", "Last", email,
+                user -> user.setEmailVerified(Boolean.TRUE));
+        String consumerId = createUser(username, email);
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(false);
+        identityProviderResource.update(idpRep);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
+
+        assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
+        assertNumFederatedIdentities(consumerId, 1);
+    }
+
+    @Test
+    public void loginSucceedsWhenEmailNotVerifiedButTrustEnabled() {
+        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+
+        final String username = "trusted-unverified";
+        final String email = "trusted-unverified@example.org";
+
+        createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, "First", "Last", email);
+        String consumerId = createUser(username, email);
+
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setTrustEmail(true);
+        identityProviderResource.update(idpRep);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
+
+        assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
+        assertNumFederatedIdentities(consumerId, 1);
+    }
+
 }

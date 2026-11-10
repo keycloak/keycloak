@@ -147,8 +147,8 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
             if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {
-                // for direct access grants the online session can be removed
-                session.sessions().removeUserSession(realm, userSession);
+                // for direct access grants the online user session and its paired root auth session can be removed
+                AuthenticationManager.removeUserSessionAndRootAuthSession(session, realm, userSession);
             }
         }
 

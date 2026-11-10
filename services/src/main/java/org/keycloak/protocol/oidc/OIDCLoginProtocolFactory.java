@@ -43,6 +43,7 @@ import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AcrProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
+import org.keycloak.protocol.oidc.mappers.AdminApiAudienceMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.FullNameMapper;
@@ -61,6 +62,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.models.Constants.KEYCLOAK_ADMIN_API_SCOPE;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST;
@@ -379,6 +381,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         addAcrClientScope(newRealm);
         addBasicClientScope(newRealm);
         addServiceAccountClientScope(newRealm);
+        addAdminApiClientScope(newRealm);
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
             ClientScopeModel organizationScope = newRealm.addClientScope(OAuth2Constants.ORGANIZATION);
@@ -505,6 +508,23 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", BASIC_SCOPE, newRealm.getName());
         }
         return basicScope;
+    }
+
+    public ClientScopeModel addAdminApiClientScope(RealmModel newRealm) {
+        ClientScopeModel scope = KeycloakModelUtils.getClientScopeByName(newRealm, KEYCLOAK_ADMIN_API_SCOPE);
+        if (scope == null) {
+            scope = newRealm.addClientScope(KEYCLOAK_ADMIN_API_SCOPE);
+            scope.setDescription("Grants access to the Keycloak Admin REST API by adding its required audience to the token");
+            scope.setDisplayOnConsentScreen(false);
+            scope.setConsentScreenText("");
+            scope.setIncludeInTokenScope(true);
+            scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            scope.addProtocolMapper(AdminApiAudienceMapper.createMapper("admin-api-audience", true, true, true));
+        } else {
+            logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", KEYCLOAK_ADMIN_API_SCOPE, newRealm.getName());
+        }
+
+        return scope;
     }
 
     public ClientScopeModel addServiceAccountClientScope(RealmModel newRealm) {

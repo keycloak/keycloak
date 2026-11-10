@@ -452,6 +452,10 @@ public class ImpersonationTest {
     private Keycloak createAdminClient(String realm, String clientId, String username) {
         String password = username.equals("admin") ? "admin" : "password";
 
+        // Ensure the client used to call the Admin REST API carries the kc-admin-api scope so it passes the
+        // audience check. The assignment is idempotent.
+        AdminApiUtil.addAdminApiClientScope((realm.equals(masterRealm.getName()) ? masterRealm : managedRealm).admin(), clientId);
+
         return clientFactory.create()
                 .realm(realm)
                 .username(username)
@@ -492,6 +496,7 @@ public class ImpersonationTest {
     }
 
     private Keycloak createServiceAccountClient(String serviceAccountRealm, UserRepresentation serviceAccount) {
+        AdminApiUtil.addAdminApiClientScope((serviceAccountRealm.equals(masterRealm.getName()) ? masterRealm : managedRealm).admin(), serviceAccount.getServiceAccountClientId());
         return clientFactory.create().realm(serviceAccountRealm).clientId(serviceAccount.getServiceAccountClientId()).clientSecret("password").grantType(OAuth2Constants.CLIENT_CREDENTIALS).build();
     }
 

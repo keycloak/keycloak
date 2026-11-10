@@ -269,7 +269,7 @@ public class HttpUtil {
         }
         SSLContext theContext = SSLContexts.custom()
                 .useProtocol("TLS")
-                .loadTrustMaterial(file, password == null ? null : password.toCharArray(), TrustSelfSignedStrategy.INSTANCE)
+                .loadTrustMaterial(file, password == null ? null : password.toCharArray())
                 .build();
         sslsf = new SSLConnectionSocketFactory(theContext);
     }

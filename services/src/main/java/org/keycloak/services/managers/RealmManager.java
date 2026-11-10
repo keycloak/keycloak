@@ -17,10 +17,13 @@
 package org.keycloak.services.managers;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
@@ -35,11 +38,13 @@ import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.email.EmailException;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
+import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
@@ -149,6 +154,7 @@ public class RealmManager {
         setupRequiredActions(realm);
         setupOfflineTokens(realm, null);
         createDefaultClientScopes(realm);
+        setupAdminApiClientScope(realm);
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
         session.clientPolicy().setupClientPoliciesOnCreatedRealm(realm);
@@ -239,6 +245,35 @@ public class RealmManager {
         }
 
     }
+
+    public void setupAdminApiClientScope(RealmModel realm, ClientModel client) {
+        setupAdminApiClientScope(realm, List.of(client));
+    }
+
+    private void setupAdminApiClientScope(RealmModel realm) {
+        setupAdminApiClientScope(realm, Stream.of(Constants.ADMIN_CONSOLE_CLIENT_ID, Constants.ADMIN_CLI_CLIENT_ID)
+                .map(realm::getClientByClientId)
+                .filter(Objects::nonNull)
+                .toList());
+    }
+
+    private void setupAdminApiClientScope(RealmModel realm, List<ClientModel> clients) {
+        ClientScopeModel adminApiScope = KeycloakModelUtils.getClientScopeByName(realm, Constants.KEYCLOAK_ADMIN_API_SCOPE);
+        if (adminApiScope == null) {
+            adminApiScope = session.getProvider(MigrationProvider.class).addOIDCAdminApiClientScope(realm);
+        }
+        if (adminApiScope == null) {
+            return;
+        }
+        for (ClientModel client : clients) {
+            Map<String, ClientScopeModel> clientScopes = new HashMap<>(client.getClientScopes(true));
+            clientScopes.putAll(client.getClientScopes(false));
+            if (!clientScopes.containsKey(Constants.KEYCLOAK_ADMIN_API_SCOPE)) {
+                client.addClientScope(adminApiScope, true);
+            }
+        }
+    }
+
     public void addQueryCompositeRoles(ClientModel realmAccess) {
         RoleModel queryClients = realmAccess.getRole(AdminRoles.QUERY_CLIENTS);
         RoleModel queryUsers = realmAccess.getRole(AdminRoles.QUERY_USERS);
@@ -711,6 +746,8 @@ public class RealmManager {
 
             session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
 
+            setupAdminApiClientScope(realm);
+
             fireRealmPostCreate(realm);
         } catch (EmailException e) {
             throw new BadRequestException(e.getMessage());
@@ -899,6 +936,7 @@ public class RealmManager {
         setupRequiredActions(realm);
         setupOfflineTokens(realm, null);
         createDefaultClientScopes(realm);
+        setupAdminApiClientScope(realm);
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);
         session.clientPolicy().setupClientPoliciesOnCreatedRealm(realm);

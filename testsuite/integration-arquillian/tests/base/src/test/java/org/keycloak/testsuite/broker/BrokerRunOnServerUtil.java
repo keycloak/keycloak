@@ -168,6 +168,7 @@ final class BrokerRunOnServerUtil {
 
             IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
             idp.setFirstBrokerLoginFlowId(newFlow.getId());
+            idp.setTrustEmail(true);
             session.identityProviders().update(idp);
         };
     }
@@ -207,6 +208,11 @@ final class BrokerRunOnServerUtil {
                 )
                 .usesInIdentityProvider(idpAlias)
         );
+        testingClient.server(consumerRealmName).run(session -> {
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
+            idp.setTrustEmail(true);
+            session.identityProviders().update(idp);
+        });
     }
 
 
@@ -233,6 +239,11 @@ final class BrokerRunOnServerUtil {
                     )
                     // Setup new FirstBrokerLogin to identity provider
                     .usesInIdentityProvider(idpAlias);
+        });
+        testingClient.server(consumerRealmName).run(session -> {
+            IdentityProviderModel idp = session.identityProviders().getByAlias(idpAlias);
+            idp.setTrustEmail(true);
+            session.identityProviders().update(idp);
         });
     }
 }

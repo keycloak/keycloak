@@ -18,6 +18,7 @@
 package org.keycloak.it.resource.realm;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import com.arjuna.ats.arjuna.coordinator.TxControl;
@@ -38,6 +39,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -70,6 +72,18 @@ public class TestRealmResource implements RealmResourceProvider {
             return Response.ok("{}", MediaType.APPLICATION_JSON).build();
         }
         return Response.noContent().build();
+    }
+
+    @Path("query-params")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response queryParams(@QueryParam("SAMLResponse") List<String> samlResponse) throws IOException {
+        var uriInfo = session.getContext().getUri();
+        String result = JsonSerialization.writeValueAsString(Map.of(
+                "decoded", uriInfo.getQueryParameters(true),
+                "raw", uriInfo.getQueryParameters(false),
+                "injectedSAMLResponse", samlResponse));
+        return Response.ok(result, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     @Path("slow")

@@ -35,6 +35,7 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.client.methods.HttpDelete;
@@ -641,6 +642,10 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     }
 
     private Keycloak createAdminClient(String username) {
+        // Ensure the test-client carries the kc-admin-api scope so the token passes the Admin REST API audience check.
+        // The assignment is idempotent.
+        ApiUtil.addAdminApiClientScope(testRealm.admin(), "test-client");
+
         return adminClientFactory.create()
                 .realm(getRealmName())
                 .clientId("test-client")
