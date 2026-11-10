@@ -13,6 +13,8 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -35,6 +37,7 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -451,6 +454,172 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                 grantRealmManagementRole(attackerClient.realm(realmName), attackerName, AdminRoles.MANAGE_CLIENTS);
             });
         });
+    }
+
+    @Test
+    public void testManageUsersAdminCannotGrantCompositeWrappingRealmAdmin() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        String attackerName = "limited-admin";
+        createUser(testRealm, attackerName);
+        UserRepresentation target = createUser(testRealm, "target-user");
+
+        grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_USERS);
+
+        ClientRepresentation mgmtClient = testRealm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = testRealm.clients().get(mgmtClient.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+
+        // full admin creates composite-wrapper -> realm-admin and outer-wrapper -> composite-wrapper
+        testRealm.roles().create(RoleConfigBuilder.create().name("composite-wrapper").build());
+        testRealm.roles().get("composite-wrapper").addComposites(List.of(realmAdminRole));
+        RoleRepresentation wrapper = testRealm.roles().get("composite-wrapper").toRepresentation();
+        testRealm.roles().create(RoleConfigBuilder.create().name("outer-wrapper").build());
+        testRealm.roles().get("outer-wrapper").addComposites(List.of(wrapper));
+        RoleRepresentation outerWrapper = testRealm.roles().get("outer-wrapper").toRepresentation();
+
+        // client role wrapping realm-admin
+        ClientRepresentation wrapperClient = ClientConfigBuilder.create().clientId("wrapper-client").build();
+        try (Response response = testRealm.clients().create(wrapperClient)) {
+            wrapperClient.setId(ApiUtil.getCreatedId(response));
+        }
+        testRealm.clients().get(wrapperClient.getId()).roles().create(RoleConfigBuilder.create().name("client-wrapper").build());
+        testRealm.clients().get(wrapperClient.getId()).roles().get("client-wrapper").addComposites(List.of(realmAdminRole));
+        RoleRepresentation clientWrapper = testRealm.clients().get(wrapperClient.getId()).roles().get("client-wrapper").toRepresentation();
+
+        // composite wrapping a plain role, which manage-users is allowed to grant
+        testRealm.roles().create(RoleConfigBuilder.create().name("plain-role").build());
+        RoleRepresentation plainRole = testRealm.roles().get("plain-role").toRepresentation();
+        testRealm.roles().create(RoleConfigBuilder.create().name("harmless-wrapper").build());
+        testRealm.roles().get("harmless-wrapper").addComposites(List.of(plainRole));
+        RoleRepresentation harmlessWrapper = testRealm.roles().get("harmless-wrapper").toRepresentation();
+
+        runAs(realmName, attackerName, attackerClient -> {
+            RoleMappingResource targetRoles = attackerClient.realm(realmName).users().get(target.getId()).roles();
+            assertForbidden("manage-users admin should not grant realm-admin directly",
+                    () -> targetRoles.clientLevel(mgmtClient.getId()).add(List.of(realmAdminRole)));
+            assertForbidden("manage-users admin should not grant a composite wrapping realm-admin",
+                    () -> targetRoles.realmLevel().add(List.of(wrapper)));
+            assertForbidden("manage-users admin should not grant a nested composite wrapping realm-admin",
+                    () -> targetRoles.realmLevel().add(List.of(outerWrapper)));
+            assertForbidden("manage-users admin should not grant a client composite wrapping realm-admin",
+                    () -> targetRoles.clientLevel(wrapperClient.getId()).add(List.of(clientWrapper)));
+            // a composite wrapping a plain role can still be granted
+            targetRoles.realmLevel().add(List.of(harmlessWrapper));
+        });
+
+        List<String> effective = testRealm.users().get(target.getId()).roles().clientLevel(mgmtClient.getId()).listEffective()
+                .stream().map(RoleRepresentation::getName).toList();
+        assertFalse(effective.contains(AdminRoles.REALM_ADMIN));
+        assertTrue(testRealm.users().get(target.getId()).roles().realmLevel().listAll().stream()
+                .map(RoleRepresentation::getName).toList().contains("harmless-wrapper"));
+    }
+
+    @Test
+    public void testManageRealmAdminCannotAddCompositeWrappingRealmAdminToExistingRole() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        String attackerName = "limited-admin";
+        createUser(testRealm, attackerName);
+
+        // only manage-realm: no manage-users, no realm-admin
+        grantRealmManagementRole(testRealm, attackerName, AdminRoles.MANAGE_REALM);
+
+        ClientRepresentation mgmtClient = testRealm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = testRealm.clients().get(mgmtClient.getId()).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+
+        // a widely assigned tenant role that an attacker would want to retroactively elevate
+        testRealm.roles().create(RoleConfigBuilder.create().name("employee").build());
+        UserRepresentation existingHolder = createUser(testRealm, "existing-employee");
+        grantRealmRole(testRealm, existingHolder, "employee");
+
+        // full admin creates composite-wrapper -> realm-admin and outer-wrapper -> composite-wrapper
+        testRealm.roles().create(RoleConfigBuilder.create().name("composite-wrapper").build());
+        testRealm.roles().get("composite-wrapper").addComposites(List.of(realmAdminRole));
+        RoleRepresentation wrapper = testRealm.roles().get("composite-wrapper").toRepresentation();
+        testRealm.roles().create(RoleConfigBuilder.create().name("outer-wrapper").build());
+        testRealm.roles().get("outer-wrapper").addComposites(List.of(wrapper));
+        RoleRepresentation outerWrapper = testRealm.roles().get("outer-wrapper").toRepresentation();
+
+        // client role wrapping realm-admin
+        ClientRepresentation wrapperClient = ClientConfigBuilder.create().clientId("wrapper-client").build();
+        try (Response response = testRealm.clients().create(wrapperClient)) {
+            wrapperClient.setId(ApiUtil.getCreatedId(response));
+        }
+        testRealm.clients().get(wrapperClient.getId()).roles().create(RoleConfigBuilder.create().name("client-wrapper").build());
+        testRealm.clients().get(wrapperClient.getId()).roles().get("client-wrapper").addComposites(List.of(realmAdminRole));
+        RoleRepresentation clientWrapper = testRealm.clients().get(wrapperClient.getId()).roles().get("client-wrapper").toRepresentation();
+
+        // composite wrapping a plain role, which manage-realm is allowed to add as a composite
+        testRealm.roles().create(RoleConfigBuilder.create().name("plain-role").build());
+        RoleRepresentation plainRole = testRealm.roles().get("plain-role").toRepresentation();
+        testRealm.roles().create(RoleConfigBuilder.create().name("harmless-wrapper").build());
+        testRealm.roles().get("harmless-wrapper").addComposites(List.of(plainRole));
+        RoleRepresentation harmlessWrapper = testRealm.roles().get("harmless-wrapper").toRepresentation();
+
+        runAs(realmName, attackerName, attackerClient -> {
+            RoleResource employeeRole = attackerClient.realm(realmName).roles().get("employee");
+            assertForbidden("manage-realm admin should not add realm-admin as a composite directly",
+                    () -> employeeRole.addComposites(List.of(realmAdminRole)));
+            assertForbidden("manage-realm admin should not add a composite wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(wrapper)));
+            assertForbidden("manage-realm admin should not add a nested composite wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(outerWrapper)));
+            assertForbidden("manage-realm admin should not add a client composite wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(clientWrapper)));
+            // a composite wrapping a plain role can still be added
+            employeeRole.addComposites(List.of(harmlessWrapper));
+        });
+
+        // existing holders of the tenant role must not have gained realm-admin
+        List<String> effective = testRealm.users().get(existingHolder.getId()).roles().clientLevel(mgmtClient.getId()).listEffective()
+                .stream().map(RoleRepresentation::getName).toList();
+        assertFalse(effective.contains(AdminRoles.REALM_ADMIN));
+        assertTrue(testRealm.roles().get("employee").getRoleComposites().stream()
+                .map(RoleRepresentation::getName).toList().contains("harmless-wrapper"));
+    }
+
+    @Test
+    public void testMasterManageUsersAdminCannotGrantCompositeWrappingOtherRealmAdminRoles() {
+        String realmName = "test-realm";
+        createRealm(adminClient, realmName);
+        RealmResource master = masterRealm.admin();
+        UserRepresentation target = createUser(master, "target-user");
+
+        // master user with manage-users on master realm only
+        grantMasterRealmManagementRole(masterRealm.getName(), masterUser.getUsername(), AdminRoles.MANAGE_USERS);
+
+        // master realm composite wrapping the test-realm manage-realm role in master
+        ClientRepresentation testRealmClient = master.clients().findByClientId(realmName + "-realm").get(0);
+        RoleRepresentation testRealmManageRealmRole = master.clients().get(testRealmClient.getId()).roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
+        master.roles().create(RoleConfigBuilder.create().name("composite-wrapper").build());
+        master.roles().get("composite-wrapper").addComposites(List.of(testRealmManageRealmRole));
+        RoleRepresentation wrapper = master.roles().get("composite-wrapper").toRepresentation();
+
+        // master realm composite wrapping the master 'admin' role
+        RoleRepresentation adminRole = master.roles().get(AdminRoles.ADMIN).toRepresentation();
+        master.roles().create(RoleConfigBuilder.create().name("admin-wrapper").build());
+        master.roles().get("admin-wrapper").addComposites(List.of(adminRole));
+        RoleRepresentation adminWrapper = master.roles().get("admin-wrapper").toRepresentation();
+
+        try {
+            runAs(masterRealm.getName(), masterUser.getUsername(), userClient -> {
+                RoleMappingResource targetRoles = userClient.realm(masterRealm.getName()).users().get(target.getId()).roles();
+                assertForbidden("master manage-users admin should not grant another realm's manage-realm directly",
+                        () -> targetRoles.clientLevel(testRealmClient.getId()).add(List.of(testRealmManageRealmRole)));
+                assertForbidden("master manage-users admin should not grant a composite wrapping another realm's manage-realm",
+                        () -> targetRoles.realmLevel().add(List.of(wrapper)));
+                assertForbidden("master manage-users admin should not grant a composite wrapping the admin role",
+                        () -> targetRoles.realmLevel().add(List.of(adminWrapper)));
+            });
+
+            List<String> effective = master.users().get(target.getId()).roles().clientLevel(testRealmClient.getId()).listEffective()
+                    .stream().map(RoleRepresentation::getName).toList();
+            assertFalse(effective.contains(AdminRoles.MANAGE_REALM));
+        } finally {
+            master.roles().deleteRole("composite-wrapper");
+            master.roles().deleteRole("admin-wrapper");
+            master.users().get(target.getId()).remove();
+        }
     }
 
     @Test
@@ -1305,6 +1474,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             tokenClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(testRealm, tokenClient.getId());
         testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewClientsScope.getId());
         testRealm.clients().get(tokenClient.getId()).addOptionalClientScope(viewUsersScope.getId());
 
@@ -1347,6 +1517,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             client.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(realm, client.getId());
         return client;
     }
 
@@ -1362,6 +1533,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             client.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(realm, client.getId());
         return client;
     }
 
@@ -1504,6 +1676,65 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
                 attackerClient.realm(realmName).users().get(victim.getId()).joinGroup(compositeGroup.getId());
             });
         });
+    }
+
+    private void addAdminApiScope(RealmResource realm, String clientDbId) {
+        realm.clientScopes().findAll().stream()
+                .filter(scope -> Constants.KEYCLOAK_ADMIN_API_SCOPE.equals(scope.getName()))
+                .findFirst()
+                .ifPresent(scope -> realm.clients().get(clientDbId).addDefaultClientScope(scope.getId()));
+    }
+
+    @Test
+    public void testManageUsersAdminCannotMoveGroupUnderAdminGroup() {
+        String realmName = "test-realm";
+        RealmResource testRealm = createRealm(adminClient, realmName);
+        UserRepresentation attacker = createUser(testRealm, "limited-admin");
+        grantRealmManagementRole(testRealm, attacker.getUsername(), AdminRoles.MANAGE_USERS);
+        UserRepresentation realmAdmin = createUser(testRealm, "realm-admin");
+        grantRealmManagementRole(testRealm, realmAdmin.getUsername(), AdminRoles.REALM_ADMIN);
+
+        String realmManagementId = testRealm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation realmAdminRole = testRealm.clients().get(realmManagementId).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        testRealm.roles().create(RoleConfigBuilder.create().name("admin-composite").build());
+        testRealm.roles().get("admin-composite").addComposites(List.of(realmAdminRole));
+
+        GroupRepresentation adminGroup = GroupConfigBuilder.create().name("admin-ancestor").build();
+        adminGroup.setId(ApiUtil.getCreatedId(testRealm.groups().add(adminGroup)));
+        testRealm.groups().group(adminGroup.getId()).roles().realmLevel()
+                .add(List.of(testRealm.roles().get("admin-composite").toRepresentation()));
+        // The destination has no direct roles: its ancestor grants realm-admin through a composite.
+        GroupRepresentation destination = GroupConfigBuilder.create().name("destination").build();
+        destination.setId(ApiUtil.getCreatedId(testRealm.groups().group(adminGroup.getId()).subGroup(destination)));
+        GroupRepresentation ordinaryParent = GroupConfigBuilder.create().name("ordinary-parent").build();
+        ordinaryParent.setId(ApiUtil.getCreatedId(testRealm.groups().add(ordinaryParent)));
+
+        GroupRepresentation source = GroupConfigBuilder.create().name("source").build();
+        source.setId(ApiUtil.getCreatedId(testRealm.groups().add(source)));
+        testRealm.users().get(attacker.getId()).joinGroup(source.getId());
+
+        runAs(realmName, attacker.getUsername(), client -> {
+            try (Response response = client.realm(realmName).groups().group(ordinaryParent.getId()).subGroup(source)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+            try (Response response = client.realm(realmName).groups().group(destination.getId()).subGroup(source)) {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+            }
+        });
+
+        assertEquals(ordinaryParent.getId(), testRealm.groups().group(source.getId()).toRepresentation().getParentId());
+        assertFalse(testRealm.users().get(attacker.getId()).roles().clientLevel(realmManagementId).listEffective().stream()
+                .anyMatch(role -> AdminRoles.REALM_ADMIN.equals(role.getName())));
+
+        // A realm-local administrator can still move the group and grant the inherited roles.
+        runAs(realmName, realmAdmin.getUsername(), client -> {
+            try (Response response = client.realm(realmName).groups().group(destination.getId()).subGroup(source)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+        });
+        assertEquals(destination.getId(), testRealm.groups().group(source.getId()).toRepresentation().getParentId());
+        assertTrue(testRealm.users().get(attacker.getId()).roles().clientLevel(realmManagementId).listEffective().stream()
+                .anyMatch(role -> AdminRoles.REALM_ADMIN.equals(role.getName())));
     }
 
     private void grantRealmManagementRole(RealmResource testRealm, GroupRepresentation group, String role) {

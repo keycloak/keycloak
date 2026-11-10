@@ -51,7 +51,10 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 
 /**
  * Test for the various "Advanced" scenarios of java admin-client
@@ -81,36 +84,30 @@ public class AdminClientTest {
 
     private static final String X509_CLIENT_ID  = "x509-client-sa";
 
+    @BeforeEach
+    public void ensureAdminApiScope() {
+        addAdminApiClientScope(testRealm.admin(), CLIENT_ID);
+        addAdminApiClientScope(testRealm.admin(), X509_CLIENT_ID);
+    }
+
     @Test
     public void clientCredentialsAuthSuccess() {
-        Keycloak adminClient = adminClientFactory.create()
-                .realm(testRealm.getName())
-                .clientId(CLIENT_ID)
-                .clientSecret(CLIENT_SECRET)
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .autoClose()
-                .build();
+        Keycloak adminClient = createAdminClient();
 
-            // Check possible to load the realm
-            RealmRepresentation realm = adminClient.realm(testRealm.getName()).toRepresentation();
-            Assertions.assertEquals(testRealm.getName(), realm.getRealm());
+        // Check possible to load the realm
+        RealmRepresentation realm = adminClient.realm(testRealm.getName()).toRepresentation();
+        Assertions.assertEquals(testRealm.getName(), realm.getRealm());
 
-            timeOffSet.set(1000);
+        timeOffSet.set(1000);
 
-            // Check still possible to load the realm after original token expired (admin client should automatically re-authenticate)
-            realm = adminClient.realm(testRealm.getName()).toRepresentation();
-            Assertions.assertEquals(testRealm.getName(), realm.getRealm());
+        // Check still possible to load the realm after original token expired (admin client should automatically re-authenticate)
+        realm = adminClient.realm(testRealm.getName()).toRepresentation();
+        Assertions.assertEquals(testRealm.getName(), realm.getRealm());
     }
 
     @Test
     public void clientCredentialsClientDisabled() {
-        Keycloak adminClient = adminClientFactory.create()
-                .realm(testRealm.getName())
-                .clientId(CLIENT_ID)
-                .clientSecret(CLIENT_SECRET)
-                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-                .autoClose()
-                .build();
+        Keycloak adminClient = createAdminClient();
 
         // Check possible to load the realm
         RealmRepresentation realm = adminClient.realm(testRealm.getName()).toRepresentation();
@@ -344,6 +341,16 @@ public class AdminClientTest {
 
             return realm;
         }
+    }
+
+    private Keycloak createAdminClient() {
+        return adminClientFactory.create()
+                .realm(testRealm.getName())
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+                .autoClose()
+                .build();
     }
 
     private static class MTlsCertificatesEnabled implements CertificatesConfig {

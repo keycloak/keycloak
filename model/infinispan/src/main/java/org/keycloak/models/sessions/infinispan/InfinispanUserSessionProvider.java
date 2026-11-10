@@ -471,7 +471,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
-        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTimeMillis());
         return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, true)
                 .filter(Predicate.not(expiration::isUserSessionExpired))
                 .filter(s -> s.getUser() != null);
@@ -484,7 +484,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     @Override
     public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
-        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTimeMillis());
         return session.getProvider(UserSessionPersisterProvider.class)
                 .readOnlyUserSessionStream(realm, client, true, skip, maxResults)
                 .filter(Predicate.not(expiration::isUserSessionExpired))
@@ -500,7 +500,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         if (maxResults == 0) {
             return Stream.empty();
         }
-        var predicates = new SessionExpirationPredicates(realm, false, Time.currentTime());
+        var predicates = new SessionExpirationPredicates(realm, false, Time.currentTimeMillis());
         var clientSessionCache = getClientSessionCache(false);
 
         // not great, distributed sort not supported, and we're sorting everything locally

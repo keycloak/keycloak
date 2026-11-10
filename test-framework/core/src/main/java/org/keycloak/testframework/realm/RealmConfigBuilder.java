@@ -464,11 +464,12 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public void attribute(String key, String value) {
+    public RealmConfigBuilder attribute(String key, String value) {
         if (rep.getAttributes() == null) {
             rep.setAttributes(new HashMap<>());
         }
         rep.getAttributes().put(key, value);
+        return this;
     }
 
     public void addClientScope(ClientScopeRepresentation clientScope) {

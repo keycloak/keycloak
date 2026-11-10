@@ -247,6 +247,14 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           stringify
         />
         <DefaultSwitchControl
+          name="config.proxyRestrictionValidation"
+          label={t("proxyRestrictionValidation")}
+          labelIcon={t("proxyRestrictionValidationHelp")}
+          defaultValue="true"
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
           name="config.wantAssertionsEncrypted"
           label={t("wantAssertionsEncrypted")}
           isDisabled={readOnly}

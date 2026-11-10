@@ -37,6 +37,8 @@ public final class Constants {
     public static final String BROKER_SERVICE_CLIENT_ID = "broker";
     public static final String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
 
+    public static final String KEYCLOAK_ADMIN_API_SCOPE = "kc-admin-api";
+
     public static final String AUTH_BASE_URL_PROP = "${authBaseUrl}";
     public static final String AUTH_ADMIN_URL_PROP = "${authAdminUrl}";
 
@@ -239,4 +241,10 @@ public final class Constants {
     // This attribute can be used in a realm import definition to signal that default client scopes should be created in addition to the client scopes defined by the realm import definition.
     // When this attribute is omitted or set to false, the default client scopes are not created if at least one other client scope is defined by the realm import definition.
     public static final String CREATE_DEFAULT_CLIENT_SCOPES = "CreateDefaultClientScopes";
+    /**
+     * Comma-separated list of protocol-mapper provider IDs that client administrators (users with permissions to manage client(s) or client scope(s), but not with permissions to manage-realm)
+     * are allowed to use when creating, updating, or deleting protocol mappers.
+     * If absent or empty, users without permissions to manage-realm cannot manage protocol mappers.
+     */
+    public static final String ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS = "allowedProtocolMapperTypesForClientAdministrators";
 }

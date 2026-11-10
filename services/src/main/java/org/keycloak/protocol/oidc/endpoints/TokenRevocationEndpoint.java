@@ -55,6 +55,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeResponseContext;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
@@ -264,7 +265,7 @@ public class TokenRevocationEndpoint {
 
                 // TODO: Might need optimization to prevent loading client sessions from cache in getAuthenticatedClientSessions()
                 if (userSession.getAuthenticatedClientSessions().isEmpty()) {
-                    session.sessions().removeUserSession(realm, userSession);
+                    AuthenticationManager.removeUserSessionAndRootAuthSession(session, realm, userSession);
                 }
             }
         }

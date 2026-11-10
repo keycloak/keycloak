@@ -577,6 +577,79 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testExchangedTokenExpirationCappedBySubjectToken() throws Exception {
+        oauth.realm(TEST);
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken subjectToken = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken();
+
+        // exchange late in the subject token lifetime (realm accessTokenLifespan is 300)
+        setTimeOffset(120);
+
+        oauth.openid(true);
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken().getExp());
+        assertEquals(subjectToken.getExp(), TokenVerifier.create(response.getIdToken(), IDToken.class).parse().getToken().getExp());
+        assertTrue("Unexpected expires_in: " + response.getExpiresIn(), response.getExpiresIn() > 0 && response.getExpiresIn() <= 180);
+
+        // ID token requested as the exchanged token, returned inside "access_token"
+        AccessTokenResponse idTokenResponse = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ID_TOKEN_TYPE);
+        assertEquals(OAuth2Constants.ID_TOKEN_TYPE, idTokenResponse.getIssuedTokenType());
+        assertEquals(subjectToken.getExp(), TokenVerifier.create(idTokenResponse.getAccessToken(), IDToken.class).parse().getToken().getExp());
+
+        // second exchange cannot extend the expiration either
+        response = tokenExchange(response.getAccessToken(), "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken().getExp());
+    }
+
+    @Test
+    public void testExchangedTokenExpirationAfterSubjectTokenAllowed() throws Exception {
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT, Boolean.TRUE.toString())
+                .update()) {
+            oauth.realm(TEST);
+            String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+            AccessToken subjectToken = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken();
+
+            setTimeOffset(120);
+
+            oauth.openid(true);
+            oauth.scope(OAuth2Constants.SCOPE_OPENID);
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+            assertTrue(TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken().getExp() > subjectToken.getExp());
+            assertTrue(TokenVerifier.create(response.getIdToken(), IDToken.class).parse().getToken().getExp() > subjectToken.getExp());
+        }
+    }
+
+    @Test
+    public void testExchangedTokenExpirationCappedWithRefreshTokenAllowed() throws Exception {
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
+                .update()) {
+            oauth.realm(TEST);
+            String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+            AccessToken subjectToken = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken();
+
+            setTimeOffset(120);
+
+            // the two options are independent, so the access token is still capped
+            AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.REFRESH_TOKEN_TYPE);
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+            assertEquals(subjectToken.getExp(), TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken().getExp());
+            assertNotNull(response.getRefreshToken());
+
+            // the refresh token is not capped and can be refreshed for an access token with the regular lifespan
+            oauth.client("requester-client", "secret");
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+            assertTrue(TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken().getExp() > subjectToken.getExp());
+        }
+    }
+
+    @Test
     @UncaughtServerErrorExpected
     public void testExchangeUsingServiceAccount() throws Exception {
         final UserRepresentation user = ApiUtil.findClientResourceByClientId(adminClient.realm(TEST), "subject-client").getServiceAccountUser();

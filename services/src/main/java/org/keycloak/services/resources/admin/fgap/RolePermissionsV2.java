@@ -17,8 +17,11 @@
 
 package org.keycloak.services.resources.admin.fgap;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -48,12 +51,12 @@ class RolePermissionsV2 extends RolePermissions {
     @Override
     public boolean canMapRole(RoleModel role) {
         if (isRealmAdminRole(role)) {
-            if (realm.isAdminPermissionsEnabled()) {
-                // only server or realm admins can map roles if FGAP is enabled
-                return root.isRealmAdmin();
-            }
-            // otherwise, check if the user is granted with manage-users and is granted with the role being granted
-            return root.hasOneAdminRole(AdminRoles.MANAGE_USERS) && checkAdminRoles(role);
+            return canMapRealmAdminRole(role);
+        }
+
+        // a non-admin composite role may still grant admin roles through its children
+        if (!canMapCompositeAdminRoles(role, this::canMapRealmAdminRole)) {
+            return false;
         }
 
         if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
@@ -73,12 +76,12 @@ class RolePermissionsV2 extends RolePermissions {
     @Override
     public boolean canMapComposite(RoleModel role) {
         if (isRealmAdminRole(role)) {
-            if (realm.isAdminPermissionsEnabled()) {
-                // only server or realm admins can map roles if FGAP is enabled
-                return root.isRealmAdmin();
-            }
-            // otherwise, check if the user is granted with manage-realm or manage-client roles and is granted with the role being granted
-            return canManageDefault(role) && checkAdminRoles(role);
+            return canMapRealmAdminComposite(role);
+        }
+
+        // a non-admin composite role may still grant admin roles through its children
+        if (!canMapCompositeAdminRoles(role, this::canMapRealmAdminComposite)) {
+            return false;
         }
 
         if (canManageDefault(role)) {
@@ -178,6 +181,48 @@ class RolePermissionsV2 extends RolePermissions {
     @Override
     public Policy rolePolicy(ResourceServer server, RoleModel role) {
         throw new UnsupportedOperationException("Not supported in V2");
+    }
+
+    private boolean canMapRealmAdminRole(RoleModel role) {
+        if (realm.isAdminPermissionsEnabled()) {
+            // only server or realm admins can map roles if FGAP is enabled
+            return root.isRealmAdmin();
+        }
+        // otherwise, check if the user is granted with manage-users and is granted with the role being granted
+        return root.hasOneAdminRole(AdminRoles.MANAGE_USERS) && checkAdminRoles(role);
+    }
+
+    private boolean canMapRealmAdminComposite(RoleModel role) {
+        if (realm.isAdminPermissionsEnabled()) {
+            // only server or realm admins can map roles if FGAP is enabled
+            return root.isRealmAdmin();
+        }
+        // otherwise, check if the user is granted with manage-realm or manage-client roles and is granted with the role being granted
+        return canManageDefault(role) && checkAdminRoles(role);
+    }
+
+    private boolean canMapCompositeAdminRoles(RoleModel role, Predicate<RoleModel> check) {
+        if (!role.isComposite()) {
+            return true;
+        }
+        if (root.isRealmAdmin()) {
+            // Server and realm admins are allowed to map any role, so no traversal is done for them
+            return true;
+        }
+        Set<String> visited = new HashSet<>();
+        visited.add(role.getId());
+        return compositeAdminRoles(role, visited).allMatch(check);
+    }
+
+    private Stream<RoleModel> compositeAdminRoles(RoleModel role, Set<String> visited) {
+        return role.getCompositesStream()
+                .filter(child -> visited.add(child.getId()))
+                .flatMap(child -> {
+                    if (isRealmAdminRole(child)) {
+                        return Stream.of(child);
+                    }
+                    return child.isComposite() ? compositeAdminRoles(child, visited) : Stream.empty();
+                });
     }
 
     private boolean isRealmAdminRole(RoleModel role) {

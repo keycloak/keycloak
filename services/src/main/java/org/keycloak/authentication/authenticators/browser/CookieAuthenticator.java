@@ -17,7 +17,12 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
+import java.net.URI;
+
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.authenticators.util.AcrStore;
@@ -31,6 +36,7 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
@@ -49,6 +55,9 @@ public class CookieAuthenticator implements Authenticator {
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(context.getSession(),
                 context.getRealm(), true);
         if (authResult == null) {
+            if (restartIfAuthenticationSessionRootRemoved(context)) {
+                return;
+            }
             context.attempted();
         } else {
             AuthenticationSessionModel authSession = context.getAuthenticationSession();
@@ -84,7 +93,7 @@ public class CookieAuthenticator implements Authenticator {
                 } else {
                     // Cookie only authentication
                     acrStore.setLevelAuthenticatedToCurrentRequest(previouslyAuthenticatedLevel);
-                    authSession.setAuthNote(AuthenticationManager.SSO_AUTH, "true");
+                    authSession.setAuthNote(AuthenticationManager.SSO_AUTH, authResult.user().getId());
                     context.attachUserSession(authResult.session());
 
                     if (isOrganizationContext(context)) {
@@ -97,6 +106,29 @@ public class CookieAuthenticator implements Authenticator {
             }
         }
 
+    }
+
+    /**
+     * Validating the identity cookie removes the root authentication session that has the id of an expired user
+     * session. The login can be running in that very root: the authorization endpoint joins the root that the
+     * AUTH_SESSION_ID cookie points to. The flow would then continue with an authentication session that no longer
+     * exists, and the login form it shows could not be submitted. The root cannot be kept, as its id would become the
+     * id of the next user session. Restart the flow in a fresh root with a random id instead.
+     */
+    private boolean restartIfAuthenticationSessionRootRemoved(AuthenticationFlowContext context) {
+        KeycloakSession session = context.getSession();
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        if (session.authenticationSessions().getRootAuthenticationSession(context.getRealm(), authSession.getParentSession().getId()) != null) {
+            return false;
+        }
+
+        AuthenticationSessionModel restarted = AuthenticationProcessor.recreate(session, authSession);
+        AuthenticationProcessor.resetFlow(restarted, context.getFlowPath());
+        session.getContext().setAuthenticationSession(restarted);
+
+        URI flowUrl = new AuthenticationFlowURLHelper(session, context.getRealm(), context.getUriInfo()).getLastExecutionUrl(restarted);
+        context.forceChallenge(Response.status(Response.Status.FOUND).location(flowUrl).build());
+        return true;
     }
 
     @Override

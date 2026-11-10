@@ -8,6 +8,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -38,6 +39,7 @@ public class AdminClientFactorySupplierTest {
     }
 
     private AdminClientBuilder createBuilder() {
+        ApiUtil.addAdminApiClientScope(realm.admin(), "myclient");
         return adminClientFactory.create()
                 .realm(realm.getName())
                 .clientId("myclient")

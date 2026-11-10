@@ -115,6 +115,15 @@ public abstract class KeycloakLogFilter implements Filter {
             return false;
         }
 
+        // JGroups 5.5.5.Final added graceful-close processing that calls shutdownInput() before the
+        // peer's TLS close_notify arrives, causing an ERROR with mTLS. The cluster still forms successfully.
+        // Remove once Infinispan upgrades to JGroups >= 5.5.6.Final (upstream fix: JGroups commit 6000d11,
+        // Infinispan upgrade: https://github.com/infinispan/infinispan/pull/18275).
+        // Tracking of the removal of this filter: https://github.com/keycloak/keycloak/issues/54024
+        if (Objects.equals(record.getLevel(), Level.SEVERE) && record.getLoggerName().equals("org.jgroups.protocols.TCP") && record.getMessage() != null && record.getMessage().contains("closing inbound before receiving peer's close_notify")) {
+            return false;
+        }
+
         if (executor != null && ThreadCreator.isVirtual(Thread.currentThread())) {
             executor.submit(new RecordLogger(ExtLogRecord.wrap(record), this));
             return false;
