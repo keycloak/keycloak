@@ -147,10 +147,6 @@ public final class JGroupsConfigurator {
         if (isLocal(holder)) {
             return;
         }
-        var stack = config.get(DefaultCacheEmbeddedConfigProviderFactory.STACK);
-        if (stack != null) {
-            transportOf(holder).stack(stack);
-        }
         configureTransport(config);
         var tracingEnabled = config.getBoolean(TRACING, false);
         var fdSockEnabled = config.getBoolean(FD_SOCK_ENABLED_NAME, FD_SOCK_ENABLED_DEFAULT);

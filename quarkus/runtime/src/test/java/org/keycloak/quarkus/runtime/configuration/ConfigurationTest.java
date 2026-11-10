@@ -496,9 +496,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         ConfigArgsConfigSource.setCliArgs("");
         Assert.assertEquals("cache-local.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
-
-        ConfigArgsConfigSource.setCliArgs("--cache-stack=foo");
-        Assert.assertEquals("foo", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.STACK));
     }
 
     @Test

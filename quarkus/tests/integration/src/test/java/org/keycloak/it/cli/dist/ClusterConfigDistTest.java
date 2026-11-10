@@ -118,12 +118,6 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start", "--cache-stack=invalid" })
-    void failInvalidClusterStack(CLIResult result) {
-        result.assertMessage("No such JGroups stack 'invalid'");
-    }
-
-    @Test
     @Launch({ "start", "--cache-config-file=cache-ispn.xml" })
     void testExplicitCacheConfigFile(CLIResult result) {
         result.assertStarted();
