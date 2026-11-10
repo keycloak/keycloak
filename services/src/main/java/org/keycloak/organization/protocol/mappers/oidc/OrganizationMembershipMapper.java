@@ -242,7 +242,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
             config.put(ADD_ORGANIZATION_NAME, Boolean.FALSE.toString());
         }
 
-        if (isAddOrganizationAttributes(copy) || isAddOrganizationId(copy)) {
+        if (isAddOrganizationAttributes(copy) || isAddOrganizationId(copy) || isAddOrganizationName(copy)) {
             config.put(JSON_TYPE, "JSON");
         }
 
