@@ -129,6 +129,7 @@ The following conditions are now enforced:
 
 * The assertion's `Subject` must contain a `SubjectConfirmation` with `Method` set to Bearer, and it must carry a `SubjectConfirmationData` element. A missing `SubjectConfirmation`, or one without `SubjectConfirmationData`, is now rejected; previously it was silently ignored. If the assertion carries multiple Bearer confirmations, they are treated as alternatives and only one of them needs to validate.
 * `SubjectConfirmationData` must carry a `NotOnOrAfter` attribute.
+* Other subject confirmation methods, including holder-of-key, are not supported; an assertion without a valid bearer confirmation is rejected.
 * `SubjectConfirmationData` must carry a `Recipient` attribute matching the response's `Destination`, whenever the response specifies one.
 * For broker logins only, `SubjectConfirmationData` must carry an `InResponseTo` attribute matching the expected request ID, for SP-initiated logins.
 

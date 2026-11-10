@@ -19,6 +19,7 @@ import org.keycloak.tests.broker.AbstractKcSamlBrokerTest;
 import org.keycloak.tests.saml.SamlBrowserlessBrokerClient;
 import org.keycloak.tests.saml.SamlClient;
 import org.keycloak.tests.saml.SamlClientBuilder;
+import org.keycloak.tests.saml.SamlResponseDocument;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,55 @@ public class KcSamlBrokerTest extends AbstractKcSamlBrokerTest {
     @Test
     public void testRejectsBearerSubjectConfirmationWithoutRecipient() throws Exception {
         assertInvalidSamlResponse(this::removeRecipient);
+    }
+
+    @Test
+    public void testHolderOfKeyOnlySubjectConfirmationIsRejected() throws Exception {
+        try (SamlBrowserlessBrokerClient broker = new SamlBrowserlessBrokerClient(getConsumerRealm(), SAML_CLIENT_ID_SALES_POST, IDP_SAML_ALIAS)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(),
+                    broker.login(getUserLogin(), getUserPassword())
+                            .onResponse(response -> response.removeSubjectConfirmations()
+                                    .addSubjectConfirmation(SamlResponseDocument.HOLDER_OF_KEY_METHOD))
+                            .submit());
+        }
+
+        assertTrue(getConsumerRealm().admin().users().search(getUserLogin(), true).isEmpty());
+    }
+
+    @Test
+    public void testUnknownSubjectConfirmationMethodIsRejected() throws Exception {
+        try (SamlBrowserlessBrokerClient broker = new SamlBrowserlessBrokerClient(getConsumerRealm(), SAML_CLIENT_ID_SALES_POST, IDP_SAML_ALIAS)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(),
+                    broker.login(getUserLogin(), getUserPassword())
+                            .onResponse(response -> response.removeSubjectConfirmations()
+                                    .addSubjectConfirmation("urn:example:unsupported"))
+                            .submit());
+        }
+
+        assertTrue(getConsumerRealm().admin().users().search(getUserLogin(), true).isEmpty());
+    }
+
+    @Test
+    public void testBearerAndHolderOfKeySubjectConfirmationIsAccepted() throws Exception {
+        try (SamlBrowserlessBrokerClient broker = new SamlBrowserlessBrokerClient(getConsumerRealm(), SAML_CLIENT_ID_SALES_POST, IDP_SAML_ALIAS)) {
+            assertEquals(Response.Status.OK.getStatusCode(),
+                    broker.login(getUserLogin(), getUserPassword())
+                            .onResponse(response -> response.addSubjectConfirmation(SamlResponseDocument.HOLDER_OF_KEY_METHOD))
+                            .submit());
+        }
+    }
+
+    @Test
+    public void testInvalidBearerAndHolderOfKeySubjectConfirmationIsRejected() throws Exception {
+        try (SamlBrowserlessBrokerClient broker = new SamlBrowserlessBrokerClient(getConsumerRealm(), SAML_CLIENT_ID_SALES_POST, IDP_SAML_ALIAS)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(),
+                    broker.login(getUserLogin(), getUserPassword())
+                            .onResponse(response -> response.expireSubjectConfirmationData(SamlResponseDocument.BEARER_METHOD)
+                                    .addSubjectConfirmation(SamlResponseDocument.HOLDER_OF_KEY_METHOD))
+                            .submit());
+        }
+
+        assertTrue(getConsumerRealm().admin().users().search(getUserLogin(), true).isEmpty());
     }
 
     @Test
