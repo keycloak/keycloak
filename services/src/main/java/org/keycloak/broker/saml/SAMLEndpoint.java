@@ -1215,7 +1215,7 @@ public class SAMLEndpoint {
                         .collect(Collectors.toList());
 
         if (bearerConfirmations.isEmpty()) {
-            return isSubjectConfirmationDataValid(assertion, null, expectedRequestId, expectedRecipient);
+            return false;
         }
 
         return bearerConfirmations.stream().anyMatch(subjectConfirmationElement ->
