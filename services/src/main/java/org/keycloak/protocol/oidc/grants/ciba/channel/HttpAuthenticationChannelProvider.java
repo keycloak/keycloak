@@ -156,10 +156,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
     }
 
     protected void checkAuthenticationChannel() {
-        if (httpAuthenticationChannelUri == null) {
-            throw new RuntimeException("Authentication Channel Request URI not set properly.");
-        }
-        if (!httpAuthenticationChannelUri.startsWith("http://") && !httpAuthenticationChannelUri.startsWith("https://")) {
+        if (!isValidHttpAuthenticationChannelUri(httpAuthenticationChannelUri)) {
             throw new RuntimeException("Authentication Channel Request URI not set properly.");
         }
     }

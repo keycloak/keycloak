@@ -32,6 +32,8 @@ public class HttpAuthenticationChannelProviderTest {
     public void validatesUri() {
         assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("https://realm.example.com/ciba"));
         assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://localhost:8500/ciba/request-authentication-channel"));
+        assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("HTTPS://realm.example.com/ciba"));
+        assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("Http://realm.example.com/ciba"));
 
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri(null));
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri(""));
