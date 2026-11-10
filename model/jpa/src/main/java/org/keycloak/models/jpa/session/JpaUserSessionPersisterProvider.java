@@ -76,19 +76,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     private final KeycloakSession session;
     private final EntityManager em;
     private final int expirationBatch;
-    private final EmptyRealmWatermarks emptyRealmWatermarks;
     private final Set<PersistentUserSessionEntity.Key> userSessionNotInDatabaseCache = new HashSet<>();
     private final Set<PersistentClientSessionEntity.Key> clientSessionNotInDatabaseCache = new HashSet<>();
 
     public JpaUserSessionPersisterProvider(KeycloakSession session, EntityManager em, int expirationBatch) {
-        this(session, em, expirationBatch, new EmptyRealmWatermarks());
-    }
-
-    JpaUserSessionPersisterProvider(KeycloakSession session, EntityManager em, int expirationBatch, EmptyRealmWatermarks emptyRealmWatermarks) {
         this.session = session;
         this.em = em;
         this.expirationBatch = expirationBatch;
-        this.emptyRealmWatermarks = emptyRealmWatermarks;
     }
 
     @Override
@@ -281,7 +275,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         final int currentTime = Time.currentTime();
         final KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
 
-        if (!isRealmEmpty(sessionFactory, realm, true, currentTime, expiration.offlineMaxIdle())) {
+        if (!isRealmEmpty(sessionFactory, realm, true)) {
             UserSessionExpirationLogic.expireOfflineSessions(sessionFactory, realm, currentTime, expiration, expirationBatch);
         }
 
@@ -289,7 +283,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             return;
         }
 
-        if (isRealmEmpty(sessionFactory, realm, false, currentTime, Math.min(expiration.maxIdle(), expiration.rememberMeMaxIdle()))) {
+        if (isRealmEmpty(sessionFactory, realm, false)) {
             return;
         }
 
@@ -305,16 +299,13 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
     }
 
     /**
-     * Checks with a single index lookup if the realm has no sessions of the given type. An empty realm has nothing to
-     * expire until the shortest idle timeout has passed, so the check is remembered to skip the expensive per-bucket queries.
+     * Checks with a single index lookup if the realm has no sessions of the given type, to skip the expensive
+     * per-bucket queries. Nothing is remembered between runs, so the result never depends on the clock.
      */
-    private boolean isRealmEmpty(KeycloakSessionFactory sessionFactory, RealmModel realm, boolean offline, int currentTime, int minIdle) {
+    private boolean isRealmEmpty(KeycloakSessionFactory sessionFactory, RealmModel realm, boolean offline) {
         String realmId = realm.getId();
-        if (emptyRealmWatermarks.canSkip(realmId, offline, currentTime, minIdle)) {
-            return true;
-        }
         // Own transaction, so the outer transaction holds no read locks that the delete transactions could wait for.
-        boolean empty = runJobInTransactionWithResult(sessionFactory, null, s ->
+        return runJobInTransactionWithResult(sessionFactory, null, s ->
                 s.getProvider(JpaConnectionProvider.class).getEntityManager()
                         .createNamedQuery("findAnyUserSessionIdByRealm", String.class)
                         .setParameter("realmId", realmId)
@@ -323,12 +314,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
                         .setMaxResults(1)
                         .getResultList()
                         .isEmpty(), "session-expiration-task");
-        if (empty) {
-            emptyRealmWatermarks.markEmpty(realmId, offline, currentTime);
-        } else {
-            emptyRealmWatermarks.clear(realmId, offline);
-        }
-        return empty;
     }
 
     private static int calculateOldestSessionTime(RealmModel realm, boolean offline) {

@@ -1274,27 +1274,17 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         long eventCount = getUserSessionExpirationEventCount(userId);
         // it seems some sessions are already present
         int initialSessions = getPersistedUserSessionsCount();
-        // the time only moves forward in each step, so sessions are always created after an earlier empty observation
-        try {
-            // no sessions
-            eventCount = doExpirationWithSessions(0, initialSessions, eventCount);
+        // no sessions
+        eventCount = doExpirationWithSessions(0, initialSessions, eventCount);
 
-            // create half batch size sessions
-            eventCount = doExpirationWithSessions(Math.max(1, JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH / 2), initialSessions, eventCount);
+        // create half batch size sessions
+        eventCount = doExpirationWithSessions(Math.max(1, JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH / 2), initialSessions, eventCount);
 
-            // exactly batch size sessions
-            eventCount = doExpirationWithSessions(JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH, initialSessions, eventCount);
+        // exactly batch size sessions
+        eventCount = doExpirationWithSessions(JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH, initialSessions, eventCount);
 
-            // double batch size sessions
-            eventCount = doExpirationWithSessions(JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2, initialSessions, eventCount);
-
-            // the realm is observed as empty in the future, then the time is set back: that observation must not hide new sessions
-            eventCount = doExpirationWithSessions(0, initialSessions, eventCount);
-            Time.setOffset(0);
-            doExpirationWithSessions(Math.max(1, JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH / 2), initialSessions, eventCount);
-        } finally {
-            Time.setOffset(0);
-        }
+        // double batch size sessions
+        doExpirationWithSessions(JpaUserSessionPersisterProviderFactory.DEFAULT_EXPIRATION_BATCH * 2, initialSessions, eventCount);
     }
 
     @Test
@@ -1426,9 +1416,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         int offset = withRealm(realmId, (session, realm) -> realm.getSsoSessionMaxLifespan() + PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 10);
         createSessions(count, value -> false);
         assertEquals(count + initialSessionCount, getPersistedUserSessionsCount());
-        // advance the time from where it is now, and keep it there for the next step
-        Time.setOffset(Time.getOffset() + offset);
-        withRealmConsumer(realmId, (session, realm) -> session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm));
+        triggerExpiration(offset);
         assertEquals(initialSessionCount, getPersistedUserSessionsCount());
         long eventCount = getUserSessionExpirationEventCount(userId);
         assertEquals(currentEventCount + count, eventCount);
