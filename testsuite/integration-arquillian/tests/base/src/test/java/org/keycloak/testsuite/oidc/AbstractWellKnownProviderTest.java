@@ -434,7 +434,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             List<String> expectedScopeList = Stream.of(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS,
                     OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS, OIDCLoginProtocolFactory.ACR_SCOPE, OIDCLoginProtocolFactory.BASIC_SCOPE,
                     OIDCLoginProtocolFactory.ROLES_SCOPE, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE, OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE, OAuth2Constants.ORGANIZATION,
-                    ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, "show-scope").collect(Collectors.toList());
+                    ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, "show-scope", Constants.KEYCLOAK_ADMIN_API_SCOPE).collect(Collectors.toList());
             oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
             assertScopesSupportedMatchesWithRealm(oidcConfig, expectedScopeList);
         } finally {
@@ -455,7 +455,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS,
                 OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS, OIDCLoginProtocolFactory.ACR_SCOPE, OIDCLoginProtocolFactory.BASIC_SCOPE,
                 OIDCLoginProtocolFactory.ROLES_SCOPE, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE, OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE, OAuth2Constants.ORGANIZATION,
-                ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
+                ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE, Constants.KEYCLOAK_ADMIN_API_SCOPE);
     }
 
     protected OIDCConfigurationRepresentation getOIDCDiscoveryRepresentation(Client client, String uriTemplate) {

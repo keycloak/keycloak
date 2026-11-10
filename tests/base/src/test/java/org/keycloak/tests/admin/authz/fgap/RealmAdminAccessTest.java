@@ -23,10 +23,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.GenericType;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RoleMappingResource;
+import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
@@ -45,18 +52,23 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.RealmAdminAccessTest.ServerConfig;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -79,6 +91,9 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
 
     @InjectAdminClientFactory
     AdminClientFactory adminClientFactory;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @Test
     public void testRealmAdminAccess() {
@@ -190,6 +205,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(fullScopeClient)) {
             fullScopeClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(fullScopeClient.getId());
 
         // Verify the permission works with a full-scope client
         try (Keycloak client = adminClientFactory.create()
@@ -212,6 +228,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(restrictedClient)) {
             restrictedClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(restrictedClient.getId());
 
         // Add query-users and view-users to scope — custom-manager is NOT in scope
         realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
@@ -275,6 +292,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(restrictedClient)) {
             restrictedClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(restrictedClient.getId());
 
         realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
                 .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
@@ -341,6 +359,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(fullScopeClient)) {
             fullScopeClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(fullScopeClient.getId());
 
         try (Keycloak client = adminClientFactory.create()
                 .realm(realmName)
@@ -362,6 +381,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(restrictedClient)) {
             restrictedClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(restrictedClient.getId());
 
         realm.admin().clients().get(restrictedClient.getId()).getScopeMappings()
                 .clientLevel(realmMgmt.getId()).add(List.of(queryUsersRole, viewUsersRole));
@@ -421,6 +441,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(maliciousClient)) {
             maliciousClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(maliciousClient.getId());
         ProtocolMapperRepresentation mapper = toRepresentation(
                 HardcodedRole.create("inject-custom-manager", "custom-manager"));
         realm.admin().clients().get(maliciousClient.getId())
@@ -490,6 +511,7 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         try (Response response = realm.admin().clients().create(maliciousClient)) {
             maliciousClient.setId(ApiUtil.getCreatedId(response));
         }
+        addAdminApiScope(maliciousClient.getId());
         ProtocolMapperRepresentation mapper = toRepresentation(
                 HardcodedRole.create("inject-app-manager", "custom-app.app-manager"));
         realm.admin().clients().get(maliciousClient.getId())
@@ -607,6 +629,98 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         assertThat(mappings.getClientMappings(), not(hasKey("secret-client")));
     }
 
+    @ParameterizedTest(name = "{0}, fullScopeAllowed={1}")
+    @CsvSource({
+            AdminPermissionsSchema.MAP_ROLE + ", false",
+            AdminPermissionsSchema.MAP_ROLE + ", true",
+            AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE + ", false",
+            AdminPermissionsSchema.MAP_ROLE_CLIENT_SCOPE + ", true"
+    })
+    public void testClientScopeEvaluationFiltersHiddenRoles(String permission, boolean fullScopeAllowed) {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+
+        ClientRepresentation evaluatedClient = new ClientRepresentation();
+        evaluatedClient.setClientId("evaluated-client");
+        evaluatedClient.setFullScopeAllowed(fullScopeAllowed);
+        try (Response response = realm.admin().clients().create(evaluatedClient)) {
+            evaluatedClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        ClientRepresentation hiddenClient = new ClientRepresentation();
+        hiddenClient.setClientId("hidden-client");
+        try (Response response = realm.admin().clients().create(hiddenClient)) {
+            hiddenClient.setId(ApiUtil.getCreatedId(response));
+        }
+
+        RoleRepresentation hiddenClientGranted = createClientRole(hiddenClient.getId(), "HIDDEN_CLIENT_GRANTED");
+        RoleRepresentation visibleClientGranted = createClientRole(hiddenClient.getId(), "VISIBLE_CLIENT_GRANTED");
+        RoleRepresentation hiddenClientNotGranted = createClientRole(hiddenClient.getId(), "HIDDEN_CLIENT_NOT_GRANTED");
+        RoleRepresentation visibleClientNotGranted = createClientRole(hiddenClient.getId(), "VISIBLE_CLIENT_NOT_GRANTED");
+        RoleRepresentation hiddenRealmGranted = createRealmRole("HIDDEN_REALM_GRANTED");
+        RoleRepresentation visibleRealmGranted = createRealmRole("VISIBLE_REALM_GRANTED");
+        RoleRepresentation hiddenRealmNotGranted = createRealmRole("HIDDEN_REALM_NOT_GRANTED");
+        RoleRepresentation visibleRealmNotGranted = createRealmRole("VISIBLE_REALM_NOT_GRANTED");
+
+        RoleMappingResource scopeMappings = realm.admin().clients().get(evaluatedClient.getId()).getScopeMappings();
+        scopeMappings.clientLevel(hiddenClient.getId()).add(List.of(hiddenClientGranted, visibleClientGranted));
+        scopeMappings.realmLevel().add(List.of(hiddenRealmGranted, visibleRealmGranted));
+
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, evaluatedClient.getId(), AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(AdminPermissionsSchema.VIEW), policy);
+
+        List<RoleRepresentation> hiddenRoles = List.of(hiddenClientGranted, hiddenClientNotGranted, hiddenRealmGranted, hiddenRealmNotGranted);
+        List<RoleRepresentation> visibleRoles = List.of(visibleClientGranted, visibleClientNotGranted, visibleRealmGranted, visibleRealmNotGranted);
+
+        // Viewing the evaluated client alone must not disclose roles from another container.
+        for (RoleRepresentation role : List.of(hiddenClientGranted, visibleClientGranted, hiddenClientNotGranted, visibleClientNotGranted,
+                hiddenRealmGranted, visibleRealmGranted, hiddenRealmNotGranted, visibleRealmNotGranted)) {
+            assertThrows(ForbiddenException.class,
+                    () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()));
+        }
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            for (String roleContainerId : List.of(hiddenClient.getId(), realm.getName())) {
+                for (String endpoint : List.of("granted", "not-granted")) {
+                    assertThat(evaluateScopeMappings(httpClient, evaluatedClient.getId(), roleContainerId, endpoint), empty());
+                }
+            }
+        }
+
+        createPermission(adminPermissionsClient, Set.of(
+                        visibleClientGranted.getId(), visibleClientNotGranted.getId(),
+                        visibleRealmGranted.getId(), visibleRealmNotGranted.getId()),
+                AdminPermissionsSchema.ROLES.getType(), Set.of(permission), policy);
+
+        for (RoleRepresentation role : hiddenRoles) {
+            assertThrows(ForbiddenException.class,
+                    () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()));
+        }
+        for (RoleRepresentation role : visibleRoles) {
+            if (AdminPermissionsSchema.MAP_ROLE.equals(permission)) {
+                assertThat(realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()).getName(), is(role.getName()));
+            } else {
+                // Scope-mapping visibility does not imply permission to view the role directly.
+                assertThrows(ForbiddenException.class,
+                        () -> realmAdminClient.realm(realm.getName()).rolesById().getRole(role.getId()));
+            }
+        }
+
+        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            List<RoleRepresentation> grantedClientRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), hiddenClient.getId(), "granted");
+            assertThat(toNames(grantedClientRoles), equalTo(fullScopeAllowed
+                    ? Set.of("VISIBLE_CLIENT_GRANTED", "VISIBLE_CLIENT_NOT_GRANTED") : Set.of("VISIBLE_CLIENT_GRANTED")));
+
+            List<RoleRepresentation> notGrantedClientRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), hiddenClient.getId(), "not-granted");
+            assertThat(toNames(notGrantedClientRoles), equalTo(fullScopeAllowed ? Set.of() : Set.of("VISIBLE_CLIENT_NOT_GRANTED")));
+
+            List<RoleRepresentation> grantedRealmRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), realm.getName(), "granted");
+            assertThat(toNames(grantedRealmRoles), equalTo(fullScopeAllowed
+                    ? Set.of("VISIBLE_REALM_GRANTED", "VISIBLE_REALM_NOT_GRANTED") : Set.of("VISIBLE_REALM_GRANTED")));
+
+            List<RoleRepresentation> notGrantedRealmRoles = evaluateScopeMappings(httpClient, evaluatedClient.getId(), realm.getName(), "not-granted");
+            assertThat(toNames(notGrantedRealmRoles), equalTo(fullScopeAllowed ? Set.of() : Set.of("VISIBLE_REALM_NOT_GRANTED")));
+        }
+    }
+
     @Test
     public void testClientScopeScopeMappingsFilterHiddenRoles() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
@@ -703,6 +817,37 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
         return roles.stream().filter(role -> name.equals(role.getName())).findFirst().orElseThrow();
     }
 
+    private RoleRepresentation createClientRole(String clientId, String roleName) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(roleName);
+        role.setAttributes(Map.of("classification", List.of("sensitive")));
+        realm.admin().clients().get(clientId).roles().create(role);
+        return realm.admin().clients().get(clientId).roles().get(roleName).toRepresentation();
+    }
+
+    private RoleRepresentation createRealmRole(String roleName) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(roleName);
+        role.setAttributes(Map.of("classification", List.of("sensitive")));
+        realm.admin().roles().create(role);
+        return realm.admin().roles().get(roleName).toRepresentation();
+    }
+
+    private List<RoleRepresentation> evaluateScopeMappings(Client httpClient, String evaluatedClientId, String roleContainerId, String result) {
+        WebTarget target = httpClient.target(keycloakUrls.getBaseUrl().toString())
+                .path("admin").path("realms").path(realm.getName())
+                .path("clients").path(evaluatedClientId)
+                .path("evaluate-scopes").path("scope-mappings").path(roleContainerId).path(result)
+                .register(new BearerAuthFilter(realmAdminClient.tokenManager()));
+
+        try (Response response = target.request(MediaType.APPLICATION_JSON).get()) {
+            assertThat(response.getStatus(), equalTo(Response.Status.OK.getStatusCode()));
+            List<RoleRepresentation> roles = response.readEntity(new GenericType<List<RoleRepresentation>>() {});
+            roles.forEach(role -> assertThat(role.getAttributes(), nullValue()));
+            return roles;
+        }
+    }
+
     private void assertWorkflowAccess(Keycloak serverAdminClient) {
         // server admin can access workflows
         serverAdminClient.realm(realm.getName()).workflows().list();
@@ -749,6 +894,147 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
                 fail("Should not have access to manage workflows if user is master realm admin with manage-realm role in a realm");
             } catch (ForbiddenException ignore) {}
         }
+    }
+
+    @Test
+    public void testManageUsersCannotMapCompositeWrappingRealmAdmin() {
+        String realmName = realm.getName();
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        RoleRepresentation manageUsersRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+
+        RoleRepresentation wrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper", realmAdminRole);
+        RoleRepresentation outerWrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper-outer", wrapper);
+
+        ClientRepresentation wrapperClient = ClientBuilder.create("wrapper-client").build();
+        try (Response response = realm.admin().clients().create(wrapperClient)) {
+            wrapperClient.setId(ApiUtil.getCreatedId(response));
+        }
+        RoleRepresentation clientWrapper = createCompositeRole(realm.admin().clients().get(wrapperClient.getId()).roles(), "client-composite-wrapper", realmAdminRole);
+
+        RoleRepresentation plainRole = new RoleRepresentation();
+        plainRole.setName("plain-role");
+        realm.admin().roles().create(plainRole);
+        plainRole = realm.admin().roles().get(plainRole.getName()).toRepresentation();
+        RoleRepresentation harmlessWrapper = createCompositeRole(realm.admin().roles(), "harmless-wrapper", plainRole);
+
+        UserRepresentation manageUsersAdmin = createUser("manage-users-admin", "password");
+        realm.admin().users().get(manageUsersAdmin.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(manageUsersRole));
+
+        UserRepresentation target = createUser("target-user", "password");
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .username("manage-users-admin")
+                .password("password")
+                .build()) {
+            RoleMappingResource targetRoles = client.realm(realmName).users().get(target.getId()).roles();
+
+            assertDenied("manage-users admin should not be able to map realm-admin directly",
+                    () -> targetRoles.clientLevel(realmMgmt.getId()).add(List.of(realmAdminRole)));
+            assertDenied("manage-users admin should not be able to map a composite role wrapping realm-admin",
+                    () -> targetRoles.realmLevel().add(List.of(wrapper)));
+            assertDenied("manage-users admin should not be able to map a nested composite role wrapping realm-admin",
+                    () -> targetRoles.realmLevel().add(List.of(outerWrapper)));
+            assertDenied("manage-users admin should not be able to map a client composite role wrapping realm-admin",
+                    () -> targetRoles.clientLevel(wrapperClient.getId()).add(List.of(clientWrapper)));
+
+            targetRoles.realmLevel().add(List.of(harmlessWrapper));
+        }
+
+        List<RoleRepresentation> effective = realm.admin().users().get(target.getId()).roles()
+                .clientLevel(realmMgmt.getId()).listEffective();
+        assertThat(effective.stream().map(RoleRepresentation::getName).toList(), not(hasItem(AdminRoles.REALM_ADMIN)));
+        assertThat(realm.admin().users().get(target.getId()).roles().realmLevel().listAll().stream().map(RoleRepresentation::getName).toList(),
+                hasItem(harmlessWrapper.getName()));
+    }
+
+    @Test
+    public void testManageRealmCannotAddCompositeWrappingRealmAdminToExistingRole() {
+        String realmName = realm.getName();
+        ClientRepresentation realmMgmt = realm.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation realmAdminRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.REALM_ADMIN).toRepresentation();
+        RoleRepresentation manageRealmRole = realm.admin().clients().get(realmMgmt.getId())
+                .roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
+
+        RoleRepresentation employee = new RoleRepresentation();
+        employee.setName("employee");
+        realm.admin().roles().create(employee);
+        employee = realm.admin().roles().get(employee.getName()).toRepresentation();
+        UserRepresentation existingHolder = createUser("existing-employee", "password");
+        realm.admin().users().get(existingHolder.getId()).roles().realmLevel().add(List.of(employee));
+
+        RoleRepresentation wrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper", realmAdminRole);
+        RoleRepresentation outerWrapper = createCompositeRole(realm.admin().roles(), "composite-wrapper-outer", wrapper);
+
+        ClientRepresentation wrapperClient = ClientBuilder.create("wrapper-client").build();
+        try (Response response = realm.admin().clients().create(wrapperClient)) {
+            wrapperClient.setId(ApiUtil.getCreatedId(response));
+        }
+        RoleRepresentation clientWrapper = createCompositeRole(realm.admin().clients().get(wrapperClient.getId()).roles(), "client-composite-wrapper", realmAdminRole);
+
+        RoleRepresentation plainRole = new RoleRepresentation();
+        plainRole.setName("plain-role");
+        realm.admin().roles().create(plainRole);
+        plainRole = realm.admin().roles().get(plainRole.getName()).toRepresentation();
+        RoleRepresentation harmlessWrapper = createCompositeRole(realm.admin().roles(), "harmless-wrapper", plainRole);
+
+        UserRepresentation manageRealmAdmin = createUser("manage-realm-admin", "password");
+        realm.admin().users().get(manageRealmAdmin.getId()).roles()
+                .clientLevel(realmMgmt.getId()).add(List.of(manageRealmRole));
+
+        try (Keycloak client = adminClientFactory.create()
+                .realm(realmName)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .username("manage-realm-admin")
+                .password("password")
+                .build()) {
+            RoleResource employeeRole = client.realm(realmName).roles().get(employee.getName());
+
+            assertDenied("manage-realm admin should not be able to add realm-admin as a composite directly",
+                    () -> employeeRole.addComposites(List.of(realmAdminRole)));
+            assertDenied("manage-realm admin should not be able to add a composite role wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(wrapper)));
+            assertDenied("manage-realm admin should not be able to add a nested composite role wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(outerWrapper)));
+            assertDenied("manage-realm admin should not be able to add a client composite role wrapping realm-admin",
+                    () -> employeeRole.addComposites(List.of(clientWrapper)));
+
+            employeeRole.addComposites(List.of(harmlessWrapper));
+        }
+
+        List<RoleRepresentation> effective = realm.admin().users().get(existingHolder.getId()).roles()
+                .clientLevel(realmMgmt.getId()).listEffective();
+        assertThat(effective.stream().map(RoleRepresentation::getName).toList(), not(hasItem(AdminRoles.REALM_ADMIN)));
+        assertThat(realm.admin().roles().get(employee.getName()).getRoleComposites().stream().map(RoleRepresentation::getName).toList(),
+                hasItem(harmlessWrapper.getName()));
+    }
+
+    private RoleRepresentation createCompositeRole(RolesResource roles, String name, RoleRepresentation... children) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        roles.create(role);
+        roles.get(name).addComposites(List.of(children));
+        return roles.get(name).toRepresentation();
+    }
+
+    private void assertDenied(String message, Runnable runnable) {
+        try {
+            runnable.run();
+            fail(message);
+        } catch (ForbiddenException expected) {
+        }
+    }
+
+    private void addAdminApiScope(String clientDbId) {
+        addAdminApiClientScope(realm.admin(), realm.admin().clients().get(clientDbId), true);
     }
 
     public static class ServerConfig implements KeycloakServerConfig {

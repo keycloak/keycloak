@@ -104,6 +104,14 @@ public class AbstractClientPoliciesTest {
         }
     }
 
+    protected void updateClientByAdminPartial(ManagedRealm realm, String cId, ClientRepresentation partial) throws ClientPolicyException {
+        try {
+            realm.admin().clients().get(cId).update(partial);
+        } catch (BadRequestException bre) {
+            processClientPolicyExceptionByAdmin(bre);
+        }
+    }
+
     private void processClientPolicyExceptionByAdmin(BadRequestException bre) throws ClientPolicyException {
         Response resp = bre.getResponse();
         if (resp.getStatus() != Response.Status.BAD_REQUEST.getStatusCode()) {

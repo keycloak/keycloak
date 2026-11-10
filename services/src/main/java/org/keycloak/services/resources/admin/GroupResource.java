@@ -49,6 +49,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -254,8 +255,15 @@ public class GroupResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
+                if (Organizations.isOrganizationGroup(child)) {
+                    throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Response.Status.BAD_REQUEST);
+                }
                 auth.groups().requireManage(child);
+                if (KeycloakModelUtils.isDescendantOfOrSelf(group, child)) {
+                    throw ErrorResponse.error("Cannot move group '" + child.getName() + "' under itself or its descendants", Response.Status.BAD_REQUEST);
+                }
                 if (!Objects.equals(child.getParentId(), group.getId())) {
+                    GroupUtils.checkAdminGroupRoles(group, auth);
                     realm.moveGroup(child, group);
                 }
                 adminEvent.operation(OperationType.UPDATE);

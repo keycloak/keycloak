@@ -274,6 +274,30 @@ The response includes pagination metadata:
 *   `itemsPerPage`: The number of resources in the current page.
 *   `startIndex`: The 1-based index of the first resource in the current page.
 
+[NOTE]
+====
+How `totalResults` relates to the resources the caller is allowed to see depends on the realm's fine-grained admin
+permissions configuration:
+
+With fine-grained admin permissions v2 enabled for the realm, the listing and the count are restricted by the same
+authorization filter in the underlying database query, so `totalResults` reflects exactly what the caller is
+allowed to see.
+
+With the deprecated fine-grained admin permissions v1, a caller can be allowed to view some resources but not
+others. `totalResults` counts the resources matching the query, before the per-resource view check, so it can be
+larger than the number of resources actually returned, and should be treated as an upper bound. A page can also be
+shorter than the requested `count`, or even empty, simply because resources were removed from it, while later pages
+still contain resources the caller is allowed to see. Neither a short page nor an empty page is a reliable signal
+that no further resources exist. Keep incrementing `startIndex` by `count` until `startIndex` exceeds `totalResults`
+rather than stopping at the first short or empty page.
+
+Without any fine-grained admin permissions, access is controlled by role-based access control alone, and the
+per-resource view check evaluates the same way for every resource of a given type: either the caller holds a
+realm-wide view role (such as `view-users`) and can see every resource, or it does not and can see none. A client
+holding only `query-users` or `query-groups` therefore receives an empty `Resources` array and a `totalResults` of
+`0`, consistently across every page.
+====
+
 To retrieve the next page, increment `startIndex` by `count`:
 
 [source,bash]
@@ -305,6 +329,10 @@ date/time or boolean attributes, and incompatible combinations are rejected. See
 where the attribute has no value. Use `not (attribute pr)` to find them. See <<Attributes without a value>>.
 * *Membership filters carry extra restrictions.* The `groups.value` and `members.value` paths behave differently under
 fine-grained admin permissions and with LDAP `LDAP_ONLY` group mappers. See <<Filtering by group membership>>.
+* *`totalResults` is only exact when fine-grained admin permissions v2 is enabled.* With the deprecated v1, it is an
+upper bound that can exceed the number of resources actually returned. Without any fine-grained admin permissions,
+it is `0` whenever the caller lacks a realm-wide view role, even though the query matched resources. See
+<<Pagination>>.
 
 == Error responses
 

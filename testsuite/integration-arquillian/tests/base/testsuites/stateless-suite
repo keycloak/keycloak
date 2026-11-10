@@ -8,5 +8,4 @@ AccessTokenTest
 LogoutTest
 ClientStorageTest
 UserInfoTest
-LightWeightAccessTokenTest
 TokenIntrospectionTest

@@ -51,6 +51,7 @@ In the case of JWT signed with private key or Client secret as jwt, it is requir
 
 |Issuer
 |{project_name} validates issuer claims, in responses from the IDP, against this value.
+Only a single issuer is supported. Configure a separate identity provider for each additional issuer.
 
 |Default Scopes
 |A list of OIDC scopes {project_name} sends with the authentication request. The default value is `openid`. A space separates each scope.

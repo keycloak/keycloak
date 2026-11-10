@@ -43,10 +43,69 @@ export async function getJwtAuthorizationGrantIdpOptions(
   return await options.allTextContents();
 }
 
+export async function goToDedicatedScope(page: Page, clientId: string) {
+  await page.getByTestId("clientScopesTab").click();
+  await page.getByRole("link", { name: `${clientId}-dedicated` }).click();
+}
+
+export async function assertDedicatedScopeMapper(
+  page: Page,
+  mapperName: string,
+) {
+  await page.getByTestId("mappersTab").click();
+  await expect(page.getByRole("link", { name: mapperName })).toBeVisible();
+}
+
+export async function toggleFullScopeAllowed(page: Page) {
+  await page.getByTestId("scopeTab").click();
+  await switchToggle(page, "#fullScopeAllowed");
+}
+
 export async function setResourceUrl(page: Page, value: string) {
   await page.getByTestId("attributes.resource_url").fill(value);
 }
 
 export async function assertResourceUrl(page: Page, value: string) {
   await expect(page.getByTestId("attributes.resource_url")).toHaveValue(value);
+}
+
+export async function setValidRedirectUri(
+  page: Page,
+  idx: number,
+  value: string,
+) {
+  await page.getByTestId("redirectUris" + idx).fill(value);
+}
+
+export async function clickAddValidRedirectUri(page: Page) {
+  await page.getByTestId("redirectUris-addValue").click();
+}
+
+export async function clickRemoveValidRedirectUri(page: Page, idx: number) {
+  await page.getByTestId("redirectUris-remove" + idx).click();
+}
+
+export async function setValidPostLogoutRedirectUri(
+  page: Page,
+  idx: number,
+  value: string,
+) {
+  await page
+    .getByTestId("attributes.post🍺logout🍺redirect🍺uris" + idx)
+    .fill(value);
+}
+
+export async function clickAddValidPostLogoutRedirectUri(page: Page) {
+  await page
+    .getByTestId("attributes.post🍺logout🍺redirect🍺uris-addValue")
+    .click();
+}
+
+export async function clickRemoveValidPostLogoutRedirectUri(
+  page: Page,
+  idx: number,
+) {
+  await page
+    .getByTestId("attributes.post🍺logout🍺redirect🍺uris-remove" + idx)
+    .click();
 }

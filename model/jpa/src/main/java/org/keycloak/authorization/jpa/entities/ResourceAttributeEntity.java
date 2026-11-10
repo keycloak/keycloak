@@ -38,6 +38,9 @@ import jakarta.persistence.Table;
 @Entity
 public class ResourceAttributeEntity {
 
+    public static final int NAME_MAX_LENGTH = 255;
+    public static final int VALUE_MAX_LENGTH = 255;
+
     @Id
     @Column(name="ID", length = 36)
     @Access(AccessType.PROPERTY) // we do this because relationships often fetch id, but not entity.  This avoids an extra SQL
@@ -47,9 +50,9 @@ public class ResourceAttributeEntity {
     @JoinColumn(name = "RESOURCE_ID")
     private ResourceEntity resource;
 
-    @Column(name = "NAME")
+    @Column(name = "NAME", length = NAME_MAX_LENGTH)
     private String name;
-    @Column(name = "VALUE")
+    @Column(name = "VALUE", length = VALUE_MAX_LENGTH)
     private String value;
 
     public String getId() {

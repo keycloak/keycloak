@@ -49,6 +49,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -214,6 +216,7 @@ public class SessionTest {
     }
 
     private Keycloak createRealmAdminClient(String username) {
+        addAdminApiClientScope(managedRealm.admin(), ADMIN_AUTH_CLIENT_ID);
         return adminClientFactory.create()
                 .realm(managedRealm.getName())
                 .username(username)

@@ -448,7 +448,7 @@ public final class CacheConfigurator {
         Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
                 .forEach(name -> builder.property()
                         .name(CacheConfigurator.lifespanConfigKey(name))
-                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, i.e., they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
+                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, meaning they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
                         .label("lifespan")
                         .type(ProviderConfigProperty.STRING_TYPE)
                         .add());

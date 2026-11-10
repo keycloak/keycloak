@@ -162,6 +162,7 @@ public class SamlProtocol implements LoginProtocol {
     public static final String CLIENT_SESSION_ID = "clientSessionId";
     public static final String SAML_AUTHN_CONTEXT_CLASS_REF = "saml_authn_context_class_ref";
 
+    public static final long DEFAULT_MAX_SOAP_MESSAGE_REQUEST_SIZE = 120000;
 
     protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
 
@@ -960,7 +961,7 @@ public class SamlProtocol implements LoginProtocol {
 
     @Override
     public boolean requireReauthentication(UserSessionModel userSession, AuthenticationSessionModel authSession) {
-        String requireReauthentication = authSession.getAuthNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN);
+        String requireReauthentication = authSession.getClientNote(SamlProtocol.SAML_LOGIN_REQUEST_FORCEAUTHN);
         return Objects.equals(SamlProtocol.SAML_FORCEAUTHN_REQUIREMENT, requireReauthentication);
     }
 

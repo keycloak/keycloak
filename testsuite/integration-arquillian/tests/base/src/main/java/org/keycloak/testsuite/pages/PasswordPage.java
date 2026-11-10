@@ -30,19 +30,11 @@ public class PasswordPage extends LanguageComboboxAwarePage {
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
-    @FindBy(linkText = "Forgot Password?")
-    private WebElement resetPasswordLink;
-
-
     public void login(String password) {
         passwordInput.clear();
         passwordInput.sendKeys(password);
 
         UIUtils.clickLink(submitButton);
-    }
-
-    public void clickResetPassword() {
-        UIUtils.clickLink(resetPasswordLink);
     }
 
     public String getPassword() {

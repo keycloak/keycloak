@@ -111,7 +111,7 @@ public class AccessTokenContext {
         Objects.requireNonNull(sessionType, "Null sessionType not allowed");
         Objects.requireNonNull(tokenType, "Null tokenType not allowed");
         Objects.requireNonNull(grantType, "Null grantType not allowed");
-        Objects.requireNonNull(grantType, "Null rawTokenId not allowed");
+        Objects.requireNonNull(rawTokenId, "Null rawTokenId not allowed");
         this.sessionType = sessionType;
         this.tokenType = tokenType;
         this.grantType = grantType;

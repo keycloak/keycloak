@@ -29,9 +29,11 @@ import org.keycloak.tests.cli.KcAdmExec;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.tests.cli.KcAdmExec.WORK_DIR;
 import static org.keycloak.tests.cli.KcAdmExec.execute;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -40,6 +42,15 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
     @InjectRealm(fromJson = "/org/keycloak/tests/cli/testrealm.json", config = AdmCliRealmConfig.class)
     ManagedRealm realm;
+
+    @BeforeEach
+    public void ensureAdminApiClientScope() {
+        for (String clientId : new String[] {"admin-cli-jwt", "admin-cli-jwt-direct", "admin-cli-secret", "admin-cli-secret-direct"}) {
+            if (!realm.admin().clients().findByClientId(clientId).isEmpty()) {
+                addAdminApiClientScope(realm.admin(), clientId);
+            }
+        }
+    }
 
     static boolean runIntermittentlyFailingTests() {
         return "true".equals(System.getProperty("test.intermittent"));

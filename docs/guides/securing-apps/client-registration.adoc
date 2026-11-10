@@ -233,9 +233,17 @@ when `Consent Required` policy is present etc.
 
 Currently we have these policy implementations:
 
-* Trusted Hosts Policy - You can configure list of trusted hosts and trusted domains. Request to Client Registration Service can be sent just from those hosts or domains.
-Request sent from some untrusted IP will be rejected. URLs of newly registered client must also use just those trusted hosts or domains. For example it won't be allowed
-to set `Redirect URI` of client pointing to some untrusted host. By default, there is not any whitelisted host, so anonymous client registration is de-facto disabled.
+* Trusted Hosts Policy - Configures trusted hosts and domains for registration requests and client URLs.
+When *Client URIs Must Match* is enabled, all supplied client URI fields must use a trusted host or domain on both registration and update.
+This includes root, home and admin URLs, redirect and post-logout redirect URIs, logout endpoints, web origins, JWKS and request URIs,
+the CIBA notification endpoint, logo, policy, terms of service and sector identifier attributes, and SAML endpoints and metadata URLs.
+The policy checks supplied fields regardless of the client's protocol. Add external hosts, such as a logo CDN, to the policy when needed.
+Web origin markers `+`, `*` and `null`, post-logout markers `+` and `-`, and embedded `data:` logos remain accepted.
+Redirect URIs referenced by `+` are checked separately; explicit URLs supplied alongside the marker are also checked.
+Web origins without a scheme and scheme-relative browser URLs, including front-channel logout and its home URL fallback, are checked against their own host.
+Relative logo URLs are checked against the {project_name} frontend host instead of the client's root URL, and their configured values are preserved.
+Redirect paths retain the runtime resolution against the client's root URL, including paths starting with `//`.
+By default, the trusted-host list is empty, so anonymous registration is disabled.
 
 NOTE: {project_name} normalizes loopback addresses to `localhost` to avoid platform-specific
 reverse-DNS differences (for example on Windows a reverse lookup of loopback may return the numeric IP rather than `localhost`). All other trusted domains must be based upon the primary reverse-DNS lookup returned by the platform.
@@ -244,9 +252,14 @@ reverse-DNS differences (for example on Windows a reverse lookup of loopback may
 see consent screen when he needs to approve permissions (client scopes). It means that client won't have access to any personal
 info or permission of user unless user approves it.
 
-* Protocol Mappers Policy - Allows to configure list of whitelisted protocol mapper implementations. New client can't be registered
-or updated if it contains some non-whitelisted protocol mapper. Note that this policy is used for authenticated requests as well, so
-even for authenticated request there are some limitations which protocol mappers can be used.
+* Protocol Mappers Policy - Allows to configure a list of allowed protocol mapper implementations. A new client can't be registered
+or updated if it contains some non-allowed protocol mapper. Note that this policy is used for authenticated requests as well, so
+even for authenticated requests there are some limitations on which protocol mappers can be used.
++
+WARNING: While the *Allowed Protocol Mapper Types* list in the policy configuration contains a default set of built-in mapper types, they are not sufficient by default.
+For a protocol mapper type to be permitted during Dynamic Client Registration, it must be present in the **intersection** of the policy's *Allowed Protocol Mapper Types* list and the realm-level **Allowed protocol mapper types for client administrators** setting (configured under *Realm settings*).
+Since the realm-level setting is empty by default, new Dynamic Client Registration clients cannot include protocol mappers, and updates cannot add, modify, or delete protocol mappers, until a realm administrator explicitly adds the allowed mapper types to BOTH the policy configuration and the realm-level setting. Existing mappers of a disallowed type may still be included unchanged in an update.
+This is intentional: allowing protocol mapper creation via DCR effectively grants the registering party the ability to shape token claims, which carries significant security risk. Only add mapper types that are absolutely required and treat any addition as a security-sensitive configuration decision.
 
 * Client Scope Policy - Allows you to specify `Client Scopes` that can be used with newly registered or updated clients.
 There are no allowed scopes by default; only the client scopes defined as `Realm Default Client Scopes` are allowed by default.

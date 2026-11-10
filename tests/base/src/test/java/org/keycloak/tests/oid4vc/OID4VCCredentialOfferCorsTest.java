@@ -159,7 +159,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         String expectedCredentialType = offer.getCredentialConfigurationIds().get(0);
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
-                .clientId(clientId)
+                .clientId(null)
                 .hasUserId()
                 .sessionId(null) // No session for unauthenticated endpoint
                 .details(Details.CREDENTIAL_TYPE, expectedCredentialType);

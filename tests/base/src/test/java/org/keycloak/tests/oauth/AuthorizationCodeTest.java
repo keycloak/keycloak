@@ -499,6 +499,80 @@ public class AuthorizationCodeTest {
         }
     }
 
+    @Test
+    public void forgedCodeDoesNotDetachClientSessionOfAnotherClient() {
+        String redirectUri = oauth.getRedirectUri();
+
+        ClientRepresentation clientRep = ClientBuilder.create("attacker-client")
+                .secret("secret")
+                .redirectUris(redirectUri)
+                .build();
+        try (Response resp = managedRealm.admin().clients().create(clientRep)) {
+            managedRealm.cleanup().add(r -> r.clients().delete(ApiUtil.getCreatedId(resp)));
+
+            // The victim client logs in and exchanges its code for tokens
+            AuthorizationEndpointResponse victimLogin = oauth
+                    .client("test-app", "test-secret")
+                    .redirectUri(redirectUri)
+                    .loginForm()
+                    .doLogin("test-user@localhost", "password");
+            AccessTokenResponse victimTokens = oauth.accessTokenRequest(victimLogin.getCode()).send();
+            assertTrue(victimTokens.isSuccess());
+
+            String victimClientUuid = managedRealm.admin()
+                    .clients()
+                    .findByClientId("test-app")
+                    .get(0)
+                    .getId();
+            String forgedCode = "forged-code." + victimLogin.getSessionState() + "." + victimClientUuid;
+
+            events.clear();
+
+            // The attacker client sends a forged code pointing at the victim's client session
+            AccessTokenResponse tokenResponse = oauth
+                    .client("attacker-client", "secret")
+                    .redirectUri(redirectUri)
+                    .accessTokenRequest(forgedCode)
+                    .send();
+
+            Assertions.assertFalse(tokenResponse.isSuccess());
+            assertEquals(INVALID_GRANT, tokenResponse.getError());
+            EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR).error(Errors.INVALID_CODE);
+
+            // The victim client session must not have been detached, so its refresh token still works
+            AccessTokenResponse refreshResponse = oauth
+                    .client("test-app", "test-secret")
+                    .redirectUri(redirectUri)
+                    .doRefreshTokenRequest(victimTokens.getRefreshToken());
+            assertTrue(refreshResponse.isSuccess());
+        }
+    }
+
+    @Test
+    public void reusedCodeStillDetachesOwnClientSession() {
+        String redirectUri = oauth.getRedirectUri();
+
+        AuthorizationEndpointResponse login = oauth
+                .client("test-app", "test-secret")
+                .redirectUri(redirectUri)
+                .loginForm()
+                .doLogin("test-user@localhost", "password");
+        String code = login.getCode();
+
+        AccessTokenResponse tokens = oauth.accessTokenRequest(code).send();
+        assertTrue(tokens.isSuccess());
+
+        events.clear();
+
+        // Reusing the own code detaches the client session, so the previously issued refresh token stops working
+        AccessTokenResponse reuseResponse = oauth.accessTokenRequest(code).send();
+        Assertions.assertFalse(reuseResponse.isSuccess());
+        assertEquals(INVALID_GRANT, reuseResponse.getError());
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokens.getRefreshToken());
+        Assertions.assertFalse(refreshResponse.isSuccess());
+    }
+
     private static class AuthzCodeRealmConfig implements RealmConfig {
 
         @Override

@@ -69,6 +69,9 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
     public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
+    public static final String ONE_TIME_USE_MAX_AGE_SECONDS = "oneTimeUseMaxAgeSeconds";
+    public static final long DEFAULT_ONE_TIME_USE_MAX_AGE_SECONDS = 60 * 60;
+    public static final String PROXY_RESTRICTION_VALIDATION = "proxyRestrictionValidation";
 
     public SAMLIdentityProviderConfig() {
     }
@@ -248,6 +251,13 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setPostBindingResponse(boolean postBindingResponse) {
         getConfig().put(POST_BINDING_RESPONSE, String.valueOf(postBindingResponse));
+    }
+
+    public boolean isProxyRestrictionValidationEnabled() {
+        String proxyRestrictionValidation = getConfig().get(PROXY_RESTRICTION_VALIDATION);
+        // Fail closed: keep validation enabled unless it is explicitly disabled with "false". Any missing,
+        // malformed or unexpected value leaves validation on so a misconfiguration never silently bypasses it.
+        return proxyRestrictionValidation == null || !"false".equalsIgnoreCase(proxyRestrictionValidation.trim());
     }
 
     public boolean isPostBindingLogout() {
@@ -474,6 +484,29 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         if (JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get().equals(getNameIDPolicyFormat()) && SamlPrincipalType.SUBJECT == getPrincipalType())
             throw new IllegalArgumentException("Can not have Transient NameID Policy Format together with SUBJECT Principal Type");
 
+    }
+
+    public long getOneTimeUseMaxAgeSeconds() {
+        String value = getConfig().get(ONE_TIME_USE_MAX_AGE_SECONDS);
+        if (value != null && !value.isEmpty()) {
+            try {
+                long result = Long.parseLong(value);
+                if (result > 0) {
+                    return result;
+                }
+            } catch (NumberFormatException e) {
+                // ignore and use default
+            }
+        }
+        return DEFAULT_ONE_TIME_USE_MAX_AGE_SECONDS;
+    }
+
+    public void setOneTimeUseMaxAgeSeconds(long oneTimeUseMaxAgeSeconds) {
+        if (oneTimeUseMaxAgeSeconds <= 0) {
+            getConfig().remove(ONE_TIME_USE_MAX_AGE_SECONDS);
+        } else {
+            getConfig().put(ONE_TIME_USE_MAX_AGE_SECONDS, String.valueOf(oneTimeUseMaxAgeSeconds));
+        }
     }
 
     @Override

@@ -76,6 +76,7 @@ public class DatabaseAwareClusterProviderFactory extends InfinispanClusterProvid
 
     @Override
     public void init(Config.Scope config) {
+        super.init(config);
         pollInterval = DurationConverter.parseDuration(config.get("pollInterval", DEFAULT_POLL_INTERVAL_MS));
         if (pollInterval.compareTo(Duration.ZERO) <= 0) {
             throw new IllegalArgumentException("pollInterval must be a positive number");

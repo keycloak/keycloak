@@ -14,6 +14,16 @@ You can use {project_name} to:
 
 You perform these actions in the *Mappers* tab in the Admin Console.
 
+WARNING: Creating, updating, and deleting protocol mappers on clients and client scopes is restricted to users with
+permission to manage the realm (for example, users holding the `manage-realm` role when role-based access control is used).
+Delegated administrators who only have permission to manage clients (or client scopes) cannot create or modify protocol mappers
+unless the realm administrator explicitly configures the allowed protocol mapper types via the **Allowed protocol mapper types for client administrators** option in **Realm settings**.
+When updating a client or client scope via the Admin REST API, a delegated administrator is still allowed to proceed even if the
+request body contains `protocolMappers`, as long as no mapper was added, modified, or deleted compared to the existing ones.
+For clients managed through OpenID Connect Dynamic Client Registration (DCR), the allowed protocol mappers that can be created, updated, or deleted during client CRUD operations are the **intersection** of the realm-level **Allowed protocol mapper types for client administrators** option and the policy-level *Allowed Protocol Mapper Types* list in *Clients* > *Client Registration*. Since the realm-level option is empty by default, no protocol mappers can be managed via Dynamic Client Registration by default. Existing mappers of a disallowed type may still be included unchanged in an update.
+See the link:{securing_apps_base_link}/client-registration#_client_registration_policies[Client Registration Policies] section in the
+{securing_apps_name} for details and security considerations that apply.
+
 .Mappers tab
 image:images/mappers-oidc.png[]
 

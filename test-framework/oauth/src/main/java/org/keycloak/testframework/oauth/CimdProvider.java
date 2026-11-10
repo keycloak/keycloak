@@ -4,12 +4,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -27,6 +29,8 @@ public class CimdProvider implements Closeable {
     private final OIDCClientRepresentation client;
     private Status responseStatus;
     private String cacheControlHeader;
+    private Map<String, Object> additionalProperties;
+    private String rawMetadata;
 
     public CimdProvider(HttpServer httpServer, OIDCClientRepresentation client) {
         this.httpServer = httpServer;
@@ -47,6 +51,23 @@ public class CimdProvider implements Closeable {
         this.cacheControlHeader = cacheControlHeader;
     }
 
+    /**
+     * Sets additional properties to be merged into the served client metadata document.
+     * Useful for testing documents that contain properties beyond the ones defined in
+     * {@link OIDCClientRepresentation}, which the CIMD specification permits.
+     */
+    public void setAdditionalProperties(Map<String, Object> additionalProperties) {
+        this.additionalProperties = additionalProperties;
+    }
+
+    /**
+     * Sets a raw response body to be served verbatim instead of the serialized client representation.
+     * Useful for testing malformed client metadata documents.
+     */
+    public void setRawMetadata(String rawMetadata) {
+        this.rawMetadata = rawMetadata;
+    }
+
     @Override
     public void close() {
         httpServer.removeContext(CONTEXT);
@@ -59,7 +80,12 @@ public class CimdProvider implements Closeable {
             try (exchange) {
                 switch (responseStatus) {
                     case OK -> {
-                        String metadata = JsonSerialization.writeValueAsString(client);
+                        String metadata = rawMetadata != null ? rawMetadata : JsonSerialization.writeValueAsString(client);
+                        if (rawMetadata == null && additionalProperties != null && !additionalProperties.isEmpty()) {
+                            ObjectNode node = (ObjectNode) JsonSerialization.mapper.readTree(metadata);
+                            additionalProperties.forEach((name, value) -> node.set(name, JsonSerialization.mapper.valueToTree(value)));
+                            metadata = JsonSerialization.writeValueAsString(node);
+                        }
                         exchange.getResponseHeaders().add("Content-Type", "application/json");
                         if (cacheControlHeader != null) {
                             exchange.getResponseHeaders().add("Cache-Control", cacheControlHeader);

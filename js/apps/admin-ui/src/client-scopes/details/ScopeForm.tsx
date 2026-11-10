@@ -33,6 +33,7 @@ import {
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
   useLoginProviders,
@@ -198,9 +199,13 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isParameterizedScopeWithFeatureDisabled =
     !isParameterizedScopesEnabled &&
     clientScope?.attributes?.["is.parameterized.scope"] === "true";
-  const scopeTypeOptions = isParameterized
-    ? allClientScopeTypes.filter((key) => key !== "default")
-    : allClientScopeTypes;
+  const { hasAccess } = useAccess();
+  const canManageRealm = hasAccess("manage-realm");
+  const scopeTypeOptions = allClientScopeTypes.filter((key) => {
+    if (isParameterized && key === "default") return false;
+    if (!canManageRealm && !clientScope) return key === "none";
+    return true;
+  });
 
   const selectedProtocol = useWatch({
     control,
@@ -537,6 +542,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           name="type"
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
+          isDisabled={!canManageRealm && !!clientScope}
           controller={{ defaultValue: allClientScopeTypes[0] }}
           options={scopeTypeOptions.map((key) => ({
             key,

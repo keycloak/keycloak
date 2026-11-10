@@ -49,6 +49,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -56,7 +57,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -136,14 +136,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation rep = registerClient(clientRep, false);
 
-        UserRepresentation serviceAccountUser = managedRealm.admin().clients().get(rep.getId()).getServiceAccountUser();
+        String serviceAccountUserId = managedRealm.admin().clients().get(rep.getId()).toRepresentation().getServiceAccountUserId();
 
-        assertNotNull(serviceAccountUser);
+        assertNotNull(serviceAccountUserId);
 
         deleteClient(rep);
 
         try {
-            managedRealm.admin().users().get(serviceAccountUser.getId()).toRepresentation();
+            managedRealm.admin().users().get(serviceAccountUserId).toRepresentation();
             fail("Expected NotFoundException");
         } catch (NotFoundException e) {
         }
@@ -692,6 +692,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     @DatabaseTest
     public void addClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -708,7 +709,8 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     @DatabaseTest
-    public void removeClientProtcolMappers() throws ClientRegistrationException {
+    public void removeClientProtocolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -725,6 +727,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     @DatabaseTest
     public void updateClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -736,6 +739,13 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation updatedClient = reg.get(CLIENT_ID);
         assertThat("Updating protocolMapper failed", updatedClient.getProtocolMappers().get(0).getConfig().get("claim.name"), is("updatedClaimName"));
+    }
+
+    /**
+     * Allows the given protocol mapper type in realm. The allowed protocol mapper must be included in both realm and protocol-mappers client registration policy
+     */
+    private void allowProtocolMapperTypeInRealm(String mapperProviderType) {
+        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, mapperProviderType));
     }
 
     private void addProtocolMapper(ClientRepresentation client, String mapperName) {
@@ -997,9 +1007,9 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Response response = masterRealm.admin().clients().create(testAdminClient);
         testAdminClient = masterRealm.admin().clients().get( ApiUtil.getCreatedId(response)).toRepresentation();
 
-        UserRepresentation serviceAccountUser = masterRealm.admin().clients().get(testAdminClient.getId()).getServiceAccountUser();
+        String serviceAccountUserId = testAdminClient.getServiceAccountUserId();
         RoleRepresentation adminRole =  masterRealm.admin().roles().get(AdminRoles.ADMIN).toRepresentation();
-        masterRealm.admin().users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(adminRole));
+        masterRealm.admin().users().get(serviceAccountUserId).roles().realmLevel().add(List.of(adminRole));
 
         oauth.client(TEST_ADMIN_CLIENT, TEST_ADMIN_CLIENT);
         oauth.realm(masterRealm.getName());

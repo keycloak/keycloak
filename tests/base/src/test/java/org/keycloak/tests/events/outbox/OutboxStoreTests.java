@@ -16,6 +16,7 @@
  */
 package org.keycloak.tests.events.outbox;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -32,9 +33,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.jpa.entities.OutboxEntryStatus;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conditions.DisabledForDatabases;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -290,8 +293,40 @@ public class OutboxStoreTests {
             Assertions.assertEquals(3, after.getAttempts(), "attempts must be incremented");
             Assertions.assertEquals(nextAttempt, after.getNextAttemptAt());
             Assertions.assertNotNull(after.getLastError());
-            Assertions.assertTrue(after.getLastError().length() <= OutboxStore.MAX_LAST_ERROR_LENGTH,
+            Assertions.assertTrue(after.getLastError().getBytes(StandardCharsets.UTF_8).length <= OutboxStore.MAX_LAST_ERROR_BYTES,
                     "lastError must be truncated to the column width");
+            Assertions.assertTrue(after.getLastError().endsWith("..."),
+                    "truncated lastError must carry an ellipsis marker");
+        });
+    }
+
+    @Test
+    @DatabaseTest
+    @DisabledForDatabases("oracle") // ORA-18716 reading outbox timestamps until #54139
+    public void recordFailure_storesErrorWithNullCharacterAndMultiByteCharacters() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            OutboxEntryEntity row = persistRaw(session, TEST_KIND, realmId, "owner-f", null,
+                    "corr-fail-chars", OutboxEntryStatus.PENDING, 0,
+                    now.minusSeconds(1), now);
+            em(session).flush();
+            em(session).clear();
+
+            // PostgreSQL cannot store U+0000 in text; with byte length semantics (Oracle) 2048 characters of
+            // a two-byte character do not fit LAST_ERROR VARCHAR(2048)
+            String error = "HTTP 500 https://receiver.example/push: invalid\u0000request " + "é".repeat(2000);
+            new OutboxStore(session)
+                    .recordFailure(findById(session, row.getId()), now.plus(Duration.ofMinutes(5)), error);
+            em(session).flush();
+            em(session).clear();
+
+            OutboxEntryEntity after = findById(session, row.getId());
+            Assertions.assertEquals(1, after.getAttempts(), "attempts must be incremented");
+            Assertions.assertTrue(after.getLastError().startsWith("HTTP 500 https://receiver.example/push: invalidrequest "),
+                    "lastError must keep the message without the null character");
+            Assertions.assertTrue(after.getLastError().getBytes(StandardCharsets.UTF_8).length <= OutboxStore.MAX_LAST_ERROR_BYTES,
+                    "lastError must fit the column width in bytes");
             Assertions.assertTrue(after.getLastError().endsWith("..."),
                     "truncated lastError must carry an ellipsis marker");
         });

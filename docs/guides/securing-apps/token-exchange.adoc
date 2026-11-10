@@ -121,7 +121,8 @@ subject_token_type::
 requested_token_type::
     _OPTIONAL._ This parameter represents the type of token that the client wants to exchange for. In this version,  only oauth and OpenID Connect token types are supported. The default value for this
     is `urn:ietf:params:oauth:token-type:access_token`. Another possible value is `urn:ietf:params:oauth:token-type:id_token` if the ID token issued to `requester-client` is requested. The possible value might
-    be also `urn:ietf:params:oauth:token-type:refresh_token`; in this case, you will receive both an access token and refresh token within the response. However, the refresh token is allowed if the `Allow refresh token in Standard Token Exchange` client configuration option is enabled as specified in the <<_standard-token-exchange-details,standard token exchange>> section.
+    be also `urn:ietf:params:oauth:token-type:refresh_token`; in this case, you will receive both an access token and refresh token within the response. However, the refresh token is allowed if the
+    `Allow refresh token in Standard Token Exchange` client configuration option is enabled as specified in the <<_standard-token-exchange-details,standard token exchange>> section.
 
 scope::
    _OPTIONAL._ This parameter represents the space-delimited set of OAuth and OpenID Connect scopes that the client is requesting. You can use link:{adminguide_link}#_client_scopes[Optional client scopes]
@@ -278,10 +279,22 @@ integration might be available to all grants. It will not be specific only to to
 client `requester-client` sends the request with `scope=some-confidential-scope`. In this example, it can be useful to create a client policy condition with combined conditions
 for `client-scope`, `grant-type` and `client-roles`.
 
+* [[_standard-token-exchange-expiration]]The exchanged access token and ID token expire together with the subject token. Their expiration is capped by the `exp` claim of the `subject_token` and the
+`expires_in` value of the response is reduced accordingly, so that a client cannot use token exchange to extend the lifetime of the identity it was given. The switch *Allow exchange token expiration
+after subject token expiration*, available in the Admin Console in the *Advanced* tab of the OIDC client in the *OpenID Connect Compatibility Modes* section, makes the exchanged tokens expire according
+to the regular realm and client token lifespans instead. Keeping the switch off is recommended.
++
+WARNING: This applies to access and ID tokens only. Refresh tokens are governed by the separate switch described below, and when both switches are combined, with *Allow exchange token expiration after
+subject token expiration* off and *Allow refresh token in Standard Token Exchange* on, the expiration can still be increased indirectly: the requester client exchanges for a refresh token, which is not
+capped, and refreshes it for an access token with the regular lifespan.
+
 * Requesting a refresh token is allowed only if the client has the switch *Allow refresh token in Standard Token Exchange* set to a value other than `No` (the default value). The switch is available in the
 Admin Console in the *Advanced* tab of the OIDC client in the *OpenID Connect Compatibility Modes* section. The other available value of the switch is *Same session*, which means that the refresh token is
 allowed only if the refresh token can use the same user session as the subject token. If that subject token is coming from a link:{adminguide_link}#_transient-session[Transient session] or from an
 link:{adminguide_link}#_offline-access[Offline session], the requesting refresh token will not be allowed. Similarly it will not be allowed to request an offline token (using `scope=offline_access`).
++
+WARNING: A refresh token lets the requester client obtain new tokens on behalf of the user for as long as the user session lives, well beyond the expiration of the subject token. Consider carefully
+whether the requester client needs one, and prefer performing a new token exchange with a fresh subject token.
 
 .Enabling refresh token in Token Exchange
 image::token-exchange-switch-refresh.png[Enabling refresh token in Token Exchange]
@@ -1029,6 +1042,7 @@ The `subject_token_type` must either be `urn:ietf:params:oauth:token-type:access
 If the type is `urn:ietf:params:oauth:token-type:access_token` you specify the `subject_issuer` parameter and it must be the
 alias of the configured identity provider.  If the type is `urn:ietf:params:oauth:token-type:jwt`, the provider will be matched via
 the `iss` (issuer) claim within the JWT which must be the alias of the provider, or a registered issuer within the provider's configuration.
+Each OIDC identity provider accepts a single configured issuer. To exchange tokens from multiple issuers, configure a separate identity provider for each issuer.
 
 For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
 will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,
