@@ -269,10 +269,11 @@ Providers extending `OAuth2IdentityProviderConfig` can instead override `getClie
 The legacy Login v1 theme (`keycloak`) and the `login:v1` feature have been removed.
 PatternFly 3 and PatternFly 4 vendor resources that only served that theme are also removed.
 
-Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v2` on upgrade.
-Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v2` or `base` instead.
+Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v3` on upgrade.
+Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v3` or `base` instead.
 The `--features=login:v1` and `--features-disabled=login:v1` options are no longer valid.
-The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v2` login theme.
+The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v3` login theme.
+See also the earlier note about the login theme move to `keycloak.v3` and PatternFly 6 for the related `keycloak.v2` removal.
 
 === CIBA requires client authentication (CVE-2026-109082)
 // https://github.com/keycloak/keycloak/issues/53937
