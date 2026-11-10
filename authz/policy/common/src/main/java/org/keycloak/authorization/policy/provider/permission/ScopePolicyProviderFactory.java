@@ -66,6 +66,9 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
     public ScopePermissionRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
         representation.setResourceType(policy.getConfig().get("defaultResourceType"));
+        if (AdminPermissionsSchema.SCHEMA.isExtendChildren(policy)) {
+            representation.setExtendChildren(Boolean.TRUE);
+        }
         return representation;
     }
 
@@ -92,6 +95,15 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
                 String resourceType = representation.getResourceType();
                 return resourceType != null ? representation.getResourceType() : null;
             });
+
+            Boolean extendChildren = representation.getExtendChildren();
+
+            // null means the flag is not being changed, so that clients unaware of it do not reset it on update
+            if (Boolean.TRUE.equals(extendChildren)) {
+                config.put(AdminPermissionsSchema.EXTEND_CHILDREN, Boolean.TRUE.toString());
+            } else if (Boolean.FALSE.equals(extendChildren)) {
+                config.remove(AdminPermissionsSchema.EXTEND_CHILDREN);
+            }
 
             policy.setConfig(config);
         }
