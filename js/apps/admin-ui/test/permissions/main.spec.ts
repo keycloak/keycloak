@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { clickSaveButton, selectItem } from "../utils/form.ts";
+import {
+  assertSwitchIsChecked,
+  clickSaveButton,
+  selectItem,
+  switchOff,
+  switchOn,
+} from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToRealm } from "../utils/sidebar.ts";
@@ -143,6 +149,70 @@ test.describe.serial("Permissions section tests", () => {
     );
     await goToPermissions(page);
     await deletePermission(page, "test-group-permission");
+  });
+
+  test("should extend group permission to children", async ({ page }) => {
+    const extendChildren = "#extendChildren";
+
+    await clickCreatePermission(page);
+    await selectResource(page, "Groups");
+    await fillPermissionForm(page, {
+      name: "test-extend-children-permission",
+      scopes: ["view"],
+    });
+    // only available for specific groups
+    await expect(page.locator(extendChildren)).toBeHidden();
+    await fillPermissionForm(page, { enforcementMode: "specificResources" });
+    await expect(page.locator(extendChildren)).toBeVisible();
+    await assertSwitchIsChecked(page, extendChildren, true);
+
+    await pickGroup(page, "one");
+    await switchOn(page, extendChildren);
+
+    await clickCreateNewPolicy(page);
+    await fillPolicyForm(
+      page,
+      {
+        name: "test-extend-children-policy",
+        description: "test-description",
+        type: "User",
+        user: "test-user",
+      },
+      true,
+    );
+    await clickCreatePolicySaveButton(page);
+    await assertNotificationMessage(page, "Successfully created the policy");
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully created the permission",
+    );
+
+    await page.reload();
+    await assertSwitchIsChecked(page, extendChildren);
+
+    await switchOff(page, extendChildren);
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Successfully updated the permission",
+    );
+
+    await page.reload();
+    await assertSwitchIsChecked(page, extendChildren, true);
+
+    await goToPermissions(page);
+    await deletePermission(page, "test-extend-children-permission");
+  });
+
+  test("should not offer to extend permissions of other resource types", async ({
+    page,
+  }) => {
+    await clickCreatePermission(page);
+    await selectResource(page, "Organizations");
+    await fillPermissionForm(page, { enforcementMode: "specificResources" });
+    await expect(page.getByTestId("select-organization-button")).toBeVisible();
+    await expect(page.locator("#extendChildren")).toBeHidden();
   });
 
   test("should edit organization permission", async ({ page }) => {

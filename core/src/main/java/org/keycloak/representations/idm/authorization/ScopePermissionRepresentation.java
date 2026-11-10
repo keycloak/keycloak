@@ -21,8 +21,24 @@ package org.keycloak.representations.idm.authorization;
  */
 public class ScopePermissionRepresentation extends AbstractPolicyRepresentation {
 
+    private Boolean extendChildren;
+
     @Override
     public String getType() {
         return "scope";
+    }
+
+    /**
+     * Only applicable to admin permissions for the {@code Groups} resource type. When {@code true}, the permission also
+     * applies to all the descendants of the groups associated with the permission.
+     *
+     * @return {@code true} if the permission extends to children groups, or {@code null} if not set
+     */
+    public Boolean getExtendChildren() {
+        return extendChildren;
+    }
+
+    public void setExtendChildren(Boolean extendChildren) {
+        this.extendChildren = extendChildren;
     }
 }
