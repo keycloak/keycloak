@@ -28,6 +28,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
@@ -106,6 +107,65 @@ public class SamlResponseDocument {
      */
     public Element createAssertionElement(String localName) {
         return document.createElementNS(ASSERTION_NS, "saml:" + localName);
+    }
+
+    /**
+     * Replaces the {@code <saml:Issuer>} text of the first {@code <saml:Assertion>} element with the given value.
+     */
+    public SamlResponseDocument setAssertionIssuer(String value) {
+        Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Assertion").item(0);
+        if (assertion == null) {
+            throw new IllegalStateException("SAML response does not contain an assertion");
+        }
+        NodeList issuers = assertion.getElementsByTagNameNS(ASSERTION_NS, "Issuer");
+        if (issuers.getLength() > 0) {
+            issuers.item(0).setTextContent(value);
+        }
+        return this;
+    }
+
+    /**
+     * Removes the {@code <saml:Issuer>} element from the first {@code <saml:Assertion>}.
+     */
+    public SamlResponseDocument removeAssertionIssuer() {
+        Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Assertion").item(0);
+        if (assertion == null) {
+            throw new IllegalStateException("SAML response does not contain an assertion");
+        }
+        NodeList issuers = assertion.getElementsByTagNameNS(ASSERTION_NS, "Issuer");
+        if (issuers.getLength() > 0) {
+            issuers.item(0).getParentNode().removeChild(issuers.item(0));
+        }
+        return this;
+    }
+
+    /**
+     * Replaces the top-level (response) {@code <saml:Issuer>} text with the given value. This is the issuer
+     * on the {@code <samlp:Response>} element, not the assertion-level issuer.
+     */
+    public SamlResponseDocument setResponseIssuer(String value) {
+        Element root = document.getDocumentElement();
+        for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if ("Issuer".equals(child.getLocalName()) && ASSERTION_NS.equals(child.getNamespaceURI())) {
+                child.setTextContent(value);
+                return this;
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Removes the top-level (response) {@code <saml:Issuer>} element from the document root.
+     */
+    public SamlResponseDocument removeResponseIssuer() {
+        Element root = document.getDocumentElement();
+        for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if ("Issuer".equals(child.getLocalName()) && ASSERTION_NS.equals(child.getNamespaceURI())) {
+                root.removeChild(child);
+                return this;
+            }
+        }
+        return this;
     }
 
     /**
