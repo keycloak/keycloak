@@ -41,7 +41,17 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
   const { addAlert, addError } = useAlerts();
 
   const setupForm = (realm: RealmRepresentation) =>
-    convertToFormValues(realm, form.setValue);
+    convertToFormValues(
+      {
+        ...realm,
+        // optional attribute, absent until set once: reset it explicitly so Reload discards unsaved input
+        attributes: {
+          cibaHttpAuthenticationChannelUri: "",
+          ...realm.attributes,
+        },
+      },
+      form.setValue,
+    );
 
   useEffect(() => setupForm(realm), []);
 
