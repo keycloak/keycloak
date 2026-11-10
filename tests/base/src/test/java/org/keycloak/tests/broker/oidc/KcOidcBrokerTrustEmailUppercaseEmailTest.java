@@ -2,6 +2,11 @@ package org.keycloak.tests.broker.oidc;
 
 import java.util.List;
 
+import jakarta.mail.Address;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
+
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -92,7 +97,7 @@ public class KcOidcBrokerTrustEmailUppercaseEmailTest extends AbstractKcOidcBrok
     }
 
     @Test
-    public void testChangedEmailRequiresVerification() {
+    public void testChangedEmailRequiresVerification() throws MessagingException {
         oauth.openLoginForm();
         logInWithBroker();
         logInAsUserInIDPForFirstTime();
@@ -104,6 +109,21 @@ public class KcOidcBrokerTrustEmailUppercaseEmailTest extends AbstractKcOidcBrok
         verifyEmailPage.assertCurrent();
         Assertions.assertTrue(mailServer.waitForIncomingEmail(5000, 1),
                 "The changed e-mail address should receive a verification e-mail");
+
+        // the address submitted in the form must be the one stored and verified, not the address of the provider
+        List<UserRepresentation> users = consumerRealm.admin().users().search(IDP_EMAIL.toLowerCase(), true);
+        Assertions.assertEquals(1, users.size(), "The user should have been created in the consumer realm");
+        UserRepresentation user = users.get(0);
+        Assertions.assertEquals(CHANGED_EMAIL, user.getEmail(), "The submitted e-mail address should be stored");
+        Assertions.assertFalse(user.isEmailVerified(), "A changed e-mail address must require verification");
+
+        MimeMessage[] messages = mailServer.getReceivedMessages();
+        Assertions.assertEquals(1, messages.length, "Only the changed address should receive a verification e-mail");
+        Address[] recipients = messages[0].getAllRecipients();
+        Assertions.assertNotNull(recipients);
+        Assertions.assertEquals(1, recipients.length);
+        Assertions.assertEquals(CHANGED_EMAIL, ((InternetAddress) recipients[0]).getAddress(),
+                "The verification e-mail should be sent to the submitted e-mail address");
     }
 
     // Only the e-mail claim is needed here, so the provider client keeps the basic client scope and the
