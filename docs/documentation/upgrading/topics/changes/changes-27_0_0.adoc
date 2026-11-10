@@ -360,6 +360,10 @@ See the link:{securing_apps_token_exchange_link}#_standard-token-exchange-expira
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== SPIFFE bundle refresh hints honored
+
+Cached keys from single-bundle endpoints now use the declared https://spiffe.io/docs/latest/spiffe-specs/spiffe_trust_domain_and_bundle/[`spiffe_refresh_hint`] interval. Bundle maps use a fixed five-minute cache. No configuration change is required.
+
 === SAML assertions with a OneTimeUse condition are no longer replayable
 // https://github.com/keycloak/keycloak/issues/46325
 
