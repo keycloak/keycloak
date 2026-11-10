@@ -339,6 +339,8 @@ public class AuthenticationManager {
                 expireUserSessionCookie(session, userSession, realm, uriInfo);
 
         final AuthenticationSessionManager asm = new AuthenticationSessionManager(session);
+        AuthenticationSessionModel previousAuthSession = session.getContext().getAuthenticationSession();
+        ClientModel previousClient = session.getContext().getClient();
         AuthenticationSessionModel logoutAuthSession =
                 createOrJoinLogoutSession(session, realm, asm, userSession, false, false);
 
@@ -351,6 +353,8 @@ public class AuthenticationManager {
         } finally {
             logger.tracef("Removing logout session '%s' after backchannel logout", logoutAuthSession.getParentSession().getId());
             session.authenticationSessions().removeRootAuthenticationSession(realm, logoutAuthSession.getParentSession());
+            session.getContext().setAuthenticationSession(previousAuthSession);
+            session.getContext().setClient(previousClient);
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);

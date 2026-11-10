@@ -16,6 +16,8 @@
  */
 package org.keycloak.tests.sessionlimits;
 
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +25,10 @@ import java.util.concurrent.TimeUnit;
 import jakarta.mail.internet.MimeMessage;
 
 import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -36,6 +41,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -56,17 +63,21 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,6 +91,9 @@ import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configureSe
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class UserSessionLimitsTest {
@@ -102,6 +116,9 @@ public class UserSessionLimitsTest {
     @InjectMailServer
     MailServer mailServer;
 
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
     @InjectPage
     protected LoginPage loginPage;
 
@@ -113,14 +130,21 @@ public class UserSessionLimitsTest {
 
     @InjectPage
     protected LoginPasswordUpdatePage updatePasswordPage;
+
+    @InjectPage
+    protected LoginTotpPage loginTotpPage;
     
     private static String realmName = "test";
     private static final String username = "test-user@localhost";
     private static final String password = "password";
+    private static final String otpUsername = "otp-user@localhost";
+    private static final String TOTP_SECRET = "totpsecret";
     private static final String directGrant1 = "direct-grant-1";
     private static final String directGrant2 = "direct-grant-2";
     private static final int BRUTE_FORCE_FAILURE_FACTOR = 3;
     private static final String testUsername2 = "test-user-2@localhost";
+
+    private final TimeBasedOTP totp = new TimeBasedOTP();
 
     @BeforeEach
     public void setup() {
@@ -780,7 +804,67 @@ public class UserSessionLimitsTest {
 
         } finally {
             // Revert config of authenticators
-            restoreAndRemoveFlow(realmName);
+            restoreAndRemoveFlow(realmName, "browser-session-limits");
+        }
+    }
+
+    // Issue 54444
+    @Test
+    public void testTerminateOldestSessionKeepsLevelOfAuthentication() throws Exception {
+        String flowAlias = "browser-session-limits-loa";
+        try {
+            managedRealm.updateWithCleanup(r -> r.otpCodeReusable(true));
+
+            runOnServer.run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(flowAlias));
+            runOnServer.run(session -> FlowUtil.inCurrentRealm(session)
+                    .selectFlow(flowAlias)
+                    .clear()
+                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, CookieAuthenticatorFactory.PROVIDER_ID)
+                    .addSubFlowExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, forms -> forms
+                            .addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, level1 -> level1
+                                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                            config -> {
+                                                config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "1");
+                                                config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, String.valueOf(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE));
+                                            })
+                                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID))
+                            .addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, level2 -> level2
+                                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                            config -> {
+                                                config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2");
+                                                config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, String.valueOf(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE));
+                                            })
+                                    .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID))
+                            .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UserSessionLimitsAuthenticatorFactory.USER_SESSION_LIMITS,
+                                    config -> {
+                                        config.getConfig().put(UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+                                        config.getConfig().put(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+                                        config.getConfig().put(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+                                    }))
+                    .defineAsBrowserFlow());
+
+            setMinimumAcr("2");
+
+            // Login in browser A
+            loginWithOtp(otpUsername);
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+
+            // Login in browser B, which terminates the session of browser A
+            deleteAllCookiesForRealm(driver);
+            loginWithOtp(otpUsername);
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT);
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+
+            // The levels reached in the login must be stored in the user session of browser B
+            events.clear();
+            oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_NONE).open();
+            driver.waiting().waitForOAuthCallback();
+            AuthorizationEndpointResponse response = oauth.parseLoginResponse();
+            assertNull(response.getError());
+            assertNotNull(response.getCode());
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+        } finally {
+            restoreAndRemoveFlow(realmName, flowAlias);
         }
     }
 
@@ -834,18 +918,17 @@ public class UserSessionLimitsTest {
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
     }
 
-    private void restoreAndRemoveFlow(String realmName) {
+    private void restoreAndRemoveFlow(String realmName, String flowAlias) {
         // Cleanup: restore original browser flow and remove custom flow
-        String currentRealm = this.realmName;
         runOnServer.run(session -> {
-            RealmModel realm = session.realms().getRealmByName(currentRealm);
+            RealmModel realm = session.realms().getRealmByName(realmName);
 
             AuthenticationFlowModel originalBrowserFlow = realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
             if (originalBrowserFlow != null) {
                 realm.setBrowserFlow(originalBrowserFlow);
             }
 
-            AuthenticationFlowModel customFlow = realm.getFlowByAlias("browser-session-limits");
+            AuthenticationFlowModel customFlow = realm.getFlowByAlias(flowAlias);
             if (customFlow != null) {
                 realm.removeAuthenticationFlow(customFlow);
             }
@@ -878,6 +961,33 @@ public class UserSessionLimitsTest {
         driver.cookies().deleteAll();
     }
 
+    private void loginWithOtp(String username) {
+        oauth.openLoginForm();
+        loginPage.fillLogin(username, password);
+        loginPage.submit();
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS);
+        loginTotpPage.login(totp.generateTOTP(TOTP_SECRET));
+
+        driver.waiting().waitForOAuthCallback();
+        assertTrue(oauth.parseLoginResponse().isSuccess());
+    }
+
+    private void setOtpTimeOffset(int offsetSeconds) {
+        timeOffSet.set(offsetSeconds);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, offsetSeconds);
+        totp.setCalendar(calendar);
+    }
+
+    private void setMinimumAcr(String minimumAcr) {
+        ClientRepresentation client = managedRealm.admin().clients().findByClientId("test-app").get(0);
+        Map<String, String> attributes = client.getAttributes() == null ? new HashMap<>() : client.getAttributes();
+        attributes.put(Constants.MINIMUM_ACR_VALUE, minimumAcr);
+        client.setAttributes(attributes);
+        managedRealm.admin().clients().get(client.getId()).update(client);
+    }
+
     public static class UserSessionLimitsRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
@@ -892,6 +1002,13 @@ public class UserSessionLimitsTest {
                     .name("Test", "User2")
                     .emailVerified(true)
                     .password(password)
+                    .enabled(true));
+            realm.users(UserBuilder.create(otpUsername)
+                    .email(otpUsername)
+                    .name("OTP", "User")
+                    .emailVerified(true)
+                    .password(password)
+                    .totpSecret(TOTP_SECRET)
                     .enabled(true));
 
             realm.name(realmName);
