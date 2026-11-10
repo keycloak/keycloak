@@ -19,8 +19,6 @@ package org.keycloak.authentication.jpa;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntConsumer;
 
 import jakarta.persistence.EntityManager;
@@ -40,8 +38,6 @@ public enum AuthenticationSessionExpirationAction implements ExpirationAction {
 
     private static final Logger logger = Logger.getLogger(AuthenticationSessionExpirationAction.class);
 
-    private final Map<String, Integer> emptyObservedAt = new ConcurrentHashMap<>();
-
     @Override
     public boolean removeExpired(KeycloakSession session, String realmId, int currentTime, int maxRemoval, IntConsumer removeCount) {
         var realm = session.realms().getRealm(realmId);
@@ -53,7 +49,7 @@ public enum AuthenticationSessionExpirationAction implements ExpirationAction {
         var olderTimestamp = currentTime - lifespan;
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
-        if (isRealmEmpty(em, realmId, currentTime, lifespan)) {
+        if (isRealmEmpty(em, realmId)) {
             return false;
         }
 
@@ -106,29 +102,15 @@ public enum AuthenticationSessionExpirationAction implements ExpirationAction {
     }
 
     /**
-     * Checks with a single index lookup if the realm has no authentication sessions. A session created after an empty
-     * observation cannot expire before the observation time plus the lifespan, so the check is remembered to skip the
-     * per-bucket queries until then. Only the observation time is stored and the deadline is derived from the current
-     * realm settings, so changing the lifespan needs no invalidation. The state is local to the node; a node without
-     * state performs the regular check.
+     * Checks with a single index lookup if the realm has no authentication sessions, to skip the per-bucket queries.
+     * Nothing is remembered between runs, so the result never depends on the clock or on the node running the task.
      */
-    private boolean isRealmEmpty(EntityManager em, String realmId, int currentTime, int lifespan) {
-        Integer observed = emptyObservedAt.get(realmId);
-        // an observation in the future happens if the clock moved backwards, for example, a time offset in tests
-        if (observed != null && observed <= currentTime && currentTime < (long) observed + lifespan) {
-            return true;
-        }
-        boolean empty = em.createNamedQuery("findAnyRootAuthSessionIdByRealm", String.class)
+    private boolean isRealmEmpty(EntityManager em, String realmId) {
+        return em.createNamedQuery("findAnyRootAuthSessionIdByRealm", String.class)
                 .setParameter("realmId", realmId)
                 .setHint(AvailableHints.HINT_READ_ONLY, true)
                 .setMaxResults(1)
                 .getResultList()
                 .isEmpty();
-        if (empty) {
-            emptyObservedAt.put(realmId, currentTime);
-        } else {
-            emptyObservedAt.remove(realmId);
-        }
-        return empty;
     }
 }

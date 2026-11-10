@@ -39,7 +39,6 @@ import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -70,16 +69,10 @@ public class AuthenticationSessionExpirationQueryCountTest {
             assertTrue(Arrays.stream(queries).noneMatch(q -> q.contains("sessionBucket")),
                     "No bucket query is expected for a realm without sessions: " + Arrays.toString(queries));
         });
-
-        // the realm was found empty, no session can expire yet, so the next run does not need to query anything
-        assertWithRetries(() -> {
-            String[] queries = executedSessionQueries(session, realmId);
-            assertEquals(0, queries.length, "Unexpected queries: " + Arrays.toString(queries));
-        });
     }
 
     @TestOnServer
-    public void sessionCreatedAfterEmptyRunIsStillExpired(KeycloakSession session) {
+    public void sessionInPreviouslyEmptyRealmIsStillExpired(KeycloakSession session) {
         assumeTrue(Profile.isFeatureEnabled(Profile.Feature.STATELESS));
         RealmModel realmModel = session.realms().getRealmByName(REALM_NAME);
         String realmId = realmModel.getId();
@@ -93,16 +86,15 @@ public class AuthenticationSessionExpirationQueryCountTest {
                 sessionId[0] = session1.authenticationSessions().createRootAuthenticationSession(r).getId();
             });
 
-            // still within the lifespan: the realm is not queried and the session survives
+            // the realm has a session now, so the probe finds it and the bucket queries run
             assertWithRetries(() -> {
                 String[] queries = executedSessionQueries(session, realmId);
-                assertEquals(0, queries.length, "Unexpected queries: " + Arrays.toString(queries));
+                assertTrue(Arrays.stream(queries).anyMatch(q -> q.contains("sessionBucket")),
+                        "Bucket queries are expected for a realm with sessions: " + Arrays.toString(queries));
             });
 
             Time.setOffset(SessionExpiration.getAuthSessionLifespan(realmModel) + 60);
-            String[] afterDeadline = executedSessionQueries(session, realmId);
-            assertTrue(Arrays.stream(afterDeadline).anyMatch(q -> q.contains("sessionBucket")),
-                    "Bucket queries are expected once the lifespan passed: " + Arrays.toString(afterDeadline));
+            executedSessionQueries(session, realmId);
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
                 RealmModel r = session1.realms().getRealm(realmId);
