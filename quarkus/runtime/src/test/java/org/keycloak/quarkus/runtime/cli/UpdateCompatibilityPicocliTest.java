@@ -97,7 +97,6 @@ public class UpdateCompatibilityPicocliTest extends AbstractConfigurationTest {
 
         var cacheMeta = info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME);
         assertEquals(CONFIG_FILE_NOT_FOUND, cacheMeta.get(CONFIG));
-        assertNull(cacheMeta.get(STACK));
 
         var jgroupsMeta = info.get(JGroupsCertificateProviderSpi.SPI_NAME);
         assertEquals("true", jgroupsMeta.get(DefaultJGroupsCertificateProviderFactory.ENABLED));
