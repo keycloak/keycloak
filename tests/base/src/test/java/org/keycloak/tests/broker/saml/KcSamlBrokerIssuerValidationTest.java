@@ -105,9 +105,11 @@ public class KcSamlBrokerIssuerValidationTest extends AbstractKcSamlBrokerTest {
     }
 
     @Test
-    public void testNullResponseIssuerWithCorrectAssertionIssuerIsAccepted() {
+    public void testNullResponseIssuerIsRejected() {
         configureIdpEntityId();
-        assertLogin(SamlResponseDocument::removeResponseIssuer, true);
+        // The broker requires a non-null response issuer when idpEntityId is configured,
+        // unlike the adapter which treats the response-level issuer as optional.
+        assertLogin(SamlResponseDocument::removeResponseIssuer, false);
     }
 
     @Test
