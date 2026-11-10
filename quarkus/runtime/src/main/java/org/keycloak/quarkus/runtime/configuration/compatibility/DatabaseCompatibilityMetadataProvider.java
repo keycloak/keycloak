@@ -88,7 +88,7 @@ public class DatabaseCompatibilityMetadataProvider implements CompatibilityMetad
                 }
             }
 
-            if (!changeSets.isEmpty()) {
+            if (!changeSets.isEmpty() || !migrations.isEmpty()) {
                 List<ChangeSet> sortedChanges = changeSets.stream().sorted(
                       Comparator.comparing(ChangeSet::id)
                             .thenComparing(ChangeSet::author)
