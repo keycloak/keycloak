@@ -132,6 +132,31 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     }
 
     @Override
+    public void replace(R resource, M model, String rawPath, JsonNode value) {
+        Path parsedPath = new Path(this, rawPath);
+
+        if (parsedPath.hasFilter()) {
+            // A value-path filter (e.g. tags[value eq "red"]) selects which values to remove.
+            // Using the canonical attr name for removal would strip the filter and delete
+            // every value, not just the matching ones — keep the original path.
+            if (rawPath != null) {
+                remove(resource, model, rawPath);
+            }
+            add(model, rawPath, value);
+            return;
+        }
+
+        Map<Attribute<M, R>, JsonNode> resolved = resolveAttributes(parsedPath.getPath(), value);
+        for (Entry<Attribute<M, R>, JsonNode> entry : resolved.entrySet()) {
+            // Remove each leaf attribute individually so that multivalued attributes are replaced
+            // rather than merged (the schema-level remove used by the default impl resolves
+            // nothing when path is a schema URN, leaving the merge adder free to append).
+            remove(resource, model, entry.getKey().getName());
+            add(model, entry.getKey().getName(), entry.getValue());
+        }
+    }
+
+    @Override
     public Attribute<M, R> getAttributeByPath(String path) {
         Map<Attribute<M, R>, JsonNode> attributes = resolveAttributes(path, NullNode.getInstance());
 
@@ -302,8 +327,12 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
                         // fallback to resolve the attribute from an extension schema
                         String name = property.getKey();
 
-                        if (!name.startsWith(getId())) {
-                            name = getId() + ":" + name;
+                        // Preserve URN-shaped keys (e.g. a custom extension schema URN inside a
+                        // pathless value object) so they resolve under their own schema, not under
+                        // the internal schema id.  Only prefix simple names (no colon) that do not
+                        // already start with the current path.
+                        if (!name.startsWith(path) && !name.contains(":")) {
+                            name = path + ":" + name;
                         }
 
                         attributes.putAll(resolveAttributes(name, property.getValue()));
