@@ -19,10 +19,12 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -206,6 +208,40 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
             try (var response = getClientApi(TEST_CLIENT_ID).deleteClient()) {
                 assertThat(response.getStatus(), anyOf(is(204), is(404)));
             }
+        }
+    }
+
+    @Test
+    public void updateClientRolesFiresOnlyClientEvent() throws Exception {
+        createTestClient();
+        try {
+            testRealm.admin().clearAdminEvents();
+            OIDCClientRepresentation rep = getTestClientRepresentation();
+            rep.setRoles(Set.of("role-a", "role-b"));
+
+            try (var response = getClientApi(TEST_CLIENT_ID).createOrUpdateClient(rep)) {
+                assertEquals(200, response.getStatus());
+            }
+
+            List<AdminEventRepresentation> events = testRealm.admin().getAdminEvents();
+            assertThat("Only the client event should be fired, not per-role events", events.size(), is(1));
+            AdminEventRepresentation event = events.get(0);
+            assertThat(event.getResourceType(), is(ResourceType.CLIENT.toString()));
+            assertThat(event.getOperationType(), is(OperationType.UPDATE.toString()));
+            assertThat(event.getDetails().get(API_VERSION_DETAIL_KEY), is(API_VERSION_V2));
+
+            testRealm.admin().clearAdminEvents();
+            rep.setRoles(Set.of("role-a"));
+
+            try (var response = getClientApi(TEST_CLIENT_ID).createOrUpdateClient(rep)) {
+                assertEquals(200, response.getStatus());
+            }
+
+            events = testRealm.admin().getAdminEvents();
+            assertThat("Only the client event should be fired when removing a role", events.size(), is(1));
+            assertThat(events.get(0).getResourceType(), is(ResourceType.CLIENT.toString()));
+        } finally {
+            deleteTestClient();
         }
     }
 
