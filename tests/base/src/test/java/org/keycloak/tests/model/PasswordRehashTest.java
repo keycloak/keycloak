@@ -11,6 +11,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * The conditional credential update relies on the database to lock the row and to return the latest committed state,
+ * and databases differ in how locks and transaction isolation levels behave, so run these tests on all supported databases.
+ */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class PasswordRehashTest {
 
     private static final String OLD_PASSWORD = "Old-password1";
