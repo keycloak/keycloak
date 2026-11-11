@@ -686,6 +686,6 @@ The following configuration options have been removed:
 * `--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override`
 
 These options were deprecated and were only relevant when using volatile user sessions (disabled persistent sessions).
-Since the `persistent-user-sessions` feature is now mandatory and volatile sessions have been removed in Keycloak 27, these configuration options are no longer applicable.
+With persistent user sessions enabled (the default since Keycloak 26), offline sessions are managed in the database and these lifespan override options have no effect.
 
 If you have these options in your configuration, remove them before upgrading to Keycloak 27.
