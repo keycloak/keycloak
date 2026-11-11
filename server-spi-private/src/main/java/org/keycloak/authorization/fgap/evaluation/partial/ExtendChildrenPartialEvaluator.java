@@ -46,7 +46,8 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESO
  *     <li>a group with any permission of its own for the scope is decided by those permissions only;</li>
  *     <li>for the group scopes (e.g. {@code view}), the closest ancestor with an extended permission decides;</li>
  *     <li>for the member scopes (e.g. {@code view-members}), a deny from any extended ancestor wins over an allow, and
- *     a grant is not inherited by the descendants of a group whose own permission denies, extended or not.</li>
+ *     a grant is not inherited by the descendants of a group whose own permission denies, extended or not, nor
+ *     propagated at all if the extended group or any of its ancestors has a permission that denies.</li>
  * </ul>
  */
 final class ExtendChildrenPartialEvaluator {
@@ -132,6 +133,12 @@ final class ExtendChildrenPartialEvaluator {
             // all extended permissions on the group must grant, as with any other set of permissions for a resource
             boolean granted = entry.getValue().values().stream().allMatch(Boolean::booleanValue);
 
+            if (memberScope && granted && isDeniedOrHasDeniedAncestor(group, deniedGroups)) {
+                // for member scopes, a deny from the group itself or from any of its ancestors, extended or not, also
+                // protects the members of the descendants, so the grant is not propagated
+                continue;
+            }
+
             // for member scopes, a deny from any ancestor, extended or not, protects the members of the descendants, so
             // the walk stops at denied groups to not grant access to their descendants
             Set<String> stopAt = memberScope ? (granted ? deniedGroups : Set.of()) : extendedByGroup.keySet();
@@ -149,6 +156,18 @@ final class ExtendChildrenPartialEvaluator {
         allowed.removeAll(denied);
 
         return new Result(allowed, denied);
+    }
+
+    private boolean isDeniedOrHasDeniedAncestor(GroupModel group, Set<String> deniedGroups) {
+        Set<String> visited = new HashSet<>();
+
+        for (GroupModel current = group; current != null && visited.add(current.getId()); current = current.getParent()) {
+            if (deniedGroups.contains(current.getId())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

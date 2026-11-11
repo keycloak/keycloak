@@ -321,11 +321,22 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
                     throw new ModelValidationException("Extending permissions to children is only supported for resource type " + GROUPS_RESOURCE_TYPE + ".");
                 }
                 Set<String> resources = rep.getResources();
-                if (resources == null || resources.isEmpty() || resources.contains(GROUPS_RESOURCE_TYPE)) {
+                if (resources == null || resources.isEmpty() || resources.stream().anyMatch(id -> isResourceTypeResource(session, resourceServer, id))) {
                     throw new ModelValidationException("Extending permissions to children requires specific groups.");
                 }
             }
         }
+    }
+
+    private boolean isResourceTypeResource(KeycloakSession session, ResourceServer resourceServer, String id) {
+        if (GROUPS_RESOURCE_TYPE.equals(id)) {
+            return true;
+        }
+
+        // resources can also be referenced by the id of their authorization resource
+        Resource resource = getStoreFactory(session).getResourceStore().findById(resourceServer, id);
+
+        return resource != null && GROUPS_RESOURCE_TYPE.equals(resource.getName());
     }
 
     /**
