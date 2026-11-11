@@ -1,5 +1,6 @@
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
+import { isRootAttribute } from "@keycloak/keycloak-ui-shared";
 import {
   KeyValueType,
   arrayToKeyValue,
@@ -18,11 +19,6 @@ export type UserFormFields = Omit<
 export interface UIUserRepresentation extends UserRepresentation {
   unmanagedAttributes?: Record<string, string[]>;
 }
-
-const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
-
-const isRootAttribute = (name?: string) =>
-  !!name && ROOT_ATTRIBUTES.includes(name);
 
 function emptyAttributeValue(
   attribute: NonNullable<UserProfileMetadata["attributes"]>[number],
