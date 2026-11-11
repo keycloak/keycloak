@@ -302,6 +302,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder passwordPolicy(String passwordPolicy) {
+        rep.setPasswordPolicy(passwordPolicy);
+        return this;
+    }
+
     public RealmConfigBuilder identityProvider(IdentityProviderRepresentation identityProvider) {
         rep.addIdentityProvider(identityProvider);
         return this;
