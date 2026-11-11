@@ -157,10 +157,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     /**
      * Convert WebAuthnCredentialModel, which was usually retrieved from DB, to the CredentialInput, which contains data in the webauthn4j specific format
      */
-    private WebAuthnCredentialModelInput getCredentialInputFromCredentialModel(CredentialModel credential) {
-        WebAuthnCredentialModel webAuthnCredential = getCredentialFromModel(credential);
-
-        WebAuthnCredentialData credData = webAuthnCredential.getWebAuthnCredentialData();
+    private WebAuthnCredentialModelInput getCredentialInputFromCredentialModel(WebAuthnCredentialModel credential) {
+        WebAuthnCredentialData credData = credential.getWebAuthnCredentialData();
 
         WebAuthnCredentialModelInput auth = new WebAuthnCredentialModelInput(getType());
 
@@ -207,13 +205,16 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         if (!WebAuthnCredentialModelInput.class.isInstance(input)) return false;
 
         WebAuthnCredentialModelInput context = WebAuthnCredentialModelInput.class.cast(input);
-        List<WebAuthnCredentialModelInput> auths = getWebAuthnCredentialModelList(realm, user);
+        List<CredentialModel> credentials = user.credentialManager().getStoredCredentialsByTypeStream(getType())
+                .collect(Collectors.toList());
 
         WebAuthnAuthenticationManager webAuthnAuthenticationManager = getWebAuthnAuthenticationManager();
         AuthenticationData authenticationData = null;
 
         try {
-            for (WebAuthnCredentialModelInput auth : auths) {
+            for (CredentialModel credModel : credentials) {
+                WebAuthnCredentialModel webAuthnCredModel = getCredentialFromModel(credModel);
+                WebAuthnCredentialModelInput auth = getCredentialInputFromCredentialModel(webAuthnCredModel);
 
                 byte[] credentialId = auth.getAttestedCredentialData().getCredentialId();
                 if (Arrays.equals(credentialId, context.getAuthenticationRequest().getCredentialId())) {
@@ -237,9 +238,6 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
                     logger.debugv("response.getAuthenticatorData().getFlags() = {0}", authenticationData.getAuthenticatorData().getFlags());
 
-                    CredentialModel credModel = user.credentialManager().getStoredCredentialById(auth.getCredentialDBId());
-                    WebAuthnCredentialModel webAuthnCredModel = getCredentialFromModel(credModel);
-
                     // update authenticator counter
                     // counters are an optional feature of the spec - if an authenticator does not support them, it
                     // will always send zero. MacOS/iOS does this for keys stored in the secure enclave (TouchID/FaceID)
@@ -252,7 +250,10 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                         }
 
                         webAuthnCredModel.updateCounter(clientCounter);
-                        user.credentialManager().updateStoredCredential(webAuthnCredModel);
+                        if (!user.credentialManager().updateStoredCredential(credModel, webAuthnCredModel)) {
+                            logger.debugf("WebAuthn credential changed while validating user %s", user.getUsername());
+                            return false;
+                        }
                     }
 
                     logger.debugf("Successfully validated WebAuthn credential for user %s", user.getUsername());
@@ -300,12 +301,6 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         return WebAuthnCredentialModel.TYPE_TWOFACTOR;
     }
 
-
-    private List<WebAuthnCredentialModelInput> getWebAuthnCredentialModelList(RealmModel realm, UserModel user) {
-        return user.credentialManager().getStoredCredentialsByTypeStream(getType())
-                .map(this::getCredentialInputFromCredentialModel)
-                .collect(Collectors.toList());
-    }
 
     public void dumpCredentialModel(WebAuthnCredentialModel credential, WebAuthnCredentialModelInput auth) {
         if(logger.isDebugEnabled()) {
