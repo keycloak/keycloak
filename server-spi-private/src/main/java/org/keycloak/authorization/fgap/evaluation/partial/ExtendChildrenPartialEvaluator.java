@@ -18,12 +18,14 @@
 package org.keycloak.authorization.fgap.evaluation.partial;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -60,10 +62,12 @@ final class ExtendChildrenPartialEvaluator {
      * @param session the session
      * @param scope the scope being evaluated
      * @param memberScope {@code true} if the scope protects the members of a group rather than the group itself
-     * @param grantedPermissions the ids of the permissions that grant access to the current admin. Any other permission
-     *                           is considered as denying access, as it would be during direct evaluation.
+     * @param outcome the outcome of a permission for the current admin: {@code true} if it grants access, {@code false}
+     *                if it denies access, or {@code null} if it can not be decided during partial evaluation (e.g.: its
+     *                policies can not be partially evaluated), in which case it neither grants nor denies access to the
+     *                descendants, as for permissions that are not extended
      */
-    Result evaluate(KeycloakSession session, String scope, boolean memberScope, Set<String> grantedPermissions) {
+    Result evaluate(KeycloakSession session, String scope, boolean memberScope, Function<Policy, Boolean> outcome) {
         RealmModel realm = session.getContext().getRealm();
 
         if (realm == null) {
@@ -85,10 +89,10 @@ final class ExtendChildrenPartialEvaluator {
 
         // groups with a permission of their own for the scope, regardless of the admin the permission targets
         Set<String> claimedGroups = new HashSet<>();
-        // groups with a permission of their own for the scope that does not grant access to the admin
+        // groups with a permission of their own for the scope that denies access to the admin
         Set<String> deniedGroups = new HashSet<>();
-        // extended permissions for the scope, by group
-        Map<String, Map<String, Boolean>> extendedByGroup = new HashMap<>();
+        // outcome of the extended permissions for the scope, by group
+        Map<String, List<Boolean>> extendedByGroup = new HashMap<>();
         Set<String> visitedPermissions = new HashSet<>();
 
         authorization.getStoreFactory().getPolicyStore().findByResourceType(resourceServer, GROUPS_RESOURCE_TYPE, permission -> {
@@ -97,6 +101,7 @@ final class ExtendChildrenPartialEvaluator {
             }
 
             boolean extended = AdminPermissionsSchema.SCHEMA.isExtendChildren(permission);
+            Boolean grants = outcome.apply(permission);
 
             for (String groupId : permission.getResourceNames()) {
                 if (GROUPS_RESOURCE_TYPE.equals(groupId)) {
@@ -105,13 +110,12 @@ final class ExtendChildrenPartialEvaluator {
 
                 claimedGroups.add(groupId);
 
-                if (!grantedPermissions.contains(permission.getId())) {
+                if (Boolean.FALSE.equals(grants)) {
                     deniedGroups.add(groupId);
                 }
 
                 if (extended) {
-                    extendedByGroup.computeIfAbsent(groupId, k -> new HashMap<>())
-                            .put(permission.getId(), grantedPermissions.contains(permission.getId()));
+                    extendedByGroup.computeIfAbsent(groupId, k -> new ArrayList<>()).add(grants);
                 }
             }
         });
@@ -123,7 +127,15 @@ final class ExtendChildrenPartialEvaluator {
         Set<String> allowed = new HashSet<>();
         Set<String> denied = new HashSet<>();
 
-        for (Map.Entry<String, Map<String, Boolean>> entry : extendedByGroup.entrySet()) {
+        for (Map.Entry<String, List<Boolean>> entry : extendedByGroup.entrySet()) {
+            List<Boolean> outcomes = entry.getValue();
+
+            if (!outcomes.contains(Boolean.FALSE) && outcomes.contains(null)) {
+                // a permission that can not be decided might deny access during direct evaluation, so the descendants
+                // are neither allowed nor denied. For group scopes, the walk of other ancestors still stops at this group
+                continue;
+            }
+
             GroupModel group = session.groups().getGroupById(realm, entry.getKey());
 
             if (group == null) {
@@ -131,7 +143,7 @@ final class ExtendChildrenPartialEvaluator {
             }
 
             // all extended permissions on the group must grant, as with any other set of permissions for a resource
-            boolean granted = entry.getValue().values().stream().allMatch(Boolean::booleanValue);
+            boolean granted = !outcomes.contains(Boolean.FALSE);
 
             if (memberScope && granted && isDeniedOrHasDeniedAncestor(group, deniedGroups)) {
                 // for member scopes, a deny from the group itself or from any of its ancestors, extended or not, also
