@@ -20,6 +20,10 @@
     border-top: none;
 }
 
+.pf-v6-theme-dark .pf-v6-c-login {
+    --pf-v6-c-login__main--BoxShadow: var(--pf-t--global--box-shadow--lg);
+}
+
 /* Info section - top margin + bottom padding */
 .pf-v6-c-login__main-footer-band:first-child {
     margin-block-start: var(--pf-t--global--spacer--lg);
@@ -189,7 +193,12 @@ hr {
     gap: 0.875rem;
 }
 p.instruction {
-  margin: var(--pf-t--global--spacer--lg) 0;
+    margin: 0 0 var(--pf-t--global--spacer--md);
+}
+
+p.instruction:last-child,
+.pf-v6-c-form p.instruction {
+    margin-bottom: 0;
 }
 
 .form-actions {

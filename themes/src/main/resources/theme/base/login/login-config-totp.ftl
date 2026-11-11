@@ -56,48 +56,13 @@
         </ol>
 
         <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-totp-settings-form" method="post" novalidate="novalidate">
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelClass!}">
-                    <label class="${properties.kcFormLabelClass!}" for="totp">
-                        <span class="${properties.kcFormLabelTextClass!}">${msg("authenticatorCode")}</span>&nbsp;<span class="${properties.kcInputRequiredClass!}" aria-hidden="true">&#42;</span>
-                    </label>
-                </div>
-                <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('totp')>${properties.kcError!}</#if>">
-                    <input type="text" required id="totp" name="totp" autocomplete="one-time-code"
-                           aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
-                           inputmode="numeric"
-                    />
+            <@field.input name="totp" label=msg("authenticatorCode") required=true autocomplete="one-time-code"
+                inputmode="numeric" errorId="input-error-otp-code" />
+            <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
+            <#if mode??><input type="hidden" id="mode" name="mode" value="${mode}"/></#if>
 
-                    <@field.errorIcon error=messagesPerField.get('totp')/>
-                </div>
-                <#if messagesPerField.existsError('totp')>
-                    <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                        ${messagesPerField.get('totp')}
-                    </span>
-                </#if>
-                <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
-                <#if mode??><input type="hidden" id="mode" name="mode" value="${mode}"/></#if>
-            </div>
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelClass!}">
-                    <label class="${properties.kcFormLabelClass!}" for="userLabel">
-                        <span class="${properties.kcFormLabelTextClass!}">${msg("loginTotpDeviceName")}</span><#if totp.otpCredentials?size gte 1>&nbsp;<span class="${properties.kcInputRequiredClass!}" aria-hidden="true">&#42;</span></#if>
-                    </label>
-                </div>
-
-                <div class="${properties.kcInputClass!} <#if messagesPerField.existsError('userLabel')>${properties.kcError!}</#if>">
-                    <input type="text" id="userLabel" name="userLabel" autocomplete="off"
-                           aria-invalid="<#if messagesPerField.existsError('userLabel')>true</#if>"
-                    />
-
-                    <@field.errorIcon error=messagesPerField.get('userLabel')/>
-                </div>
-                <#if messagesPerField.existsError('userLabel')>
-                    <span id="input-error-otp-label" class="${properties.kcInputErrorMessageClass!}" aria-live="polite">
-                        ${messagesPerField.get('userLabel')}
-                    </span>
-                </#if>
-            </div>
+            <@field.input name="userLabel" label=msg("loginTotpDeviceName") required=(totp.otpCredentials?size gte 1)
+                errorId="input-error-otp-label" />
 
             <div class="${properties.kcFormGroupClass!}">
                 <@passwordCommons.logoutOtherSessions/>

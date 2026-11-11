@@ -1,5 +1,5 @@
 <#-- Nest a custom control in <@field.group name="field-id" label=msg("labelKey")> for its label and errors. -->
-<#macro group name label error="" required=false>
+<#macro group name label error="" required=false errorId="input-error-${name}">
 
 <div class="${properties.kcFormGroupClass!}">
     <div class="${properties.kcFormGroupLabelClass!}">
@@ -13,23 +13,31 @@
         </label>
     </div>
 
-    <#nested>
+    <div class="${properties.kcFormGroupControlClass!}">
+        <#nested>
 
-    <div id="input-error-container-${name}">
+        <@errorMessage name=name error=error errorId=errorId/>
+    </div>
+</div>
+
+</#macro>
+
+<#-- Render a field error using the theme helper text classes. -->
+<#macro errorMessage name error="" errorId="input-error-${name}">
+    <div id="input-error-container-${name}" class="${properties.kcFormHelperTextClass!}" aria-live="polite" <#if !error?has_content>hidden</#if>>
         <#if error?has_content>
-            <div class="${properties.kcFormHelperTextClass!}" aria-live="polite">
-                <div class="${properties.kcInputHelperTextClass!}">
-                    <div class="${properties.kcInputHelperTextItemClass!} ${properties.kcError!}" id="input-error-${name}">
-                        <span class="${properties.kcInputErrorMessageClass!}">
-                            ${error}
+            <div class="${properties.kcInputHelperTextClass!}">
+                <div class="${properties.kcInputHelperTextItemClass!} ${properties.kcError!}" id="${errorId}">
+                    <#if properties.kcInputHelperTextItemIconClass?has_content>
+                        <span class="${properties.kcInputHelperTextItemIconClass}">
+                            <i class="${properties.kcInputErrorIconClass!}" aria-hidden="true"></i>
                         </span>
-                    </div>
+                    </#if>
+                    <span class="${properties.kcInputErrorMessageClass!}">${error}</span>
                 </div>
             </div>
         </#if>
     </div>
-</div>
-
 </#macro>
 
 <#-- Use <@field.errorIcon error=message/> inside a control to show its validation status. -->
@@ -44,12 +52,12 @@
 </#macro>
 
 <#-- Use <@field.input name="username" label=msg("username")/>; errors default to messagesPerField. -->
-<#macro input name label value="" required=false autocomplete="off" fieldName=name error=messagesPerField.get(fieldName) autofocus=false>
-  <@group name=name label=label error=error required=required>
+<#macro input name label value="" required=false autocomplete="off" fieldName=name error=messagesPerField.get(fieldName) autofocus=false inputmode="" errorId="input-error-${name}">
+  <@group name=name label=label error=error required=required errorId=errorId>
     <span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
-        <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
-                <#if autocomplete == "one-time-code">inputmode="numeric"</#if>
-                aria-invalid="<#if error?has_content>true</#if>"/>
+        <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" autocapitalize="none" spellcheck="false" <#if autofocus>autofocus</#if>
+                <#if inputmode?has_content>inputmode="${inputmode}"</#if>
+                <#if error?has_content>aria-invalid="true" aria-describedby="${errorId}"</#if>/>
         <@errorIcon error=error/>
     </span>
   </@group>
@@ -57,12 +65,13 @@
 
 <#-- Use <@field.password name="password" label=msg("password")>; nest optional helper text or controls. -->
 <#macro password name label value="" required=false forgotPassword=false fieldName=name error=messagesPerField.get(fieldName) autocomplete="off" autofocus=false>
+  <#local helperItems><#compress><#nested></#compress></#local>
   <@group name=name label=label error=error required=required>
     <div class="${properties.kcInputGroup!}">
       <div class="${properties.kcInputGroupItemClass!} ${properties.kcFill!}">
         <span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
           <input id="${name}" name="${name}" value="${value}" type="password" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
-                  aria-invalid="<#if error?has_content>true</#if>"/>
+                  <#if error?has_content>aria-invalid="true" aria-describedby="input-error-${name}"</#if>/>
           <@errorIcon error=error/>
         </span>
       </div>
@@ -77,10 +86,11 @@
         </button>
       </div>
     </div>
+    <#if helperItems?has_content || forgotPassword>
     <div class="${properties.kcFormHelperTextClass!}" aria-live="polite">
         <div class="${properties.kcInputHelperTextClass!}">
             <#-- Additional helper items -->
-            <#nested>
+            ${helperItems}
             <#if forgotPassword>
                 <div class="${properties.kcInputHelperTextItemClass!}">
                   <span class="${properties.kcInputHelperTextItemTextClass!}">
@@ -90,6 +100,7 @@
             </#if>
         </div>
     </div>
+    </#if>
 
   </@group>
   <#if !passwordVisibilityScriptLoaded??>
@@ -155,8 +166,8 @@
 </#macro>
 
 <#-- Use <@field.checkbox name="rememberMe" label=msg("rememberMe") value=true/>; value sets the checked state. -->
-<#macro checkbox name label value=false required=false invalid=false>
-  <div class="${properties.kcCheckboxClass!}">
+<#macro checkbox name label value=false required=false invalid=false error=messagesPerField.get(name) errorId="input-error-${name}">
+  <div class="${properties.kcFormGroupControlClass!}">
     <label for="${name}" class="${properties.kcCheckboxClass!}">
       <input
         class="${properties.kcCheckboxInputClass!}"
@@ -164,12 +175,13 @@
         id="${name}"
         name="${name}"
         <#if value>checked</#if>
-        <#if invalid>aria-invalid="true"</#if>
+        <#if invalid || error?has_content>aria-invalid="true"</#if>
+        <#if error?has_content>aria-describedby="${errorId}"</#if>
       />
-      <span class="${properties.kcCheckboxLabelClass!}">${label}</span>
-      <#if required>
-        <span class="${properties.kcCheckboxLabelRequiredClass!}" aria-hidden="true">&#42;</span>
-      </#if>
+      <span class="${properties.kcCheckboxLabelClass!}">${label}<#if required><span class="${properties.kcCheckboxLabelRequiredClass!}" aria-hidden="true">&#42;</span></#if></span>
     </label>
+    <#if error?has_content>
+      <@errorMessage name=name error=error errorId=errorId/>
+    </#if>
   </div>
 </#macro>
