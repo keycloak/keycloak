@@ -129,6 +129,21 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
     }
 
     @Test
+    public void testExtendChildrenRequiresSpecificGroupsWhenReferencedById() {
+        // the resource for all groups can also be referenced by the id of its authorization resource
+        String allGroupsResourceId = adminPermissionsClient.authorization().resources().findByName(GROUPS_RESOURCE_TYPE).get(0).getId();
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType(GROUPS_RESOURCE_TYPE);
+        permission.setScopes(Set.of(VIEW));
+        permission.setResources(Set.of(department.getId(), allGroupsResourceId));
+        permission.setExtendChildren(true);
+        permission.addPolicy(allowMyAdmin.getName());
+
+        createPermission(adminPermissionsClient, permission, Response.Status.BAD_REQUEST);
+    }
+
+    @Test
     public void testExtendChildrenNotSupportedOutsideAdminPermissions() {
         ClientResource resourceServer = AdminApiUtil.findClientByClientId(realm.admin(), "myresourceserver");
         ScopeRepresentation scope = new ScopeRepresentation("read");
@@ -337,6 +352,24 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         assertCannotView(member);
         assertThat(searchUserIds(member), empty());
         assertThrows(ForbiddenException.class, () -> myGroup(subteam).members());
+    }
+
+    @Test
+    public void testUserDeniedByNonExtendedMemberScopeOfAncestorOfExtendedGroup() {
+        createAllPermission(adminPermissionsClient, USERS_RESOURCE_TYPE, allowMyAdmin, Set.of(VIEW));
+        // the deny is on an ancestor of the extended group rather than on one of its descendants
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), false, denyMyAdmin);
+        createGroupPermission(team, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
+        UserRepresentation teamMember = createMember("team-member", team);
+        UserRepresentation member = createMember("subteam-member", subteam);
+
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+        assertThrows(ForbiddenException.class, () -> myGroup(subteam).members());
+
+        // the own permission of the team takes precedence over the deny of its ancestor for its direct members
+        assertCanView(teamMember);
+        assertThat(searchUserIds(teamMember), contains(teamMember.getId()));
     }
 
     @Test
