@@ -148,7 +148,7 @@ This endpoint can also be found in the OpenID Connect Discovery endpoint for the
 [WARNING]
 ====
 {project_name} supports most of the options mentioned in the OpenID Connect Dynamic Client Registration specification. However not everything is properly supported. For
-instance OpenID Connect client option `application_type` is not unsupported right now and it will be ignored by {project_name} if you use it when registering your client.
+instance OpenID Connect client option `application_type` is not supported right now and it will be ignored by {project_name} if you use it when registering your client.
 
 For the indication of what OpenID Connect client options are supported, you may try to see client documentation section in the link:{adminguide_link}[{adminguide_name}] or inspect the
 available options in the admin console when configuring the client. OIDC client options, which have counterparts in the {project_name} admin console are usually supported
