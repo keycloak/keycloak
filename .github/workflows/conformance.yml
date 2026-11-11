@@ -3,9 +3,6 @@ name: Conformance Tests
 on:
   workflow_dispatch:
 
-env:
-  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-
 concurrency:
   group: conformance-${{ github.ref }}
   cancel-in-progress: true

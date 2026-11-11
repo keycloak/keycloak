@@ -629,25 +629,30 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         return doClientCredentialsGrantRequest(jwt);
     }
 
-    protected void assertError(AccessTokenResponse response, String clientId, String responseError, String eventError) {
+    protected void assertError(AccessTokenResponse response, String clientId, String responseError, String eventError, String detail) {
         assertEquals(400, response.getStatusCode());
-        assertMessageError(response,clientId,responseError,eventError);
+        assertMessageError(response,clientId,responseError,eventError, detail);
     }
 
-    protected void assertError(AccessTokenResponse response, int errorCode, String clientId, String responseError, String eventError) {
+    protected void assertError(AccessTokenResponse response, int errorCode, String clientId, String responseError, String eventError, String detail) {
         assertEquals(errorCode, response.getStatusCode());
-        assertMessageError(response, clientId, responseError, eventError);
+        assertMessageError(response, clientId, responseError, eventError, detail);
     }
 
-    protected void assertMessageError(AccessTokenResponse response, String clientId, String responseError, String eventError) {
+    protected void assertMessageError(AccessTokenResponse response, String clientId, String responseError, String eventError, String detail) {
         assertEquals(responseError, response.getError());
 
-        EventAssertion.assertError(events.poll())
+        EventAssertion eventAssertion = EventAssertion.assertError(events.poll())
                 .type(EventType.CLIENT_LOGIN_ERROR)
                 .clientId(clientId)
                 .sessionId(null)
                 .error(eventError)
                 .userId(null);
+        if (detail == null) {
+            eventAssertion.withoutDetails(Details.AUTHENTICATION_ERROR_DETAIL);
+        } else {
+            eventAssertion.details(Details.AUTHENTICATION_ERROR_DETAIL, detail);
+        }
     }
 
     protected void assertSuccess(AccessTokenResponse response, String clientId, String userId, String userName) {

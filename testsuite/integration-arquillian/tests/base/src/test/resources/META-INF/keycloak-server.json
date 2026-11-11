@@ -10,7 +10,8 @@
     },
 
     "admin": {
-        "realm": "master"
+        "realm": "master",
+        "audienceCheckEnabled": "false"
     },
 
     "eventsStore": {

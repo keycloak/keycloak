@@ -115,6 +115,16 @@ public class JpaSingleUseObjectProvider implements SingleUseObjectProvider {
                     .setParameter(2, SingleUseObjectSerialization.notesToString(key, Map.of()))
                     .setParameter(3, currentTime + lifespanInSeconds)
                     .executeUpdate();
+        } else if (JpaUtils.isConflictUpdateRacy(em)) {
+            em.createNamedQuery("deleteExpiredSingleUseObject")
+                    .setParameter("id", key)
+                    .setParameter("currentTime", currentTime)
+                    .executeUpdate();
+            rows = em.createNamedQuery("insertIfAbsentSingleUseObject")
+                    .setParameter("id", key)
+                    .setParameter("notes", SingleUseObjectSerialization.notesToString(key, Map.of()))
+                    .setParameter("expire", currentTime + lifespanInSeconds)
+                    .executeUpdate();
         } else {
             rows = em.createNamedQuery("insertIfAbsentOrExpiredSingleUseObject")
                     .setParameter("id", key)

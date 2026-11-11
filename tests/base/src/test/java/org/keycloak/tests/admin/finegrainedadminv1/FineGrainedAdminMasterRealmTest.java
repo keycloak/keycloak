@@ -18,6 +18,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -96,6 +98,9 @@ public class FineGrainedAdminMasterRealmTest extends AbstractFineGrainedAdminTes
         rep.setPublicClient(false);
         rep.setEnabled(true);
         masterRealm.admin().clients().create(rep);
+
+        String clientUuid = masterRealm.admin().clients().findByClientId("fullScopedClient").get(0).getId();
+        addAdminApiClientScope(masterRealm.admin(), masterRealm.admin().clients().get(clientUuid), true);
 
         Keycloak realmClient = adminClientFactory.create().realm("master")
                 .username("admin").password("admin").clientId("fullScopedClient").clientSecret("618268aa-51e6-4e64-93c4-3c0bc65b8171").build();

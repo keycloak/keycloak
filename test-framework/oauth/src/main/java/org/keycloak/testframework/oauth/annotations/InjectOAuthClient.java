@@ -28,4 +28,9 @@ public @interface InjectOAuthClient {
 
     boolean kcAdmin() default false;
 
+    /**
+     * Enable this for clients used to call the Admin REST API.
+     */
+    boolean adminApiAccess() default false;
+
 }

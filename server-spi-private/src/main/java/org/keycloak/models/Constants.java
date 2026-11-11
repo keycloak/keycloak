@@ -39,6 +39,8 @@ public final class Constants {
     public static final String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
     public static final String ADMIN_PERMISSIONS_CLIENT_ID = "admin-permissions";
 
+    public static final String KEYCLOAK_ADMIN_API_SCOPE = "kc-admin-api";
+
     public static final String AUTH_BASE_URL_PROP = "${authBaseUrl}";
     public static final String AUTH_ADMIN_URL_PROP = "${authAdminUrl}";
 
@@ -265,4 +267,11 @@ public final class Constants {
 
     // Suffix for "private key" client attribute. The attribute of this name should not be persisted to the DB and should not be displayed in admin events
     public static final String PRIVATE_KEY_ATTR_SUFFIX = "private.key";
+
+    /**
+     * Comma-separated list of protocol-mapper provider IDs that client administrators (users with permissions to manage client(s) or client scope(s), but not with permissions to manage-realm)
+     * are allowed to use when creating, updating, or deleting protocol mappers.
+     * If absent or empty, users without permissions to manage-realm cannot manage protocol mappers.
+     */
+    public static final String ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS = "allowedProtocolMapperTypesForClientAdministrators";
 }

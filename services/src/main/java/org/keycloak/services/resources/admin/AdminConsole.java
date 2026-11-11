@@ -216,6 +216,7 @@ public class AdminConsole {
         }
 
         final String issuedFor = authResult.token().getIssuedFor();
+        // azp-restricted: it must be the admin console
         if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
             if (issuedFor == null) {
                 throw new ForbiddenException("No azp claim in the token");
