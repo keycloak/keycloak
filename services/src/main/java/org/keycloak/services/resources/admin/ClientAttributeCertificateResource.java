@@ -208,7 +208,7 @@ public class ClientAttributeCertificateResource {
     }
 
     /**
-     * Get a keystore file for the client, containing private key and public certificate
+     * Get a keystore file for the client, containing the public certificate
      *
      * @param config Keystore configuration as JSON
      * @return
@@ -230,21 +230,16 @@ public class ClientAttributeCertificateResource {
         checkKeystoreFormat(config);
 
         CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix, session.getKeycloakSessionFactory());
-        String privatePem = info.getPrivateKey();
         String certPem = info.getCertificate();
 
-        if (privatePem == null && certPem == null) {
+        if (certPem == null) {
             throw new NotFoundException("keypair not generated for client");
-        }
-        if (privatePem != null && config.getKeyPassword() == null) {
-            throw new ErrorResponseException("password-missing", "Need to specify a key password for jks download", Response.Status.BAD_REQUEST);
         }
         if (config.getStorePassword() == null) {
             throw new ErrorResponseException("password-missing", "Need to specify a store password for jks download", Response.Status.BAD_REQUEST);
         }
 
-        byte[] rtn = getKeystore(config, privatePem, certPem);
-        return rtn;
+        return getKeystore(config, null, certPem);
     }
 
     /**
