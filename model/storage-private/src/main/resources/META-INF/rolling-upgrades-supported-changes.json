@@ -37,6 +37,8 @@
   }, {
     "class" : "org.keycloak.migration.migrators.MigrateTo26_8_0"
   }, {
+    "class" : "org.keycloak.migration.migrators.MigrateTo26_8_3"
+  }, {
     "class" : "org.keycloak.migration.migrators.MigrateTo3_4_2"
   }, {
     "class" : "org.keycloak.migration.migrators.MigrateTo26_0_0"
