@@ -17,7 +17,9 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -45,7 +47,9 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESO
  * <p>For each scope, permissions associated with the group itself take precedence over those inherited from its
  * ancestors. For the group scopes (e.g. {@code view}), the closest ancestor with an extended permission decides. For
  * the member scopes (e.g. {@code view-members}), every extended ancestor is evaluated, so that a deny from any of them
- * wins, consistently with {@link UserResourceTypePolicyEvaluator}.
+ * wins, consistently with {@link UserResourceTypePolicyEvaluator}. Once a member scope is inherited from an extended
+ * ancestor, the non-extended permissions of the ancestors for that scope are also evaluated, as they already are when
+ * evaluating the members of the group.
  *
  * <p>An inherited permission is only evaluated for the scopes it is allowed to decide, see {@link ScopeRestrictedPolicy}.
  */
@@ -76,6 +80,12 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
         Set<Scope> claimedScopes = new HashSet<>();
         policyStore.findByResource(resourceServer, permission.getResource(), policy -> claimedScopes.addAll(policy.getScopes()));
 
+        // scopes decided by the permissions of the group itself
+        Set<Scope> ownScopes = new HashSet<>(claimedScopes);
+        // member scopes inherited from at least one extended ancestor
+        Set<Scope> inheritedMemberScopes = new HashSet<>();
+        // non-extended permissions of the ancestors
+        List<Policy> nonExtendedPolicies = new ArrayList<>();
         Set<String> visited = new HashSet<>();
         visited.add(group.getId());
         GroupModel ancestor = group.getParent();
@@ -83,7 +93,12 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
         while (ancestor != null && visited.add(ancestor.getId())) {
             Set<Scope> claimedByAncestor = new HashSet<>();
 
-            evaluateExtendedPolicies(authorization, resourceServer, ancestor, policy -> {
+            evaluateAncestorPolicies(authorization, resourceServer, ancestor, policy -> {
+                if (!AdminPermissionsSchema.SCHEMA.isExtendChildren(policy)) {
+                    nonExtendedPolicies.add(policy);
+                    return;
+                }
+
                 Set<Scope> unclaimed = new HashSet<>(policy.getScopes());
                 unclaimed.removeAll(claimedScopes);
 
@@ -93,15 +108,42 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
 
                 policyConsumer.accept(unclaimed.size() == policy.getScopes().size() ? policy : new ScopeRestrictedPolicy(policy, unclaimed));
 
-                unclaimed.stream()
-                        .filter(scope -> !MEMBER_SCOPES.contains(scope.getName()))
-                        .forEach(claimedByAncestor::add);
+                for (Scope scope : unclaimed) {
+                    if (isMemberScope(scope)) {
+                        inheritedMemberScopes.add(scope);
+                    } else {
+                        claimedByAncestor.add(scope);
+                    }
+                }
             });
 
             // claimed after the whole level is evaluated, so that all the permissions of the same group are evaluated together
             claimedScopes.addAll(claimedByAncestor);
             ancestor = ancestor.getParent();
         }
+
+        inheritedMemberScopes.removeAll(ownScopes);
+
+        if (inheritedMemberScopes.isEmpty()) {
+            return;
+        }
+
+        // the member scopes of any ancestor permission, extended or not, already protect the members of the group when
+        // evaluating the users (see UserResourceTypePolicyEvaluator). They are also evaluated here for the member scopes
+        // inherited from an extended ancestor, so that a deny from any ancestor wins in both cases. They are not evaluated
+        // otherwise, so that a permission is only inherited by a group if it is explicitly extended.
+        for (Policy policy : nonExtendedPolicies) {
+            Set<Scope> scopes = new HashSet<>(policy.getScopes());
+            scopes.retainAll(inheritedMemberScopes);
+
+            if (!scopes.isEmpty()) {
+                policyConsumer.accept(new ScopeRestrictedPolicy(policy, scopes));
+            }
+        }
+    }
+
+    private boolean isMemberScope(Scope scope) {
+        return MEMBER_SCOPES.contains(scope.getName());
     }
     private GroupModel resolveGroup(ResourcePermission permission, AuthorizationProvider authorization) {
         Resource resource = permission.getResource();
@@ -123,7 +165,7 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
         return session.groups().getGroupById(realm, groupId);
     }
 
-    private void evaluateExtendedPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, GroupModel group, Consumer<Policy> consumer) {
+    private void evaluateAncestorPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, GroupModel group, Consumer<Policy> consumer) {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
         Resource resource = resourceStore.findByName(resourceServer, group.getId());
@@ -132,10 +174,6 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
             return;
         }
 
-        storeFactory.getPolicyStore().findByResource(resourceServer, resource, policy -> {
-            if (AdminPermissionsSchema.SCHEMA.isExtendChildren(policy)) {
-                consumer.accept(policy);
-            }
-        });
+        storeFactory.getPolicyStore().findByResource(resourceServer, resource, consumer);
     }
 }
