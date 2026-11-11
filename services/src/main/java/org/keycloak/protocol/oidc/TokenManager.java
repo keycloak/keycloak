@@ -135,6 +135,7 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.util.JWKSUtils;
@@ -204,6 +205,12 @@ public class TokenManager {
         } else {
             // Find userSession regularly for online tokens
             userSession = session.sessions().getUserSession(realm, oldToken.getSessionState());
+            // Non-browser grants can leave the state unset; logout always sets an explicit state.
+            UserSessionModel.State state = userSession == null ? null : userSession.getState();
+            // Reject separately from expiration cleanup so front-channel logout can still finish.
+            if (state != null && state != UserSessionModel.State.LOGGED_IN) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session not active", "Session not active");
+            }
             if (!AuthenticationManager.isSessionValid(realm, userSession)) {
                 if (userSession != null) {
                     UserSessionModel onlineSession = userSession;
@@ -239,6 +246,11 @@ public class TokenManager {
 
         if (clientSession == null) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Session doesn't have required client", "Session doesn't have required client");
+        }
+
+        if (!offline && (CommonClientSessionModel.Action.LOGGING_OUT.name().equals(clientSession.getAction())
+                || CommonClientSessionModel.Action.LOGGED_OUT.name().equals(clientSession.getAction()))) {
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Client session not active");
         }
 
         if (!AuthenticationManager.isClientSessionValid(realm, client, userSession, clientSession)) {
