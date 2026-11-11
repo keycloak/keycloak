@@ -13,6 +13,7 @@ package org.keycloak.scim.model.group;
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProviderFactory;
 
 public class GroupResourceTypeProviderFactory implements ScimResourceTypeProviderFactory<GroupResourceTypeProvider> {
@@ -29,7 +30,13 @@ public class GroupResourceTypeProviderFactory implements ScimResourceTypeProvide
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        factory.register(event -> {
+            // reject invalid mappings when the realm attribute is set, through the admin API or a realm import
+            if (event instanceof RealmModel.RealmAttributeUpdateEvent attributeUpdateEvent
+                    && GroupAttributeMappings.REALM_ATTRIBUTE.equals(attributeUpdateEvent.getAttributeName())) {
+                GroupAttributeMappings.parse(attributeUpdateEvent.getAttributeValue());
+            }
+        });
     }
 
     @Override

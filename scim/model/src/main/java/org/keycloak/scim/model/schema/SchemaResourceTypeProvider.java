@@ -31,7 +31,7 @@ import static org.keycloak.scim.resource.Scim.hasDiscoveryEndpointPermission;
  * This implementation supports:
  * - Built-in core schemas (User, Group)
  * - Built-in extension schemas (EnterpriseUser)
- * - Custom extension schemas based on user profile configuration (future)
+ * - Custom extension schemas based on user profile configuration (users) and realm configuration (groups)
  */
 public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Schema> {
 
@@ -107,7 +107,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
                     subAttr.setReturned(attribute.getReturned());
-                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setMutability(attribute.getMutability());
                     subAttr.setCaseExact(attribute.isCaseExact());
                     subAttr.setUniqueness(attribute.getUniqueness());
 
@@ -124,7 +124,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         p.setName(k);
                         p.setType("complex");
                         p.setMultiValued(attribute.isMultivalued());
-                        p.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                        p.setMutability(attribute.getMutability());
                         p.setRequired(attribute.isRequired());
                         p.setCaseExact(attribute.isCaseExact());
                         p.setUniqueness(attribute.getUniqueness());
@@ -136,7 +136,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
                     subAttr.setReturned(attribute.getReturned());
-                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setMutability(attribute.getMutability());
                     subAttr.setRequired(attribute.isRequired());
                     subAttr.setCaseExact(attribute.isCaseExact());
                     subAttr.setUniqueness(attribute.getUniqueness());
@@ -187,7 +187,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
         attr.setType(attribute.getType());
         attr.setMultiValued(attribute.isMultivalued());
         attr.setReturned(attribute.getReturned());
-        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+        attr.setMutability(attribute.getMutability());
         attr.setRequired(attribute.isRequired());
         attr.setCaseExact(attribute.isCaseExact());
         attr.setUniqueness(attribute.getUniqueness());
