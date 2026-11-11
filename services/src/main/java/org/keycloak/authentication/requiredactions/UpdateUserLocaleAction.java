@@ -38,10 +38,13 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
+        context.getUser().removeRequiredAction(getId());
+        context.ignore();
     }
 
     @Override
     public void processAction(RequiredActionContext context) {
+        context.success();
     }
 
     @Override
