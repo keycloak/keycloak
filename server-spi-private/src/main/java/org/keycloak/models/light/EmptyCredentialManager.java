@@ -48,6 +48,11 @@ class EmptyCredentialManager implements SubjectCredentialManager {
     }
 
     @Override
+    public boolean updateStoredCredential(CredentialModel oldCred, CredentialModel newCred) {
+        return false;
+    }
+
+    @Override
     public CredentialModel createStoredCredential(CredentialModel cred) {
         // no-op
         return null;
