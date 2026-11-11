@@ -291,7 +291,7 @@ public class RoleService {
         boolean limit = max != null && max >= 0;
         // the search overload always queries the database, but is the only one with a defined (name) order.
         // The unordered stream, which can be served from the cache, is only usable when not searching or paginating.
-        Stream<RoleModel> composites = (!StringUtil.isNullOrEmpty(search) && !skip && !limit
+        Stream<RoleModel> composites = (StringUtil.isNullOrEmpty(search) && !skip && !limit
                 ? role.getCompositesStream()
                 : role.getCompositesStream(search, null, null))
                 .filter(auth.roles()::canView);
