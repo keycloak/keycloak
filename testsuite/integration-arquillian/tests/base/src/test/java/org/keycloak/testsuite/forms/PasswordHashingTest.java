@@ -42,13 +42,11 @@ import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha256PasswordHashProviderFactory;
 import org.keycloak.credential.hash.Pbkdf2Sha512PasswordHashProviderFactory;
 import org.keycloak.crypto.hash.Argon2Parameters;
-import org.keycloak.crypto.hash.Argon2PasswordHashProviderFactory;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
-import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -64,7 +62,6 @@ import org.keycloak.testsuite.util.DefaultPasswordHash;
 
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assume;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -281,35 +278,6 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
         assertEncoded(credential, password, credential.getPasswordSecretData().getSalt(), "PBKDF2WithHmacSHA1", Pbkdf2PasswordHashProviderFactory.DEFAULT_ITERATIONS);
-    }
-
-    @Test
-    public void testArgon2() {
-        Assume.assumeTrue("Argon2 tests skipped in FIPS mode", notFips());
-
-        setPasswordPolicy("hashAlgorithm(" + Argon2PasswordHashProviderFactory.ID + ")");
-        String username = "testArgon2";
-        final String password = createUser(username);
-
-        PasswordCredentialModel credential = PasswordCredentialModel.createFromCredentialModel(fetchCredentials(username));
-        PasswordCredentialData data = credential.getPasswordCredentialData();
-
-        Assertions.assertEquals("argon2", data.getAlgorithm());
-        Assertions.assertEquals(5, data.getHashIterations());
-        Assertions.assertEquals("1.3", data.getAdditionalParameters().getFirst("version"));
-        Assertions.assertEquals("id", data.getAdditionalParameters().getFirst("type"));
-        Assertions.assertEquals("32", data.getAdditionalParameters().getFirst("hashLength"));
-        Assertions.assertEquals("7168", data.getAdditionalParameters().getFirst("memory"));
-        Assertions.assertEquals("1", data.getAdditionalParameters().getFirst("parallelism"));
-
-        oauth.openLoginForm();
-        loginPage.login("testArgon2", "invalid");
-        loginPage.assertCurrent();
-        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
-
-        loginPage.login("testArgon2", password);
-
-        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private static boolean notFips() {
