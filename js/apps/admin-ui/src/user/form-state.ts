@@ -1,4 +1,5 @@
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type { UserProfileMetadata } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import {
   KeyValueType,
   arrayToKeyValue,
@@ -18,8 +19,46 @@ export interface UIUserRepresentation extends UserRepresentation {
   unmanagedAttributes?: Record<string, string[]>;
 }
 
-export function toUserFormFields(data: UIUserRepresentation): UserFormFields {
+const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
+
+const isRootAttribute = (name?: string) =>
+  !!name && ROOT_ATTRIBUTES.includes(name);
+
+function emptyAttributeValue(
+  attribute: NonNullable<UserProfileMetadata["attributes"]>[number],
+): string | string[] {
+  const inputType = attribute.annotations?.inputType;
+  if (
+    attribute.multivalued ||
+    inputType === "multiselect" ||
+    inputType === "multiselect-checkboxes"
+  ) {
+    return [];
+  }
+  return "";
+}
+
+/**
+ * Convert a user representation into react-hook-form values.
+ *
+ * When `userProfileMetadata` is provided, every managed non-root attribute is
+ * seeded with an empty value before applying server attributes. Cleared
+ * attributes are omitted from Keycloak's GET response, and without these seeds
+ * `form.reset` can leave the previous nested value in the form (e.g. a
+ * multiselect chip reappears after save).
+ */
+export function toUserFormFields(
+  data: UIUserRepresentation,
+  userProfileMetadata?: UserProfileMetadata,
+): UserFormFields {
   const attributes: Record<string, string | string[]> = {};
+
+  userProfileMetadata?.attributes?.forEach((attribute) => {
+    if (!isRootAttribute(attribute.name)) {
+      attributes[beerify(attribute.name!)] = emptyAttributeValue(attribute);
+    }
+  });
+
   Object.entries(data.attributes || {}).forEach(
     ([k, v]) => (attributes[beerify(k)] = v),
   );
