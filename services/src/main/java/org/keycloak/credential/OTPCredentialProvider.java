@@ -111,8 +111,7 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
                 return false;
             }
             otpCredentialModel.updateCounter(counter);
-            user.credentialManager().updateStoredCredential(otpCredentialModel);
-            return true;
+            return user.credentialManager().updateStoredCredential(credential, otpCredentialModel);
         } else if (OTPCredentialModel.TOTP.equals(credentialData.getSubType())) {
             TimeBasedOTP validator = new TimeBasedOTP(credentialData.getAlgorithm(), credentialData.getDigits(), credentialData.getPeriod(), policy.getLookAheadWindow());
             final boolean isValid = validator.validateTOTP(challengeResponse, otpCredentialModel.getDecodedSecret());

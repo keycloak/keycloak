@@ -113,8 +113,7 @@ public class RecoveryAuthnCodesCredentialProvider
                     String nextRecoveryCode = nextRecoveryAuthnCode.get().getEncodedHashedValue();
                     if (RecoveryAuthnCodesUtils.verifyRecoveryCodeInput(rawInputRecoveryAuthnCode, nextRecoveryCode)) {
                         credentialModel.removeRecoveryAuthnCode();
-                        user.credentialManager().updateStoredCredential(credentialModel);
-                        return true;
+                        return user.credentialManager().updateStoredCredential(credential.get(), credentialModel);
                     }
 
                 }
