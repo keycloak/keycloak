@@ -69,6 +69,7 @@ import org.keycloak.util.JsonSerialization;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
@@ -946,6 +947,22 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
             // The alert is not executed
             assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
+        }
+    }
+
+    @Test
+    public void installProviderIsRemoved() throws Exception {
+        authManageClients();
+        ClientRepresentation client = registerClient(true);
+
+        HttpGet get = new HttpGet(keycloakUrls.getBaseBuilder()
+                .path("/realms/{realm}/clients-registrations/install/{clientId}")
+                .build(managedRealm.getName(), client.getClientId()));
+        get.setHeader("Authorization", "Bearer " + getToken("manage-clients", "password"));
+
+        try (CloseableHttpResponse response = closeableHttpClient.execute(get)) {
+            assertEquals(404, response.getStatusLine().getStatusCode());
+            EntityUtils.consume(response.getEntity());
         }
     }
 

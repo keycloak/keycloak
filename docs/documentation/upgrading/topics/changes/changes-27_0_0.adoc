@@ -292,6 +292,26 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
+=== Client registration `install` provider removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The `install` client registration provider, which was deprecated in {project_name} 26.8, has been removed.
+Requests to `/realms/<realm>/clients-registrations/install/<clientId>` now return a `404 Not Found` response.
+
+The following related APIs have also been removed:
+
+* The `getAdapterConfig()` method of the `ClientRegistration` class in the Java client registration library (`keycloak-client-registration-api`).
+* The `install` endpoint type (`-e install` or `-e adapter`) of the `kcreg get` command.
+
+Retrieve the adapter configuration of a client with the Admin REST API instead, using `GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`, for example with the `keycloak-oidc-keycloak-json` provider.
+The same configuration is available from `kcadm.sh get clients/<client-uuid>/installation/providers/keycloak-oidc-keycloak-json`.
+
+The removed endpoint accepted client credentials or a registration access token, and it did not require authentication for public clients.
+The Admin REST API endpoint requires an access token with permission to view the client.
+Applications that loaded their `keycloak.json` anonymously from the removed endpoint, such as JavaScript applications, must bundle the configuration with the application or fetch it with an authenticated call.
+
+The `default` and `saml2-entity-descriptor` client registration providers remain deprecated and are not affected by this change.
+
 === Kerberos password authentication accepts only allowed realms
 // https://github.com/keycloak/keycloak/issues/54271
 

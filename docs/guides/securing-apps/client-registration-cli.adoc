@@ -279,27 +279,6 @@ $ kcreg.sh get myclient
 C:\> kcreg get myclient
 ----
 
-[WARNING]
-====
-The `-e install` flag retrieves adapter configuration via the deprecated `install` client registration provider.
-Use the Admin REST API (`GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`) instead.
-====
-
-You can also retrieve the client configuration as an adapter configuration file, which you can package with your web application.
-
-For example, on:
-
-* Linux:
-[options="nowrap"]
-----
-$ kcreg.sh get myclient -e install > keycloak.json
-----
-* Windows:
-[options="nowrap"]
-----
-C:\> kcreg get myclient -e install > keycloak.json
-----
-
 Run the [command]`kcreg get --help` command for more information about the [command]`kcreg get` command.
 
 
