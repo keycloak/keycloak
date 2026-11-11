@@ -20,12 +20,17 @@ package org.keycloak.it.cli.dist;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.storage.database.ManualMigrationParity;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
@@ -38,6 +43,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.hamcrest.number.OrderingComparison.lessThan;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -86,6 +92,64 @@ public class ManualMigrationEmptyDatabaseDistTest {
         // the script is generated. Were it missing, they would all resolve to "not executed" and changesets that
         // should be marked as ran would be emitted instead - this one carries MySQL-only index syntax.
         assertThat(output, not(containsString("VALUE(255)")));
+    }
+
+
+    /**
+     * Some changesets replace an index by dropping it and creating one of the same name. The script is generated
+     * against an empty database, where the index to drop does not exist yet because an earlier changeset of the
+     * same script creates it. The drop must therefore be emitted regardless, otherwise creating the replacement
+     * fails with "already exists" when the script is applied.
+     */
+    @Test
+    void testEmptyDatabaseExportDropsReplacedIndexes(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws IOException {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+
+        runner.run("start-dev",
+                "--spi-connections-jpa-quarkus-migration-strategy=manual",
+                "--spi-connections-jpa-quarkus-initialize-empty=false")
+                .assertMessage("Database not initialized, please initialize database with");
+
+        File script = rawDistRootPath.getDistRootPath().resolve("bin").resolve("keycloak-database-update.sql").toFile();
+        String output = FileUtils.readFileToString(script, Charset.defaultCharset());
+
+        for (String index : new String[] { "IDX_USER_SESSION_EXPIRATION_CREATED", "IDX_USER_SESSION_EXPIRATION_LAST_REFRESH", "IDX_ROOT_AUTH_SESSION_REALM" }) {
+            int firstCreate = output.indexOf("CREATE INDEX PUBLIC." + index);
+            int drop = output.indexOf("DROP INDEX PUBLIC." + index);
+            int lastCreate = output.lastIndexOf("CREATE INDEX PUBLIC." + index);
+
+            assertThat(index + " must be created by an earlier changeset", firstCreate, greaterThan(-1));
+            assertThat(index + " must be dropped after it is first created", drop, greaterThan(firstCreate));
+            assertThat(index + " must be re-created after it is dropped", lastCreate, greaterThan(drop));
+        }
+    }
+
+    /**
+     * Applies the generated script to an empty database and compares the result with what the automatic migration
+     * creates, which is what the string assertions above cannot show. The server must also accept the result as an
+     * up-to-date database.
+     */
+    @Test
+    void testScriptProducesTheSchemaOfTheAutomaticMigration(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws Exception {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        Path h2Dir = rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath();
+        String url = "jdbc:h2:file:" + h2Dir.resolve("keycloakdb") + ";NON_KEYWORDS=VALUE";
+
+        ManualMigrationParity.Database database = new ManualMigrationParity.Database() {
+            @Override
+            public Connection open() throws Exception {
+                return DriverManager.getConnection(url, "", "");
+            }
+
+            @Override
+            public void reset() throws Exception {
+                FileUtil.deleteDirectory(h2Dir);
+            }
+        };
+
+        ManualMigrationParity.verify(runner, rawDistRootPath, database, List.of("start-dev"),
+                ManualMigrationParity.KNOWN_MISSING_FROM_SCRIPT, ManualMigrationParity.KNOWN_EXTRA_IN_SCRIPT);
     }
 
     private static int countOccurrences(String haystack, String needle) {
