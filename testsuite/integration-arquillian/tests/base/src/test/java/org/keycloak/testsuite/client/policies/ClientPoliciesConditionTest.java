@@ -635,7 +635,8 @@ public class ClientPoliciesConditionTest extends AbstractClientPoliciesTest {
         }
 
         try {
-            failLoginByNotFollowingPKCE(clientAlphaId);
+            // The condition matches when the client is created, so the executor already configured PKCE on it
+            failLoginByNotFollowingPKCEWithoutClientPolicyValidation(clientAlphaId);
             successfulLoginAndLogoutWithPKCE(clientAlphaId, clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
         } catch (Exception e) {
             fail();
