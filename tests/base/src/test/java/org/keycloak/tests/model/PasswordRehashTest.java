@@ -94,6 +94,29 @@ public class PasswordRehashTest {
         });
     }
 
+    @Test
+    public void updateStoredCredentialRejectsChangeCommittedAfterCredentialWasLoaded() {
+        String username = createUserWithOutdatedHash("rehash-stale-context");
+
+        runOnServer.run(session -> {
+            UserModel user = user(session, username);
+            // loads the credential into the persistence context of this transaction
+            CredentialModel old = storedPassword(user);
+            assertTrue(user.credentialManager().isValid(UserCredentialModel.password(OLD_PASSWORD)));
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(),
+                    other -> assertTrue(user(other, username).credentialManager().updateCredential(UserCredentialModel.password(NEW_PASSWORD))));
+
+            CredentialModel rehashed = old.shallowClone();
+            rehashed.setUserLabel("must-not-be-written");
+            assertFalse(user.credentialManager().updateStoredCredential(old, rehashed), "The credential was changed by another transaction");
+        });
+
+        assertPasswordValid(username, NEW_PASSWORD, true);
+        assertPasswordValid(username, OLD_PASSWORD, false);
+        assertFalse("must-not-be-written".equals(credential(username).getUserLabel()));
+    }
+
     private String createUserWithOutdatedHash(String username) {
         realm.updateWithCleanup(r -> r.passwordPolicy("hashAlgorithm(pbkdf2-sha512) and hashIterations(1)"));
         runOnServer.run(session -> {
