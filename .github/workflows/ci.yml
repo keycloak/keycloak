@@ -139,7 +139,7 @@ jobs:
           upload-dist: true
 
       - name: Spotless
-        run: ./mvnw -Pdocs,distribution,operator spotless:check
+        run: ./mvnw -Pspotless spotless:check
 
       - name: Check for unstaged proto.lock files
         if: github.event_name == 'pull_request' && startsWith(github.event.pull_request.base.ref, 'release/')
