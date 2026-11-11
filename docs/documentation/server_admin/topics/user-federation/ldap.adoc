@@ -186,6 +186,13 @@ This mapper grants a specified {project_name} role to each {project_name} user f
 
 Group Mapper::
 This mapper maps LDAP groups from a branch of an LDAP tree into groups within {project_name}. This mapper also propagates user-group mappings from LDAP into user-group mappings in {project_name}.
++
+[NOTE]
+====
+The `LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY` value of the *User Groups Retrieve Strategy* option is available only for Microsoft Active Directory. It uses the `LDAP_MATCHING_RULE_IN_CHAIN` extension to resolve nested group memberships. Active Directory evaluates the `member` and `memberOf` attributes of the user and group objects when processing these queries, so the LDAP bind account configured for the provider must have permission to read these attributes on both the user and the group objects (e.g. `Read all properties` on the relevant user and group `OU`s). If the bind account lacks this permission, Active Directory does not return an error, but the group memberships, including the members of nested groups, might not be retrieved or displayed in {project_name}.
+
+The same applies to the `LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY` strategy of the Role Mapper.
+====
 
 [[_msad_mapper]]
 MSAD User Account Mapper::

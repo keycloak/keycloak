@@ -20,6 +20,7 @@ package org.keycloak.partialimport;
 import java.util.List;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -71,7 +72,13 @@ public class IdentityProvidersPartialImport extends AbstractPartialImport<Identi
     @Override
     public void create(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation idpRep) {
         idpRep.setInternalId(KeycloakModelUtils.generateId());
-        session.identityProviders().create(RepresentationToModel.toModel(realm, idpRep, session));
+        try {
+            session.identityProviders().create(RepresentationToModel.toModel(realm, idpRep, session));
+        } catch (IllegalArgumentException e) {
+            // Partial import carries no version, so legacy configurations are not migrated here. Report the
+            // problem to the caller instead of failing as an internal server error.
+            throw new ModelValidationException("Invalid configuration for identity provider '" + getName(idpRep) + "': " + e.getMessage());
+        }
     }
 
 }

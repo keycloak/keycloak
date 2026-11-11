@@ -136,6 +136,8 @@ public class DeploymentArchiveProcessorUtils {
 
         modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
         modifyDocElementAttribute(doc, "SP", "logoutPage", AUTH_SERVER_REPLACED_URL, getAppServerContextRoot());
+
+        modifyDocElementAttribute(doc, "IDP", "entityID", AUTH_SERVER_REPLACED_URL, getAuthServerContextRoot());
     }
 
     public static void useJakartaEEServletClass(Archive<?> archive, String adapterConfigPath) {

@@ -13,7 +13,8 @@ This file is derived guidance, mainly for code reviews. The canonical resources 
 ### Review Philosophy
 
 * Only comment when you have HIGH CONFIDENCE (>85%) that an issue exists
-* Be concise: one or two sentences per comment when possible
+* Be concise: one or two sentences per review item when possible
+* Be thorough: report as many high and medium issues as possible
 * Focus on actionable feedback, not observations
 * Review with defense in depth in mind: when a change fixes or touches an issue, consider related situations (similar code paths, other callers, other entry points) that may need a follow-up. Related changes that make the project more resilient are allowed and should not be flagged as unrelated.
 * When reviewing text, only comment on clarity issues if the text is genuinely confusing or could lead to errors.

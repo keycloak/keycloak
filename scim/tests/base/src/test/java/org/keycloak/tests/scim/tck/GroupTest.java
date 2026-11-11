@@ -33,6 +33,8 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -824,8 +826,9 @@ public class GroupTest extends AbstractScimTest {
         }
     }
 
-    @Test
-    public void testGroupMembersReplace() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testGroupMembersReplace(boolean emptyMembers) {
         // create users via SCIM
         User userA = createScimUser();
         User userB = createScimUser();
@@ -842,16 +845,19 @@ public class GroupTest extends AbstractScimTest {
                 .add("members", userB.getId())
                 .build());
 
-        // PUT update: replace members with a different set
+        // PUT update: replace members with a different or empty set
         Group toUpdate = client.groups().get(group.getId());
-        toUpdate.setMembers(null);
-        toUpdate.addMember(userC.getId());
+        toUpdate.setMembers(new ArrayList<>());
+        if (!emptyMembers) {
+            toUpdate.addMember(userC.getId());
+        }
         try {
             client.groups().update(toUpdate);
             fail("Should have thrown an exception");
         } catch (ScimClientException e) {
             ErrorResponse error = e.getError();
             assertNotNull(error);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), error.getStatusInt());
             assertEquals("Managing members on updates is not supported", error.getDetail());
         }
     }

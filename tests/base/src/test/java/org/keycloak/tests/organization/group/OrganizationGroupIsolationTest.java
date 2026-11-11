@@ -282,6 +282,74 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testCannotMoveNestedOrgGroupViaChildrenEndpoint() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation approversRep = new GroupRepresentation();
+        approversRep.setName("approvers");
+        String approversId;
+        try (Response response = orgResource.groups().group(engineeringId).addSubGroup(approversRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            approversId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation targetRep = new GroupRepresentation();
+        targetRep.setName("target_realm_group");
+        String targetId;
+        try (Response response = realm.admin().groups().add(targetRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            targetId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.groups().group(targetId).remove());
+
+        GroupRepresentation moveRep = new GroupRepresentation();
+        moveRep.setId(approversId);
+        moveRep.setName("approvers");
+        try (Response response = realm.admin().groups().group(targetId).subGroup(moveRep)) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+        }
+    }
+
+    @Test
+    public void testCannotMoveTopLevelOrgGroupViaChildrenEndpoint() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
+
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation targetRep = new GroupRepresentation();
+        targetRep.setName("target_realm_group");
+        String targetId;
+        try (Response response = realm.admin().groups().add(targetRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            targetId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.groups().group(targetId).remove());
+
+        GroupRepresentation moveRep = new GroupRepresentation();
+        moveRep.setId(engineeringId);
+        moveRep.setName("engineering");
+        try (Response response = realm.admin().groups().group(targetId).subGroup(moveRep)) {
+            assertThat(response.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+        }
+    }
+
+    @Test
     public void testCannotUseOrgGroupInAuthorizationPolicy() {
         // Organization groups cannot be used in authorization policies - only realm groups are allowed
         OrganizationRepresentation orgRep = createOrganization();

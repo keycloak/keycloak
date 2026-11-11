@@ -44,6 +44,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.scope.CustomRegexScopeType;
 import org.keycloak.protocol.oidc.scope.ParameterizedScopeTypeProvider;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -126,6 +127,15 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+        // Currently RepresentationToModel.updateClientScope does not update protocol mappers from representation,
+        // but this check ensures the mapper-type allowlist is enforced in case updating protocol mappers is supported in the future.
+        if (rep.getProtocolMappers() != null) {
+            Set<String> changedMapperTypes = ProtocolMapperUtils.getChangedOrDeletedMapperTypes(
+                    clientScope.getProtocolMappersStream(), rep.getProtocolMappers());
+            if (!changedMapperTypes.isEmpty()) {
+                ProtocolMappersResource.requireManageProtocolMappers(auth, realm, changedMapperTypes);
+            }
+        }
         rep.setId(clientScope.getId());
         if (rep.getProtocol() == null) {
             rep.setProtocol(clientScope.getProtocol());

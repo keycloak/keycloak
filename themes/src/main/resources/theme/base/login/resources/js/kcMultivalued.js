@@ -1,7 +1,6 @@
 const DATA_KC_MULTIVALUED = 'data-kcMultivalued';
 const KC_ADD_ACTION_PREFIX = "kc-add-";
 const KC_REMOVE_ACTION_PREFIX = "kc-remove-";
-const KC_ACTION_CLASS = "pf-c-button pf-m-inline pf-m-link";
 
 function createAddAction(element) {
     const action = createAction("Add value",
@@ -74,11 +73,11 @@ function removeActions(element) {
 }
 
 function createAction(text, type, element, onClick) {
-    const action = document.createElement("button")
+    const action = document.createElement("button");
     action.setAttribute("id", type + element.getAttribute("id"));
     action.setAttribute("type", "button");
     action.innerText = text;
-    action.setAttribute("class", KC_ACTION_CLASS);
+    action.className = element.dataset.kcMultivaluedActionClass ?? "";
     action.addEventListener("click", onClick);
     return action;
 }

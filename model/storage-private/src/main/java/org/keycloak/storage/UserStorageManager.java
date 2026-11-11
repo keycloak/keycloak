@@ -798,6 +798,9 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         consumeEnabledStorageProvidersWithTimeout(realm, UserStorageProvider.class,
                 provider -> provider.preRemove(realm));
+
+        realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName())
+                .forEach(component -> notifyStorageProviderRemoved(realm, component));
     }
 
     @Override
@@ -1149,6 +1152,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (!component.getProviderType().equals(UserStorageProvider.class.getName())) return;
         localStorage().preRemove(realm, component);
         if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, component);
+
+        notifyStorageProviderRemoved(realm, component);
+    }
+
+    private void notifyStorageProviderRemoved(RealmModel realm, ComponentModel component) {
         // enlistAfterCompletion(..) as we need to ensure that the realm is updated with the final settings
         session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
             @Override

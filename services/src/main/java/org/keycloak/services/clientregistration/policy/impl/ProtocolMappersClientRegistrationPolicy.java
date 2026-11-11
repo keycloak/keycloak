@@ -17,16 +17,20 @@
 
 package org.keycloak.services.clientregistration.policy.impl;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
@@ -53,74 +57,54 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
     @Override
     public void beforeRegister(ClientRegistrationContext context) throws ClientRegistrationPolicyException {
-        testMappers(context, null);
-    }
-
-    protected void testMappers(ClientRegistrationContext context, ClientModel clientModel) throws ClientRegistrationPolicyException {
         List<ProtocolMapperRepresentation> protocolMappers = context.getClient().getProtocolMappers();
         if (protocolMappers == null) {
             return;
         }
 
-        List<String> allowedMapperProviders = getAllowedMapperProviders();
-
-        for (ProtocolMapperRepresentation mapperRepresentation : protocolMappers) {
-            String mapperType = mapperRepresentation.getProtocolMapper();
-
-			if (allowedMapperProviders.contains(mapperType)) {
-				continue;
-			}
-			if (clientModel == null) {
-				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
-				return;
-			}
-			String mapperRepresentationId = mapperRepresentation.getId();
-			if (mapperRepresentationId == null) {
-				String message = "Missing id for mapper named '%s'".formatted(mapperRepresentation.getName());
-				ServicesLogger.LOGGER.warn(message);
-				throw new ClientRegistrationPolicyException(message);
-			}
-			ProtocolMapperModel mapperModel = clientModel.getProtocolMapperById(mapperRepresentationId);
-			if (mapperModel == null) {
-				String message = "No existing mapper model found for id '%s'".formatted(mapperRepresentationId);
-				ServicesLogger.LOGGER.warn(message);
-				throw new ClientRegistrationPolicyException(message);
-			}
-			String storedMapperType = mapperModel.getProtocolMapper();
-			if (!Objects.equals(mapperType, storedMapperType)) {
-				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
-				return;
-			}
-			Map<String, String> modelConfig = mapperModel.getConfig();
-			Map<String, String> representationConfig = mapperRepresentation.getConfig();
-			if (!Objects.equals(representationConfig, modelConfig)) {
-				failWithProtocolMapperTypeNotAllowedError(mapperRepresentation);
-				return;
-			}
-		}
-    }
-
-	protected void failWithProtocolMapperTypeNotAllowedError(ProtocolMapperRepresentation mapper) {
-		ServicesLogger.LOGGER.clientRegistrationMapperNotAllowed(mapper.getName(), mapper.getProtocolMapper());
-		throw new ClientRegistrationPolicyException("ProtocolMapper type not allowed");
-	}
-
-    // Remove builtin mappers of unsupported types too
-    @Override
-    public void afterRegister(ClientRegistrationContext context, ClientModel clientModel) {
-        // Remove mappers of unsupported type, which were added "automatically"
-        List<String> allowedMapperProviders = getAllowedMapperProviders();
-        clientModel.getProtocolMappersStream()
-                .filter(mapper -> !allowedMapperProviders.contains(mapper.getProtocolMapper()))
-                .peek(mapperToRemove -> logger.debugf("Removing builtin mapper '%s' of type '%s' as type is not permitted",
-                        mapperToRemove.getName(), mapperToRemove.getProtocolMapper()))
-                .collect(Collectors.toList())
-                .forEach(clientModel::removeProtocolMapper);
+        // On create every mapper is new — compute changed types against an empty existing set.
+        Set<String> changedTypes = ProtocolMapperUtils.getChangedOrDeletedMapperTypes(Stream.empty(), protocolMappers);
+        checkMapperTypesAllowed(changedTypes);
     }
 
     @Override
     public void beforeUpdate(ClientRegistrationContext context, ClientModel clientModel) throws ClientRegistrationPolicyException {
-        testMappers(context, clientModel);
+        List<ProtocolMapperRepresentation> protocolMappers = context.getClient().getProtocolMappers();
+        if (protocolMappers == null) {
+            return;
+        }
+
+        // On update only check mapper types that are actually new, changed, or deleted — identical
+        // pre-existing mappers are allowed through, consistent with the admin REST ClientResource.update path.
+        Set<String> changedTypes = ProtocolMapperUtils.getChangedOrDeletedMapperTypes(
+                clientModel.getProtocolMappersStream(), protocolMappers);
+        checkMapperTypesAllowed(changedTypes);
+    }
+
+    private void checkMapperTypesAllowed(Set<String> mapperTypes) throws ClientRegistrationPolicyException {
+        if (mapperTypes.isEmpty()) {
+            return;
+        }
+        Set<String> allowedMapperProviders = getAllowedMapperProviders();
+        for (String mapperType : mapperTypes) {
+            if (!allowedMapperProviders.contains(mapperType)) {
+                ServicesLogger.LOGGER.clientRegistrationMapperNotAllowed(mapperType, mapperType);
+                throw new ClientRegistrationPolicyException("ProtocolMapper type not allowed");
+            }
+        }
+    }
+
+	   // Remove builtin mappers of unsupported types too
+	   @Override
+	   public void afterRegister(ClientRegistrationContext context, ClientModel clientModel) {
+        // Remove mappers of unsupported type, which were added "automatically"
+        Set<String> allowedMapperProviders = getAllowedMapperProviders();
+        clientModel.getProtocolMappersStream()
+                .filter(mapper -> !allowedMapperProviders.contains(mapper.getProtocolMapper()))
+                .peek(mapperToRemove -> logger.debugf("Removing builtin mapper '%s' of type '%s' as type is not permitted",
+                        mapperToRemove.getName(), mapperToRemove.getProtocolMapper()))
+                .toList()
+                .forEach(clientModel::removeProtocolMapper);
     }
 
     @Override
@@ -137,8 +121,22 @@ public class ProtocolMappersClientRegistrationPolicy implements ClientRegistrati
 
     }
 
-    private List<String> getAllowedMapperProviders() {
-        return componentModel.getConfig().getOrDefault(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, Collections.emptyList());
+    private Set<String> getAllowedMapperProviders() {
+        RealmModel realm = session.getContext().getRealm();
+        String allowedForAdminsAttr = realm != null ? realm.getAttribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS) : null;
+        if (allowedForAdminsAttr == null || allowedForAdminsAttr.isBlank()) {
+            return Collections.emptySet();
+        }
+
+        Set<String> allowedForAdmins = Arrays.stream(allowedForAdminsAttr.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        // Allowed mappers are intersection of the policy configuration and realm attribute. Mapper must be included in both places to be effectively allowed
+        Set<String> allowedInConfig = new HashSet<>(componentModel.getConfig().getOrDefault(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, Collections.emptyList()));
+        allowedInConfig.retainAll(allowedForAdmins);
+        return allowedInConfig;
     }
 
 }

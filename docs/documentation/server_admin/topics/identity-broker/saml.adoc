@@ -166,3 +166,15 @@ http[s]://{host:port}{kc_realms_path}/${realm-name}/broker/{broker-alias}/login
 Adding a query parameter named `login_hint` to this URL adds the parameter's value to SAML request as a Subject attribute. If this query parameter is empty, {project_name} does not add a subject to the request.
 
 Enable the "Pass subject" option to send the subject in SAML requests.
+
+[[_identity_broker_saml_proxy_restriction]]
+==== Support for the ProxyRestriction condition
+
+When brokering a SAML v2.0 Identity Provider, {project_name} consumes the assertion issued by the external IDP and issues a new assertion to the downstream client.
+In this role, {project_name} is a proxying (re-issuing) party, but it does not support the `<ProxyRestriction>` condition: it cannot honor the constraint, and it does not propagate the condition to the assertion it issues to the downstream client.
+
+Because an assertion carrying a `<ProxyRestriction>` condition asks the receiving party to enforce a restriction that {project_name} cannot satisfy, {project_name} rejects any incoming assertion that contains this condition and the login fails.
+
+This validation is controlled by the *Reject proxy restriction* switch on the SAML Identity Provider settings, which is enabled by default.
+If you have an existing brokering deployment where the external IDP issues assertions with a `<ProxyRestriction>` condition and you want to keep brokering them, disable this switch on the corresponding Identity Provider.
+Disabling the switch makes {project_name} accept the assertion and ignore the `<ProxyRestriction>` condition.

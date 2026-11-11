@@ -115,7 +115,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String VALIDATED_ID_TOKEN = "VALIDATED_ID_TOKEN";
     public static final String EXCHANGE_PROVIDER = "EXCHANGE_PROVIDER";
     public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
-    private static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
+    public static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
     private static final List<String> SUPPORTED_TOKEN_TYPES = Arrays.asList(TokenUtil.TOKEN_TYPE_ID, TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_JWT_ACCESS_TOKEN, TokenUtil.TOKEN_TYPE_JWT_ACCESS_TOKEN_PREFIXED);
 
     public OIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
@@ -793,15 +793,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             throw new IdentityBrokerException("Token issued for does not match client id");
         }
 
-        String trustedIssuers = getConfig().getIssuer();
+        String trustedIssuer = getConfig().getIssuer();
 
-        if (trustedIssuers != null && trustedIssuers.length() > 0) {
-            String[] issuers = trustedIssuers.split(",");
-
-            for (String trustedIssuer : issuers) {
-                if (iss != null && iss.equals(trustedIssuer.trim())) {
-                    return token;
-                }
+        if (trustedIssuer != null && !trustedIssuer.isEmpty()) {
+            if (iss != null && iss.equals(trustedIssuer.trim())) {
+                return token;
             }
 
             throw new IdentityBrokerException("Wrong issuer from token. Got: " + iss + " expected: " + getConfig().getIssuer());
@@ -832,16 +828,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (requestedIssuer == null) requestedIssuer = issuer;
         if (requestedIssuer.equals(getConfig().getAlias())) return true;
 
-        String trustedIssuers = getConfig().getIssuer();
+        String trustedIssuer = getConfig().getIssuer();
 
-        if (trustedIssuers != null && trustedIssuers.length() > 0) {
-            String[] issuers = trustedIssuers.split(",");
-
-            for (String trustedIssuer : issuers) {
-                if (requestedIssuer.equals(trustedIssuer.trim())) {
-                    return true;
-                }
-            }
+        if (trustedIssuer != null && !trustedIssuer.isEmpty()) {
+            return requestedIssuer.equals(trustedIssuer.trim());
         }
 
         return false;
