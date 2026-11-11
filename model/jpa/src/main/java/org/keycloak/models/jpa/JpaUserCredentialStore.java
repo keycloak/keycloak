@@ -91,8 +91,11 @@ public class JpaUserCredentialStore implements UserCredentialStore {
                 em.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
             } catch (ModelIllegalStateException e) {
                 // MariaDB with snapshot isolation refuses to lock a row that was changed since the snapshot of this
-                // transaction was taken ("Record has changed since last read"), which means the credential was changed
-                // This doesn't mark the transaction as rollback-only, so the caller can continue (verified by PasswordRehashTest).
+                // transaction was taken ("Record has changed since last read"), which means the credential was changed.
+                // Only report that if the transaction is still usable, otherwise the failure is a different problem.
+                if (session.getTransactionManager().getRollbackOnly()) {
+                    throw e;
+                }
                 return false;
             }
         }
