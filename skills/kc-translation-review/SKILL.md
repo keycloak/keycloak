@@ -78,9 +78,9 @@ Compare against the English source files (ground truth). Community translations 
 - English: `themes/src/main/resources/theme/keycloak/email/messages/messages_en.properties`
 - Translations: `themes/src/main/resources-community/theme/keycloak/email/messages/messages_<lang>.properties`
 
-**Login (keycloak.v2 theme)** (login overrides):
-- English: `themes/src/main/resources/theme/keycloak.v2/login/messages/messages_en.properties`
-- Translations: `themes/src/main/resources-community/theme/keycloak.v2/login/messages/messages_<lang>.properties`
+**Login (keycloak.v3 theme)** (login overrides):
+- English: `themes/src/main/resources/theme/keycloak.v3/login/messages/messages_en.properties`
+- Translations: `themes/src/main/resources-community/theme/keycloak.v3/login/messages/messages_<lang>.properties`
 
 **Welcome** (welcome page):
 - English: `themes/src/main/resources/theme/keycloak/welcome/messages/messages_en.properties`
