@@ -61,7 +61,7 @@
             <input type="hidden" id="totpSecret" name="totpSecret" value="${totp.totpSecret}" />
             <#if mode??><input type="hidden" id="mode" name="mode" value="${mode}"/></#if>
 
-            <@field.input name="userLabel" label=msg("loginTotpDeviceName") required=(totp.otpCredentials?size gte 1)
+            <@field.input name="userLabel" label=msg("loginTotpDeviceName") required=true
                 errorId="input-error-otp-label" />
 
             <div class="${properties.kcFormGroupClass!}">

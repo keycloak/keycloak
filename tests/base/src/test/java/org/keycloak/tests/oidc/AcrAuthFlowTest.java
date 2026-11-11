@@ -294,7 +294,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
 
     private void configureTOTP() {
         loginConfigTotpPage.assertCurrent();
-        loginConfigTotpPage.configure(totp.generateTOTP(loginConfigTotpPage.getTotpSecret()));
+        loginConfigTotpPage.configure(totp.generateTOTP(loginConfigTotpPage.getTotpSecret()), "otp");
     }
 
     private void setAcrClientPolicy(String acr, String alias) {

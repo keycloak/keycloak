@@ -681,6 +681,14 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== Empty credential labels are rejected
+// https://github.com/keycloak/keycloak/issues/51440
+
+Empty or blank credential labels are now rejected in the Account REST API and in the OTP and Passkey setup flows.
+The first OTP device, like every later device, requires a device name.
+Clients that previously omitted a label when creating or renaming a credential must supply a non-empty value.
+The Admin REST API already rejected empty labels and is unchanged.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
