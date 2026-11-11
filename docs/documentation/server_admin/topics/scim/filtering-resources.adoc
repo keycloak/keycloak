@@ -82,6 +82,14 @@ A comparison such as `attribute eq "value"` or `attribute ne "value"` does not m
 has no value. Use `not (attribute pr)` to find them. For a multi-valued attribute, `attribute ne "value"` matches
 resources that have at least one other value.
 
+For a single-valued attribute, the negated comparison `not (attribute eq "value")` behaves like `attribute ne "value"`
+and also does not match resources where the attribute has no value. For a multi-valued attribute,
+`not (attribute eq "value")` matches resources that do not have the given value, including resources where the
+attribute has no value.
+
+User attribute values longer than 255 characters can only be compared using the `eq`, `ne`, and `pr` operators.
+Other operators, and their negations, do not match such values.
+
 The `eq` and `ne` operators accept the `null` literal, but the comparison never matches, so it cannot be used to find
 resources without a value.
 

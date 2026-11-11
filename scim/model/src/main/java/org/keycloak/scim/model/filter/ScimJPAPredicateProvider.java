@@ -2,39 +2,55 @@ package org.keycloak.scim.model.filter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiPredicate;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.common.util.TriFunction;
+import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.schema.attribute.ScimDateTimeUtil;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
+import org.keycloak.storage.jpa.JpaHashUtils;
 
 import org.jboss.logging.Logger;
 
 /**
  * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and collection-backed
  * attributes - custom attributes stored in an associated "attributes" collection, and resource-specific relations
- * such as groups/members/roles resolved via {@link ScimAttributeJpaExpressionResolver}. Collection-backed attributes
- * are evaluated using a correlated {@code EXISTS} subquery rather than a shared {@code JOIN}, so that conjunction
- * across independent values and negation are evaluated per-resource rather than per-joined-row (see
- * <a href="https://github.com/keycloak/keycloak/issues/51805">#51805</a>). Also handles necessary type conversions
- * for temporal fields.
+ * such as groups/members/roles resolved via {@link ScimAttributeJpaExpressionResolver}. Multivalued collection-backed
+ * attributes are evaluated using a correlated {@code EXISTS} subquery rather than a shared {@code JOIN}, so that
+ * conjunction across independent values and negation are evaluated per-resource rather than per-joined-row (see
+ * <a href="https://github.com/keycloak/keycloak/issues/51805">#51805</a>). Single-valued attributes stored in the
+ * "attributes" collection evaluate to SQL {@code UNKNOWN} when the resource has no value, matching the semantics of
+ * a direct field (see <a href="https://github.com/keycloak/keycloak/issues/53260">#53260</a>).
+ * Also handles necessary type conversions for temporal fields.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 public class ScimJPAPredicateProvider {
 
     private static final Logger logger = Logger.getLogger(ScimJPAPredicateProvider.class);
+
+    /**
+     * Values longer than this are stored in the {@code LONG_VALUE} column (see {@link UserAttributeEntity#setValue(String)}).
+     */
+    private static final int MAX_SHORT_VALUE_LENGTH = 255;
+
+    /**
+     * Operators that can be evaluated against values stored in the {@code LONG_VALUE} column, using the hash of the value.
+     */
+    private static final Set<String> LONG_VALUE_OPERATORS = Set.of("eq", "ne", "pr");
 
     private final ScimResourceTypeProvider resourceTypeProvider;
     private final List<ModelSchema<?, ?>> schemas;
@@ -145,7 +161,9 @@ public class ScimJPAPredicateProvider {
      * matters for two SCIM filtering scenarios that a plain {@code JOIN} cannot express correctly: conjunction across
      * independent values of the same multivalued attribute (each side must be allowed to match a different value/row),
      * and negation (a {@code NOT} must apply to the resource as a whole, including resources with no values at all,
-     * not to a single joined row).
+     * not to a single joined row). For a single-valued attribute stored in the "attributes" collection, a resource
+     * without a value evaluates to SQL {@code UNKNOWN} (see {@link #unknownIfAbsent(String)}), so that it matches
+     * neither a comparison nor its negation, as with direct fields.
      *
      * @param attrInfo the attribute metadata to determine how to build the predicate
      * @param operation the comparison operator (eq, ne, gt, ge, lt, le, co, sw, ew)
@@ -195,16 +213,109 @@ public class ScimJPAPredicateProvider {
             }
         }
 
+        Join<?, ?> attributesJoin = null;
+
         if (expression == null) {
-            Join<?, ?> join = subquery.correlate(root).join("attributes");
-            expression = join.get("value");
-            correlation = cb.equal(join.get("name"), modelAttributeName);
+            attributesJoin = subquery.correlate(root).join("attributes");
+            expression = attributesJoin.get("value");
+            correlation = cb.equal(attributesJoin.get("name"), modelAttributeName);
         }
 
         Predicate operatorPredicate = buildOperatorPredicate(expression, attrInfo, operation, value);
+
+        boolean longValuesComparable = false;
+
+        if (attributesJoin != null && hasLongValues(attributesJoin)) {
+            longValuesComparable = LONG_VALUE_OPERATORS.contains(operation);
+            if (longValuesComparable) {
+                operatorPredicate = cb.or(operatorPredicate, buildLongValuePredicate(attributesJoin, attrInfo, operation, value));
+            }
+        }
+
         subquery.where(correlation != null ? cb.and(correlation, operatorPredicate) : operatorPredicate);
 
-        return cb.exists(subquery);
+        Predicate exists = cb.exists(subquery);
+
+        if (attributesJoin != null && !attrInfo.isMultivalued() && !"pr".equals(operation)) {
+            // a resource without a value for a single-valued attribute must evaluate to UNKNOWN rather than FALSE,
+            // so that "attr ne x" and "not (attr eq x)" both exclude it, consistent with attributes stored directly
+            // on the root entity (see https://github.com/keycloak/keycloak/issues/53260). The comparison itself is
+            // still evaluated by the EXISTS subquery, so matching is unchanged for resources with a value. Presence
+            // ("pr") is never unknown, so that "not (attr pr)" still finds resources without a value.
+            return cb.or(exists, unknownIfAbsent(modelAttributeName, longValuesComparable));
+        }
+
+        return exists;
+    }
+
+    /**
+     * Whether the entity behind the given "attributes" join stores values longer than {@value #MAX_SHORT_VALUE_LENGTH}
+     * characters in a separate {@code LONG_VALUE} column, together with hashes of the value, instead of in the
+     * {@code VALUE} column (see {@link UserAttributeEntity#setValue(String)}).
+     */
+    private static boolean hasLongValues(Join<?, ?> attributesJoin) {
+        return UserAttributeEntity.class.isAssignableFrom(attributesJoin.getJavaType());
+    }
+
+    /**
+     * Build a predicate that compares values stored in the {@code LONG_VALUE} column. The column is a {@code CLOB}
+     * that cannot be compared portably, so the comparison is done on the hash of the value - the same approach as the
+     * user search of the JPA store. Only the operators in {@link #LONG_VALUE_OPERATORS} can be evaluated this way.
+     *
+     * @param attributesJoin the join on the "attributes" collection
+     * @param attrInfo the attribute metadata to determine case sensitivity
+     * @param operation the comparison operator (eq, ne, pr)
+     * @param value the value to compare against, already normalized to the correct type
+     * @return the predicate matching resources whose long value satisfies the comparison
+     */
+    private Predicate buildLongValuePredicate(Join<?, ?> attributesJoin, Attribute<?, ?> attrInfo, String operation, Object value) {
+        boolean caseInsensitive = attrInfo.isStoredLowerCase() || !attrInfo.isCaseExact();
+        Path<byte[]> hash = attributesJoin.get(caseInsensitive ? "longValueHashLowerCase" : "longValueHash");
+
+        if ("pr".equals(operation)) {
+            return cb.isNotNull(hash);
+        }
+        if (!(value instanceof String stringValue)) {
+            // only string values can be long
+            return cb.disjunction();
+        }
+
+        boolean longValue = stringValue.length() > MAX_SHORT_VALUE_LENGTH;
+        byte[] valueHash = caseInsensitive ? JpaHashUtils.hashForAttributeValueLowerCase(stringValue) : JpaHashUtils.hashForAttributeValue(stringValue);
+
+        if ("eq".equals(operation)) {
+            // a short value is never stored in LONG_VALUE, so it can only match the VALUE column
+            return longValue ? cb.equal(hash, valueHash) : cb.disjunction();
+        }
+
+        // "ne": every long value differs from a short value
+        return longValue ? cb.and(cb.isNotNull(hash), cb.notEqual(hash, valueHash)) : cb.isNotNull(hash);
+    }
+
+    /**
+     * Build a predicate that is SQL {@code UNKNOWN} if the resource has no value for the given attribute that the
+     * comparison can be evaluated against, and {@code FALSE} otherwise. OR-ing it with a comparison leaves the
+     * comparison unchanged for resources with such a value, and makes it {@code UNKNOWN} - which neither the
+     * comparison nor its negation matches - for resources without one.
+     * <p>
+     * If the comparison can be evaluated against values stored in the {@code LONG_VALUE} column, any entry for the
+     * attribute counts as a value. Otherwise, only an entry with a value in the {@code VALUE} column does, so that a
+     * long value is matched by neither the comparison nor its negation.
+     *
+     * @param modelAttributeName the name of the attribute in the "attributes" collection
+     * @param longValuesComparable whether the comparison can be evaluated against values stored in {@code LONG_VALUE}
+     * @return the predicate
+     */
+    private Predicate unknownIfAbsent(String modelAttributeName, boolean longValuesComparable) {
+        // (SELECT MAX(name) ... WHERE name = :name) is either :name (present) or NULL (absent), so comparing it
+        // with "<>" yields FALSE or UNKNOWN respectively
+        Subquery<String> subquery = query.subquery(String.class);
+        Join<?, ?> join = subquery.correlate(root).join("attributes");
+        Path<String> name = join.get("name");
+        subquery.select(cb.greatest(name));
+        Predicate restriction = cb.equal(name, modelAttributeName);
+        subquery.where(longValuesComparable ? restriction : cb.and(restriction, cb.isNotNull(join.get("value"))));
+        return cb.notEqual(subquery, modelAttributeName);
     }
 
     /**
