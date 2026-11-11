@@ -30,6 +30,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
@@ -86,7 +87,14 @@ public class JpaUserCredentialStore implements UserCredentialStore {
         // reloads an already locked entity with a plain read, and on MySQL/MariaDB under REPEATABLE READ that read
         // is served from the transaction snapshot taken earlier, which can miss rows committed since then.
         if (em.getLockMode(entity) != LockModeType.PESSIMISTIC_WRITE) {
-            em.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
+            try {
+                em.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
+            } catch (ModelIllegalStateException e) {
+                // MariaDB with snapshot isolation refuses to lock a row that was changed since the snapshot of this
+                // transaction was taken ("Record has changed since last read"), which means the credential was changed
+                // This doesn't mark the transaction as rollback-only, so the caller can continue (verified by PasswordRehashTest).
+                return false;
+            }
         }
         if (!toModel(entity).hasSameContent(oldCred)) return false;
         updateCredential(realm, user, newCred);

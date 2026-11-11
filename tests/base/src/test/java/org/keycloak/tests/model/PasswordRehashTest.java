@@ -116,7 +116,13 @@ public class PasswordRehashTest {
             CredentialModel rehashed = old.shallowClone();
             rehashed.setUserLabel("must-not-be-written");
             assertFalse(user.credentialManager().updateStoredCredential(old, rehashed), "The credential was changed by another transaction");
+
+            // the rejected update must not doom the transaction, so the work that follows is still committed
+            assertFalse(session.getTransactionManager().getRollbackOnly());
+            user.setFirstName("after-rejection");
         });
+
+        assertEquals("after-rejection", runOnServer.fetch(session -> user(session, username).getFirstName(), String.class));
 
         assertPasswordValid(username, NEW_PASSWORD, true);
         assertPasswordValid(username, OLD_PASSWORD, false);
