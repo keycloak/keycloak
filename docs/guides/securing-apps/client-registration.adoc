@@ -15,7 +15,6 @@ The Client Registration Service endpoint is `/realms/<realm>/clients-registratio
 The built-in supported `providers` are:
 
 * default - {project_name} Client Representation (JSON)
-* install - {project_name} Adapter Configuration (JSON)
 * openid-connect - OpenID Connect Client Metadata Description (JSON)
 * saml2-entity-descriptor - SAML Entity Descriptor (XML)
 
@@ -115,28 +114,6 @@ It will also return a new registration access token.
 To delete the Client Representation perform an HTTP DELETE request to:
 `/realms/<realm>/clients-registrations/default/<client id>`
 
-== {project_name} adapter configuration
-
-[WARNING]
-====
-The `install` client registration provider is deprecated since {project_name} 26.8 and will be removed in a future major release.
-Retrieve adapter configuration via the Admin REST API (`GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`) instead.
-====
-
-The `installation` client registration provider can be used to retrieve the adapter configuration for a client.
-In addition to token authentication you can also authenticate with client credentials using HTTP basic authentication.
-To do this include the following header in the request:
-
-[source]
-----
-Authorization: basic BASE64(client-id + ':' + client-secret)
-----
-
-To retrieve the Adapter Configuration then perform an HTTP GET request to `/realms/<realm>/clients-registrations/install/<client id>`.
-
-No authentication is required for public clients.
-This means that for the JavaScript adapter you can load the client configuration directly from {project_name} using the above URL.
-
 == OpenID Connect Dynamic Client Registration
 
 {project_name} implements https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration], which extends https://datatracker.ietf.org/doc/html/rfc7591[OAuth 2.0 Dynamic Client Registration Protocol] and https://datatracker.ietf.org/doc/html/rfc7592[OAuth 2.0 Dynamic Client Registration Management Protocol].
@@ -194,7 +171,7 @@ For full instructions on using the Client Registration refer to the JavaDocs.
 Below is an example of creating a client. You need to replace `eyJhbGciOiJSUz...` with a proper initial access token or bearer token.
 [WARNING]
 ====
-The `ClientRegistration` methods `reg.create()`, `reg.get()`, `reg.update()`, and `reg.delete()` target `default`; `reg.getAdapterConfig()` targets `install`; and `reg.saml().create()` targets `saml2-entity-descriptor`. These providers are deprecated since {project_name} 26.8 and will be removed in a future major release.
+The `ClientRegistration` methods `reg.create()`, `reg.get()`, `reg.update()`, and `reg.delete()` target `default`; and `reg.saml().create()` targets `saml2-entity-descriptor`. These providers are deprecated since {project_name} 26.8 and will be removed in a future major release.
 New integrations should use the replacement Admin REST API endpoints described above, or the OpenID Connect dynamic client registration endpoint for OIDC client registration.
 ====
 [source,java,subs="attributes+"]
