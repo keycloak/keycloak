@@ -59,6 +59,7 @@ export {
   beerify,
   debeerify,
   isBundleKey,
+  isRootAttribute,
   isUserProfileError,
   label,
   setUserProfileServerError,
