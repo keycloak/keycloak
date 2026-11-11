@@ -119,37 +119,13 @@ public final class PartialEvaluator {
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
                 for (Policy policy : policies) {
-                    PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
+                    Boolean granted = evaluatePolicy(session, authorization, policyProviders, policy, adminUser);
 
-                    if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
-                        deniedResources.addAll(ids);
-                        permissionOutcomes.put(permission.getId(), false);
+                    if (granted == null) {
                         continue;
                     }
 
-                    PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
-
-                    if (provider == null) {
-                        continue;
-                    }
-
-                    Outcome granted = provider.evaluateOutcome(session, policy, adminUser);
-
-                    if (Outcome.SKIP.equals(granted)) {
-                        continue;
-                    }
-
-                    if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {
-                        deniedResources.addAll(ids);
-                        permissionOutcomes.put(permission.getId(), false);
-                        continue;
-                    }
-
-                    if (Logic.NEGATIVE.equals(policy.getLogic())) {
-                        granted = granted == Outcome.GRANT ? Outcome.DENY : Outcome.GRANT;
-                    }
-
-                    if (Outcome.GRANT.equals(granted)) {
+                    if (granted) {
                         allowedResources.addAll(ids);
                         permissionOutcomes.putIfAbsent(permission.getId(), true);
                     } else {
@@ -164,15 +140,20 @@ public final class PartialEvaluator {
             // when evaluating groups to filter users by membership, the member scope is what protects the members
             boolean memberScope = groupResourceType != null;
             String scope = memberScope ? AdminPermissionsSchema.VIEW_MEMBERS : AdminPermissionsSchema.VIEW;
-            Set<String> grantedPermissions = new HashSet<>();
 
-            permissionOutcomes.forEach((id, granted) -> {
-                if (granted) {
-                    grantedPermissions.add(id);
+            // the permissions returned by the policy providers only include those whose policies reference the admin, so
+            // the other permissions are evaluated as well. For instance, a permission whose policy denies another admin
+            // grants access to the current admin
+            Map<String, Boolean> otherOutcomes = new HashMap<>();
+            ExtendChildrenPartialEvaluator.Result inherited = extendChildrenEvaluator.evaluate(session, scope, memberScope, permission -> {
+                if (permissionOutcomes.containsKey(permission.getId())) {
+                    return permissionOutcomes.get(permission.getId());
                 }
+                if (!otherOutcomes.containsKey(permission.getId())) {
+                    otherOutcomes.put(permission.getId(), evaluatePermission(session, authorization, policyProviders, permission, adminUser));
+                }
+                return otherOutcomes.get(permission.getId());
             });
-
-            ExtendChildrenPartialEvaluator.Result inherited = extendChildrenEvaluator.evaluate(session, scope, memberScope, grantedPermissions);
 
             allowedResources.addAll(inherited.allowed());
             deniedResources.addAll(inherited.denied());
@@ -193,6 +174,65 @@ public final class PartialEvaluator {
         }
 
         return cache.get(adminUser.getId()).get(cacheKey);
+    }
+
+    /**
+     * Evaluates the given {@code permission} for the {@code adminUser}, consistently with the evaluation of the permissions
+     * returned by the policy providers.
+     *
+     * @return {@code false} if any of its policies denies access, {@code true} if at least one grants access, or {@code null}
+     * if none of its policies can be decided
+     */
+    private Boolean evaluatePermission(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy permission, UserModel adminUser) {
+        Boolean granted = null;
+
+        for (Policy policy : permission.getAssociatedPolicies()) {
+            Boolean outcome = evaluatePolicy(session, authorization, policyProviders, policy, adminUser);
+
+            if (Boolean.FALSE.equals(outcome)) {
+                return false;
+            }
+
+            if (Boolean.TRUE.equals(outcome)) {
+                granted = true;
+            }
+        }
+
+        return granted;
+    }
+
+    /**
+     * @return {@code true} if the {@code policy} grants access to the {@code adminUser}, {@code false} if it denies access,
+     * or {@code null} if it can not be partially evaluated or should be skipped
+     */
+    private Boolean evaluatePolicy(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy policy, UserModel adminUser) {
+        PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
+
+        if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
+            return false;
+        }
+
+        PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
+
+        if (provider == null) {
+            return null;
+        }
+
+        Outcome granted = provider.evaluateOutcome(session, policy, adminUser);
+
+        if (Outcome.SKIP.equals(granted)) {
+            return null;
+        }
+
+        if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {
+            return false;
+        }
+
+        if (Logic.NEGATIVE.equals(policy.getLogic())) {
+            granted = granted == Outcome.GRANT ? Outcome.DENY : Outcome.GRANT;
+        }
+
+        return Outcome.GRANT.equals(granted);
     }
 
     public List<Predicate> buildPredicates(PartialEvaluationContext context) {
