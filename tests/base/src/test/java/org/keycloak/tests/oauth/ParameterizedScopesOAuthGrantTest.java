@@ -821,6 +821,7 @@ public class ParameterizedScopesOAuthGrantTest {
                     .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
                     .consentRequired(Boolean.TRUE)
                     .redirectUris("*")
+                    .publicClient(Boolean.FALSE)
                     .secret("password")
                     .attribute(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "ping")
                     .attribute(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "http://localhost:8500/ciba/push-ciba-client-notification")
