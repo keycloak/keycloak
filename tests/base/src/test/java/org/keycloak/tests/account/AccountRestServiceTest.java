@@ -695,6 +695,64 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testSetCredentialLabelRejectsEmptyAndBlank() throws IOException {
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
+
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(user.toRepresentation())
+                .totpSecret("totpSecret")
+                .build();
+        userRep.getCredentials().get(0).setUserLabel("original-label");
+        user.update(userRep);
+
+        CredentialRepresentation otpCredential = user.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+
+        try {
+            try (SimpleHttpResponse response = simpleHttp
+                    .doPut(getAccountUrl("credentials/" + otpCredential.getId() + "/label"))
+                    .auth(token)
+                    .json("")
+                    .asResponse()) {
+                Assertions.assertEquals(400, response.getStatus());
+                OAuth2ErrorRepresentation error = response.asJson(OAuth2ErrorRepresentation.class);
+                Assertions.assertEquals("missingCredentialLabel", error.getError());
+                Assertions.assertEquals("Credential label must not be empty", error.getErrorDescription());
+            }
+
+            try (SimpleHttpResponse response = simpleHttp
+                    .doPut(getAccountUrl("credentials/" + otpCredential.getId() + "/label"))
+                    .auth(token)
+                    .json("   ")
+                    .asResponse()) {
+                Assertions.assertEquals(400, response.getStatus());
+                OAuth2ErrorRepresentation error = response.asJson(OAuth2ErrorRepresentation.class);
+                Assertions.assertEquals("missingCredentialLabel", error.getError());
+                Assertions.assertEquals("Credential label must not be empty", error.getErrorDescription());
+            }
+
+            try (SimpleHttpResponse response = simpleHttp
+                    .doPut(getAccountUrl("credentials/" + otpCredential.getId() + "/label"))
+                    .auth(token)
+                    .json("updated-label")
+                    .asResponse()) {
+                Assertions.assertEquals(204, response.getStatus());
+            }
+
+            CredentialRepresentation updated = user.credentials().stream()
+                    .filter(credentialRep -> otpCredential.getId().equals(credentialRep.getId()))
+                    .findFirst()
+                    .get();
+            Assertions.assertEquals("updated-label", updated.getUserLabel());
+        } finally {
+            user.removeCredential(otpCredential.getId());
+        }
+    }
+
+    @Test
     public void testRemoveCredentialWithNonOtpCredentialTriggeringNoEvent() throws IOException {
         String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
 

@@ -356,6 +356,7 @@ public class Messages {
     public static final String WEBAUTHN_ERROR_BAD_RPID = "webauthn-error-bad-rpid";
     public static final String WEBAUTHN_ERROR_BAD_CHALLENGE = "webauthn-error-bad-challenge";
     public static final String WEBAUTHN_ERROR_BAD_SIGNATURE = "webauthn-error-bad-signature";
+    public static final String WEBAUTHN_ERROR_MISSING_LABEL = "webauthn-error-missing-label";
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";

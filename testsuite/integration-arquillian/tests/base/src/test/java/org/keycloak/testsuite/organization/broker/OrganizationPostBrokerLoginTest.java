@@ -121,7 +121,7 @@ public class OrganizationPostBrokerLoginTest extends AbstractInitializedBaseBrok
         // Post broker flow should require TOTPs
         totpConfigPage.assertCurrent();
         String totpSecret = totpConfigPage.getTotpSecret();
-        totpConfigPage.configure(totp.generateTOTP(totpSecret));
+        totpConfigPage.configure(totp.generateTOTP(totpSecret), "otp");
         UsersResource usersApi = realmsResouce().realm(bc.consumerRealmName()).users();
         List<UserRepresentation> users = usersApi.search(bc.getUserLogin(), true);
         assertThat(1, equalTo(users.size()));

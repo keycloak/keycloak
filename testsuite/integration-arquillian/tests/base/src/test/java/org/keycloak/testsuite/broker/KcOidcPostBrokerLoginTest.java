@@ -93,7 +93,7 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
 
             totpPage.assertCurrent();
             String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
+            totpPage.configure(totp.generateTOTP(totpSecret), "otp");
 
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
@@ -158,7 +158,7 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
 
             totpPage.assertCurrent();
             String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
+            totpPage.configure(totp.generateTOTP(totpSecret), "otp");
             logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
             assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
@@ -194,7 +194,7 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
                 logInWithBroker(samlBrokerConfig);
                 totpPage.assertCurrent();
                 String totpSecret = totpPage.getTotpSecret();
-                totpPage.configure(totp.generateTOTP(totpSecret));
+                totpPage.configure(totp.generateTOTP(totpSecret), "otp");
                 AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
                 AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
@@ -247,7 +247,7 @@ public class KcOidcPostBrokerLoginTest extends AbstractInitializedBaseBrokerTest
 
         totpPage.assertCurrent();
         String totpSecret = totpPage.getTotpSecret();
-        totpPage.configure(totp.generateTOTP(totpSecret));
+        totpPage.configure(totp.generateTOTP(totpSecret), "otp");
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
