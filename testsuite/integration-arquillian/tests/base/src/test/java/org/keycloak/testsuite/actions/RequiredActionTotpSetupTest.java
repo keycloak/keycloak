@@ -183,13 +183,13 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String totpSecret = totpPage.getTotpSecret();
 
         //submit with wrong otp
-        totpPage.configure("wrongOtp");
+        totpPage.configure("wrongOtp", "otp");
         totpPage.assertCurrent();
 
         //assert totpSecret doesn't change after a wrong submit
         assertEquals(totpSecret, totpPage.getTotpSecret());
 
-        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
 
         String authSessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                 .userId(userId)
@@ -414,7 +414,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         String firstCode = totp.generateTOTP(totpSecret);
 
-        totpPage.configure(firstCode);
+        totpPage.configure(firstCode, "otp");
 
         String authSessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
@@ -491,7 +491,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             totpPage.assertCurrent();
 
             String totpCode = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpCode));
+            totpPage.configure(totp.generateTOTP(totpCode), "otp");
 
             // After totp config, user should be on the app page
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
@@ -540,7 +540,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
             // Since the authentificator was removed, it has to be set up again
             totpPage.assertCurrent();
-            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
 
             String sessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                     .userId(userId)
@@ -584,7 +584,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String totpSecret = totpPage.getTotpSecret();
 
         TimeBasedOTP timeBased = new TimeBasedOTP(HmacOTP.HMAC_SHA1, 8, 30, 1);
-        totpPage.configure(timeBased.generateTOTP(totpSecret));
+        totpPage.configure(timeBased.generateTOTP(totpSecret), "otp");
 
         String sessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
@@ -644,7 +644,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         String totpSecret = totpPage.getTotpSecret();
 
         HmacOTP otpgen = new HmacOTP(6, HmacOTP.HMAC_SHA1, 1);
-        totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
+        totpPage.configure(otpgen.generateHOTP(totpSecret, 0), "otp");
         String uri = driver.getCurrentUrl();
         String sessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
@@ -742,7 +742,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             totpPage.checkLogoutSessions();
         }
         Assertions.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
-        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         if (logoutOtherSessions) {
@@ -793,7 +793,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
             // Configure OTP
             totpPage.assertCurrent();
-            totpPage.configure(this.totp.generateTOTP(totpPage.getTotpSecret()));
+            totpPage.configure(this.totp.generateTOTP(totpPage.getTotpSecret()), "otp");
 
             // The next page should be the setup page for recovery codes
             setupRecoveryAuthnCodesPage.assertCurrent();

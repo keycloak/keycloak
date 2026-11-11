@@ -763,6 +763,14 @@ As a workaround, use the default value of a property that is not defined, for ex
 This did not work before, as the `$` prevented the placeholder from being closed.
 It only works as long as the property is not defined.
 
+=== Empty credential labels are rejected
+// https://github.com/keycloak/keycloak/issues/51440
+
+Empty or blank credential labels are now rejected in the Account REST API and in the OTP and Passkey setup flows.
+The first OTP device, like every later device, requires a device name.
+Clients that previously omitted a label when creating or renaming a credential must supply a non-empty value.
+The Admin REST API already rejected empty labels and is unchanged.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

@@ -209,7 +209,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
         totpPage.assertCurrent();
         String totpSecret = totpPage.getTotpSecret();
-        totpPage.configure(totp.generateTOTP(totpSecret));
+        totpPage.configure(totp.generateTOTP(totpSecret), "otp");
 
         // Logout user through admin endpoint
         user.logout();

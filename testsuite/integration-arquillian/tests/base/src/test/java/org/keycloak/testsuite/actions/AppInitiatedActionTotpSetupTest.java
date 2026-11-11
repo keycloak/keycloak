@@ -112,7 +112,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         totpPage.assertCurrent();
 
-        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
 
         events.poll(); // skip to totp event
         String authSessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
@@ -385,7 +385,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         String totpSecret = totpPage.getTotpSecret();
 
-        totpPage.configure(totp.generateTOTP(totpSecret));
+        totpPage.configure(totp.generateTOTP(totpSecret), "otp");
 
         String authSessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
@@ -430,7 +430,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         totpPage.assertCurrent();
 
         String totpCode = totpPage.getTotpSecret();
-        totpPage.configure(totp.generateTOTP(totpCode));
+        totpPage.configure(totp.generateTOTP(totpCode), "otp");
 
         // After totp config, user should be on the app page
         assertKcActionStatus(SUCCESS);
@@ -499,7 +499,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String totpSecret = totpPage.getTotpSecret();
 
         TimeBasedOTP timeBased = new TimeBasedOTP(HmacOTP.HMAC_SHA1, 8, 30, 1);
-        totpPage.configure(timeBased.generateTOTP(totpSecret));
+        totpPage.configure(timeBased.generateTOTP(totpSecret), "otp");
 
         String sessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
@@ -559,7 +559,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String totpSecret = totpPage.getTotpSecret();
 
         HmacOTP otpgen = new HmacOTP(6, HmacOTP.HMAC_SHA1, 1);
-        totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
+        totpPage.configure(otpgen.generateHOTP(totpSecret, 0), "otp");
 
         String sessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
@@ -645,7 +645,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             // Configure OTP as AIA
             doAIA();
             totpPage.assertCurrent();
-            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
 
             // The next page should be the setup page for recovery codes
             setupRecoveryAuthnCodesPage.assertCurrent();
@@ -654,8 +654,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             // call the action the second time, now no recovery code setup should be shown
             doAIA();
             totpPage.assertCurrent();
-            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
-            // This should now fail
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp2");
+            assertKcActionStatus(SUCCESS);
+            // Recovery codes should not be required again
             Assertions.assertThrows(AssertionFailedError.class, () -> setupRecoveryAuthnCodesPage.assertCurrent());
         } finally {
             // finally, reset totp action config
