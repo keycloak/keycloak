@@ -594,13 +594,6 @@ To send it in the background, a provider that extends `FreeMarkerEmailTemplatePr
 
 The Admin REST API and the other REST endpoints now use the `ObjectMapper` that is managed by Quarkus, instead of one created by {project_name}.
 {project_name} applies its own configuration on top of it.
-The `quarkus.jackson.*` properties can therefore be used to work around serialization or deserialization issues if needed.
-
-Do not use properties that change the shape of the JSON, such as `quarkus.jackson.property-naming-strategy`.
-The REST API contract, including the published OpenAPI documentation, uses camel case property names, so changing them breaks clients.
-
-{project_name} always enforces failing on unknown properties, writing dates as timestamps, and omitting `null` values.
-The corresponding `quarkus.jackson.*` properties have no effect.
 
 ==== JSON properties of custom representations with the `http-optimized-serializers` feature
 
