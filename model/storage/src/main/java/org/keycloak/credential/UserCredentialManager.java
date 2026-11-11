@@ -117,6 +117,12 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     }
 
     @Override
+    public boolean updateStoredCredential(CredentialModel oldCred, CredentialModel newCred) {
+        throwExceptionIfInvalidUser(user);
+        return getStoreForUser(user).updateCredential(realm, user, oldCred, newCred);
+    }
+
+    @Override
     public CredentialModel createStoredCredential(CredentialModel cred) {
         throwExceptionIfInvalidUser(user);
         return getStoreForUser(user).createCredential(realm, user, cred);
