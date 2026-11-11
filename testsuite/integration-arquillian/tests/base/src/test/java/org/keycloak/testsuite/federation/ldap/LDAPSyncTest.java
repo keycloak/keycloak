@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -337,6 +338,51 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             SynchronizationResult result = UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), ctx.getLdapModel());
             Assertions.assertEquals(0, result.getFailed());
+        });
+    }
+
+    @Test
+    public void testFullSyncRemovesUsersDeletedInLDAP() {
+        // import two users from LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "staleuser1", "Stale1", "Stale1", "staleuser1@email.org", null, "");
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "staleuser2", "Stale2", "Stale2", "staleuser2@email.org", null, "");
+            UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), ctx.getLdapModel());
+        });
+
+        // delete one of them directly in LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+            LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, ctx.getRealm(), ldapProvider.getLdapIdentityStore().getConfig(), "staleuser2");
+        });
+
+        // option disabled (default) - user is kept in the local database
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            SynchronizationResult result = UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), ctx.getLdapModel());
+            Assertions.assertEquals(0, result.getRemoved());
+            Assertions.assertNotNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(ctx.getRealm(), "staleuser2"));
+        });
+
+        // option enabled - user is removed from the local database, the other one is kept
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserStorageProviderModel model = ctx.getLdapModel();
+            model.getConfig().putSingle(LDAPConstants.REMOVE_INVALID_USERS_ON_SYNC, "true");
+            try {
+                SynchronizationResult result = UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), model);
+                Assertions.assertEquals(1, result.getRemoved());
+            } finally {
+                model.getConfig().remove(LDAPConstants.REMOVE_INVALID_USERS_ON_SYNC);
+            }
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            Assertions.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(ctx.getRealm(), "staleuser2"));
+            Assertions.assertNotNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(ctx.getRealm(), "staleuser1"));
         });
     }
 

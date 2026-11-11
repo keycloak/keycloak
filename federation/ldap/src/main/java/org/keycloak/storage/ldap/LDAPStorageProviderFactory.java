@@ -18,7 +18,9 @@
 package org.keycloak.storage.ldap;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -47,7 +49,9 @@ import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -129,6 +133,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .defaultValue("true")
                 .add()
                 .property().name(LDAPConstants.SYNC_REGISTRATIONS)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("false")
+                .add()
+                .property().name(LDAPConstants.REMOVE_INVALID_USERS_ON_SYNC)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
@@ -636,9 +644,14 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         logger.infof("Sync all users from LDAP to local store: realm: %s, federation provider: %s", realmId, model.getName());
 
         try (LDAPQuery userQuery = createQuery(sessionFactory, realmId, model)) {
-            SynchronizationResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model);
+            boolean removeInvalidUsers = model.isImportEnabled() && new LDAPConfig(model.getConfig()).isRemoveInvalidUsersOnSync();
+            Set<String> ldapIds = removeInvalidUsers ? new HashSet<>() : null;
 
-            // TODO: Remove all existing keycloak users, which have federation links, but are not in LDAP. Perhaps don't check users, which were just added or updated during this sync?
+            SynchronizationResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model, ldapIds);
+
+            if (removeInvalidUsers) {
+                removeUsersNotFoundInLdap(sessionFactory, realmId, model, ldapIds, syncResult);
+            }
 
             logger.infof("Sync all users finished: %s", syncResult.getStatus());
             return syncResult;
@@ -689,6 +702,13 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     }
 
     protected SynchronizationResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPQuery userQuery, final String realmId, final ComponentModel fedModel) {
+        return syncImpl(sessionFactory, userQuery, realmId, fedModel, null);
+    }
+
+    /**
+     * @param ldapIds if not {@code null}, the UUIDs (LDAP_ID) of all LDAP users returned by the query are collected into it
+     */
+    protected SynchronizationResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPQuery userQuery, final String realmId, final ComponentModel fedModel, Set<String> ldapIds) {
 
         final SynchronizationResult syncResult = new SynchronizationResult();
 
@@ -702,17 +722,110 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 userQuery.setLimit(pageSize);
                 final List<LDAPObject> users = userQuery.getResultList();
                 nextPage = userQuery.getPaginationContext().hasNextPage();
+                collectLdapIds(users, ldapIds);
                 SynchronizationResult currentPageSync = importLdapUsers(sessionFactory, realmId, fedModel, users);
                 syncResult.add(currentPageSync);
             }
         } else {
             // LDAP pagination not available. Do everything in single transaction
             final List<LDAPObject> users = userQuery.getResultList();
+            collectLdapIds(users, ldapIds);
             SynchronizationResult currentSync = importLdapUsers(sessionFactory, realmId, fedModel, users);
             syncResult.add(currentSync);
         }
 
         return syncResult;
+    }
+
+    private static void collectLdapIds(List<LDAPObject> users, Set<String> ldapIds) {
+        if (ldapIds == null) {
+            return;
+        }
+        for (LDAPObject user : users) {
+            if (user.getUuid() != null) {
+                ldapIds.add(user.getUuid());
+            }
+        }
+    }
+
+    /**
+     * Removes local users linked to this provider whose {@code LDAP_ID} was not returned by the full LDAP user query.
+     * Users are first collected (read-only, without validation against LDAP) and then each one is removed in its own
+     * transaction, so a failure of one removal does not affect the others.
+     * <p>
+     * As a safety measure nothing is removed when the LDAP query returned no users at all, because this is far more
+     * likely a misconfiguration (wrong Users DN, filter, ...) than an intentionally empty directory.
+     */
+    protected void removeUsersNotFoundInLdap(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model,
+                                             Set<String> ldapIds, SynchronizationResult syncResult) {
+        if (ldapIds.isEmpty()) {
+            logger.warnf("LDAP query returned no users for federation provider '%s' in realm '%s'. Skipping removal of invalid users to prevent accidental data loss.",
+                    model.getName(), realmId);
+            return;
+        }
+
+        int pageSize = Math.max(new LDAPConfig(model.getConfig()).getBatchSizeForSync(), 1);
+        List<String> toRemove = new ArrayList<>();
+
+        try {
+            int first = 0;
+            while (true) {
+                final int offset = first;
+                List<Map.Entry<String, String>> page = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
+                    RealmModel realm = session.realms().getRealm(realmId);
+                    session.getContext().setRealm(realm);
+                    return UserStoragePrivateUtil.userLocalStorage(session)
+                            .getImportedUserIdsWithAttributeStream(realm, model.getId(), LDAPConstants.LDAP_ID, offset, pageSize)
+                            .collect(Collectors.toList());
+                });
+
+                for (Map.Entry<String, String> entry : page) {
+                    // users without LDAP_ID are left untouched, we cannot reliably tell whether they exist in LDAP
+                    if (entry.getValue() != null && !ldapIds.contains(entry.getValue())) {
+                        toRemove.add(entry.getKey());
+                    }
+                }
+
+                if (page.size() < pageSize) {
+                    break;
+                }
+                first += pageSize;
+            }
+        } catch (UnsupportedOperationException e) {
+            logger.warnf("Local user storage does not support listing imported users. Skipping removal of invalid users for federation provider '%s'.", model.getName());
+            return;
+        }
+
+        if (toRemove.isEmpty()) {
+            return;
+        }
+
+        logger.infof("Removing %d users of federation provider '%s' in realm '%s', which no longer exist in LDAP", toRemove.size(), model.getName(), realmId);
+
+        for (String userId : toRemove) {
+            try {
+                KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                    RealmModel realm = session.realms().getRealm(realmId);
+                    session.getContext().setRealm(realm);
+                    UserProvider localStorage = UserStoragePrivateUtil.userLocalStorage(session);
+                    UserModel user = localStorage.getUserById(realm, userId);
+                    if (user == null) {
+                        return; // already removed concurrently
+                    }
+                    UserCache userCache = UserStorageUtil.userCache(session);
+                    if (userCache != null) {
+                        userCache.evict(realm, user);
+                    }
+                    if (new UserManager(session).removeUser(realm, user, localStorage)) {
+                        logger.debugf("Removed user '%s' (id: %s), which no longer exists in LDAP", user.getUsername(), userId);
+                        syncResult.increaseRemoved();
+                    }
+                });
+            } catch (ModelException e) {
+                logger.warnf(e, "Failed to remove user with id '%s', which no longer exists in LDAP", userId);
+                syncResult.increaseFailed();
+            }
+        }
     }
 
     /**

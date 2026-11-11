@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -641,6 +642,20 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId)
                 .executeUpdate();
+    }
+
+    @Override
+    public Stream<Map.Entry<String, String>> getImportedUserIdsWithAttributeStream(RealmModel realm, String storageProviderId,
+            String attributeName, Integer firstResult, Integer maxResults) {
+        TypedQuery<Object[]> query = em.createQuery(
+                "select u.id, attr.value from UserEntity u left join u.attributes attr on attr.name = :name " +
+                        "where u.realmId = :realmId and u.federationLink = :link order by u.id", Object[].class)
+                .setParameter("name", attributeName)
+                .setParameter("realmId", realm.getId())
+                .setParameter("link", storageProviderId);
+
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
+                .map(row -> new AbstractMap.SimpleImmutableEntry<>((String) row[0], (String) row[1]));
     }
 
     @Override

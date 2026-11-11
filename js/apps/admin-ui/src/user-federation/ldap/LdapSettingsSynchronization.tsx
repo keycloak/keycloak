@@ -20,6 +20,7 @@ export const LdapSettingsSynchronization = ({
 
   const watchPeriodicSync = form.watch("config.periodicFullSync", false);
   const watchChangedSync = form.watch("config.periodicChangedUsersSync", false);
+  const watchImportEnabled = form.watch("config.importEnabled", ["true"]);
 
   return (
     <FormProvider {...form}>
@@ -200,6 +201,35 @@ export const LdapSettingsSynchronization = ({
                 label={t("on")}
                 labelOff={t("off")}
                 aria-label={t("removeInvalidUsers")}
+              />
+            )}
+          />
+        </FormGroup>
+        <FormGroup
+          label={t("removeInvalidUsersOnSync")}
+          labelIcon={
+            <HelpItem
+              helpText={t("removeInvalidUsersOnSyncHelp")}
+              fieldLabelId="removeInvalidUsersOnSync"
+            />
+          }
+          fieldId="kc-remove-invalid-users-on-sync"
+          hasNoPaddingTop
+        >
+          <Controller
+            name="config.removeInvalidUsersOnSync"
+            defaultValue={["false"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id="kc-remove-invalid-users-on-sync"
+                data-testid="remove-invalid-users-on-sync"
+                isDisabled={watchImportEnabled?.[0] !== "true"}
+                onChange={(_event, value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                label={t("on")}
+                labelOff={t("off")}
+                aria-label={t("removeInvalidUsersOnSync")}
               />
             )}
           />
