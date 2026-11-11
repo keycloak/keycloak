@@ -63,6 +63,12 @@ If you provision realms from an exported JSON file, import the file once after u
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Existing AES key sizes are recorded during migration
+
+When upgrading, existing `aes-generated` key providers without an explicit `secretSize` are updated to record the size of their stored key, including databases already running 26.8.x.
+This ensures the Admin Console displays the actual key size and saving a provider without changes preserves its key and key ID.
+Providers with an explicitly configured size are preserved.
+
 === `secure-redirect-uris-enforcer` now always validates post-logout redirect URIs
 // https://github.com/keycloak/keycloak/issues/50982
 
