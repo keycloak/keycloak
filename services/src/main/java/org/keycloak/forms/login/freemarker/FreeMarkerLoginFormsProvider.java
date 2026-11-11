@@ -348,7 +348,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
         }
 
-        return processTemplate(theme, Templates.getTemplate(page), locale);
+        String templateName = Templates.getTemplate(page);
+        setPageTitleIfDefined(templateName, messagesBundle, locale);
+
+        return processTemplate(theme, templateName, locale);
     }
 
     /**
@@ -380,8 +383,56 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         UriBuilder uriBuilder = prepareBaseUriBuilder(false);
         createCommonAttributes(theme, locale, messagesBundle, uriBuilder, null);
+        setPageTitleIfDefined(form, messagesBundle, locale);
 
         return processTemplate(theme, form, locale);
+    }
+
+    /**
+     * Use a page-specific title when the theme defines one. The message key is <code>loginTitle.</code> followed by the
+     * template name without the <code>.ftl</code> extension, for example <code>loginTitle.login-otp</code>. The realm display
+     * name is passed as parameter <code>{0}</code>, as for <code>loginTitle</code>. If the key is not defined, the title already
+     * set for the page is kept.
+     *
+     * @param templateName   name of the template to be rendered
+     * @param messagesBundle actual message bundle (provided by <code>handleThemeResources()</code>)
+     * @param locale         actual locale
+     */
+    protected void setPageTitleIfDefined(String templateName, Properties messagesBundle, Locale locale) {
+        if (realm == null || templateName == null || !templateName.endsWith(".ftl")) {
+            return;
+        }
+
+        String key = "loginTitle." + templateName.substring(0, templateName.length() - 4);
+        if (messagesBundle.containsKey(key)) {
+            String title = formatPageTitle(realm, key, messagesBundle, locale);
+            if (title != null) {
+                attributes.put("title", title);
+            }
+        }
+    }
+
+    /**
+     * Format a page-specific title message. References to other messages, such as <code>${key}</code>, are resolved
+     * in the message and in the realm display name. The realm display name is passed as parameter <code>{0}</code>,
+     * as for <code>loginTitle</code>. If the message is not a valid pattern, a warning is logged and
+     * <code>null</code> is returned, so that the page keeps its current title.
+     *
+     * @param realm          the realm
+     * @param key            message key of the page-specific title
+     * @param messagesBundle actual message bundle, which must contain the key
+     * @param locale         actual locale
+     * @return the formatted title, or <code>null</code> if the message is not a valid pattern
+     */
+    public static String formatPageTitle(RealmModel realm, String key, Properties messagesBundle, Locale locale) {
+        String displayName = TemplatingUtil.resolveVariables(new RealmBean(realm).getDisplayName(), messagesBundle);
+        String pattern = TemplatingUtil.resolveVariables(messagesBundle.getProperty(key), messagesBundle);
+        try {
+            return new MessageFormat(pattern, locale).format(new Object[] { displayName });
+        } catch (IllegalArgumentException e) {
+            logger.warnf("Ignoring invalid page title message '%s': %s", key, e.getMessage());
+            return null;
+        }
     }
 
     /**

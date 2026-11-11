@@ -18,6 +18,7 @@ import jakarta.ws.rs.ext.Provider;
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.forms.login.MessageType;
+import org.keycloak.forms.login.freemarker.FreeMarkerLoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -199,6 +200,12 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         String errorMessage = messagesBundle.getProperty(errorKey);
 
         attributes.put("message", new MessageBean(errorMessage, MessageType.ERROR));
+        String title = messagesBundle.containsKey("loginTitle.error")
+                ? FreeMarkerLoginFormsProvider.formatPageTitle(realm, "loginTitle.error", messagesBundle, locale)
+                : null;
+        if (title != null) {
+            attributes.put("title", title);
+        }
         // Default fallback in case an error occurs determining the dark mode later on.
         attributes.put("darkMode", true);
 
