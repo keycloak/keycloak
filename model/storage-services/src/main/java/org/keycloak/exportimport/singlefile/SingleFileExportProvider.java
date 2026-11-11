@@ -31,9 +31,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.util.ObjectMapperResolver;
+import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.jboss.logging.Logger;
 
@@ -95,16 +95,15 @@ public class SingleFileExportProvider implements ExportProvider {
     public void close() {
     }
 
-    private ObjectMapper getObjectMapper() {
-        ObjectMapper streamSerializer = ObjectMapperResolver.createStreamSerializer();
-        streamSerializer.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        streamSerializer.enable(SerializationFeature.INDENT_OUTPUT);
-        return streamSerializer;
+    private ObjectWriter getObjectWriter() {
+        // use the same mapper as SingleFileImportProvider so that the file can always be read back,
+        // derive from the shared mapper, which must not be reconfigured
+        return JsonSerialization.mapper.writer(SerializationFeature.INDENT_OUTPUT);
     }
 
     private void writeToFile(Object reps) throws IOException {
         FileOutputStream stream = new FileOutputStream(this.file);
-        getObjectMapper().writeValue(stream, reps);
+        getObjectWriter().writeValue(stream, reps);
     }
 
     public ExportProvider withRealmName(String realmName) {

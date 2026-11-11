@@ -590,6 +590,31 @@ The emails are sent by the `email` executor. It has 4 threads by default and sta
 Custom email template providers, including ones that extend `FreeMarkerEmailTemplateProvider`, still send the email right away, so for them the response time still depends on the mail server.
 To send it in the background, a provider that extends `FreeMarkerEmailTemplateProvider` can override `supportsBackgroundDelivery()`. Other providers need to implement `EmailTemplateProvider.renderPasswordReset` and `send(RenderedEmail, int, EmailDeliveryListener)`.
 
+=== REST layer uses the Quarkus managed `ObjectMapper`
+
+The Admin REST API and the other REST endpoints now use the `ObjectMapper` that is managed by Quarkus, instead of one created by {project_name}.
+{project_name} applies its own configuration on top of it.
+
+==== JSON properties of custom representations with the `http-optimized-serializers` feature
+
+When the preview feature `http-optimized-serializers` is enabled, {project_name} uses serializers that Quarkus generates at build time instead of reflection.
+These generated serializers are created for every class that a REST endpoint accepts or returns, including the representations of custom extensions.
+They derive the property name from the getter name by lowercasing only the first character.
+Jackson without this feature lowercases all leading uppercase characters.
+
+As a result, a getter that starts with two or more consecutive uppercase characters is serialized under a different name.
+For example, `getOAuth2DeviceCodeLifespan()` is serialized as `oAuth2DeviceCodeLifespan` instead of `oauth2DeviceCodeLifespan`, and `getOIDCRequest()` as `oIDCRequest` instead of `oidcrequest`.
+Clients that deserialize with the standard names then fail with an unrecognized field error.
+
+{project_name} sets the names explicitly on its own representations, so the Admin REST API is not affected.
+Custom extensions that provide an endpoint with their own representation, and that enable this feature, must do the same for such getters.
+Add `@JsonProperty("<name>")` with the intended name to the getter.
+Representations whose getters start with a single uppercase character followed by a lowercase character, such as `getName()`, are not affected.
+
+The generated serializers also skip a property that is declared as a non-public field annotated with `@JsonProperty` but has no public getter.
+The property is then missing from the response without any error, and clients see `null` for it.
+Add a public getter for such fields, annotated with `@JsonProperty` when the JSON name differs from the getter-derived name.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
