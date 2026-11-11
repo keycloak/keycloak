@@ -604,6 +604,24 @@ public class JpaUserFederatedStorageProvider implements
         entity.setUserLabel(cred.getUserLabel());
     }
 
+    @Override
+    public boolean updateCredential(RealmModel realm, String userId, CredentialModel oldCred, CredentialModel newCred) {
+        FederatedUserCredentialEntity entity = em.find(FederatedUserCredentialEntity.class, oldCred.getId());
+        if (!checkCredentialEntity(entity, userId)) return false;
+        // write pending changes first, as the refresh discards them
+        em.flush();
+        // Lock the row and read its current state from the database, to compare with the latest committed version.
+        // If this transaction already holds the lock, the state is current. Skip the refresh in that case: Hibernate
+        // reloads an already locked entity with a plain read, and on MySQL/MariaDB under REPEATABLE READ that read
+        // is served from the transaction snapshot taken earlier, which can miss rows committed since then.
+        if (em.getLockMode(entity) != LockModeType.PESSIMISTIC_WRITE) {
+            em.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
+        }
+        if (!toModel(entity).hasSameContent(oldCred)) return false;
+        updateCredential(realm, userId, newCred);
+        return true;
+    }
+
     /**
      * Validates if a credential with the same user label already exists for the given user.
      * Excludes the credential itself if updating an existing one.
@@ -759,6 +777,11 @@ public class JpaUserFederatedStorageProvider implements
     @Override
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         updateCredential(realm, user.getId(), cred);
+    }
+
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialModel oldCred, CredentialModel newCred) {
+        return updateCredential(realm, user.getId(), oldCred, newCred);
     }
 
     @Override

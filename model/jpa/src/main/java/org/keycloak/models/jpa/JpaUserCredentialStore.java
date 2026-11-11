@@ -76,6 +76,24 @@ public class JpaUserCredentialStore implements UserCredentialStore {
     }
 
     @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialModel oldCred, CredentialModel newCred) {
+        CredentialEntity entity = em.find(CredentialEntity.class, oldCred.getId());
+        if (!checkCredentialEntity(entity, user)) return false;
+        // write pending changes first, as the refresh discards them
+        em.flush();
+        // Lock the row and read its current state from the database, to compare with the latest committed version.
+        // If this transaction already holds the lock, the state is current. Skip the refresh in that case: Hibernate
+        // reloads an already locked entity with a plain read, and on MySQL/MariaDB under REPEATABLE READ that read
+        // is served from the transaction snapshot taken earlier, which can miss rows committed since then.
+        if (em.getLockMode(entity) != LockModeType.PESSIMISTIC_WRITE) {
+            em.refresh(entity, LockModeType.PESSIMISTIC_WRITE);
+        }
+        if (!toModel(entity).hasSameContent(oldCred)) return false;
+        updateCredential(realm, user, newCred);
+        return true;
+    }
+
+    @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = createCredentialEntity(realm, user, cred);
         return toModel(entity);
