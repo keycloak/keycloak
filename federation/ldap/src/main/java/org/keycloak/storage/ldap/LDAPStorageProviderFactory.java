@@ -18,8 +18,8 @@
 package org.keycloak.storage.ldap;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -645,12 +645,16 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         try (LDAPQuery userQuery = createQuery(sessionFactory, realmId, model)) {
             boolean removeInvalidUsers = model.isImportEnabled() && new LDAPConfig(model.getConfig()).isRemoveInvalidUsersOnSync();
-            Set<String> ldapIds = removeInvalidUsers ? new HashSet<>() : null;
 
-            SynchronizationResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model, ldapIds);
+            // Snapshot of imported users taken BEFORE the LDAP scan. Only these users are candidates for removal, so users
+            // imported concurrently (e.g. on login) or by this sync are never removed.
+            Map<String, String> candidates = removeInvalidUsers ? loadImportedUsers(sessionFactory, realmId, model) : null;
+            LdapScan scan = candidates != null && !candidates.isEmpty() ? new LdapScan() : null;
 
-            if (removeInvalidUsers) {
-                removeUsersNotFoundInLdap(sessionFactory, realmId, model, ldapIds, syncResult);
+            SynchronizationResult syncResult = syncImpl(sessionFactory, userQuery, realmId, model, scan);
+
+            if (scan != null) {
+                removeUsersNotFoundInLdap(sessionFactory, realmId, model, candidates, scan, syncResult);
             }
 
             logger.infof("Sync all users finished: %s", syncResult.getStatus());
@@ -706,9 +710,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
     }
 
     /**
-     * @param ldapIds if not {@code null}, the UUIDs (LDAP_ID) of all LDAP users returned by the query are collected into it
+     * @param scan if not {@code null}, the UUIDs (LDAP_ID) of all LDAP users returned by the query are collected into it
      */
-    protected SynchronizationResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPQuery userQuery, final String realmId, final ComponentModel fedModel, Set<String> ldapIds) {
+    protected SynchronizationResult syncImpl(KeycloakSessionFactory sessionFactory, LDAPQuery userQuery, final String realmId, final ComponentModel fedModel, LdapScan scan) {
 
         final SynchronizationResult syncResult = new SynchronizationResult();
 
@@ -722,14 +726,21 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 userQuery.setLimit(pageSize);
                 final List<LDAPObject> users = userQuery.getResultList();
                 nextPage = userQuery.getPaginationContext().hasNextPage();
-                collectLdapIds(users, ldapIds);
+                if (scan != null) {
+                    scan.collect(users);
+                    if (userQuery.getPaginationContext().isIncomplete()) {
+                        scan.markIncomplete();
+                    }
+                }
                 SynchronizationResult currentPageSync = importLdapUsers(sessionFactory, realmId, fedModel, users);
                 syncResult.add(currentPageSync);
             }
         } else {
             // LDAP pagination not available. Do everything in single transaction
             final List<LDAPObject> users = userQuery.getResultList();
-            collectLdapIds(users, ldapIds);
+            if (scan != null) {
+                scan.collect(users);
+            }
             SynchronizationResult currentSync = importLdapUsers(sessionFactory, realmId, fedModel, users);
             syncResult.add(currentSync);
         }
@@ -737,36 +748,49 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
         return syncResult;
     }
 
-    private static void collectLdapIds(List<LDAPObject> users, Set<String> ldapIds) {
-        if (ldapIds == null) {
-            return;
-        }
-        for (LDAPObject user : users) {
-            if (user.getUuid() != null) {
-                ldapIds.add(user.getUuid());
+    /**
+     * Result of the full LDAP user scan, used to detect users removed from LDAP.
+     */
+    protected static class LdapScan {
+        private final Set<String> ldapIds = new HashSet<>();
+        private boolean complete = true;
+
+        void collect(List<LDAPObject> users) {
+            for (LDAPObject user : users) {
+                if (user.getUuid() == null) {
+                    // we cannot tell which local user this entry belongs to, so we cannot safely remove anybody
+                    complete = false;
+                } else {
+                    ldapIds.add(user.getUuid());
+                }
             }
+        }
+
+        void markIncomplete() {
+            complete = false;
+        }
+
+        boolean isComplete() {
+            return complete;
+        }
+
+        boolean contains(String ldapId) {
+            return ldapIds.contains(ldapId);
+        }
+
+        boolean isEmpty() {
+            return ldapIds.isEmpty();
         }
     }
 
     /**
-     * Removes local users linked to this provider whose {@code LDAP_ID} was not returned by the full LDAP user query.
-     * Users are first collected (read-only, without validation against LDAP) and then each one is removed in its own
-     * transaction, so a failure of one removal does not affect the others.
-     * <p>
-     * As a safety measure nothing is removed when the LDAP query returned no users at all, because this is far more
-     * likely a misconfiguration (wrong Users DN, filter, ...) than an intentionally empty directory.
+     * Loads ids of local users linked to this provider together with their {@code LDAP_ID}, without validating them against LDAP.
+     *
+     * @return map userId -> LDAP_ID, or {@code null} if the local storage does not support this operation
      */
-    protected void removeUsersNotFoundInLdap(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model,
-                                             Set<String> ldapIds, SynchronizationResult syncResult) {
-        if (ldapIds.isEmpty()) {
-            logger.warnf("LDAP query returned no users for federation provider '%s' in realm '%s'. Skipping removal of invalid users to prevent accidental data loss.",
-                    model.getName(), realmId);
-            return;
-        }
-
+    private Map<String, String> loadImportedUsers(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         int pageSize = Math.max(new LDAPConfig(model.getConfig()).getBatchSizeForSync(), 1);
-        List<String> toRemove = new ArrayList<>();
-
+        Map<String, String> result = new HashMap<>();
         try {
             int first = 0;
             while (true) {
@@ -781,20 +805,45 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
                 for (Map.Entry<String, String> entry : page) {
                     // users without LDAP_ID are left untouched, we cannot reliably tell whether they exist in LDAP
-                    if (entry.getValue() != null && !ldapIds.contains(entry.getValue())) {
-                        toRemove.add(entry.getKey());
+                    if (entry.getValue() != null) {
+                        result.put(entry.getKey(), entry.getValue());
                     }
                 }
 
                 if (page.size() < pageSize) {
-                    break;
+                    return result;
                 }
                 first += pageSize;
             }
         } catch (UnsupportedOperationException e) {
             logger.warnf("Local user storage does not support listing imported users. Skipping removal of invalid users for federation provider '%s'.", model.getName());
+            return null;
+        }
+    }
+
+    /**
+     * Removes users from the {@code candidates} snapshot whose {@code LDAP_ID} was not returned by the full LDAP user query.
+     * Each user is removed in its own transaction, so a failure of one removal does not affect the others.
+     * <p>
+     * As a safety measure nothing is removed when the LDAP scan may be incomplete (e.g. server-side size limit hit,
+     * entries without UUID) or returned no users at all (likely misconfiguration such as wrong Users DN or filter).
+     */
+    protected void removeUsersNotFoundInLdap(KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model,
+                                             Map<String, String> candidates, LdapScan scan, SynchronizationResult syncResult) {
+        if (!scan.isComplete()) {
+            logger.warnf("LDAP user query for federation provider '%s' in realm '%s' may have returned incomplete results. Skipping removal of invalid users to prevent accidental data loss.",
+                    model.getName(), realmId);
             return;
         }
+        if (scan.isEmpty()) {
+            logger.warnf("LDAP query returned no users for federation provider '%s' in realm '%s'. Skipping removal of invalid users to prevent accidental data loss.",
+                    model.getName(), realmId);
+            return;
+        }
+
+        List<Map.Entry<String, String>> toRemove = candidates.entrySet().stream()
+                .filter(e -> !scan.contains(e.getValue()))
+                .collect(Collectors.toList());
 
         if (toRemove.isEmpty()) {
             return;
@@ -802,7 +851,9 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
 
         logger.infof("Removing %d users of federation provider '%s' in realm '%s', which no longer exist in LDAP", toRemove.size(), model.getName(), realmId);
 
-        for (String userId : toRemove) {
+        for (Map.Entry<String, String> candidate : toRemove) {
+            String userId = candidate.getKey();
+            String ldapId = candidate.getValue();
             try {
                 KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
                     RealmModel realm = session.realms().getRealm(realmId);
@@ -812,10 +863,16 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                     if (user == null) {
                         return; // already removed concurrently
                     }
+                    // re-check the user was not unlinked or re-linked to a different LDAP entry since the snapshot
+                    if (!model.getId().equals(user.getFederationLink()) || !ldapId.equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) {
+                        logger.debugf("Skipping removal of user '%s' (id: %s) as it changed during sync", user.getUsername(), userId);
+                        return;
+                    }
                     UserCache userCache = UserStorageUtil.userCache(session);
                     if (userCache != null) {
                         userCache.evict(realm, user);
                     }
+                    publishUserPreRemovedEvent(session, realm, user);
                     if (new UserManager(session).removeUser(realm, user, localStorage)) {
                         logger.debugf("Removed user '%s' (id: %s), which no longer exists in LDAP", user.getUsername(), userId);
                         syncResult.increaseRemoved();
@@ -826,6 +883,25 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 syncResult.increaseFailed();
             }
         }
+    }
+
+    private static void publishUserPreRemovedEvent(KeycloakSession session, RealmModel realm, UserModel user) {
+        session.getKeycloakSessionFactory().publish(new UserModel.UserPreRemovedEvent() {
+            @Override
+            public RealmModel getRealm() {
+                return realm;
+            }
+
+            @Override
+            public UserModel getUser() {
+                return user;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
     /**

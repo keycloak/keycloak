@@ -648,14 +648,15 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     public Stream<Map.Entry<String, String>> getImportedUserIdsWithAttributeStream(RealmModel realm, String storageProviderId,
             String attributeName, Integer firstResult, Integer maxResults) {
         TypedQuery<Object[]> query = em.createQuery(
-                "select u.id, attr.value from UserEntity u left join u.attributes attr on attr.name = :name " +
+                // longValue is selected separately (not via coalesce) because it may be mapped to a LOB column on some databases
+                "select u.id, attr.value, attr.longValue from UserEntity u left join u.attributes attr on attr.name = :name " +
                         "where u.realmId = :realmId and u.federationLink = :link order by u.id", Object[].class)
                 .setParameter("name", attributeName)
                 .setParameter("realmId", realm.getId())
                 .setParameter("link", storageProviderId);
 
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(row -> new AbstractMap.SimpleImmutableEntry<>((String) row[0], (String) row[1]));
+                .map(row -> new AbstractMap.SimpleImmutableEntry<>((String) row[0], row[1] != null ? (String) row[1] : (String) row[2]));
     }
 
     @Override
