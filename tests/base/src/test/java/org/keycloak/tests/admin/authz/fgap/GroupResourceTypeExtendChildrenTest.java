@@ -45,11 +45,14 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -282,20 +285,81 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
 
     @Test
     public void testUserSearchIncludesMembersOfDescendants() {
-        UserRepresentation member = new UserRepresentation();
-        member.setUsername("subteam-member");
-        member.setEnabled(true);
-
-        try (Response response = realm.admin().users().create(member)) {
-            member.setId(ApiUtil.getCreatedId(response));
-        }
-
-        realm.admin().users().get(member.getId()).joinGroup(subteam.getId());
+        UserRepresentation member = createMember("subteam-member", subteam);
 
         createGroupPermission(department, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
 
-        List<UserRepresentation> search = myRealm().users().search(member.getUsername(), -1, -1);
-        assertThat(search.stream().map(UserRepresentation::getId).toList(), contains(member.getId()));
+        assertThat(searchUserIds(member), contains(member.getId()));
+    }
+
+    @Test
+    public void testUserInheritsMemberScopesFromExtendedAncestor() {
+        createGroupPermission(department, Set.of(VIEW, VIEW_MEMBERS, MANAGE_MEMBERS), true, allowMyAdmin);
+        UserRepresentation member = createMember("subteam-member", subteam);
+        UserRepresentation outsider = createMember("outsider");
+
+        // direct checks, search and the group members agree
+        assertCanView(member);
+        assertCanManage(member);
+        assertThat(searchUserIds(member), contains(member.getId()));
+        assertThat(myGroup(subteam).members().stream().map(UserRepresentation::getId).toList(), contains(member.getId()));
+
+        assertCannotView(outsider);
+        assertThat(searchUserIds(outsider), empty());
+    }
+
+    @Test
+    public void testUserDeniedByAnyExtendedAncestorMemberScope() {
+        createAllPermission(adminPermissionsClient, USERS_RESOURCE_TYPE, allowMyAdmin, Set.of(VIEW));
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), true, denyMyAdmin);
+        // a closer extended grant does not override a deny from a farther ancestor for member scopes
+        createGroupPermission(team, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
+        UserRepresentation member = createMember("subteam-member", subteam);
+        UserRepresentation outsider = createMember("outsider");
+
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+        assertThrows(ForbiddenException.class, () -> myGroup(subteam).members());
+
+        // users outside the hierarchy are only decided by the permission for all users
+        assertCanView(outsider);
+        assertThat(searchUserIds(outsider), contains(outsider.getId()));
+    }
+
+    @Test
+    public void testUserDeniedByNonExtendedMemberScopeOfIntermediateGroup() {
+        createAllPermission(adminPermissionsClient, USERS_RESOURCE_TYPE, allowMyAdmin, Set.of(VIEW));
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
+        // member scopes of a group already protect the members of its subgroups, with or without extend children
+        createGroupPermission(team, Set.of(VIEW_MEMBERS), false, denyMyAdmin);
+        UserRepresentation member = createMember("subteam-member", subteam);
+
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+        assertThrows(ForbiddenException.class, () -> myGroup(subteam).members());
+    }
+
+    @Test
+    public void testUserInSeveralGroupsDeniedByInheritedMemberScope() {
+        createAllPermission(adminPermissionsClient, USERS_RESOURCE_TYPE, allowMyAdmin, Set.of(VIEW));
+        GroupRepresentation other = createGroup("other");
+        createGroupPermission(other, Set.of(VIEW_MEMBERS), false, allowMyAdmin);
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), true, denyMyAdmin);
+        UserRepresentation member = createMember("subteam-and-other-member", subteam, other);
+
+        // a grant from another group of the user does not override the inherited deny
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+    }
+
+    @Test
+    public void testUserInheritingThroughSeveralGroupsIsGrantedOnce() {
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
+        UserRepresentation member = createMember("team-and-subteam-member", team, subteam);
+
+        assertCanView(member);
+        // the user is a member of two groups inheriting the same permission, but is only listed once
+        assertThat(searchUserIds(member), contains(member.getId()));
     }
 
     private ScopePermissionRepresentation createGroupPermission(GroupRepresentation group, Set<String> scopes, boolean extendChildren, UserPolicyRepresentation policy) {
@@ -350,6 +414,42 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         GroupRepresentation rep = realm.admin().groups().group(group.getId()).toRepresentation();
         rep.setDescription("updated by delegated admin");
         assertThrows(ForbiddenException.class, () -> myGroup(group).update(rep));
+    }
+
+    private UserRepresentation createMember(String username, GroupRepresentation... groups) {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setEnabled(true);
+
+        try (Response response = realm.admin().users().create(user)) {
+            user.setId(ApiUtil.getCreatedId(response));
+        }
+
+        realm.cleanup().add(r -> r.users().delete(user.getId()).close());
+
+        for (GroupRepresentation group : groups) {
+            realm.admin().users().get(user.getId()).joinGroup(group.getId());
+        }
+
+        return user;
+    }
+
+    private void assertCanView(UserRepresentation user) {
+        assertThat(myRealm().users().get(user.getId()).toRepresentation().getId(), equalTo(user.getId()));
+    }
+
+    private void assertCannotView(UserRepresentation user) {
+        assertThrows(ForbiddenException.class, () -> myRealm().users().get(user.getId()).toRepresentation());
+    }
+
+    private void assertCanManage(UserRepresentation user) {
+        UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+        rep.setFirstName("updated by delegated admin");
+        myRealm().users().get(user.getId()).update(rep);
+    }
+
+    private List<String> searchUserIds(UserRepresentation user) {
+        return myRealm().users().search(user.getUsername(), true).stream().map(UserRepresentation::getId).toList();
     }
 
     private Set<String> searchGroupIds(String search) {

@@ -45,7 +45,8 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESO
  * <ul>
  *     <li>a group with any permission of its own for the scope is decided by those permissions only;</li>
  *     <li>for the group scopes (e.g. {@code view}), the closest ancestor with an extended permission decides;</li>
- *     <li>for the member scopes (e.g. {@code view-members}), a deny from any extended ancestor wins over an allow.</li>
+ *     <li>for the member scopes (e.g. {@code view-members}), a deny from any extended ancestor wins over an allow, and
+ *     a grant is not inherited by the descendants of a group whose own permission denies, extended or not.</li>
  * </ul>
  */
 final class ExtendChildrenPartialEvaluator {
@@ -58,8 +59,8 @@ final class ExtendChildrenPartialEvaluator {
      * @param session the session
      * @param scope the scope being evaluated
      * @param memberScope {@code true} if the scope protects the members of a group rather than the group itself
-     * @param grantedPermissions the ids of the extended permissions that grant access to the current admin. Any other
-     *                           extended permission is considered as denying access, as it would be during direct evaluation.
+     * @param grantedPermissions the ids of the permissions that grant access to the current admin. Any other permission
+     *                           is considered as denying access, as it would be during direct evaluation.
      */
     Result evaluate(KeycloakSession session, String scope, boolean memberScope, Set<String> grantedPermissions) {
         RealmModel realm = session.getContext().getRealm();
@@ -83,6 +84,8 @@ final class ExtendChildrenPartialEvaluator {
 
         // groups with a permission of their own for the scope, regardless of the admin the permission targets
         Set<String> claimedGroups = new HashSet<>();
+        // groups with a permission of their own for the scope that does not grant access to the admin
+        Set<String> deniedGroups = new HashSet<>();
         // extended permissions for the scope, by group
         Map<String, Map<String, Boolean>> extendedByGroup = new HashMap<>();
         Set<String> visitedPermissions = new HashSet<>();
@@ -100,6 +103,10 @@ final class ExtendChildrenPartialEvaluator {
                 }
 
                 claimedGroups.add(groupId);
+
+                if (!grantedPermissions.contains(permission.getId())) {
+                    deniedGroups.add(groupId);
+                }
 
                 if (extended) {
                     extendedByGroup.computeIfAbsent(groupId, k -> new HashMap<>())
@@ -125,7 +132,11 @@ final class ExtendChildrenPartialEvaluator {
             // all extended permissions on the group must grant, as with any other set of permissions for a resource
             boolean granted = entry.getValue().values().stream().allMatch(Boolean::booleanValue);
 
-            for (String descendant : getInheritingDescendants(group, claimedGroups, memberScope ? Set.of() : extendedByGroup.keySet())) {
+            // for member scopes, a deny from any ancestor, extended or not, protects the members of the descendants, so
+            // the walk stops at denied groups to not grant access to their descendants
+            Set<String> stopAt = memberScope ? (granted ? deniedGroups : Set.of()) : extendedByGroup.keySet();
+
+            for (String descendant : getInheritingDescendants(group, claimedGroups, stopAt)) {
                 if (granted) {
                     allowed.add(descendant);
                 } else {
