@@ -19,8 +19,7 @@ package org.keycloak.authentication.authenticators.conditional;
 
 import org.keycloak.authentication.AuthenticationFlowCallback;
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.AuthenticationFlowException;
+import org.keycloak.authentication.authenticators.util.AcrNotFulfilledException;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -28,7 +27,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
@@ -109,9 +107,7 @@ public class ConditionalLoaAuthenticator implements ConditionalAuthenticator, Au
 
         logger.tracef("Finished authentication at level %d when authenticating authSession '%s'.", acrStore.getLevelOfAuthenticationFromCurrentAuthentication(), authSession.getParentSession().getId());
         if (acrStore.isLevelOfAuthenticationForced() && !acrStore.isLevelOfAuthenticationSatisfiedFromCurrentAuthentication(topFlow)) {
-            String details = String.format("Forced level of authentication did not meet the requirements. Requested level: %d, Fulfilled level: %d",
-                    acrStore.getRequestedLevelOfAuthentication(topFlow), acrStore.getLevelOfAuthenticationFromCurrentAuthentication());
-            throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, details, Messages.ACR_NOT_FULFILLED);
+            throw new AcrNotFulfilledException(acrStore.getRequestedLevelOfAuthentication(topFlow), acrStore.getEffectiveLevelOfAuthentication());
         }
 
         logger.tracef("Updating authenticated levels in authSession '%s' to user session note for future authentications: %s", authSession.getParentSession().getId(), authSession.getAuthNote(Constants.LOA_MAP));
