@@ -7,7 +7,8 @@ import type Keycloak from "keycloak-js";
  * value exactly matches `Bearer ${keycloak.token}`. Admin/account UI requests capture the
  * token before calling fetch; if another request refreshes the token in between, that
  * equality check fails and the request is sent as Bearer with a DPoP-bound token, which
- * the server rejects. Re-syncing the header to the current token closes that race.
+ * the server rejects. Re-syncing a stale `Bearer` header to the current token closes that
+ * race. Non-Bearer schemes (for example `DPoP`) are left unchanged.
  */
 export function createKeycloakFetch(keycloak: Keycloak): typeof fetch {
   return (input, init) => {
@@ -15,7 +16,14 @@ export function createKeycloakFetch(keycloak: Keycloak): typeof fetch {
       init?.headers ?? (input instanceof Request ? input.headers : undefined),
     );
 
-    if (headers.has("Authorization") && keycloak.token) {
+    // Only resync console Bearer tokens. Leave DPoP or other schemes alone so
+    // callers that already upgraded the header are not rewritten back to Bearer.
+    const authorization = headers.get("Authorization");
+    if (
+      keycloak.token &&
+      authorization?.startsWith("Bearer ") &&
+      authorization !== `Bearer ${keycloak.token}`
+    ) {
       headers.set("Authorization", `Bearer ${keycloak.token}`);
     }
 

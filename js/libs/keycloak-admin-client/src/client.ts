@@ -230,6 +230,11 @@ export class KeycloakAdminClient {
     return this.#globalRequestArgOptions;
   }
 
+  /**
+   * Updates connection settings. Omitted `requestOptions` and `fetch` keep their
+   * previous values; pass a new value to replace them. Neither can be cleared
+   * through this method once set.
+   */
   public setConfig(connectionConfig: ConnectionConfig) {
     if (
       typeof connectionConfig.baseUrl === "string" &&

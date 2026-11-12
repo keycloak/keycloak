@@ -37,4 +37,23 @@ describe("createKeycloakFetch", () => {
     const [, init] = keycloakFetch.mock.calls[0];
     expect(new Headers(init?.headers).has("Authorization")).toBe(false);
   });
+
+  it("does not rewrite a non-Bearer Authorization header", async () => {
+    const response = new Response("{}");
+    const keycloakFetch = vi.fn().mockResolvedValue(response);
+    const keycloak = {
+      token: "current-token",
+      fetch: keycloakFetch,
+    } as unknown as Keycloak;
+
+    const fetchImpl = createKeycloakFetch(keycloak);
+    await fetchImpl("http://example.test/admin", {
+      headers: { Authorization: "DPoP other-token" },
+    });
+
+    const [, init] = keycloakFetch.mock.calls[0];
+    expect(new Headers(init.headers).get("Authorization")).toBe(
+      "DPoP other-token",
+    );
+  });
 });

@@ -380,6 +380,17 @@ When upgrading, existing `aes-generated` key providers without an explicit `secr
 This ensures the Admin Console displays the actual key size and saving a provider without changes preserves its key and key ID.
 Providers with an explicitly configured size are preserved.
 
+=== Admin and Account Consoles use DPoP-bound tokens when advertised
+// https://github.com/keycloak/keycloak/issues/42813
+// https://github.com/keycloak/keycloak/issues/42814
+
+The Admin Console and Account Console now initialize `keycloak-js` with DPoP in `auto` mode and send authenticated API requests through `keycloak.fetch`.
+When the server advertises DPoP support, console access tokens are DPoP-bound and must be presented with a DPoP proof.
+Plain `Authorization: Bearer` requests that reuse the console token without a proof are rejected.
+
+If you maintain console extensions or custom themes that call `fetch` with `keycloak.token` directly, switch those calls to `keycloak.fetch` (or an equivalent that attaches a DPoP proof) so they keep working when DPoP is active.
+When the server does not advertise DPoP, the consoles continue to use Bearer tokens as before.
+
 === SAML assertions with a OneTimeUse condition are no longer replayable
 // https://github.com/keycloak/keycloak/issues/46325
 
