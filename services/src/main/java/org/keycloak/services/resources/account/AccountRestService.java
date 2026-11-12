@@ -73,6 +73,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserConsentManager;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
@@ -427,9 +428,9 @@ public class AccountRestService {
                     if (userSession.getAuthenticatedClientSessions().isEmpty()) {
                         // The last client session was ended, remove the now empty user session as well.
                         if (userSession.isOffline()) {
-                            session.sessions().removeOfflineUserSession(realm, userSession);
+                            new UserSessionManager(session).revokeOfflineUserSession(userSession);
                         } else {
-                            session.sessions().removeUserSession(realm, userSession);
+                            AuthenticationManager.removeUserSessionAndRootAuthSession(session, realm, userSession);
                         }
                     }
                     event.clone()
