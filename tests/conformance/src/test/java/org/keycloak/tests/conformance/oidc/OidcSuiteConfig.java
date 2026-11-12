@@ -24,6 +24,7 @@ import org.keycloak.testframework.conformance.runner.BrowserFlow;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.SuiteOptions;
 import org.keycloak.tests.conformance.oidc.configs.OidcDynamicRealmConfig;
+import org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,7 +34,6 @@ import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.CLIENT
 import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.CLIENT2;
 import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.CLIENT2_SECRET;
 import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.CLIENT_SECRET;
-import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.CONFORMANCE_CALLBACK;
 import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.PASSWORD;
 import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.REALM;
 import static org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig.USER;
@@ -53,25 +53,25 @@ record OidcSuiteConfig(
         List<BrowserFlow> browser,
         SuiteOptions options) {
 
-    static OidcSuiteConfig create(URI keycloakBaseUri, BrowserInteraction browserInteraction) {
+    static OidcSuiteConfig create(URI keycloakBaseUri, String alias, BrowserInteraction browserInteraction) {
         return new OidcSuiteConfig(
-                "keycloak",
+                alias,
                 server(keycloakBaseUri, REALM),
                 new Client(CLIENT, CLIENT_SECRET),
                 new Client(CLIENT2, CLIENT2_SECRET),
                 new Client(CLIENT, CLIENT_SECRET),
-                browserFlows(REALM, browserInteraction),
+                browserFlows(REALM, alias, browserInteraction),
                 SuiteOptions.WITHOUT_BROWSER_CSS);
     }
 
-    static OidcSuiteConfig createDynamic(URI keycloakBaseUri, BrowserInteraction browserInteraction) {
+    static OidcSuiteConfig createDynamic(URI keycloakBaseUri, String alias, BrowserInteraction browserInteraction) {
         return new OidcSuiteConfig(
-                "keycloak",
+                alias,
                 server(keycloakBaseUri, OidcDynamicRealmConfig.REALM),
                 null,
                 null,
                 null,
-                browserFlows(OidcDynamicRealmConfig.REALM, browserInteraction),
+                browserFlows(OidcDynamicRealmConfig.REALM, alias, browserInteraction),
                 SuiteOptions.WITHOUT_BROWSER_CSS);
     }
 
@@ -79,12 +79,12 @@ record OidcSuiteConfig(
         return new Server(keycloakBaseUri + "/realms/" + realm + "/.well-known/openid-configuration");
     }
 
-    private static List<BrowserFlow> browserFlows(String realm, BrowserInteraction browserInteraction) {
+    private static List<BrowserFlow> browserFlows(String realm, String alias, BrowserInteraction browserInteraction) {
         return browserInteraction.browserFlows(new BrowserInteraction.BrowserContext(
                 realm,
                 USER,
                 PASSWORD,
-                CONFORMANCE_CALLBACK));
+                OidcRealmConfig.callback(alias)));
     }
 
     JsonNode toJson() {

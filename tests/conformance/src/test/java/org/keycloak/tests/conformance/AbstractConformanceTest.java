@@ -26,6 +26,7 @@ import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.conformance.annotations.InjectOpenIdConformanceServer;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceAttempts;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleResult;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
@@ -53,14 +54,13 @@ public abstract class AbstractConformanceTest {
 
     /**
      * How often a module not finishing as expected, or whose run fails with an exception, is run again before the test
-     * fails, as modules occasionally fail for reasons outside of Keycloak, e.g. network errors or the timing of the
-     * suite's waits. Set it with the
-     * {@value} test framework option (system property, {@code KC_TEST_CONFORMANCE_RETRIES} environment variable or
-     * keycloak-test.properties); 0 disables the retries.
+     * fails, see {@link ConformanceAttempts}. Set it with the {@value} test framework option (system property,
+     * {@code KC_TEST_CONFORMANCE_RETRIES} environment variable or keycloak-test.properties) for all tests; without it,
+     * each test uses its {@link #defaultRetries()}. 0 disables the retries.
      */
     public static final String RETRIES_PROPERTY = "kc.test.conformance.retries";
 
-    private static final int DEFAULT_RETRIES = 3;
+    private int attempt = 1;
 
     @InjectCertificates(config = TlsCertificates.class)
     protected ManagedCertificates certificates;
@@ -122,44 +122,52 @@ public abstract class AbstractConformanceTest {
         return null;
     }
 
+    /**
+     * How often a module of this test is run again by default, see {@link #RETRIES_PROPERTY}. Retries are opt-in, so
+     * none by default.
+     */
+    protected int defaultRetries() {
+        return 0;
+    }
+
+    /**
+     * The number of attempts of a module, given the default number of retries of the test, see
+     * {@link #RETRIES_PROPERTY}.
+     */
+    public static int attempts(int defaultRetries) {
+        return 1 + Math.max(0, Config.get(RETRIES_PROPERTY, defaultRetries, Integer.class));
+    }
+
+    /**
+     * The suite alias for the current attempt of a module, see {@link ConformanceAttempts#alias}. A test with retries
+     * uses it in its {@link #suiteConfig}, and accepts the callback URLs of all its aliases, see
+     * {@link ConformanceAttempts#aliases}.
+     */
+    protected String suiteAlias(String base) {
+        return ConformanceAttempts.alias(base, attempt);
+    }
+
     @ParameterizedTest
     @MethodSource("moduleVariants")
     public void conformance(ConformanceModuleVariant moduleVariant) {
         ConformanceResult expectedResult = moduleVariant.expectedResult();
-
-        int attempts = 1 + Math.max(0, Config.get(RETRIES_PROPERTY, DEFAULT_RETRIES, Integer.class));
-        for (int attempt = 1; ; attempt++) {
-            // Each run creates a new plan, so an attempt does not depend on the previous one
-            ConformanceModuleResult result;
-            try {
-                result = server.client()
+        ConformanceAttempts.Outcome outcome;
+        try {
+            outcome = ConformanceAttempts.run(moduleVariant.name(), attempts(defaultRetries()), attempt -> {
+                this.attempt = attempt;
+                // Each run creates a new plan, so an attempt does not depend on the previous one
+                return server.client()
                         .run(moduleVariant, suiteConfig(moduleVariant), beforeStart(moduleVariant), interaction(moduleVariant));
-            } catch (RuntimeException e) {
-                // e.g. the suite's API not answering or the module not reaching a state in time, which is retried like
-                // a module not finishing as expected; the last attempt fails with the exception itself
-                if (attempt < attempts) {
-                    printRetryNotice("Attempt " + attempt + " of " + attempts + " of conformance module "
-                            + moduleVariant.name() + " failed, running it again: " + e);
-                    continue;
-                }
-                throw e;
-            }
-            String failure = failure(result, expectedResult);
-            if (failure == null) {
-                if (attempt > 1) {
-                    printRetryNotice("Conformance module " + result.module() + " " + moduleVariant.moduleVariant()
-                            + " finished as expected in attempt " + attempt + " of " + attempts);
-                }
-                return;
-            }
-            if (attempt < attempts) {
-                printRetryNotice("Attempt " + attempt + " of " + attempts + " of conformance module " + result.module()
-                        + " did not finish as expected, running it again:\n" + failure);
-                continue;
-            }
+            }, result -> failure(result, expectedResult), AbstractConformanceTest::printRetryNotice);
+        } finally {
+            attempt = 1;
+        }
+        if (!outcome.succeeded()) {
+            ConformanceModuleResult result = outcome.result();
             // Formatted upfront, as the test framework log filter replays buffered records without their parameters
             LOGGER.error("Full logs of failed conformance module " + result.module() + ":\n" + result.logs().toPrettyString());
-            Assertions.fail((attempts > 1 ? "All " + attempts + " attempts failed, the last one with:\n" : "") + failure);
+            Assertions.fail((outcome.attempts() > 1 ? "All " + outcome.attempts() + " attempts failed, the last one with:\n" : "")
+                    + outcome.failure());
         }
     }
 

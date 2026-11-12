@@ -41,12 +41,11 @@ Modules are grouped by the browser interaction and the result they are expected 
 a module may be expected to finish with `REVIEW` (Keycloak's error page or a second login is snapshotted for a
 human reviewer), `SKIPPED` or `WARNING`; the reasons are documented next to the module lists.
 
-Keycloak always adds the `typ` claim to the ID token, and puts the claims of a requested scope, e.g. `email`, in it
-even when an access token is issued for the userinfo endpoint. The suite warns about both, and no realm setting
-changes them, so this module packages a script based protocol mapper (`src/main/resources`, with the `scripts`
-feature enabled by `ConformanceServerConfig`) that the OpenID Connect clients use: `oidc-id-token-claims.js` removes
-`typ` and, unless the response type is `id_token`, the email claims. The OpenID Connect tests also disable the CSS
-processing of the suite's browser (`browsercontrol_css_enable`), where most of their time used to go.
+Keycloak always adds the `typ` claim to the ID token, and puts the claims of a requested scope, e.g. `email`, in it even when an access token is issued for the userinfo endpoint.
+The specification permits both, but the suite warns about them, and no realm setting changes them.
+The OpenID Connect realms therefore apply a conformance test adjustment, a script based protocol mapper of this module (`src/main/resources/conformance-adjustment-oidc-id-token.js`), which documents what it changes and why: it removes `typ`, and the email claims unless the response type is `id_token` or the client requested them in the ID token with the `claims` parameter.
+It is test configuration, not a recommended Keycloak setup; the `scripts` feature and the deployment of this module as a provider (`ConformanceServerConfig`) are only there for it.
+The OpenID Connect tests also disable the CSS processing of the suite's browser (`browsercontrol_css_enable`), where most of their time used to go.
 
 In the Dynamic OP plan, the suite registers its clients itself through Keycloak's anonymous dynamic client registration.
 Its realm (`OidcDynamicRealmConfig`) replaces Keycloak's default anonymous client registration policies, whose trusted hosts policy rejects the suite's registrations, with the consent required policy and a higher limit of clients.
@@ -57,6 +56,7 @@ The suite skips `oidcc-idtoken-unsigned`, as Keycloak does not issue unsigned ID
 Keycloak fetches some URLs the suite publishes for its clients, e.g. their `jwks_uri`, `request_uri` and `sector_identifier_uri`.
 The suite publishes them on its container internal host, which Keycloak, running on the Docker host, cannot resolve.
 The test server therefore sends the requests for that host through a tunnel in the test JVM (`SuiteTunnel` of the `conformance-runner` module) to the suite's port on the Docker host, with the `proxy-mappings` option of Keycloak's outgoing HTTP client, and trusts the suite's TLS certificate.
+The tunnel is started only when a Keycloak server configuration asks for it, so the OID4VCI and OID4VP tests do not open it.
 
 ## Prerequisites
 
@@ -100,11 +100,14 @@ module are printed to the test output to aid debugging.
 
 ### Retries
 
-Modules occasionally fail for reasons outside of Keycloak, e.g. network errors or the timing of the suite's waits, so a module that does not finish with its expected result, or whose run fails with an exception, is run again, in a new plan, up to 3 times.
+Modules occasionally fail for reasons outside of Keycloak, e.g. network errors or the timing of the suite's waits.
+Retries are opt-in per test: the OpenID Connect tests run a module that does not finish with its expected result, or whose run fails with an exception, again, in a new plan, up to 3 times; the OID4VCI and OID4VP tests do not retry.
 Only if all attempts fail does the test fail, with the result of the last attempt.
-A module that did not finish, e.g. as it timed out, is stopped, and its browser is given time to stop, before the module runs again, so the attempts do not interfere.
+A module whose run failed with an exception, e.g. as it timed out, is stopped before it runs again; if it cannot be stopped, the test fails right away, as the attempts could interfere.
+Each attempt also uses its own suite alias (`keycloak`, `keycloak-retry1`, ...), so a late callback of an earlier attempt's browser, e.g. an authorization response, cannot reach a later attempt's module; the static clients register the callback of every attempt.
 Every retry is printed to the test output, prefixed with `[conformance retry]`, also when a later attempt passes, so modules that pass only when run again stay visible.
-Set the number of retries with the `kc.test.conformance.retries` option (system property, `KC_TEST_CONFORMANCE_RETRIES` environment variable or `keycloak-test.properties`), e.g. `0` to see every failure while iterating:
+Set the number of retries for all tests with the `kc.test.conformance.retries` option (system property, `KC_TEST_CONFORMANCE_RETRIES` environment variable or `keycloak-test.properties`), e.g. `0` to see every failure while iterating.
+The OID4VCI and OID4VP tests use the same alias for all their attempts, so a late callback could still reach a retry of them:
 
 ```bash
 ./mvnw package -f tests/conformance/pom.xml -Dtest=OidcTestSuite -Dkc.test.conformance.retries=0

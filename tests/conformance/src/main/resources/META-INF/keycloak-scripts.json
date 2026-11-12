@@ -1,9 +1,9 @@
 {
   "mappers": [
     {
-      "name": "OpenID Connect conformance ID token claims",
-      "fileName": "oidc-id-token-claims.js",
-      "description": "Removes the typ claim, and the email claims unless no access token is issued, from the ID token"
+      "name": "Conformance test adjustment: OpenID Connect ID token",
+      "fileName": "conformance-adjustment-oidc-id-token.js",
+      "description": "Conformance tests only: removes the typ claim, and the email claims unless no access token is issued or the claims parameter requests them, from the ID token, as the OpenID Foundation conformance suite warns about them"
     }
   ]
 }

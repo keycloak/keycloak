@@ -70,7 +70,8 @@ public class OidcDynamicRealmConfig implements RealmConfig {
                         .attribute("include.in.token.scope", "false")
                         .attribute("display.on.consent.screen", "false")
                         .mappers(
-                                ConformanceRealmUtil.idTokenScriptMapper("conformance id token claims", "oidc-id-token-claims.js"),
+                                ConformanceRealmUtil.idTokenScriptMapper("conformance test adjustment of the id token",
+                                "conformance-adjustment-oidc-id-token.js"),
                                 ConformanceRealmUtil.claimsParameterMapper()))
                 .update(rep -> rep.setDefaultDefaultClientScopes(List.of(ID_TOKEN_CLAIMS_SCOPE)),
                         OidcDynamicRealmConfig::anonymousClientRegistrationPolicies,

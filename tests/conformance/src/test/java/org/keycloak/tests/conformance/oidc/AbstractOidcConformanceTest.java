@@ -26,6 +26,7 @@ import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.tests.conformance.AbstractConformanceTest;
+import org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -44,6 +45,17 @@ import com.fasterxml.jackson.databind.JsonNode;
  * </ul>
  */
 public abstract class AbstractOidcConformanceTest extends AbstractConformanceTest {
+
+    /**
+     * The OpenID Connect tests run a module again up to 3 times by default, see {@link #RETRIES_PROPERTY}, as their many
+     * browser based modules occasionally fail for reasons outside of Keycloak.
+     */
+    public static final int DEFAULT_RETRIES = 3;
+
+    @Override
+    protected int defaultRetries() {
+        return DEFAULT_RETRIES;
+    }
 
     protected abstract String plan();
 
@@ -73,6 +85,7 @@ public abstract class AbstractOidcConformanceTest extends AbstractConformanceTes
 
     @Override
     protected JsonNode suiteConfig(ConformanceModuleVariant module) {
-        return OidcSuiteConfig.create(OpenIdConformanceServer.KEYCLOAK_BASE_URI, module.browserInteraction()).toJson();
+        return OidcSuiteConfig.create(OpenIdConformanceServer.KEYCLOAK_BASE_URI, suiteAlias(OidcRealmConfig.ALIAS),
+                module.browserInteraction()).toJson();
     }
 }

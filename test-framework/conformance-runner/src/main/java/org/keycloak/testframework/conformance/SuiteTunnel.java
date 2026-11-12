@@ -84,11 +84,18 @@ final class SuiteTunnel implements AutoCloseable {
      * suite's internal host through this proxy.
      */
     String keycloakProxyMapping() {
-        InetAddress address = serverSocket.getInetAddress();
+        return proxyMapping(internalAuthority.substring(0, internalAuthority.indexOf(':')), serverSocket.getInetAddress(),
+                serverSocket.getLocalPort());
+    }
+
+    /**
+     * A {@code proxy-mappings} entry sending the requests for {@code host} through the proxy at {@code address} and
+     * {@code port}.
+     */
+    static String proxyMapping(String host, InetAddress address, int port) {
         // an IPv6 address, e.g. the loopback address with java.net.preferIPv6Addresses, needs brackets in a URI
-        String host = address instanceof Inet6Address ? "[" + address.getHostAddress() + "]" : address.getHostAddress();
-        return internalAuthority.substring(0, internalAuthority.indexOf(':')).replace(".", "\\.") + ";http://"
-                + host + ":" + serverSocket.getLocalPort();
+        String proxyHost = address instanceof Inet6Address ? "[" + address.getHostAddress() + "]" : address.getHostAddress();
+        return host.replace(".", "\\.") + ";http://" + proxyHost + ":" + port;
     }
 
     private void accept() {
@@ -166,7 +173,7 @@ final class SuiteTunnel implements AutoCloseable {
     // Copies one direction of the tunnel until its source closes, then closes the output of the other side, which the
     // other direction still uses for the answer. On an error both sockets are closed, as the other direction would
     // otherwise wait for data that never comes.
-    private static void pipe(Socket from, Socket to) {
+    static void pipe(Socket from, Socket to) {
         try {
             InputStream input = from.getInputStream();
             OutputStream output = to.getOutputStream();

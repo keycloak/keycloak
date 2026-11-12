@@ -65,7 +65,8 @@ public final class OpenIdConformanceServer implements AutoCloseable {
     private final ConformanceApiClient client;
     private final URI baseUri;
     private final X509Certificate nginxCertificate;
-    private final SuiteTunnel tunnel;
+    // started on first use, as only some tests make Keycloak call the suite
+    private SuiteTunnel tunnel;
 
     private OpenIdConformanceServer(Network network, GenericContainer<?> mongo, GenericContainer<?> server,
                                     GenericContainer<?> nginx, URI baseUri, SSLContext sslContext, X509Certificate nginxCertificate) {
@@ -76,7 +77,6 @@ public final class OpenIdConformanceServer implements AutoCloseable {
         this.baseUri = baseUri;
         this.nginxCertificate = nginxCertificate;
         this.client = new ConformanceApiClient(baseUri, sslContext);
-        this.tunnel = new SuiteTunnel(INTERNAL_BASE_URI, baseUri.getHost(), baseUri.getPort());
     }
 
     /**
@@ -128,7 +128,6 @@ public final class OpenIdConformanceServer implements AutoCloseable {
                 .withLogConsumer(new JBossContainerLogConsumer(Logger.getLogger("managed.conformance.nginx")))
                 .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofMinutes(2)));
 
-        OpenIdConformanceServer suite = null;
         try {
             mongo.start();
             server.start();
@@ -137,14 +136,11 @@ public final class OpenIdConformanceServer implements AutoCloseable {
             URI baseUri = URI.create("https://" + nginx.getHost() + ":" + nginx.getMappedPort(8443));
             X509Certificate nginxCertificate = nginxCertificate(nginx);
             SSLContext sslContext = sslContextTrusting(nginxCertificate);
-            suite = new OpenIdConformanceServer(network, mongo, server, nginx, baseUri, sslContext, nginxCertificate);
+            OpenIdConformanceServer suite =
+                    new OpenIdConformanceServer(network, mongo, server, nginx, baseUri, sslContext, nginxCertificate);
             suite.client().waitUntilAvailable(Duration.ofMinutes(4));
             return suite;
         } catch (RuntimeException e) {
-            // the tunnel the suite started already, unlike the containers below, has nothing else closing it
-            if (suite != null) {
-                suite.tunnel.close();
-            }
             List.of(nginx, server, mongo).forEach(GenericContainer::stop);
             network.close();
             throw e;
@@ -179,7 +175,10 @@ public final class OpenIdConformanceServer implements AutoCloseable {
      * dynamically registered client. The requests go through a tunnel in the test JVM to the suite's port on the Docker
      * host.
      */
-    public String keycloakProxyMapping() {
+    public synchronized String keycloakProxyMapping() {
+        if (tunnel == null) {
+            tunnel = new SuiteTunnel(INTERNAL_BASE_URI, baseUri.getHost(), baseUri.getPort());
+        }
         return tunnel.keycloakProxyMapping();
     }
 
@@ -195,7 +194,12 @@ public final class OpenIdConformanceServer implements AutoCloseable {
 
     @Override
     public void close() {
-        tunnel.close();
+        synchronized (this) {
+            if (tunnel != null) {
+                tunnel.close();
+                tunnel = null;
+            }
+        }
         List.of(nginx, server, mongo).forEach(GenericContainer::stop);
         network.close();
         synchronized (OpenIdConformanceServer.class) {

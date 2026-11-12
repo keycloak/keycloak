@@ -20,10 +20,6 @@ package org.keycloak.tests.conformance;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.common.Profile;
 import org.keycloak.testframework.conformance.ConformanceTls;
@@ -43,19 +39,19 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
  * <li>the requests Keycloak sends to the URLs the suite publishes on its container internal host, e.g. the jwks_uri,
  * request_uri or sector_identifier_uri of a dynamically registered client, go through a tunnel to the suite, see
  * {@link OpenIdConformanceServer#keycloakProxyMapping()}</li>
- * <li>the script based protocol mappers of this module (src/main/resources), which keep the ID tokens of the
- * conformance realms free of claims the suite warns about, e.g. Keycloak's typ claim</li>
+ * <li>the conformance test adjustment of the ID tokens, a script based protocol mapper of this module
+ * (src/main/resources/conformance-adjustment-oidc-id-token.js), see there for what it changes and why</li>
  * </ul>
- * Subclasses can trust additional certificates, e.g. the CAs of TLS client certificates.
  */
 public class ConformanceServerConfig implements KeycloakServerConfig {
 
-    // Written once per configuration, as a different path on every configuration would restart the server for every
-    // test class
-    private static final Map<Class<?>, Path> TRUSTSTORES = new ConcurrentHashMap<>();
+    // Written once, as a different path on every configuration would restart the server for every test class
+    private static Path truststore;
 
     @Override
     public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+        // The scripts feature and the deployment of this module as a provider are only there for the conformance test
+        // adjustment of the ID tokens, which is a script based protocol mapper of this module
         return config.features(Profile.Feature.SCRIPTS)
                 .dependencyCurrentProject()
                 .option("https-protocols", ConformanceTls.PROTOCOLS)
@@ -67,25 +63,17 @@ public class ConformanceServerConfig implements KeycloakServerConfig {
                         OpenIdConformanceServer.instance().keycloakProxyMapping());
     }
 
-    /**
-     * PEM encoded certificates the server trusts in addition to the suite's TLS certificate.
-     */
-    protected List<String> additionalTrustedCertificates() {
-        return List.of();
-    }
-
-    private Path truststore() {
-        return TRUSTSTORES.computeIfAbsent(getClass(), configClass -> {
-            List<String> certificates = new ArrayList<>(additionalTrustedCertificates());
-            certificates.add(OpenIdConformanceServer.instance().certificatePem());
+    private static synchronized Path truststore() {
+        if (truststore == null) {
             try {
                 Path path = Files.createTempFile("keycloak-conformance-truststore", ".pem");
                 path.toFile().deleteOnExit();
-                Files.writeString(path, String.join("\n", certificates) + "\n");
-                return path;
+                Files.writeString(path, OpenIdConformanceServer.instance().certificatePem() + "\n");
+                truststore = path;
             } catch (IOException e) {
                 throw new RuntimeException("Failed to write the conformance truststore", e);
             }
-        });
+        }
+        return truststore;
     }
 }

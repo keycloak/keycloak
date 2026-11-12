@@ -42,6 +42,7 @@ import org.keycloak.testframework.conformance.runner.ConformanceResult;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.conformance.ConformanceServerConfig;
 import org.keycloak.tests.conformance.oidc.configs.OidcDynamicRealmConfig;
+import org.keycloak.tests.conformance.oidc.configs.OidcRealmConfig;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.BeforeEach;
@@ -163,7 +164,8 @@ public class OidcDynamicTest extends AbstractOidcConformanceTest {
 
     @Override
     protected JsonNode suiteConfig(ConformanceModuleVariant module) {
-        return OidcSuiteConfig.createDynamic(OpenIdConformanceServer.KEYCLOAK_BASE_URI, module.browserInteraction()).toJson();
+        return OidcSuiteConfig.createDynamic(OpenIdConformanceServer.KEYCLOAK_BASE_URI, suiteAlias(OidcRealmConfig.ALIAS),
+                module.browserInteraction()).toJson();
     }
 
     /**
