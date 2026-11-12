@@ -56,3 +56,5 @@ https://www.keycloak.org/server/db#galera-cluster-considerations
 https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolation-level-in-stateless-mode
 https://www.keycloak.org/high-availability/multi-cluster-v2/migrate-from-v1-to-v2
 https://www.keycloak.org/securing-apps/token-exchange#_token-exchange-delegation
+# Blocks automated HTTP requests from CI runners (returns 403), but loads fine in a browser.
+https://developer.linkedin.com*
