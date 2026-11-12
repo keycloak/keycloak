@@ -45,6 +45,10 @@ export async function toggleClients(page: Page, on = true) {
   }
 }
 
+export async function selectOrganizations(page: Page) {
+  await switchOn(page, page.getByTestId("organizations-checkbox"));
+}
+
 function assertVisible(page: Page, locator: Locator, visible = true) {
   return expect(locator).toBeVisible({ visible });
 }

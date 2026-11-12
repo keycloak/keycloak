@@ -63,7 +63,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -90,7 +89,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
@@ -114,7 +112,6 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
-import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -1800,31 +1797,7 @@ public class DefaultExportImportManager implements ExportImportManager {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
 
             for (OrganizationRepresentation orgRep : Optional.ofNullable(rep.getOrganizations()).orElse(Collections.emptyList())) {
-                OrganizationsValidation.validateUrl(orgRep.getRedirectUrl());
-                OrganizationModel orgModel = provider.create(orgRep.getId(), orgRep.getName(), orgRep.getAlias());
-
-                for (IdentityProviderRepresentation identityProvider : Optional.ofNullable(orgRep.getIdentityProviders()).orElse(Collections.emptyList())) {
-                    IdentityProviderModel idp = session.identityProviders().getByAlias(identityProvider.getAlias());
-                    boolean autoMembership = true;
-                    MembershipType membershipType = MembershipType.UNMANAGED;
-                    List<OrganizationIdentityProviderLinkRepresentation> links = identityProvider.getOrganizationLinks();
-                    if (links != null && !links.isEmpty()) {
-                        OrganizationIdentityProviderLinkRepresentation linkRep = links.get(0);
-                        if (linkRep.getAutoMembership() != null) {
-                            autoMembership = linkRep.getAutoMembership();
-                        }
-                        if (linkRep.getMembershipType() != null) {
-                            membershipType = MembershipType.valueOf(linkRep.getMembershipType());
-                        }
-                    }
-                    provider.addIdentityProvider(orgModel, idp, autoMembership, membershipType);
-                }
-
-                RepresentationToModel.toModel(orgRep, orgModel);
-
-                for (GroupRepresentation groupRep : Optional.ofNullable(orgRep.getGroups()).orElse(Collections.emptyList())) {
-                    importOrganizationGroup(provider, orgModel, newRealm, groupRep, null);
-                }
+                OrganizationModel orgModel = RepresentationToModel.importOrganization(session, newRealm, orgRep);
 
                 for (MemberRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
                     UserModel m = session.users().getUserByUsername(newRealm, member.getUsername());
@@ -1856,47 +1829,6 @@ public class DefaultExportImportManager implements ExportImportManager {
 
             if (realm.getClientSessionMaxLifespan() > realm.getSsoSessionMaxLifespan()) {
                 throw new ModelException("Client session max lifespan cannot exceed realm SSO session max lifespan.");
-            }
-        }
-    }
-
-    private void importOrganizationGroup(OrganizationProvider provider, OrganizationModel organization, RealmModel realm, GroupRepresentation groupRep, GroupModel parent) {
-        GroupModel group = provider.createGroup(organization, groupRep.getId(), groupRep.getName(), parent);
-
-        if (groupRep.getAttributes() != null) {
-            for (Map.Entry<String, List<String>> attr : groupRep.getAttributes().entrySet()) {
-                group.setAttribute(attr.getKey(), attr.getValue());
-            }
-        }
-
-        if (groupRep.getRealmRoles() != null) {
-            for (String roleString : groupRep.getRealmRoles()) {
-                RoleModel role = realm.getRole(roleString.trim());
-                if (role == null) {
-                    role = realm.addRole(roleString.trim());
-                }
-                group.grantRole(role);
-            }
-        }
-        if (groupRep.getClientRoles() != null) {
-            for (Map.Entry<String, List<String>> entry : groupRep.getClientRoles().entrySet()) {
-                ClientModel client = realm.getClientByClientId(entry.getKey());
-                if (client == null) {
-                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
-                }
-                for (String roleName : entry.getValue()) {
-                    RoleModel role = client.getRole(roleName.trim());
-                    if (role == null) {
-                        role = client.addRole(roleName.trim());
-                    }
-                    group.grantRole(role);
-                }
-            }
-        }
-
-        if (groupRep.getSubGroups() != null) {
-            for (GroupRepresentation subGroup : groupRep.getSubGroups()) {
-                importOrganizationGroup(provider, organization, realm, subGroup, group);
             }
         }
     }
