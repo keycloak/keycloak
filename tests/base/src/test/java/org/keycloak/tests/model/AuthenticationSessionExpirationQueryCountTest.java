@@ -97,8 +97,8 @@ public class AuthenticationSessionExpirationQueryCountTest {
             executedSessionQueries(session, realmId);
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
-                RealmModel r = session1.realms().getRealm(realmId);
-                assertNull(session1.authenticationSessions().getRootAuthenticationSession(r, sessionId[0]));
+                assertNull(session1.getProvider(JpaConnectionProvider.class).getEntityManager()
+                        .find(org.keycloak.authentication.jpa.RootAuthenticationSessionEntity.class, sessionId[0]));
             });
         } finally {
             Time.setOffset(0);
