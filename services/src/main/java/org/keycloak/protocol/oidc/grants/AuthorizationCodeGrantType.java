@@ -36,6 +36,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
@@ -189,6 +190,14 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
         if (authUsername == null) {
             authUsername = "unknown";
+        }
+
+        String clientCodeChallengeMethod = OIDCAdvancedConfigWrapper.fromClientModel(client).getPkceCodeChallengeMethod();
+        if (clientCodeChallengeMethod != null && !clientCodeChallengeMethod.isEmpty() && codeChallenge == null) {
+            String errorMessage = "PKCE code challenge not present in authorization";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.PKCE_VERIFICATION_FAILED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorMessage, Response.Status.BAD_REQUEST);
         }
 
         if (codeChallengeMethod != null && !codeChallengeMethod.isEmpty()) {
