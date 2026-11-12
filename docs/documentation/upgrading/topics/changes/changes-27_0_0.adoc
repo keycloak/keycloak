@@ -677,3 +677,16 @@ The default implementations of the following methods were removed, and the metho
 The removed default implementations were not atomic, and a credential that was changed concurrently could be overwritten.
 Custom implementations of these interfaces must implement the methods.
 They must replace the credential only if the stored credential still has the content of `oldCred`, return `false` otherwise, and perform the comparison and the update atomically, for example by locking the stored credential.
+
+=== Offline session cache entry lifespan override options removed
+// https://github.com/keycloak/keycloak/issues/40981
+
+The following configuration options have been removed:
+
+* `--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`
+* `--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override`
+
+These options were deprecated and were only relevant when using volatile user sessions (disabled persistent sessions).
+With persistent user sessions enabled (the default since Keycloak 26), offline sessions are managed in the database and these lifespan override options have no effect.
+
+If you have these options in your configuration, remove them before upgrading to Keycloak 27.
