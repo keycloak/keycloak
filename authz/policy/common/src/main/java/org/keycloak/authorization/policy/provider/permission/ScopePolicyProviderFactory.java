@@ -105,6 +105,13 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
                 config.remove(AdminPermissionsSchema.EXTEND_CHILDREN);
             }
 
+            // the flag only applies to specific groups. It is removed once the permission no longer targets them, so
+            // that a client unaware of it does not silently extend the permission again when targeting specific groups
+            // later. The resources of the permission are already updated at this point
+            if (!AdminPermissionsSchema.SCHEMA.targetsSpecificGroups(policy)) {
+                config.remove(AdminPermissionsSchema.EXTEND_CHILDREN);
+            }
+
             policy.setConfig(config);
         }
     }
