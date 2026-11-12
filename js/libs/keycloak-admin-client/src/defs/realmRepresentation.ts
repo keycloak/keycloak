@@ -3,6 +3,7 @@ import type ComponentExportRepresentation from "./componentExportRepresentation.
 import type UserRepresentation from "./userRepresentation.js";
 import type GroupRepresentation from "./groupRepresentation.js";
 import type IdentityProviderRepresentation from "./identityProviderRepresentation.js";
+import type OrganizationRepresentation from "./organizationRepresentation.js";
 import type RequiredActionProviderRepresentation from "./requiredActionProviderRepresentation.js";
 import type RolesRepresentation from "./rolesRepresentation.js";
 import type ClientProfilesRepresentation from "./clientProfilesRepresentation.js";
@@ -85,6 +86,7 @@ export default interface RealmRepresentation {
   offlineSessionIdleTimeout?: number;
   offlineSessionMaxLifespan?: number;
   offlineSessionMaxLifespanEnabled?: boolean;
+  organizations?: OrganizationRepresentation[];
   organizationsEnabled?: boolean;
   verifiableCredentialsEnabled?: boolean;
   otpPolicyAlgorithm?: string;

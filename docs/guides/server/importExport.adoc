@@ -203,6 +203,7 @@ NOTE: The Admin Console partial import can also import files created by the CLI 
 by the CLI can be imported by using the Admin Console. If the file contains users, those users will also be available for importing into the
 current realm.
 
-NOTE: The Admin Console partial import does not import organizations.
+NOTE: The Admin Console partial import imports organizations without their members, when organizations are enabled for the realm.
+If an organization of the file already exists in the realm, *Skip* leaves it untouched and *Overwrite* aborts the import, because organizations are never overwritten.
 
 </@tmpl.guide>
