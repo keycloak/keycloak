@@ -107,7 +107,12 @@ public final class ManualMigrationParity {
 
     public static final List<String> KNOWN_MISSING_FROM_SCRIPT = List.of(
             // the single-column version that 26.5.0-remove-workflow-provider-id-column creates
-            "INDEX WORKFLOW_STATE IDX_WORKFLOW_STATE_PROVIDER(");
+            "INDEX WORKFLOW_STATE IDX_WORKFLOW_STATE_PROVIDER(",
+            // the script does not create the lock table, the server creates it on startup (CustomLockService.init())
+            "TABLE DATABASECHANGELOGLOCK",
+            "COLUMN DATABASECHANGELOGLOCK.",
+            "INDEX DATABASECHANGELOGLOCK ",
+            "PRIMARY KEY DATABASECHANGELOGLOCK ");
 
     private ManualMigrationParity() {
     }
