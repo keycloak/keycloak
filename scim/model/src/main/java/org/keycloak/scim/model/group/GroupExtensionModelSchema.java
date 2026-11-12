@@ -144,7 +144,7 @@ public class GroupExtensionModelSchema extends AbstractModelSchema<GroupModel, G
                         }
                         Set<String> removed = toStrings(values);
                         List<String> remaining = model.getAttributeStream(name)
-                                .filter(value -> !removed.contains(value))
+                                .filter(value -> removed.stream().noneMatch(value::equalsIgnoreCase))
                                 .toList();
                         if (remaining.isEmpty()) {
                             model.removeAttribute(name);
