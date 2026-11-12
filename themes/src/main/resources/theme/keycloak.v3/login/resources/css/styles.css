@@ -200,6 +200,7 @@ p.instruction {
 }
 
 p.instruction:last-child,
+p.instruction:has(+ .pf-v6-c-login__main-footer),
 .pf-v6-c-form p.instruction {
     margin-bottom: 0;
 }

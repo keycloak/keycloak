@@ -9,14 +9,7 @@
         <form id="kc-update-email-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <@userProfileCommons.userProfileFormFields/>
 
-            <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                    <div class="${properties.kcFormOptionsWrapperClass!}">
-                    </div>
-                </div>
-
-                <@passwordCommons.logoutOtherSessions/>
-            </div>
+            <@passwordCommons.logoutOtherSessions/>
 
             <@buttons.actionGroup horizontal=true>
                 <@buttons.button id="kc-submit" label="doSubmit"/>

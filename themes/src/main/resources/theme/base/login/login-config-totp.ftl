@@ -64,9 +64,7 @@
             <@field.input name="userLabel" label=msg("loginTotpDeviceName") required=(totp.otpCredentials?size gte 1)
                 errorId="input-error-otp-label" />
 
-            <div class="${properties.kcFormGroupClass!}">
-                <@passwordCommons.logoutOtherSessions/>
-            </div>
+            <@passwordCommons.logoutOtherSessions/>
 
             <#if isAppInitiatedAction??>
                 <@buttons.actionGroup horizontal=true>
