@@ -2,8 +2,11 @@ import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation.js";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation.js";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation.js";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation.js";
+import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation.js";
 import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation.js";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
+import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation.js";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation.js";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation.js";
@@ -355,6 +358,70 @@ class AdminClient {
     });
   }
 
+  async getRealmRole(name: string, realm: string = this.#client.realmName) {
+    await this.#login();
+    return await this.#client.roles.findOneByName({ name, realm });
+  }
+
+  async updateRealmRoleById(
+    id: string,
+    payload: RoleRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#client.roles.updateById({ id, realm }, payload);
+  }
+
+  async getClientRole(
+    clientUuid: string,
+    roleName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return await this.#client.clients.findRole({
+      id: clientUuid,
+      roleName,
+      realm,
+    });
+  }
+
+  async addClientProtocolMapper(
+    clientUuid: string,
+    mapper: ProtocolMapperRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#client.clients.addProtocolMapper(
+      { id: clientUuid, realm },
+      mapper,
+    );
+  }
+
+  async addClientScopeProtocolMapper(
+    clientScopeId: string,
+    mapper: ProtocolMapperRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#client.clientScopes.addProtocolMapper(
+      { id: clientScopeId, realm },
+      mapper,
+    );
+  }
+
+  async createIdentityProviderMapper(
+    alias: string,
+    mapper: IdentityProviderMapperRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#client.identityProviders.createMapper({
+      alias,
+      realm,
+      identityProviderMapper: mapper,
+    });
+  }
+
   async addRealmScopeMappingsToClientScope(
     clientScopeName: string,
     roleNames: string[],
@@ -561,7 +628,7 @@ class AdminClient {
     org: OrganizationRepresentation & { realm?: string },
   ) {
     await this.#login();
-    await this.#client.organizations.create(org);
+    return await this.#client.organizations.create(org);
   }
 
   async deleteOrganization(
@@ -616,6 +683,51 @@ class AdminClient {
     await this.#withRealm(realm, async () => {
       const orgId = await this.#findOrgId(orgName);
       await this.#client.organizations.linkIdp({ orgId, alias });
+    });
+  }
+
+  async addOrgGroupMember(
+    orgName: string,
+    groupId: string,
+    userId: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations
+        .groups(orgId)
+        .addMemberToOrgGroup({ groupId, userId });
+    });
+  }
+
+  async createOrgChildGroup(
+    orgName: string,
+    parentId: string,
+    groupName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      return this.#client.organizations
+        .groups(orgId)
+        .createChildGroup({ id: parentId }, { name: groupName });
+    });
+  }
+
+  async updateOrgGroup(
+    orgName: string,
+    groupId: string,
+    group: GroupRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations
+        .groups(orgId)
+        .update({ id: groupId }, group);
     });
   }
 

@@ -317,8 +317,15 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
                           <AdminEvents
                             resourcePath={
                               isOrganization
-                                ? `organizations/${orgId}/groups/${id}`
-                                : `groups/${id}`
+                                ? [
+                                    `organizations/${orgId}/groups/${id}`,
+                                    `organizations/${orgId}/groups/${id}/role-mappings/*`,
+                                  ]
+                                : [
+                                    `groups/${id}`,
+                                    `groups/${id}/role-mappings/*`,
+                                    `groups/${id}/management/*`,
+                                  ]
                             }
                           />
                         </Tab>

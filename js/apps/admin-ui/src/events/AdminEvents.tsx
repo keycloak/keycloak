@@ -106,11 +106,19 @@ const DetailCell = (event: AdminEventRepresentation) => (
 );
 
 type AdminEventsProps = {
-  resourcePath?: string;
+  /**
+   * Resource path(s) to restrict the events to. The server accepts only one pattern per request,
+   * so multiple paths (for example an exact path plus its sub-resources) are queried separately and merged.
+   */
+  resourcePath?: string | string[];
 };
 
-export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
+export const AdminEvents = ({
+  resourcePath: resourcePathProp,
+}: AdminEventsProps) => {
   const { adminClient } = useAdminClient();
+  const resourcePaths = ([] as string[]).concat(resourcePathProp ?? []);
+  const resourcePath = resourcePaths[0];
 
   const { t } = useTranslation();
   const { realm } = useRealm();
@@ -176,15 +184,32 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
     [],
   );
 
-  function loader(first?: number, max?: number) {
-    return adminClient.realms.findAdminEvents({
-      resourcePath,
-      // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
-      ...(activeFilters as any),
-      realm,
-      first,
-      max,
-    });
+  async function loader(first?: number, max?: number) {
+    const find = (path: string | undefined, first?: number, max?: number) =>
+      adminClient.realms.findAdminEvents({
+        resourcePath: path,
+        // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
+        ...(activeFilters as any),
+        realm,
+        first,
+        max,
+      });
+
+    if (resourcePaths.length <= 1) {
+      return find(resourcePath, first, max);
+    }
+
+    // Each query must return enough rows to fill the requested page after merging.
+    const skip = first ?? 0;
+    const results = await Promise.all(
+      resourcePaths.map((path) =>
+        find(path, 0, max === undefined ? undefined : skip + max),
+      ),
+    );
+    const merged = results.flat().sort((a, b) => (b.time ?? 0) - (a.time ?? 0));
+    return max === undefined
+      ? merged.slice(skip)
+      : merged.slice(skip, skip + max);
   }
 
   function submitSearch() {

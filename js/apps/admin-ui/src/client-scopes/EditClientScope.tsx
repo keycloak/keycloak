@@ -302,7 +302,12 @@ export default function EditClientScope() {
                 title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                 {...eventsTab}
               >
-                <AdminEvents resourcePath={`*client-scopes/${id}`} />
+                <AdminEvents
+                  resourcePath={[
+                    `client-scopes/${id}`,
+                    `client-scopes/${id}/*`,
+                  ]}
+                />
               </Tab>
             )}
         </RoutableTabs>

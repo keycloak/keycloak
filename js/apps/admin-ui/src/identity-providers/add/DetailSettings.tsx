@@ -932,7 +932,10 @@ export default function DetailSettings() {
                 {...eventsTab}
               >
                 <AdminEvents
-                  resourcePath={`identity-provider/instances/${alias}`}
+                  resourcePath={[
+                    `identity-provider/instances/${alias}`,
+                    `identity-provider/instances/${alias}/*`,
+                  ]}
                 />
               </Tab>
             )}

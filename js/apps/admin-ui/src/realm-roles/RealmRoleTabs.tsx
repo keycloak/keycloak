@@ -335,7 +335,17 @@ export default function RealmRoleTabs() {
                 title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                 {...eventsTab}
               >
-                <AdminEvents resourcePath={`roles-by-id/${id}`} />
+                {/* Client roles are changed via clients/{id}/roles/{name}, realm roles via roles-by-id/{id} */}
+                <AdminEvents
+                  resourcePath={
+                    clientId
+                      ? [
+                          `clients/${clientId}/roles/${encodeURIComponent(roleName!)}`,
+                          `clients/${clientId}/roles/${encodeURIComponent(roleName!)}/*`,
+                        ]
+                      : [`roles-by-id/${id}`, `roles-by-id/${id}/*`]
+                  }
+                />
               </Tab>
             )}
           </RoutableTabs>
