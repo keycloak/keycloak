@@ -120,11 +120,38 @@ hr {
 
 /* Social/identity providers */
 
+/* Allow long provider labels to shrink and wrap inside their buttons. */
+#kc-social-providers a.pf-v5-c-button {
+    height: auto;
+    min-width: 0;
+    white-space: normal;
+}
+
+#kc-social-providers a.pf-v5-c-button > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
 #kc-social-providers img,
 #kc-social-providers picture {
+    flex-shrink: 0;
     height: var(--pf-v5-global--FontSize--xl);
     width: var(--pf-v5-global--FontSize--xl);
     object-fit: contain;
+}
+
+/* Stretch provider buttons to the tallest button in each grid row. */
+#kc-social-providers ul.pf-v5-l-grid {
+    align-items: stretch;
+}
+
+#kc-social-providers ul.pf-v5-l-grid > li {
+    display: flex;
+}
+
+#kc-social-providers ul.pf-v5-l-grid > li > a {
+    flex: 1;
 }
 
 /* Remove bottom padding when no info section follows (e.g. registration disabled) */
