@@ -42,8 +42,9 @@ public class KcOidcBrokerPromptParameterTest extends AbstractKcOidcBrokerTest {
         assertUserCreatedInConsumerRealm();
     }
 
-    // The shared createOidcIdentityProvider() sets prompt=login, which the broker always prefers over the
-    // client-forwarded prompt. This test needs the client's prompt=consent to pass through, so it clears the
+    // The shared createOidcIdentityProvider() sets prompt=login, which the broker prefers over the
+    // client-forwarded prompt (except for a forwarded prompt=none when the IDP accepts passive forwards).
+    // This test needs the client's prompt=consent to pass through, so it clears the
     // IDP-configured prompt - mirroring the legacy KcOidcBrokerConfiguration2, which removed the attribute.
     static class PromptConsumerRealmConfig implements RealmConfig {
         @Override

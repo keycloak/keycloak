@@ -8,6 +8,13 @@ public interface ResourceEncodingProviderFactory extends ProviderFactory<Resourc
 
     boolean encodeContentType(String contentType);
 
+    /**
+     * Clears any cached encoded resources. Implementations that do not cache encoded resources can leave this as a
+     * no-op.
+     */
+    default void clearCache() {
+    }
+
     @Override
     default void init(Config.Scope config) {
     }

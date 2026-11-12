@@ -743,6 +743,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             // if user is leaving group not managed by this mapper, let the call proceed to the next mapper or to the DB.
             if (!isGroupInGroupPath(realm, group)) {
                 super.leaveGroup(group);
+                return;
             }
 
             try (LDAPQuery ldapQuery = createGroupQuery(true)) {

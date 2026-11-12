@@ -36,6 +36,11 @@ public class StringUtilTest {
         assertEquals("test1 test2 test3 \\\"test4\\\"", StringUtil.sanitizeSpacesAndQuotes("test1\ntest2\ttest3\r\"test4\"", '"'));
         assertEquals(" \\\"test", StringUtil.sanitizeSpacesAndQuotes("\n\"test", '"'));
         assertEquals("\\\" test", StringUtil.sanitizeSpacesAndQuotes("\"\rtest", '"'));
+        assertEquals("back\\slash", StringUtil.sanitizeSpacesAndQuotes("back\\slash", null));
+        assertEquals("back\\\\slash", StringUtil.sanitizeSpacesAndQuotes("back\\slash", '"'));
+        assertEquals("trailing\\\\", StringUtil.sanitizeSpacesAndQuotes("trailing\\", '"'));
+        assertEquals("a\\\\\\\", type=LOGIN", StringUtil.sanitizeSpacesAndQuotes("a\\\", type=LOGIN", '"'));
+        assertEquals("a\\\\\\'", StringUtil.sanitizeSpacesAndQuotes("a\\'", '\''));
     }
 
     @Test

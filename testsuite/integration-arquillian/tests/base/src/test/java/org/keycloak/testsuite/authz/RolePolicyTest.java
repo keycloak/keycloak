@@ -195,9 +195,9 @@ public class RolePolicyTest extends AbstractAuthzTest {
         ClientScopeRepresentation rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
-        UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();
+        String serviceAccountUserId = clientResource.toRepresentation().getServiceAccountUserId();
         RoleRepresentation roleB = realm.roles().get("Role B").toRepresentation();
-        realm.users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(roleB));
+        realm.users().get(serviceAccountUserId).roles().realmLevel().add(List.of(roleB));
         RolePolicyRepresentation roleRep = clientResource.authorization().policies().role().findByName("Role B Policy");
         roleRep.setFetchRoles(true);
         clientResource.authorization().policies().role().findById(roleRep.getId()).update(roleRep);

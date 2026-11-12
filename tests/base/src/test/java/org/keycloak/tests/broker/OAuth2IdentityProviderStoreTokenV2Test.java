@@ -47,6 +47,7 @@ import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.util.TokenUtil;
 
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
@@ -130,6 +131,7 @@ public class OAuth2IdentityProviderStoreTokenV2Test implements InterfaceIdentity
         Assertions.assertInstanceOf(AccessTokenResponse.class, response);
         AccessTokenResponse externalTokens = (AccessTokenResponse) response;
         Assertions.assertNotNull(externalTokens.getAccessToken());
+        Assertions.assertEquals(TokenUtil.TOKEN_TYPE_BEARER, externalTokens.getTokenType());
         Assertions.assertNull(externalTokens.getRefreshToken());
         Assertions.assertNull(externalTokens.getIdToken());
         UserInfoResponse userInfoResponse = oauthExternal.userInfoRequest(externalTokens.getAccessToken()).send();

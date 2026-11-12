@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -87,34 +88,48 @@ public class AbstractPermissionsTest {
             managedMasterRealm.admin().users().get(roleUserUuid).roles().clientLevel(clientUuid).add(Collections.singletonList(roleRep));
         }
 
-        clients.put(AdminRoles.REALM_ADMIN,
-                adminClientFactory.create().realm(REALM_NAME).username(AdminRoles.REALM_ADMIN).password("password").clientId("test-client").clientSecret("secret").build());
+        clients.put(AdminRoles.REALM_ADMIN, createAdminClient(REALM_NAME, AdminRoles.REALM_ADMIN, "test-client"));
 
-        clients.put("none",
-                adminClientFactory.create().realm(REALM_NAME).username("none").password("password").clientId("test-client").clientSecret("secret").build());
+        clients.put("none", createAdminClient(REALM_NAME, "none", "test-client"));
 
-        clients.put("multi",
-                adminClientFactory.create().realm(REALM_NAME).username("multi").password("password").clientId("test-client").clientSecret("secret").build());
+        clients.put("multi", createAdminClient(REALM_NAME, "multi", "test-client"));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            clients.put(role, adminClientFactory.create().realm(REALM_NAME).username(role).password("password").clientId("test-client").build());
+            clients.put(role, createAdminClient(REALM_NAME, role, "test-client"));
         }
 
-        clients.put("REALM2", adminClientFactory.create().realm(REALM_2_NAME).username("admin").password("password").clientId("test-client").build());
+        clients.put("REALM2", createAdminClient(REALM_2_NAME, "admin", "test-client"));
 
         clients.put("master-admin", adminClient);
 
-        clients.put("master-none", adminClientFactory.create().realm("master").username("permissions-test-master-none").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build());
+        clients.put("master-none", createAdminClient("master", "permissions-test-master-none", Constants.ADMIN_CLI_CLIENT_ID));
 
         for (String role : AdminRoles.ALL_REALM_ROLES) {
-            clients.put("master-" + role,
-                    adminClientFactory.create().realm("master").username("permissions-test-master-" + role).password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build());
+            clients.put("master-" + role, createAdminClient("master", "permissions-test-master-" + role, Constants.ADMIN_CLI_CLIENT_ID));
         }
 
         for (String role : AdminRoles.ALL_ROLES) {
-            clients.put("master-admin-" + role,
-                    adminClientFactory.create().realm("master").username("master-user-" + role).password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build());
+            clients.put("master-admin-" + role, createAdminClient("master", "master-user-" + role, Constants.ADMIN_CLI_CLIENT_ID));
         }
+    }
+
+    private Keycloak createAdminClient(String realm, String username, String clientId) {
+        // The master-admin client can manage all realms and already carries the kc-admin-api scope, so use it to
+        // ensure the target client passes the Admin REST API audience check. The assignment is idempotent. Some
+        // subclasses don't inject every realm referenced here; in that case the client is created lazily and never
+        // used, so a missing realm can be safely ignored.
+        try {
+            ApiUtil.addAdminApiClientScope(adminClient.realm(realm), clientId);
+        } catch (NotFoundException e) {
+            // Realm not present in this test; nothing to assign.
+        }
+
+        return adminClientFactory.create()
+                .realm(realm)
+                .username(username)
+                .password("password")
+                .clientId(clientId)
+                .build();
     }
 
     protected void invoke(final Invocation invocation, AdminAuth.Resource resource, boolean manage) {

@@ -18,15 +18,6 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.session",
         "org.keycloak.tests.sessionlimits",
         "org.keycloak.tests.ssl",
-        "org.keycloak.tests.theme",
-        "org.keycloak.tests.tracing",
-        "org.keycloak.tests.transactions",
-        "org.keycloak.tests.user",
-        "org.keycloak.tests.url",
-        "org.keycloak.tests.vault",
-        "org.keycloak.tests.welcomepage",
-        "org.keycloak.tests.workflow",
-        "org.keycloak.tests.x509",
 })
 public class Base3TestSuite {
 }

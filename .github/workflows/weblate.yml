@@ -34,8 +34,10 @@ jobs:
       # language=bash
       - run: |
           if [ "${WEBLATE_TOKEN}" != "" ]; then
-            curl --fail-with-body -d operation=pull -H "Authorization: Token ${WEBLATE_TOKEN}" https://hosted.weblate.org/api/projects/keycloak/repository/
-            curl --fail-with-body -d operation=push -H "Authorization: Token ${WEBLATE_TOKEN}" https://hosted.weblate.org/api/projects/keycloak/repository/
+            # Weblate returns HTTP 423 while another repository operation is still running, so retry
+            for operation in pull push; do
+              curl --fail-with-body --retry 10 --retry-delay 30 --retry-all-errors -d operation=${operation} -H "Authorization: Token ${WEBLATE_TOKEN}" https://hosted.weblate.org/api/projects/keycloak/repository/
+            done
           fi
 
         env:

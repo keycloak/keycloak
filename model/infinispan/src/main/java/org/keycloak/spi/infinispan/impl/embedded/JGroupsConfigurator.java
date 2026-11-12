@@ -147,16 +147,11 @@ public final class JGroupsConfigurator {
         if (isLocal(holder)) {
             return;
         }
-        var stack = config.get(DefaultCacheEmbeddedConfigProviderFactory.STACK);
-        if (stack != null) {
-            transportOf(holder).stack(stack);
-        }
         configureTransport(config);
         var tracingEnabled = config.getBoolean(TRACING, false);
         var fdSockEnabled = config.getBoolean(FD_SOCK_ENABLED_NAME, FD_SOCK_ENABLED_DEFAULT);
         configureDiscovery(holder, session, tracingEnabled, fdSockEnabled);
         configureTls(holder, session);
-        warnDeprecatedStack(holder);
     }
 
     /**
@@ -264,9 +259,8 @@ public final class JGroupsConfigurator {
 
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
         var stackName = transportStackOf(holder).get();
-        var isUdp = stackName.endsWith("udp");
         var tableName = JpaUtils.getTableNameForNativeQuery("JGROUPS_PING", em);
-        var stack = getProtocolConfigurations(tableName, isUdp, tracingEnabled, fdSockEnabled);
+        var stack = getProtocolConfigurations(tableName, tracingEnabled, fdSockEnabled);
         var connectionFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
         String clusterName = transportOf(holder).attributes().attribute(CLUSTER_NAME).get();
@@ -274,7 +268,7 @@ public final class JGroupsConfigurator {
         Address address = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(),
                 s -> prepareJGroupsAddress(s, clusterName)),
                 50, 10);
-        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(session.getKeycloakSessionFactory(), stackName, stack, connectionFactory, isUdp, address), null);
+        holder.addJGroupsStack(new JpaFactoryAwareJGroupsChannelConfigurator(session.getKeycloakSessionFactory(), stackName, stack, connectionFactory, address), null);
 
         transportOf(holder).stack(stackName);
         JGroupsConfigurator.logger.info("JGroups JDBC_PING discovery enabled.");
@@ -336,14 +330,14 @@ public final class JGroupsConfigurator {
                 s.setString(3, clusterName); // cluster name
                 s.setString(4, "127.0.0.1:0"); // ip = new IpAddress("localhost", 0).toString()
                 s.setBoolean(5, false); // coord
-                s.setLong(6, Time.currentTime()); // last_update
+                s.setLong(6, Time.currentTimeSeconds()); // last_update
                 s.execute();
             }
         });
         return address;
     }
 
-    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean udp, boolean tracingEnabled, boolean fdSockEnabled) {
+    private static List<ProtocolConfiguration> getProtocolConfigurations(String tableName, boolean tracingEnabled, boolean fdSockEnabled) {
         var list = new ArrayList<ProtocolConfiguration>(4);
         list.add(new ProtocolConfiguration(KEYCLOAK_JDBC_PING2.class.getName(),
               Map.ofEntries(
@@ -363,46 +357,31 @@ public final class JGroupsConfigurator {
                     Map.entry("write_data_on_find", "true"),
                     Map.entry("register_shutdown_hook", "false"),
                     Map.entry("stack.combine", "REPLACE"),
-                    Map.entry("stack.position", udp ? "PING" : "MPING")
+                    Map.entry("stack.position", "MPING")
               ))
         );
 
-        if (!udp) {
-            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(),
-                    // Using per-destination bundler is important to not block the communication to other nodes
-                    // if one node is shut down or becomes unreachable. For example with network policies on
-                    // Kubernetes, for a Pod that has been terminated, any further connection attempt will
-                    // lead to a network timeout that would otherwise block the flow to other nodes.
-                    Map.of(
-                            "bundler_type", "per-destination",
-                            "bundler.use_single_sender_thread", "false"
-                    ))
-            );
-        }
+        list.add(new ProtocolConfiguration(TCP.class.getSimpleName(),
+                // Using per-destination bundler is important to not block the communication to other nodes
+                // if one node is shut down or becomes unreachable. For example with network policies on
+                // Kubernetes, for a Pod that has been terminated, any further connection attempt will
+                // lead to a network timeout that would otherwise block the flow to other nodes.
+                Map.of(
+                        "bundler_type", "per-destination",
+                        "bundler.use_single_sender_thread", "false"
+                ))
+        );
 
         if (tracingEnabled) {
             list.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
                     "stack.combine", "INSERT_ABOVE",
-                    "stack.position", udp ? "UDP" : "TCP"
+                    "stack.position", "TCP"
             )));
         }
         if (!fdSockEnabled) {
             list.add(new ProtocolConfiguration(FD_SOCK2.class.getSimpleName(), Map.of("stack.combine", "REMOVE")));
         }
         return list;
-    }
-
-    private static void warnDeprecatedStack(ConfigurationBuilderHolder holder) {
-        var stackName = transportStackOf(holder).get();
-        switch (stackName) {
-            case "jdbc-ping-udp":
-            case "tcp":
-            case "udp":
-            case "azure":
-            case "ec2":
-            case "google":
-                logger.warnf("Stack '%s' is deprecated. We recommend to use 'jdbc-ping' instead", stackName);
-        }
     }
 
     private static TransportConfigurationBuilder transportOf(ConfigurationBuilderHolder holder) {
@@ -428,13 +407,14 @@ public final class JGroupsConfigurator {
                     name.equals(UDP.class.getName()) ||
                     name.equals(TCP_NIO2.class.getSimpleName()) ||
                     name.equals(TCP_NIO2.class.getName())) {
-                throw new RuntimeException("Cache TLS is not available with protocol " + name);
+                throw new RuntimeException("Cache TLS is not available with protocol " + name
+                        + ". Use the supported jdbc-ping transport stack. For a custom transport stack, set --cache-embedded-mtls-enabled=false and configure encryption in the JGroups stack.");
             }
         }
     }
 
     private static boolean isJdbcPingStack(String stackName) {
-        return "jdbc-ping".equals(stackName) || "jdbc-ping-udp".equals(stackName);
+        return "jdbc-ping".equals(stackName);
     }
 
     private static void readConfigAndSet(Config.Scope scope, String configKey, Consumer<String> consumer) {
@@ -450,8 +430,8 @@ public final class JGroupsConfigurator {
         private final JpaConnectionProviderFactory jpaConnectionProviderFactory;
         private final Address address;
 
-        public JpaFactoryAwareJGroupsChannelConfigurator(KeycloakSessionFactory factory, String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory jpaConnectionProviderFactory, boolean isUdp, Address address) {
-            super(name, stack, null, isUdp ? "udp" : "tcp");
+        public JpaFactoryAwareJGroupsChannelConfigurator(KeycloakSessionFactory factory, String name, List<ProtocolConfiguration> stack, JpaConnectionProviderFactory jpaConnectionProviderFactory, Address address) {
+            super(name, stack, null, "tcp");
             this.factory = factory;
             this.jpaConnectionProviderFactory = Objects.requireNonNull(jpaConnectionProviderFactory);
             this.address = address;

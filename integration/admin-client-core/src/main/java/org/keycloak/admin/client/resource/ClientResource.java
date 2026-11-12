@@ -38,7 +38,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 
 /**
@@ -169,7 +168,7 @@ public interface ClientResource {
     ClientScopeEvaluateResource clientScopesEvaluate();
 
     /**
-     * Get default client scopes.  Only name and ids are returned.
+     * Get default client scopes, including their names, IDs, descriptions, and parameterized scope flags.
      *
      * @return default client scopes
      */
@@ -177,6 +176,14 @@ public interface ClientResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("default-client-scopes")
     List<ClientScopeRepresentation> getDefaultClientScopes();
+
+    /**
+     * Get summaries of client scopes that can be assigned to this client. Requires manage permission on the client.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("available-client-scopes")
+    List<ClientScopeRepresentation> getAvailableClientScopes();
 
     @PUT
     @Path("default-client-scopes/{clientScopeId}")
@@ -187,7 +194,7 @@ public interface ClientResource {
     void removeDefaultClientScope(@PathParam("clientScopeId") String clientScopeId);
 
     /**
-     * Get optional client scopes.  Only name and ids are returned.
+     * Get optional client scopes, including their names, IDs, descriptions, and parameterized scope flags.
      *
      * @return optional client scopes
      */
@@ -203,11 +210,6 @@ public interface ClientResource {
     @DELETE
     @Path("optional-client-scopes/{clientScopeId}")
     void removeOptionalClientScope(@PathParam("clientScopeId") String clientScopeId);
-
-    @Path("/service-account-user")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    UserRepresentation getServiceAccountUser();
 
     @Path("nodes")
     @POST

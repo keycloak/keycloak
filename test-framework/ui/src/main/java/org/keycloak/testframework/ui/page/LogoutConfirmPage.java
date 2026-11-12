@@ -20,7 +20,6 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -29,7 +28,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class LogoutConfirmPage extends AbstractLoginPage {
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(id = "kc-logout")
     private WebElement confirmLogoutButton;
 
     public LogoutConfirmPage(ManagedWebDriver driver) {
@@ -37,7 +36,7 @@ public class LogoutConfirmPage extends AbstractLoginPage {
     }
 
     public void confirmLogout() {
-        confirmLogoutButton.sendKeys(Keys.ENTER);
+        confirmLogoutButton.click();
     }
 
     @Override

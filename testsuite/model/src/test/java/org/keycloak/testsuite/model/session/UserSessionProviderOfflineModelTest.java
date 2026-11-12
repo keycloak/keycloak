@@ -59,15 +59,12 @@ import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
 import org.hamcrest.Matchers;
-import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
-import org.infinispan.context.Flag;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -517,48 +514,6 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             return null;
         });
     }
-
-    @Test
-    public void testOfflineSessionLifespanOverride() {
-        // As offline session's timeout is not overriden when PERSISTENT_USER_SESSIONS is enabled
-        Assume.assumeFalse(MultiSiteUtils.isPersistentSessionsEnabled());
-        assumeFalse("Clusterless Feature enabled", Profile.isFeatureEnabled(Profile.Feature.CLUSTERLESS));
-
-        createOfflineSessions("user1", 2, new LinkedList<>(), new LinkedList<>());
-
-        reinitializeKeycloakSessionFactory();
-
-        withRealm(realmId, (session, realm) -> {
-            InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-
-            // skip remote cache load as we are only interested in embedded caches
-            AdvancedCache<?, ?> offlineUSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
-            AdvancedCache<?, ?> offlineCSCache = provider.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME).getAdvancedCache().withFlags(Flag.SKIP_CACHE_LOAD);
-
-            Assert.assertEquals(0, offlineUSCache.size());
-            Assert.assertEquals(0, offlineCSCache.size());
-
-            // lazy load offline user sessions from DB => this should also import user and client sessions to the caches
-            Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
-
-            // check sessions were imported to the caches
-            Assert.assertEquals(2, offlineUSCache.size());
-            Assert.assertEquals(4, offlineCSCache.size());
-
-            // lifespan override set to 12h (43200s)
-            setTimeOffset(44000);
-
-            // check sessions were evicted from the caches
-            Assert.assertEquals(0, offlineUSCache.size());
-            Assert.assertEquals(0, offlineCSCache.size());
-
-            // sessions should still be in the DB
-            Assert.assertEquals(2, session.sessions().getOfflineUserSessionsStream(realm, session.users().getUserByUsername(realm, "user1")).count());
-
-            return null;
-        });
-    }
-
     @Test
     public void testExpirationTaskExists() {
         // embedded + volatile sessions store offline sessions in the database, the task must be running in this case too.

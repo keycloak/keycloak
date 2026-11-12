@@ -80,6 +80,7 @@ import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configureSe
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class UserSessionLimitsTest {
@@ -537,7 +538,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword("test-user@localhost");
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
 
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
@@ -590,7 +591,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword("test-user@localhost");
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
@@ -601,12 +602,16 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.open(changePasswordUrl.trim());
             updatePasswordPage.assertCurrent();
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+            // changing a password requires relogin
+            oauth.doLogin(username, "resetPassword");
 
             runOnServer.run(assertSessionCount(realmName, username, 1));
         } finally {
@@ -637,7 +642,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword(username);
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
@@ -648,6 +653,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -687,7 +693,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword(username);
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
@@ -698,12 +704,16 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.open(changePasswordUrl.trim());
             updatePasswordPage.assertCurrent();
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+            // changing a password requires relogin
+            oauth.doLogin(username, "resetPassword");
 
             runOnServer.run(assertSessionCount(realmName, username, 1));
         } finally {

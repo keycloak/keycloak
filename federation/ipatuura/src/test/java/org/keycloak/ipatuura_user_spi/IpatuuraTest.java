@@ -40,4 +40,22 @@ public class IpatuuraTest {
         // a trailing backslash must not swallow the closing quote
         Assert.assertEquals("userName eq \"a\\\\\"", Ipatuura.buildFilter("userName", "a\\"));
     }
+
+    @Test
+    public void testRequiresPasswordReentryWhenUnchanged() {
+        Assert.assertFalse(IpatuuraUserStorageProviderFactory.requiresPasswordReentry(
+                "server.example.com:8080", "server.example.com:8080", "admin", "admin"));
+    }
+
+    @Test
+    public void testRequiresPasswordReentryWhenUrlChanged() {
+        Assert.assertTrue(IpatuuraUserStorageProviderFactory.requiresPasswordReentry(
+                "server.example.com:8080", "evil.example.com:8080", "admin", "admin"));
+    }
+
+    @Test
+    public void testRequiresPasswordReentryWhenUsernameChanged() {
+        Assert.assertTrue(IpatuuraUserStorageProviderFactory.requiresPasswordReentry(
+                "server.example.com:8080", "server.example.com:8080", "admin", "someoneelse"));
+    }
 }

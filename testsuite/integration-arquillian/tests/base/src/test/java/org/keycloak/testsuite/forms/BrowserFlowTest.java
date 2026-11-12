@@ -49,6 +49,7 @@ import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -1078,7 +1079,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
         Assertions.assertNotNull(user);
 
-        MultiFactorAuthenticationTest.configureBrowserFlowWithAlternativeCredentials(testingClient);
+        testingClient.server("test").run(RunHelpers.configureBrowserFlowWithAlternativeCredentials());
         try {
             RealmRepresentation realm = managedRealm.admin().toRepresentation();
             realm.setLoginWithEmailAllowed(false);

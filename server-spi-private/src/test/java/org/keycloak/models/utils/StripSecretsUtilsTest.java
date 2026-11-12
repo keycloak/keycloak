@@ -30,6 +30,7 @@ import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -299,6 +300,52 @@ public class StripSecretsUtilsTest {
         assertEquals(2, componentExportConfig.get("nonSecret").size());
         assertEquals("nonSecret1", componentExportConfig.get("nonSecret").get(0));
         assertEquals("nonSecret2", componentExportConfig.get("nonSecret").get(1));
+    }
+
+    @Test
+    public void stripCertificate() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPrivateKey("MIIJQgIBADANBgkq...");
+        rep.setPublicKey("MIIBIjANBgkq...");
+        rep.setCertificate("MIIEnDCCAoSgAwIB...");
+        rep.setKid("7Nv-DdLhRJ2mF4qK");
+        rep.setJwks("{\"keys\":[{\"kty\":\"RSA\",\"d\":\"secret\"}]}");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getPrivateKey());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
+        assertEquals("MIIEnDCCAoSgAwIB...", rep.getCertificate());
+        assertEquals("7Nv-DdLhRJ2mF4qK", rep.getKid());
+    }
+
+    @Test
+    public void stripCertificateNullFields() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPublicKey("MIIBIjANBgkq...");
+        rep.setCertificate("MIIEnDCCAoSgAwIB...");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertNull(rep.getPrivateKey());
+        assertNull(rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
+        assertEquals("MIIEnDCCAoSgAwIB...", rep.getCertificate());
+    }
+
+    @Test
+    public void stripCertificateVaultValues() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPrivateKey("${vault.client-private-key}");
+        rep.setJwks("${vault.client-jwks}");
+        rep.setPublicKey("MIIBIjANBgkq...");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertEquals("${vault.client-private-key}", rep.getPrivateKey());
+        assertEquals("${vault.client-jwks}", rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
     }
 
     @Test

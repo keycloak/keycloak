@@ -35,7 +35,11 @@ import org.keycloak.provider.ProviderFactory;
  * @version $Revision: 1 $
  */
 public interface ClientInstallationProvider extends Provider, ProviderFactory<ClientInstallationProvider> {
-    Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri);
+    /**
+     * Generates installation configuration, masking stored secrets when {@code includeSecrets} is false.
+     */
+    Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri, boolean includeSecrets);
+
     String getProtocol();
     String getDisplayType();
     String getHelpText();

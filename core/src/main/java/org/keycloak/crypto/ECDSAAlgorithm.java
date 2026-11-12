@@ -44,6 +44,12 @@ public enum ECDSAAlgorithm {
     }
 
     public static byte[] concatenatedRSToASN1DER(final byte[] signature, int signLength) throws IOException {
+        // RFC 7518 section 3.4 fixes the JOSE ECDSA signature to exactly signLength octets. The provider
+        // implementations read only the first signLength bytes, so without this check a signature with
+        // trailing data appended would still convert and verify, making accepted signatures malleable.
+        if (signature.length != signLength) {
+            throw new IOException("Invalid ECDSA signature length: expected " + signLength + ", got " + signature.length);
+        }
         return CryptoIntegration.getProvider().getEcdsaCryptoProvider().concatenatedRSToASN1DER(signature, signLength);
     }
 

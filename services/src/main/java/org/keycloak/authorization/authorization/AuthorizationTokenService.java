@@ -260,7 +260,13 @@ public class AuthorizationTokenService {
                         throw invalidResponseModeException;
                     }
                 } else {
-                    return createSuccessfulResponse(createAuthorizationResponse(identity, permissions, request, targetClient), request);
+                    try {
+                        return createSuccessfulResponse(createAuthorizationResponse(identity, permissions, request, targetClient), request);
+                    } catch (IllegalArgumentException iae) {
+                        CorsErrorResponseException invalidResponseModeException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, iae.getMessage(), Status.BAD_REQUEST);
+                        fireErrorEvent(event, Errors.INVALID_REQUEST, invalidResponseModeException);
+                        throw invalidResponseModeException;
+                    }
                 }
             }
 
@@ -326,6 +332,9 @@ public class AuthorizationTokenService {
         if (accessToken.getSessionState() == null) {
             // Create temporary (request-scoped) transient session
             UserModel user = TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
+            if (user == null) {
+                throw new IllegalArgumentException("User from token not found");
+            }
             userSessionModel = new UserSessionManager(keycloakSession).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteHost(),
                     ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         } else {

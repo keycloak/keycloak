@@ -191,11 +191,33 @@ public class SubjectManagementService {
 
         String clientClientId = resolveClientClientId(callerClientId);
         SubjectResolution resolution = resolveSubject(request.getSubject());
+        SubjectManagementResult permissionResult = checkReceiverMayRemove(clientClientId, resolution);
+        if (permissionResult != null) {
+            return permissionResult;
+        }
 
         // Receiver-driven path: stamp the SSF §9.3 tombstone so the
         // dispatcher can honor a configured grace window. Admin-driven
         // removes go through removeSubjectByAdmin and skip the stamp.
         return unregisterSubjectForNotification(clientClientId, resolution, true);
+    }
+
+    protected SubjectManagementResult checkReceiverMayRemove(String receiverClientId, SubjectResolution resolution) {
+        final boolean excluded;
+        if (resolution instanceof SubjectResolution.User u) {
+            excluded = SsfNotifyAttributes.isUserExcluded(u.user(), receiverClientId);
+        } else if (resolution instanceof SubjectResolution.Organization o) {
+            excluded = SsfNotifyAttributes.isOrganizationExcluded(o.organization(), receiverClientId);
+        } else {
+            excluded = false;
+        }
+
+        if (excluded) {
+            log.debugf("SSF subject remove denied, subject is explicitly excluded. clientId=%s", receiverClientId);
+            return SubjectManagementResult.SUBJECT_NOT_PERMITTED;
+        } else {
+            return null;
+        }
     }
 
     protected SubjectManagementResult excludeSubjectFromNotification(String callerClientId, SubjectResolution resolution) {

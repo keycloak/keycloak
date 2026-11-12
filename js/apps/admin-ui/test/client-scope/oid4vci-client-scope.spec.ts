@@ -1,3 +1,4 @@
+import { assertNotificationMessage } from "../utils/masthead.ts";
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { createTestBed } from "../support/testbed.ts";
@@ -273,7 +274,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .fill(TEST_VALUES.SUPPORTED_CREDENTIAL_TYPES);
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
@@ -534,7 +535,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page.getByTestId("name").fill(testClientScopeName);
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
@@ -578,7 +579,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .fill(TEST_VALUES.ISSUER_DID);
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
     await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue(
@@ -587,7 +588,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     await page.getByTestId(OID4VCI_FIELDS.ISSUER_DID).fill("");
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope updated")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope updated");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
     await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue("");
@@ -610,7 +611,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page.getByTestId("name").fill(testClientScopeName);
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
@@ -803,7 +804,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     );
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
@@ -859,7 +860,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .fill(TEST_VALUES.KEY_ATTESTATION_USER_AUTHENTICATION);
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
@@ -903,7 +904,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page.getByTestId("name").fill(testClientScopeName);
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
@@ -943,7 +944,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
   });
 
   test("should configure mdoc format and cose_key binding when mdoc feature is enabled", async ({
@@ -995,7 +996,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
   });
 
   test("should reject unsupported proof types", async ({ page }) => {
@@ -1029,7 +1030,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .fill("jwt,attestation");
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
   });
 
   test("should reject mixed valid and invalid proof types", async ({
@@ -1089,7 +1090,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       .fill("jwt,attestation");
 
     await clickSaveButton(page);
-    await expect(page.getByText("Client scope created")).toBeVisible();
+    await assertNotificationMessage(page, "Client scope created");
 
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 

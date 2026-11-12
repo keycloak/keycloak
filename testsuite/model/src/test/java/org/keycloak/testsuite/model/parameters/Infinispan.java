@@ -125,9 +125,7 @@ public class Infinispan extends KeycloakModelParameters {
                 .config("stalledTimeoutInSeconds", "10")
                 .spi(UserSessionSpi.NAME)
                 .provider(InfinispanUtils.EMBEDDED_PROVIDER_ID)
-                .config("sessionPreloadStalledTimeoutInSeconds", "10")
-                .config("offlineSessionCacheEntryLifespanOverride", "43200")
-                .config("offlineClientSessionCacheEntryLifespanOverride", "43200");
+                .config("sessionPreloadStalledTimeoutInSeconds", "10");
         cf.spi(CacheEmbeddedConfigProviderSpi.SPI_NAME)
                 .provider(DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID)
                 .config(DefaultCacheEmbeddedConfigProviderFactory.CONFIG, "test-ispn.xml")

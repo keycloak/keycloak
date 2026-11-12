@@ -19,6 +19,8 @@ package org.keycloak.ipatuura_user_spi;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -31,6 +33,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.services.resources.admin.ComponentResource;
 import org.keycloak.storage.UserStorageProviderFactory;
 
 import org.jboss.logging.Logger;
@@ -74,6 +77,12 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config)
             throws ComponentValidationException {
+        if (config.getId() != null) {
+            // Updating an existing component - make sure the stored login password isn't silently sent
+            // to a different server/user if the URL or username changed but the password wasn't re-entered.
+            validatePasswordReentryOnServerOrUserChange(session, realm, config);
+        }
+
         Ipatuura ipatuura = new Ipatuura(session, config);
 
         SimpleHttpResponse response;
@@ -84,6 +93,39 @@ public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFa
         } catch (Exception e) {
             throw new ComponentValidationException("Cannot connect to provided URL!", e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validatePasswordReentryOnServerOrUserChange(KeycloakSession session, RealmModel realm, ComponentModel config) {
+        ComponentModel oldComponent = realm.getComponent(config.getId());
+        if (oldComponent == null) {
+            return;
+        }
+
+        Set<String> secretPlaceholderFields = session.getAttribute(
+                ComponentResource.SECRET_PLACEHOLDER_FIELDS_ATTR, Set.class);
+        if (secretPlaceholderFields == null || !secretPlaceholderFields.contains("loginpassword")) {
+            // The login password was explicitly re-entered, no risk of sending it to a different destination.
+            return;
+        }
+
+        String oldUrl = oldComponent.getConfig().getFirst("scimurl");
+        String newUrl = config.getConfig().getFirst("scimurl");
+        String oldUsername = oldComponent.getConfig().getFirst("loginusername");
+        String newUsername = config.getConfig().getFirst("loginusername");
+
+        if (requiresPasswordReentry(oldUrl, newUrl, oldUsername, newUsername)) {
+            throw new ComponentValidationException(
+                    "The login password must be re-entered when the Ipatuura Server URL or login username is changed");
+        }
+    }
+
+    /**
+     * Determines whether the login password must be re-entered because the server URL or the
+     * username it is bound to has changed, instead of silently reusing the previously stored password.
+     */
+    static boolean requiresPasswordReentry(String oldUrl, String newUrl, String oldUsername, String newUsername) {
+        return !Objects.equals(oldUrl, newUrl) || !Objects.equals(oldUsername, newUsername);
     }
 
     @Override

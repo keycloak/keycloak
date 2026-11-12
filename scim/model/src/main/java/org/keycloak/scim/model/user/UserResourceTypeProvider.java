@@ -231,6 +231,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
     @Override
     public Long count(SearchOptions searchRequest, int resourceSize) {
+        if (isViewFullyDenied()) {
+            return 0L;
+        }
+
         if (resourceSize < searchRequest.getCount() && (resourceSize > 0 || searchRequest.getStartIndex() == 1)) {
             return (long) (searchRequest.getStartIndex() - 1 + resourceSize);
         }

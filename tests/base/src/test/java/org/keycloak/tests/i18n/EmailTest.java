@@ -332,7 +332,10 @@ public class EmailTest {
         // Ensure that page is still in german (after authenticationSession was forked on server). The emailSentMessage should be also displayed in german
         loginPage.assertCurrent();
         assertEquals("Deutsch", loginPage.getSelectedLanguage());
-        assertEquals("Sie sollten in Kürze eine E-Mail mit weiteren Instruktionen erhalten.", loginPage.getSuccessMessage());
+        assertEquals("Sie sollten in Kürze eine E-Mail mit weiteren Instruktionen erhalten.", loginPage.getSuccessMessage().orElse(null));
+
+        // wait for the background email, so it doesn't land in the next test
+        Assertions.assertTrue(mailServer.waitForIncomingEmail(1));
     }
 
 }

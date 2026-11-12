@@ -18,16 +18,19 @@
 package org.keycloak.authentication.authenticators.broker;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.broker.util.ExistingUserInfo;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.util.Booleans;
 
 import org.jboss.logging.Logger;
 
-import static org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator.getExistingUser;
 
 /**
  * @author <a href="mailto:Ryan.Slominski@gmail.com">Ryan Slominski</a>
@@ -38,6 +41,47 @@ public class IdpAutoLinkAuthenticator extends AbstractIdpAuthenticator {
 
     @Override
     protected void authenticateImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+
+        // Check if email was changed on Review Profile Page
+        String emailChanged = context.getAuthenticationSession().getAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED);
+        boolean emailWasEdited = "true".equals(emailChanged);
+
+        // Check if username was changed on Review Profile Page
+        String usernameChanged = context.getAuthenticationSession().getAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_USERNAME_CHANGED);
+        boolean usernameWasEdited = "true".equals(usernameChanged);
+
+        // Don't auto-link when email or username edited on Review Profile.
+        if (emailWasEdited || usernameWasEdited) {
+            logger.debugf("Auto-link blocked: email or username was edited on Review Profile Page");
+            context.attempted();
+            return;
+        }
+
+        String existingUserInfoJson = context.getAuthenticationSession().getAuthNote(EXISTING_USER_INFO);
+        if (existingUserInfoJson != null) {
+            ExistingUserInfo existingUserInfo = ExistingUserInfo.deserialize(existingUserInfoJson);
+
+            if (UserModel.EMAIL.equals(existingUserInfo.getDuplicateAttributeName())) {
+                IdentityProviderModel idpConfig = brokerContext.getIdpConfig();
+
+                // Email must match the broker email
+                if (brokerContext.getEmail() == null || !brokerContext.getEmail().equalsIgnoreCase(existingUserInfo.getDuplicateAttributeValue())) {
+                    logger.debugf("Auto-link blocked: broker email '%s' does not match existing user email '%s'",
+                            brokerContext.getEmail(), existingUserInfo.getDuplicateAttributeValue());
+                    context.attempted();
+                    return;
+                }
+
+                // Email must be verified or trusted
+                if (!Booleans.isTrue(idpConfig.isTrustEmail()) && !brokerContext.isEmailVerified()) {
+                    logger.debugf("Auto-link blocked: email '%s' is not verified by IdP '%s'",
+                            brokerContext.getEmail(), idpConfig.getAlias());
+                    context.attempted();
+                    return;
+                }
+            }
+        }
+
         KeycloakSession session = context.getSession();
         RealmModel realm = context.getRealm();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();

@@ -19,14 +19,24 @@ package org.keycloak.it.storage.database;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 
 import io.quarkus.logging.Log;
@@ -102,10 +112,94 @@ public abstract class BasicDatabaseTest {
         var count = countMatches(outputLowerCase, "create table public.databasechangelog (")
                 + countMatches(outputLowerCase, "create table keycloak.databasechangelog (");
         assertThat(count, is(1));
+
+        // ... and the lock table, which the server would otherwise have to create itself on first startup
+        var lockCount = countMatches(outputLowerCase, "create table public.databasechangeloglock (")
+                + countMatches(outputLowerCase, "create table keycloak.databasechangeloglock (");
+        assertThat(lockCount, is(1));
         assertThat(output, containsString("Change Log: META-INF/jpa-changelog-master.xml"));
         assertThat(output, containsString("Changeset META-INF/jpa-changelog-26.2.6.xml"));
 
         return output;
+    }
+
+    /**
+     * Applies the generated manual migration script to an empty database and checks that the result is the schema
+     * of the automatic migration. Distribution tests call this from a {@code @Test}; it is not one itself because
+     * it needs a {@link KeycloakRunner}, which only exists for {@code @DistributionTest} classes.
+     */
+    protected void assertManualScriptMatchesAutomaticMigration(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws Exception {
+        RawKeycloakDistribution dist = runner.getDistribution(RawKeycloakDistribution.class);
+
+        // the connection details the test framework wrote for the container
+        Properties config = new Properties();
+        try (Reader reader = Files.newBufferedReader(dist.getDistPath().resolve("conf").resolve("keycloak.conf"))) {
+            config.load(reader);
+        }
+
+        ManualMigrationParity.Database database = new ManualMigrationParity.Database() {
+            @Override
+            public Connection open() throws Exception {
+                return DriverManager.getConnection(config.getProperty("db-url"), config.getProperty("db-username"),
+                        config.getProperty("db-password"));
+            }
+
+            @Override
+            public void reset() throws Exception {
+                try (Connection connection = open()) {
+                    resetDatabase(connection);
+                }
+            }
+
+            @Override
+            public boolean supportsSequences() {
+                return BasicDatabaseTest.this.supportsSequences();
+            }
+        };
+
+        ManualMigrationParity.verify(runner, rawDistRootPath, database,
+                List.of("start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false"),
+                knownMissingFromScript(), knownExtraInScript());
+    }
+
+    /** Remove every object from the database the connection points at, leaving an empty database. */
+    protected void resetDatabase(Connection connection) throws Exception {
+        throw new UnsupportedOperationException("Manual migration parity is not set up for this database");
+    }
+
+    /** Snapshot entries (prefixes) known to exist after the automatic migration but not after the script. */
+    protected List<String> knownMissingFromScript() {
+        return ManualMigrationParity.KNOWN_MISSING_FROM_SCRIPT;
+    }
+
+    /** Snapshot entries (prefixes) known to exist after the script but not after the automatic migration. */
+    protected List<String> knownExtraInScript() {
+        return ManualMigrationParity.KNOWN_EXTRA_IN_SCRIPT;
+    }
+
+    protected boolean supportsSequences() {
+        return true;
+    }
+
+    /**
+     * Drop every table of the current catalog, for databases where the test user may not drop the database itself.
+     */
+    protected static void dropAllTables(Connection connection) throws Exception {
+        List<String> tables = new ArrayList<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(
+                     "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'")) {
+            while (rs.next()) {
+                tables.add(rs.getString(1));
+            }
+        }
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("SET FOREIGN_KEY_CHECKS = 0");
+            for (String table : tables) {
+                statement.execute("DROP TABLE `" + table + "`");
+            }
+            statement.execute("SET FOREIGN_KEY_CHECKS = 1");
+        }
     }
 
     protected static String readKeycloakDbUpdateScript(RawDistRootPath path) {

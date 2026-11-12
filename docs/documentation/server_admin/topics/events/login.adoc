@@ -1,4 +1,5 @@
 
+[#auditing-user-events]
 === Auditing user events
 
 You can record and view every event that affects users. {project_name} triggers login events for actions such as successful user login, a user entering an incorrect password, or a user account updating. By default, {project_name} does not store or display events in the Admin Console. Only the error events are logged to the Admin Console and the server’s log file.

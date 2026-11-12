@@ -24,9 +24,11 @@ import java.util.Arrays;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
+import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
@@ -71,6 +73,12 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
         reg.auth(Auth.token(token));
+
+        allowProtocolMappersInRealm();
+    }
+
+    private void allowProtocolMappersInRealm() {
+        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, UserAttributeStatementMapper.PROVIDER_ID));
     }
 
     @Test
@@ -83,7 +91,7 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
     public void testSAMLEndpointCreateWithOIDCClient() throws Exception {
         ClientsResource clientsResource = managedRealm.admin().clients();
         ClientRepresentation oidcClient = clientsResource.findByClientId("oidc-client").get(0);
-        String oidcClientServiceId = clientsResource.get(oidcClient.getId()).getServiceAccountUser().getId();
+        String oidcClientServiceId = clientsResource.get(oidcClient.getId()).toRepresentation().getServiceAccountUserId();
 
         String realmManagementId = clientsResource.findByClientId("realm-management").get(0).getId();
         RoleRepresentation role = clientsResource.get(realmManagementId).roles().get("create-client").toRepresentation();

@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.organization.exportimport;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,12 +36,14 @@ import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.dir.DirImportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -49,9 +52,16 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.http.client.HttpClient;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -61,6 +71,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -406,25 +417,71 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testPartialExport() {
-        createOrganization();
-        assertPartialExportImport(false, false);
-        assertPartialExportImport(true, false);
-        assertPartialExportImport(true, true);
-        assertPartialExportImport(false, true);
+    public void testPartialExport() throws IOException {
+        OrganizationRepresentation expected = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(expected.getId());
+        createTopLevelGroup(organization, "Department");
+        addMember(organization);
+
+        OrganizationIdentityProviderLinkRepresentation linkUpdate = new OrganizationIdentityProviderLinkRepresentation();
+        linkUpdate.setAutoMembership(false);
+        String brokerAlias = expected.getDomains().iterator().next().getIdentityProviderAlias();
+        try (Response response = organization.identityProviders().get(brokerAlias).update(linkUpdate)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            assertPartialExportImport(client, expected, false, false);
+            assertPartialExportImport(client, expected, true, false);
+            assertPartialExportImport(client, expected, true, true);
+            assertPartialExportImport(client, expected, false, true);
+        }
     }
 
-    private void assertPartialExportImport(boolean exportGroupsAndRoles, boolean exportClients) {
-        RealmRepresentation export = managedRealm.admin().partialExport(exportGroupsAndRoles, exportClients);
-        assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
+    private void assertPartialExportImport(HttpClient client, OrganizationRepresentation expected, boolean exportGroupsAndRoles, boolean exportClients) throws IOException {
+        String realmUrl = suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/realms/" + managedRealm.getName();
+        String token = adminClient.tokenManager().getAccessTokenString();
+
+        ObjectNode exportedFile = (ObjectNode) SimpleHttpDefault.doPost(realmUrl + "/partial-export?exportGroupsAndRoles=" + exportGroupsAndRoles + "&exportClients=" + exportClients, client)
+                .auth(token)
+                .entity(new StringEntity(""))
+                .asJson();
+        RealmRepresentation export = JsonSerialization.mapper.treeToValue(exportedFile, RealmRepresentation.class);
+
+        assertThat(export.getOrganizations(), hasSize(1));
+        OrganizationRepresentation exported = export.getOrganizations().get(0);
+        assertThat(exported.getId(), equalTo(expected.getId()));
+        assertThat(exported.getName(), equalTo(expected.getName()));
+        assertThat(exported.getAlias(), equalTo(expected.getAlias()));
+        assertThat(exported.getDescription(), equalTo(expected.getDescription()));
+        assertThat(exported.getAttributes(), equalTo(expected.getAttributes()));
+
+        OrganizationDomainRepresentation expectedDomain = expected.getDomains().iterator().next();
+        OrganizationDomainRepresentation exportedDomain = exported.getDomain(expectedDomain.getName());
+        assertThat(exportedDomain, notNullValue());
+        assertThat(exportedDomain.getIdentityProviderAlias(), equalTo(expectedDomain.getIdentityProviderAlias()));
+        assertThat(exportedDomain.isAutoRedirect(), is(expectedDomain.isAutoRedirect()));
+
+        assertThat(exported.getIdentityProviders(), hasSize(1));
+        IdentityProviderRepresentation exportedBroker = exported.getIdentityProviders().get(0);
+        assertThat(exportedBroker.getAlias(), equalTo(expectedDomain.getIdentityProviderAlias()));
+        assertThat(exportedBroker.getOrganizationLinks(), hasSize(1));
+        OrganizationIdentityProviderLinkRepresentation exportedLink = exportedBroker.getOrganizationLinks().get(0);
+        OrganizationIdentityProviderLinkRepresentation expectedLink = managedRealm.admin().organizations().get(expected.getId())
+                .identityProviders().getIdentityProviders().get(0).getOrganizationLinks().get(0);
+        assertThat(exportedLink.getOrganizationId(), equalTo(expected.getId()));
+        assertThat(exportedLink.getAutoMembership(), is(false));
+        assertThat(exportedLink.getMembershipType(), notNullValue());
+        assertThat(exportedLink.getMembershipType(), equalTo(expectedLink.getMembershipType()));
+
+        assertThat(exported.getGroups().stream().map(GroupRepresentation::getName).toList(), containsInAnyOrder("Department"));
+        assertThat(Optional.ofNullable(exported.getMembers()).orElse(List.of()), empty());
         assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> idp.getOrganizationLinks() != null && !idp.getOrganizationLinks().isEmpty()));
-        PartialImportRepresentation rep = new PartialImportRepresentation();
-        rep.setUsers(export.getUsers());
-        rep.setClients(export.getClients());
-        rep.setRoles(export.getRoles());
-        rep.setIdentityProviders(export.getIdentityProviders());
-        rep.setGroups(export.getGroups());
-        managedRealm.admin().partialImport(rep).close();
+
+        exportedFile.put("ifResourceExists", PartialImportRepresentation.Policy.SKIP.name());
+        try (SimpleHttpResponse response = SimpleHttpDefault.doPost(realmUrl + "/partialImport", client).auth(token).json(exportedFile).asResponse()) {
+            assertThat(response.getStatus(), equalTo(Response.Status.OK.getStatusCode()));
+        }
     }
 
     private String createTopLevelGroup(OrganizationResource organization, String name) {

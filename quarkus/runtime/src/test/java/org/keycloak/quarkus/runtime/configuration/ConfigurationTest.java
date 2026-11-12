@@ -416,6 +416,14 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?targetServerType=any");
         assertNull(config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
 
+        // PostgreSQL: logServerErrorDetail should be set for AWS JDBC Wrapper
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals("false", config.getConfigValue(DatabasePropertyMappers.PG_LOG_SERVER_ERROR_DETAIL).getValue());
+
+        // logServerErrorDetail: unknown custom JDBC driver -> disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_LOG_SERVER_ERROR_DETAIL).getValue());
+
         // MSSQL: sendStringParametersAsUnicode should be set to false by default
         config = createConfigFromCliArguments("--db=mssql");
         assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false)
@@ -488,9 +496,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         ConfigArgsConfigSource.setCliArgs("");
         Assert.assertEquals("cache-local.xml", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.CONFIG));
-
-        ConfigArgsConfigSource.setCliArgs("--cache-stack=foo");
-        Assert.assertEquals("foo", cacheEmbeddedConfiguration().get(DefaultCacheEmbeddedConfigProviderFactory.STACK));
     }
 
     @Test
@@ -1044,7 +1049,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?connectTimeout=5");
         assertNull(config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
 
+        // AWS JDBC Wrapper -> connectTimeout still set (wrapper passes through to underlying PG driver)
         config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        assertEquals("10", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+
+        // unknown custom JDBC driver -> connectTimeout disabled
+        config = createConfigFromCliArguments("--db=postgres", "--db-driver=com.custom.CustomDriver");
         assertNull(config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
 
         config = createConfigFromCliArguments("--db=postgres", "--db-connect-timeout=30s");

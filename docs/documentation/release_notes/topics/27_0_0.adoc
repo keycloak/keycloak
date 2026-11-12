@@ -1,5 +1,41 @@
+= User interface
+
+== Login v1 theme removed
+
+The legacy Login v1 theme based on PatternFly 3/4 has been deprecated for a long time and has been removed for this release.
+
+= Administration
+
+== Service account user ID available on client representation
+
+The service account user ID is now included directly in the client representation as the `serviceAccountUserId` field.
+This removes the need for a separate API call to discover the service account user, simplifying client administration and role mapping workflows.
+The dedicated `GET /admin/realms/\{realm}/clients/\{id}/service-account-user` endpoint has been removed.
+See the upgrading guide for migration details.
+
 = Security and Standards
+
+== PAR discovery respects the feature flag
+
+When the `par` feature is disabled, OpenID Connect discovery no longer advertises the pushed authorization request endpoint, including its mTLS alias, or `require_pushed_authorization_requests`.
+Discovery metadata is unchanged when PAR is enabled.
+
+== SAML OneTimeUse condition enforced for identity brokering
+
+When an external SAML identity provider issues an assertion with a `OneTimeUse` condition, {project_name} now rejects any later attempt to present the same assertion, as required by the SAML 2.0 specification.
+This protects brokered logins against assertion replay, in particular in IdP-initiated flows where no `InResponseTo` binding is available.
+How long a consumed assertion is remembered is bounded by the new *OneTimeUse maximum age* setting of the SAML identity provider, which defaults to 1 hour.
+See the upgrading guide for details.
 
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
+
+== OID4VP verifier infers the DCQL query from mappers (experimental)
+
+The OID4VP identity provider no longer requires a hand-written DCQL query.
+Configure the accepted credential types (`vct`) in the new *Default Credential Types* setting, and the query sent to the wallet is built from the claims that the identity provider mappers read, plus the principal attribute.
+
+A DCQL query can still be configured for requests that mappers cannot express, such as claim sets.
+It takes precedence over the inferred query and is now validated when the identity provider is saved.
+Only a single credential in the `dc+sd-jwt` format can be requested.

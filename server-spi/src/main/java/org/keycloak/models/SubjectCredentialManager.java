@@ -78,6 +78,19 @@ public interface SubjectCredentialManager {
     void updateStoredCredential(CredentialModel cred);
 
     /**
+     * Replaces a credential of the entity with a new version, but only if the stored credential still has the content
+     * of the old version. Use this to update a credential that was read earlier, so that changes made in the meantime
+     * are not overwritten.
+     * <p>
+     * Implementations must make the check and the replacement atomic, for example by locking the stored credential.
+     *
+     * @param oldCred the credential as it was read, identified by its id
+     * @param newCred the credential to store instead
+     * @return {@code true} if the credential was replaced, {@code false} if it was changed or removed in the meantime
+     */
+    boolean updateStoredCredential(CredentialModel oldCred, CredentialModel newCred);
+
+    /**
      * Updates a credential of the entity with an updated {@link CredentialModel}.
      * Usually called by a {@link org.keycloak.credential.CredentialProvider}.
      */

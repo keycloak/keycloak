@@ -183,7 +183,6 @@ public class ClientScopeAdapter implements ClientScopeModel, JpaModel<ClientScop
             entity.getConfig().clear();
             entity.getConfig().putAll(mapping.getConfig());
         }
-        em.flush();
 
     }
 

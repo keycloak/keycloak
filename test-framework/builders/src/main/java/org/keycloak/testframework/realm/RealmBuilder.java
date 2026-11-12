@@ -349,6 +349,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder actionTokenGeneratedByUserLifespan(int actionTokenGeneratedByUserLifespan) {
+        rep.setActionTokenGeneratedByUserLifespan(actionTokenGeneratedByUserLifespan);
+        return this;
+    }
+
     public RealmBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
         rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
         return this;
@@ -796,6 +801,33 @@ public RealmBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> a
         rep.setMaxDeltaTimeSeconds(maxDeltaTimeSeconds);
         return this;
     }
+
+    public RealmBuilder bruteForceStrategy(RealmRepresentation.BruteForceStrategy bruteForceStrategy) {
+        rep.setBruteForceStrategy(bruteForceStrategy);
+        return this;
+    }
+
+    public RealmBuilder waitIncrementSeconds(int waitIncrementSeconds) {
+        rep.setWaitIncrementSeconds(waitIncrementSeconds);
+        return this;
+    }
+
+    public RealmBuilder maxFailureWaitSeconds(int maxFailureWaitSeconds) {
+        rep.setMaxFailureWaitSeconds(maxFailureWaitSeconds);
+        return this;
+    }
+
+    public RealmBuilder quickLoginCheckMilliSeconds(long quickLoginCheckMilliSeconds) {
+        rep.setQuickLoginCheckMilliSeconds(quickLoginCheckMilliSeconds);
+        return this;
+    }
+
+    public RealmBuilder minimumQuickLoginWaitSeconds(int minimumQuickLoginWaitSeconds) {
+        rep.setMinimumQuickLoginWaitSeconds(minimumQuickLoginWaitSeconds);
+        return this;
+    }
+
+
 
     /**
      * Best practice is to use other convenience methods when configuring a realm, but while the framework is under

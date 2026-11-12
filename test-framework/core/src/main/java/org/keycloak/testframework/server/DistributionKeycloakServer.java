@@ -13,10 +13,9 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -156,6 +155,9 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(new File(keycloakHomeDir, "bin"));
+        // The output handler requires ECS JSON records, so don't allow overriding these from the environment
+        pb.environment().put("KC_LOG_CONSOLE_OUTPUT", "json");
+        pb.environment().put("KC_LOG_CONSOLE_JSON_FORMAT", "ecs");
 
         if (debug) {
             pb.environment().put("DEBUG", "true");
@@ -358,8 +360,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
     private class OutputHandler implements Runnable {
 
-        private static final Pattern LOG_PATTERN = Pattern.compile("([^ ]*) ([^ ]*) ([A-Z]*)([ ]*)(.*)");
-        private static final Logger LOGGER = Logger.getLogger("managed.keycloak");
+        private static final String LOGGER_NAME = "managed.keycloak";
+        private static final Logger LOGGER = Logger.getLogger(LOGGER_NAME);
 
         private boolean startedInPrinted = false;
         private final Process process;
@@ -376,24 +378,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             try {
                 for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
-                    if (!startedInPrinted && line.matches(".*Keycloak.* started in.*")) {
-                        startupLatch.countDown();
-                    }
-
-                    Matcher matcher = LOG_PATTERN.matcher(line);
-                    if (matcher.matches()) {
-                        String levelString = matcher.group(3);
-                        String message = matcher.group(5);
-                        if (levelString != null && message != null) {
-                            for (Logger.Level l : Logger.Level.values()) {
-                                if (l.name().equals(levelString)) {
-                                    LOGGER.log(l, message);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    LOGGER.info(line);
+                    logLine(line);
                 }
             } catch (IOException e) {
                 // Ignored
@@ -402,6 +387,26 @@ public class DistributionKeycloakServer implements KeycloakServer {
                     startupLatch.countDown();
                 }
             }
+        }
+
+        private void detectStartup(String text) {
+            if (!startedInPrinted && text.matches(".*Keycloak.* started in.*")) {
+                startupLatch.countDown();
+            }
+        }
+
+        private void logLine(String line) {
+            Optional<EcsLogRecord> record = line.startsWith("{") ? EcsLogRecord.parse(line) : Optional.empty();
+            if (record.isEmpty()) {
+                // Output that is not an ECS log record is forwarded unchanged
+                detectStartup(line);
+                LOGGER.info(line);
+                return;
+            }
+
+            detectStartup(record.get().message());
+            // Nested under the managed logger to keep its configured level, while preserving the original logger name
+            Logger.getLogger(LOGGER_NAME + "." + record.get().loggerName()).log(record.get().level(), record.get().fullMessage());
         }
 
         public boolean waitForStarted() {

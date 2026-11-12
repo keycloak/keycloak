@@ -84,6 +84,10 @@
             		<groupId>io.vertx</groupId>
             		<artifactId>vertx-uri-template</artifactId>
             	</exclusion>
+                <exclusion>
+                    <groupId>com.aayushatharva.brotli4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -99,10 +103,6 @@
             		<groupId>io.vertx</groupId>
             		<artifactId>vertx-uri-template</artifactId>
             	</exclusion>
-                <exclusion>
-                    <groupId>com.aayushatharva.brotli4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-compress</artifactId>

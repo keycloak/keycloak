@@ -17,16 +17,21 @@
  */
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.jboss.logging.Logger;
+
 /**
  * Parse the parameters from request body
- * 
+ *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 class BackchannelAuthenticationEndpointRequestBodyParser extends BackchannelAuthenticationEndpointRequestParser {
+
+    private static final Logger logger = Logger.getLogger(BackchannelAuthenticationEndpointRequestBodyParser.class);
 
     private final MultivaluedMap<String, String> requestParams;
 
@@ -56,6 +61,20 @@ class BackchannelAuthenticationEndpointRequestBodyParser extends BackchannelAuth
     @Override
     protected Set<String> keySet() {
         return requestParams.keySet();
+    }
+
+    @Override
+    protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {
+        // Reject reserved names supplied as standalone CIBA form parameters.
+        // Copying them into additional parameters could overwrite server-controlled
+        // authentication request claims during deserialization.
+        for (String paramName : keySet()) {
+            if (DISABLED_REQ_PARAMS.contains(paramName)) {
+                logger.warnf("Reserved protocol claim '%s' is not allowed as a CIBA request parameter.", paramName);
+                throw new RuntimeException("Reserved protocol claim '" + paramName + "' is not allowed as a CIBA request parameter.");
+            }
+        }
+        super.extractAdditionalReqParams(additionalReqParams);
     }
 
     private void checkDuplicated(MultivaluedMap<String, String> requestParams, String paramName) {

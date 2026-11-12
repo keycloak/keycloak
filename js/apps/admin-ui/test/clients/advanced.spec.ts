@@ -42,16 +42,23 @@ import {
 } from "./advanced.ts";
 
 test.describe.serial("Advanced tab test", () => {
+  const realmName = `advanced-tab-${uuidv4()}`;
   const clientId = `advanced-tab-${uuidv4()}`;
 
-  test.beforeAll(() =>
-    adminClient.createClient({ clientId, publicClient: true }),
-  );
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    await adminClient.createClient({
+      clientId,
+      publicClient: true,
+      realm: realmName,
+    });
+  });
 
-  test.afterAll(() => adminClient.deleteClient(clientId));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await goToRealm(page, realmName);
     await goToClients(page);
     await clickTableRowItem(page, clientId);
     await goToAdvancedTab(page);

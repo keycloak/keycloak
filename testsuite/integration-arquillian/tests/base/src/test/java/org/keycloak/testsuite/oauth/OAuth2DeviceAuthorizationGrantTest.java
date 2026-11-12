@@ -813,7 +813,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         DeviceAuthorizationResponse response = doDeviceAuthorizationWithDuplicatedParams(DEVICE_APP_PUBLIC, null);
         
         Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_grant", response.getError());
+        Assertions.assertEquals("invalid_request", response.getError());
         Assertions.assertEquals("duplicated parameter", response.getErrorDescription());
     }
 

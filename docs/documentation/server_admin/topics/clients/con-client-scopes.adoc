@@ -73,6 +73,14 @@ Linking between a client scope and a client is configured in the *Client Scopes*
 .Client scopes linking to client
 image:images/client-scopes-default.png[]
 
+WARNING: Assigning or unassigning a client scope to a client requires permission to manage both the client and client scopes;
+managing an individual client alone is not sufficient.
+However note that the `manage-clients` role grants permission to manage both clients and client scopes.
+Administrators with permissions to manage both (such as users with the `manage-clients` role) can assign or unassign any client scope configured in the realm to their clients.
+Since client scopes can contain protocol mappers and role scope mappings, realm administrators should take care when defining client scopes or granting permissions to manage clients and client scopes.
+If a sensitive or potentially dangerous protocol mapper is added to a client scope, administrators with permissions to manage the client and client scopes can assign that client scope to their client, allowing that protocol mapper to be used.
+When using OpenID Connect Dynamic Client Registration (DCR), allowed client scopes can be restricted using the *Allowed Client Scopes* client registration policy (configured under *Clients* > *Client Registration*).
+
 There are two ways of linking between the client scope and the client.
 
 Default Client Scopes::
@@ -94,7 +102,7 @@ The scope parameter contains the string, with the scope values divided by spaces
 [[_client_scopes_dedicated]]
 === Dedicated client scope
 
-There is a special client scope, which is linked to every client. It is a dedicated client scope, which is always shown as the first client scope when you click on the tab *Client scopes* of the particular client. 
+There is a special client scope, which is linked to every client. It is a dedicated client scope, which is always shown as the first client scope when you click on the tab *Client scopes* of the particular client.
 For example, for client `myclient`, the client scope is shown as `myclient-dedicated`. This client scope represents the protocol mappers and role scope mappings, which are linked directly to the client itself.
 
 It is not possible to unlink the dedicated client scope from a client. Also, it is not possible to link this dedicated client scope to a different client. In other words, the dedicated client scope is useful

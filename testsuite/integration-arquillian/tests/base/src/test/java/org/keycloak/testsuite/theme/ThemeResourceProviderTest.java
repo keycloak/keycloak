@@ -111,8 +111,8 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         // This can happen in rare case when the file were created before in "tmp" directory by different system user and current user can't delete them
         boolean filesNotExistsInTmp = testingClient.server().fetch(session -> {
             boolean deleted = true;
-            File file1 = Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile();
-            if (file1.isFile()) {
+            File file1 = findGzipCacheFile(System.getProperty("java.io.tmpdir"), resourcesVersion);
+            if (file1 != null && file1.isFile()) {
                 deleted = file1.delete();
             }
 
@@ -124,15 +124,37 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         // Check no files exists inside "/tmp" directory. We need to skip this test in the rare case when there are thombstone files created by different user
         if (filesNotExistsInTmp) {
             testingClient.server().run(session -> {
-                assertFalse(Paths.get(System.getProperty("java.io.tmpdir"), "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
+                File file = findGzipCacheFile(System.getProperty("java.io.tmpdir"), resourcesVersion);
+                assertFalse(file != null && file.isFile());
             });
         }
 
         testingClient.server().run(session -> {
             String serverTmpDir = KeycloakApplication.getTmpDirectory().toString();
-            assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
+            File file = findGzipCacheFile(serverTmpDir, resourcesVersion);
+            assertTrue(file != null && file.isFile());
         });
     }
+
+    // the directory name has a generation suffix, so match by prefix instead of an exact name. More than one
+    // generation can share that prefix (clearCache() keeps the previous one around too), and listFiles()
+    // order is unspecified, so every matching generation is checked for the actual cache file.
+    private static File findGzipCacheFile(String tmpDir, String resourcesVersion) {
+        File cacheRoot = Paths.get(tmpDir, "kc-gzip-cache").toFile();
+        File[] dirs = cacheRoot.listFiles();
+        if (dirs != null) {
+            for (File dir : dirs) {
+                if (dir.getName().startsWith(resourcesVersion)) {
+                    File candidate = Paths.get(dir.getPath(), "welcome", "keycloak", "css", "welcome.css.gz").toFile();
+                    if (candidate.isFile()) {
+                        return candidate;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
 
     @Test
     public void notFoundOnInvalidThemeType() throws IOException {
