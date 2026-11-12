@@ -23,7 +23,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * Migrates login themes from Login v1 (`keycloak`) and Login v2 (`keycloak.v2`)
- * to Login v3 / PatternFly 6 (`keycloak.v3`).
+ * to Login v3 / PatternFly 6 (`keycloak.v3`), and Account Console themes
+ * {@code keycloak} / {@code keycloak.v2} / {@code keycloak.v3} to {@code keycloak.v4}.
  */
 public class MigrateTo27_0_0 extends RealmMigration {
 
@@ -31,6 +32,7 @@ public class MigrateTo27_0_0 extends RealmMigration {
 
     private static final String LOGIN_THEME_ATTRIBUTE = "login_theme";
     private static final String LOGIN_V3_THEME = "keycloak.v3";
+    private static final String ACCOUNT_V4_THEME = "keycloak.v4";
 
     @Override
     public ModelVersion getVersion() {
@@ -45,11 +47,13 @@ public class MigrateTo27_0_0 extends RealmMigration {
     @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
         updateLoginTheme(realm);
+        updateAccountTheme(realm);
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         updateLoginTheme(realm);
+        updateAccountTheme(realm);
     }
 
     private void updateLoginTheme(RealmModel realm) {
@@ -63,9 +67,21 @@ public class MigrateTo27_0_0 extends RealmMigration {
                 .forEach(client -> client.setAttribute(LOGIN_THEME_ATTRIBUTE, LOGIN_V3_THEME));
     }
 
+    private void updateAccountTheme(RealmModel realm) {
+        if (isLegacyAccountTheme(realm.getAccountTheme())) {
+            realm.setAccountTheme(ACCOUNT_V4_THEME);
+        }
+    }
+
     private static boolean isLegacyLoginTheme(String theme) {
         return "keycloak".equals(theme)
                 || "keycloak.v2".equals(theme)
                 || "rh-sso.v2".equals(theme);
+    }
+
+    private static boolean isLegacyAccountTheme(String theme) {
+        return "keycloak".equals(theme)
+                || "keycloak.v2".equals(theme)
+                || "keycloak.v3".equals(theme);
     }
 }

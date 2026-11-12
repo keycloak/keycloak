@@ -283,6 +283,28 @@ Updates that change other settings, or that use a `${vault.<key>}` expression as
 Custom identity providers whose secret is sent to a destination derived from provider-specific configuration can take part in this check by overriding `IdentityProviderModel#canReuseMaskedClientSecret` in the model returned by `IdentityProviderFactory#createConfig()`.
 Providers extending `OAuth2IdentityProviderConfig` can instead override `getClientSecretDestinationConfigKeys()` and `isClientSecretDestinationChanged()`.
 
+=== Account Console moved to `keycloak.v4` and PatternFly 6
+// https://github.com/keycloak/keycloak/issues/52344
+
+The built-in Account Console is now the `keycloak.v4` theme, based on PatternFly 6.
+The previous `keycloak.v3` Account Console theme and the `account:v3` feature value have been removed.
+
+For new realms, `keycloak.v4` is the default Account Console theme when the `account:v4` feature is enabled (the default).
+Existing realms that explicitly use `keycloak`, `keycloak.v2`, or `keycloak.v3` as the account theme are migrated to `keycloak.v4` during upgrade.
+Custom account themes are left unchanged.
+
+If you maintain a custom Account Console theme that extends or copies `keycloak.v3`, migrate it to PatternFly 6 before switching its parent to `keycloak.v4`.
+To assist with migration, use the helper script:
+
+[source,bash]
+----
+node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs --app-path /path/to/your/theme
+----
+
+Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
+If you explicitly enable `account:v3` (for example `--features=account:v3` or `KC_FEATURES=account:v3`), replace it with `account:v4`, or remove the entry because `account:v4` is enabled by default.
+Servers that still request `account:v3` fail feature validation at startup.
+
 === Login v1 theme removed
 // https://github.com/keycloak/keycloak/issues/43241
 
