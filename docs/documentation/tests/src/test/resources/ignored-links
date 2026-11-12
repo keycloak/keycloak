@@ -48,6 +48,8 @@ https://www.h2database.com/*
 https://hosted.weblate.org/projects/keycloak/
 # Blocks automated HTTP requests from CI runners (returns 403), but loads fine in a browser.
 https://docs.redhat.com/*
+# Blocks automated HTTP requests from CI runners (returns 403), but loads fine in a browser.
+https://developer.linkedin.com*
 # BEGIN - To be removed once KC 26.4 has been released
 https://www.keycloak.org/securing-apps/specifications
 https://www.keycloak.org/server/db#configure-multiple-datasources
