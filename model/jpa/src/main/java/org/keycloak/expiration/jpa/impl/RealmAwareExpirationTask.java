@@ -114,15 +114,20 @@ public class RealmAwareExpirationTask extends BaseExpirationTask {
 
     private boolean realmNeedsCleanup(String realmId, int currentTime) {
         try {
-            return KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
-                var config = session.getProvider(ServerConfigStorageProvider.class);
-                var key = rowIdForRealm(realmId);
-                var lastCheck = config.loadOrCreate(key, "0");
-                if (Long.parseLong(lastCheck) + intervalSeconds > currentTime) {
-                    return false;
+            var key = rowIdForRealm(realmId);
+            var lastCheck = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
+                var value = session.getProvider(ServerConfigStorageProvider.class).loadOrCreate(key, "0");
+                // the interval has not elapsed, or there is nothing to do: don't write the coordination row
+                if (Long.parseLong(value) + intervalSeconds > currentTime || !action.hasWork(session, realmId)) {
+                    return null;
                 }
-                return config.replace(key, lastCheck, Long.toString(currentTime));
+                return value;
             });
+            if (lastCheck == null) {
+                return false;
+            }
+            return KeycloakModelUtils.runJobInTransactionWithResult(factory, session ->
+                    session.getProvider(ServerConfigStorageProvider.class).replace(key, lastCheck, Long.toString(currentTime)));
         } catch (Exception e) {
             logger.debugf(e, "Unable to update realm last cleanup check. Skipping removal of expired '%s' for realm '%s'", entityId, realmId);
             return false;

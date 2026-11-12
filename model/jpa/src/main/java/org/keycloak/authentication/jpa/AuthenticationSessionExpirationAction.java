@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntConsumer;
 
-import jakarta.persistence.EntityManager;
-
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.expiration.jpa.ExpirationAction;
 import org.keycloak.models.KeycloakSession;
@@ -48,10 +46,6 @@ public enum AuthenticationSessionExpirationAction implements ExpirationAction {
         var lifespan = SessionExpiration.getAuthSessionLifespan(realm);
         var olderTimestamp = currentTime - lifespan;
         var em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-
-        if (isRealmEmpty(em, realmId)) {
-            return false;
-        }
 
         boolean hasMore = false;
         int remaining = maxRemoval;
@@ -102,11 +96,13 @@ public enum AuthenticationSessionExpirationAction implements ExpirationAction {
     }
 
     /**
-     * Checks with a single index lookup if the realm has no authentication sessions, to skip the per-bucket queries.
+     * Checks with a single index lookup if the realm has any authentication sessions, to skip the per-bucket queries.
      * Nothing is remembered between runs, so the result never depends on the clock or on the node running the task.
      */
-    private boolean isRealmEmpty(EntityManager em, String realmId) {
-        return em.createNamedQuery("findAnyRootAuthSessionIdByRealm", String.class)
+    @Override
+    public boolean hasWork(KeycloakSession session, String realmId) {
+        return !session.getProvider(JpaConnectionProvider.class).getEntityManager()
+                .createNamedQuery("findAnyRootAuthSessionIdByRealm", String.class)
                 .setParameter("realmId", realmId)
                 .setHint(AvailableHints.HINT_READ_ONLY, true)
                 .setMaxResults(1)

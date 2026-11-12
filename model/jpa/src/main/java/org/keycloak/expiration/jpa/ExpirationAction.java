@@ -34,6 +34,20 @@ import org.keycloak.models.KeycloakSession;
 public interface ExpirationAction {
 
     /**
+     * Cheap read-only check if there might be anything to remove for the realm.
+     * <p>
+     * Realm-aware tasks call this in a transaction before they claim the realm for the current interval. If it returns
+     * {@code false}, the realm is skipped without writing anything, so it is checked again on the next run.
+     *
+     * @param session the current Keycloak session, valid for the duration of the enclosing transaction.
+     * @param realmId the realm to check.
+     * @return {@code false} if the realm has nothing that could expire; {@code true} otherwise. Defaults to {@code true}.
+     */
+    default boolean hasWork(KeycloakSession session, String realmId) {
+        return true;
+    }
+
+    /**
      * Removes expired entries from the database.
      * <p>
      * This method is invoked inside a transaction. It should delete a batch of expired entries whose expiration time is
