@@ -1,6 +1,5 @@
 package org.keycloak.tests.cli.registration;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +20,6 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.cli.KcRegExec;
 import org.keycloak.tests.cli.TempFileResource;
-import org.keycloak.tests.cli.exec.AbstractExec;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.Matchers;
@@ -59,6 +57,21 @@ public class KcRegCreateTest extends AbstractRegCliTest {
         }
     }
 
+    @Test
+    void testCreateWithRemovedSaml2EndpointIsRejected() throws IOException {
+
+        FileConfigHandler handler = initCustomConfigFile();
+
+        try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
+            String token = issueInitialAccessToken("test");
+
+            KcRegExec exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() +
+                    " --realm test -e saml2 -s clientId=saml2_removed_client -t " + token);
+
+            Assertions.assertNotEquals(0, exe.exitCode(), "exitCode != 0");
+            Assertions.assertFalse(exe.stderrLines().isEmpty(), "error reported on stderr");
+        }
+    }
 
     @Test
     void testCreateThoroughly() throws IOException {
@@ -204,26 +217,6 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
                 assertExitCodeAndStreamSizes(exe, 1, 0, 1);
                 Assertions.assertEquals("Attribute 'redirect_uris' not supported on document type 'default'", exe.stderrLines().get(0), "Error message");
-            }
-
-            // TODO: SAML is not tested with FIPS enabled as it does not work. This needs to be revisited when SAML works with FIPS
-            if (!AbstractExec.isFips()) {
-
-                // test create saml formated xml - format autodetection
-                File samlSpMetaFile = resourceFile("org/keycloak/tests/cli/kcreg/saml-sp-metadata.xml");
-                Assertions.assertTrue(samlSpMetaFile.isFile(), "saml-sp-metadata.xml exists");
-
-                exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f - < '" + samlSpMetaFile.getAbsolutePath() + "'");
-
-                assertExitCodeAndStdErrSize(exe, 0, 2);
-
-                ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-                Assertions.assertNotNull(client.getId(), "id");
-                Assertions.assertEquals("http://localhost:8080/sales-post-enc/", client.getClientId(), "clientId");
-                Assertions.assertEquals(Arrays.asList("http://localhost:8081/sales-post-enc/saml"), client.getRedirectUris(), "redirectUris");
-                Assertions.assertEquals("username", client.getAttributes().get("saml_name_id_format"), "attributes.saml_name_id_format");
-                Assertions.assertEquals("http://localhost:8081/sales-post-enc/saml", client.getAttributes().get("saml_assertion_consumer_url_post"), "attributes.saml_assertion_consumer_url_post");
-                Assertions.assertEquals("RSA_SHA256", client.getAttributes().get("saml.signature.algorithm"), "attributes.saml.signature.algorithm");
             }
 
             // delete initial token

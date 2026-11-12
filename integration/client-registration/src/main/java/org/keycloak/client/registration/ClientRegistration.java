@@ -45,12 +45,10 @@ public class ClientRegistration {
     }
 
     private final String JSON = "application/json";
-    private final String XML = "application/xml";
 
     private final String DEFAULT = "default";
     private final String INSTALLATION = "install";
     private final String OIDC = "openid-connect";
-    private final String SAML = "saml2-entity-descriptor";
 
     private HttpUtil httpUtil;
 
@@ -108,10 +106,6 @@ public class ClientRegistration {
         return new OIDCClientRegistration();
     }
 
-    public SAMLClientRegistration saml() {
-        return new SAMLClientRegistration();
-    }
-
     public static String serialize(Object obj) throws ClientRegistrationException {
         try {
             return outputMapper.writeValueAsString(obj);
@@ -153,15 +147,6 @@ public class ClientRegistration {
 
         public void delete(String clientId) throws ClientRegistrationException {
             httpUtil.doDelete(OIDC, clientId);
-        }
-
-    }
-
-    public class SAMLClientRegistration {
-
-        public ClientRepresentation create(String entityDescriptor) throws ClientRegistrationException {
-            InputStream resultStream = httpUtil.doPost(entityDescriptor, XML, UTF_8, JSON, SAML);
-            return deserialize(resultStream, ClientRepresentation.class);
         }
 
     }

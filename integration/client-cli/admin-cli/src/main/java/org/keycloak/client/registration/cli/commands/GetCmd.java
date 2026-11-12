@@ -131,9 +131,6 @@ public class GetCmd extends AbstractAuthOptionsCmd {
                     result = JsonSerialization.readValue(json, AdapterConfig.class);
                     break;
                 }
-                case SAML2: {
-                    break;
-                }
                 default: {
                     throw new RuntimeException("Unexpected type: " + regType);
                 }

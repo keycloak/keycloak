@@ -151,8 +151,6 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         //
         // We could also support environment variables in input file, and apply them before parsing it.
         //
-        // One problem - what if it is SAML XML? No problem as we don't support update for SAML - only create.
-        //
         if (file == null && attrs.size() > 0) {
             mergeMode = true;
         }

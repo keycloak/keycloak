@@ -312,7 +312,7 @@ public class ClientRegistrationAuth {
     }
 
     private void checkClientProtocol(ClientModel client) {
-        if (endpoint.equals("openid-connect") || endpoint.equals("saml2-entity-descriptor")) {
+        if (endpoint.equals("openid-connect")) {
             if (client != null && !endpoint.contains(client.getProtocol())) {
                 throw new ErrorResponseException(Errors.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
             }

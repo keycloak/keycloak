@@ -939,6 +939,17 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void removedSamlEntityDescriptorEndpointReturnsNotFound() throws IOException {
+        HttpPost post = new HttpPost(keycloakUrls.getBaseBuilder().path("/realms/" + managedRealm.getName() + "/clients-registrations/saml2-entity-descriptor").build());
+        post.setEntity(new StringEntity("<EntityDescriptor/>"));
+        post.setHeader("Content-Type", "application/xml");
+
+        try (CloseableHttpResponse response = closeableHttpClient.execute(post)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(404));
+        }
+    }
+
+    @Test
     @DatabaseTest
     public void registerMultipleClients() {
 
