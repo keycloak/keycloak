@@ -19,12 +19,14 @@ type ErrorPageProps = {
 export const ErrorPage = (props: ErrorPageProps) => {
   const { t, i18n } = useTranslation();
   const error = props.error;
+  // keycloak-js rejects with a plain { error, error_description } object on OAuth
+  // failures such as access_denied; NetworkError carries the same shape in responseData.
   const errorMessage =
     error instanceof NetworkError ? null : getErrorMessage(error);
   const networkErrorMessage =
     error instanceof NetworkError
       ? getNetworkErrorMessage(error.responseData)
-      : undefined;
+      : getNetworkErrorMessage(error);
   console.error(error);
 
   function onRetry() {
