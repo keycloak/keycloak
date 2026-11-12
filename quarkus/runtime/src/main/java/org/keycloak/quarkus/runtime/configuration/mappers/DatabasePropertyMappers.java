@@ -18,8 +18,6 @@ import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
-import org.keycloak.config.CachingOptions;
-import org.keycloak.config.CachingOptions.Stack;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
@@ -51,7 +49,6 @@ import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_TYPE;
 import static org.keycloak.config.DatabaseOptions.DB_URL;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -363,11 +360,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isJdbcPingStack() {
-        if (!CachingPropertyMappers.cacheSetToInfinispan()) {
-            return false;
-        }
-        String stack = getOptionalKcValue(CachingOptions.CACHE_STACK).orElse(Stack.jdbc_ping.toString());
-        return Stack.jdbc_ping.toString().equals(stack);
+        // jdbc-ping is now the only supported stack, so just check if ispn cache is enabled
+        return CachingPropertyMappers.cacheSetToInfinispan();
     }
 
     public static boolean isPostgresqlTargetServerTypeEnabled() {

@@ -40,6 +40,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.validation.Validation;
@@ -217,6 +218,10 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
                             .detail(Details.PREF_UPDATED + UserModel.USERNAME, profile.getAttributes().getFirst(UserModel.USERNAME))
                             .success();
                 } else if (attributeName.equals(UserModel.EMAIL)) {
+                    if (isCaseOnlyChange(oldValue, profile.getAttributes().getFirst(UserModel.EMAIL))) {
+                        // The user profile lower-cases the e-mail address of the brokered user, which is not a change made by the user
+                        return;
+                    }
                     context.getAuthenticationSession().setAuthNote(AbstractIdentityProvider.UPDATE_PROFILE_EMAIL_CHANGED, "true");
                     event.clone().event(EventType.UPDATE_EMAIL)
                             .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
@@ -251,6 +256,14 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         context.getAuthenticationSession().setAuthNote(ENFORCE_UPDATE_PROFILE, "true");
 
         context.success();
+    }
+
+    private boolean isCaseOnlyChange(List<String> oldValue, String newValue) {
+        // Compare with the same lower-casing the user profile applies to the e-mail, so that a different
+        // address is still a change. equalsIgnoreCase also treats some distinct letters as equal, such as
+        // the dotless 'ı' and 'i', which the lower-casing does not
+        return oldValue != null && oldValue.size() == 1 && newValue != null
+                && KeycloakModelUtils.toLowerCaseSafe(oldValue.get(0)).equals(newValue);
     }
 
     @Override

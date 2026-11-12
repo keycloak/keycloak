@@ -338,7 +338,7 @@ The mappings are validated when the realm is updated or imported, and the reques
 
 * The value is not a JSON array of mappings, or a mapping has an unknown property.
 * A group attribute or SCIM attribute is mapped more than once.
-* The SCIM attribute is not prefixed with a schema URN, or the attribute name is not a simple attribute name. Sub-attributes are not supported.
+* The SCIM attribute is not prefixed with a valid schema URN, such as `urn:example:params:scim:schemas:extension:custom:1.0:Group`, or the attribute name is not a simple attribute name. Sub-attributes are not supported.
 * The SCIM attribute belongs to a schema defined by RFC 7643, such as the core Group schema or the Enterprise User extension.
 * The group attribute is `externalId`, which is already mapped by the core Group schema, or a name reserved for built-in group fields, such as `name` or `description`.
 
@@ -360,7 +360,8 @@ Once configured, group resources include the mapped attributes under the extensi
 }
 ----
 
-Group extension attributes can be set when creating or updating groups, patched, and used in filters with the full schema URN prefix, in the same way as user extension attributes:
+Group extension attributes can be set when creating or updating groups, patched, selected with the `attributes` and `excludedAttributes` parameters, and used in filters with the full schema URN prefix, in the same way as user extension attributes.
+PATCH operations can reference an attribute by its full name, use the schema URN as the path with an object holding the attributes as the value, or omit the path and key the value by the schema URN:
 
 [source,bash]
 ----

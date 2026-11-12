@@ -346,8 +346,10 @@ public class Attribute<M extends Model, R> {
                         return this;
                     }
 
-                    // fallback to check if the path is the scheme itself
-                    if (path.equalsIgnoreCase(schema.getId())) {
+                    // fallback to check if the path is the scheme itself. Internal schemas serve attributes from
+                    // multiple extension schemas, so their id only selects the attributes from that extension,
+                    // which is checked below
+                    if (!schema.isInternal() && path.equalsIgnoreCase(schema.getId())) {
                         return this;
                     }
 

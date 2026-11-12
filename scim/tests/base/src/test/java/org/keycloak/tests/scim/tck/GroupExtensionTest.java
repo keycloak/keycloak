@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.model.group.GroupAttributeMappings;
+import org.keycloak.scim.model.group.GroupExtensionModelSchema;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.Scim;
@@ -114,6 +115,8 @@ public class GroupExtensionTest extends AbstractScimTest {
         group = client.groups().get(id, List.of(CUSTOM_SCHEMA + ":costCenter"));
         extension = getExtension(group);
         assertEquals(Map.of("costCenter", "CC-42"), extension);
+        // the core schema is always included, even if no core attribute is returned
+        assertTrue(group.getSchemas().contains(Scim.GROUP_CORE_SCHEMA));
 
         // the extension schema is excluded
         group = client.groups().get(id, null, List.of(CUSTOM_SCHEMA));
@@ -195,6 +198,61 @@ public class GroupExtensionTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchExtensionObject() {
+        setMappings(MAPPINGS);
+
+        String id = createGroupWithAdminApi(Map.of("costCenter", List.of("CC-1")));
+
+        // the path is the extension schema and the value holds its attributes
+        client.groups().patch(id, PatchRequest.create()
+                .replace(CUSTOM_SCHEMA, "{\"costCenter\": \"CC-2\"}")
+                .build());
+        assertEquals("CC-2", getExtension(client.groups().get(id)).get("costCenter"));
+
+        // no path, and the value holds the extension schema
+        client.groups().patch(id, PatchRequest.create()
+                .replace("{\"" + CUSTOM_SCHEMA + "\": {\"costCenter\": \"CC-3\"}}")
+                .build());
+        assertEquals("CC-3", getExtension(client.groups().get(id)).get("costCenter"));
+
+        // add to a multivalued attribute through the extension schema
+        client.groups().patch(id, PatchRequest.create()
+                .add(CUSTOM_SCHEMA, "{\"tags\": [\"a\", \"b\"]}")
+                .build());
+        List<?> tags = (List<?>) getExtension(client.groups().get(id)).get("tags");
+        assertEquals(2, tags.size());
+        assertTrue(tags.containsAll(List.of("a", "b")));
+    }
+
+    @Test
+    public void testSelectByExtensionSchema() {
+        setMappings("""
+                [
+                  {"name": "costCenter", "scimAttribute": "%s:costCenter"},
+                  {"name": "team", "scimAttribute": "%s:team"}
+                ]
+                """.formatted(CUSTOM_SCHEMA, GroupExtensionModelSchema.KEYCLOAK_GROUP_SCHEMA));
+
+        String id = createGroupWithAdminApi(Map.of("costCenter", List.of("CC-1"), "team", List.of("core-iam")));
+
+        // excluding one extension schema does not exclude the other one served by the same model schema
+        Group group = client.groups().get(id, null, List.of(GroupExtensionModelSchema.KEYCLOAK_GROUP_SCHEMA));
+        assertEquals("CC-1", getExtension(group).get("costCenter"));
+        assertFalse(group.getExtensions().containsKey(GroupExtensionModelSchema.KEYCLOAK_GROUP_SCHEMA));
+        assertFalse(group.getSchemas().contains(GroupExtensionModelSchema.KEYCLOAK_GROUP_SCHEMA));
+
+        group = client.groups().get(id, null, List.of(CUSTOM_SCHEMA));
+        assertFalse(group.getExtensions().containsKey(CUSTOM_SCHEMA));
+        assertEquals(Map.of("team", "core-iam"), group.getExtensions().get(GroupExtensionModelSchema.KEYCLOAK_GROUP_SCHEMA));
+
+        // requesting one extension schema only returns the attributes from that extension
+        group = client.groups().get(id, List.of(GroupExtensionModelSchema.KEYCLOAK_GROUP_SCHEMA));
+        assertEquals(Map.of("team", "core-iam"), group.getExtensions().get(GroupExtensionModelSchema.KEYCLOAK_GROUP_SCHEMA));
+        assertFalse(group.getExtensions().containsKey(CUSTOM_SCHEMA));
+        assertTrue(group.getSchemas().contains(Scim.GROUP_CORE_SCHEMA));
+    }
+
+    @Test
     public void testFilter() {
         setMappings(MAPPINGS);
 
@@ -235,6 +293,7 @@ public class GroupExtensionTest extends AbstractScimTest {
                 "[{\"name\": \"externalId\", \"scimAttribute\": \"" + CUSTOM_SCHEMA + ":externalId\"}]",
                 "[{\"name\": \"entryUUID\", \"scimAttribute\": \"entryUUID\"}]",
                 "[{\"name\": \"entryUUID\", \"scimAttribute\": \"" + Scim.GROUP_CORE_SCHEMA + ":entryUUID\"}]",
+                "[{\"name\": \"entryUUID\", \"scimAttribute\": \"urn:bad schema:Group:entryUUID\"}]",
                 "not json")) {
             RealmRepresentation rep = realm.admin().toRepresentation();
             rep.getAttributes().put(GroupAttributeMappings.REALM_ATTRIBUTE, invalid);

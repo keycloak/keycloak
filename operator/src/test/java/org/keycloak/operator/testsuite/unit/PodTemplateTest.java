@@ -352,8 +352,8 @@ public class PodTemplateTest {
                 .withNewSpec()
                 .addNewContainer()
                 .addNewEnv()
-                .withName("KC_CACHE_STACK")
-                .withValue("template_stack")
+                .withName("KC_CACHE_CONFIG_FILE")
+                .withValue("template_cache.xml")
                 .endEnv()
                 .addNewEnv()
                 .withName("KC_DB_URL_HOST")
@@ -365,7 +365,7 @@ public class PodTemplateTest {
 
         // Act
         var podTemplate = getDeployment(additionalPodTemplate, null,
-                s -> s.addNewAdditionalOption("cache.stack", "additional_stack")
+                s -> s.addNewAdditionalOption("cache.config-file", "additional_cache.xml")
                         .addNewAdditionalOption("http.port", "additional_port").withNewDatabaseSpec().withHost("spec-host")
                         .endDatabaseSpec())
                 .getSpec().getTemplate();
@@ -377,7 +377,7 @@ public class PodTemplateTest {
             return e1;
         }));
         // template spec takes the most priority for envs - only fields called out in the KeycloakDeployment warning are overriden by the rest of the spec
-        assertThat(envVarMap.get("KC_CACHE_STACK").getValue()).isEqualTo("template_stack");
+        assertThat(envVarMap.get("KC_CACHE_CONFIG_FILE").getValue()).isEqualTo("template_cache.xml");
         assertThat(envVarMap.get("KC_DB_URL_HOST").getValue()).isEqualTo("template_host");
         // the main spec takes priority over the additional options
         assertThat(envVarMap.get("KC_HTTP_PORT").getValue()).isEqualTo("8080");

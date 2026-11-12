@@ -61,6 +61,11 @@ public class GroupAttributeMappingsTest {
             // not prefixed with a schema URN
             "[{\"name\": \"entryUUID\", \"scimAttribute\": \"entryUUID\"}]",
             "[{\"name\": \"entryUUID\", \"scimAttribute\": \"Group:entryUUID\"}]",
+            // invalid schema URNs
+            "[{\"name\": \"entryUUID\", \"scimAttribute\": \"urn:bad schema:Group:entryUUID\"}]",
+            "[{\"name\": \"entryUUID\", \"scimAttribute\": \"urn:example:a\\\"b:Group:entryUUID\"}]",
+            "[{\"name\": \"entryUUID\", \"scimAttribute\": \"example:params:Group:entryUUID\"}]",
+            "[{\"name\": \"entryUUID\", \"scimAttribute\": \"urn:example::Group:entryUUID\"}]",
             // invalid attribute names, including sub-attributes
             "[{\"name\": \"entryUUID\", \"scimAttribute\": \"" + SCHEMA + ":\"}]",
             "[{\"name\": \"entryUUID\", \"scimAttribute\": \"" + SCHEMA + ":entry.uuid\"}]",

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
@@ -74,6 +75,11 @@ public final class GroupAttributeMappings {
      */
     private static final List<String> RESERVED_SCHEMA_PREFIXES = List.of("urn:ietf:params:scim:schemas:core:",
             "urn:ietf:params:scim:api:", Scim.ENTERPRISE_USER_SCHEMA);
+
+    /**
+     * The schema URN syntax accepted by the SCIM filter lexer ({@code URN_SCHEMA} in {@code ScimFilterLexer.g4}).
+     */
+    private static final Pattern SCHEMA_URN = Pattern.compile("urn:[a-zA-Z0-9]+(:[a-zA-Z0-9._-]+)+");
 
     private static final Logger logger = Logger.getLogger(GroupAttributeMappings.class);
 
@@ -204,6 +210,11 @@ public final class GroupAttributeMappings {
 
         if (schema == null || !schema.contains(":")) {
             throw invalid("SCIM attribute '" + scimAttribute + "' must be prefixed with the URN of an extension schema");
+        }
+
+        // the same syntax accepted by the SCIM filter lexer, so that the attribute can be used in filters
+        if (!SCHEMA_URN.matcher(schema).matches()) {
+            throw invalid("SCIM attribute '" + scimAttribute + "' has an invalid schema URN '" + schema + "'");
         }
 
         String simpleName = Attribute.getSimpleName(scimAttribute);
