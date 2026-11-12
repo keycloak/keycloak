@@ -20,6 +20,7 @@ package org.keycloak.tests.model;
 import org.keycloak.authentication.jpa.AuthenticationSessionExpirationAction;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
