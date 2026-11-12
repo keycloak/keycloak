@@ -136,6 +136,27 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
     }
 
     @Test
+    public void testExtendChildrenRemovedWhenPermissionTargetsAllGroups() {
+        ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), true, allowMyAdmin);
+
+        // a client unaware of the flag changes the permission to all groups
+        permission.setExtendChildren(null);
+        permission.setResources(Set.of());
+        getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+
+        // and later back to a specific group, still without sending the flag
+        permission.setResources(Set.of(department.getId()));
+        getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+
+        // the permission is not extended to the descendants again
+        assertCanView(department);
+        assertCannotView(team);
+        assertCannotView(subteam);
+    }
+
+    @Test
     public void testExtendChildrenOnlySupportedForGroups() {
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
         permission.setName(KeycloakModelUtils.generateId());
