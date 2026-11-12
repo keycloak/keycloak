@@ -306,6 +306,9 @@ export default function EditClientScope() {
                   resourcePath={[
                     `client-scopes/${id}`,
                     `client-scopes/${id}/*`,
+                    // Events of changing the realm default scopes
+                    `default-default-client-scopes/${id}`,
+                    `default-optional-client-scopes/${id}`,
                   ]}
                 />
               </Tab>

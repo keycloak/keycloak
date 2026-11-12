@@ -335,17 +335,32 @@ export default function RealmRoleTabs() {
                 title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                 {...eventsTab}
               >
-                {/* Client roles are changed via clients/{id}/roles/{name}, realm roles via roles-by-id/{id} */}
-                <AdminEvents
-                  resourcePath={
-                    clientId
-                      ? [
-                          `clients/${clientId}/roles/${encodeURIComponent(roleName!)}`,
-                          `clients/${clientId}/roles/${encodeURIComponent(roleName!)}/*`,
-                        ]
-                      : [`roles-by-id/${id}`, `roles-by-id/${id}/*`]
-                  }
-                />
+                {clientId ? (
+                  // The name is only known once the role is loaded.
+                  roleName && (
+                    <AdminEvents
+                      resourcePath={[
+                        `clients/${clientId}/roles/${roleName}`,
+                        `clients/${clientId}/roles/${roleName}/*`,
+                        `roles-by-id/${id}`,
+                        `roles-by-id/${id}/*`,
+                      ]}
+                      matchPath={(path) =>
+                        [
+                          `clients/${clientId}/roles/${roleName}`,
+                          `roles-by-id/${id}`,
+                        ].some(
+                          (prefix) =>
+                            path === prefix || path.startsWith(`${prefix}/`),
+                        )
+                      }
+                    />
+                  )
+                ) : (
+                  <AdminEvents
+                    resourcePath={[`roles-by-id/${id}`, `roles-by-id/${id}/*`]}
+                  />
+                )}
               </Tab>
             )}
           </RoutableTabs>

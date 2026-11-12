@@ -165,6 +165,80 @@ test.describe("Admin events tab of resources", () => {
     await assertEvents(page, ["CLIENT_ROLE CREATE"]);
   });
 
+  test("Client scope shows events of changing the realm default scopes", async ({
+    page,
+  }) => {
+    const realmName = await createRealm();
+    const name = `scope-${uuid()}`;
+    const { id } = await adminClient.createClientScope({
+      name,
+      protocol: "openid-connect",
+      realm: realmName,
+    });
+    await adminClient.addRealmDefaultClientScope(id!, realmName);
+
+    await openRealm(page, realmName);
+    await goToClientScopes(page);
+    await searchItem(page, "Search for client scope", name);
+    await clickTableRowItem(page, name);
+    await page.getByTestId("admin-events-tab").click();
+
+    await assertEvents(page, ["CLIENT_SCOPE CREATE", "CLIENT_SCOPE CREATE"]);
+  });
+
+  test("Client role treats special characters of its name literally and loads when opened directly", async ({
+    page,
+  }) => {
+    const realmName = await createRealm();
+    const clientId = `client-${uuid()}`;
+    const { id } = await adminClient.createClient({
+      clientId,
+      realm: realmName,
+    });
+    // "_" is a single-character wildcard in SQL LIKE, so "read-only" must not show up for "read_only".
+    await adminClient.createClientRole(id, {
+      name: "read_only",
+      realm: realmName,
+    });
+    await adminClient.createClientRole(id, {
+      name: "read-only",
+      realm: realmName,
+    });
+    // Names with spaces are recorded unencoded.
+    await adminClient.createClientRole(id, {
+      name: "team lead",
+      realm: realmName,
+    });
+    const readOnly = await adminClient.getClientRole(
+      id,
+      "read_only",
+      realmName,
+    );
+    const teamLead = await adminClient.getClientRole(
+      id,
+      "team lead",
+      realmName,
+    );
+    await adminClient.updateRealmRoleById(
+      readOnly!.id!,
+      { ...readOnly, description: "updated by id" },
+      realmName,
+    );
+
+    await openRealm(page, realmName);
+    await page.goto(
+      `${SERVER_URL}/admin/master/console/#/${realmName}/clients/${id}/roles/${readOnly!.id}/events`,
+    );
+    await page.reload();
+    await assertEvents(page, ["CLIENT_ROLE CREATE", "CLIENT_ROLE UPDATE"]);
+
+    await page.goto(
+      `${SERVER_URL}/admin/master/console/#/${realmName}/clients/${id}/roles/${teamLead!.id}/events`,
+    );
+    await page.reload();
+    await assertEvents(page, ["CLIENT_ROLE CREATE"]);
+  });
+
   test("Identity provider shows only events of its own alias", async ({
     page,
   }) => {

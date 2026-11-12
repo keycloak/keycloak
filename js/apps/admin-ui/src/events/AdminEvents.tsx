@@ -111,10 +111,16 @@ type AdminEventsProps = {
    * so multiple paths (for example an exact path plus its sub-resources) are queried separately and merged.
    */
   resourcePath?: string | string[];
+  /**
+   * The server matches the resource path with SQL LIKE, so characters like `_` in names act as wildcards.
+   * When set, only events whose resource path is accepted are listed.
+   */
+  matchPath?: (path: string) => boolean;
 };
 
 export const AdminEvents = ({
   resourcePath: resourcePathProp,
+  matchPath,
 }: AdminEventsProps) => {
   const { adminClient } = useAdminClient();
   const resourcePaths = ([] as string[]).concat(resourcePathProp ?? []);
@@ -195,15 +201,33 @@ export const AdminEvents = ({
         max,
       });
 
-    if (resourcePaths.length <= 1) {
+    if (resourcePaths.length <= 1 && !matchPath) {
       return find(resourcePath, first, max);
     }
+
+    // Rows that are filtered out don't count, so continue reading until enough rows are found.
+    const findMatching = async (path: string | undefined, needed?: number) => {
+      if (!matchPath) {
+        return find(path, 0, needed);
+      }
+      const pageSize = Math.max(needed ?? 100, 100);
+      const matching: Awaited<ReturnType<typeof find>> = [];
+      for (let offset = 0; ; offset += pageSize) {
+        const page = await find(path, offset, pageSize);
+        matching.push(
+          ...page.filter((event) => matchPath(event.resourcePath!)),
+        );
+        if (page.length < pageSize || (needed && matching.length >= needed)) {
+          return matching;
+        }
+      }
+    };
 
     // Each query must return enough rows to fill the requested page after merging.
     const skip = first ?? 0;
     const results = await Promise.all(
       resourcePaths.map((path) =>
-        find(path, 0, max === undefined ? undefined : skip + max),
+        findMatching(path, max === undefined ? undefined : skip + max),
       ),
     );
     const merged = results.flat().sort((a, b) => (b.time ?? 0) - (a.time ?? 0));
@@ -313,7 +337,8 @@ export const AdminEvents = ({
       )}
       {!adminEventsEnabled && <EventsBanners type="adminEvents" />}
       <KeycloakDataTable
-        key={key}
+        // Remount to reload when the resource paths change.
+        key={`${key}-${resourcePaths.join("|")}`}
         loader={loader}
         detailColumns={[
           {

@@ -306,6 +306,14 @@ class AdminClient {
     return await this.#client.clientScopes.create(scope);
   }
 
+  async addRealmDefaultClientScope(
+    id: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#client.clientScopes.addDefaultClientScope({ id, realm });
+  }
+
   async addDefaultClientScopeInClient(
     clientScopeName: string,
     clientId: string,
