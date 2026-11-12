@@ -88,12 +88,14 @@
 </#macro>
 
 <#macro inputTag attribute value>
-	<span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
-		<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
-			aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+	<span class="${properties.kcInputClass!} <#if messagesPerField.existsError(attribute.name)>${properties.kcError!}</#if>">
+		<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}"
+			<#if messagesPerField.existsError(attribute.name)>aria-invalid="true" aria-describedby="input-error-${attribute.name}"</#if>
 			data-kc-multivalued-action-class="${properties.kcMultivaluedActionClass!}"
 			<#if attribute.readOnly>disabled</#if>
-			<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>
+			<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"<#elseif attribute.name == 'firstName'>autocomplete="given-name"<#elseif attribute.name == 'lastName'>autocomplete="family-name"</#if>
+			<#if attribute.name == 'email'>inputmode="email"</#if>
+			<#if attribute.name == 'username' || attribute.name == 'email'>autocapitalize="none" spellcheck="false"</#if>
 			<#if attribute.annotations.inputTypePlaceholder??>placeholder="${advancedMsg(attribute.annotations.inputTypePlaceholder)}"</#if>
 			<#if attribute.annotations.inputTypePattern??>pattern="${attribute.annotations.inputTypePattern}"</#if>
 			<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
@@ -106,6 +108,7 @@
 					data-${key}="${value}"
 			</#list>
 		/>
+		<@field.errorIcon error=messagesPerField.get(attribute.name)/>
 	</span>
 </#macro>
 
@@ -124,21 +127,22 @@
 </#macro>
 
 <#macro textareaTag attribute>
-	<span class="${properties.kcInputClass!}">
+	<span class="${properties.kcInputClass!} ${properties.kcInputTextareaClass!} <#if messagesPerField.existsError(attribute.name)>${properties.kcError!}</#if>">
 	<textarea id="${attribute.name}" name="${attribute.name}"
-		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+		<#if messagesPerField.existsError(attribute.name)>aria-invalid="true" aria-describedby="input-error-${attribute.name}"</#if>
 		<#if attribute.readOnly>disabled</#if>
 		<#if attribute.annotations.inputTypeCols??>cols="${attribute.annotations.inputTypeCols}"</#if>
 		<#if attribute.annotations.inputTypeRows??>rows="${attribute.annotations.inputTypeRows}"</#if>
 		<#if attribute.annotations.inputTypeMaxlength??>maxlength="${attribute.annotations.inputTypeMaxlength}"</#if>
 	>${(attribute.value!attribute.defaultValue!'')}</textarea>
+	<@field.errorIcon error=messagesPerField.get(attribute.name)/>
 	</span>
 </#macro>
 
 <#macro selectTag attribute>
-	<div class="${properties.kcInputClass!}">
+	<div class="${properties.kcInputClass!} <#if messagesPerField.existsError(attribute.name)>${properties.kcError!}</#if>">
 		<select id="${attribute.name}" name="${attribute.name}"
-			aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+			<#if messagesPerField.existsError(attribute.name)>aria-invalid="true" aria-describedby="input-error-${attribute.name}"</#if>
 			<#if attribute.readOnly>disabled</#if>
 			<#if attribute.annotations.inputType=='multiselect'>multiple</#if>
 			<#if attribute.annotations.inputTypeSize??>size="${attribute.annotations.inputTypeSize}"</#if>
@@ -165,6 +169,11 @@
 			</#list>
 		</select>
 		<span class="${properties.kcFormControlUtilClass!}">
+			<#if messagesPerField.existsError(attribute.name)>
+				<span class="${properties.kcInputErrorIconStatusClass!}">
+					<i class="${properties.kcInputErrorIconClass!}" aria-hidden="true"></i>
+				</span>
+			</#if>
 			<span class="${properties.kcFormControlToggleIcon!}">
 				<svg
 					class="${properties.kcSvgIconClass!}"
@@ -215,7 +224,7 @@
 	<#list options as option>
 		<div class="${classDiv}">
 			<input type="${inputType}" id="${attribute.name}-${option}" name="${attribute.name}" value="${option}" class="${classInput}"
-				   aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
+				   <#if messagesPerField.existsError(attribute.name)>aria-invalid="true" aria-describedby="input-error-${attribute.name}"</#if>
 				   <#if attribute.readOnly>disabled</#if>
 					<#if selectedValues?seq_contains(option)>checked</#if>
 			/>

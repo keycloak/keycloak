@@ -45,6 +45,32 @@ General validation also preserves the legacy web origin literals `${authAdminUrl
 Trusted Hosts resolves relative logo URLs against the {project_name} frontend URL and checks that host against its allowlist. The client's root URL does not determine where the browser loads a logo.
 The pattern executor continues to match literal configured values, including markers and relative URLs, and respects an explicit field selection. Sector identifier URLs in pairwise protocol mappers remain subject to their separate validation.
 
+=== Login theme moved to `keycloak.v3` and PatternFly 6
+// https://github.com/keycloak/keycloak/issues/52342
+
+The built-in login experience now has a new versioned theme, `keycloak.v3`, based on PatternFly 6.
+The built-in welcome theme also uses PatternFly 6 for its markup and styles.
+
+For new realms, `keycloak.v3` is now the default login theme.
+Existing realms that explicitly use `keycloak.v2` are migrated to `keycloak.v3` during upgrade.
+
+The built-in `keycloak.v2` login theme has been removed. If you maintain a custom login theme that extends or copies `keycloak.v2`, migrate it to PatternFly 6 before switching to `keycloak.v3`.
+If you maintain a custom welcome theme that copies PatternFly 5 classes from the built-in welcome theme, update those classes to PatternFly 6.
+
+The `login:v2` feature value has also been removed. If you explicitly enable it (for example `--features=login:v2` or `KC_FEATURES=login:v2`), replace it with `login:v3`, or remove the entry because `login:v3` is enabled by default. Servers that still request `login:v2` fail feature validation at startup.
+
+Login pages and macros live in the Base login theme, with CSS classes supplied by theme properties. `keycloak.v3` provides PatternFly 6 styling through `theme.properties` and resources, without duplicating templates. Custom themes can restyle fields and buttons by overriding individual Base macros or a few properties, instead of copying whole pages such as `login.ftl` or `register.ftl`.
+
+To assist with migration, use the new script:
+
+[source,bash]
+----
+node misc/scripts/migrate-login-theme-pf5-to-pf6.mjs --theme-path /path/to/your/theme
+----
+
+Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
+After migration, validate your customizations manually for light and dark mode, social provider buttons, and custom CSS overrides.
+
 === OIDC identity providers accept a single issuer
 // https://github.com/keycloak/keycloak/issues/54458
 
@@ -263,10 +289,11 @@ Providers extending `OAuth2IdentityProviderConfig` can instead override `getClie
 The legacy Login v1 theme (`keycloak`) and the `login:v1` feature have been removed.
 PatternFly 3 and PatternFly 4 vendor resources that only served that theme are also removed.
 
-Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v2` on upgrade.
-Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v2` or `base` instead.
+Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v3` on upgrade.
+Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v3` or `base` instead.
 The `--features=login:v1` and `--features-disabled=login:v1` options are no longer valid.
-The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v2` login theme.
+The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v3` login theme.
+See also the earlier note about the login theme move to `keycloak.v3` and PatternFly 6 for the related `keycloak.v2` removal.
 
 === CIBA requires client authentication (CVE-2026-109082)
 // https://github.com/keycloak/keycloak/issues/53937
@@ -382,7 +409,7 @@ See the link:{securing_apps_token_exchange_link}#_standard-token-exchange-expira
 
 The new Base login theme provides reusable templates and components for current and future login themes, with styling configurable through theme properties.
 Custom themes can override individual macros or properties instead of copying complete pages, reducing maintenance and helping them inherit validation, accessibility, and authentication improvements.
-The `keycloak.v2` login theme now inherits these shared templates and retains its styling through theme properties.
+The `keycloak.v3` login theme inherits these shared templates and supplies PatternFly 6 styling through theme properties.
 
 The previous Base login templates are no longer provided.
 Custom login themes with `parent=base` now inherit the new markup.

@@ -10,13 +10,6 @@
                 </div>
             </div>
         </div>
-        <@field.checkbox name="termsAccepted" label=msg("acceptTerms") required=false invalid=messagesPerField.existsError('termsAccepted') />
-        <#if messagesPerField.existsError('termsAccepted')>
-            <div class="${properties.kcFormHelperTextClass!}" aria-live="polite">
-                <span id="input-error-terms-accepted" class="${properties.kcInputErrorMessageClass!}">
-                    ${messagesPerField.get('termsAccepted')}
-                </span>
-            </div>
-        </#if>
+        <@field.checkbox name="termsAccepted" label=msg("acceptTerms") required=true errorId="input-error-terms-accepted" />
     </#if>
 </#macro>

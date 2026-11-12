@@ -1,12 +1,15 @@
 <#-- Include <@validator.templates/> once before enabling client-side password validation. -->
 <#macro templates>
     <template id="errorTemplate">
-        <div class="${properties.kcFormHelperTextClass!}" aria-live="polite">
-            <div class="${properties.kcInputHelperTextClass!}">
-                <div class="${properties.kcInputHelperTextItemClass!} ${properties.kcError!}">
-                    <ul class="${properties.kcInputErrorMessageClass!}">
-                    </ul>
-                </div>
+        <div class="${properties.kcInputHelperTextClass!}">
+            <div class="${properties.kcInputHelperTextItemClass!} ${properties.kcError!}">
+                <#if properties.kcInputHelperTextItemIconClass?has_content>
+                    <span class="${properties.kcInputHelperTextItemIconClass}">
+                        <i class="${properties.kcInputErrorIconClass!}" aria-hidden="true"></i>
+                    </span>
+                </#if>
+                <ul class="${properties.kcInputErrorMessageClass!}">
+                </ul>
             </div>
         </div>
     </template>
@@ -38,10 +41,15 @@
 
             if (errors.length === 0) {
                 errorContainer.replaceChildren();
+                errorContainer.hidden = true;
+                event.target.removeAttribute("aria-invalid");
+                event.target.removeAttribute("aria-describedby");
                 return;
             }
 
+            const errorId = "input-error-${field}";
             const errorList = template.querySelector("ul");
+            errorList.id = errorId;
             const htmlErrors = errors.forEach((e) => {
                 const row = document.querySelector("#errorItemTemplate").content.cloneNode(true);
                 const li = row.querySelector("li");
@@ -49,6 +57,9 @@
                 errorList.appendChild(li);
             });
             errorContainer.replaceChildren(template);
+            errorContainer.hidden = false;
+            event.target.setAttribute("aria-invalid", "true");
+            event.target.setAttribute("aria-describedby", errorId);
         });
     </#outputformat>
     </script>

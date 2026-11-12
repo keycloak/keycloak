@@ -37,8 +37,8 @@ public class ThemeResourceTest {
     @Test
     public void gzipCacheFailureFallsBackToOriginalResource() throws IOException {
         String resourcesVersion = runOnServer.fetch(session -> Version.RESOURCES_VERSION, String.class);
-        String url = keycloakUrls.getBase() + "/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css";
-        String cachedResourcePath = "login/keycloak.v2/css/styles.css.gz";
+        String url = keycloakUrls.getBase() + "/resources/" + resourcesVersion + "/login/keycloak.v3/css/styles.css";
+        String cachedResourcePath = "login/keycloak.v3/css/styles.css.gz";
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().disableContentCompression().build()) {
             String expected;
             try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {

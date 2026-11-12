@@ -300,6 +300,13 @@ public class ServerInfoAdminResource {
             filteredNames.remove("rh-sso.v2");
         }
 
+        boolean filterLoginV3 = (type == Theme.Type.LOGIN) &&
+                !Profile.isFeatureEnabled(Profile.Feature.LOGIN_V3);
+
+        if (filterLoginV3) {
+            filteredNames.remove("keycloak.v3");
+        }
+
         boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) &&
             !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_V3);
 

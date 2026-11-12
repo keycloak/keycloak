@@ -27,7 +27,7 @@ public class PasswordPage extends LanguageComboboxAwarePage {
     @FindBy(name = "login")
     private WebElement submitButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
     public void login(String password) {

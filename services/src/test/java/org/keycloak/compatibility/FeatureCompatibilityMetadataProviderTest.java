@@ -105,18 +105,18 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
 
     @Test
     public void testRollingNoUpgradePolicy() {
-        Profile.Feature v2 = Profile.Feature.LOGIN_V2;
+        Profile.Feature v3 = Profile.Feature.LOGIN_V3;
 
         FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
 
-        Profile.configure(new FeatureResolver(v2, true));
-        assertFeature(v2, true, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
+        Profile.configure(new FeatureResolver(v3, true));
+        assertFeature(v3, true, v3.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
 
         // Start from complete current metadata and only rewrite login to an older version so the
         // assertion isolates the ROLLING_NO_UPGRADE version transition.
         Map<String, String> oldVersionMeta = new HashMap<>(provider.metadata());
         oldVersionMeta.put(
-                v2.getUnversionedKey(),
+                v3.getUnversionedKey(),
                 "{\"enabled\":true,\"version\":1,\"updatePolicy\":\"ROLLING_NO_UPGRADE\"}"
         );
         assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(oldVersionMeta));
@@ -143,7 +143,7 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         return Stream.of(
               Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.IMPERSONATION),
               Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.Feature.PERSISTENT_USER_SESSIONS),
-              Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.LOGIN_V2)
+              Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.LOGIN_V3)
         );
     }
 

@@ -28,16 +28,16 @@ public class WelcomePage extends AbstractPage {
     @FindBy(xpath = "//button")
     private WebElement submitButton;
 
-    @FindBy(css = ".pf-v5-c-alert")
+    @FindBy(css = ".pf-v6-c-alert")
     private WebElement pageAlert;
 
-    @FindBy(css = ".pf-v5-c-title")
+    @FindBy(css = ".pf-v6-c-title")
     private WebElement welcomeMessage;
 
-    @FindBy(css = ".pf-v5-c-login__main-header-desc")
+    @FindBy(css = ".pf-v6-c-login__main-header-desc")
     private WebElement welcomeDescription;
 
-    @FindBy(css = ".pf-v5-c-button")
+    @FindBy(css = ".pf-v6-c-button")
     private WebElement openAdminConsoleLink;
 
     public WelcomePage(ManagedWebDriver driver) {

@@ -141,7 +141,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class AbstractMigrationTest {
 
     private static final Logger LOG = Logger.getLogger(AbstractMigrationTest.class);
-    private static final String PREFERRED_DEFAULT_LOGIN_THEME = "keycloak.v2";
+    private static final String PREFERRED_DEFAULT_LOGIN_THEME = "keycloak.v3";
 
     static final String MIGRATION = "Migration";
     static final String MIGRATION2 = "Migration2";
@@ -501,7 +501,7 @@ public abstract class AbstractMigrationTest {
 
     protected void testMigrationTo27_0_0(RealmResource realmWithUnsetTheme) {
         Assertions.assertEquals(PREFERRED_DEFAULT_LOGIN_THEME, migrationRealm.toRepresentation().getLoginTheme(),
-                "Login v1 realm theme was not migrated to keycloak.v2");
+                "Login v1 realm theme was not migrated to keycloak.v3");
         Assertions.assertEquals("custom-theme", migrationRealm2.toRepresentation().getLoginTheme(),
                 "Custom login theme should be preserved");
         Assertions.assertNull(realmWithUnsetTheme.toRepresentation().getLoginTheme(),

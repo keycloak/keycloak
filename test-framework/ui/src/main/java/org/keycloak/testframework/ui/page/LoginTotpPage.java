@@ -75,7 +75,7 @@ public class LoginTotpPage extends AbstractLoginPage {
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.className("pf-v5-c-tile"));
+            driver.findElement(By.className("pf-v6-c-tile"));
             Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assertions.assertFalse(expectedAvailability);
@@ -104,7 +104,7 @@ public class LoginTotpPage extends AbstractLoginPage {
     }
 
     private By getXPathForLookupAllCards() {
-        return By.xpath("//span[contains(@class, 'pf-v5-c-tile__title')]");
+        return By.xpath("//span[contains(@class, 'pf-v6-c-tile__title')]");
     }
 
     private By getCssSelectorForLookupActiveCard() {
@@ -112,6 +112,6 @@ public class LoginTotpPage extends AbstractLoginPage {
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//div[contains(@class, 'pf-v6-c-tile')][normalize-space() = '"+ credentialName +"']");
     }
 }

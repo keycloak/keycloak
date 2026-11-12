@@ -8,17 +8,9 @@
             <form class="form-actions ${properties.kcFormClass!}" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
                 <p class="instruction">${msg("logoutConfirmHeader")}</p>
                 <input type="hidden" name="session_code" value="${logoutConfirm.code}">
-                <div class="${properties.kcFormGroupClass!}">
-                    <div id="kc-form-options">
-                        <div class="${properties.kcFormOptionsWrapperClass!}">
-                        </div>
-                    </div>
-
-                    <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                        <@buttons.button name="confirmLogout" id="kc-logout" label="doLogout" class=["kcButtonLargeClass"] value=msg("doLogout") tabindex="4" />
-                    </div>
-
-                </div>
+                <@buttons.actionGroup id="kc-form-buttons">
+                    <@buttons.button name="confirmLogout" id="kc-logout" label="doLogout" class=["kcButtonLargeClass"] value=msg("doLogout") tabindex="4" />
+                </@buttons.actionGroup>
             </form>
 
             <div id="kc-info-message">
