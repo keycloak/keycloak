@@ -29,7 +29,8 @@
       ],
       "files": [
         "src",
-        "tsconfig.json"
+        "tsconfig.json",
+        "../../tsconfig.json"
       ],
       "output": [
         "lib"
@@ -69,7 +70,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.2.0",
-    "@kiota-community/kiota-gen": "^1.0.2",
+    "@kiota-community/kiota-gen": "^1.0.3",
     "@types/chai": "^5.2.2",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.10",

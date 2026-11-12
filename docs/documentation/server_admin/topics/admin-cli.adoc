@@ -1041,7 +1041,7 @@ $ kcadm.sh get users -r demorealm -q q=username:testuser
 ----
 [NOTE]
 ====
-Filtering does not use exact matching. This example matches the value of the `username` attribute against the `\*testuser*` pattern.
+Filtering does not use exact matching. This example matches the value of the `username` attribute against the `+*testuser*+` pattern.
 ====
 
 For clients, groups, and users you can filter across multiple attributes by specifying a more complex `q` query parameter.  you may use something like -q q="field1:value1 field2:value2". {project_name} returns users that match the condition for all the attributes only.

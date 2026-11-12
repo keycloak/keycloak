@@ -892,6 +892,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     }
 
     @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialModel oldCred, CredentialModel newCred) {
+        return credentialStore.updateCredential(realm, user, oldCred, newCred);
+    }
+
+    @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         CredentialEntity entity = credentialStore.createCredentialEntity(realm, user, cred);
 
