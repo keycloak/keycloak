@@ -24,6 +24,7 @@ import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.managers.ClientManager;
@@ -52,6 +53,9 @@ public class PartialImportManager {
         partialImports.add(new RolesPartialImport());
         partialImports.add(new IdentityProvidersPartialImport());
         partialImports.add(new IdentityProviderMappersPartialImport());
+        if (Organizations.isEnabled(session)) {
+            partialImports.add(new OrganizationsPartialImport());
+        }
         partialImports.add(new GroupsPartialImport());
         partialImports.add(new UsersPartialImport());
     }
