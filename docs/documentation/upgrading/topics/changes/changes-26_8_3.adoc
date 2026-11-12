@@ -138,3 +138,14 @@ The organization Redirect URL field is now deprecated and will be removed in a f
 === Organization invitation endpoints without `client_id`
 
 The `invite-user` and `invite-existing-user` admin client overloads that do not accept a `client_id` parameter are now deprecated. Use the overloads that accept an explicit `client_id` instead. When omitted, the endpoints default to the `account` client, but callers should migrate to always specify a client.
+
+=== Atomic credential update for custom credential stores
+// https://github.com/keycloak/keycloak/issues/55028
+
+The new methods `SubjectCredentialManager.updateStoredCredential(oldCred, newCred)`, `UserCredentialStore.updateCredential(realm, user, oldCred, newCred)` and `UserFederatedUserCredentialStore.updateCredential(realm, userId, oldCred, newCred)` replace a credential only if the stored credential still has the content of `oldCred`, and return `false` otherwise.
+{project_name} uses them to re-hash a password after a login, so that a password or label that was changed in the meantime is not overwritten.
+
+Custom implementations of these interfaces should override the new methods, and perform the comparison and the update atomically, for example by locking the stored credential.
+The default implementations exist only for backwards compatibility.
+They check and update in two separate steps, so a concurrent change can still be lost.
+The default implementations will be removed in a future release, at which point custom implementations that do not provide the methods will no longer compile.

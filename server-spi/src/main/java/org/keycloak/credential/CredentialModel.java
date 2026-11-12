@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
@@ -81,6 +82,19 @@ public class CredentialModel implements Serializable {
         res.credentialData = credentialData;
         res.federationLink = federationLink;
         return res;
+    }
+
+    /**
+     * Checks if the other credential has the same type, label, creation date, secret data and credential data, which
+     * means that both describe the same state of a stored credential.
+     */
+    public boolean hasSameContent(CredentialModel other) {
+        return other != null
+                && Objects.equals(type, other.type)
+                && Objects.equals(userLabel, other.userLabel)
+                && Objects.equals(createdDate, other.createdDate)
+                && Objects.equals(secretData, other.secretData)
+                && Objects.equals(credentialData, other.credentialData);
     }
 
     public String getId() {
