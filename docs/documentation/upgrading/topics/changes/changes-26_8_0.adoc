@@ -367,7 +367,7 @@ This prevents deadlocks that occur under concurrent logins.
 If binary logging is enabled with `binlog_format = STATEMENT`, this change will cause write operations to fail.
 {project_name} logs an error at startup when it detects this incompatible setting.
 
-See the link:https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolation-level-in-stateless-mode[Transaction isolation level in stateless mode] section in the database configuration guide for details on `binlog_format` requirements.
+See the link:https://www.keycloak.org/server/db#mysql-mariadb-transaction-isolation-level[Transaction isolation level] section in the database configuration guide for details on `binlog_format` requirements.
 
 Changing the default transaction isolation level for all modes is being considered for a future release.
 

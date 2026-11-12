@@ -169,6 +169,9 @@ public final class ImmutableSession {
                         .filterKeys(clientSessionKeys))
                 .iterator()
                 .forEachRemaining(entry -> {
+                    if (entry.getValue().isLoadingMarker()) {
+                        return;
+                    }
                     var clientSession = entry.getValue().getEntity();
                     var userSession = userSessionMap.get(entry.getKey().userSessionId());
                     var client = expirationPredicates.realm().getClientById(entry.getKey().clientId());

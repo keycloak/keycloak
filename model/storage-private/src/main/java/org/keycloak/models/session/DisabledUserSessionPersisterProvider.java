@@ -20,9 +20,11 @@ package org.keycloak.models.session;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -53,7 +55,10 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        if (factory.getProviderFactory(UserSessionPersisterProvider.class) == this && MultiSiteUtils.isPersistentSessionsEnabled()) {
+            throw new IllegalStateException("The disabled user session persister requires --features-disabled=persistent-user-sessions. "
+                    + "Remove --spi-user-session-persister--provider=disabled to use database-backed sessions.");
+        }
     }
 
     @Override
@@ -99,6 +104,11 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     @Override
     public void onUserRemoved(RealmModel realm, UserModel user) {
 
+    }
+
+    @Override
+    public Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        return Collections.emptyMap();
     }
 
     @Override

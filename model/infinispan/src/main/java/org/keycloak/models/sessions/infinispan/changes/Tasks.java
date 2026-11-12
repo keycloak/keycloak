@@ -69,6 +69,52 @@ public class Tasks {
         }
     };
 
+    // Cache-only REMOVE: the caller already performed the DB deletion directly via the persister,
+    // so JpaChangesPerformer must not repeat it in a second transaction.
+    private static final SessionUpdateTask<? extends SessionEntity> REMOVE_CACHE_ONLY = new PersistentSessionUpdateTask<>() {
+        @Override
+        public void runUpdate(SessionEntity entity) {
+        }
+
+        @Override
+        public CacheOperation getOperation() {
+            return CacheOperation.REMOVE;
+        }
+
+        @Override
+        public boolean isOffline() {
+            return false;
+        }
+
+        @Override
+        public boolean requiresDatabasePersistence() {
+            return false;
+        }
+    };
+
+    // Cache-only offline REMOVE: the caller already performed the DB deletion directly via the persister,
+    // so JpaChangesPerformer must not repeat it in a second transaction.
+    private static final SessionUpdateTask<? extends SessionEntity> OFFLINE_REMOVE_CACHE_ONLY = new PersistentSessionUpdateTask<>() {
+        @Override
+        public void runUpdate(SessionEntity entity) {
+        }
+
+        @Override
+        public CacheOperation getOperation() {
+            return CacheOperation.REMOVE;
+        }
+
+        @Override
+        public boolean isOffline() {
+            return true;
+        }
+
+        @Override
+        public boolean requiresDatabasePersistence() {
+            return false;
+        }
+    };
+
     /**
      * Returns a typed task of type {@link CacheOperation#ADD_IF_ABSENT} that does no other update.
      * @param <S>
@@ -98,5 +144,17 @@ public class Tasks {
         return offline ? (PersistentSessionUpdateTask<S>) OFFLINE_REMOVE_SYNC : (PersistentSessionUpdateTask<S>) REMOVE_SYNC;
     }
 
+    /**
+     * Returns a cache-only {@link CacheOperation#REMOVE} task. Use when the caller already performed the
+     * DB deletion directly via the persister in the current JPA transaction, so that
+     * {@link JpaChangesPerformer} does not duplicate the removal in a second transaction.
+     *
+     * @param offline whether the operation should be performed on offline or non-offline session
+     * @param <S>
+     * @return
+     */
+    public static <S extends SessionEntity> PersistentSessionUpdateTask<S> removeSyncCacheOnly(boolean offline) {
+        return offline ? (PersistentSessionUpdateTask<S>) OFFLINE_REMOVE_CACHE_ONLY : (PersistentSessionUpdateTask<S>) REMOVE_CACHE_ONLY;
+    }
 
 }
