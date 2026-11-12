@@ -16,7 +16,10 @@
  */
 package org.keycloak.authentication.actiontoken.idpverifyemail;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
@@ -28,11 +31,13 @@ import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticator;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
@@ -210,8 +215,11 @@ public class IdpVerifyAccountLinkActionTokenHandler extends AbstractActionTokenH
         return isUserVerified;
     }
 
-    static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
-        return "kc.brokering.user.verified." + userId  + "." + idpAlias + "." + externalId;
+    public static String getUserVerifiedSingleObjectKey(String userId, String idpAlias, String externalId) {
+        String binding = Stream.of(userId, idpAlias, externalId)
+                .map(value -> Base64Url.encode(value.getBytes(StandardCharsets.UTF_8)))
+                .collect(Collectors.joining("."));
+        return "kc.brokering.user.verified." + HashUtils.sha256UrlEncodedHash(binding, StandardCharsets.UTF_8);
     }
 
     private Response sendLinkConfirmedAlready(KeycloakSession session, EventBuilder event, UserModel user, IdpVerifyAccountLinkActionToken token) {

@@ -294,8 +294,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
                 protected void commitImpl() {
                     try {
                         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(),
-                                (KeycloakSession s) -> refreshPassword(s, hashAlgorithm, iterations, input.getChallengeResponse(),
-                                        password.getId(), password.getCreatedDate(), password.getUserLabel(), user.getId()));
+                                (KeycloakSession s) -> refreshPassword(s, hashAlgorithm, iterations, input.getChallengeResponse(), password, user.getId()));
                     } catch (ModelException e) {
                         logger.info("Error re-hashing the password in a different transaction", e);
                     }
@@ -310,17 +309,18 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     }
 
     private static void refreshPassword(KeycloakSession s, String hashAlgorithm, int iterations, String challenge,
-            String passwordId, Long passwordDate, String passwordLabel, String userId) {
+            PasswordCredentialModel oldPassword, String userId) {
         PasswordCredentialModel newPassword = ((hashAlgorithm != null)
                 ? s.getProvider(PasswordHashProvider.class, hashAlgorithm)
                 : s.getProvider(PasswordHashProvider.class))
                 .encodedCredential(challenge, iterations);
-        newPassword.setId(passwordId);
-        newPassword.setCreatedDate(passwordDate);
-        newPassword.setUserLabel(passwordLabel);
+        newPassword.setId(oldPassword.getId());
+        newPassword.setCreatedDate(oldPassword.getCreatedDate());
+        newPassword.setUserLabel(oldPassword.getUserLabel());
         UserModel userModel = s.users().getUserById(s.getContext().getRealm(), userId);
-        if (userModel != null) {
-            userModel.credentialManager().updateStoredCredential(newPassword);
+        if (userModel != null && !userModel.credentialManager().updateStoredCredential(oldPassword, newPassword)) {
+            // the password was changed or removed after it was validated, the new hash would overwrite that change
+            logger.debugf("Skipped re-hashing the password of user %s as the credential was changed in the meantime", userId);
         }
     }
 

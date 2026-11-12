@@ -49,6 +49,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -253,6 +254,9 @@ public class GroupResource {
                 child = realm.getGroupById(rep.getId());
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
+                }
+                if (Organizations.isOrganizationGroup(child)) {
+                    throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Response.Status.BAD_REQUEST);
                 }
                 auth.groups().requireManage(child);
                 if (!Objects.equals(child.getParentId(), group.getId())) {

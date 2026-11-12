@@ -97,7 +97,7 @@ public class JpaUserSessionPersisterProviderFactory implements UserSessionPersis
         var builder = ProviderConfigurationBuilder.create();
         builder.property()
                 .name(EXPIRATION_BATCH_CONFIG)
-                .helpText("Sets the size of the expiration batch, i.e., the number of expired sessions to remove per delete statement.")
+                .helpText("Sets the size of the expiration batch, that is, the number of expired sessions to remove per delete statement.")
                 .label("size")
                 .type(ProviderConfigProperty.INTEGER_TYPE)
                 .defaultValue(DEFAULT_EXPIRATION_BATCH)

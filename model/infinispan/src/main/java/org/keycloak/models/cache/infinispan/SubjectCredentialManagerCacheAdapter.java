@@ -48,6 +48,12 @@ public abstract class SubjectCredentialManagerCacheAdapter extends UserCredentia
     }
 
     @Override
+    public boolean updateStoredCredential(CredentialModel oldCred, CredentialModel newCred) {
+        invalidateCacheForEntity();
+        return super.updateStoredCredential(oldCred, newCred);
+    }
+
+    @Override
     public CredentialModel createStoredCredential(CredentialModel cred) {
         invalidateCacheForEntity();
         return super.createStoredCredential(cred);

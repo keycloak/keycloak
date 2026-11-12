@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.scim.protocol.ForbiddenException;
@@ -75,8 +76,42 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
             throw new ForbiddenException();
         }
 
-        return getModels(searchOptions)
-                .map(m -> createResourceTypeInstance(m, searchOptions.getAttributes(), searchOptions.getExcludedAttributes()));
+        Stream<M> models = getModels(searchOptions);
+
+        // The query scope only allows a caller to reach this endpoint, it does not entitle them to read the
+        // resources it matches. When fine-grained admin permissions v2 are enabled for the realm, the queries
+        // behind getModels are already narrowed at the SQL level by AdminPermissionsSchema#applyAuthorizationFilters,
+        // which is gated on that same realm flag. In every other configuration, including the deprecated v1
+        // feature, nothing narrows the result set, so the per-resource VIEW check is the only enforcement point.
+        // This mirrors UsersResource#toRepresentation and GroupsResource#getGroups in the Admin REST API.
+        // Resources are filtered before being converted so that representations are never built for resources the
+        // caller cannot see.
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())
+                && !hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
+            // The page was already narrowed by the query, so this filter removes resources from a page that has
+            // been paginated. Record how many resources the query matched before filtering: the count of total
+            // results is derived from the size of the page the query produced, and a page shortened by this filter
+            // must not be mistaken for the last page.
+            List<M> page = models.toList();
+
+            searchOptions.setMatchedSize(page.size());
+
+            if (isViewFullyDenied()) {
+                // Plain RBAC: the VIEW check above evaluates the same way for every resource of this type, so
+                // lacking it here means the caller cannot view any resource of this type, on any page. count()
+                // independently recognizes this and reports zero instead of falling through to a DB count that
+                // does not account for permissions at all.
+                models = Stream.empty();
+            } else {
+                // Deprecated fine-grained admin permissions v1: a per-resource policy can grant view access to a
+                // subset of resources, so some, none, or all resources on this page may pass. Because this is not
+                // narrowed at the SQL level, count() falls back to an unfiltered DB count, making totalResults an
+                // upper bound rather than an exact count.
+                models = page.stream().filter(m -> hasPermission(m, getRealmResourceType(), AdminPermissionsSchema.VIEW));
+            }
+        }
+
+        return models.map(m -> createResourceTypeInstance(m, searchOptions.getAttributes(), searchOptions.getExcludedAttributes()));
     }
 
     @Override
@@ -114,6 +149,22 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
     protected boolean canQuery() {
         return hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY)
                 || hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW);
+    }
+
+    /**
+     * Whether the caller cannot view any resource of this type, on any page, because neither fine-grained admin
+     * permissions v2 nor the deprecated v1 are in effect for the realm and the caller lacks the blanket VIEW
+     * permission. Without any fine-grained admin permissions, the per-resource VIEW check evaluates the same way
+     * for every resource of this type, so this is an all-or-nothing decision. Implementations of {@code count()}
+     * must honor this by reporting zero rather than falling back to a DB count that does not account for
+     * permissions at all.
+     *
+     * @return {@code true} when the caller is denied view access to every resource of this type
+     */
+    protected boolean isViewFullyDenied() {
+        return !AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())
+                && !hasPermission(getRealmResourceType(), AdminPermissionsSchema.VIEW)
+                && !Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ);
     }
 
     public boolean hasPermission(R representation, String scope) {
