@@ -96,7 +96,7 @@ public class UserSessionExpirationQueryCountTest {
 
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session1 -> {
                 session1.getContext().setRealm(realmModel);
-                assertNull(session1.sessions().getUserSession(realmModel, sessionId[0]));
+                assertNull(session1.getProvider(UserSessionPersisterProvider.class).loadUserSession(realmModel, sessionId[0], false));
                 var user = session1.users().getUserByUsername(realmModel, "expiring-user");
                 assertNotNull(user);
                 session1.users().removeUser(realmModel, user);
