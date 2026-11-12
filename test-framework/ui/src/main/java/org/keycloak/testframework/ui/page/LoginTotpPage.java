@@ -75,7 +75,7 @@ public class LoginTotpPage extends AbstractLoginPage {
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.className("pf-v6-c-tile"));
+            driver.findElement(getCssSelectorForLookupAllRadios());
             Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assertions.assertFalse(expectedAvailability);
@@ -90,7 +90,7 @@ public class LoginTotpPage extends AbstractLoginPage {
     public String getSelectedOtpCredential() {
         try {
             WebElement selected = driver.findElement(getCssSelectorForLookupActiveCard());
-            return selected.getText();
+            return driver.findElement(By.id(selected.getAttribute("aria-labelledby"))).getText();
         } catch (NoSuchElementException nse) {
             // No selected element found
             return null;
@@ -103,15 +103,19 @@ public class LoginTotpPage extends AbstractLoginPage {
         webElement.click();
     }
 
+    private By getCssSelectorForLookupAllRadios() {
+        return By.cssSelector("input[type='radio'][name='selectedCredentialId']");
+    }
+
     private By getXPathForLookupAllCards() {
-        return By.xpath("//span[contains(@class, 'pf-v6-c-tile__title')]");
+        return By.xpath("//*[starts-with(@id, 'kc-otp-credential-title-')]");
     }
 
     private By getCssSelectorForLookupActiveCard() {
-        return By.cssSelector(".pf-m-selected");
+        return By.cssSelector("input[name='selectedCredentialId']:checked");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'pf-v6-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//input[@name='selectedCredentialId'][@aria-labelledby = //*[starts-with(@id, 'kc-otp-credential-title-')][normalize-space() = '" + credentialName + "']/@id]/following-sibling::label");
     }
 }

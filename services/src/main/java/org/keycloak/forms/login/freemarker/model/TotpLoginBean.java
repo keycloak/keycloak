@@ -21,7 +21,6 @@ package org.keycloak.forms.login.freemarker.model;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
@@ -82,8 +81,8 @@ public class TotpLoginBean {
 
         public OTPCredential(CredentialModel credentialModel) {
             this.id = credentialModel.getId();
-            // TODO: "Unnamed" OTP credentials should be displayed in the UI in gray
-            this.userLabel = credentialModel.getUserLabel() == null || credentialModel.getUserLabel().isEmpty() ? OTPFormAuthenticator.UNNAMED : credentialModel.getUserLabel();
+            // TODO: Credentials without a name should be displayed in the UI in gray
+            this.userLabel = credentialModel.getUserLabel();
         }
 
         public String getId() {

@@ -11,7 +11,7 @@
 
     <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-deleteaccount-form" method="post">
 
-      <div class="${properties.kcAlertClass!} ${properties.kcAlertWarningClass!}">
+      <div class="${properties.kcAlertInFormClass!properties.kcAlertClass!} ${properties.kcAlertWarningClass!}">
         <div class="${properties.kcAlertIconClass!}">
           <i class="${properties.kcFeedbackWarningIcon!}" aria-hidden="true"></i>
         </div>
