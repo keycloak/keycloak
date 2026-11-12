@@ -36,4 +36,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, testing,
 * Sign off every commit with `git commit --signoff`.
 * Create pull requests as drafts, and only when asked.
 * In pull request descriptions, state rationales, assumptions, and decisions. Do not repeat the issue or the code change. Put each paragraph on a single line.
-* Run `./mvnw spotless:apply` before committing (see [CONTRIBUTING.md](CONTRIBUTING.md#spotless)); CI fails on formatting violations.
+* Run `./mvnw -Pspotless spotless:apply` before committing (see [CONTRIBUTING.md](CONTRIBUTING.md#spotless)); CI fails on formatting violations.

@@ -88,7 +88,8 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
             }
             buffer.append("        </Keys>\n");
         }
-        buffer.append("        <IDP entityID=\"idp\"");
+        String idpEntityId = RealmsResource.realmBaseUrl(UriBuilder.fromUri(baseUri)).build(realm.getName()).toString();
+        buffer.append("        <IDP entityID=\"").append(idpEntityId).append("\"");
         if (samlClient.requiresClientSignature()) {
             buffer.append("\n             signatureAlgorithm=\"").append(samlClient.getSignatureAlgorithm()).append("\"");
             if (samlClient.getCanonicalizationMethod() != null) {

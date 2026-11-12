@@ -13,8 +13,7 @@ The current distributed cache implementation is built on top of https://infinisp
 == Enable distributed caching
 When you start {project_name} in production mode, by using the `start` command, caching is enabled and all {project_name} nodes in your network are discovered.
 
-By default, caches use the `jdbc-ping` stack which is based upon a TCP transport and uses the configured database to track nodes joining the cluster.
-{project_name} allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this {section}.
+Cluster nodes communicate over TCP and use the configured database to discover other nodes.
 
 To explicitly enable distributed infinispan caching, enter this command:
 
@@ -154,11 +153,11 @@ This is the foundation for the multi-cluster (v2) setup that is covered in more 
 In order to reduce memory usage, it's possible to place an upper bound on the number of entries which are stored in a given
 cache. To specify an upper bound of on a cache, you must provide the following command line argument
 `--cache-embedded-$\{CACHE_NAME}-max-count=`, with `$\{CACHE_NAME}` replaced with the name of the cache you would like to
-apply the upper bound to. For example, to apply an upper-bound of `1000` to the `offlineSessions` cache you would configure
-`--cache-embedded-offline-sessions-max-count=1000`. An upper bound can not be defined on the following caches:
+apply the upper bound to. For example, to apply an upper-bound of `1000` to the `sessions` cache you would configure
+`--cache-embedded-sessions-max-count=1000`. An upper bound can not be defined on the following caches:
 `actionToken`, `authenticationSessions`, `loginFailures`, `work`.
 
-Setting a maximum cache size for `sessions`, `clientSessions` is not supported when the deprecated volatile sessions mode is used.
+When volatile user sessions are in use, limits on the `sessions` and `clientSessions` caches are ignored; only the offline session cache limits remain supported in that mode.
 
 === Specify your own cache configuration file
 
@@ -208,7 +207,7 @@ The following options allow you to identify the cluster and its nodes:
 Cluster name::
 Defines the name of the cluster.
 Only nodes with the same cluster name can discover each other and form a cluster.
-Because {project_name} uses the database for node discovery via `jdbc-ping` by default, clusters that share the same database but should remain separate will merge unless they have distinct cluster names.
+Because {project_name} uses the database for node discovery, clusters that share the same database but should remain separate will merge unless they have distinct cluster names.
 The default cluster name is `ISPN`.
 +
 Use `+--cache-embedded-cluster-name+` (or environment variable `+KC_CACHE_EMBEDDED_CLUSTER_NAME+`).
@@ -277,9 +276,9 @@ We recommend to set up anti-affinity rules and/or topology spread constraints to
 == Transport stack
 
 The transport stack ensures that {project_name} nodes in a cluster communicate in a reliable fashion.
-The only supported transport stack is `jdbc-ping`, which uses TCP for transport and the database for node discovery via the JGroups `JDBC_PING2` protocol.
+{project_name} uses TCP for transport and the database for node discovery.
 
-Encryption using TLS is enabled by default for the TCP-based `jdbc-ping` transport stack.
+Communication between nodes is encrypted using TLS by default.
 No additional CLI options or modifications of the cache XML are required.
 
 With TLS enabled, {project_name} auto-generates a self-signed RSA 2048 bit certificate to secure the connection and uses TLS 1.3 to secure the communication.
@@ -338,7 +337,7 @@ To restrict unauthorized access, always use a self-signed certificate for each {
 == Network Ports
 
 To ensure a healthy {project_name} clustering, some network ports need to be open.
-The table below shows the TCP ports that need to be open for the `jdbc-ping` stack, and a description of the traffic that goes through it.
+The table below shows the TCP ports required for cluster communication, and a description of the traffic that goes through them.
 
 |===
 |Port |Option| Property | Description

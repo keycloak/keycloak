@@ -19,7 +19,10 @@ package org.keycloak.tests.saml;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SignatureAlgorithm;
@@ -28,6 +31,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
@@ -41,6 +45,10 @@ import org.w3c.dom.NodeList;
 public class SamlResponseDocument {
 
     private static final String ASSERTION_NS = JBossSAMLURIConstants.ASSERTION_NSURI.get();
+
+    public static final String BEARER_METHOD = JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get();
+
+    public static final String HOLDER_OF_KEY_METHOD = JBossSAMLURIConstants.HOLDER_OF_KEY.get();
 
     private final org.w3c.dom.Document document;
 
@@ -109,6 +117,65 @@ public class SamlResponseDocument {
     }
 
     /**
+     * Replaces the {@code <saml:Issuer>} text of the first {@code <saml:Assertion>} element with the given value.
+     */
+    public SamlResponseDocument setAssertionIssuer(String value) {
+        Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Assertion").item(0);
+        if (assertion == null) {
+            throw new IllegalStateException("SAML response does not contain an assertion");
+        }
+        NodeList issuers = assertion.getElementsByTagNameNS(ASSERTION_NS, "Issuer");
+        if (issuers.getLength() > 0) {
+            issuers.item(0).setTextContent(value);
+        }
+        return this;
+    }
+
+    /**
+     * Removes the {@code <saml:Issuer>} element from the first {@code <saml:Assertion>}.
+     */
+    public SamlResponseDocument removeAssertionIssuer() {
+        Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NS, "Assertion").item(0);
+        if (assertion == null) {
+            throw new IllegalStateException("SAML response does not contain an assertion");
+        }
+        NodeList issuers = assertion.getElementsByTagNameNS(ASSERTION_NS, "Issuer");
+        if (issuers.getLength() > 0) {
+            issuers.item(0).getParentNode().removeChild(issuers.item(0));
+        }
+        return this;
+    }
+
+    /**
+     * Replaces the top-level (response) {@code <saml:Issuer>} text with the given value. This is the issuer
+     * on the {@code <samlp:Response>} element, not the assertion-level issuer.
+     */
+    public SamlResponseDocument setResponseIssuer(String value) {
+        Element root = document.getDocumentElement();
+        for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if ("Issuer".equals(child.getLocalName()) && ASSERTION_NS.equals(child.getNamespaceURI())) {
+                child.setTextContent(value);
+                return this;
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Removes the top-level (response) {@code <saml:Issuer>} element from the document root.
+     */
+    public SamlResponseDocument removeResponseIssuer() {
+        Element root = document.getDocumentElement();
+        for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if ("Issuer".equals(child.getLocalName()) && ASSERTION_NS.equals(child.getNamespaceURI())) {
+                root.removeChild(child);
+                return this;
+            }
+        }
+        return this;
+    }
+
+    /**
      * Turns the response into an unsolicited (IdP-initiated) one addressed to {@code destination}: the response
      * {@code Destination} and every {@code SubjectConfirmationData Recipient} are set to it, and all
      * {@code InResponseTo} attributes are removed.
@@ -136,6 +203,50 @@ public class SamlResponseDocument {
             throw new IllegalStateException("SAML assertion does not contain a subject");
         }
         return subject;
+    }
+
+    private List<Element> getSubjectConfirmations() {
+        NodeList nodes = getFirstAssertionSubject().getElementsByTagNameNS(ASSERTION_NS, "SubjectConfirmation");
+        List<Element> confirmations = new ArrayList<>(nodes.getLength());
+        for (int i = 0; i < nodes.getLength(); i++) {
+            confirmations.add((Element) nodes.item(i));
+        }
+        return confirmations;
+    }
+
+    /**
+     * Removes every {@code <saml:SubjectConfirmation>} from the assertion subject.
+     */
+    public SamlResponseDocument removeSubjectConfirmations() {
+        for (Element confirmation : getSubjectConfirmations()) {
+            confirmation.getParentNode().removeChild(confirmation);
+        }
+        return this;
+    }
+
+    /**
+     * Appends a {@code <saml:SubjectConfirmation>} with the given {@code Method} and no
+     * {@code <saml:SubjectConfirmationData>}.
+     */
+    public SamlResponseDocument addSubjectConfirmation(String method) {
+        Element confirmation = createAssertionElement("SubjectConfirmation");
+        confirmation.setAttribute("Method", method);
+        getFirstAssertionSubject().appendChild(confirmation);
+        return this;
+    }
+
+    /**
+     * Expires the {@code <saml:SubjectConfirmationData>} for the specified confirmation method.
+     */
+    public SamlResponseDocument expireSubjectConfirmationData(String method) {
+        Element data = getSubjectConfirmations().stream()
+                .filter(confirmation -> method.equals(confirmation.getAttribute("Method")))
+                .map(confirmation -> (Element) confirmation.getElementsByTagNameNS(ASSERTION_NS, "SubjectConfirmationData").item(0))
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No SubjectConfirmationData found for method " + method));
+        data.setAttribute("NotOnOrAfter", "2000-01-01T00:00:00Z");
+        return this;
     }
 
     /**

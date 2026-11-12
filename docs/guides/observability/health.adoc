@@ -150,6 +150,7 @@ use the `metrics-enabled` option as follows:
 
 <@kc.build parameters="--health-enabled=true --metrics-enabled=true"/>
 
-The cluster health check is only available for clustered setups when the cache transport stack `jdbc-ping` is used.
+The cluster health check is available for clustered setups using the default database-based node discovery.
+It is not available for custom transport stacks that use a different discovery mechanism.
 
 </@tmpl.guide>

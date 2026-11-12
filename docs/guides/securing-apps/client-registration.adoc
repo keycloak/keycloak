@@ -145,6 +145,17 @@ The endpoint to use these specifications to register clients in {project_name} i
 
 This endpoint can also be found in the OpenID Connect Discovery endpoint for the realm, `/realms/<realm>/.well-known/openid-configuration`.
 
+[WARNING]
+====
+{project_name} supports most of the options mentioned in the OpenID Connect Dynamic Client Registration specification. However not everything is properly supported. For
+instance OpenID Connect client option `application_type` is not supported right now and it will be ignored by {project_name} if you use it when registering your client.
+
+For the indication of what OpenID Connect client options are supported, you may try to see client documentation section in the link:{adminguide_link}[{adminguide_name}] or inspect the
+available options in the admin console when configuring the client. OIDC client options, which have counterparts in the {project_name} admin console are usually supported
+and can be understood by {project_name}. Note that in some cases, the semantics is a bit different. For example, OpenID Connect option `response_types` is mapped in the
+{project_name} client configuration to different individual On/Off switches like `Standard flow`, `Implicit flow` and others.
+====
+
 == SAML Entity Descriptors
 
 [WARNING]
@@ -269,7 +280,11 @@ Client scopes can contain role scope mappings and various protocol mappers, whic
 When a client is assigned an allowed client scope, all of those role scope mappings and protocol mappers will be applied.
 
 * Full Scope Policy - Newly registered clients will have `Full Scope Allowed` switch disabled. This means they won't have any scoped
-realm roles or client roles of other clients.
+realm roles or client roles of other clients. This policy is present by default for both anonymous and authenticated client registration.
+
+* Default Roles Policy - Rejects create or update requests that would change the realm-wide default-role composite through the deprecated
+`defaultRoles` field. This policy is present by default for both anonymous and authenticated client registration.
+Realm administrators who still need this behaviour through Dynamic Client Registration can remove the policy.
 
 * Max Clients Policy - Rejects registration if current number of clients in the realm is same or bigger than specified limit. It's 200 by default for anonymous registrations.
 

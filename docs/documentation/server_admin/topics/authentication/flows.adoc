@@ -436,6 +436,21 @@ An active login in such a flow reaches at least level 1 even if the session prev
 A rejected interactive login ends on an error page.
 A rejected login with `prompt=none` returns the error `unmet_authentication_requirements` if the login completed without user interaction, for example through the SSO session or a client certificate, or `login_required` if reaching the requested level requires user interaction.
 
+*ACR in non-browser authentication grants*
+
+In {project_name}, certain authentication grants involve requests sent directly to the token endpoint without using a browser to log in. For example, the OAuth 2.0 specification defines the Resource Owner Password Credential (ROPC) and Client Credentials grants. ROPC is suitable for clients capable of obtaining the resource owner's credentials (username and password) typically via an interactive form (note that ROPC is deprecated/removed in OAuth 2.1). The Client Credentials grant allows a client to request an access token using only its own credentials.
+
+{project_name} also supports extension grants, such as the link:{securing_apps_jwt_authorization_grant_link}[JWT Authorization Grant] and link:{securing_apps_token_exchange_link}[Token Exchange], which are governed by different specifications and allow clients to obtain access tokens through alternative methods. Generally, specifications for non-browser grants do not address Level of Authentication (LoA) or ACR management. Step-up authentication is only available for browser-based flows, and {project_name} assigns a default ACR of 1 (or its equivalent mapped name) for non-browser grants (Default Token Exchange can reuse the existing SSO-authenticated client session and return ACR 0, but it is a special case).
+
+The following authentication flows presented in the client <<_access-type, Capability config>> section do not manage step-up authentication. They are disabled by default and must be explicitly enabled by administrators for each client:
+
+* Direct access grants (Resource Owner Password Credential grant)
+* Service account roles (Client Credentials grant)
+* Standard Token Exchange
+* JWT Authorization Grant
+
+WARNING: The *Minimum ACR Value* configuration option in OIDC clients does not affect non-browser authentication grants. The access token will retain the default ACR level of 1 if the ACR mapper is executed. Administrators should avoid enabling these flows if they feel the grant does not meet the necessary security level for the client. Note that the ROPC grant uses its own Direct grant flow, which can be configured individually, for instance, to require OTP authentication.
+
 [[_step-up-authentication-saml]]
 ==== Step-up authentication for SAML
 

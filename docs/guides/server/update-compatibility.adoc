@@ -155,7 +155,6 @@ Changing the value of one of the following CLI options triggers a recreate updat
 | Option                          | Rationale
 | `--cache`                       | The `ispn` and `local` configurations are mutually exclusive, changing from one to another will lead to data loss.
 | `--cache-config-file`           | Changing the configuration file could result in incompatible cache or transport configurations, resulting in clusters not forming as expected.
-| `--cache-stack`                 | Changing stack will result in the cluster not forming during rolling update and will lead to data loss.
 | `--cache-embedded-mtls-enabled` | Enabling/Disabling TLS will result in the cluster not forming during rolling update and will lead to data loss.
 | `--cache-remote-host`           | Connecting to a new remote cache will cause previously cached data to be lost.
 | `--cache-remote-port`           | Connecting to a new remote cache will cause previously cached data to be lost.

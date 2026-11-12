@@ -4,6 +4,25 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Client registration policies restrict default roles and full scope (CVE-2026-109081)
+// https://github.com/keycloak/keycloak/issues/54702
+
+Dynamic Client Registration can no longer change the realm-wide default-role composite through the deprecated `defaultRoles` field, and authenticated registration can no longer enable `fullScopeAllowed`, unless a realm administrator removes the corresponding client registration policies.
+
+Starting with this release:
+
+* A *Default Roles Disabled* client registration policy is added to both the anonymous and authenticated client registration policies (including during migration of existing realms).
+While this policy is present, create or update requests that would add, change, or remove roles in the realm `default-roles-<realm>` composite through `defaultRoles` are rejected with HTTP `403 Forbidden`.
+* The existing *Full Scope Disabled* policy (`scope`) is also added to the authenticated client registration policies (it was already present for anonymous registration).
+Newly registered clients through authenticated Dynamic Client Registration have `fullScopeAllowed` disabled, and updates that try to enable it are rejected with HTTP `403 Forbidden`.
+
+Realm administrators who intentionally want Dynamic Client Registration to manage these settings can remove the corresponding policies under *Clients* -> *Client registration* -> *Client registration policies*.
+Removing them restores the previous behavior and should be done only when the security implications are understood.
+Use the Admin REST API to manage realm default roles and full scope when the policies remain in place.
+
+This migration installs a new client registration policy provider that earlier nodes do not know.
+A rolling upgrade is therefore not supported for this change; shut down the cluster and upgrade all nodes together (or use a recreate update) so that older nodes never process Dynamic Client Registration requests against the new policy components.
+
 === PAR metadata omitted when PAR is disabled
 
 When the `par` feature is disabled, OpenID Connect discovery now omits `pushed_authorization_request_endpoint` from both the top-level metadata and `mtls_endpoint_aliases`, and omits `require_pushed_authorization_requests`.
@@ -129,6 +148,7 @@ The following conditions are now enforced:
 
 * The assertion's `Subject` must contain a `SubjectConfirmation` with `Method` set to Bearer, and it must carry a `SubjectConfirmationData` element. A missing `SubjectConfirmation`, or one without `SubjectConfirmationData`, is now rejected; previously it was silently ignored. If the assertion carries multiple Bearer confirmations, they are treated as alternatives and only one of them needs to validate.
 * `SubjectConfirmationData` must carry a `NotOnOrAfter` attribute.
+* Other subject confirmation methods, including holder-of-key, are not supported; an assertion without a valid bearer confirmation is rejected.
 * `SubjectConfirmationData` must carry a `Recipient` attribute matching the response's `Destination`, whenever the response specifies one.
 * For broker logins only, `SubjectConfirmationData` must carry an `InResponseTo` attribute matching the expected request ID, for SP-initiated logins.
 
@@ -368,11 +388,24 @@ The previous Base login templates are no longer provided.
 Custom login themes with `parent=base` now inherit the new markup.
 Review and update their template overrides and CSS to match the new structure.
 
+=== Auto-linking requires a trusted email (CVE-2026-97175)
+
+Identity provider auto-linking now blocks the link when the IdP email is not verified and *Trust Email* is not enabled on the identity provider.
+This prevents an attacker who controls a brokered account with an unverified email from being automatically linked to a victim's existing consumer account.
+
+If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== Existing AES key sizes are recorded during migration
+
+When upgrading, existing `aes-generated` key providers without an explicit `secretSize` are updated to record the size of their stored key, including databases already running 26.8.x.
+This ensures the Admin Console displays the actual key size and saving a provider without changes preserves its key and key ID.
+Providers with an explicitly configured size are preserved.
 
 === SAML assertions with a OneTimeUse condition are no longer replayable
 // https://github.com/keycloak/keycloak/issues/46325
@@ -573,6 +606,36 @@ Log parsers that interpret backslash escapes still read the original value and n
 Log parsers that match on the exact logged text must be updated to expect the doubled backslash.
 The change does not apply when the listener is configured with `--spi-events-listener--jboss-logging--quotes=none` or `--spi-events-listener--jboss-logging--sanitize=false`.
 
+=== Reset password emails are sent in the background
+
+The *Forgot password* form no longer waits for the mail server. It responds right away and sends the email in the background. Before, the form was slower for users that exist and have an email, so someone could find out which usernames exist. Now every username takes the same path, whether an email is sent or not.
+
+The `SEND_RESET_PASSWORD` event is still recorded during the request. It now means the email was accepted for sending. If sending fails later, a `SEND_RESET_PASSWORD_ERROR` event is recorded too, from a background thread without the HTTP request context. The email is also not sent, and an error event is recorded, if the link expired or the user was deleted or disabled before it could be sent.
+
+The emails are sent by the `email` executor. It has 4 threads by default and starts more, up to 64, once 128 emails are waiting. If even more are waiting, the email is not sent and the request records a `SEND_RESET_PASSWORD_ERROR` event instead of `SEND_RESET_PASSWORD`. Emails still waiting when the server shuts down are not sent, which is only logged. You can change these numbers with `spi-executors--default--email-min`, `spi-executors--default--email-max` and `spi-executors--default--email-queue`. The `queue` option is new and also available for the other executors, which keep an unbounded queue unless you set it.
+
+Custom email template providers, including ones that extend `FreeMarkerEmailTemplateProvider`, still send the email right away, so for them the response time still depends on the mail server.
+To send it in the background, a provider that extends `FreeMarkerEmailTemplateProvider` can override `supportsBackgroundDelivery()`. Other providers need to implement `EmailTemplateProvider.renderPasswordReset` and `send(RenderedEmail, int, EmailDeliveryListener)`.
+
+=== OIDC identity provider now respects `email_verified=false` from the ID token when Trust Email is enabled
+// https://github.com/keycloak/keycloak/issues/54245
+
+When brokering through an OpenID Connect identity provider with *Trust Email* enabled, {project_name} now correctly honors an `email_verified=false` claim in the ID token, even when the UserInfo endpoint does not include an `email_verified` field.
+
+Previously, if a provider such as GitLab supplied `email_verified=false` in the ID token but omitted the claim from UserInfo, {project_name} ignored the token value and fell back to the `trustEmail` setting, marking the email as verified despite the IdP explicitly stating otherwise.
+
+After upgrading, the following behavior applies when *Trust Email* is enabled:
+
+* If UserInfo includes `email_verified`, that value is used and the ID token value is ignored.
+* If UserInfo provides an email but omits `email_verified`, the ID token's `email_verified` value is used, provided the two emails match.
+* If UserInfo returns a different email than the ID token, the ID token's `email_verified` claim is discarded because it does not apply to the email that was actually selected. {project_name} falls back to the default trust-email behavior for that email.
+* If a custom provider stores the validated ID token under `VALIDATED_ID_TOKEN` in the brokered identity context but does not explicitly set an `EMAIL_VERIFIED` context entry, {project_name} reads `email_verified` directly from the token as a fallback, again only when the token and context emails match.
+
+The change affects existing users under FORCE synchronization mode. When UserInfo provides the user's email but omits `email_verified`, {project_name} now applies the ID token's `email_verified` value, whether `true` or `false`, on every login, even if the user's email address has not changed since the last login.
+For example, if an administrator marked the user's email as not verified, a later login whose ID token carries `email_verified=true` sets the flag back to `true`. Conversely, a token carrying `email_verified=false` sets it to `false` even if the administrator marked the email as verified.
+Previously, the flag was left unchanged for existing users with an unchanged address in this situation.
+If this behavior is not desired, set *Trust Email* to *OFF* for that identity provider. {project_name} then leaves the flag unchanged for existing users whose email address has not changed, and sets it to `false` for new users until the email is verified locally.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -591,22 +654,39 @@ The `invite-user` and `invite-existing-user` admin client overloads that do not 
 
 End of Life features have been previously deprecated and are removed in this release.
 
-=== Deprecated cache stacks no longer supported
+=== Cache stack CLI option removed
 // https://github.com/keycloak/keycloak/issues/53461
 
-The following cache transport stacks are no longer supported:
-
-* `azure`
-* `ec2`
-* `google`
-* `jdbc-ping-udp`
-* `kubernetes`
-* `tcp`
-* `udp`
-
+The `--cache-stack` CLI option has been completely removed.
 The only supported transport stack is `jdbc-ping`, which uses TCP for transport and the database for node discovery.
 Communication between nodes is encrypted using TLS by default.
 
-Remove the `cache-stack` setting from your configuration to use the default `jdbc-ping` stack.
-If your cache configuration XML explicitly selects another transport stack, remove that selection as well.
-Remove any discovery settings specific to the previous stack, such as `jgroups.dns.query`.
+If you were using the `--cache-stack` option in your configuration, remove it.
+To use a custom JGroups stack, configure it directly in your cache configuration XML file using the `--cache-config-file` option.
+Remove any discovery settings specific to previously deprecated stacks, such as `jgroups.dns.query`.
+
+=== Credential update methods without default implementation
+// https://github.com/keycloak/keycloak/issues/55034
+
+The default implementations of the following methods were removed, and the methods are now abstract:
+
+* `SubjectCredentialManager.updateStoredCredential(CredentialModel oldCred, CredentialModel newCred)`
+* `UserCredentialStore.updateCredential(RealmModel realm, UserModel user, CredentialModel oldCred, CredentialModel newCred)`
+* `UserFederatedUserCredentialStore.updateCredential(RealmModel realm, String userId, CredentialModel oldCred, CredentialModel newCred)`
+
+The removed default implementations were not atomic, and a credential that was changed concurrently could be overwritten.
+Custom implementations of these interfaces must implement the methods.
+They must replace the credential only if the stored credential still has the content of `oldCred`, return `false` otherwise, and perform the comparison and the update atomically, for example by locking the stored credential.
+
+=== Offline session cache entry lifespan override options removed
+// https://github.com/keycloak/keycloak/issues/40981
+
+The following configuration options have been removed:
+
+* `--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`
+* `--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override`
+
+These options were deprecated and were only relevant when using volatile user sessions (disabled persistent sessions).
+With persistent user sessions enabled (the default since Keycloak 26), offline sessions are managed in the database and these lifespan override options have no effect.
+
+If you have these options in your configuration, remove them before upgrading to Keycloak 27.
