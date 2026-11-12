@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
@@ -214,7 +215,29 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         if (!closed && singleUseObjectCache.getCacheManager().isCoordinator()) {
             // Keycloak's executor provider owns this shared pool. Offloading avoids blocking the Infinispan notification
             // thread without retaining a thread owned by this provider between the rare cluster membership changes.
-            reloadExecutor.execute(this::reloadRevokedTokens);
+            try {
+                reloadExecutor.execute(this::reloadRevokedTokens);
+            } catch (RejectedExecutionException e) {
+                // The default executor has an unbounded queue, so a rejection means the executor is shutting down.
+                // There is nothing left to retry, but clearing the marker lets the next node starting up reload.
+                if (!closed) {
+                    logger.warn("Failed to submit the reload of revoked tokens after a cluster membership change", e);
+                }
+                clearLoadedMarker();
+            }
+        }
+    }
+
+    private void clearLoadedMarker() {
+        try {
+            // Without the marker, the next node starting up loads the persisted revocations again. This also applies
+            // to every later node until a reload succeeds, which is intended: the cache may be incomplete, and
+            // claiming otherwise would hide the missing entries. A successful scan sets the marker again.
+            singleUseObjectCache.remove(LOADED);
+        } catch (RuntimeException removeFailure) {
+            if (!closed) {
+                logger.warn("Failed to clear the revoked tokens loaded marker", removeFailure);
+            }
         }
     }
 
@@ -236,12 +259,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         } catch (RuntimeException e) {
             if (!closed) {
                 logger.warn("Failed to reload revoked tokens after a cluster membership change", e);
-                try {
-                    // Without the marker, the next node starting up loads the persisted revocations again.
-                    singleUseObjectCache.remove(LOADED);
-                } catch (RuntimeException removeFailure) {
-                    logger.warn("Failed to clear the revoked tokens loaded marker", removeFailure);
-                }
+                clearLoadedMarker();
             }
         }
     }
