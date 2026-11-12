@@ -347,8 +347,18 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
      * @return {@code true} if the permission extends to children groups
      */
     public boolean isExtendChildren(Policy permission) {
+        return Boolean.parseBoolean(permission.getConfig().get(EXTEND_CHILDREN)) && targetsSpecificGroups(permission);
+    }
+
+    /**
+     * Returns {@code true} if the given {@code permission} is a permission for the {@link #GROUPS_RESOURCE_TYPE} that is
+     * associated with specific groups rather than with all groups, which is required to extend it to children groups.
+     *
+     * @param permission the permission
+     * @return {@code true} if the permission targets specific groups
+     */
+    public boolean targetsSpecificGroups(Policy permission) {
         return GROUPS_RESOURCE_TYPE.equals(permission.getResourceType())
-                && Boolean.parseBoolean(permission.getConfig().get(EXTEND_CHILDREN))
                 && permission.getResources().stream().map(Resource::getName).noneMatch(GROUPS_RESOURCE_TYPE::equals);
     }
 
