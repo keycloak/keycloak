@@ -366,6 +366,17 @@ class AdminClient {
     });
   }
 
+  async addCompositeRole(
+    parentRoleId: string,
+    child: RoleRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#client.roles.createComposite({ roleId: parentRoleId, realm }, [
+      child,
+    ]);
+  }
+
   async getRealmRole(name: string, realm: string = this.#client.realmName) {
     await this.#login();
     return await this.#client.roles.findOneByName({ name, realm });

@@ -242,7 +242,14 @@ export const AdminEvents = ({
         findMatching(path, max === undefined ? undefined : skip + max),
       ),
     );
-    const merged = results.flat().sort((a, b) => (b.time ?? 0) - (a.time ?? 0));
+    // Patterns can overlap when names contain wildcards, so the same event may be returned more than once.
+    const unique = new Map(
+      results.flat().map((event) => [event.id ?? JSON.stringify(event), event]),
+    );
+    const merged = [...unique.values()].sort(
+      (a, b) =>
+        (b.time ?? 0) - (a.time ?? 0) || (a.id ?? "").localeCompare(b.id ?? ""),
+    );
     return max === undefined
       ? merged.slice(skip)
       : merged.slice(skip, skip + max);

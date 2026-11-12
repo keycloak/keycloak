@@ -239,6 +239,30 @@ test.describe("Admin events tab of resources", () => {
     await assertEvents(page, ["CLIENT_ROLE CREATE"]);
   });
 
+  test("Client role with a wildcard in its name lists each event once", async ({
+    page,
+  }) => {
+    const realmName = await createRealm();
+    const clientId = `client-${uuid()}`;
+    const { id } = await adminClient.createClient({
+      clientId,
+      realm: realmName,
+    });
+    await adminClient.createClientRole(id, { name: "read*", realm: realmName });
+    await adminClient.createClientRole(id, { name: "child", realm: realmName });
+    const parent = await adminClient.getClientRole(id, "read*", realmName);
+    const child = await adminClient.getClientRole(id, "child", realmName);
+    // Recorded below the role, so it matches both the exact and the sub-resource pattern.
+    await adminClient.addCompositeRole(parent!.id!, child!, realmName);
+
+    await openRealm(page, realmName);
+    await page.goto(
+      `${SERVER_URL}/admin/master/console/#/${realmName}/clients/${id}/roles/${parent!.id}/events`,
+    );
+    await page.reload();
+    await assertEvents(page, ["CLIENT_ROLE CREATE", "CLIENT_ROLE CREATE"]);
+  });
+
   test("Identity provider shows only events of its own alias", async ({
     page,
   }) => {
@@ -271,6 +295,41 @@ test.describe("Admin events tab of resources", () => {
     await openRealm(page, realmName);
     await goToIdentityProviders(page);
     await page.locator(`a[href$="/${alias}/settings"]`).click();
+    await page.getByTestId("admin-events-tab").click();
+
+    await assertEvents(page, [
+      "IDENTITY_PROVIDER CREATE",
+      "IDENTITY_PROVIDER_MAPPER CREATE",
+    ]);
+  });
+
+  test("Identity provider treats special characters of its alias literally", async ({
+    page,
+  }) => {
+    const realmName = await createRealm();
+    // "_" is a single-character wildcard in SQL LIKE, so "corp-sso" must not show up for "corp_sso".
+    for (const alias of ["corp_sso", "corp-sso"]) {
+      await adminClient.createIdentityProvider(
+        "OpenID Connect v1.0",
+        alias,
+        realmName,
+        oidcConfig,
+      );
+      await adminClient.createIdentityProviderMapper(
+        alias,
+        {
+          name: "mapper",
+          identityProviderAlias: alias,
+          identityProviderMapper: "hardcoded-attribute-idp-mapper",
+          config: { attribute: "a", "attribute.value": "b" },
+        },
+        realmName,
+      );
+    }
+
+    await openRealm(page, realmName);
+    await goToIdentityProviders(page);
+    await page.locator('a[href$="/corp_sso/settings"]').click();
     await page.getByTestId("admin-events-tab").click();
 
     await assertEvents(page, [
