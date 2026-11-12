@@ -157,6 +157,8 @@ apply the upper bound to. For example, to apply an upper-bound of `1000` to the 
 `--cache-embedded-sessions-max-count=1000`. An upper bound can not be defined on the following caches:
 `actionToken`, `authenticationSessions`, `loginFailures`, `work`.
 
+When volatile user sessions are in use, limits on the `sessions` and `clientSessions` caches are ignored; only the offline session cache limits remain supported in that mode.
+
 === Specify your own cache configuration file
 
 To specify your own cache configuration file, enter this command:
