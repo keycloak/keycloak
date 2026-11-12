@@ -31,8 +31,12 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
@@ -73,8 +77,10 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.account.custom.CustomAuthFlowOTPTest.LoginTotpPage;
 import org.keycloak.tests.utils.ClientPoliciesUtil;
@@ -135,6 +141,12 @@ public class AcrAuthFlowTest {
 
     @InjectPage
     protected LoginPage loginPage;
+
+    @InjectPage
+    protected RegisterPage registerPage;
+
+    @InjectPage
+    protected ErrorPage errorPage;
 
     @InjectWebDriver
     protected ManagedWebDriver driver;
@@ -507,6 +519,90 @@ public class AcrAuthFlowTest {
         AccessTokenResponse response = oauth.client(CLIENT_ID, CLIENT_SECRET).doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertEquals(200, response.getStatusCode());
         Assertions.assertEquals("acr-otp", oauth.verifyToken(response.getAccessToken()).getAcr());
+    }
+
+    @Test
+    public void testAuthFlowEssential() {
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        loginWithAcr(List.of("acr-password"), true);
+
+        authenticatePassword(PASSWORD);
+        Tokens tokens = assertLoginWithAcr(userId, "acr-password");
+
+        logout(userId, tokens);
+    }
+
+    @Test
+    public void testAuthFlowOTPEssential() {
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        loginWithAcr(List.of("acr-otp"), true);
+
+        authenticatePassword(PASSWORD);
+        authenticateTOTP(TOTP_SECRET);
+        Tokens tokens = assertLoginWithAcr(userId, "acr-otp");
+
+        logout(userId, tokens);
+    }
+
+    /**
+     * The level of the selected flow applies also when the flow contains a level condition which is skipped.
+     * Expected: ACR = "acr-otp" for a user without OTP
+     */
+    @Test
+    public void testAuthFlowWithSkippedLevelConditionEssential() {
+        String flowAlias = "selected-step-up-flow";
+        runOnServer.run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(flowAlias));
+        runOnServer.run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(flowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, subflow -> subflow
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID)
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                        config -> {
+                                            config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2");
+                                            config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, String.valueOf(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE));
+                                        })
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID))));
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", flowAlias, 3);
+
+        loginWithAcr(List.of("acr-otp"), true);
+        authenticatePassword(NO_OTP_USER, PASSWORD);
+        String noOtpUserId = getNoOtpUserId();
+        Tokens tokens = assertLoginWithAcr(noOtpUserId, "acr-otp");
+
+        logout(noOtpUserId, tokens);
+    }
+
+    /**
+     * The level of the selected flow applies only to logins completing that flow, a registration does not reach it.
+     * Expected: essential ACR requiring the level is rejected and no user is created
+     */
+    @Test
+    public void testRegistrationDoesNotReachAuthFlowLoaEssential() {
+        // update the realm before adding the client policies, the realm is restored to this state after the test
+        managedRealm.updateWithCleanup(r -> r.registrationAllowed(true));
+        managedRealm.cleanup().add(r -> r.users().searchByUsername("registered", true).forEach(u -> r.users().get(u.getId()).remove()));
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy(adminClient, managedRealm.getName(), "acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        loginWithAcr(List.of("acr-otp"), true);
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        registerPage.register("First", "Last", "registered@example.com", "registered", "password");
+
+        errorPage.assertCurrent();
+        Assertions.assertEquals("Authentication requirements not fulfilled", errorPage.getError());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.GENERIC_AUTHENTICATION_ERROR)
+                .details(Details.AUTHENTICATION_ERROR_DETAIL, "Forced level of authentication did not meet the requirements. Requested level: 3, Fulfilled level: 1");
+        Assertions.assertTrue(managedRealm.admin().users().searchByUsername("registered", true).isEmpty());
     }
 
     private void startForcedOtpSetup() {

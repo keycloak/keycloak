@@ -27,13 +27,19 @@ import java.util.Optional;
 
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextClassRefType;
 import org.keycloak.dom.saml.v2.assertion.AuthnContextType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
@@ -46,6 +52,7 @@ import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -334,6 +341,73 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
     }
 
     @Test
+    public void authnContextClassRefNotReachedWithSso() {
+        SamlClient samlClient = loginAtLevel1WithUserWithoutOtp();
+
+        // level 2 cannot be reached because the user has no OTP configured
+        samlClient.execute(new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken")
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .assertResponse(this::assertErrorAuthenticationRequirementsNotFullfilled)
+                .getSteps());
+    }
+
+    @Test
+    public void authnContextClassRefNotReachedWithSsoAndIsPassive() {
+        SamlClient samlClient = loginAtLevel1WithUserWithoutOtp();
+
+        samlClient.execute(new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken")
+                .transformObject(authnRequest -> {
+                    authnRequest.setIsPassive(true);
+                    return authnRequest;
+                })
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .assertResponse(this::assertErrorSamlResponsePost)
+                .getSteps());
+    }
+
+    private SamlClient loginAtLevel1WithUserWithoutOtp() {
+        String flowAlias = "step-up-with-otp-if-configured";
+        testingClient.server(REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(flowAlias));
+        testingClient.server(REALM_NAME)
+                .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(flowAlias).inForms(forms -> forms.clear()
+                        .addAuthenticatorExecution(Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> subFlow
+                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                        config -> {
+                                            config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "1");
+                                            config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, String.valueOf(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE));
+                                        })
+                                .addAuthenticatorExecution(Requirement.REQUIRED, PasswordFormFactory.PROVIDER_ID))
+                        .addSubFlowExecution(Requirement.CONDITIONAL, subFlow -> subFlow
+                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                        config -> {
+                                            config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2");
+                                            config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, String.valueOf(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE));
+                                        })
+                                .addAuthenticatorExecution(Requirement.REQUIRED, ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID)
+                                .addAuthenticatorExecution(Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID))
+                ).defineAsBrowserFlow());
+
+        return new SamlClientBuilder()
+                .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                        SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport")
+                .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                .build()
+                .login().user(bburkeUser).build()
+                .login().user(bburkeUser).build()
+                .execute(this::assertResponsePassword);
+    }
+
+    @Test
     public void authnContextClassRefOrder() {
         LevelOfAssuranceFlowTest.configureStepUpFlow(REALM_NAME, testingClient);
 
@@ -419,6 +493,23 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
                     .build()
                     .login().user(bburkeUser).build()
                     .execute(this::assertResponseUnspecified);
+        }
+    }
+
+    @Test
+    public void authnContextClassRefTooHighWithoutStepUpFlowFails() throws IOException {
+        try (RealmAttributeUpdater ignored = new RealmAttributeUpdater(adminClient.realm(REALM_NAME))
+                .setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW)
+                .update()) {
+
+            new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST_SIG,
+                            SAML_ASSERTION_CONSUMER_URL_SALES_POST_SIG, SamlClient.Binding.POST)
+                    .addAuthnContextClassRef("urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken")
+                    .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
+                    .build()
+                    .login().user(bburkeUser).build()
+                    .execute(this::assertErrorAuthenticationRequirementsNotFullfilled);
         }
     }
 

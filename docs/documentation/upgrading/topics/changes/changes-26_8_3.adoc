@@ -141,6 +141,20 @@ on an affected client, set `post.logout.redirect.uris` to `-`; otherwise, update
 its post-logout redirect URIs to satisfy those rules. Setting `-` also works
 after upgrading, so an affected client can still be remediated.
 
+=== Stricter enforcement of the requested level of authentication
+// https://github.com/keycloak/keycloak/issues/53157
+
+Previously, {project_name} could complete a login at a lower level of authentication than the client requested, when the authentication flow skipped the steps for the requested level, usually because the user already had a session.
+{project_name} now rejects such logins.
+For OpenID Connect clients, the requested level is the level of an essential `acr` claim.
+For SAML clients, it is the level of the requested authentication context or of the minimum ACR value of the client.
+The level is now enforced in every authentication flow, including flows without a `Conditional - Level Of Authentication` condition and the registration and reset credentials flows.
+An active login in a flow without the condition now always reaches at least level 1, and the `acr` claim reports it accordingly.
+
+A rejected interactive login ends on an error page.
+A rejected passive login returns the error `unmet_authentication_requirements` or `login_required` to an OpenID Connect client and the `NoAuthnContext` status to a SAML client.
+For the level that each flow reaches, see link:{adminguide_link}#_step-up-flow[Creating a browser login flow with step-up mechanism] in the {adminguide_name}.
+
 === Organization Redirect URL now validated against the account client
 
 The Redirect URL configured on an organization is now validated against the valid redirect URIs of the `account` client. If the URL is not listed in the client's allowed redirect URIs, the user is redirected to the account console instead. When a custom client is specified in the invitation, the organization's Redirect URL is ignored and the user is redirected to the custom client's base URL.
