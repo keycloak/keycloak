@@ -105,22 +105,30 @@ const DetailCell = (event: AdminEventRepresentation) => (
   </DescriptionList>
 );
 
+// The server matches the path with SQL LIKE, so `_` and `%` in names are wildcards as well.
+// Returns a check for the literal path, or undefined when the server already matches exactly.
+function literalMatcher(pattern: string | undefined) {
+  if (!pattern || !/[_%]/.test(pattern)) {
+    return undefined;
+  }
+  const prefix = pattern.endsWith("/*") ? pattern.slice(0, -1) : undefined;
+  if ((prefix ?? pattern).includes("*")) {
+    return undefined;
+  }
+  return (path: string) =>
+    prefix ? path.startsWith(prefix) : path === pattern;
+}
+
 type AdminEventsProps = {
   /**
    * Resource path(s) to restrict the events to. The server accepts only one pattern per request,
    * so multiple paths (for example an exact path plus its sub-resources) are queried separately and merged.
    */
   resourcePath?: string | string[];
-  /**
-   * The server matches the resource path with SQL LIKE, so characters like `_` in names act as wildcards.
-   * When set, only events whose resource path is accepted are listed.
-   */
-  matchPath?: (path: string) => boolean;
 };
 
 export const AdminEvents = ({
   resourcePath: resourcePathProp,
-  matchPath,
 }: AdminEventsProps) => {
   const { adminClient } = useAdminClient();
   const resourcePaths = ([] as string[]).concat(resourcePathProp ?? []);
@@ -201,12 +209,16 @@ export const AdminEvents = ({
         max,
       });
 
-    if (resourcePaths.length <= 1 && !matchPath) {
+    if (
+      resourcePaths.length <= 1 &&
+      !resourcePaths.some((path) => literalMatcher(path))
+    ) {
       return find(resourcePath, first, max);
     }
 
     // Rows that are filtered out don't count, so continue reading until enough rows are found.
     const findMatching = async (path: string | undefined, needed?: number) => {
+      const matchPath = literalMatcher(path);
       if (!matchPath) {
         return find(path, 0, needed);
       }

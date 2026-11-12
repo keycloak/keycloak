@@ -345,15 +345,6 @@ export default function RealmRoleTabs() {
                         `roles-by-id/${id}`,
                         `roles-by-id/${id}/*`,
                       ]}
-                      matchPath={(path) =>
-                        [
-                          `clients/${clientId}/roles/${roleName}`,
-                          `roles-by-id/${id}`,
-                        ].some(
-                          (prefix) =>
-                            path === prefix || path.startsWith(`${prefix}/`),
-                        )
-                      }
                     />
                   )
                 ) : (
