@@ -26,14 +26,11 @@ import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.conformance.OpenIdConformanceServer;
-import org.keycloak.testframework.conformance.runner.ConformanceAttempts;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.tests.conformance.AbstractConformanceTest;
 import org.keycloak.tests.conformance.ConformanceRealmUtil;
-import org.keycloak.tests.conformance.oidc.AbstractOidcConformanceTest;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -60,7 +57,8 @@ public class OidcRealmConfig implements RealmConfig {
     public static final String CLIENT_SECRET = "oidcc-client-secret-0123456789abcdef";
     public static final String CLIENT2 = "oidcc-client2";
     public static final String CLIENT2_SECRET = "oidcc-client2-secret-0123456789abcdef";
-    // The suite alias of the first attempt of a module; a retry uses its own, see ConformanceAttempts
+    // The base of the suite aliases; every run of a module uses its own alias, and the test registers its callback as a
+    // redirect URI of the clients for the run (AbstractOidcConformanceTest)
     public static final String ALIAS = "keycloak";
 
     public static final String CONFIG_PLAN = "oidcc-config-certification-test-plan";
@@ -134,9 +132,6 @@ public class OidcRealmConfig implements RealmConfig {
                         ConformanceRealmUtil.idTokenScriptMapper("conformance test adjustment of the id token",
                                 "conformance-adjustment-oidc-id-token.js"),
                         ConformanceRealmUtil.claimsParameterMapper())
-                // the callback of every attempt of a module, as each attempt uses its own alias
-                .redirectUris(ConformanceAttempts.aliases(ALIAS, AbstractConformanceTest.attempts(AbstractOidcConformanceTest.DEFAULT_RETRIES))
-                        .stream().map(OidcRealmConfig::callback).toArray(String[]::new))
                 .webOrigins(OpenIdConformanceServer.INTERNAL_BASE_URI.toString());
     }
 

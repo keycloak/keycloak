@@ -19,8 +19,10 @@ package org.keycloak.testframework.conformance.runner;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -37,12 +39,13 @@ class ConformanceAttemptsTest {
     private final List<String> notices = new ArrayList<>();
 
     @Test
-    void eachAttemptHasItsOwnAlias() {
-        assertEquals("keycloak", ConformanceAttempts.alias("keycloak", 1));
-        assertEquals("keycloak-retry1", ConformanceAttempts.alias("keycloak", 2));
-        assertEquals(List.of("keycloak", "keycloak-retry1", "keycloak-retry2", "keycloak-retry3"),
-                ConformanceAttempts.aliases("keycloak", 4));
-        assertEquals(List.of("keycloak"), ConformanceAttempts.aliases("keycloak", 0));
+    void everyRunHasItsOwnAlias() {
+        Set<String> aliases = new HashSet<>();
+        for (int i = 0; i < 100; i++) {
+            String alias = ConformanceAttempts.newAlias("keycloak");
+            assertTrue(alias.matches("keycloak-[0-9]+"), alias);
+            assertTrue(aliases.add(alias), "alias used twice: " + alias);
+        }
     }
 
     @Test
@@ -110,27 +113,31 @@ class ConformanceAttemptsTest {
     }
 
     @Test
-    void lateCallbackOfAnEarlierAttemptDoesNotReachALaterAttempt() {
-        // The suite routes a callback to the module run under the alias of the callback URL
+    void lateCallbackOfAFailedRunReachesNeitherItsRetryNorAnotherModule() {
+        // The suite routes a callback to the module run under the alias of its callback URL
         Map<String, List<String>> callbacksByAlias = new HashMap<>();
-        List<String> aliasesOfAttempts = new ArrayList<>();
+        List<String> aliasesOfModuleA = new ArrayList<>();
 
-        ConformanceAttempts.Outcome outcome = ConformanceAttempts.run("module", 4, attempt -> {
-            String alias = ConformanceAttempts.alias("keycloak", attempt);
-            aliasesOfAttempts.add(alias);
+        ConformanceAttempts.Outcome moduleA = ConformanceAttempts.run("module-a", 4, attempt -> {
+            String alias = ConformanceAttempts.newAlias("keycloak");
+            aliasesOfModuleA.add(alias);
             callbacksByAlias.put(alias, new ArrayList<>());
             if (attempt == 1) {
                 throw new IllegalStateException("timed out waiting for the browser");
             }
-            // the browser of the first attempt sends its authorization response only now
-            callbacksByAlias.get(aliasesOfAttempts.get(0)).add("late authorization response of attempt 1");
             return callbacksByAlias.get(alias).isEmpty() ? result("PASSED") : result("FAILED");
         }, ConformanceAttemptsTest::failure, notices::add);
 
-        assertTrue(outcome.succeeded(), outcome::failure);
-        assertEquals(List.of("keycloak", "keycloak-retry1"), aliasesOfAttempts);
-        assertEquals(List.of("late authorization response of attempt 1"), callbacksByAlias.get("keycloak"));
-        assertTrue(callbacksByAlias.get("keycloak-retry1").isEmpty());
+        String aliasOfModuleB = ConformanceAttempts.newAlias("keycloak");
+        callbacksByAlias.put(aliasOfModuleB, new ArrayList<>());
+        // the browser of module A's first, failed run sends its authorization response only now
+        callbacksByAlias.get(aliasesOfModuleA.get(0)).add("late authorization response");
+
+        assertTrue(moduleA.succeeded(), moduleA::failure);
+        assertEquals(2, aliasesOfModuleA.size());
+        assertEquals(List.of("late authorization response"), callbacksByAlias.get(aliasesOfModuleA.get(0)));
+        assertTrue(callbacksByAlias.get(aliasesOfModuleA.get(1)).isEmpty());
+        assertTrue(callbacksByAlias.get(aliasOfModuleB).isEmpty());
     }
 
     private static ConformanceModuleResult result(String result) {

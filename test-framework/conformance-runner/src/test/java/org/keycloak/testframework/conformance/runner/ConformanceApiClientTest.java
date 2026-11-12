@@ -63,8 +63,9 @@ class ConformanceApiClientTest {
         suite = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
         suite.createContext("/api/", this::handle);
         suite.start();
-        URI baseUri = URI.create("http://" + suite.getAddress().getAddress().getHostAddress() + ":"
-                + suite.getAddress().getPort());
+        // the URI constructor puts an IPv6 address, e.g. the loopback address with java.net.preferIPv6Addresses, in brackets
+        URI baseUri = new URI("http", null, suite.getAddress().getAddress().getHostAddress(), suite.getAddress().getPort(),
+                null, null, null);
         client = new ConformanceApiClient(baseUri, SSLContext.getDefault(), Duration.ofSeconds(3));
     }
 

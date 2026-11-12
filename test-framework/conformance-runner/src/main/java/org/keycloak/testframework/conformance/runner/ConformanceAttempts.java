@@ -17,10 +17,9 @@
 
 package org.keycloak.testframework.conformance.runner;
 
-import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 /**
  * Runs a conformance module up to a number of attempts, as modules occasionally fail for reasons outside of the system
@@ -30,8 +29,9 @@ import java.util.stream.IntStream;
  * an exception.</li>
  * <li>A {@link ModuleCleanupFailedException} is not retried: the module and its browser may still be running, so another
  * attempt could interfere with them.</li>
- * <li>Each attempt uses its own suite alias ({@link #alias}), so a late callback of an earlier attempt's browser, e.g.
- * an authorization response, goes to that attempt's callback URL and never reaches a later attempt's module.</li>
+ * <li>Every run of a module, i.e. every attempt of every module, uses its own suite alias ({@link #newAlias}), so a
+ * late callback of an earlier run's browser, e.g. an authorization response, goes to that run's callback URL and never
+ * reaches the module of another run, neither a later attempt of the same module nor another module.</li>
  * </ul>
  */
 public final class ConformanceAttempts {
@@ -39,19 +39,15 @@ public final class ConformanceAttempts {
     private ConformanceAttempts() {
     }
 
-    /**
-     * The suite alias of an attempt: {@code base} for the first, as without retries, and {@code <base>-retry<n>} for the
-     * n-th retry.
-     */
-    public static String alias(String base, int attempt) {
-        return attempt <= 1 ? base : base + "-retry" + (attempt - 1);
-    }
+    private static final AtomicLong RUNS = new AtomicLong();
 
     /**
-     * The aliases of all attempts, e.g. to register the callback URL of every attempt as a client's redirect URI.
+     * A suite alias no other run of a module in this JVM uses: {@code <base>-<n>}. The suite routes the callbacks to the
+     * running module by the alias in the callback URL, so its callback URL has to be accepted by the system under test,
+     * e.g. registered as a redirect URI of a client, before the run.
      */
-    public static List<String> aliases(String base, int attempts) {
-        return IntStream.rangeClosed(1, Math.max(1, attempts)).mapToObj(attempt -> alias(base, attempt)).toList();
+    public static String newAlias(String base) {
+        return base + "-" + RUNS.incrementAndGet();
     }
 
     /**

@@ -104,7 +104,7 @@ Modules occasionally fail for reasons outside of Keycloak, e.g. network errors o
 Retries are opt-in per test: the OpenID Connect tests run a module that does not finish with its expected result, or whose run fails with an exception, again, in a new plan, up to 3 times; the OID4VCI and OID4VP tests do not retry.
 Only if all attempts fail does the test fail, with the result of the last attempt.
 A module whose run failed with an exception, e.g. as it timed out, is stopped before it runs again; if it cannot be stopped, the test fails right away, as the attempts could interfere.
-Each attempt also uses its own suite alias (`keycloak`, `keycloak-retry1`, ...), so a late callback of an earlier attempt's browser, e.g. an authorization response, cannot reach a later attempt's module; the static clients register the callback of every attempt.
+Every run of a module, i.e. every attempt of every module, also uses its own suite alias (`keycloak-1`, `keycloak-2`, ...), so a late callback of another run's browser, e.g. an authorization response, cannot reach its module; the OpenID Connect tests register the callback URL of the run as a redirect URI of the static clients for the run.
 Every retry is printed to the test output, prefixed with `[conformance retry]`, also when a later attempt passes, so modules that pass only when run again stay visible.
 Set the number of retries for all tests with the `kc.test.conformance.retries` option (system property, `KC_TEST_CONFORMANCE_RETRIES` environment variable or `keycloak-test.properties`), e.g. `0` to see every failure while iterating.
 The OID4VCI and OID4VP tests use the same alias for all their attempts, so a late callback could still reach a retry of them:

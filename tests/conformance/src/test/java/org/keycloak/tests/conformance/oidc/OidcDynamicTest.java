@@ -162,6 +162,12 @@ public class OidcDynamicTest extends AbstractOidcConformanceTest {
         return groups.stream().flatMap(group -> group);
     }
 
+    // The suite registers its clients itself, with the redirect URIs of the run's alias
+    @Override
+    protected Runnable aliasCreated(String alias) {
+        return null;
+    }
+
     @Override
     protected JsonNode suiteConfig(ConformanceModuleVariant module) {
         return OidcSuiteConfig.createDynamic(OpenIdConformanceServer.KEYCLOAK_BASE_URI, suiteAlias(OidcRealmConfig.ALIAS),

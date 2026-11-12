@@ -17,10 +17,16 @@
 
 package org.keycloak.tests.conformance.oidc;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
@@ -52,9 +58,34 @@ public abstract class AbstractOidcConformanceTest extends AbstractConformanceTes
      */
     public static final int DEFAULT_RETRIES = 3;
 
+    @InjectAdminClient
+    protected Keycloak adminClient;
+
     @Override
     protected int defaultRetries() {
         return DEFAULT_RETRIES;
+    }
+
+    /**
+     * Registers the callback URL of the run's alias as a redirect URI of the static clients for the run. Each run has its
+     * own alias, so the redirect URIs cannot be registered upfront, and a wildcard would also accept the unregistered
+     * redirect URI of oidcc-ensure-registered-redirect-uri, the alias's base URL with a random suffix.
+     */
+    @Override
+    protected Runnable aliasCreated(String alias) {
+        String callback = OidcRealmConfig.callback(alias);
+        List<String> clientIds = List.of(OidcRealmConfig.CLIENT, OidcRealmConfig.CLIENT2);
+        clientIds.forEach(clientId -> updateRedirectUris(clientId, redirectUris -> redirectUris.add(callback)));
+        return () -> clientIds.forEach(clientId -> updateRedirectUris(clientId, redirectUris -> redirectUris.remove(callback)));
+    }
+
+    private void updateRedirectUris(String clientId, Consumer<List<String>> update) {
+        ClientsResource clients = adminClient.realm(OidcRealmConfig.REALM).clients();
+        ClientRepresentation client = clients.findByClientId(clientId).get(0);
+        List<String> redirectUris = client.getRedirectUris() == null ? new ArrayList<>() : new ArrayList<>(client.getRedirectUris());
+        update.accept(redirectUris);
+        client.setRedirectUris(redirectUris);
+        clients.get(client.getId()).update(client);
     }
 
     protected abstract String plan();
