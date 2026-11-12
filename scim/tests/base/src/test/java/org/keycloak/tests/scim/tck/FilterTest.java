@@ -566,6 +566,33 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
+    public void testFilterCustomAttributeWithUnannotatedUserProfileAttribute() {
+        // user profile attributes are not required to declare annotations. An attribute without any
+        // annotations used to cause a NullPointerException when resolving the custom SCIM schema
+        // attributes, and aborted the model attribute lookup for any attribute declared after it.
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute unannotated = new UPAttribute("unannotated");
+        unannotated.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(unannotated);
+        realm.admin().users().userProfile().update(upConfig);
+        assertThat(realm.admin().users().userProfile().getConfiguration().getAttribute("unannotated").getAnnotations(), is(nullValue()));
+
+        String customSchema = "urn:test:custom:" + KeycloakModelUtils.generateId();
+        addOrReplaceUPAttribute(customSchema, "attrOne");
+
+        User user = createUser("bob");
+        UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+        rep.setAttributes(Map.of(
+                "unannotated", List.of("some-value"),
+                "scim.attrOne", List.of("value-one")));
+        realm.admin().users().get(user.getId()).update(rep);
+        createUser("alice");
+
+        String filter = ResourceFilter.filter().eq(customSchema + ":attrOne", "value-one").build();
+        assertSingleResult(client.users().getAll(filter), user.getUserName());
+    }
+
+    @Test
     public void testFilterMultivaluedCustomAttributeConjunctionAndNegation() {
         // Regression test for https://github.com/keycloak/keycloak/issues/51805: JOIN-based predicate
         // generation for collection-backed attributes could not correctly express conjunction across
