@@ -618,3 +618,16 @@ Communication between nodes is encrypted using TLS by default.
 If you were using the `--cache-stack` option in your configuration, remove it.
 To use a custom JGroups stack, configure it directly in your cache configuration XML file using the `--cache-config-file` option.
 Remove any discovery settings specific to previously deprecated stacks, such as `jgroups.dns.query`.
+
+=== Credential update methods without default implementation
+// https://github.com/keycloak/keycloak/issues/55034
+
+The default implementations of the following methods were removed, and the methods are now abstract:
+
+* `SubjectCredentialManager.updateStoredCredential(CredentialModel oldCred, CredentialModel newCred)`
+* `UserCredentialStore.updateCredential(RealmModel realm, UserModel user, CredentialModel oldCred, CredentialModel newCred)`
+* `UserFederatedUserCredentialStore.updateCredential(RealmModel realm, String userId, CredentialModel oldCred, CredentialModel newCred)`
+
+The removed default implementations were not atomic, and a credential that was changed concurrently could be overwritten.
+Custom implementations of these interfaces must implement the methods.
+They must replace the credential only if the stored credential still has the content of `oldCred`, return `false` otherwise, and perform the comparison and the update atomically, for example by locking the stored credential.
