@@ -82,24 +82,13 @@ public interface SubjectCredentialManager {
      * of the old version. Use this to update a credential that was read earlier, so that changes made in the meantime
      * are not overwritten.
      * <p>
-     * Implementations writing to the Keycloak credential store replace the credential atomically. The default
-     * implementation is not atomic, and a change that is committed between the check and the update can be lost.
-     * <p>
-     * The default implementation exists for backwards compatibility. It should be removed in the next major release,
-     * to force implementations to provide an atomic implementation.
+     * Implementations must make the check and the replacement atomic, for example by locking the stored credential.
      *
      * @param oldCred the credential as it was read, identified by its id
      * @param newCred the credential to store instead
      * @return {@code true} if the credential was replaced, {@code false} if it was changed or removed in the meantime
      */
-    default boolean updateStoredCredential(CredentialModel oldCred, CredentialModel newCred) {
-        CredentialModel current = getStoredCredentialById(oldCred.getId());
-        if (current == null || !current.hasSameContent(oldCred)) {
-            return false;
-        }
-        updateStoredCredential(newCred);
-        return true;
-    }
+    boolean updateStoredCredential(CredentialModel oldCred, CredentialModel newCred);
 
     /**
      * Updates a credential of the entity with an updated {@link CredentialModel}.
