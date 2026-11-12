@@ -364,12 +364,12 @@ async function main() {
   const runTimestamp = formatTimestamp();
   const tempRoot = await mkdtemp(path.join(tmpdir(), "kc-pf6-login-migrate-"));
   const stagedLoginDir = path.join(tempRoot, "login");
-  await cp(loginDir, stagedLoginDir, { recursive: true });
+  await cp(loginDir, stagedLoginDir, { recursive: true, dereference: true });
 
   let stagedCommonDir;
   if (commonDir) {
     stagedCommonDir = path.join(tempRoot, "common");
-    await cp(commonDir, stagedCommonDir, { recursive: true });
+    await cp(commonDir, stagedCommonDir, { recursive: true, dereference: true });
   }
 
   const steps = [

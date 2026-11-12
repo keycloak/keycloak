@@ -38,6 +38,11 @@ public class MigrateTo27_0_0Test {
     private final MigrateTo27_0_0 migrator = new MigrateTo27_0_0();
 
     @Test
+    public void migrateDoesNotAccessPersistedRealms() {
+        migrator.migrate(null);
+    }
+
+    @Test
     public void migrateRealmUpdatesBuiltinLoginThemes() {
         assertLoginThemeMigrated("keycloak.v2", "keycloak.v3");
         assertLoginThemeMigrated("rh-sso.v2", "keycloak.v3");
@@ -49,7 +54,7 @@ public class MigrateTo27_0_0Test {
     }
 
     @Test
-    public void migrateRealmUpdatesClientLoginThemes() {
+    public void migrateImportUpdatesClientLoginThemes() {
         Map<String, String> v2ClientAttrs = new HashMap<>();
         v2ClientAttrs.put("login_theme", "keycloak.v2");
         ClientModel v2Client = clientWithAttributes(v2ClientAttrs);
@@ -63,7 +68,7 @@ public class MigrateTo27_0_0Test {
         ClientModel customClient = clientWithAttributes(customClientAttrs);
 
         RealmModel realm = realmWithClients(Stream.of(v2Client, rhSsoClient, customClient));
-        migrator.migrateRealm(null, realm);
+        migrator.migrateImport(null, realm, new RealmRepresentation(), false);
 
         assertThat(v2ClientAttrs.get("login_theme"), is("keycloak.v3"));
         assertThat(rhSsoClientAttrs.get("login_theme"), is("keycloak.v3"));

@@ -56,6 +56,7 @@
   <@group name=name label=label error=error required=required errorId=errorId>
     <span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
         <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" autocapitalize="none" spellcheck="false" <#if autofocus>autofocus</#if>
+                <#if required>aria-required="true"</#if>
                 <#if inputmode?has_content>inputmode="${inputmode}"</#if>
                 <#if error?has_content>aria-invalid="true" aria-describedby="${errorId}"</#if>/>
         <@errorIcon error=error/>
@@ -71,6 +72,7 @@
       <div class="${properties.kcInputGroupItemClass!} ${properties.kcFill!}">
         <span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
           <input id="${name}" name="${name}" value="${value}" type="password" autocomplete="${autocomplete}" <#if autofocus>autofocus</#if>
+                  <#if required>aria-required="true"</#if>
                   <#if error?has_content>aria-invalid="true" aria-describedby="input-error-${name}"</#if>/>
           <@errorIcon error=error/>
         </span>
@@ -174,6 +176,7 @@
         type="checkbox"
         id="${name}"
         name="${name}"
+        <#if required>aria-required="true"</#if>
         <#if value>checked</#if>
         <#if invalid || error?has_content>aria-invalid="true"</#if>
         <#if error?has_content>aria-describedby="${errorId}"</#if>

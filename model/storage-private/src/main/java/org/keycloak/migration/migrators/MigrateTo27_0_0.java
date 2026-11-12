@@ -38,6 +38,11 @@ public class MigrateTo27_0_0 extends RealmMigration {
     }
 
     @Override
+    public void migrate(KeycloakSession session) {
+        // Liquibase migrates persisted themes; Java migration is only needed for imports.
+    }
+
+    @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
         updateLoginTheme(realm);
     }
