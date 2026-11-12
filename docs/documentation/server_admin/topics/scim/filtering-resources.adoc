@@ -88,7 +88,8 @@ and also does not match resources where the attribute has no value. For a multi-
 attribute has no value.
 
 User attribute values longer than 255 characters can only be compared using the `eq`, `ne`, and `pr` operators.
-Other operators, and their negations, do not match such values.
+For single-valued attributes, other operators and their negations do not match such values.
+For multi-valued attributes, a resource containing only long values still matches a negated comparison using another operator.
 
 The `eq` and `ne` operators accept the `null` literal, but the comparison never matches, so it cannot be used to find
 resources without a value.

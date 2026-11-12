@@ -280,16 +280,13 @@ public class ScimJPAPredicateProvider {
             return cb.disjunction();
         }
 
-        boolean longValue = stringValue.length() > MAX_SHORT_VALUE_LENGTH;
         byte[] valueHash = caseInsensitive ? JpaHashUtils.hashForAttributeValueLowerCase(stringValue) : JpaHashUtils.hashForAttributeValue(stringValue);
 
         if ("eq".equals(operation)) {
-            // a short value is never stored in LONG_VALUE, so it can only match the VALUE column
-            return longValue ? cb.equal(hash, valueHash) : cb.disjunction();
+            return cb.equal(hash, valueHash);
         }
 
-        // "ne": every long value differs from a short value
-        return longValue ? cb.and(cb.isNotNull(hash), cb.notEqual(hash, valueHash)) : cb.isNotNull(hash);
+        return cb.and(cb.isNotNull(hash), cb.notEqual(hash, valueHash));
     }
 
     /**
