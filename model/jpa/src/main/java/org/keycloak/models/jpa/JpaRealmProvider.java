@@ -883,6 +883,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public GroupModel createGroup(RealmModel realm, String id, Type type, String name, GroupModel toParent) {
+        GroupAdapter.validateGroupName(name);
         if (id == null) {
             id = KeycloakModelUtils.generateId();
         } else if (GroupEntity.TOP_PARENT_ID.equals(id)) {

@@ -52,6 +52,8 @@ import org.hibernate.annotations.Nationalized;
 )
 public class GroupEntity {
 
+    public static final int NAME_MAX_LENGTH = 255;
+
     /**
      * ID set in the PARENT column to mark the group as top level.
      */
@@ -63,7 +65,7 @@ public class GroupEntity {
     protected String id;
 
     @Nationalized
-    @Column(name = "NAME")
+    @Column(name = "NAME", length = NAME_MAX_LENGTH)
     protected String name;
 
     @Nationalized
