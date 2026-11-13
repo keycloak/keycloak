@@ -49,6 +49,10 @@ public interface UserVerifiableCredentialResource {
     List<IssuedVerifiableCredentialRepresentation> getIssuedCredentials();
 
     @DELETE
+    @Path("issued-credentials")
+    void revokeAllIssuedCredentials();
+
+    @DELETE
     @Path("issued-credentials/{id}")
     void revokeIssuedCredential(@PathParam("id") String credentialId);
 
