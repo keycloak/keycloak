@@ -947,6 +947,7 @@ public class LoginActionsService {
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername())
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, brokerContext.getId())
                 .detail(Details.IDENTITY_PROVIDER_BROKER_SESSION_ID, brokerContext.getBrokerSessionId());
 
         AuthenticationProcessor processor = new AuthenticationProcessor() {
@@ -1170,6 +1171,10 @@ public class LoginActionsService {
         if (identityProvider != null) {
             event.detail(Details.IDENTITY_PROVIDER, identityProvider)
                     .detail(Details.IDENTITY_PROVIDER_USERNAME, userSessionNotes.get(Details.IDENTITY_PROVIDER_USERNAME));
+            String identityProviderUserId = userSessionNotes.get(Details.IDENTITY_PROVIDER_USER_ID);
+            if (identityProviderUserId != null) {
+                event.detail(Details.IDENTITY_PROVIDER_USER_ID, identityProviderUserId);
+            }
         }
     }
 
