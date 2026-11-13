@@ -105,7 +105,9 @@ public class SSOTest {
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = events.poll();
-        EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         String sessionId1 = loginEvent.getSessionId();
 
         String code = oauth.parseLoginResponse().getCode();
@@ -124,7 +126,8 @@ public class SSOTest {
         EventRepresentation loginEvent2 = events.poll();
         EventAssertion.assertSuccess(loginEvent2)
                 .type(EventType.LOGIN)
-                .clientId("test-app");
+                .clientId("test-app")
+                .withoutDetails(Details.CREDENTIAL_TYPE);
         String sessionId2 = loginEvent2.getSessionId();
 
         assertEquals(sessionId1, sessionId2);
