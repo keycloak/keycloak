@@ -1043,6 +1043,17 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
+    public boolean markIssuedVerifiableCredentialCompleted(String credentialId) {
+        if (localStorage().markIssuedVerifiableCredentialCompleted(credentialId)) {
+            return true;
+        }
+        if (getFederatedStorage() != null) {
+            return getFederatedStorage().markIssuedVerifiableCredentialCompleted(credentialId);
+        }
+        return false;
+    }
+
+    @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
         if (localStorage().removeIssuedVerifiableCredential(credentialId)) {
             return true;

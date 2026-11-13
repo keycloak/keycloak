@@ -74,6 +74,38 @@ public class FederatedIssuedVerifiableCredentialTest extends AbstractUserTest {
 
     @Test
     @DatabaseTest
+    public void testMarkIssuedCredentialCompletedForFederatedUser() {
+        String federatedUserId = createFederatedUser("fed-user-issued-completed");
+        String clientId = createTestClient("wallet-client");
+        String scopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
+
+        String issuedVcId = runOnServer.fetchString(session -> {
+            UserVerifiableCredentialModel addedVC = session.users().addVerifiableCredential(federatedUserId, new UserVerifiableCredentialModel("vc_01", scopeId));
+            IssuedVerifiableCredentialModel issuedVc = new IssuedVerifiableCredentialModel(federatedUserId, addedVC.getId(), clientId);
+            issuedVc.setRevision("rev-001");
+            return session.users().addIssuedVerifiableCredential(issuedVc).getId();
+        });
+
+        runOnServer.run(session -> {
+            List<IssuedVerifiableCredentialModel> issued = session.users()
+                    .getIssuedVerifiableCredentialsStreamByUser(federatedUserId)
+                    .toList();
+            assertEquals(1, issued.size());
+            assertFalse(issued.get(0).isCompleted());
+
+            assertTrue(session.users().markIssuedVerifiableCredentialCompleted(issuedVcId));
+
+            List<IssuedVerifiableCredentialModel> afterMark = session.users()
+                    .getIssuedVerifiableCredentialsStreamByUser(federatedUserId)
+                    .toList();
+            assertTrue(afterMark.get(0).isCompleted());
+
+            assertFalse(session.users().markIssuedVerifiableCredentialCompleted("non-existent-id"));
+        });
+    }
+
+    @Test
+    @DatabaseTest
     public void testRemoveIssuedCredentialForFederatedUser() {
         String federatedUserId = createFederatedUser("fed-user-issued-remove");
         String clientId = createTestClient("wallet-client");

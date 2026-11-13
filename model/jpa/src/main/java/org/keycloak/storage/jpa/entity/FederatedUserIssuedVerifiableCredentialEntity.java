@@ -61,6 +61,9 @@ public class FederatedUserIssuedVerifiableCredentialEntity {
     @Column(name="REVISION", nullable = false)
     protected String revision;
 
+    @Column(name="COMPLETED", nullable = false)
+    protected boolean completed;
+
     public String getId() {
         return id;
     }
@@ -131,6 +134,14 @@ public class FederatedUserIssuedVerifiableCredentialEntity {
 
     public void setRevision(String revision) {
         this.revision = revision;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.completed = completed;
     }
 
     @Override

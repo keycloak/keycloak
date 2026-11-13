@@ -8,4 +8,5 @@ export default interface IssuedUserVerifiableCredentialRepresentation {
   revision?: string;
   clientName?: string;
   clientBaseUrl?: string;
+  completed?: boolean;
 }
