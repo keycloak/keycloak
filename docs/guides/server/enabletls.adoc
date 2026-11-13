@@ -82,6 +82,30 @@ For example to only enable TLSv1.3, use a command such as the following: `kc.sh 
 By default {project_name} will reload the certificates, keys, and keystores specified in `+https-*+` options every hour. For environments where your server keys may need frequent rotation, this allows that to happen without a server restart. You may override the default via the `https-certificates-reload-period` option. Interval on which to reload key store, trust store, and certificate files referenced by `+https-*+` options.
 The value may be a java.time.Duration value, an integer number of seconds, or an integer followed by one of the time units [`ms`, `h`, `m`, `s`, `d`]. Must be greater than 30 seconds. Use `-1` to disable.
 
+== Post-quantum HTTPS authentication (POC)
+
+This proof of concept uses Bouncy Castle TLS for the main HTTPS listener outside FIPS mode.
+It supports conventional RSA/ECDSA identities and pure ML-DSA identities without changing JVM-wide provider order.
+It does not configure outbound HTTPS clients or the separate management listener.
+
+For ML-DSA, supply a PKCS12 keystore containing an ML-DSA-65 private key and certificate:
+
+<@kc.start parameters="--https-key-store-file=/path/to/mldsa.p12 --https-key-store-type=PKCS12 --https-key-store-password=<password> --https-protocols=TLSv1.3"/>
+
+Use JDK 21 or later to run the server and ML-DSA-capable tooling to generate the certificate beforehand.
+PKCS12 files are loaded using Bouncy Castle; use PKCS12 rather than PEM for ML-DSA in this POC.
+Clients must support ML-DSA TLS authentication and trust the certificate or its issuer.
+An ML-DSA-only identity cannot authenticate to clients supporting only conventional signatures.
+The existing certificate reload and client authentication settings continue to apply.
+For a migration period, a PKCS12 keystore can contain both an RSA private-key entry and an ML-DSA private-key entry, with certificates valid for the same hostname.
+The server selects a compatible identity from the client's advertised signature schemes.
+This allows conventional clients to continue using RSA; it does not require post-quantum authentication on every connection.
+This POC covers software private keys; hardware-backed key stores have not been validated.
+
+ML-DSA authentication is not hybrid: it relies on ML-DSA alone.
+It does not itself protect recorded traffic against future decryption; that also requires post-quantum key exchange.
+Cache transport settings do not configure the HTTPS listener.
+
 <@opts.printRelevantOptions includedOptions="https-* http-enabled" excludedOptions="https-trust-store-* https-client-auth https-management-* https-management-client-auth">
 
 === Management server

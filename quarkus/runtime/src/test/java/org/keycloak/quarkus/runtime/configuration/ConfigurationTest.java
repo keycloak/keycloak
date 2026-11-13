@@ -1196,8 +1196,16 @@ public class ConfigurationTest extends AbstractConfigurationTest {
                 HttpPropertyMappers.TLS_PREFIX + "key-store.p12.path", "server.p12",
                 HttpPropertyMappers.TLS_PREFIX + "key-store.p12.password", "pass"
         ));
+        assertExternalConfig(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.provider", "BC");
         assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.jks.path");
         assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.other.path");
+    }
+
+    @Test
+    public void testHttpFipsDoesNotSelectRegularBcPkcs12() {
+        ConfigArgsConfigSource.setCliArgs("--https-key-store-file=server.p12", "--fips-mode=non-strict");
+        initConfig();
+        assertExternalConfigNull(HttpPropertyMappers.TLS_PREFIX + "key-store.p12.provider");
     }
 
     @Test
