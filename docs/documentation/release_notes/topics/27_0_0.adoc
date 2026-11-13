@@ -27,6 +27,10 @@ This protects brokered logins against assertion replay, in particular in IdP-ini
 How long a consumed assertion is remembered is bounded by the new *OneTimeUse maximum age* setting of the SAML identity provider, which defaults to 1 hour.
 See the upgrading guide for details.
 
+== Refresh token revocation configurable per client
+
+The realm settings *Revoke Refresh Token* and *Refresh Token Max Reuse* can now be overridden per client in the *Advanced settings* section of the client. This allows enabling refresh token rotation only for clients that need it, or exempting specific clients when rotation is enabled for the realm. When no client override is set, the realm setting is used.
+
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
