@@ -16,11 +16,15 @@
  */
 package org.keycloak.crypto;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
+
+import org.keycloak.common.crypto.CryptoIntegration;
 
 public class AsymmetricSignatureSignerContext implements SignatureSignerContext {
 
@@ -48,12 +52,28 @@ public class AsymmetricSignatureSignerContext implements SignatureSignerContext 
     @Override
     public byte[] sign(byte[] data) throws SignatureException {
         try {
-            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
+            Signature signature = getSignature();
             signature.initSign((PrivateKey) key.getPrivateKey());
             signature.update(data);
             return signature.sign();
         } catch (Exception e) {
             throw new SignatureException("Signing failed", e);
+        }
+    }
+
+    private Signature getSignature()
+            throws NoSuchAlgorithmException, NoSuchProviderException {
+        if (KeyType.AKP.equals(key.getType())) {
+            // AKP private key encodings are not necessarily portable across providers. Use the same
+            // crypto provider that created and loaded the key to avoid provider-ordering mismatches.
+            return CryptoIntegration.getProvider().getSignature(key.getAlgorithmOrDefault());
+        }
+
+        try {
+            return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(key.getAlgorithmOrDefault(), key.getCurve()));
+        } catch (NoSuchAlgorithmException e) {
+            // Retry using the current crypto provider's override implementation
+            return CryptoIntegration.getProvider().getSignature(key.getAlgorithmOrDefault());
         }
     }
 

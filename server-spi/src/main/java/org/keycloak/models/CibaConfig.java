@@ -181,7 +181,7 @@ public class CibaConfig extends AbstractConfig {
 
     public Algorithm getBackchannelAuthRequestSigningAlg(ClientModel client) {
         String alg = client.getAttribute(CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
-        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+        return alg == null ? null : Algorithm.fromName(alg);
     }
 
     public String getBackchannelClientNotificationEndpoint(ClientModel client) {
