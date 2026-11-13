@@ -209,3 +209,8 @@ p.instruction:has(+ .pf-v6-c-login__main-footer),
   margin-bottom: var(--pf-t--global--spacer--md);
 }
 
+.pf-v6-c-form__actions .pf-v6-c-button {
+    white-space: normal;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
