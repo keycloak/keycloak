@@ -663,6 +663,24 @@ For example, if an administrator marked the user's email as not verified, a late
 Previously, the flag was left unchanged for existing users with an unchanged address in this situation.
 If this behavior is not desired, set *Trust Email* to *OFF* for that identity provider. {project_name} then leaves the flag unchanged for existing users whose email address has not changed, and sets it to `false` for new users until the email is verified locally.
 
+=== Custom truststore in `kcadm` and `kcreg` now rejects self-signed certificates not present in the truststore
+
+When `kcadm` or `kcreg` is configured with a custom truststore (via `--truststore` or `config truststore`), a self-signed server certificate is now only accepted if it has been explicitly imported into that truststore.
+Previously, any self-signed certificate was accepted regardless of the truststore contents.
+
+If you use a custom truststore and connect to a {project_name} server with a self-signed certificate, ensure that certificate is imported into your truststore:
+
+[source,bash]
+----
+keytool -exportcert -alias <server-alias> -keystore <server-keystore.p12> \
+  -storepass <password> -file server.crt -rfc
+
+keytool -importcert -alias <server-alias> -file server.crt \
+  -keystore <truststore.p12> -storepass <password> -noprompt
+----
+
+Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
