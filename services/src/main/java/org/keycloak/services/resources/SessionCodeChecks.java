@@ -453,7 +453,12 @@ public class SessionCodeChecks {
             // set redirect uri from client_data parameter if valid.
             try {
                 ClientData clientData = ClientData.decodeClientDataFromParameter(clientDataString);
-                if (RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), authSession.getClient()) != null) {
+                // the restarted session keeps the protocol it was started with, so a SAML session is
+                // completed as SAML and never gets OIDC response parameters appended to its redirect
+                // URI - the forbidden set is resolved from the session protocol (see
+                // keycloak/keycloak#53823)
+                if (RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), authSession.getClient(), true,
+                        RedirectUtils.resolveForbiddenParams(authSession.getProtocol())) != null) {
                     authSession.setRedirectUri(clientData.getRedirectUri());
                 }
             } catch (Exception e) {

@@ -684,6 +684,86 @@ public class UserEmailTest extends AbstractUserTest {
     }
 
     @Test
+    public void sendExecuteActionsEmailWithOidcNamedParameterOnSamlClient() throws IOException {
+        // #53823: a redirect URI of a SAML client may carry query parameters named like OIDC response
+        // parameters (e.g. state or code) - the SAML flow never appends those parameters itself, so
+        // the forbidden-OIDC-parameter check must not reject the redirect URI of a SAML client.
+        // For an OIDC client the check still applies (parameter pollution, CVE-2026-9689).
+        UserRepresentation userRep = UserBuilder.create()
+                .username("user-saml-acs").name("User", "SamlAcs").email("user-saml-acs@test.com").build();
+
+        String id = createUser(userRep);
+        UserResource user = managedRealm.admin().users().get(id);
+
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+
+        ClientRepresentation samlClient = new ClientRepresentation();
+        samlClient.setClientId("saml-client-with-oidc-named-param");
+        samlClient.setProtocol("saml");
+        samlClient.setRedirectUris(new LinkedList<>());
+        samlClient.getRedirectUris().add("https://sp.example/acs*");
+        samlClient.setName("saml-client-with-oidc-named-param");
+        samlClient.setEnabled(true);
+        try (Response response = managedRealm.admin().clients().create(samlClient)) {
+            ApiUtil.getCreatedId(response);
+        }
+
+        ClientRepresentation oidcClient = new ClientRepresentation();
+        oidcClient.setClientId("oidc-client-with-oidc-named-param");
+        oidcClient.setRedirectUris(new LinkedList<>());
+        oidcClient.getRedirectUris().add("https://sp.example/acs*");
+        oidcClient.setName("oidc-client-with-oidc-named-param");
+        oidcClient.setEnabled(true);
+        try (Response response = managedRealm.admin().clients().create(oidcClient)) {
+            ApiUtil.getCreatedId(response);
+        }
+
+        // SAML client: a redirect URI carrying an OIDC-named parameter is accepted, the email is sent
+        // to the realm's SMTP server (GreenMail) and received (the mailbox is empty at test start, so
+        // the expected count is cumulative over the two sends).
+        String[] oidcNamedParams = {"state", "code"};
+        for (int i = 0; i < oidcNamedParams.length; i++) {
+            user.executeActionsEmail("saml-client-with-oidc-named-param", "https://sp.example/acs?" + oidcNamedParams[i] + "=x", actions);
+            Assertions.assertEquals(i + 1, mailServer.getReceivedMessages().length,
+                    "execute-actions-email for a SAML client must accept a redirect URI carrying the OIDC-named parameter '" + oidcNamedParams[i] + "'");
+        }
+
+        // The link in the last email must also complete through the action-token flow for the SAML
+        // client: the token is verified (the forbidden-parameter set follows the client protocol on
+        // the consuming side too), the required action is completed, and the redirect URI survives
+        // verbatim to the final info page's back-to-application link.
+        String link = MailUtils.getPasswordResetEmailLink(mailServer.getReceivedMessages()[mailServer.getReceivedMessages().length - 1]);
+        driver.open(link);
+
+        // fresh authentication session: the confirmation info page
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+
+        // complete the required action
+        passwordUpdatePage.assertCurrent();
+        passwordUpdatePage.changePassword("update-pass-1", "update-pass-1");
+
+        // the account-updated info page offers the original redirect URI back to the application
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+        String backToApplicationUrl = infoPage.getBackToApplicationUrl();
+        assertEquals("https://sp.example/acs?code=x", backToApplicationUrl,
+                "the SAML redirect URI with the OIDC-named parameter must survive the action-token flow verbatim");
+
+        // OIDC client: the very same redirect URI is rejected - forbidden OIDC response parameters must
+        // not be pre-populated in the redirect URI of an OIDC client (CVE-2026-9689).
+        try {
+            user.executeActionsEmail("oidc-client-with-oidc-named-param", "https://sp.example/acs?state=x", actions);
+            fail("Expected failure as the redirect URI carries a forbidden OIDC parameter for an OIDC client");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assertions.assertEquals("Invalid redirect uri.", error.getErrorMessage());
+        }
+    }
+
+    @Test
     public void sendResetPasswordEmailWithRedirect() throws IOException {
         UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
