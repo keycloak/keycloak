@@ -85,6 +85,8 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -227,6 +229,24 @@ public class LoginTest {
         assertThat(body, containsString("Sign in"));
         response.close();
     }
+
+    @Test
+    public void testMultipartAuthenticationRequestwithFileParameter() throws IOException {
+        HttpPost post =  new HttpPost(oauth.getEndpoints().getAuthorization());
+        HttpEntity entity = MultipartEntityBuilder.create()
+            .addTextBody(OAuth2Constants.CLIENT_ID, oauth.getClientId())
+            .addTextBody(OAuth2Constants.RESPONSE_TYPE, "code")
+            .addTextBody(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri())
+            .addTextBody(OAuth2Constants.STATE, "123456")
+            .addBinaryBody("file", "test".getBytes(StandardCharsets.UTF_8))
+            .build();
+        
+        post.setEntity(entity);
+
+        try (CloseableHttpResponse response = client.execute(post)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(400)));
+        }
+    } 
 
     @Test
     @DatabaseTest
