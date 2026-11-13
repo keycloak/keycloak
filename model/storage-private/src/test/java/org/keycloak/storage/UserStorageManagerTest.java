@@ -26,8 +26,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -39,6 +37,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -54,6 +55,7 @@ public class UserStorageManagerTest {
 
     private final List<String> delegatedUsernames = new ArrayList<>();
 
+    private DefaultDatastoreProvider datastore;
     private UserStorageManager manager;
 
     @Before
@@ -66,12 +68,12 @@ public class UserStorageManagerTest {
             return defaultValue(method);
         });
 
-        KeycloakSession[] sessionRef = new KeycloakSession[1];
+        DefaultDatastoreProvider[] datastoreRef = new DefaultDatastoreProvider[1];
         KeycloakSession session = stub(KeycloakSession.class, (method, args) -> {
             if (method.getName().equals("getProvider")) {
                 Class<?> requested = (Class<?>) args[0];
                 if (requested == DatastoreProvider.class) {
-                    return new DefaultDatastoreProvider(null, sessionRef[0]);
+                    return datastoreRef[0];
                 }
                 if (requested == UserProvider.class) {
                     return localStorage;
@@ -79,9 +81,10 @@ public class UserStorageManagerTest {
             }
             return defaultValue(method);
         });
-        sessionRef[0] = session;
+        datastore = new DefaultDatastoreProvider(null, session);
+        datastoreRef[0] = datastore;
 
-        manager = new UserStorageManager(session);
+        manager = (UserStorageManager) datastore.users();
     }
 
     @Test
@@ -102,6 +105,13 @@ public class UserStorageManagerTest {
     public void rejectsWhitespaceUsername() {
         assertThrows(ModelException.class, () -> manager.addUser(null, "   "));
         assertThrows(ModelException.class, () -> manager.addUser(null, "id", "   ", true, true));
+        assertTrue(delegatedUsernames.isEmpty());
+    }
+
+    @Test
+    public void rejectsMissingUsernameThroughSessionUserProvider() {
+        assertThrows(ModelException.class, () -> datastore.users().addUser(null, "id", null, true, true));
+        assertThrows(ModelException.class, () -> datastore.users().addUser(null, null));
         assertTrue(delegatedUsernames.isEmpty());
     }
 

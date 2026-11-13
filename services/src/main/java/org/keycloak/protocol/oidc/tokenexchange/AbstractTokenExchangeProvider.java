@@ -74,6 +74,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.Booleans;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -299,7 +300,14 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             throw new CorsErrorResponseException(cors, Errors.INVALID_ISSUER, "Invalid " + OAuth2Constants.SUBJECT_ISSUER + " parameter", Response.Status.BAD_REQUEST);
         }
 
-        UserModel user = importUserFromExternalIdentity(context);
+        UserModel user;
+        try {
+            user = importUserFromExternalIdentity(context);
+        } catch (IdentityBrokerException e) {
+            event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.IDENTITY_PROVIDER_ERROR);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getMessage(), Response.Status.BAD_REQUEST);
+        }
 
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteHost(), "external-exchange", false, null, null);
         externalExchangeContext.provider().exchangeExternalComplete(userSession, context, formParams);
@@ -341,10 +349,10 @@ public abstract class AbstractTokenExchangeProvider implements TokenExchangeProv
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'.", providerId, context.getUsername());
 
             String username = context.getModelUsername();
-            if (Validation.isBlank(username)) {
+            if (StringUtil.isBlank(username)) {
                 if (this.realm.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
                     username = context.getEmail();
-                } else if (Validation.isBlank(context.getUsername())) {
+                } else if (StringUtil.isBlank(context.getUsername())) {
                     username = context.getIdpConfig().getAlias() + "." + context.getId();
                 } else {
                     username = context.getUsername();

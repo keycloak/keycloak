@@ -39,6 +39,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.broker.oidc.mappers.UserAttributeMapper;
+import org.keycloak.broker.oidc.mappers.UsernameTemplateMapper;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -99,6 +100,47 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
     @Test
     public void testExternalInternalTokenExchange() throws Exception {
         assertExternalToInternalExchange(bc.getIDPAlias(), true, false);
+    }
+
+    @Test
+    public void testExternalInternalTokenExchangeRejectsUnresolvableUsernameTemplate() throws Exception {
+        testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(KcOidcBrokerTokenExchangeTest::setupRealm);
+
+        RealmResource providerRealm = realmsResouce().realm(bc.providerRealmName());
+        ClientRepresentation brokerApp = providerRealm.clients().findByClientId("brokerapp").get(0);
+        brokerApp.setDirectAccessGrantsEnabled(true);
+        providerRealm.clients().get(brokerApp.getId()).update(brokerApp);
+
+        RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
+        IdentityProviderResource identityProviderResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
+
+        IdentityProviderMapperRepresentation usernameTemplateMapper = new IdentityProviderMapperRepresentation();
+        usernameTemplateMapper.setName("unresolvable-username-template");
+        usernameTemplateMapper.setIdentityProviderAlias(bc.getIDPAlias());
+        usernameTemplateMapper.setIdentityProviderMapper(UsernameTemplateMapper.PROVIDER_ID);
+        usernameTemplateMapper.setConfig(Map.of(
+                IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString(),
+                UsernameTemplateMapper.TEMPLATE, "${ALIAS}.${CLAIM.non-existent-claim}"));
+        identityProviderResource.addMapper(usernameTemplateMapper).close();
+        getCleanup().addCleanup(() -> identityProviderResource.getMappers().stream()
+                .filter(mapper -> "unresolvable-username-template".equals(mapper.getName()))
+                .forEach(mapper -> identityProviderResource.delete(mapper.getId())));
+
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.realm(bc.providerRealmName())
+                .client(brokerApp.getClientId(), brokerApp.getSecret())
+                .doPasswordGrantRequest(bc.getUserLogin(), bc.getUserPassword());
+        assertThat(tokenResponse.getIdToken(), notNullValue());
+
+        int userCountBefore = consumerRealm.users().count();
+
+        try (Client httpClient = AdminClientUtil.createResteasyClient()) {
+            WebTarget exchangeUrl = getConsumerTokenEndpoint(httpClient);
+            try (Response response = sendExternalInternalTokenExchangeRequest(exchangeUrl, tokenResponse.getIdToken(), OAuth2Constants.ID_TOKEN_TYPE)) {
+                assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
+            }
+        }
+
+        assertThat(consumerRealm.users().count(), equalTo(userCountBefore));
     }
 
     // Tests token-exchange works when user is already linked to the IDP

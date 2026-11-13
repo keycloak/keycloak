@@ -20,8 +20,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.junit.Test;
 import org.keycloak.models.cache.infinispan.UserCacheManager;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;

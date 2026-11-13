@@ -139,14 +139,18 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
         addUsernameTemplateMapper("unresolvable-username-mapper", "${ALIAS}.${CLAIM.non-existent-claim}");
 
         createProviderUser();
+        int userCountBefore = consumerRealm.admin().users().count();
+
         oauth.openLoginForm();
         loginPage.clickSocial(IDP_ALIAS);
 
         loginPage.fillLogin(PROVIDER_USERNAME, "password");
         loginPage.submit();
 
-        assertTrue(consumerRealm.admin().users().search("", true).isEmpty(),
-                "A username template that cannot be resolved must not create a user with an empty username");
+        assertEquals("login-error", driver.page().getCurrentPageId(),
+                "A username template that cannot be resolved must reject the login");
+        assertEquals(userCountBefore, consumerRealm.admin().users().count().intValue(),
+                "A username template that cannot be resolved must not create a user");
     }
 
     @Test // #50505

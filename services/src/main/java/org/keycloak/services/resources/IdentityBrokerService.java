@@ -137,6 +137,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -789,10 +790,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, context.getUsername());
 
             String username = context.getModelUsername();
-            if (Validation.isBlank(username)) {
+            if (StringUtil.isBlank(username)) {
                 if (this.realmModel.isRegistrationEmailAsUsername() && !Validation.isBlank(context.getEmail())) {
                     username = context.getEmail();
-                } else if (Validation.isBlank(context.getUsername())) {
+                } else if (StringUtil.isBlank(context.getUsername())) {
                     username = context.getIdpConfig().getAlias() + "." + context.getId();
                 } else {
                     username = context.getUsername();

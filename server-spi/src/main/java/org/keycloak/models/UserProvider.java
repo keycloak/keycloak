@@ -80,7 +80,7 @@ public interface UserProvider extends Provider,
      * @return model of created user
      *
      * @throws NullPointerException when realm is {@code null}
-     * @throws ModelException when username is {@code null} or empty
+     * @throws ModelException when username is blank
      * @throws ModelDuplicateException when a user with given id or username already exists
      */
     UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions);

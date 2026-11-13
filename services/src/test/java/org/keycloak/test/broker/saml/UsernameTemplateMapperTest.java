@@ -41,11 +41,12 @@ import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 
 import org.junit.Test;
 
+import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGET;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGET;
 
 /**
  * Unit test for {@link UsernameTemplateMapper} making sure a username template that cannot be resolved never

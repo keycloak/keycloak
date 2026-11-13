@@ -162,7 +162,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        return addUser(realm, KeycloakModelUtils.generateId(), username, true, true);
+        if (StringUtil.isBlank(username)) {
+            throw new ModelException("Cannot create a user without a username");
+        }
+
+        return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
     }
 
     @Override

@@ -40,7 +40,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.utils.StringUtil;
 import org.keycloak.social.bitbucket.BitbucketIdentityProviderFactory;
 import org.keycloak.social.facebook.FacebookIdentityProviderFactory;
 import org.keycloak.social.github.GitHubIdentityProviderFactory;
@@ -53,6 +52,7 @@ import org.keycloak.social.openshift.OpenshiftV4IdentityProviderFactory;
 import org.keycloak.social.paypal.PayPalIdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGET;
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGETS;

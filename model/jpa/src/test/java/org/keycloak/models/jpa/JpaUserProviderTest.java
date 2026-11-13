@@ -16,8 +16,9 @@
  */
 package org.keycloak.models.jpa;
 
-import org.junit.Test;
 import org.keycloak.models.ModelException;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -29,6 +30,11 @@ public class JpaUserProviderTest {
     @Test
     public void rejectsMissingUsername() {
         assertThrows(ModelException.class, () -> provider.addUser(null, null, null, true, true));
+    }
+
+    @Test
+    public void rejectsMissingUsernameThroughAddUser() {
+        assertThrows(ModelException.class, () -> provider.addUser(null, null));
     }
 
     @Test
