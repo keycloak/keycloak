@@ -27,6 +27,12 @@ const Harness = ({ value, min }: { value?: unknown; min?: number }) => {
           ...(min === undefined ? {} : { rules: { min } }),
         }}
       />
+      <button
+        type="button"
+        onClick={() => form.setError("amount", { message: "Enter an amount" })}
+      >
+        Show error
+      </button>
       <Value />
     </FormProvider>
   );
@@ -143,5 +149,54 @@ describe("NumberControl", () => {
     // converted, so nothing is written back over what is stored.
     expect(input().value).toBe("");
     expect(formValue()).toBe('"no number"');
+  });
+
+  it("links the number input to its error", async () => {
+    render(<Harness value={STORED} />);
+
+    fireEvent.click(button(/show error/i));
+
+    const error = await screen.findByText("Enter an amount");
+    expect(input().getAttribute("aria-invalid")).toBe("true");
+    expect(input().getAttribute("aria-errormessage")).toBe("amount-error");
+    expect(document.getElementById("amount-error")?.contains(error)).toBe(true);
+  });
+
+  it("links a nested number input to its error", async () => {
+    const NestedHarness = () => {
+      const form = useForm({
+        defaultValues: { config: { maxLifespan: [50] } },
+      });
+      return (
+        <FormProvider {...form}>
+          <NumberControl
+            name="config.maxLifespan[0]"
+            controller={{ defaultValue: 0 }}
+          />
+          <button
+            type="button"
+            onClick={() =>
+              form.setError("config.maxLifespan.0", {
+                message: "Enter a lifespan",
+              })
+            }
+          >
+            Show error
+          </button>
+        </FormProvider>
+      );
+    };
+
+    render(<NestedHarness />);
+    fireEvent.click(button(/show error/i));
+
+    const error = await screen.findByText("Enter a lifespan");
+    expect(input().getAttribute("aria-invalid")).toBe("true");
+    expect(input().getAttribute("aria-errormessage")).toBe(
+      "config.maxLifespan[0]-error",
+    );
+    expect(
+      document.getElementById("config.maxLifespan[0]-error")?.contains(error),
+    ).toBe(true);
   });
 });

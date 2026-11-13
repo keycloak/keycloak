@@ -157,6 +157,8 @@ export const ResetPasswordDialog = ({
             <PasswordInput
               data-testid="passwordField"
               id="password"
+              aria-invalid={!!errors.password}
+              aria-errormessage={errors.password ? "password-error" : undefined}
               onChange={async (e) => {
                 await onChange(e);
                 if (passwordConfirmation !== e.currentTarget.value) {
@@ -169,7 +171,9 @@ export const ResetPasswordDialog = ({
               }}
               {...rest}
             />
-            {errors.password && <FormErrorText message={t("required")} />}
+            {errors.password && (
+              <FormErrorText id="password-error" message={t("required")} />
+            )}
           </FormGroup>
           <FormGroup
             name="passwordConfirmation"
@@ -184,6 +188,12 @@ export const ResetPasswordDialog = ({
             <PasswordInput
               data-testid="passwordConfirmationField"
               id="passwordConfirmation"
+              aria-invalid={!!errors.passwordConfirmation}
+              aria-errormessage={
+                errors.passwordConfirmation
+                  ? "passwordConfirmation-error"
+                  : undefined
+              }
               {...register("passwordConfirmation", {
                 required: true,
                 validate: (value) =>
@@ -192,7 +202,8 @@ export const ResetPasswordDialog = ({
             />
             {errors.passwordConfirmation && (
               <FormErrorText
-                message={errors.passwordConfirmation.message as string}
+                id="passwordConfirmation-error"
+                message={errors.passwordConfirmation.message || t("required")}
               />
             )}
           </FormGroup>
