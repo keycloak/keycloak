@@ -62,6 +62,7 @@ import org.keycloak.models.cache.infinispan.events.UserConsentsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
+import org.keycloak.models.cache.infinispan.events.UserIssuedVerifiableCredentialsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserVerifiableCredentialsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.GroupListPredicate;
@@ -210,6 +211,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 UserFederationLinkRemovedEvent.class,
                 UserFederationLinkUpdatedEvent.class,
                 UserFullInvalidationEvent.class,
+                UserIssuedVerifiableCredentialsUpdatedEvent.class,
                 UserUpdatedEvent.class,
                 UserVerifiableCredentialsUpdatedEvent.class,
 
