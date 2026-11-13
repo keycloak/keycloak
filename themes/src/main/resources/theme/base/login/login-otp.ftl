@@ -22,7 +22,7 @@
                 <input id="selectedCredentialId" type="hidden" name="selectedCredentialId" value="${otpLogin.selectedCredentialId!''}">
             </#if>
 
-            <@field.input name="otp" label=msg("loginOtpOneTime") autocomplete="one-time-code" inputmode="numeric" fieldName="totp" autofocus=(otpLogin.userOtpCredentials?size lte 1) />
+            <@field.input name="otp" label=msg("loginOtpOneTime") autocomplete="one-time-code" inputmode="numeric" fieldName="totp" autofocus=true />
 
             <@buttons.loginButton />
         </form>
