@@ -30,7 +30,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.naming.AuthenticationException;
 import javax.naming.NameAlreadyBoundException;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
@@ -359,7 +358,7 @@ public class LDAPIdentityStore implements IdentityStore {
     // *************** CREDENTIALS AND USER SPECIFIC STUFF
 
     @Override
-    public void validatePassword(LDAPObject user, String password) throws AuthenticationException {
+    public void validatePassword(LDAPObject user, String password) throws NamingException {
         if (logger.isTraceEnabled()) {
             logger.tracef("Using DN [%s] for authentication of user", user.getDn());
         }

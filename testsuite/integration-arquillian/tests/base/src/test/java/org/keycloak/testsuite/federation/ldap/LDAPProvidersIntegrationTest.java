@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.naming.AuthenticationException;
+import javax.naming.NamingException;
 import javax.naming.directory.SearchControls;
 
 import jakarta.ws.rs.core.Response;
@@ -1243,7 +1243,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             try {
                 LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johnkeycloak");
                 ctx.getLdapProvider().getLdapIdentityStore().validatePassword(ldapUser, "Password1");
-            } catch (AuthenticationException ex) {
+            } catch (NamingException ex) {
                 throw new RuntimeException(ex);
             }
         });

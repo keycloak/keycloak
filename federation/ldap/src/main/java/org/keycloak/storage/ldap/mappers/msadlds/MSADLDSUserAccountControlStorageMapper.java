@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.naming.AuthenticationException;
+import javax.naming.NamingException;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.LDAPConstants;
@@ -123,7 +123,7 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
     }
 
     @Override
-    public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm) {
+    public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, NamingException ldapException, RealmModel realm) {
         String exceptionMessage = ldapException.getMessage();
         Matcher m = AUTH_EXCEPTION_REGEX.matcher(exceptionMessage);
         if (m.matches()) {

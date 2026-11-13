@@ -20,7 +20,7 @@ package org.keycloak.storage.ldap.mappers;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import javax.naming.AuthenticationException;
+import javax.naming.NamingException;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
@@ -69,7 +69,7 @@ public abstract class AbstractLDAPStorageMapper implements LDAPStorageMapper {
     }
 
     @Override
-    public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, AuthenticationException ldapException, RealmModel realm) {
+    public boolean onAuthenticationFailure(LDAPObject ldapUser, UserModel user, NamingException ldapException, RealmModel realm) {
         return false;
     }
 
