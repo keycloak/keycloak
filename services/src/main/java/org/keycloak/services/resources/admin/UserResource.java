@@ -1007,42 +1007,6 @@ public class UserResource {
     }
 
     /**
-     * Send an email to the user with a link they can click to reset their password.
-     * The redirectUri and clientId parameters are optional. The default for the
-     * redirect is the account client.
-     *
-     * This endpoint has been deprecated.  Please use the execute-actions-email passing a list with
-     * UPDATE_PASSWORD within it.
-     *
-     * @param redirectUri redirect uri
-     * @param clientId client id
-     * @return
-     */
-    @Deprecated
-    @Path("reset-password-email")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(
-            summary = "Send an email to the user with a link they can click to reset their password.",
-            description = "The redirectUri and clientId parameters are optional. The default for the redirect is the account client. This endpoint has been deprecated.  Please use the execute-actions-email passing a list with UPDATE_PASSWORD within it.",
-            deprecated = true)
-    @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class))),
-        @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "404", description = "Not Found"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error", content = @Content(schema = @Schema(implementation = ErrorRepresentation.class)))
-    })
-    public Response resetPasswordEmail(@Parameter(description = "redirect uri") @QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String redirectUri,
-                                       @Parameter(description = "client id") @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId) {
-        List<String> actions = new LinkedList<>();
-        actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
-        return executeActionsEmail(redirectUri, clientId, null, actions);
-    }
-
-
-    /**
      * Send an email to the user with a link they can click to execute particular actions.
      *
      * An email contains a link the user can click to perform a set of required actions.
