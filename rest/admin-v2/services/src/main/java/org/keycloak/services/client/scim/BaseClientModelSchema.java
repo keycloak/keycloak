@@ -40,7 +40,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
         map.put("protocol",         stringAttr("protocol",         "protocol",              BaseClientRepresentation::setProtocol,       ClientModel::setProtocol));
         map.put("uuid",             stringAttr("uuid",             "id",                    BaseClientRepresentation::setUuid,           null));  // read-only
         map.put("clientId",         stringAttr("clientId",         "clientId",              BaseClientRepresentation::setClientId,       ClientModel::setClientId));
-        map.put("enabled",          boolAttr  ("enabled",          "enabled",               BaseClientRepresentation::setEnabled,        (model, v) -> model.setEnabled(Boolean.TRUE.equals(v))));
+        map.put("enabled",          boolAttr  ("enabled",          "enabled",               BaseClientRepresentation::setEnabled,        (model, v) -> model.setEnabled(!Boolean.FALSE.equals(v)))); // null is the default - true
         map.put("description",      stringAttr("description",      "description",           BaseClientRepresentation::setDescription,    ClientModel::setDescription));
         map.put("displayName",      stringAttr("displayName",      "name",                  BaseClientRepresentation::setDisplayName,    ClientModel::setName));
         map.put("appUrl",           stringAttr("appUrl",           "baseUrl",               BaseClientRepresentation::setAppUrl,         ClientModel::setBaseUrl));

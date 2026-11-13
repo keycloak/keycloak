@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.schema.attribute.Attribute.ComplexAttributeOptions;
@@ -110,6 +111,8 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
             model.setSecret(auth.getSecret());
         } else {
             model.setPublicClient(true);
+            model.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
+            model.setSecret(null);
         }
     }
 

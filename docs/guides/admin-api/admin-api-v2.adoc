@@ -56,6 +56,17 @@ The Admin API v2 uses the same CLI tool described in the {adminguide_link}#admin
 
 <@kc.admin parameters="--v2 config credentials --server http://localhost:8080 --realm master --user admin"/>
 
+== Update Semantics (PUT vs PATCH)
+
+The Admin API v2 separates full resource replacement from partial updates:
+
+* *Replace (`PUT`)*: Replaces the entire resource configuration with the representation provided in the request body.
+`PUT` does not preserve previous state for omitted fields.
+Any omitted field or field set to `null` is resolved to its default schema value (or removed if it has no default).
+* *Partial Update (`PATCH`)*: Modifies only the fields explicitly provided in the request body.
+Omitted fields retain their current persisted values.
+Setting a field with a schema default explicitly to `null` resets it to its default value, while setting optional fields without a schema default to `null` removes the stored configuration.
+
 == Available Resources
 
 For details on filtering and projection, see <@links.adminapi id="querying" />.

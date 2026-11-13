@@ -1035,6 +1035,85 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void patchSamlClientActsOnCurrentState() throws Exception {
+        String clientId = "saml-patch-defaults";
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
+        rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
+        rep.setIncludeAuthnStatement(false);
+        rep.setSignDocuments(false);
+        rep.setClientSignatureRequired(false);
+        rep.setForcePostBinding(false);
+        rep.setFrontChannelLogout(false);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
+
+        // an unrelated patch must not change any of the values
+        var unrelated = (SAMLClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream("{\"description\":\"changed\"}".getBytes(StandardCharsets.UTF_8)));
+        assertThat(unrelated.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
+        assertThat(unrelated.getIncludeAuthnStatement(), is(false));
+        assertThat(unrelated.getSignDocuments(), is(false));
+        assertThat(unrelated.getClientSignatureRequired(), is(false));
+        assertThat(unrelated.getForcePostBinding(), is(false));
+        assertThat(unrelated.getFrontChannelLogout(), is(false));
+
+        // explicit nulls resolve to the model level defaults
+        String nulls = "{\"includeAuthnStatement\":null,\"signDocuments\":null,"
+                + "\"clientSignatureRequired\":null,\"forcePostBinding\":null,\"frontChannelLogout\":null,"
+                + "\"nameIdFormat\":null}";
+        var defaulted = (SAMLClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream(nulls.getBytes(StandardCharsets.UTF_8)));
+        assertThat(defaulted.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.USERNAME));
+        assertThat(defaulted.getIncludeAuthnStatement(), is(true));
+        assertThat(defaulted.getSignDocuments(), is(true));
+        assertThat(defaulted.getClientSignatureRequired(), is(true));
+        assertThat(defaulted.getForcePostBinding(), is(true));
+        assertThat(defaulted.getFrontChannelLogout(), is(true));
+    }
+
+    @Test
+    public void putSamlClientResolvesDefaultsLikeCreate() throws Exception {
+        String clientId = "saml-put-defaults";
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
+        rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
+        rep.setIncludeAuthnStatement(false);
+        rep.setSignDocuments(false);
+        rep.setClientSignatureRequired(false);
+        rep.setForcePostBinding(false);
+        rep.setFrontChannelLogout(false);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
+
+        // a replace without the optional values must not reuse the existing state
+        SAMLClientRepresentation replacement = new SAMLClientRepresentation();
+        replacement.setClientId(clientId);
+        replacement.setRedirectUris(Set.of("http://localhost/callback"));
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(replacement)) {
+            assertEquals(200, response.getStatus());
+            var replaced = response.readEntity(SAMLClientRepresentation.class);
+            assertThat(replaced.getEnabled(), is(true));
+            assertThat(replaced.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.USERNAME));
+            assertThat(replaced.getIncludeAuthnStatement(), is(true));
+            assertThat(replaced.getSignDocuments(), is(true));
+            assertThat(replaced.getClientSignatureRequired(), is(true));
+            assertThat(replaced.getForcePostBinding(), is(true));
+            assertThat(replaced.getFrontChannelLogout(), is(true));
+        }
+    }
+
+    @Test
     public void createSamlClientWithInvalidRedirectUriFragment() throws Exception {
         SAMLClientRepresentation rep = new SAMLClientRepresentation();
         rep.setEnabled(true);

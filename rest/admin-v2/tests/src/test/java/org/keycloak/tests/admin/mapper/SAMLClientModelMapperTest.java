@@ -202,7 +202,7 @@ public class SAMLClientModelMapperTest {
     }
 
     @TestOnServer
-    public void fromModel_nullBooleanAttributesReturnNull(KeycloakSession session) {
+    public void fromModel_absentAttributesReturnEffectiveValues(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("master");
         session.getContext().setRealm(realm);
 
@@ -216,10 +216,12 @@ public class SAMLClientModelMapperTest {
 
             assertThat(rep.getNameIdFormat(), nullValue());
             assertThat(rep.getForceNameIdFormat(), nullValue());
-            assertThat(rep.getIncludeAuthnStatement(), nullValue());
-            assertThat(rep.getSignDocuments(), nullValue());
+            // absent attributes are effectively false, so an unrelated patch must not enable them
+            assertThat(rep.getIncludeAuthnStatement(), is(false));
+            assertThat(rep.getSignDocuments(), is(false));
             assertThat(rep.getSignAssertions(), nullValue());
-            assertThat(rep.getClientSignatureRequired(), nullValue());
+            assertThat(rep.getClientSignatureRequired(), is(false));
+            assertThat(rep.getForcePostBinding(), is(false));
             assertThat(rep.getSignatureAlgorithm(), nullValue());
             assertThat(rep.getAllowEcpFlow(), nullValue());
         } finally {
@@ -362,7 +364,7 @@ public class SAMLClientModelMapperTest {
     }
 
     @TestOnServer
-    public void toModel_removesAttributesWhenNull(KeycloakSession session) {
+    public void toModel_removesOrDefaultsAttributesWhenNull(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("master");
         session.getContext().setRealm(realm);
 
@@ -377,15 +379,48 @@ public class SAMLClientModelMapperTest {
             rep.setEnabled(true);
             rep.setClientId("test-saml-tomodel-null");
             rep.setRedirectUris(Set.of());
-            // Leave SAML-specific fields null (null means remove existing attribute)
+            // Leave SAML-specific fields null (null means remove existing attribute, unless there is a default)
 
             SAMLClientModelSchema schema = SAMLClientModelSchema.INSTANCE;
             schema.populate(clientModel, rep);
 
-            // Existing attributes should be removed when rep values are null
-            assertThat(clientModel.getAttribute(SAML_NAME_ID_FORMAT), nullValue());
-            assertThat(clientModel.getAttribute(SAML_SIGNATURE_ALGORITHM), nullValue());
+            // Fields with schema defaults populate their defaults when null; fields without defaults are removed
+            assertThat(clientModel.getAttribute(SAML_NAME_ID_FORMAT), is("username"));
+            assertThat(clientModel.getAttribute(SAML_SIGNATURE_ALGORITHM), is("RSA_SHA256"));
             assertThat(clientModel.getAttribute(SAML_SIGNING_CERTIFICATE), nullValue());
+        } finally {
+            realm.removeClient(clientModel.getId());
+        }
+    }
+
+    @TestOnServer
+    public void toModel_appliesDefaultsWhenBooleansNull(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("master");
+        session.getContext().setRealm(realm);
+
+        ClientModel clientModel = realm.addClient("test-saml-tomodel-defaults");
+        try {
+            // Pre-set the opposite of the defaults to show null does not simply clear/disable the value
+            clientModel.setAttribute(SAML_AUTHN_STATEMENT, "false");
+            clientModel.setAttribute(SAML_SERVER_SIGNATURE, "false");
+            clientModel.setAttribute(SAML_CLIENT_SIGNATURE, "false");
+            clientModel.setAttribute(SAML_FORCE_POST_BINDING, "false");
+            clientModel.setFrontchannelLogout(false);
+            clientModel.setEnabled(false);
+
+            SAMLClientRepresentation rep = new SAMLClientRepresentation();
+            rep.setClientId("test-saml-tomodel-defaults");
+            rep.setRedirectUris(Set.of());
+
+            SAMLClientModelSchema schema = SAMLClientModelSchema.INSTANCE;
+            schema.populate(clientModel, rep);
+
+            assertThat(clientModel.isEnabled(), is(true));
+            assertThat(clientModel.getAttribute(SAML_AUTHN_STATEMENT), is("true"));
+            assertThat(clientModel.getAttribute(SAML_SERVER_SIGNATURE), is("true"));
+            assertThat(clientModel.getAttribute(SAML_CLIENT_SIGNATURE), is("true"));
+            assertThat(clientModel.getAttribute(SAML_FORCE_POST_BINDING), is("true"));
+            assertThat(clientModel.isFrontchannelLogout(), is(true));
         } finally {
             realm.removeClient(clientModel.getId());
         }

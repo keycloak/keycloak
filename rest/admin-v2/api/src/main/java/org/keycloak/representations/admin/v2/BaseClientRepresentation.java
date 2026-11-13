@@ -121,6 +121,7 @@ public class BaseClientRepresentation extends BaseRepresentation {
         this.description = description;
     }
 
+    @Schema(defaultValue = "true")
     public Boolean getEnabled() {
         return enabled;
     }
