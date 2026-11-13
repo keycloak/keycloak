@@ -113,6 +113,8 @@ public class Profile {
 
         KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.DEFAULT),
 
+        OAUTH_ML_DSA("ML-DSA support for OAuth 2.0 and OpenID Connect", Type.EXPERIMENTAL),
+
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
 
