@@ -19,7 +19,7 @@ package org.keycloak.protocol.oidc.grants.ciba.channel;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -44,10 +44,11 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";
 
+    private static final Pattern LENIENT_HOST_PORT = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9._-]*(:\\d{1,5})?");
+
     protected KeycloakSession session;
     protected MultivaluedMap<String, String> formParams;
     protected RealmModel realm;
-    protected Map<String, String> clientAuthAttributes;
     protected Cors cors;
     protected final String httpAuthenticationChannelUri;
 
@@ -81,15 +82,24 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         }
         try {
             URI parsed = new URI(uri);
-            // getHost() is null for host names that are not valid per RFC 2396, e.g. names containing '_',
-            // which are common in container networks. Fall back to the authority in that case.
-            String host = parsed.getHost() != null ? parsed.getHost() : parsed.getAuthority();
             return parsed.isAbsolute()
                     && ("http".equalsIgnoreCase(parsed.getScheme()) || "https".equalsIgnoreCase(parsed.getScheme()))
-                    && !StringUtil.isBlank(host);
+                    && hasHost(parsed);
         } catch (URISyntaxException e) {
             return false;
         }
+    }
+
+    /**
+     * {@link URI#getHost()} is null for host names that are not valid per RFC 2396, e.g. names containing '_',
+     * which are common in container networks. In that case the authority must be a plain {@code host[:port]}.
+     */
+    private static boolean hasHost(URI uri) {
+        if (uri.getHost() != null) {
+            return !uri.getHost().isBlank();
+        }
+        String authority = uri.getAuthority();
+        return authority != null && LENIENT_HOST_PORT.matcher(authority).matches();
     }
 
     @Override

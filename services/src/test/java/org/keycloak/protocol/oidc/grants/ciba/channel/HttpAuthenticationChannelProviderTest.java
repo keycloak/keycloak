@@ -45,5 +45,11 @@ public class HttpAuthenticationChannelProviderTest {
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("file:///etc/passwd"));
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("https:///no-host"));
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("https://exa mple.com"));
+        // authorities without a plain host[:port]
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://:8080/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://user@/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://evil.example.com:80@ciba_server/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:80:90/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:port/ciba"));
     }
 }
