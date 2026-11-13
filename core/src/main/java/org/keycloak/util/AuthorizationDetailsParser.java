@@ -13,6 +13,11 @@ public interface AuthorizationDetailsParser {
     <T extends AuthorizationDetailsJSONRepresentation> T asSubtype(AuthorizationDetailsJSONRepresentation authzDetail, Class<T> clazz);
 
 
+    /**
+     * @deprecated The global parser registry is deprecated. Parsing is now the responsibility of the
+     * <em>AuthorizationDetailsProcessor</em> handling the corresponding "type" (see <em>AuthorizationDetailsProcessor.narrowRepresentation</em>).
+     */
+    @Deprecated
     Map<String, AuthorizationDetailsParser> PARSERS = new ConcurrentHashMap<>();
 
     /**
@@ -23,7 +28,10 @@ public interface AuthorizationDetailsParser {
      *
      * @param type Type as used in the "type" claim of "authorization_details" object entry
      * @param parser Parser for this type
+     * @deprecated Parsing is now the responsibility of the <em>AuthorizationDetailsProcessor</em> handling the corresponding "type"
+     * (see <em>AuthorizationDetailsProcessor.narrowRepresentation</em>). Registering a parser globally is no longer required.
      */
+    @Deprecated
     static void registerParser(String type, AuthorizationDetailsParser parser) {
         PARSERS.put(type, parser);
     }
@@ -36,7 +44,9 @@ public interface AuthorizationDetailsParser {
      * @param clazz Subtype of {@link AuthorizationDetailsJSONRepresentation}, which will be returned by calling this method
      * @return given authzDetail passed in <em>authzDetail</em> parameter cast to the class specified by clazz parameter as long as parser corresponding to the type
      * returned by {@link AuthorizationDetailsJSONRepresentation#getType} is able to parse this authorizationDetails and convert it to that subtype
+     * @deprecated Use <em>AuthorizationDetailsProcessor.narrowRepresentation</em> of the processor handling the corresponding "type" instead
      */
+    @Deprecated
     static <T extends AuthorizationDetailsJSONRepresentation> T parseToSubtype(AuthorizationDetailsJSONRepresentation authzDetail, Class<T> clazz) {
         if (authzDetail.getType() == null) {
             throw new IllegalArgumentException("Used authzDetail entry does not have 'type' set. The used authzDetail entry was: " + authzDetail);
