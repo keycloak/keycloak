@@ -21,12 +21,21 @@ import static org.keycloak.common.util.UriUtils.checkUrl;
 public class KubernetesIdentityProviderConfig extends IdentityProviderModel implements IssuerValidation {
 
     public static final String ISSUER_DISCOVERY_URL = "issuerDiscoveryUrl";
+    public static final String FORWARD_TOKEN_TO_ADDITIONAL_ENDPOINTS = "forwardTokenToAdditionalEndpoints";
 
     public KubernetesIdentityProviderConfig() {
     }
 
     public KubernetesIdentityProviderConfig(IdentityProviderModel model) {
         super(model);
+    }
+
+    public boolean isForwardTokenToAdditionalEndpoints() {
+        return Boolean.parseBoolean(getConfig().get(FORWARD_TOKEN_TO_ADDITIONAL_ENDPOINTS));
+    }
+
+    public void setForwardTokenToAdditionalEndpoints(boolean forwardTokenToAdditionalEndpoints) {
+        getConfig().put(FORWARD_TOKEN_TO_ADDITIONAL_ENDPOINTS, String.valueOf(forwardTokenToAdditionalEndpoints));
     }
 
     public String getIssuer() {
