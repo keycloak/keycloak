@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -31,11 +32,17 @@ import java.util.concurrent.TimeUnit;
 import jakarta.ws.rs.core.NewCookie;
 
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.LogoutToken;
@@ -68,6 +75,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.Cookie;
 
 /**
  * Tests the logout (root) authentication session that
@@ -367,6 +375,213 @@ public class LogoutSessionReuseTest {
         user.admin().logout();
     }
 
+    /**
+     * The browser has an unfinished login in root R, and neither the identity cookie nor the {@code KEYCLOAK_SESSION}
+     * cookie, when it is sent to the logout endpoint with a valid {@code id_token_hint}. The logout session joins R
+     * through the {@code AUTH_SESSION_ID} cookie, and as the user session cannot be confirmed against the browser it
+     * is logged out by {@code backchannelLogout}. That must only remove the logout tab from R, not the login tab.
+     */
+    @Test
+    void backchannelLogoutKeepsOtherTabsOfSharedRoot() {
+        final String postLogoutRedirectUri = testApp.getRedirectionUri();
+        updateClient(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUri));
+        resetBrowser();
+
+        String rootId = null;
+        try {
+            AccessTokenResponse tokens = login();
+            dropCookies(CookieType.IDENTITY, CookieType.SESSION, CookieType.AUTH_SESSION_ID);
+
+            // An unfinished login, for example in another tab of the same browser
+            oauth.openLoginForm();
+            rootId = authSessionIdFromCookie();
+            Assertions.assertEquals(1, rootAuthenticationSessionTabCount(rootId), "Root R must hold only the login tab");
+
+            oauth.logoutForm()
+                    .idTokenHint(tokens.getIdToken())
+                    .postLogoutRedirectUri(postLogoutRedirectUri)
+                    .open();
+
+            String currentUrl = driver.getCurrentUrl();
+            Assertions.assertTrue(currentUrl.startsWith(postLogoutRedirectUri),
+                    "The browser must be redirected to post_logout_redirect_uri, but was: " + currentUrl);
+            Assertions.assertTrue(user.admin().getUserSessions().isEmpty(), "The user session must be logged out");
+            Assertions.assertEquals(1, rootAuthenticationSessionTabCount(rootId),
+                    "Only the logout tab may be removed from root R, the login tab must be kept");
+        } finally {
+            if (rootId != null) {
+                removeRootAuthenticationSession(rootId);
+            }
+            resetBrowser();
+            user.admin().logout();
+        }
+    }
+
+    /**
+     * A logout of user session A is left unfinished in logout root L after it already logged out a client. A logout
+     * of user session B, for the same client and from the same browser, then finds the logout session of A in L. It
+     * must not reuse it: the logout state that A recorded for the client would suppress the logout of B from that
+     * client.
+     *
+     * <p>Here the browser has no session cookies anymore, so B is logged out by {@code backchannelLogout}.
+     */
+    @Test
+    void logoutOfAnotherUserSessionDoesNotReuseItsClientLogoutStates() throws Exception {
+        assertLogoutOfAnotherUserSessionIsDelivered(false);
+    }
+
+    /**
+     * Same as {@link #logoutOfAnotherUserSessionDoesNotReuseItsClientLogoutStates()}, but the browser is still logged
+     * in to user session A. The logout request with the {@code id_token_hint} of B then joins the logout session of A
+     * and shows a confirmation screen. Once confirmed, the logout session is bound to B and B is logged out by
+     * {@code browserLogout}.
+     */
+    @Test
+    void confirmedLogoutOfAnotherUserSessionDoesNotReuseItsClientLogoutStates() throws Exception {
+        assertLogoutOfAnotherUserSessionIsDelivered(true);
+    }
+
+    /**
+     * The unfinished logout of user session A is simulated by recording the client as logged out in its logout
+     * session, as {@code backchannelLogoutClientSession} does.
+     */
+    private void assertLogoutOfAnotherUserSessionIsDelivered(boolean keepBrowserSessionOfA) throws Exception {
+        try (BackchannelLogoutReceiver receiver = new BackchannelLogoutReceiver()) {
+            final String postLogoutRedirectUri = testApp.getRedirectionUri();
+            updateClient(Map.of(
+                    OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, receiver.url(),
+                    OIDCConfigAttributes.BACKCHANNEL_LOGOUT_SESSION_REQUIRED, "true",
+                    OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUri));
+            resetBrowser();
+
+            try {
+                // User session B, then user session A in the same browser
+                final String idTokenB = login().getIdToken();
+                final String sessionB = oauth.verifyIDToken(idTokenB).getSessionId();
+                dropCookies(CookieType.IDENTITY, CookieType.SESSION, CookieType.AUTH_SESSION_ID);
+                final String sessionA = oauth.verifyIDToken(login().getIdToken()).getSessionId();
+                Assertions.assertNotEquals(sessionA, sessionB, "Two different user sessions are needed");
+
+                // Start the logout of A and leave it unfinished
+                oauth.logoutForm()
+                        .withClientId()
+                        .open();
+                logoutConfirmPage.assertCurrent();
+                recordClientLoggedOutInLogoutSession(authSessionIdFromCookie(), sessionA, oauth.getClientId());
+
+                // Log out B from the same browser
+                if (!keepBrowserSessionOfA) {
+                    dropCookies(CookieType.IDENTITY, CookieType.SESSION);
+                }
+                oauth.logoutForm()
+                        .idTokenHint(idTokenB)
+                        .postLogoutRedirectUri(postLogoutRedirectUri)
+                        .open();
+                if (keepBrowserSessionOfA) {
+                    logoutConfirmPage.assertCurrent();
+                    logoutConfirmPage.confirmLogout();
+                }
+
+                String currentUrl = driver.getCurrentUrl();
+                Assertions.assertTrue(currentUrl.startsWith(postLogoutRedirectUri),
+                        "The browser must be redirected to post_logout_redirect_uri, but was: " + currentUrl);
+                LogoutToken logoutToken = receiver.poll();
+                Assertions.assertNotNull(logoutToken, "The logout of user session B must be delivered to the client");
+                Assertions.assertEquals(sessionB, logoutToken.getSid());
+                Assertions.assertEquals(List.of(sessionA), user.admin().getUserSessions().stream().map(s -> s.getId()).toList(),
+                        "Only user session B must be logged out");
+            } finally {
+                resetBrowser();
+                user.admin().logout();
+            }
+        }
+    }
+
+    /**
+     * A logout confirmation creates a new logout root and points the {@code AUTH_SESSION_ID} cookie to it. The
+     * {@code KC_AUTH_SESSION_HASH} cookie must point to it as well. Otherwise, after the confirmation is abandoned,
+     * a login that joins the logout root (for example with {@code prompt=login}) renders the hash of that root while
+     * the cookie still holds the hash of the previous root, and authChecker.js reloads the login page until the
+     * cookie expires.
+     */
+    @Test
+    void logoutRootUpdatesAuthSessionHashCookie() {
+        resetBrowser();
+        try {
+            login();
+            driver.open(oauth.getEndpoints().getJwks());
+            final String loginRootHash = authSessionIdHashFromCookie();
+            Assertions.assertNotNull(loginRootHash, "The login must set the KC_AUTH_SESSION_HASH cookie");
+
+            oauth.logoutForm()
+                    .withClientId()
+                    .open();
+            logoutConfirmPage.assertCurrent();
+
+            final String logoutRootHash = authSessionIdHash(authSessionIdFromCookie());
+            Assertions.assertNotEquals(loginRootHash, logoutRootHash, "The logout must use a new root");
+            Assertions.assertEquals(logoutRootHash, authSessionIdHashFromCookie(),
+                    "The KC_AUTH_SESSION_HASH cookie must hold the hash of the logout root");
+        } finally {
+            resetBrowser();
+            user.admin().logout();
+        }
+    }
+
+    /**
+     * Binding the logout session of user session A to user session B removes the logout states recorded for the clients
+     * of both user sessions, so that no state of A can suppress the logout of B. That includes a client that only A has,
+     * as B can get a session for that client before its logout reaches it.
+     */
+    @Test
+    void bindingLogoutSessionToAnotherUserSessionRemovesClientLogoutStates() {
+        final String realmName = realm.getName();
+        final String userId = user.getId();
+        final String sharedClientId = oauth.getClientId();
+        final String clientIdOfA = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+
+        // Created in a request of their own, so that the binding finds them in the session store
+        String sessionIds = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            UserModel userModel = session.users().getUserById(realmModel, userId);
+            UserSessionModel sessionA = session.sessions().createUserSession(realmModel, userModel, userModel.getUsername(), "127.0.0.1", "form", false, null, null);
+            session.sessions().createClientSession(realmModel, realmModel.getClientByClientId(sharedClientId), sessionA);
+            session.sessions().createClientSession(realmModel, realmModel.getClientByClientId(clientIdOfA), sessionA);
+            UserSessionModel sessionB = session.sessions().createUserSession(realmModel, userModel, userModel.getUsername(), "127.0.0.1", "form", false, null, null);
+            session.sessions().createClientSession(realmModel, realmModel.getClientByClientId(sharedClientId), sessionB);
+            return sessionA.getId() + "," + sessionB.getId();
+        }, String.class);
+        final String sessionIdA = sessionIds.split(",")[0];
+        final String sessionIdB = sessionIds.split(",")[1];
+
+        try {
+            String boundState = runOnServer.fetch(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                ClientModel sharedClient = realmModel.getClientByClientId(sharedClientId);
+                ClientModel clientOfA = realmModel.getClientByClientId(clientIdOfA);
+                RootAuthenticationSessionModel root = session.authenticationSessions().createRootAuthenticationSession(realmModel);
+                AuthenticationSessionModel logoutSession = root.createAuthenticationSession(sharedClient);
+                logoutSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
+                AuthenticationManager.bindLogoutSessionToUserSession(session, logoutSession, session.sessions().getUserSession(realmModel, sessionIdA));
+                AuthenticationManager.setClientLogoutAction(logoutSession, sharedClient.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
+                AuthenticationManager.setClientLogoutAction(logoutSession, clientOfA.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
+
+                AuthenticationManager.bindLogoutSessionToUserSession(session, logoutSession, session.sessions().getUserSession(realmModel, sessionIdB));
+
+                String result = logoutSession.getAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID) + ","
+                        + AuthenticationManager.getClientLogoutAction(logoutSession, sharedClient.getId()) + ","
+                        + AuthenticationManager.getClientLogoutAction(logoutSession, clientOfA.getId());
+                session.authenticationSessions().removeRootAuthenticationSession(realmModel, root);
+                return result;
+            }, String.class);
+
+            Assertions.assertEquals(sessionIdB + ",null,null", boundState,
+                    "The logout session must be bound to B, without the logout states recorded for A");
+        } finally {
+            user.admin().logout();
+        }
+    }
+
     /** Records the names of the cookies that are written during a request. Static so it does not capture the test instance. */
     private static class CookieRecordingHttpResponse implements HttpResponse {
 
@@ -435,6 +650,96 @@ public class LogoutSessionReuseTest {
         final String realmName = realm.getName();
         return runOnServer.fetch(session -> session.authenticationSessions()
                 .getRootAuthenticationSession(session.realms().getRealmByName(realmName), id) != null, Boolean.class);
+    }
+
+    private int rootAuthenticationSessionTabCount(String id) {
+        final String realmName = realm.getName();
+        return runOnServer.fetch(session -> {
+            RootAuthenticationSessionModel root = session.authenticationSessions()
+                    .getRootAuthenticationSession(session.realms().getRealmByName(realmName), id);
+            return root == null ? -1 : root.getAuthenticationSessions().size();
+        }, Integer.class);
+    }
+
+    /**
+     * Records {@code clientId} as logged out in the logout session of {@code userSessionId} in root {@code rootId}.
+     */
+    private void recordClientLoggedOutInLogoutSession(String rootId, String userSessionId, String clientId) {
+        final String realmName = realm.getName();
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, rootId);
+            Assertions.assertNotNull(root, "The logout root must exist");
+            AuthenticationSessionModel logoutSession = root.getAuthenticationSessions().values().stream()
+                    .filter(authSession -> AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(authSession.getAction()))
+                    .findFirst()
+                    .orElse(null);
+            Assertions.assertNotNull(logoutSession, "The logout root must hold a logout session");
+            Assertions.assertEquals(userSessionId, logoutSession.getAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID));
+            AuthenticationManager.setClientLogoutAction(logoutSession, realmModel.getClientByClientId(clientId).getId(),
+                    AuthenticationSessionModel.Action.LOGGED_OUT);
+        });
+    }
+
+    private void removeRootAuthenticationSession(String id) {
+        final String realmName = realm.getName();
+        runOnServer.run(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, id);
+            if (root != null) {
+                session.authenticationSessions().removeRootAuthenticationSession(realmModel, root);
+            }
+        });
+    }
+
+    /**
+     * Drops the session and authentication session cookies, so that a test does not depend on the browser state that
+     * other tests leave behind (the browser is shared).
+     */
+    private void resetBrowser() {
+        dropCookies(CookieType.IDENTITY, CookieType.SESSION, CookieType.AUTH_SESSION_ID, CookieType.AUTH_SESSION_ID_HASH);
+    }
+
+    /**
+     * Deletes the given cookies from the browser. The cookies are scoped to the realm path, so the browser has to be on it.
+     */
+    private void dropCookies(CookieType... cookieTypes) {
+        driver.open(oauth.getEndpoints().getJwks());
+        for (CookieType cookieType : cookieTypes) {
+            driver.driver().manage().deleteCookieNamed(cookieType.getName());
+            Assertions.assertNull(driver.cookies().get(cookieType), "The " + cookieType.getName() + " cookie must be gone");
+        }
+    }
+
+    private String authSessionIdFromCookie() {
+        Cookie cookie = driver.cookies().get(CookieType.AUTH_SESSION_ID);
+        Assertions.assertNotNull(cookie, "AUTH_SESSION_ID cookie must be present");
+        String encoded = cookie.getValue();
+        int routeSeparator = encoded.indexOf('.');
+        if (routeSeparator != -1) {
+            encoded = encoded.substring(0, routeSeparator);
+        }
+        String signed = new String(Base64Url.decode(encoded), StandardCharsets.UTF_8);
+        return signed.substring(0, signed.lastIndexOf('.'));
+    }
+
+    /**
+     * The value of the {@code KC_AUTH_SESSION_HASH} cookie, or {@code null} if there is none. The value may be quoted,
+     * the quotes are removed as authChecker.js does.
+     */
+    private String authSessionIdHashFromCookie() {
+        Cookie cookie = driver.cookies().get(CookieType.AUTH_SESSION_ID_HASH);
+        if (cookie == null) {
+            return null;
+        }
+        String value = cookie.getValue();
+        return value.length() > 1 && value.startsWith("\"") && value.endsWith("\"") ? value.substring(1, value.length() - 1) : value;
+    }
+
+    /** The value of the {@code KC_AUTH_SESSION_HASH} cookie for root {@code rootId}. */
+    private static String authSessionIdHash(String rootId) {
+        return Base64.getEncoder().withoutPadding()
+                .encodeToString(HashUtils.hash(JavaAlgorithm.SHA384, rootId.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**

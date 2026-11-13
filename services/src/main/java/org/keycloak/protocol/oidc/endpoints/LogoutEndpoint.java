@@ -785,8 +785,9 @@ public class LogoutEndpoint {
     }
 
     private Response initiateBrowserLogout(UserSessionModel userSession, AuthenticationSessionModel logoutSession) {
-        // the logout session may have been created without a user session (e.g. only an id_token_hint), bind it now so it is reused
-        logoutSession.setAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID, userSession.getId());
+        // the logout session may have been created without a user session (e.g. only an id_token_hint), or for the
+        // browser session while the id_token_hint names another one, bind it now so it is reused
+        AuthenticationManager.bindLogoutSessionToUserSession(session, logoutSession, userSession);
         userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
         logger.tracef("Calling initiateBrowserLogout for user session '%s'", userSession.getId());
         Response response =  AuthenticationManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
