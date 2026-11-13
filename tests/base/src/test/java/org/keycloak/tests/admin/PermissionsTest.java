@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -1129,6 +1130,57 @@ public class PermissionsTest extends AbstractPermissionsTest {
             invoke(realm -> realm.users().userProfile().getConfiguration(), clients.get(role), true);
             invoke(realm -> realm.users().userProfile().getMetadata(), clients.get(role), true);
         }
+    }
+
+    @Test
+    public void federatedIdentityLinksPermissions() {
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias("fed-links-permissions-idp");
+        idp.setProviderId("oidc");
+        idp.setEnabled(true);
+        managedRealm1.admin().identityProviders().create(idp).close();
+        managedRealm1.cleanup().add(r -> r.identityProviders().get(idp.getAlias()).remove());
+
+        String targetUserId = ApiUtil.getCreatedId(managedRealm1.admin().users()
+                .create(UserBuilder.create().username("fed-links-permissions-user").enabled(true).build()));
+        managedRealm1.cleanup().add(r -> r.users().get(targetUserId).remove());
+
+        // viewing the providers the user is linked to only requires view-users
+        invoke(realm -> realm.users().get(targetUserId).getFederatedIdentityLinks(true, null, null, null),
+                clients.get("none"), false);
+        invoke(realm -> realm.users().get(targetUserId).getFederatedIdentityLinks(true, null, null, null),
+                clients.get(AdminRoles.VIEW_USERS), true);
+
+        // listing providers available to link requires BOTH manage-users and view-identity-providers;
+        // neither permission alone is enough
+        invoke(realm -> realm.users().get(targetUserId).getFederatedIdentityLinks(false, null, null, null),
+                clients.get(AdminRoles.VIEW_USERS), false);
+        invoke(realm -> realm.users().get(targetUserId).getFederatedIdentityLinks(false, null, null, null),
+                clients.get(AdminRoles.MANAGE_USERS), false);
+        invoke(realm -> realm.users().get(targetUserId).getFederatedIdentityLinks(false, null, null, null),
+                clients.get(AdminRoles.VIEW_IDENTITY_PROVIDERS), false);
+
+        // name/email must be set, otherwise the User Profile "Update Profile" required action is dynamically
+        // triggered on login and the password grant below fails with "Account is not fully set up"
+        String comboUserUuid = ApiUtil.getCreatedId(managedRealm1.admin().users()
+                .create(UserBuilder.create().username("fed-links-combo").password("password").enabled(true)
+                        .name("fed-links-combo", "fed-links-combo").email("fed-links-combo@localhost.com").build()));
+        managedRealm1.cleanup().add(r -> r.users().get(comboUserUuid).remove());
+
+        ClientRepresentation realmMgmtClient = managedRealm1.admin().clients()
+                .findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
+        RoleRepresentation manageUsersRole = managedRealm1.admin().clients().get(realmMgmtClient.getId())
+                .roles().get(AdminRoles.MANAGE_USERS).toRepresentation();
+        RoleRepresentation viewIdentityProvidersRole = managedRealm1.admin().clients().get(realmMgmtClient.getId())
+                .roles().get(AdminRoles.VIEW_IDENTITY_PROVIDERS).toRepresentation();
+        managedRealm1.admin().users().get(comboUserUuid).roles().clientLevel(realmMgmtClient.getId())
+                .add(List.of(manageUsersRole, viewIdentityProvidersRole));
+
+        Keycloak comboClient = adminClientFactory.create().realm(REALM_NAME)
+                .username("fed-links-combo").password("password").clientId("test-client").build();
+
+        invoke(realm -> realm.users().get(targetUserId).getFederatedIdentityLinks(false, null, null, null),
+                comboClient, true);
     }
 
     @Test
