@@ -454,6 +454,41 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     }
 
     @Test
+    public void verifyEmailNewSessionRespectsResendCooldown() {
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+
+        // Clearing the cookies makes the next login start a new authentication session
+        driver.manage().deleteAllCookies();
+
+        oauth.openLoginForm();
+        loginPage.login("test-user@localhost", "password");
+
+        verifyEmailPage.assertCurrent();
+
+        // The resend cooldown is per user, so the new session must not send another e-mail
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+
+        verifyEmailPage.clickResendEmail();
+        assertThat(verifyEmailPage.getFeedbackText(), Matchers.containsString("You must wait"));
+
+        try {
+            // Move the clock past the cooldown, a new session sends the e-mail again
+            timeOffSet.set(40);
+            driver.manage().deleteAllCookies();
+            oauth.openLoginForm();
+            loginPage.login("test-user@localhost", "password");
+            verifyEmailPage.assertCurrent();
+            Assertions.assertEquals(2, mail.getReceivedMessages().length);
+        } finally {
+            timeOffSet.set(0);
+        }
+    }
+
+    @Test
     public void verifyEmailResendWithRefreshes() throws IOException {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");

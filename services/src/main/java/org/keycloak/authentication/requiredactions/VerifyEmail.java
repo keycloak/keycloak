@@ -136,11 +136,18 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
-            // Adding the cooldown entry first to prevent concurrent operations
-            EmailCooldownManager.addCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
-            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
-            EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
-            challenge = sendVerifyEmail(context, event);
+            Long remaining = EmailCooldownManager.retrieveCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
+            if (remaining != null) {
+                // A verification e-mail was sent recently for this user (possibly from another auth session):
+                // render the page without sending and without setting the note
+                challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+            } else {
+                // Adding the cooldown entry first to prevent concurrent operations
+                EmailCooldownManager.addCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
+                authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
+                EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
+                challenge = sendVerifyEmail(context, event);
+            }
         } else {
             challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         }
