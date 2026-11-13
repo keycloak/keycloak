@@ -79,6 +79,7 @@ import org.keycloak.utils.StringUtil;
 
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
@@ -443,10 +444,19 @@ public class VerifyProfileTest {
 
         verifyProfilePage.assertCurrent();
         //submit with error
+        // the initial page already shows a last name error, so wait for the submitted form to be replaced
+        WebElement submittedForm = driver.findElement(By.tagName("form"));
         verifyProfilePage.update("First", "L");
+        driver.waiting().until(d -> {
+            try {
+                submittedForm.isEnabled();
+                return false;
+            } catch (StaleElementReferenceException e) {
+                return true;
+            }
+        });
 
         verifyProfilePage.assertCurrent();
-        // wait for the re-rendered page with the validation error before submitting again
         assertNotNull(verifyProfilePage.getInputErrors().getLastNameError());
         //submit OK
         verifyProfilePage.update("First", "Last");
