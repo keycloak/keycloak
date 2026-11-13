@@ -274,6 +274,7 @@ This is intentional: allowing protocol mapper creation via DCR effectively grant
 
 * Client Scope Policy - Allows you to specify `Client Scopes` that can be used with newly registered or updated clients.
 There are no allowed scopes by default; only the client scopes defined as `Realm Default Client Scopes` are allowed by default.
+The policy also checks scopes requested through the deprecated `clientTemplate` field, after converting spaces in legacy names to underscores.
 +
 WARNING: Realm administrators should take care before adding `Allowed Client Scopes` to this client registration policy.
 Client scopes can contain role scope mappings and various protocol mappers, which can modify issued tokens or assertions.
