@@ -49,7 +49,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     }
 
     public UsernamePasswordForm(KeycloakSession session) {
-        webauthnAuth = new WebAuthnConditionalUIAuthenticator(session, (context) -> createLoginForm(context.form()));
+        webauthnAuth = new WebAuthnConditionalUIAuthenticator(session, (context) -> createLoginForm(context, context.form()));
     }
 
     @Override
