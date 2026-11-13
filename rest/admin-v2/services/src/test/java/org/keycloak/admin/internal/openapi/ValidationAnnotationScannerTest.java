@@ -587,4 +587,18 @@ public class ValidationAnnotationScannerTest {
         private String protocol;
         private Long createdTimestamp;
     }
+
+    @Test
+    public void loadValidationMessages_usesRootLocaleEvenWhenDefaultLocaleIsDifferent() {
+        java.util.Locale originalLocale = java.util.Locale.getDefault();
+        try {
+            java.util.Locale.setDefault(java.util.Locale.GERMAN);
+            ValidationAnnotationScanner germanScanner = new ValidationAnnotationScanner(index);
+            ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+            String description = germanScanner.buildDescription(classInfo, "notBlankField");
+            assertTrue(description.contains("must not be blank"));
+        } finally {
+            java.util.Locale.setDefault(originalLocale);
+        }
+    }
 }
