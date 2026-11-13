@@ -69,7 +69,7 @@ According to the https://modelcontextprotocol.io/specification/draft/basic/autho
 | SHOULD
 | Supported
 
-| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-01[OAuth Client ID Metadata Document (Internet Draft)]
+| https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02[OAuth Client ID Metadata Document (Internet Draft)]
 | SHOULD
 | SHOULD
 | -
@@ -208,7 +208,7 @@ To configure the executor, create a client policy profile in the {project_name} 
 . Configure the executor with the following options:
 +
 * *Allow http scheme*: If `ON`, allows `http` scheme for the URLs that {project_name} fetches itself, that is the Client ID URL and the `jwks_uri`, `sector_identifier_uri` and `request_uris` properties of the client metadata. This should only be `ON` in a development environment and must be `OFF` in a production environment.
-* *Allow private-use addresses*: If `OFF`, the executor rejects the URLs that {project_name} fetches itself, that is the Client ID URL and the `jwks_uri`, `sector_identifier_uri` and `request_uris` properties, when their host resolves to a loopback, private, link-local, unique local or multicast address. They are rejected even if their host matches one of the trusted domains, which prevents Server-Side Request Forgery (SSRF) against hosts that only {project_name} can reach. This should only be `ON` in a development environment and must be `OFF` in a production environment.
+* *Allow private-use addresses*: If `OFF`, the executor rejects the URLs that {project_name} fetches itself, that is the Client ID URL and the `jwks_uri`, `sector_identifier_uri` and `request_uris` properties, when their host resolves to a loopback, private, link-local, unique local, multicast or other special-use address. They are rejected even if their host matches one of the trusted domains, which prevents Server-Side Request Forgery (SSRF) against hosts that only {project_name} can reach. This should only be `ON` in a development environment and must be `OFF` in a production environment.
 * *Trusted domains*: A list of domain patterns (wildcard) that the executor accepts for the Client ID URL and Client Metadata URL properties. For example, use `*.example.org` to accept any subdomain of `example.org`. If empty, all domains are denied.
 * *Restrict same domain*: If `ON`, the executor verifies that the Client ID URL and Redirect URI in an authorization request, as well as URL-valued properties of the client metadata, are all under the same trusted domain.
 * *Required properties*: A list of client metadata properties that must be present in the Client ID Metadata Document. If the fetched document does not include all the listed properties, the request is rejected.
@@ -241,7 +241,7 @@ With this configuration, when an MCP client sends an authorization request with 
 
 ===== Client ID URL validation
 
-In accordance with the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-01[OAuth Client ID Metadata Document] specification, {project_name} validates the `client_id` URL and rejects the authorization request if it does not meet the following requirements:
+In accordance with the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-02[OAuth Client ID Metadata Document] specification, {project_name} validates the `client_id` URL and rejects the authorization request if it does not meet the following requirements:
 
 * The URL MUST have an `https` scheme (unless *Allow http scheme* is enabled in the executor configuration).
 * The URL MUST contain a path component (e.g., `+https://example.com/mcp+` is valid, `+https://example.com+` without a path is not).
@@ -251,6 +251,8 @@ In accordance with the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-cl
 * The URL MUST NOT include a query string component.
 
 NOTE: The specification states that the `client_id` URL SHOULD NOT include a query string component. {project_name} enforces this as a hard requirement and rejects any `client_id` URL that contains a query string.
+
+NOTE: The specification requires the `redirect_uri` to exactly match one of the `redirect_uris` in the Client ID Metadata Document. {project_name} uses its standard redirect URI matching, which also accepts wildcards. To reject wildcards, add the `secure-redirect-uris-enforcer` executor to a separate client profile, and apply it with a client policy whose condition also matches on client registration, such as `any-client`. The `client-id-uri` condition only matches authorization requests, so adding the executor to the CIMD client profile does not check the registered `redirect_uris`. For clients that use loopback redirect URIs, such as VS Code or Claude Code, also enable the executor's loopback address options and its *Allow http scheme* option, which is separate from the option of the same name in the `client-id-metadata-document` executor.
 
 ===== System-wide settings for the Client ID Metadata Document executor
 
