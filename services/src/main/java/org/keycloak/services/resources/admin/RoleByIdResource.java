@@ -140,6 +140,10 @@ public class RoleByIdResource extends RoleResource {
 
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
+        RoleRepresentation roleRepresentation = new RoleRepresentation();
+        roleRepresentation.setId(role.getId());
+        roleRepresentation.setName(role.getName());
+
         deleteRole(role);
 
         if (role.isClientRole()) {
@@ -148,7 +152,7 @@ public class RoleByIdResource extends RoleResource {
             adminEvent.resource(ResourceType.REALM_ROLE);
         }
 
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roleRepresentation).success();
     }
 
     /**
