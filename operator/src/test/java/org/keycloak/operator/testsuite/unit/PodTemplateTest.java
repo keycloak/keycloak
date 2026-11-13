@@ -128,7 +128,7 @@ public class PodTemplateTest {
         var kc = createKeycloak(podTemplate, additionalSpec);
 
         existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewMetadata().endMetadata().editOrNewSpec().editOrNewSelector()
-                .withMatchLabels(Utils.allInstanceLabels(kc))
+                .withMatchLabels(Utils.allInstanceLabels(kc, false))
                 .endSelector().endSpec().build();
 
         //noinspection unchecked
@@ -578,6 +578,14 @@ public class PodTemplateTest {
                   topologyKey: "kubernetes.io/hostname"
                   whenUnsatisfiable: "ScheduleAnyway"
                 """);
+        
+        var podTemplateMetadata = podTemplate.getMetadata();
+        assertEquals(
+                Map.of("app", "keycloak", "app.kubernetes.io/managed-by", "keycloak-operator",
+                        "app.kubernetes.io/instance", "instance", "app.kubernetes.io/component", "server",
+                        "testLabelWithExpression", "my-value", "test.label", "foobar",
+                        "app.kubernetes.io/name", "keycloak", "app.kubernetes.io/part-of", "keycloak"),
+                podTemplateMetadata.getLabels());
     }
 
     @Test
@@ -919,6 +927,27 @@ public class PodTemplateTest {
                 + "operator: \"value1\"\n"
                 + "tolerationSeconds: 10\n"
                 + "value: \"in\"\n", Serialization.asYaml(job.getSpec().getTemplate().getSpec().getTolerations().get(0)));
+    }
+
+    @Test
+    public void testRealmImportJobPodTemplateLabels() {
+        Job job = getImportJob(builder -> {}, builder -> {}, builder -> {});
+        var podLabels = job.getSpec().getTemplate().getMetadata().getLabels();
+        // pod template should carry the full recommended label set, not the server selector labels
+        assertEquals(KeycloakRealmImportJobDependentResource.JOB_NAME, podLabels.get(Constants.APP_LABEL));
+        assertEquals(KeycloakRealmImportJobDependentResource.JOB_NAME, podLabels.get(Constants.NAME_LABEL));
+        assertEquals(Constants.NAME, podLabels.get(Constants.PART_OF_LABEL));
+        assertEquals(Constants.COMMAND_COMPONENT, podLabels.get(Constants.COMPONENT_LABEL));
+    }
+
+    @Test
+    public void testUpdateJobPodTemplateLabels() {
+        Job job = getUpdateJob(builder -> {}, builder -> {}, builder -> {});
+        var podLabels = job.getSpec().getTemplate().getMetadata().getLabels();
+        assertEquals(KeycloakUpdateJobDependentResource.APP_LABEL_VALUE, podLabels.get(Constants.APP_LABEL));
+        assertEquals(KeycloakUpdateJobDependentResource.APP_LABEL_VALUE, podLabels.get(Constants.NAME_LABEL));
+        assertEquals(Constants.NAME, podLabels.get(Constants.PART_OF_LABEL));
+        assertEquals(Constants.COMMAND_COMPONENT, podLabels.get(Constants.COMPONENT_LABEL));
     }
 
     @Test
