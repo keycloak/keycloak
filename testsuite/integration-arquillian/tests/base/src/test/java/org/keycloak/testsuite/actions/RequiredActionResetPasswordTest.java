@@ -170,6 +170,31 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         assertEquals(1, testUser.getUserSessions().size());
     }
 
+    @Test
+    public void rejectedPasswordKeepsOtherSessions() {
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
+        oauth.newConfig().driver(driver2).doLogin("test-user@localhost", "password");
+        assertEquals(1, testUser.getUserSessions().size());
+
+        requireUpdatePassword();
+        RealmManager.realm(managedRealm.admin()).passwordPolicy("length(20)");
+        try {
+            oauth.openLoginForm();
+            loginPage.login("test-user@localhost", "password");
+            changePasswordPage.assertCurrent();
+            changePasswordPage.checkLogoutSessions();
+            changePasswordPage.changePassword("too-short", "too-short");
+            changePasswordPage.assertCurrent();
+            assertEquals("Invalid password: minimum length 20.", changePasswordPage.getError());
+            assertEquals(1, testUser.getUserSessions().size());
+        } finally {
+            RealmManager.realm(managedRealm.admin()).passwordPolicy("");
+            UserRepresentation userRep = findUser("test-user@localhost");
+            userRep.setRequiredActions(new LinkedList<>());
+            testUser.update(userRep);
+        }
+    }
+
     private void resetPassword(boolean logoutOtherSessions) {
         // create a regular session
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);

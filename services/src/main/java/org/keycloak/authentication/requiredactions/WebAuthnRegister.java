@@ -311,10 +311,6 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
 
         RegistrationParameters registrationParameters = new RegistrationParameters(serverProperty, buildExpectedCredentialParameters(policy), isUserVerificationRequired);
 
-        if ("on".equals(params.getFirst("logout-sessions"))) {
-            AuthenticatorUtil.logoutOtherSessions(context);
-        }
-
         WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager(policy);
         try {
             // parse
@@ -339,6 +335,10 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             WebAuthnCredentialModel newCredentialModel = webAuthnCredProvider.getCredentialModelFromCredentialInput(credential, label);
 
             CredentialModel createdCredential = webAuthnCredProvider.createCredential(context.getRealm(), context.getUser(), newCredentialModel);
+
+            if ("on".equals(params.getFirst("logout-sessions"))) {
+                AuthenticatorUtil.logoutOtherSessions(context);
+            }
 
             String aaguid = newCredentialModel.getWebAuthnCredentialData().getAaguid();
             logger.debugv("WebAuthn credential registration success for user {0}. credentialType = {1}, publicKeyCredentialId = {2}, publicKeyCredentialLabel = {3}, publicKeyCredentialAAGUID = {4}",
