@@ -14,7 +14,12 @@ requiredEnv AZURE_SUBSCRIPTION AZURE_ADMIN_USER AZURE_DB_USER
 
 # Resource group (created via idempotent command)
 echo "Creating resource group ${AZURE_RG} in ${AZURE_REGION}"
-az group create --name ${AZURE_RG} --location ${AZURE_REGION} --subscription ${AZURE_SUBSCRIPTION}
+group_args=(--name "$AZURE_RG" --location "$AZURE_REGION" --subscription "$AZURE_SUBSCRIPTION")
+if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  group_args+=(--tags "keycloak-ci-repository=$GITHUB_REPOSITORY" "keycloak-ci-run=$GITHUB_RUN_ID"
+    "keycloak-ci-attempt=$GITHUB_RUN_ATTEMPT")
+fi
+az group create "${group_args[@]}"
 
 echo "Creating SQL server ${AZURE_NAME}-sqlsrv"
 az sql server create \
