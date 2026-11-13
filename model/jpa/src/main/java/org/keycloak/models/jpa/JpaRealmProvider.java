@@ -1233,11 +1233,13 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Stream<ClientScopeModel> getClientScopesStream(RealmModel realm) {
-        TypedQuery<String> query = em.createNamedQuery("getClientScopeIds", String.class);
-        query.setParameter("realm", realm.getId());
-        Stream<String> scopes = query.getResultStream();
+        // load all entities up front: the lookups by id below are then served from the persistence context,
+        // and the lazy collections of all scopes can be batch-fetched together when using getResultList(), and not a stream.
+        List<ClientScopeEntity> scopes = em.createNamedQuery("getClientScopes", ClientScopeEntity.class)
+                .setParameter("realm", realm.getId())
+                .getResultList();
 
-        return closing(scopes.map(realm::getClientScopeById).filter(Objects::nonNull));
+        return scopes.stream().map(entity -> realm.getClientScopeById(entity.getId())).filter(Objects::nonNull);
     }
 
     @Override
