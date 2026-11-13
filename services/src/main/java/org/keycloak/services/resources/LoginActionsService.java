@@ -55,11 +55,13 @@ import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginCon
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdpLinkAction;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.TriFunction;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
@@ -119,6 +121,8 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.authentication.AuthenticatorUtil.getUserSessionForKcAction;
+import static org.keycloak.authentication.AuthenticatorUtil.isReAuthRequiredForKcAction;
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
 import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 
@@ -1208,6 +1212,15 @@ public class LoginActionsService {
         processLocaleParam(authSession);
 
         if (!checks.isActionRequest()) {
+            // A POST without a valid session_code is treated as a page refresh, but it is not a plain refresh: the challenge of a
+            // required action may act on the submitted body (e.g. UpdateEmail sends a confirmation to the submitted address).
+            // The max_auth_age check must therefore also apply here, otherwise it could be bypassed by dropping the session_code.
+            if ("POST".equalsIgnoreCase(request.getHttpMethod()) && isReAuthRequiredBeforeAction(authSession, action, null)) {
+                logger.debugf("Re-authentication required before processing POST without session_code for AIA action %s", action);
+                RequiredActionFactory staleFactory = action == null ? null : (RequiredActionFactory) session.getKeycloakSessionFactory()
+                        .getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(action));
+                return rejectStaleAction(authSession, staleFactory == null ? null : staleFactory.create(session));
+            }
             initLoginEvent(authSession);
             event.event(EventType.CUSTOM_REQUIRED_ACTION);
             return AuthenticationManager.nextActionAfterAuthentication(session, authSession, clientConnection, request, session.getContext().getUri(), event);
@@ -1241,11 +1254,13 @@ public class LoginActionsService {
 
 
         Response response;
-
         if (isCancelAppInitiatedAction(factory.getId(), authSession, context)) {
             provider.initiatedActionCanceled(session, authSession);
             AuthenticationManager.setKcActionStatus(factory.getId(), RequiredActionContext.KcActionStatus.CANCELLED, authSession);
             context.cancel();
+        } else if (isReAuthRequiredBeforeAction(authSession, factory.getId(), provider)) {
+            logger.debugf("Re-authentication required before committing AIA action %s", factory.getId());
+            return rejectStaleAction(authSession, provider);
         } else {
             provider.processAction(context);
         }
@@ -1282,6 +1297,48 @@ public class LoginActionsService {
         return BrowserHistoryHelper.getInstance().saveResponseAndRedirect(session, authSession, response, true, request);
     }
 
+    /**
+     * Whether an application-initiated action must not proceed because the {@code max_auth_age} of the action has elapsed.
+     *
+     * @param authSession the current authentication session
+     * @param providerId the ID of the action, or {@code null} to check against {@code kc_action}
+     * @param provider the action provider, or {@code null} to resolve it from {@code kc_action}
+     */
+    private boolean isReAuthRequiredBeforeAction(AuthenticationSessionModel authSession, String providerId, RequiredActionProvider provider) {
+        return !isAdminInitiatedCredentialOffer(providerId, authSession)
+                && !isIdpLinkCompletion(providerId, authSession)
+                && authSession.getClientNote(Constants.KC_ACTION) != null
+                && isReAuthRequiredForKcAction(session, getUserSessionForKcAction(session, authSession), authSession, provider, providerId);
+    }
+
+    /**
+     * Rejects an application-initiated action because its {@code max_auth_age} has elapsed. The challenge of the action may already
+     * have created state that the reset of the flow does not remove (e.g. a stored credential offer), so the action is notified
+     * through {@link RequiredActionProvider#initiatedActionCanceled} before the user is sent to authenticate again.
+     *
+     * @param authSession the current authentication session
+     * @param provider the provider of the rejected action, or {@code null} if it could not be resolved
+     */
+    private Response rejectStaleAction(AuthenticationSessionModel authSession, RequiredActionProvider provider) {
+        if (provider != null) {
+            provider.initiatedActionCanceled(session, authSession);
+        }
+        return resetFlowAndRedirectToAuthenticate(authSession);
+    }
+
+    /**
+     * Resets the authentication flow of the given authentication session and redirects the user to the login page.
+     * Used when an application-initiated action requires the user to re-authenticate because {@code max_auth_age} has elapsed.
+     *
+     * @param authSession the current authentication session
+     * @return a redirect response to the login page
+     */
+    public Response resetFlowAndRedirectToAuthenticate(AuthenticationSessionModel authSession) {
+        AuthenticationProcessor.resetFlow(authSession, AUTHENTICATE_PATH);
+        URI redirectUri = getLastExecutionUrl(AUTHENTICATE_PATH, null, authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
+        return Response.status(Response.Status.FOUND).location(redirectUri).build();
+    }
+
     private Response interruptionResponse(RequiredActionContextResult context, AuthenticationSessionModel authSession, String action, Error error) {
         LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
         protocol.setRealm(context.getRealm())
@@ -1293,6 +1350,26 @@ public class LoginActionsService {
 
         event.error(Errors.REJECTED_BY_USER);
         return protocol.sendError(authSession, error, context.getErrorMessage());
+    }
+
+    /**
+     * An admin-initiated credential offer is started from an emailed action token. The token already proves the user's
+     * identity (the auth session note is only set server-side by the token handler) and there is no prior authentication
+     * in the session, so the {@code max_auth_age} re-authentication check does not apply.
+     */
+    private boolean isAdminInitiatedCredentialOffer(String providerId, AuthenticationSessionModel authSession) {
+        return OID4VCIConstants.VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID.equals(providerId)
+                && "true".equals(authSession.getAuthNote(OID4VCIConstants.IS_ADMIN_INITIATED));
+    }
+
+    /**
+     * Completion call of the idp_link action, invoked by {@link IdentityBrokerService} after the external IdP round trip. The status note is only
+     * set server-side by the broker. The {@code max_auth_age} check was already done by the broker before the link was persisted, so it must not
+     * be repeated here, as it could reject the action after the link was already committed.
+     */
+    private boolean isIdpLinkCompletion(String providerId, AuthenticationSessionModel authSession) {
+        return IdpLinkAction.PROVIDER_ID.equals(providerId)
+                && authSession.getAuthNote(IdpLinkAction.IDP_LINK_STATUS) != null;
     }
 
     private boolean isCancelAppInitiatedAction(String providerId, AuthenticationSessionModel authSession, RequiredActionContextResult context) {
