@@ -42,9 +42,8 @@ image:images/oidc-add-identity-provider.png[Add Identity Provider]
 |Client Secret
 |Client secret from an external <<_vault-administration,vault>>. This secret is necessary if you are using the Authorization Code Flow.
 
-|Client Assertion Signature Algorithm
-|Signature algorithm to create JWT assertion as client authentication.
-In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. `RS256` is adapted in the case of JWT signed with private key.  `HS256` is adapted in the case of Client secret as jwt.
+|Client Assertion Algorithm
+|For `private_key_jwt`, the signature algorithm used to sign the JWT assertion. For `client_secret_jwt`, the HMAC algorithm used to create a message authentication code with the client secret. If no algorithm is specified, `RS256` is used with a private key and `HS256` with the client secret.
 
 |Client Assertion Audience
 |The audience to use for the client assertion. The default value is the IDP's token endpoint URL.
