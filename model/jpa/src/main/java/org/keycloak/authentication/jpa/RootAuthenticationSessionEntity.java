@@ -49,6 +49,10 @@ import org.hibernate.annotations.DynamicUpdate;
                         " WHERE sess.realmId = :realmId AND sess.sessionBucket = :sessionBucket AND sess.timestampCoarse < :timestampCoarse"
         ),
         @NamedQuery(
+                name = "findAnyRootAuthSessionIdByRealm",
+                query = "SELECT sess.id FROM RootAuthenticationSessionEntity sess WHERE sess.realmId = :realmId"
+        ),
+        @NamedQuery(
             name = "deleteRootAuthSessionsByUser",
             query = "DELETE FROM RootAuthenticationSessionEntity sess" +
                 " WHERE sess.realmId = :realmId" +

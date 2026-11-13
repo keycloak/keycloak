@@ -118,7 +118,8 @@ public class RealmAwareExpirationTask extends BaseExpirationTask {
                 var config = session.getProvider(ServerConfigStorageProvider.class);
                 var key = rowIdForRealm(realmId);
                 var lastCheck = config.loadOrCreate(key, "0");
-                if (Long.parseLong(lastCheck) + intervalSeconds > currentTime) {
+                // the interval has not elapsed, or there is nothing to do: don't write the coordination row
+                if (Long.parseLong(lastCheck) + intervalSeconds > currentTime || !action.hasWork(session, realmId)) {
                     return false;
                 }
                 return config.replace(key, lastCheck, Long.toString(currentTime));

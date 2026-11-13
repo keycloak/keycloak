@@ -25,7 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.expiration.jpa.ExpirationAction;
@@ -430,6 +432,38 @@ public class ExpirationTaskTest {
         Thread.sleep(200);
 
         assertThat(callCount.get(), is(1));
+    }
+
+    // -- hasWork test --
+
+    @TestOnServer
+    public void testRealmAwareTaskSkipsRealmWithoutWorkAndDoesNotClaimIt(KeycloakSession session) {
+        var hasWork = new AtomicBoolean(false);
+        var removeCalls = new AtomicInteger();
+        var realmId = session.realms().getRealmByName(REALM_NAME_1).getId();
+        var action = new ExpirationAction() {
+            @Override
+            public boolean hasWork(KeycloakSession s, String id) {
+                return !realmId.equals(id) || hasWork.get();
+            }
+
+            @Override
+            public boolean removeExpired(KeycloakSession s, String id, int currentTime, int maxRemoval, IntConsumer removeCount) {
+                if (realmId.equals(id)) {
+                    removeCalls.incrementAndGet();
+                }
+                return false;
+            }
+        };
+
+        var task = buildTask("realm-has-work", action, new RecordingListener(), true, session.getKeycloakSessionFactory());
+        task.run();
+        assertThat(removeCalls.get(), is(0));
+
+        // the realm was not claimed, so it is cleaned in the same interval as soon as there is work
+        hasWork.set(true);
+        task.run();
+        assertThat(removeCalls.get(), is(1));
     }
 
     // -- Helpers --
