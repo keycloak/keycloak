@@ -49,6 +49,9 @@ public class RegisterPage extends AbstractLoginPage {
     @FindBy(name = "password")
     private WebElement passwordInput;
 
+    @FindBy(id = "input-error-password")
+    private WebElement passwordError;
+
     @FindBy(name = "password-confirm")
     private WebElement passwordConfirmInput;
 
@@ -172,6 +175,14 @@ public class RegisterPage extends AbstractLoginPage {
 
     public String getPassword() {
         return passwordInput.getAttribute("value");
+    }
+
+    public String getPasswordError() {
+        try {
+            return passwordError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
     }
 
     public boolean isDepartmentPresent() {
