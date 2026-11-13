@@ -49,6 +49,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.conformance.ConformanceTls;
 import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -95,20 +96,9 @@ public final class VciConformanceRealmUtil {
     // The attester leaf certificate is generated with the emailProtection extended key usage.
     private static final String ATTESTER_ATTESTATION_EKU = "1.3.6.1.5.5.7.3.4";
 
-    // FAPI2 requires the TLS layer to only offer BCP195 (RFC 9325) recommended cipher suites for TLS 1.2. The
-    // default JVM cipher list includes non-recommended suites, which the conformance suite TLS checks reject, so
-    // the test server is restricted to the recommended AEAD suites. The TLS 1.3 suites must be listed too, as
-    // restricting the cipher list would otherwise disable TLS 1.3 entirely and the suite checks that TLS 1.3 is
-    // negotiable where offered. Both the HAIP and non-HAIP servers run the FAPI2-family TLS checks, so they share
-    // this list.
-    public static final String TLS_PROTOCOLS = "TLSv1.3,TLSv1.2";
-    public static final String BCP195_CIPHERS = String.join(",",
-            "TLS_AES_128_GCM_SHA256",
-            "TLS_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
+    // Both the HAIP and non-HAIP servers run the FAPI2-family TLS checks, so they share the BCP195 settings.
+    public static final String TLS_PROTOCOLS = ConformanceTls.PROTOCOLS;
+    public static final String BCP195_CIPHERS = ConformanceTls.BCP195_CIPHERS;
 
     /**
      * Maps the conformance suite {@code credential_format} plan variant to the matching credential configuration id

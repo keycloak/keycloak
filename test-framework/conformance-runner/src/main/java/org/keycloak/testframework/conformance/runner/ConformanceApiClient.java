@@ -40,11 +40,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public final class ConformanceApiClient {
 
+    private static final Duration DEFAULT_STOP_TIMEOUT = Duration.ofMinutes(1);
+
     private final URI baseUri;
     private final HttpClient httpClient;
+    private final Duration stopTimeout;
 
     public ConformanceApiClient(URI baseUri, SSLContext sslContext) {
+        this(baseUri, sslContext, DEFAULT_STOP_TIMEOUT);
+    }
+
+    /**
+     * {@code stopTimeout} is how long to wait for a module to stop after a failed run, see
+     * {@link #run(ConformanceModuleVariant, JsonNode, Runnable, Consumer)}.
+     */
+    ConformanceApiClient(URI baseUri, SSLContext sslContext, Duration stopTimeout) {
         this.baseUri = baseUri;
+        this.stopTimeout = stopTimeout;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(20))
                 .sslContext(sslContext)
@@ -118,26 +130,50 @@ public final class ConformanceApiClient {
      */
     public ConformanceModuleResult run(ConformanceModuleVariant module, JsonNode suiteConfig,
             Consumer<ModuleRun> interaction) {
+        return run(module, suiteConfig, null, interaction);
+    }
+
+    /**
+     * Like {@link #run(ConformanceModuleVariant, JsonNode, Consumer)}, with {@code beforeStart} run once the module is
+     * configured and before it is started, e.g. to rotate the server's keys for a module comparing them with the keys
+     * it fetched while being configured. It runs only for modules the suite does not start by itself.
+     */
+    public ConformanceModuleResult run(ConformanceModuleVariant module, JsonNode suiteConfig, Runnable beforeStart,
+            Consumer<ModuleRun> interaction) {
         JsonNode plan = createPlan(module.plan(), suiteConfig, module.planVariant());
         String planId = requiredText(plan, "id");
 
         JsonNode moduleNode = createModule(planId, module.name(), module.moduleVariant());
         String moduleId = requiredText(moduleNode, "id");
-        JsonNode info = waitForRunnableOrFinished(planId, moduleId);
-        if ("CONFIGURED".equals(info.path("status").asText())) {
-            startModule(planId, moduleId);
-        }
-        if (interaction != null) {
-            info = waitForState(planId, moduleId, List.of("WAITING", "FINISHED"), Duration.ofMinutes(4));
-            if (!"FINISHED".equals(info.path("status").asText())) {
-                interaction.accept(new ModuleRun(moduleNode, info));
+        try {
+            JsonNode info = waitForRunnableOrFinished(planId, moduleId);
+            if ("CONFIGURED".equals(info.path("status").asText())) {
+                if (beforeStart != null) {
+                    beforeStart.run();
+                }
+                startModule(planId, moduleId);
             }
-        }
-        info = waitForFinished(planId, moduleId);
-        JsonNode logs = getLogs(planId, moduleId);
+            if (interaction != null) {
+                info = waitForState(planId, moduleId, List.of("WAITING", "FINISHED"), Duration.ofMinutes(4));
+                if (!"FINISHED".equals(info.path("status").asText())) {
+                    interaction.accept(new ModuleRun(moduleNode, info));
+                }
+            }
+            info = waitForFinished(planId, moduleId);
+            JsonNode logs = getLogs(planId, moduleId);
 
-        return new ConformanceModuleResult(module.plan(), module.planVariant(), module.name(), module.moduleVariant(),
-                planId, moduleId, info.path("status").asText(), info.path("result").asText("UNKNOWN"), logs);
+            return new ConformanceModuleResult(module.plan(), module.planVariant(), module.name(), module.moduleVariant(),
+                    planId, moduleId, info.path("status").asText(), info.path("result").asText("UNKNOWN"), logs);
+        } catch (RuntimeException e) {
+            // A module that did not finish, e.g. it timed out, would otherwise keep running, with its browser, against
+            // the same realm as a module run after it, e.g. when the test runs it again
+            RuntimeException cleanupFailure = stopModule(planId, moduleId);
+            if (cleanupFailure != null) {
+                throw new ModuleCleanupFailedException("Conformance module " + module.name() + idContext(planId, moduleId)
+                        + " failed and could not be stopped", e, cleanupFailure);
+            }
+            throw e;
+        }
     }
 
     /**
@@ -180,6 +216,29 @@ public final class ConformanceApiClient {
         // not replayed on IO failures as a lost response would start the module a second time
         expectJson(request("/api/runner/" + moduleId).POST(HttpRequest.BodyPublishers.noBody()).build(), 200,
                 idContext(planId, moduleId), false);
+    }
+
+    /**
+     * Stops a module that is still running and waits until the suite reports it stopped. The suite answers 404 for a
+     * module that is not running any more.
+     *
+     * @return why stopping the module failed, or {@code null} if it is not running any more
+     */
+    private RuntimeException stopModule(String planId, String moduleId) {
+        try {
+            HttpRequest request = request("/api/runner/" + moduleId).DELETE().build();
+            HttpResponse<String> response = send(request);
+            if (response.statusCode() == 200) {
+                // the suite stops the module in the background
+                waitForState(planId, moduleId, List.of("FINISHED"), stopTimeout);
+            } else if (response.statusCode() != 404) {
+                throw new IllegalStateException("Conformance API DELETE " + request.uri() + idContext(planId, moduleId)
+                        + " returned HTTP " + response.statusCode() + ": " + response.body());
+            }
+            return null;
+        } catch (RuntimeException e) {
+            return e;
+        }
     }
 
     private JsonNode waitForRunnableOrFinished(String planId, String moduleId) {

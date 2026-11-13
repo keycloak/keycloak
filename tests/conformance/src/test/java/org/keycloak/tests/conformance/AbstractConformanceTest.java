@@ -17,14 +17,18 @@
 
 package org.keycloak.tests.conformance;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.conformance.annotations.InjectOpenIdConformanceServer;
 import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceAttempts;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleResult;
 import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
 import org.keycloak.testframework.conformance.runner.ConformanceResult;
@@ -49,6 +53,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 public abstract class AbstractConformanceTest {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractConformanceTest.class);
+
+    /**
+     * How often a module not finishing as expected, or whose run fails with an exception, is run again before the test
+     * fails, see {@link ConformanceAttempts}. Set it with the {@value} test framework option (system property,
+     * {@code KC_TEST_CONFORMANCE_RETRIES} environment variable or keycloak-test.properties) for all tests; without it,
+     * each test uses its {@link #defaultRetries()}. 0 disables the retries.
+     */
+    public static final String RETRIES_PROPERTY = "kc.test.conformance.retries";
+
+    // The aliases of the current attempt by base, null outside of an attempt, e.g. while discovering module variants
+    private Map<String, String> attemptAliases;
+    // Undoes what the test prepared for the aliases of the current attempt
+    private final List<Runnable> attemptCleanups = new ArrayList<>();
 
     @InjectCertificates(config = TlsCertificates.class)
     protected ManagedCertificates certificates;
@@ -101,15 +118,113 @@ public abstract class AbstractConformanceTest {
         return null;
     }
 
+    /**
+     * Prepares Keycloak once the module is configured and before it is started, for the modules the suite does not
+     * start by itself, e.g. rotates the realm's signing keys for a module comparing them with the keys it fetched while
+     * being configured.
+     */
+    protected Runnable beforeStart(ConformanceModuleVariant moduleVariant) {
+        return null;
+    }
+
+    /**
+     * How often a module of this test is run again by default, see {@link #RETRIES_PROPERTY}. Retries are opt-in, so
+     * none by default.
+     */
+    protected int defaultRetries() {
+        return 0;
+    }
+
+    /**
+     * The number of attempts of a module, given the default number of retries of the test, see
+     * {@link #RETRIES_PROPERTY}.
+     */
+    public static int attempts(int defaultRetries) {
+        return 1 + Math.max(0, Config.get(RETRIES_PROPERTY, defaultRetries, Integer.class));
+    }
+
+    /**
+     * The suite alias of the current run of a module, see {@link ConformanceAttempts#newAlias}: a new one for every
+     * attempt, so a late callback of another run cannot reach this run's module. A test calls it in its
+     * {@link #suiteConfig}. Outside of a run, e.g. while discovering module variants, it is {@code base}.
+     */
+    protected String suiteAlias(String base) {
+        if (attemptAliases == null) {
+            return base;
+        }
+        return attemptAliases.computeIfAbsent(base, b -> {
+            String alias = ConformanceAttempts.newAlias(b);
+            Runnable cleanup = aliasCreated(alias);
+            if (cleanup != null) {
+                attemptCleanups.add(cleanup);
+            }
+            return alias;
+        });
+    }
+
+    /**
+     * Prepares Keycloak for a run under a new suite alias, e.g. registers its callback URL as a redirect URI of the
+     * static clients, as the suite routes the callbacks by the alias.
+     *
+     * @return what undoes it once the run finished, or {@code null}
+     */
+    protected Runnable aliasCreated(String alias) {
+        return null;
+    }
+
     @ParameterizedTest
     @MethodSource("moduleVariants")
     public void conformance(ConformanceModuleVariant moduleVariant) {
-        ConformanceModuleResult result = server.client()
-                .run(moduleVariant, suiteConfig(moduleVariant), interaction(moduleVariant));
-        if (!result.finishedWith(moduleVariant.expectedResult())) {
-            LOGGER.errorf("Full logs of failed conformance module %s:%n%s", result.module(), result.logs().toPrettyString());
-            Assertions.fail(result.failureSummary());
+        ConformanceResult expectedResult = moduleVariant.expectedResult();
+        ConformanceAttempts.Outcome outcome;
+        try {
+            outcome = ConformanceAttempts.run(moduleVariant.name(), attempts(defaultRetries()), attempt -> {
+                attemptAliases = new HashMap<>();
+                try {
+                    // Each run creates a new plan, so an attempt does not depend on the previous one
+                    return server.client()
+                            .run(moduleVariant, suiteConfig(moduleVariant), beforeStart(moduleVariant), interaction(moduleVariant));
+                } finally {
+                    cleanUpAttempt();
+                }
+            }, result -> failure(result, expectedResult), AbstractConformanceTest::printRetryNotice);
+        } finally {
+            attemptAliases = null;
         }
+        if (!outcome.succeeded()) {
+            ConformanceModuleResult result = outcome.result();
+            // Formatted upfront, as the test framework log filter replays buffered records without their parameters
+            LOGGER.error("Full logs of failed conformance module " + result.module() + ":\n" + result.logs().toPrettyString());
+            Assertions.fail((outcome.attempts() > 1 ? "All " + outcome.attempts() + " attempts failed, the last one with:\n" : "")
+                    + outcome.failure());
+        }
+    }
+
+    private void cleanUpAttempt() {
+        for (Runnable cleanup : attemptCleanups) {
+            try {
+                cleanup.run();
+            } catch (RuntimeException e) {
+                // Formatted upfront, as the test framework log filter replays buffered records without their parameters
+                LOGGER.warn("Failed to clean up after a conformance module run: " + e);
+            }
+        }
+        attemptCleanups.clear();
+    }
+
+    /**
+     * Prints to the test output rather than logging, as the test framework log filter drops the logs of a test that
+     * passes, which would hide that a module passed only when run again.
+     */
+    private static void printRetryNotice(String message) {
+        System.out.println("[conformance retry] " + message);
+    }
+
+    /**
+     * Why the module did not finish as expected, or {@code null} if it did.
+     */
+    private static String failure(ConformanceModuleResult result, ConformanceResult expectedResult) {
+        return result.finishedWith(expectedResult) ? null : result.failureSummary();
     }
 
     public static class TlsCertificates implements CertificatesConfig {
