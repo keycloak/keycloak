@@ -54,6 +54,6 @@ the HttpClient to provide the right certificates in the keystore for the outgoin
 
 === Configuring X.509 Authentication
 
-For more information on how to configure X.509 Authentication, see link:{adminguide_link}#_x509[X.509 Client Certificate User Authentication section].
+For more information on how to configure X.509 Authentication, see link:{adminguide_x509}[X.509 Client Certificate User Authentication section].
 
 </@tmpl.guide>
