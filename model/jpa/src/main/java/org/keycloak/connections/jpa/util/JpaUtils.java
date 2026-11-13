@@ -20,6 +20,10 @@ package org.keycloak.connections.jpa.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,6 +63,7 @@ public class JpaUtils {
     public static final String QUERY_NATIVE_SUFFIX = "[native]";
     public static final String QUERY_JPQL_SUFFIX = "[jpql]";
     private static final Logger logger = Logger.getLogger(JpaUtils.class);
+    private static final String TIDB_PROPERTY = "keycloak.tidb";
 
     /**
      * MySQL/MariaDB drivers default to CLIENT_FOUND_ROWS, which makes ON DUPLICATE KEY UPDATE
@@ -67,8 +72,74 @@ public class JpaUtils {
      * no-op update on an active row is indistinguishable from a successful insert (both return 1).
      */
     public static boolean isUpsertRowCountUnreliable(EntityManager em) {
+        return isMySQLDialect(em);
+    }
+
+    public static boolean isMySQLDialect(EntityManager em) {
         return em.getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
                 .getJdbcServices().getDialect() instanceof MySQLDialect;
+    }
+
+    /**
+     * TiDB is used via the MySQL dialect, and accepts {@code FOR UPDATE SKIP LOCKED} but silently ignores the
+     * {@code SKIP LOCKED} part: rows locked by other transactions are returned instead of being skipped, so a query
+     * using it doesn't prove that the row is locked by the current transaction.
+     * TiDB can only be identified by its version string, which looks like {@code 8.0.11-TiDB-v8.5.8}.
+     * See <a href="https://github.com/pingcap/tidb/issues/18207">pingcap/tidb#18207</a>.
+     */
+    public static boolean isSkipLockedSupported(EntityManager em) {
+        if (!isMySQLDialect(em)) {
+            // not a MySQL dialect
+            return true;
+        }
+        return !Boolean.TRUE.equals(em.getEntityManagerFactory().getProperties().get(TIDB_PROPERTY));
+    }
+
+    /**
+     * Detects database products that are used via the dialect of another database and can only be identified by their
+     * version string. Needs to be called once while the server starts, before any request is handled, so the result can be
+     * read without synchronization afterwards.
+     */
+    public static void detectDatabaseProduct(EntityManagerFactory emf, Connection connection) throws SQLException {
+        SessionFactoryImplementor factory = emf.unwrap(SessionFactoryImplementor.class);
+        boolean tidb = false;
+        if (factory.getJdbcServices().getDialect() instanceof MySQLDialect) {
+            // TiDB reports a version like 8.0.11-TiDB-v8.5.8
+            String version = connection.getMetaData().getDatabaseProductVersion();
+            tidb = version != null && version.contains("-TiDB-");
+        }
+        emf.getProperties().put(TIDB_PROPERTY, tidb);
+        if (tidb) {
+            warnIfTiDBCommitOptimizationsDisabled(connection);
+        }
+    }
+
+    /**
+     * Async commit and one-phase commit roughly halve the latency of writes on TiDB. They are enabled by default
+     * on TiDB clusters, but might be disabled on clusters that were upgraded from an older version.
+     * The single-node {@code unistore} that is embedded in the TiDB container image commits locally and doesn't benefit from them.
+     */
+    private static void warnIfTiDBCommitOptimizationsDisabled(Connection connection) {
+        try (Statement statement = connection.createStatement();
+             ResultSet config = statement.executeQuery("SELECT @@tidb_config")) {
+            if (config.next() && config.getString(1).replaceAll("\\s", "").contains("\"store\":\"unistore\"")) {
+                return;
+            }
+        } catch (SQLException e) {
+            logger.debug("Unable to read the TiDB configuration", e);
+        }
+        try (Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SHOW VARIABLES WHERE Variable_name IN ('tidb_enable_async_commit', 'tidb_enable_1pc')")) {
+            while (rs.next()) {
+                String name = rs.getString(1);
+                String value = rs.getString(2);
+                if (!"ON".equalsIgnoreCase(value) && !"1".equals(value)) {
+                    logger.warnf("TiDB variable '%s' is set to '%s'. Set it to 'ON' to reduce the latency of writes.", name, value);
+                }
+            }
+        } catch (SQLException e) {
+            logger.debug("Unable to check the TiDB commit optimization settings", e);
+        }
     }
 
     /**
