@@ -111,7 +111,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri())
-                .withoutDetails(Details.CONSENT);
+                .withoutDetails(Details.CONSENT, Details.CREDENTIAL_TYPE);
     }
 
     @Test
@@ -130,7 +130,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri())
-                .withoutDetails(Details.CONSENT);
+                .withoutDetails(Details.CONSENT, Details.CREDENTIAL_TYPE);
     }
 
     @Test
@@ -146,7 +146,8 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        EventAssertion.expectLoginSuccess(events.poll());
+        EventAssertion.expectLoginSuccess(events.poll())
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
     }
 
     // KEYCLOAK-3835
@@ -166,7 +167,8 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        EventAssertion.expectLoginSuccess(events.poll());
+        EventAssertion.expectLoginSuccess(events.poll())
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
     }
 
     @Test
