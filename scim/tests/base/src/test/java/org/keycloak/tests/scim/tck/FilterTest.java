@@ -634,6 +634,77 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
+    public void testFilterSingleValuedAttributeWithoutValueNegation() {
+        // Regression test for https://github.com/keycloak/keycloak/issues/53260: single-valued attributes stored
+        // as user attributes are evaluated with an EXISTS subquery, which used to make "not (attr eq x)" match users
+        // without a value while "attr ne x" did not. Both must exclude users without a value, as direct fields do.
+        addOrReplaceUPAttribute("title");
+        String customSchema = "urn:test:custom:" + KeycloakModelUtils.generateId();
+        String customAttr = customSchema + ":singleValuedAttr";
+        addOrReplaceUPAttribute(customSchema, "singleValuedAttr");
+
+        User engineer = createUser("engineer");
+        User manager = createUser("manager");
+        User none = createUser("none");
+        setAttributes(engineer, Map.of("scim.title", List.of("Engineer"), "scim.singleValuedAttr", List.of("Engineer")));
+        setAttributes(manager, Map.of("scim.title", List.of("Manager"), "scim.singleValuedAttr", List.of("Manager")));
+
+        for (String attr : List.of("title", customAttr)) {
+            assertSingleResult(client.users().getAll(ResourceFilter.filter().ne(attr, "Engineer").build()), manager.getUserName());
+            assertSingleResult(client.users().getAll(ResourceFilter.filter()
+                    .not().lparen().eq(attr, "Engineer").rparen().build()), manager.getUserName());
+            assertSingleResult(client.users().getAll(ResourceFilter.filter()
+                    .not().lparen().co(attr, "gine").rparen().build()), manager.getUserName());
+
+            ListResponse<User> present = client.users().getAll(ResourceFilter.filter().pr(attr).build());
+            assertThat(present.getTotalResults(), is(2));
+            assertSingleResult(client.users().getAll(ResourceFilter.filter()
+                    .not().lparen().pr(attr).rparen().build()), none.getUserName());
+        }
+    }
+
+    @Test
+    public void testFilterSingleValuedAttributeWithLongValueNegation() {
+        // values longer than 255 characters are stored in a separate column of the user attribute table; the user
+        // still has a value for the attribute, so "ne" and a negated "eq" must both match it
+        String customSchema = "urn:test:custom:" + KeycloakModelUtils.generateId();
+        String customAttr = customSchema + ":singleValuedAttr";
+        addOrReplaceUPAttribute(customSchema, "singleValuedAttr");
+
+        String longAttrValue = "x".repeat(300);
+        User engineer = createUser("engineer");
+        User longValue = createUser("long");
+        User none = createUser("none");
+        setAttributes(engineer, Map.of("scim.singleValuedAttr", List.of("Engineer")));
+        setAttributes(longValue, Map.of("scim.singleValuedAttr", List.of(longAttrValue)));
+
+        assertSingleResult(client.users().getAll(ResourceFilter.filter().ne(customAttr, "Engineer").build()), longValue.getUserName());
+        assertSingleResult(client.users().getAll(ResourceFilter.filter()
+                .not().lparen().eq(customAttr, "Engineer").rparen().build()), longValue.getUserName());
+
+        assertSingleResult(client.users().getAll(ResourceFilter.filter().eq(customAttr, longAttrValue).build()), longValue.getUserName());
+        assertSingleResult(client.users().getAll(ResourceFilter.filter().ne(customAttr, longAttrValue).build()), engineer.getUserName());
+        assertSingleResult(client.users().getAll(ResourceFilter.filter()
+                .not().lparen().eq(customAttr, longAttrValue).rparen().build()), engineer.getUserName());
+
+        assertThat(client.users().getAll(ResourceFilter.filter().pr(customAttr).build()).getTotalResults(), is(2));
+        assertSingleResult(client.users().getAll(ResourceFilter.filter()
+                .not().lparen().pr(customAttr).rparen().build()), none.getUserName());
+
+        // operators other than eq, ne and pr cannot be evaluated against long values, so a long value matches
+        // neither the comparison nor its negation
+        assertNoResults(client.users().getAll(ResourceFilter.filter().co(customAttr, "xxx").build()));
+        assertSingleResult(client.users().getAll(ResourceFilter.filter()
+                .not().lparen().co(customAttr, "xxx").rparen().build()), engineer.getUserName());
+    }
+
+    private void setAttributes(User user, Map<String, List<String>> attributes) {
+        UserRepresentation rep = realm.admin().users().get(user.getId()).toRepresentation();
+        rep.setAttributes(attributes);
+        realm.admin().users().get(user.getId()).update(rep);
+    }
+
+    @Test
     public void testFilterByEmail() {
         User bob = createUser("bob", "Robert", "Johnson", "bob@keycloak.org", true);
         User alice = createUser("alice", "Alice", "Smith", "alice@keycloak.org", true);
