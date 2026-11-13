@@ -27,6 +27,12 @@ import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class LoggedInPageHeader extends AbstractHeader {
+    /**
+     * Account Console masthead shows the kebab below the PatternFly {@code md}
+     * breakpoint (768px) and the desktop toggle from {@code md} upward.
+     */
+    private static final int ACCOUNT_MOBILE_WIDTH = 767;
+
     @FindBy(xpath = "//*[@role='menuitem' and normalize-space()='Sign out']")
     private WebElement logoutBtn;
 
@@ -35,6 +41,11 @@ public class LoggedInPageHeader extends AbstractHeader {
 
     @FindBy(xpath = "//*[@data-testid='options-kebab-toggle']")
     private WebElement mobileOptions;
+
+    @Override
+    protected int getMobileWidth() {
+        return ACCOUNT_MOBILE_WIDTH;
+    }
 
     @Override
     public void clickOptions() {

@@ -102,9 +102,13 @@ node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs \
   --fail-on-unresolved
 ```
 
+`--app-path` must point at an Account UI source package whose `package.json`
+name is `@keycloak/keycloak-account-ui` (for example a fork of `js/apps/account-ui`).
+Installed or inherited theme directories under `themes/` are not supported.
+
 Useful options:
 
-- `--app-path PATH` to target a custom account-ui directory
+- `--app-path PATH` to target a custom account-ui source directory
 - `--report-dir PATH` to customize report output location
 - `--backup-dir PATH` to customize apply-mode backup location
 - `--skip-pf-codemods`, `--skip-css-vars-updater`, `--skip-class-updater` for partial runs

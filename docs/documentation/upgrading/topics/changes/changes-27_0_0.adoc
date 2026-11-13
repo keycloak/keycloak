@@ -294,14 +294,17 @@ Existing realms that explicitly use `keycloak`, `keycloak.v2`, or `keycloak.v3` 
 Custom account themes are left unchanged.
 
 If you maintain a custom Account Console theme that extends or copies `keycloak.v3`, migrate it to PatternFly 6 before switching its parent to `keycloak.v4`.
-To assist with migration, use the helper script:
+
+The helper script below migrates an Account UI *source checkout* (a directory whose `package.json` name is `@keycloak/keycloak-account-ui`), not an installed or inherited theme directory under `themes/`.
+Pass the path of that source package with `--app-path`:
 
 [source,bash]
 ----
-node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs --app-path /path/to/your/theme
+node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs --app-path /path/to/keycloak-account-ui
 ----
 
 Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
+For CSS-only custom themes that only override resources of `keycloak.v3`, update PatternFly 5 classes and CSS variables to PatternFly 6 manually; the helper does not process those theme directories.
 If you explicitly enable `account:v3` (for example `--features=account:v3` or `KC_FEATURES=account:v3`), replace it with `account:v4`, or remove the entry because `account:v4` is enabled by default.
 Servers that still request `account:v3` fail feature validation at startup.
 
