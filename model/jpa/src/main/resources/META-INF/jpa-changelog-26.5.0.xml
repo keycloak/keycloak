@@ -31,7 +31,7 @@
             <column name="CLIENT_ID" type="VARCHAR(255)" />
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
         </createIndex>
-        <modifySql dbms="postgresql">
+        <modifySql dbms="postgresql,cockroachdb">
             <append value="WHERE CLIENT_ID != 'external'" />
         </modifySql>
         <modifySql dbms="mssql">
@@ -50,7 +50,7 @@
             <column name="EXTERNAL_CLIENT_ID" type="VARCHAR(255)"/>
             <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
         </createIndex>
-        <modifySql dbms="postgresql">
+        <modifySql dbms="postgresql,cockroachdb">
             <append value="WHERE CLIENT_STORAGE_PROVIDER != 'internal'" />
         </modifySql>
         <modifySql dbms="mssql">

@@ -106,6 +106,7 @@
         <module>db-oracle</module>
         <module>db-postgres</module>
         <module>db-tidb</module>
+        <module>db-cockroachdb</module>
         <module>email-server</module>
         <module>test-providers</module>
         <module>tests</module>

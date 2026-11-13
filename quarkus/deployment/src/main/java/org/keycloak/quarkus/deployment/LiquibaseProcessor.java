@@ -81,10 +81,14 @@ class LiquibaseProcessor {
         recorder.configureLiquibase(services);
     }
 
+    private static final Set<String> COCKROACH_DATABASES = Set.of("liquibase.database.core.CockroachDatabase", "org.keycloak.connections.jpa.updater.liquibase.KeycloakCockroachDatabase");
+
     private void filterImplementations(Class<?> types, String dbKind, Set<ClassInfo> classes) {
         if (Database.class.equals(types)) {
-            // removes unsupported databases
-            classes.removeIf(classInfo -> !org.keycloak.config.database.Database.isLiquibaseDatabaseSupported(classInfo.name().toString(), dbKind));
+            // removes unsupported databases, CockroachDB is kept for PostgreSQL as it is detected at runtime and used in the "dbms" attribute of changesets
+            classes.removeIf(classInfo -> !org.keycloak.config.database.Database.isLiquibaseDatabaseSupported(classInfo.name().toString(), dbKind)
+                    && !(COCKROACH_DATABASES.contains(classInfo.name().toString())
+                    && org.keycloak.config.database.Database.isLiquibaseDatabaseSupported("liquibase.database.core.PostgresDatabase", dbKind)));
         }
     }
 }
