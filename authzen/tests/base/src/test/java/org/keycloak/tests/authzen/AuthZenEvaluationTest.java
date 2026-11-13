@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -57,6 +58,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.CLIENT;
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.USER;
@@ -65,6 +68,7 @@ import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.access
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -366,6 +370,7 @@ public class AuthZenEvaluationTest {
                     .build());
 
         assertEquals(401, result.statusCode());
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "invalid_token");
     }
 
     // Subject properties are merged into identity attributes. The /subject-protected resource
@@ -420,6 +425,37 @@ public class AuthZenEvaluationTest {
               .build());
 
         assertEquals(401, result.statusCode());
+        // RFC 6750 section 3.1: no error code when the request carries no credentials
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), null);
+    }
+
+    @Test
+    public void testInvalidTokenReturnsUnauthorizedWithChallenge() throws IOException {
+        EvaluationResult result = authZenClient.withAccessToken("not-a-token")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(401, result.statusCode());
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "invalid_token");
+    }
+
+    // The challenge uses the scheme of the Authorization header, so a DPoP request gets a DPoP challenge.
+    // Auth schemes are case insensitive, so this also holds for other spellings of DPoP.
+    @ParameterizedTest
+    @ValueSource(strings = {"DPoP", "dpop"})
+    public void testInvalidDPoPTokenReturnsDPoPChallenge(String scheme) throws IOException {
+        EvaluationResult result = authZenClient.evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build(),
+              Map.of(HttpHeaders.AUTHORIZATION, scheme + " not-a-token"));
+
+        assertEquals(401, result.statusCode());
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "DPoP", "invalid_token");
     }
 
     @Test
@@ -436,6 +472,7 @@ public class AuthZenEvaluationTest {
                     .build());
 
         assertEquals(401, result.statusCode());
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "invalid_token");
     }
 
     @Test
@@ -886,6 +923,21 @@ public class AuthZenEvaluationTest {
 
     private String realmUrl() {
         return keycloakUrls.getBase() + "/realms/" + realm.getName();
+    }
+
+    private void assertChallenge(String header, String expectedError) {
+        assertChallenge(header, "Bearer", expectedError);
+    }
+
+    private void assertChallenge(String header, String scheme, String expectedError) {
+        assertNotNull(header, "401 without a WWW-Authenticate header");
+        assertTrue(header.startsWith(scheme + " "), header);
+        assertTrue(header.contains("realm=\"" + realm.getName() + "\""), header);
+        if (expectedError == null) {
+            assertFalse(header.contains("error="), header);
+        } else {
+            assertTrue(header.contains("error=\"" + expectedError + "\""), header);
+        }
     }
 
     private AuthZenClient.Authenticated authzenClient() {
