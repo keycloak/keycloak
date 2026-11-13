@@ -8,9 +8,11 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -30,6 +32,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
@@ -65,7 +68,9 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
+import org.keycloak.tests.providers.client.policies.RejectClientUpdatedClientPolicyExecutor;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
@@ -93,6 +98,11 @@ public class ClientIdMetadataDocumentTest {
     private static final String LOGO_URI = "http://localhost:8500/logo.png";
     private static final String RESOURCE = "https://mcp.example.com/api";
     private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
+    private static final String CIBA_NOTIFICATION_ENDPOINT = "http://localhost:8500/ciba/notification";
+    private static final String CUSTOM_OPTIONAL_SCOPE = "cimd-custom-optional";
+    private static final String ANOTHER_REDIRECT_URI = "https://app.example.com/callback";
+    private static final String ANOTHER_POST_LOGOUT_REDIRECT_URI = "https://app.example.com/logout";
+    private static final String BACKCHANNEL_LOGOUT_URI = "http://localhost:8500/backchannel-logout";
 
     @InjectRealm
     protected ManagedRealm realm;
@@ -1342,6 +1352,308 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientIdMetadataDocumentExecutorRefetchRevokesOmittedCapabilities() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.UMA_GRANT_TYPE,
+                OAuth2Constants.CIBA_GRANT_TYPE
+        ));
+        cimd.getRepresentation().setBackchannelTokenDeliveryMode(CibaConfig.CIBA_PING_MODE);
+        cimd.getRepresentation().setBackchannelClientNotificationEndpoint(CIBA_NOTIFICATION_ENDPOINT);
+
+        // first registration
+        AccessTokenResponse tokenResponse = loginAndGetTokenByPrivateKeyJwt(true);
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertTrue(Boolean.TRUE.equals(clientRepresentation.getAuthorizationServicesEnabled()));
+        Assertions.assertTrue(hasClientRole(clientRepresentation.getId(), Constants.AUTHZ_UMA_PROTECTION));
+        Assertions.assertTrue(hasServiceAccountUser());
+        Assertions.assertEquals("true", clientRepresentation.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+        Assertions.assertEquals(CIBA_NOTIFICATION_ENDPOINT, clientRepresentation.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT));
+
+        logout(tokenResponse.getIdToken());
+
+        // the client metadata omits grant_types and the CIBA properties
+        cimd.getRepresentation().setGrantTypes(null);
+        cimd.getRepresentation().setBackchannelTokenDeliveryMode(null);
+        cimd.getRepresentation().setBackchannelClientNotificationEndpoint(null);
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // re-fetch the client metadata
+        tokenResponse = loginAndGetTokenByPrivateKeyJwt(false);
+
+        // the capabilities granted by the previous client metadata are revoked
+        clientRepresentation = findByClientIdByAdmin();
+        String id = clientRepresentation.getId();
+        Assertions.assertFalse(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        Assertions.assertFalse(hasClientRole(id, Constants.AUTHZ_UMA_PROTECTION));
+        Assertions.assertFalse(hasServiceAccountUser());
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertNull(attrs.get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+        Assertions.assertNull(attrs.get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT));
+        Assertions.assertNull(attrs.get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT));
+        // the same as a client registered without grant_types
+        Assertions.assertNull(attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRefetchRemovesOmittedOptionalClientScopes() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // a client scope that is not a realm default client scope
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName(CUSTOM_OPTIONAL_SCOPE);
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        try (Response response = realm.admin().clientScopes().create(clientScope)) {
+            String clientScopeId = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.clientScopes().get(clientScopeId).remove());
+        }
+
+        cimd.getRepresentation().setScope("address " + CUSTOM_OPTIONAL_SCOPE);
+
+        // first registration
+        AccessTokenResponse tokenResponse = loginAndGetTokenByPrivateKeyJwt(true);
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(clientRepresentation.getOptionalClientScopes(),
+                Matchers.containsInAnyOrder("address", CUSTOM_OPTIONAL_SCOPE));
+        List<String> defaultClientScopes = clientRepresentation.getDefaultClientScopes();
+
+        logout(tokenResponse.getIdToken());
+
+        // the client metadata omits scope
+        cimd.getRepresentation().setScope(null);
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // re-fetch the client metadata
+        tokenResponse = loginAndGetTokenByPrivateKeyJwt(false);
+
+        // an omitted scope grants no optional client scopes
+        clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(clientRepresentation.getOptionalClientScopes(), Matchers.empty());
+        MatcherAssert.assertThat(clientRepresentation.getDefaultClientScopes(), Matchers.containsInAnyOrder(defaultClientScopes.toArray()));
+
+        logout(tokenResponse.getIdToken());
+
+        // re-fetch the unchanged client metadata
+        timeOffSet.set(2 * (CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3));
+        tokenResponse = loginAndGetTokenByPrivateKeyJwt(false);
+
+        // the client scopes remain the same
+        clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(clientRepresentation.getOptionalClientScopes(), Matchers.empty());
+        MatcherAssert.assertThat(clientRepresentation.getDefaultClientScopes(), Matchers.containsInAnyOrder(defaultClientScopes.toArray()));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRefetchRemovesOmittedWebOrigins() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        cimd.getRepresentation().setRedirectUris(List.of(REDIRECT_URI, ANOTHER_REDIRECT_URI));
+
+        // first registration
+        AccessTokenResponse tokenResponse = loginAndGetTokenByPrivateKeyJwt(true);
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(clientRepresentation.getWebOrigins(),
+                Matchers.containsInAnyOrder("http://localhost:8500", "https://app.example.com"));
+
+        logout(tokenResponse.getIdToken());
+
+        // the client metadata no longer includes the other redirect URI
+        cimd.getRepresentation().setRedirectUris(List.of(REDIRECT_URI));
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // re-fetch the client metadata
+        tokenResponse = loginAndGetTokenByPrivateKeyJwt(false);
+
+        // the web origin derived from the removed redirect URI is no longer allowed
+        clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(clientRepresentation.getRedirectUris(), Matchers.containsInAnyOrder(REDIRECT_URI));
+        MatcherAssert.assertThat(clientRepresentation.getWebOrigins(), Matchers.containsInAnyOrder("http://localhost:8500"));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRefetchRemovesOmittedLogoutUrisOfPublicClient() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // a public client whose client metadata includes neither grant_types nor keys,
+        // so that DescriptionConverter creates the client attributes only after the logout URIs
+        setCimdPublicClient();
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setGrantTypes(null);
+        cimd.getRepresentation().setBackchannelLogoutUri(BACKCHANNEL_LOGOUT_URI);
+
+        // first registration
+        AccessTokenResponse tokenResponse = loginAndGetTokenAsPublicClient(true);
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertEquals(BACKCHANNEL_LOGOUT_URI, clientRepresentation.getAttributes().get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+
+        logout(tokenResponse.getIdToken());
+
+        // the client metadata omits backchannel_logout_uri
+        cimd.getRepresentation().setBackchannelLogoutUri(null);
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // re-fetch the client metadata
+        tokenResponse = loginAndGetTokenAsPublicClient(false);
+
+        clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertNull(clientRepresentation.getAttributes().get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerOnCimdUpdateValidatesOmittedPostLogoutRedirectUris() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+
+        // SecureRedirectUrisEnforcer that allows any domain initially
+        SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        redirectUrisConfig.setAllowHttpScheme(true);
+        redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        setCimdPublicClient();
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setPostLogoutRedirectUris(List.of(ANOTHER_POST_LOGOUT_REDIRECT_URI));
+
+        // first registration
+        AccessTokenResponse tokenResponse = loginAndGetTokenAsPublicClient(true);
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertEquals(ANOTHER_POST_LOGOUT_REDIRECT_URI, clientRepresentation.getAttributes().get(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS));
+
+        logout(tokenResponse.getIdToken());
+
+        // tighten the policy so that the persisted post-logout redirect URI is no longer allowed
+        redirectUrisConfig.setAllowPermittedDomains(List.of("localhost"));
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        // the client metadata omits post_logout_redirect_uris, so the redirect URIs are used, which are allowed
+        cimd.getRepresentation().setPostLogoutRedirectUris(null);
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // re-fetch the client metadata, which is accepted
+        tokenResponse = loginAndGetTokenAsPublicClient(false);
+
+        clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertNull(clientRepresentation.getAttributes().get(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRefetchFailureNotPartiallyPersisted() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // first registration
+        AccessTokenResponse tokenResponse = loginAndGetTokenByPrivateKeyJwt(true);
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        String cacheExpiry = clientRepresentation.getAttributes().get(AbstractPersistentClientIdMetadataDocumentProvider.CIMD_CACHE_EXPIRY_TIME_IN_SEC);
+        Assertions.assertEquals(LOGO_URI, clientRepresentation.getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+        MatcherAssert.assertThat(clientRepresentation.getOptionalClientScopes(), Matchers.containsInAnyOrder("address", "phone"));
+
+        logout(tokenResponse.getIdToken());
+
+        // a client policy rejects the client after it has been updated
+        updateCimdAndRejectClientUpdatedPolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // change the client metadata
+        cimd.getRepresentation().setLogoUri("http://localhost:8500/logo2.png");
+        cimd.getRepresentation().setScope("profile");
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // re-fetch the client metadata, which fails after the client has been updated
+        assertLoginAndError(RejectClientUpdatedClientPolicyExecutor.ERROR_DETAIL);
+
+        // nothing of the failed update is persisted
+        clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertEquals(LOGO_URI, clientRepresentation.getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+        MatcherAssert.assertThat(clientRepresentation.getOptionalClientScopes(), Matchers.containsInAnyOrder("address", "phone"));
+        Assertions.assertEquals(cacheExpiry, clientRepresentation.getAttributes().get(AbstractPersistentClientIdMetadataDocumentProvider.CIMD_CACHE_EXPIRY_TIME_IN_SEC));
+
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRegisterWithoutScope() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        cimd.getRepresentation().setScope(null);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokenByPrivateKeyJwt(true);
+
+        // an omitted scope grants no optional client scopes, and the realm default client scopes are assigned
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(clientRepresentation.getOptionalClientScopes(), Matchers.empty());
+        MatcherAssert.assertThat(clientRepresentation.getDefaultClientScopes(),
+                Matchers.containsInAnyOrder(getRealmDefaultOIDCClientScopes().toArray()));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRejectUmaGrantWithoutClientCredentialsGrant() throws Exception {
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        List<String> umaWithoutClientCredentials = List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.UMA_GRANT_TYPE
+        );
+
+        // registration is rejected
+        cimd.getRepresentation().setGrantTypes(umaWithoutClientCredentials);
+        assertLoginAndError(AbstractPersistentClientIdMetadataDocumentProvider.ERR_UMA_GRANT_WITHOUT_CLIENT_CREDENTIALS_GRANT);
+        Assertions.assertTrue(realm.admin().clients().findByClientId(CLIENT_ID).isEmpty());
+
+        // register without the UMA grant
+        cimd.getRepresentation().setGrantTypes(List.of(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.REFRESH_TOKEN));
+        AccessTokenResponse tokenResponse = loginAndGetTokenByPrivateKeyJwt(true);
+        logout(tokenResponse.getIdToken());
+
+        // the refresh is rejected
+        cimd.getRepresentation().setGrantTypes(umaWithoutClientCredentials);
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+        assertLoginAndError(AbstractPersistentClientIdMetadataDocumentProvider.ERR_UMA_GRANT_WITHOUT_CLIENT_CREDENTIALS_GRANT);
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        Assertions.assertFalse(hasClientRole(clientRepresentation.getId(), Constants.AUTHZ_UMA_PROTECTION));
+
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorValidateClientMetadataRestrictSameDomain() throws Exception {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
@@ -1543,6 +1855,69 @@ public class ClientIdMetadataDocumentTest {
         return identityProvider.encodeToken(reqToken);
     }
 
+    private AccessTokenResponse loginAndGetTokenByPrivateKeyJwt(boolean isGrantRequired) {
+        String code = loginUserAndGetCode(isGrantRequired);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        return tokenResponse;
+    }
+
+    private AccessTokenResponse loginAndGetTokenAsPublicClient(boolean isGrantRequired) {
+        String code = loginUserAndGetCode(isGrantRequired);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        return tokenResponse;
+    }
+
+    private boolean hasServiceAccountUser() {
+        String username = (ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + CLIENT_ID).toLowerCase();
+        return realm.admin().users().search(username).stream().anyMatch(u -> username.equals(u.getUsername()));
+    }
+
+    private boolean hasClientRole(String id, String roleName) {
+        return realm.admin().clients().get(id).roles().list().stream().anyMatch(role -> roleName.equals(role.getName()));
+    }
+
+    private List<String> getRealmDefaultOIDCClientScopes() {
+        List<String> names = realm.admin().getDefaultDefaultClientScopes().stream().map(ClientScopeRepresentation::getName).toList();
+        return realm.admin().clientScopes().findAll().stream()
+                .filter(scope -> OIDCLoginProtocol.LOGIN_PROTOCOL.equals(scope.getProtocol()))
+                .map(ClientScopeRepresentation::getName)
+                .filter(names::contains)
+                .toList();
+    }
+
+    private void updateCimdAndRejectClientUpdatedPolicy(ClientIdUriSchemeCondition.Configuration conditionConfig,
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig) {
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("cimd-profile")
+                    .description("CIMD executor profile")
+                    .executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig)
+                    .build())
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("reject-profile")
+                    .description("profile rejecting updated clients")
+                    .executor(RejectClientUpdatedClientPolicyExecutor.PROVIDER_ID, new RejectClientUpdatedClientPolicyExecutor.Configuration())
+                    .build());
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("cimd-policy")
+                    .description("CIMD policy")
+                    .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                    .profile("cimd-profile")
+                    .build())
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("reject-policy")
+                    .description("policy rejecting updated clients")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, null)
+                    .profile("reject-profile")
+                    .build());
+            return r;
+        });
+    }
+
     private ClientRepresentation findByClientIdByAdmin() {
         List<ClientRepresentation> clients = realm.admin().clients().findByClientId(CLIENT_ID);
         Assertions.assertEquals(1, clients.size());
@@ -1571,7 +1946,8 @@ public class ClientIdMetadataDocumentTest {
     public static class CimdServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS);
+            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS)
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 
