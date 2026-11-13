@@ -140,8 +140,10 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatus());
             String body = response.readEntity(String.class);
-            // TODO might be more consistent in error messages
-            assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
+
+            assertThat(body, containsString(
+                    "Invalid client metadata: token_endpoint_auth_method. Allowed client authentication methods: client-jwt, client-secret-jwt, client-x509"
+            ));
         }
     }
 
@@ -242,8 +244,10 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatus());
             String body = response.readEntity(String.class);
-            // TODO might be more consistent in error messages
-            assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
+
+            assertThat(body, containsString(
+                    "Invalid client metadata: token_endpoint_auth_method. Allowed client authentication methods: client-jwt, client-secret-jwt, client-x509"
+            ));
 
             // Verify the client was NOT updated (transaction rollback worked)
             OIDCClientRepresentation current = (OIDCClientRepresentation) getClientsApi().client("test-put-update-client").getClient();
