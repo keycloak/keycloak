@@ -1,0 +1,35 @@
+name: Pre-triage Pull Request
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled, ready_for_review]
+    branches:
+      - main
+
+concurrency:
+  group: pre-triage-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pre-triage:
+    env:
+      GH_TOKEN: ${{ github.token }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+
+      - name: Check linked issues
+        id: check-linked-issues
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: .github/scripts/pre-triage-pr.sh
