@@ -67,6 +67,7 @@ export {
 } from "./user-profile/utils";
 export type { UserFormFields } from "./user-profile/utils";
 export { createNamedContext } from "./utils/createNamedContext";
+export { createKeycloakFetch } from "./utils/createKeycloakFetch";
 export {
   getErrorDescription,
   getErrorMessage,

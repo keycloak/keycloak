@@ -1,5 +1,7 @@
 const ERROR_FIELDS = ["error", "errorMessage"];
 
+export type FetchLike = typeof globalThis.fetch;
+
 export type NetworkErrorOptions = { response: Response; responseData: unknown };
 
 export class NetworkError extends Error {
@@ -16,8 +18,9 @@ export class NetworkError extends Error {
 export async function fetchWithError(
   input: Request | string | URL,
   init?: RequestInit,
+  fetchImpl: FetchLike = fetch,
 ) {
-  const response = await fetch(input, init);
+  const response = await fetchImpl(input, init);
 
   if (!response.ok) {
     const responseData = await parseResponse(response);

@@ -18,6 +18,23 @@ import { BaseEnvironment } from "./environment";
 
 const ACTION_UPDATE = "action-update";
 
+/**
+ * keycloak-js restores the application hash with `history.replaceState` after an
+ * OAuth callback. That does not fire `popstate`, and React Router's hash history
+ * listens only to `popstate`, so hash-based routers keep the pre-callback
+ * location. Notify the router without rewriting the URL or pushing history.
+ */
+function syncHashAfterReplaceState() {
+  const { hash } = window.location;
+  if (hash.length <= 1) {
+    return;
+  }
+
+  window.dispatchEvent(
+    new PopStateEvent("popstate", { state: window.history.state }),
+  );
+}
+
 export type ActionUpdate = {
   status: "success" | "cancelled" | "error";
   action?: string;
@@ -125,10 +142,17 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
         pkceMethod: "S256",
         responseMode: "query",
         scope: environment.scope,
+        dpopConfig: { mode: "auto" },
       });
 
     init()
-      .then(() => setInit(true))
+      .then(() => {
+        // keycloak-js restores the application hash via history.replaceState after
+        // login, which does not emit popstate. Notify hash-based routers
+        // (Admin Console createHashRouter) so they observe deep links.
+        syncHashAfterReplaceState();
+        setInit(true);
+      })
       .catch((error) => setError(error));
 
     calledOnce.current = true;
