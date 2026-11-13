@@ -25,12 +25,11 @@ export const UserProfileTab = ({ setTableData }: UserProfileTabProps) => {
   const { realm } = useRealm();
   const { t } = useTranslation();
 
-  const useTab = (tab: IUserProfileTab) =>
-    useRoutableTab(toUserProfile({ realm, tab }));
+  const tab = (tab: IUserProfileTab) => toUserProfile({ realm, tab });
 
-  const attributesTab = useTab("attributes");
-  const attributesGroupTab = useTab("attributes-group");
-  const jsonEditorTab = useTab("json-editor");
+  const attributesTab = useRoutableTab(tab("attributes"));
+  const attributesGroupTab = useRoutableTab(tab("attributes-group"));
+  const jsonEditorTab = useRoutableTab(tab("json-editor"));
 
   return (
     <UserProfileProvider>
