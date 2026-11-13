@@ -33,6 +33,7 @@ import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
@@ -62,7 +63,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -683,14 +684,28 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
     }
 
     @Test
-    public void testCompleteFlowWithExpiredCredentialOffer() throws Exception {
-        // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
+    public void testAccessTokenRemainsUsableAfterCredentialOfferExpires() throws Exception {
+        // Make the access token outlive the offer to verify that offer expiry is only evaluated during token issuance.
         testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
+        var realm = testRealm.admin().toRepresentation();
+        realm.getAttributes().put(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY, "60");
+        testRealm.admin().update(realm);
+        CredentialScopeRepresentation credentialScope = new CredentialScopeRepresentation(getCredentialClientScope());
+        int credentialExpiry = credentialScope.getExpiryInSeconds();
+        credentialScope.setExpiryInSeconds(600);
+        updateCredentialScope(credentialScope);
 
-        AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
-        // Make sure that offer is expired
-        timeOffSet.set(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S + 10);
-        assertFailedCredentialRequest(tokenResponse);
+        try {
+            AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
+            timeOffSet.set(65);
+            assertSuccessfulCredentialRequest(tokenResponse);
+        } finally {
+            timeOffSet.set(0);
+            realm.getAttributes().remove(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
+            testRealm.admin().update(realm);
+            credentialScope.setExpiryInSeconds(credentialExpiry);
+            updateCredentialScope(credentialScope);
+        }
     }
 
     @Test
