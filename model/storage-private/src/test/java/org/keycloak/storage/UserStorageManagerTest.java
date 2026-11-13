@@ -228,4 +228,5 @@ public class UserStorageManagerTest {
         int count = manager.countQueryWithGracefulDegradation(externalProvider, failing, 0, 10);
         assertThat(count, is(0));
     }
+
 }

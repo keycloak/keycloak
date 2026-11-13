@@ -39,6 +39,8 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
 
 
     public static final String PROVIDER_ID = "user-password-map-arq";
+    public static final String USE_FEDERATED_STORAGE_FOR_GROUP_MEMBERSHIPS = "useFederatedStorageForGroupMemberships";
+    public static final String EXCLUDE_IMPORTED_GROUP_MEMBERS = "excludeImportedGroupMembers";
 
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
@@ -53,6 +55,18 @@ public class UserMapStorageFactory implements UserStorageProviderFactory<UserMap
                         + "through to local storage, mirroring LDAPStorageProvider.synchronizeRegistrations().",
                 ProviderConfigProperty.BOOLEAN_TYPE, true);
         configProperties.add(syncRegistrations);
+
+        ProviderConfigProperty federatedGroupMemberships = new ProviderConfigProperty(USE_FEDERATED_STORAGE_FOR_GROUP_MEMBERSHIPS,
+                "Use federated storage for group memberships",
+                "When enabled, group memberships are stored in the federated storage provider instead of this provider's map.",
+                ProviderConfigProperty.BOOLEAN_TYPE, false);
+        configProperties.add(federatedGroupMemberships);
+
+        ProviderConfigProperty excludeImportedGroupMembers = new ProviderConfigProperty(EXCLUDE_IMPORTED_GROUP_MEMBERS,
+                "Exclude imported group members",
+                "When enabled, imported users are omitted from later group-member queries to simulate providers whose result set shrinks after import.",
+                ProviderConfigProperty.BOOLEAN_TYPE, false);
+        configProperties.add(excludeImportedGroupMembers);
     }
 
     private final Map<String, String> userPasswords = new ConcurrentHashMap<>();
