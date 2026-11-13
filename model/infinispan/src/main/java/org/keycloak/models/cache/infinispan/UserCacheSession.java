@@ -306,16 +306,20 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             String userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) {
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null) {
                 logger.tracev("return managed user");
-                return managedUsers.get(userId).user();
+                UserModel managedUser = managed.user();
+                // the user was loaded by another lookup in this session (for example by email), so the query for
+                // this key still needs to be cached, but only if the managed user is really a match for the key
+                if (realm.getId().equals(managed.realmId()) && username.equalsIgnoreCase(managedUser.getUsername())) {
+                    cacheUserQuery(realm, cacheKey, loaded, managedUser);
+                }
+                return managedUser;
             }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
-            if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
-                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
-            }
+            cacheUserQuery(realm, cacheKey, loaded, adapter);
             addManagedUser(realm, userId, adapter);
             return adapter;
         }
@@ -336,6 +340,20 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                     registerInvalidation(cacheKey);
                     return getDelegate().getUserByUsername(realm, username);
                 });
+    }
+
+    /**
+     * Caches the lookup query for the given key, but only if the user itself is cached. Users that are not cached
+     * (for example from a provider with {@code NO_CACHE}) must not get a query either.
+     */
+    private void cacheUserQuery(RealmModel realm, String cacheKey, long loaded, UserModel user) {
+        if (user instanceof UserAdapter) {
+            long lifespan = getLifespan(realm, user);
+            if (lifespan != 0) {
+                UserListQuery query = new UserListQuery(loaded, cacheKey, realm, user.getId());
+                cache.addRevisioned(query, startupRevision, lifespan);
+            }
+        }
     }
 
     private long getLifespan(RealmModel realm, UserModel user) {
@@ -474,13 +492,18 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             if (model == null) return null;
             String userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) return managedUsers.get(userId).user();
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null) {
+                UserModel managedUser = managed.user();
+                // see getUserByUsername: cache the query for this key, but only if the managed user is a match for it
+                if (realm.getId().equals(managed.realmId()) && email.equalsIgnoreCase(managedUser.getEmail())) {
+                    cacheUserQuery(realm, cacheKey, loaded, managedUser);
+                }
+                return managedUser;
+            }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
-            if (adapter instanceof UserAdapter) {
-                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
-            }
+            cacheUserQuery(realm, cacheKey, loaded, adapter);
             addManagedUser(realm, userId, adapter);
             return adapter;
         }
