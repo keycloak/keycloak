@@ -541,11 +541,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     familyName = getJsonProperty(userInfo, IDToken.FAMILY_NAME);
                     preferredUsername = getUsernameFromUserInfo(userInfo);
                     String userInfoEmail = getJsonProperty(userInfo, "email");
-                    Boolean userInfoEmailVerified = Boolean.parseBoolean(getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED));
+                    String userInfoEmailVerifiedClaim = getJsonProperty(userInfo, IDToken.EMAIL_VERIFIED);
+                    Boolean userInfoEmailVerified = userInfoEmailVerifiedClaim == null ? null : Boolean.valueOf(userInfoEmailVerifiedClaim);
 
                     if (userInfoEmail != null) {
+                        emailVerified = resolveEmailVerifiedFromUserInfo(userInfoEmail, userInfoEmailVerified, email, emailVerified);
                         email = userInfoEmail;
-                        emailVerified = userInfoEmailVerified;
                     }
 
                     AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, userInfo, getConfig().getAlias());
@@ -593,6 +594,24 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (tokenResponse != null) processAccessTokenResponse(identity, tokenResponse);
 
         return identity;
+    }
+
+    protected static Boolean resolveEmailVerifiedFromUserInfo(String userInfoEmail, Boolean userInfoEmailVerified,
+            String idTokenEmail, Boolean idTokenEmailVerified) {
+        // use UserInfo claim if present
+        if (userInfoEmailVerified != null) {
+            return userInfoEmailVerified;
+        }
+        // discard the ID token claim if addresses differ (to avoid applying it to the wrong address)
+        if (!isSameEmail(userInfoEmail, idTokenEmail)) {
+            return null;
+        }
+        return idTokenEmailVerified;
+    }
+
+    // a missing address on either side is not considered a mismatch
+    private static boolean isSameEmail(String email1, String email2) {
+        return email1 == null || email2 == null || email1.equalsIgnoreCase(email2);
     }
 
     protected String getusernameClaimNameForIdToken() {
@@ -1029,10 +1048,22 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected void setEmailVerified(UserModel user, BrokeredIdentityContext context) {
         OIDCIdentityProviderConfig config = getConfig();
         Map<String, Object> contextData = context.getContextData();
+
+        // the value stored for the selected email takes precedence
         Boolean emailVerified = (Boolean) contextData.get(IDToken.EMAIL_VERIFIED);
 
+        // Otherwise use the validated ID token claim, but only if the token has an email and it matches the selected one
+        if (emailVerified == null && contextData.get(VALIDATED_ID_TOKEN) instanceof JsonWebToken validatedIdToken) {
+            // a non-string email claim is ignored instead of failing the login
+            String tokenEmail = validatedIdToken.getOtherClaims().get(IDToken.EMAIL) instanceof String s ? s : null;
+            if (tokenEmail != null && isSameEmail(context.getEmail(), tokenEmail)) {
+                // no explicit entry, fallback to the claim in the validated token (providers that do not use the default extractIdentity)
+                emailVerified = getEmailVerifiedClaim(validatedIdToken);
+            }
+        }
+
+        // fallback to the default behavior if trust is disabled or there is no email_verified claim
         if (!config.isTrustEmail() || emailVerified == null) {
-            // fallback to the default behavior if trust is disabled or there is no email_verified claim
             super.setEmailVerified(user, context);
             return;
         }
