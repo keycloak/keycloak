@@ -82,7 +82,7 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
             case UPDATE:
                 ClientCRUDContext clientUpdateContext = (ClientCRUDContext)context;
                 autoConfigure(clientUpdateContext.getProposedClientRepresentation());
-                validate(clientUpdateContext.getProposedClientRepresentation());
+                validate(clientUpdateContext);
                 break;
             case PUSHED_AUTHORIZATION_REQUEST:
                 PushedAuthorizationRequestContext pushedAuthorizationRequestContext = (PushedAuthorizationRequestContext)context;
@@ -101,12 +101,27 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
     }
 
     private void autoConfigure(ClientRepresentation rep) {
-        if (configuration.isAutoConfigure())
-            rep.setImplicitFlowEnabled(Boolean.FALSE);
+        if (configuration == null || !Boolean.TRUE.equals(configuration.isAutoConfigure())) return;
+        rep.setImplicitFlowEnabled(Boolean.FALSE);
     }
 
-    private void validate(ClientRepresentation rep) throws ClientPolicyException {
-        boolean isImplicitFlowEnabled = rep.isImplicitFlowEnabled().booleanValue();
+    private boolean getEffectiveImplicitFlowEnabled(ClientCRUDContext clientCRUDContext) {
+        Boolean implicitFlowEnabled = clientCRUDContext.getProposedClientRepresentation().isImplicitFlowEnabled();
+        if (implicitFlowEnabled != null) {
+            return implicitFlowEnabled;
+        } else {
+            // The "implicitFlowEnabled" field is not filled in the representation, so it effectively has same value as before the update
+            if (clientCRUDContext.getTargetClient() != null) {
+                return clientCRUDContext.getTargetClient().isImplicitFlowEnabled();
+            } else {
+                // Registration of new client. The "implicit flow" is disabled by default
+                return false;
+            }
+        }
+    }
+
+    private void validate(ClientCRUDContext clientCRUDContext) throws ClientPolicyException {
+        boolean isImplicitFlowEnabled = getEffectiveImplicitFlowEnabled(clientCRUDContext);
         if (!isImplicitFlowEnabled) return;
         throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid client metadata: implicit flow enabled");
     }
