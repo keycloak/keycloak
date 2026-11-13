@@ -38,6 +38,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.http.FormPartValue;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -63,12 +64,15 @@ public class RealmLocalizationResource {
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
 
+    private final AdminEventBuilder adminEvent;
+
     protected final KeycloakSession session;
 
-    public RealmLocalizationResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+    public RealmLocalizationResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.auth = auth;
+        this.adminEvent = adminEvent;
     }
 
     @Path("{locale}/{key}")
@@ -86,6 +90,10 @@ public class RealmLocalizationResource {
         this.auth.realm().requireManageRealm();
         try {
             session.realms().saveLocalizationText(realm, locale, key, text);
+            adminEvent.operation(OperationType.UPDATE)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(Map.of(key, text))
+                    .success();
         } catch (ModelDuplicateException e) {
             throw new BadRequestException(
                     String.format("Localization text %s for the locale %s and realm %s already exists.",
@@ -119,6 +127,10 @@ public class RealmLocalizationResource {
             };
             Map<String, String> rep = JsonSerialization.readValue(inputStream, typeRef);
             realm.createOrUpdateRealmLocalizationTexts(locale, rep);
+            adminEvent.operation(OperationType.UPDATE)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(rep)
+                    .success();
         } catch (IOException e) {
             throw new BadRequestException("Could not read file.");
         }
@@ -137,6 +149,10 @@ public class RealmLocalizationResource {
             Map<String, String> localizationTexts) {
         this.auth.realm().requireManageRealm();
         realm.createOrUpdateRealmLocalizationTexts(locale, localizationTexts);
+        adminEvent.operation(OperationType.UPDATE)
+                .resourcePath(session.getContext().getUri())
+                .representation(localizationTexts)
+                .success();
     }
 
     @Path("{locale}")
@@ -153,6 +169,9 @@ public class RealmLocalizationResource {
         if(!realm.removeRealmLocalizationTexts(locale)) {
             throw new NotFoundException("No localization texts for locale " + locale + " found.");
         }
+        adminEvent.operation(OperationType.DELETE)
+                .resourcePath(session.getContext().getUri())
+                .success();
     }
 
     @Path("{locale}/{key}")
@@ -169,6 +188,9 @@ public class RealmLocalizationResource {
         if (!session.realms().deleteLocalizationText(realm, locale, key)) {
             throw new NotFoundException("Localization text not found");
         }
+        adminEvent.operation(OperationType.DELETE)
+                .resourcePath(session.getContext().getUri())
+                .success();
     }
 
     @GET
