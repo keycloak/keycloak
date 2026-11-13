@@ -22,7 +22,6 @@ class DriverOptions {
                     "--headless=new",
                     "--disable-gpu",
                     "--window-size=1920,1200",
-                    "--ignore-certificate-errors",
                     "--disable-dev-shm-usage",
                     "--remote-allow-origins=*",
                     "--no-sandbox"
