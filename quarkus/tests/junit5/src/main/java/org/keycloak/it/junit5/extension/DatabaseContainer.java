@@ -26,6 +26,8 @@ import org.jboss.logmanager.Level;
 import org.jboss.logmanager.LogManager;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.mariadb.MariaDBContainer;
 import org.testcontainers.mssqlserver.MSSQLServerContainer;
 import org.testcontainers.mysql.MySQLContainer;
@@ -37,8 +39,16 @@ public class DatabaseContainer {
 
     static final String DEFAULT_PASSWORD = "Password1!";
 
+    // PostgreSQL behind PgBouncer in transaction mode, without support for prepared statements
+    static final String POSTGRES_PGBOUNCER_NO_PREPARED_STATEMENTS_ALIAS = "postgresql-pgbouncer-transaction-no-prepared-statements";
+    private static final String PGBOUNCER_UPSTREAM_HOST = "postgres";
+    private static final int PGBOUNCER_PORT = 5432;
+
     private final String alias;
     private GenericContainer<?> container;
+    // only set when the tests connect through a proxy, then 'container' is the proxy
+    private GenericContainer<?> databaseBehindProxy;
+    private Network network;
 
     DatabaseContainer(String alias) {
         this.alias = alias;
@@ -46,6 +56,9 @@ public class DatabaseContainer {
 
     void start() {
         container = createContainer();
+        if (databaseBehindProxy != null) {
+            databaseBehindProxy.withStartupTimeout(Duration.ofMinutes(5)).start();
+        }
         container.withStartupTimeout(Duration.ofMinutes(5)).start();
     }
 
@@ -56,7 +69,14 @@ public class DatabaseContainer {
     void configureDistribution(RawKeycloakDistribution dist) {
         dist.setProperty("db-username", getUsername());
         dist.setProperty("db-password", getPassword());
-        dist.setProperty("db-url", getJdbcUrl());
+        if (databaseBehindProxy != null) {
+            // not using db-url, as it would cause db-url-properties to be ignored
+            dist.setProperty("db-url-host", container.getHost());
+            dist.setProperty("db-url-port", String.valueOf(container.getMappedPort(PGBOUNCER_PORT)));
+            dist.setProperty("db-url-database", "keycloak");
+        } else {
+            dist.setProperty("db-url", getJdbcUrl());
+        }
     }
 
     private String getJdbcUrl() {
@@ -80,6 +100,12 @@ public class DatabaseContainer {
     void stop() {
         container.stop();
         container = null;
+        if (databaseBehindProxy != null) {
+            databaseBehindProxy.stop();
+            databaseBehindProxy = null;
+            network.close();
+            network = null;
+        }
     }
 
     private JdbcDatabaseContainer<?> configureJdbcContainer(JdbcDatabaseContainer<?> jdbcDatabaseContainer) {
@@ -101,11 +127,31 @@ public class DatabaseContainer {
         String MYSQL_IMAGE = System.getProperty("kc.db.mysql.container.image");
         String MSSQL_IMAGE = System.getProperty("kc.db.mssql.container.image");
         String TIDB_IMAGE = System.getProperty("kc.db.tidb.container.image");
+        String PGBOUNCER_IMAGE = System.getProperty("kc.db.pgbouncer.container.image");
 
         switch (alias) {
             case "postgres":
                 DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
                 return configureJdbcContainer(new PostgreSQLContainer(POSTGRES));
+            case POSTGRES_PGBOUNCER_NO_PREPARED_STATEMENTS_ALIAS:
+                network = Network.newNetwork();
+                DockerImageName POSTGRES_BEHIND_PROXY = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
+                databaseBehindProxy = configureJdbcContainer(new PostgreSQLContainer(POSTGRES_BEHIND_PROXY))
+                        .withNetwork(network)
+                        .withNetworkAliases(PGBOUNCER_UPSTREAM_HOST);
+                return new GenericContainer<>(DockerImageName.parse(PGBOUNCER_IMAGE))
+                        .withNetwork(network)
+                        .withEnv("DB_HOST", PGBOUNCER_UPSTREAM_HOST)
+                        .withEnv("DB_NAME", "keycloak")
+                        .withEnv("DB_USER", getUsername())
+                        .withEnv("DB_PASSWORD", getPassword())
+                        .withEnv("AUTH_TYPE", "scram-sha-256")
+                        .withEnv("POOL_MODE", "transaction")
+                        .withEnv("DEFAULT_POOL_SIZE", "5")
+                        // The default of PgBouncer doesn't track prepared statements, which is the problematic setup to test for
+                        .withEnv("MAX_PREPARED_STATEMENTS", "0")
+                        .withExposedPorts(PGBOUNCER_PORT)
+                        .waitingFor(Wait.forListeningPort());
             case "mariadb":
                 DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
                 return configureJdbcContainer(new MariaDBContainer(MARIADB));
@@ -137,6 +183,7 @@ public class DatabaseContainer {
     }
 
     private String resolveInitScript() {
-        return String.format("database/scripts/init-%s.sql", alias);
+        String script = POSTGRES_PGBOUNCER_NO_PREPARED_STATEMENTS_ALIAS.equals(alias) ? "postgres" : alias;
+        return String.format("database/scripts/init-%s.sql", script);
     }
 }
