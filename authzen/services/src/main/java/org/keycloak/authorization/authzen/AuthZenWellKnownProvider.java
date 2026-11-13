@@ -34,8 +34,7 @@ public class AuthZenWellKnownProvider implements WellKnownProvider {
 
     @Override
     public Object getConfig() {
-        RealmModel realm = session.getContext().getRealm();
-        String realmUri = Urls.realmIssuer(session.getContext().getUri(UrlType.FRONTEND).getBaseUri(), realm.getName());
+        String realmUri = realmUri(session);
 
         return Map.of(
               "policy_decision_point", realmUri,
@@ -44,12 +43,28 @@ public class AuthZenWellKnownProvider implements WellKnownProvider {
         );
     }
 
+    /**
+     * The audience that access tokens must contain to call the AuthZEN endpoints of the current realm.
+     */
+    public static String audience(KeycloakSession session) {
+        return audience(realmUri(session));
+    }
+
+    public static String audience(String realmUri) {
+        return String.format("%s/%s", realmUri, AuthZenRealmResourceProviderFactory.PROVIDER_ID);
+    }
+
     public static String accessEvaluationEndpoint(String realmUri) {
         return String.format("%s/%s/%s", realmUri, AuthZenRealmResourceProviderFactory.PROVIDER_ID, AuthZen.EVALUATION_PATH);
     }
 
     public static String accessEvaluationsEndpoint(String realmUri) {
         return String.format("%s/%s/%s", realmUri, AuthZenRealmResourceProviderFactory.PROVIDER_ID, AuthZen.EVALUATIONS_PATH);
+    }
+
+    private static String realmUri(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        return Urls.realmIssuer(session.getContext().getUri(UrlType.FRONTEND).getBaseUri(), realm.getName());
     }
 
     @Override
