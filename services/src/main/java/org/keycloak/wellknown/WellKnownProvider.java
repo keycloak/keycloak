@@ -26,4 +26,15 @@ public interface WellKnownProvider extends Provider {
 
     Object getConfig();
 
+    /**
+     * Media type of the response, for example {@code application/entity-statement+jwt}. It is called after {@link #getConfig()},
+     * so it may depend on the returned config.
+     *
+     * @return the media type, or {@code null} to use {@code application/jwt} if the config is a {@link String} and
+     * {@code application/json} otherwise
+     */
+    default String getMediaType() {
+        return null;
+    }
+
 }
