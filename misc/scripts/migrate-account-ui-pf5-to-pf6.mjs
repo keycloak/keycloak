@@ -19,7 +19,8 @@ function usage() {
   node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs [options]
 
 Options:
-  --app-path <path>          Account UI app root (default: js/apps/account-ui)
+  --app-path <path>          Account UI source package root (default: js/apps/account-ui;
+                             package.json name must be @keycloak/keycloak-account-ui)
   --apply                    Apply changes to the source app (default: dry-run)
   --report-dir <path>        Directory for markdown/json reports
   --backup-dir <path>        Directory for apply-mode backups
@@ -102,7 +103,8 @@ async function resolveAppDir(appPath) {
   const { name } = JSON.parse(await readFile(packageJson, "utf8"));
   if (name !== "@keycloak/keycloak-account-ui") {
     throw new Error(
-      `Expected '@keycloak/keycloak-account-ui' at '${absolute}', found '${name ?? "unknown"}'.`,
+      `Expected an Account UI source package named '@keycloak/keycloak-account-ui' at '${absolute}', found '${name ?? "unknown"}'. ` +
+        "Installed or inherited theme directories are not supported; pass a fork/checkout of js/apps/account-ui.",
     );
   }
 

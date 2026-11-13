@@ -4,8 +4,9 @@ import {
   DropdownItem,
   Masthead,
   MastheadBrand,
-  MastheadBrandProps,
   MastheadContent,
+  MastheadLogo,
+  MastheadLogoProps,
   MastheadMainProps,
   MastheadToggle,
   PageToggleButton,
@@ -40,7 +41,7 @@ function loggedInUserName(
   return givenName || familyName || preferredUsername || t("unknownUser");
 }
 
-type BrandLogo = MastheadBrandProps & {
+type BrandLogo = MastheadLogoProps & {
   src?: string;
   alt?: string;
 };
@@ -108,8 +109,10 @@ const KeycloakMasthead = ({
           <BarsIcon />
         </PageToggleButton>
       </MastheadToggle>
-      <MastheadBrand {...brandProps}>
-        <img src={src} alt={alt} className={className} />
+      <MastheadBrand>
+        <MastheadLogo {...brandProps}>
+          <img src={src} alt={alt} className={className} />
+        </MastheadLogo>
       </MastheadBrand>
       <MastheadContent>
         {toolbar}
