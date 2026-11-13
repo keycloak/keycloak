@@ -18,6 +18,7 @@ package org.keycloak.saml.processing.core.saml.v2.writers;
 
 import java.net.URI;
 import java.util.List;
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -178,6 +179,11 @@ public class SAMLRequestWriter extends BaseWriter {
         String consent = logOutRequest.getConsent();
         if (StringUtil.isNotNull(consent))
             StaxUtil.writeAttribute(writer, JBossSAMLConstants.CONSENT.get(), consent);
+
+        XMLGregorianCalendar notOnOrAfter = logOutRequest.getNotOnOrAfter();
+        if (notOnOrAfter != null) {
+            StaxUtil.writeAttribute(writer, JBossSAMLConstants.NOT_ON_OR_AFTER.get(), notOnOrAfter.toString());
+        }
 
         NameIDType issuer = logOutRequest.getIssuer();
         write(issuer, new QName(ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get(), ASSERTION_PREFIX));
