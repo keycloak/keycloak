@@ -155,7 +155,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
 
-        assertEquals("Device already exists with the same name", totpPage.getInputLabelError());
+        assertEquals("Device already exists with the same name.", totpPage.getInputLabelError());
 
     }
 
