@@ -1152,8 +1152,9 @@ public class AuthenticationManager {
         uriBuilder.queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession));
 
         if (uriInfo.getQueryParameters().containsKey(LoginActionsService.AUTH_SESSION_ID)) {
-            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, authSession.getParentSession().getId());
-
+            // signed and encoded like the AUTH_SESSION_ID cookie, which SessionCodeChecks compares it with
+            String signedAuthSessionId = new AuthenticationSessionManager(session).signAndEncodeToBase64AuthSessionId(authSession.getParentSession().getId());
+            uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, signedAuthSessionId);
         }
 
         URI redirect = uriBuilder.build(realm.getName());
