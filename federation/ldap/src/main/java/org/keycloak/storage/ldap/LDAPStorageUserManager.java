@@ -18,7 +18,9 @@
 package org.keycloak.storage.ldap;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -33,6 +35,9 @@ public class LDAPStorageUserManager {
 
     private final Map<String, LDAPObject> managedLDAPObjects = new HashMap<>();
     private final Map<String, ManagedUserEntry> managedUsers = new HashMap<>();
+    // userIds whose proxy was (re)built since the last persistence-context clear - lets invalidateManagedProxiedUsers
+    // touch only those entries instead of rescanning the whole (ever-growing) managedUsers map on every clear
+    private final Set<String> proxiedSinceLastClear = new HashSet<>();
     private final LDAPStorageProvider provider;
 
     public LDAPStorageUserManager(LDAPStorageProvider provider) {
@@ -76,23 +81,53 @@ public class LDAPStorageUserManager {
         String userId = proxiedUser.getId();
         ManagedUserEntry entry = managedUsers.get(userId);
         if (entry != null) {
+            if (entry.getManagedProxiedUser() == null) {
+                // entry survived a persistence-context clear (see invalidateManagedProxiedUsers) - refresh the
+                // proxy, keeping the already-enlisted LDAPTransaction and ldapUser in place
+                entry.setManagedProxiedUser(proxiedUser);
+                proxiedSinceLastClear.add(userId);
+                return;
+            }
             throw new IllegalStateException("Don't expect to have entry for user " + userId);
         }
 
         LDAPTransaction ldapTransaction = new LDAPTransaction(provider, ldapObject);
         ManagedUserEntry newEntry = new ManagedUserEntry(proxiedUser, ldapObject, ldapTransaction);
         managedUsers.put(userId, newEntry);
+        proxiedSinceLastClear.add(userId);
     }
 
     public void removeManagedUserEntry(String userId) {
         managedUsers.remove(userId);
+        proxiedSinceLastClear.remove(userId);
+    }
+
+    /**
+     * Invalidate the cached proxied {@link UserModel} for every user whose proxy was (re)built since the last
+     * clear, without dropping the entries themselves - the enlisted {@link LDAPTransaction} and resolved
+     * {@link LDAPObject} must survive. Call this whenever the underlying persistence context is cleared
+     * mid-transaction, so the next access rebuilds the proxy instead of handing back one backed by a now-detached
+     * entity.
+     * <p>
+     * Only {@link #proxiedSinceLastClear} is scanned - not the whole (ever-growing) {@code managedUsers} map -
+     * so invalidation cost stays proportional to the batch size instead of the total number of users enlisted
+     * so far in the transaction (eg. across all batches of a large export).
+     */
+    public void invalidateManagedProxiedUsers() {
+        for (String userId : proxiedSinceLastClear) {
+            ManagedUserEntry entry = managedUsers.get(userId);
+            if (entry != null) {
+                entry.setManagedProxiedUser(null);
+            }
+        }
+        proxiedSinceLastClear.clear();
     }
 
 
 
     private static class ManagedUserEntry {
 
-        private final UserModel managedProxiedUser;
+        private UserModel managedProxiedUser;
         private final LDAPObject ldapUser;
         private final LDAPTransaction ldapTransaction;
 
@@ -104,6 +139,10 @@ public class LDAPStorageUserManager {
 
         public UserModel getManagedProxiedUser() {
             return managedProxiedUser;
+        }
+
+        public void setManagedProxiedUser(UserModel managedProxiedUser) {
+            this.managedProxiedUser = managedProxiedUser;
         }
 
         public LDAPObject getLdapUser() {
