@@ -98,6 +98,7 @@ public class TrustedAttestationKeyResolver implements AttestationKeyResolver {
                 .kid(kid)
                 .algorithm(algorithm)
                 .issuer(issuer)
+                .purpose(TrustMaterialRequest.Purpose.KEY_ATTESTATION)
                 .build();
     }
 }

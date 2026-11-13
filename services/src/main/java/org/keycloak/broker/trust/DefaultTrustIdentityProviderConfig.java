@@ -42,6 +42,7 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
     public static final String USE_X509 = "useX509";
     public static final String TRUSTED_CERTIFICATES = "trustedCertificates";
     public static final String REQUIRED_EXTENDED_KEY_USAGES = "requiredExtendedKeyUsages";
+    public static final String REJECT_TRUST_ANCHOR_IN_X5C = "rejectTrustAnchorInX5c";
 
     public DefaultTrustIdentityProviderConfig() {
     }
@@ -154,5 +155,10 @@ public class DefaultTrustIdentityProviderConfig extends IdentityProviderModel {
                 .filter(value -> !value.isEmpty())
                 .distinct()
                 .toList();
+    }
+
+    public boolean isRejectTrustAnchorInX5c() {
+        return Boolean.parseBoolean(
+                getConfig().getOrDefault(REJECT_TRUST_ANCHOR_IN_X5C, Boolean.FALSE.toString()));
     }
 }

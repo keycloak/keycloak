@@ -60,9 +60,21 @@ public final class X509CertificateChainValidator {
      */
     public static JWK validate(List<String> x5c, String algorithm, Collection<X509Certificate> trustAnchors,
             List<String> requiredExtendedKeyUsages) throws VerificationException {
+        return validate(x5c, algorithm, trustAnchors, requiredExtendedKeyUsages, false);
+    }
+
+    public static JWK validate(List<String> x5c, String algorithm, Collection<X509Certificate> trustAnchors,
+            List<String> requiredExtendedKeyUsages, boolean rejectTrustAnchorInPresentedChain)
+            throws VerificationException {
         try {
             List<X509Certificate> certificateChain = decodeCertificateChain(x5c);
             X509Certificate leaf = certificateChain.get(0);
+
+            if (rejectTrustAnchorInPresentedChain
+                    && certificateChain.stream().anyMatch(trustAnchors::contains)) {
+                throw new VerificationException(
+                        "The x5c certificate chain must not include a configured trust anchor");
+            }
 
             rejectSelfSignedLeaf(leaf);
             validateLeafPurpose(leaf, requiredExtendedKeyUsages);
