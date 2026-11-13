@@ -26,7 +26,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.testframework.events.EventAssertion;
@@ -500,53 +499,39 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
     @Test
     public void testConsentRequiredIsRejected() {
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
-        ClientRepresentation rep = clientResource.toRepresentation();
-        rep.setConsentRequired(true);
-        clientResource.update(rep);
-        try {
-            String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
-            AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        realm.updateClientWithCleanup("test-app", c -> c.consentRequired(true));
 
-            Assertions.assertFalse(response.isSuccess());
-            Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
-            Assertions.assertEquals("Missing consents for the client test-app", response.getErrorDescription());
-            EventAssertion.assertError(events.poll())
-                    .type(EventType.JWT_AUTHORIZATION_GRANT_ERROR)
-                    .userId(user.getId())
-                    .error(Errors.CONSENT_DENIED)
-                    .details(Details.REASON, "Missing consents for the client test-app");
-        } finally {
-            rep.setConsentRequired(false);
-            clientResource.update(rep);
-        }
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+
+        Assertions.assertFalse(response.isSuccess());
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
+        Assertions.assertEquals("Missing consents for the client test-app", response.getErrorDescription());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.JWT_AUTHORIZATION_GRANT_ERROR)
+                .userId(user.getId())
+                .error(Errors.CONSENT_DENIED)
+                .details(Details.REASON, "Missing consents for the client test-app");
     }
 
     @Test
     public void testConsentRequiredWithGrantedConsentSucceeds() {
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
-        ClientRepresentation rep = clientResource.toRepresentation();
-        rep.setConsentRequired(true);
-        clientResource.update(rep);
-        try {
-            runOnServer.run(session -> {
-                RealmModel r = session.getContext().getRealm();
-                ClientModel client = session.clients().getClientByClientId(r, "test-app");
-                UserModel u = session.users().getUserByUsername(r, "basic-user");
-                UserConsentModel consent = new UserConsentModel(client);
-                client.getClientScopes(true).values().stream()
-                        .filter(ClientScopeModel::isDisplayOnConsentScreen)
-                        .forEach(consent::addGrantedClientScope);
-                UserConsentManager.addConsent(session, r, u, consent);
-            });
+        realm.updateClientWithCleanup("test-app", c -> c.consentRequired(true));
+        realm.cleanup().add(r -> r.users().get(user.getId()).revokeConsent("test-app"));
 
-            String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
-            AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-            assertSuccess("test-app", response);
-        } finally {
-            realm.admin().users().get(user.getId()).revokeConsent("test-app");
-            rep.setConsentRequired(false);
-            clientResource.update(rep);
-        }
+        runOnServer.run(session -> {
+            RealmModel r = session.getContext().getRealm();
+            ClientModel client = session.clients().getClientByClientId(r, "test-app");
+            UserModel u = session.users().getUserByUsername(r, "basic-user");
+            UserConsentModel consent = new UserConsentModel(client);
+            client.getClientScopes(true).values().stream()
+                    .filter(ClientScopeModel::isDisplayOnConsentScreen)
+                    .forEach(consent::addGrantedClientScope);
+            UserConsentManager.addConsent(session, r, u, consent);
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
     }
 }

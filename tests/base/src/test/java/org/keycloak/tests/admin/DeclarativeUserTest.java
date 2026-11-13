@@ -13,7 +13,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -198,30 +197,21 @@ public class DeclarativeUserTest {
 
     @Test
     public void testUserLocale() {
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
-        realmRep.setInternationalizationEnabled(true);
-        managedRealm.admin().update(realmRep);
+        managedRealm.updateWithCleanup(r -> r.internationalizationEnabled(true));
 
-        try {
-            UserRepresentation user1 = new UserRepresentation();
-            user1.setUsername("user1");
-            user1.singleAttribute(UserModel.LOCALE, "pt_BR");
-            String user1Id = createUserWithCleanup(user1);
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("user1");
+        user1.singleAttribute(UserModel.LOCALE, "pt_BR");
+        String user1Id = createUserWithCleanup(user1);
 
-            UserResource userResource = managedRealm.admin().users().get(user1Id);
-            user1 = userResource.toRepresentation();
-            Assertions.assertEquals("pt_BR", user1.getAttributes().get(UserModel.LOCALE).get(0));
+        UserResource userResource = managedRealm.admin().users().get(user1Id);
+        user1 = userResource.toRepresentation();
+        Assertions.assertEquals("pt_BR", user1.getAttributes().get(UserModel.LOCALE).get(0));
 
-            realmRep.setInternationalizationEnabled(false);
-            managedRealm.admin().update(realmRep);
+        managedRealm.updateWithCleanup(r -> r.internationalizationEnabled(false));
 
-            user1 = userResource.toRepresentation();
-            Assertions.assertNull(user1.getAttributes());
-        } finally {
-            realmRep.setInternationalizationEnabled(internationalizationEnabled);
-            managedRealm.admin().update(realmRep);
-        }
+        user1 = userResource.toRepresentation();
+        Assertions.assertNull(user1.getAttributes());
     }
 
     private String createUserWithCleanup(UserRepresentation userRep) {
