@@ -1268,14 +1268,7 @@ public class SamlService extends AuthorizationEndpointBase {
     public Response soapBinding(InputStream inputStream) {
         SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize, enableSaml11);
 
-        Response response;
-        try (InputStream limitedInputStream = SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize)) {
-            response = bindingService.authenticate(limitedInputStream);
-        } catch (IOException e) {
-            logger.debug("Error while closing the SOAP request stream", e);
-            return Soap.createFault().reason("Some error occurred while processing the SOAP request.").build();
-        }
-        return response;
+        return bindingService.authenticate(inputStream);
     }
 
     private ClientModel getAndCheckClientModel(String clientSessionId, String clientId) throws ProcessingException {
