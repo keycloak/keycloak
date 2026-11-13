@@ -6,7 +6,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Description
+      label: Feature Request Description
       description: Describe the feature at a high-level
     validations:
       required: true
