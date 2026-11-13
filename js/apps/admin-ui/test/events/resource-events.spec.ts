@@ -263,6 +263,57 @@ test.describe("Admin events tab of resources", () => {
     await assertEvents(page, ["CLIENT_ROLE CREATE", "CLIENT_ROLE CREATE"]);
   });
 
+  test("Client scope shows events of assigning it to a client", async ({
+    page,
+  }) => {
+    const realmName = await createRealm();
+    const name = `scope-${uuid()}`;
+    await adminClient.createClientScope({
+      name,
+      protocol: "openid-connect",
+      realm: realmName,
+    });
+    const clientId = `client-${uuid()}`;
+    await adminClient.createClient({ clientId, realm: realmName });
+    await adminClient.addDefaultClientScopeInClient(name, clientId, realmName);
+
+    await openRealm(page, realmName);
+    await goToClientScopes(page);
+    await searchItem(page, "Search for client scope", name);
+    await clickTableRowItem(page, name);
+    await page.getByTestId("admin-events-tab").click();
+
+    await assertEvents(page, [
+      "CLIENT_SCOPE CREATE",
+      "CLIENT_SCOPE_CLIENT_MAPPING CREATE",
+    ]);
+  });
+
+  test("Client role does not show events of a role whose name extends its path", async ({
+    page,
+  }) => {
+    const realmName = await createRealm();
+    const clientId = `client-${uuid()}`;
+    const { id } = await adminClient.createClient({
+      clientId,
+      realm: realmName,
+    });
+    await adminClient.createClientRole(id, { name: "admin", realm: realmName });
+    // The create event of this role is recorded below the path of "admin".
+    await adminClient.createClientRole(id, {
+      name: "admin/read",
+      realm: realmName,
+    });
+    const admin = await adminClient.getClientRole(id, "admin", realmName);
+
+    await openRealm(page, realmName);
+    await page.goto(
+      `${SERVER_URL}/admin/master/console/#/${realmName}/clients/${id}/roles/${admin!.id}/events`,
+    );
+    await page.reload();
+    await assertEvents(page, ["CLIENT_ROLE CREATE"]);
+  });
+
   test("Identity provider shows only events of its own alias", async ({
     page,
   }) => {

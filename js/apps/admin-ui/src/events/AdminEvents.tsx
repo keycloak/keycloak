@@ -236,6 +236,8 @@ export const AdminEvents = ({
     };
 
     // Each query must return enough rows to fill the requested page after merging.
+    // Known limitation: events with the same timestamp can be cut differently per query at a page boundary,
+    // so an event can repeat or be skipped between pages. A single backend request would avoid this, see keycloak/keycloak#55126.
     const skip = first ?? 0;
     const results = await Promise.all(
       resourcePaths.map((path) =>

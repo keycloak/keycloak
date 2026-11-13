@@ -309,6 +309,9 @@ export default function EditClientScope() {
                     // Events of changing the realm default scopes
                     `default-default-client-scopes/${id}`,
                     `default-optional-client-scopes/${id}`,
+                    // Events of assigning the scope to a client
+                    `clients/*/default-client-scopes/${id}`,
+                    `clients/*/optional-client-scopes/${id}`,
                   ]}
                 />
               </Tab>
