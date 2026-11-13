@@ -18,11 +18,16 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import java.util.List;
+import java.util.UUID;
+
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -37,6 +42,7 @@ import org.junit.runners.MethodSorters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -163,5 +169,57 @@ public class LDAPExternalChangesTest extends AbstractLDAPTest {
         user = users.get(0);
         assertEquals(userId, user.getId());
         assertEquals(user.getUsername(), updatedUsername);
+    }
+
+    private String addLdapUserAndRecordExpectedId(String username) {
+        // The lambda passed to the testing client is serialized and runs on the server, so the expected id has to be
+        // returned to the client rather than captured in a client-side reference
+        return testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            // The reported scenario runs against a read-only federation, where deleting the user removes just the
+            // local record and the LDAP entry is re-imported on the next search
+            ctx.getLdapModel().put(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.READ_ONLY.toString());
+            realm.updateComponent(ctx.getLdapModel());
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), realm, username, "Stable", "Id", username + "@ldap.org", null, "1234");
+            LDAPObject ldapUser = ctx.getLdapProvider().loadLDAPUserByUsername(realm, username);
+            return LDAPUtils.generateStableUserId(realm.getId(), ctx.getLdapModel().getId(), ldapUser.getUuid());
+        }, String.class);
+    }
+
+    private UserRepresentation importUserFromLdap(String username) {
+        List<UserRepresentation> users = managedRealm.admin().users().search(username, true);
+        assertEquals(1, users.size(), "Expected the LDAP user '" + username + "' to be imported by the search");
+        return users.get(0);
+    }
+
+    @Test
+    public void testImportedUserIdDerivedFromFederationAnchors() {
+        String expectedUserId = addLdapUserAndRecordExpectedId("stableid1");
+        UserRepresentation imported = importUserFromLdap("stableid1");
+        assertEquals(expectedUserId, imported.getId());
+        assertNotNull(UUID.fromString(imported.getId()));
+    }
+
+    @Test
+    public void testUserIdRestoredAfterDeleteAndReimport() {
+        String expectedUserId = addLdapUserAndRecordExpectedId("stableid2");
+        UserRepresentation imported = importUserFromLdap("stableid2");
+        assertEquals(expectedUserId, imported.getId());
+        try (Response resp = managedRealm.admin().users().delete(imported.getId())) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resp.getStatus());
+        }
+        // The LDAP entry was not removed by the delete, so re-importing the same entry restores the previous id
+        UserRepresentation reimported = importUserFromLdap("stableid2");
+        assertEquals(imported.getId(), reimported.getId());
+    }
+
+    @Test
+    public void testUserIdStableAcrossRepeatedImports() {
+        String expectedUserId = addLdapUserAndRecordExpectedId("stableid3");
+        UserRepresentation first = importUserFromLdap("stableid3");
+        UserRepresentation second = importUserFromLdap("stableid3");
+        assertEquals(expectedUserId, first.getId());
+        assertEquals(first.getId(), second.getId());
     }
 }
