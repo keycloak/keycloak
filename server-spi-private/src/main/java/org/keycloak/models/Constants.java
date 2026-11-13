@@ -30,6 +30,9 @@ import org.keycloak.models.utils.SystemClientUtil;
  * @version $Revision: 1 $
  */
 public final class Constants {
+    /** Client policy exception detail controlling whether an authorization error may redirect to the client. */
+    public static final String ERROR_REDIRECT_ALLOWED = "error_redirect_allowed";
+
     public static final String ADMIN_CONSOLE_CLIENT_ID = "security-admin-console";
     public static final String ADMIN_CLI_CLIENT_ID = "admin-cli";
 
