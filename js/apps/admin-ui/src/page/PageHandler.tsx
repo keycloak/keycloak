@@ -260,6 +260,7 @@ export const PageHandler = ({
       if (data) {
         convertToFormValues(data, form.setValue);
       }
+      form.reset(form.getValues());
       setId(data?.id);
       setIsLoading(false);
     },
