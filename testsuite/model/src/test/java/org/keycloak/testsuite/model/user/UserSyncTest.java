@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 import javax.naming.directory.BasicAttribute;
 
+import org.keycloak.models.GroupModel;
+
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
@@ -471,6 +473,67 @@ public class UserSyncTest extends KeycloakModelTest {
             assertThat(session.users().removeUser(realm, user), is(true));
             user = session.users().getUserByUsername(realm, "user1");
             assertThat(user, is(nullValue()));
+            return null;
+        });
+    }
+
+    @Test
+    public void testInvalidUserCanLeaveGroup() {
+        withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            providerModel.getConfig().putSingle(REMOVE_INVALID_USERS_ENABLED, "false");
+            realm.updateComponent(providerModel);
+            return null;
+        });
+
+        // add user to LDAP and import them
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user1", "User1FN", "User1LN", "user1@email.org", "my-street 1", "111");
+            session.users().getUserByUsername(realm, "user1"); // trigger import
+            return null;
+        });
+
+        // remove user from LDAP so they become invalid/disabled in Keycloak
+        withRealm(realmId, (session, realm) -> {
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, "user1");
+            assertThat(localUser, is(notNullValue()));
+            assertThat(ldapFedProvider.removeUser(realm, localUser), is(true));
+            return null;
+        });
+
+        AtomicReference<String> groupId = new AtomicReference<>();
+
+        // create a local group and add the user via local storage (before they become invalid)
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "test-group");
+            groupId.set(group.getId());
+            // join via local storage directly so we don't hit the read-only delegate
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, "user1");
+            localUser.joinGroup(group);
+            return null;
+        });
+
+        // verify user is disabled and can leave the group without ReadOnlyException
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().getGroupById(realm, groupId.get());
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            assertThat("User should be disabled after removal from LDAP", user.isEnabled(), is(false));
+            assertThat(user.isMemberOf(group), is(true));
+            // should not throw ReadOnlyException
+            user.leaveGroup(group);
+            return null;
+        });
+
+        // verify user is no longer in the group
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().getGroupById(realm, groupId.get());
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            assertThat(user.isMemberOf(group), is(false));
             return null;
         });
     }
