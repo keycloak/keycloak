@@ -259,6 +259,7 @@ public class LDAPQuery implements AutoCloseable {
 
         private final LdapContext ldapContext;
         private byte[] cookie;
+        private boolean incomplete;
 
         private PaginationContext(LdapContext ldapContext) {
             if (ldapContext == null) {
@@ -282,6 +283,18 @@ public class LDAPQuery implements AutoCloseable {
 
         public boolean hasNextPage() {
             return this.cookie != null;
+        }
+
+        /**
+         * Marks the paginated search as possibly incomplete, e.g. when the server did not return the paged results
+         * response control (typically because a server-side size limit was hit).
+         */
+        public void markIncomplete() {
+            this.incomplete = true;
+        }
+
+        public boolean isIncomplete() {
+            return incomplete;
         }
     }
 

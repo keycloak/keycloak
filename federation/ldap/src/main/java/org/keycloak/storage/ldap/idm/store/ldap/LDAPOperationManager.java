@@ -372,6 +372,7 @@ public class LDAPOperationManager {
                              * See KEYCLOAK-19036
                              */
                             identityQuery.getPaginationContext().setCookie(null);
+                            identityQuery.getPaginationContext().markIncomplete();
                             logger.warnf("Did not receive response controls for paginated query using DN [%s], filter [%s]. Did you hit a query result size limit?", baseDN, filter);
                         }
 

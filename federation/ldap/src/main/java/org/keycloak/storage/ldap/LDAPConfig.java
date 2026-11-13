@@ -211,6 +211,10 @@ public class LDAPConfig {
         return pageSizeConfig!=null ? Integer.parseInt(pageSizeConfig) : LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC;
     }
 
+    public boolean isRemoveInvalidUsersOnSync() {
+        return Boolean.parseBoolean(config.getFirst(LDAPConstants.REMOVE_INVALID_USERS_ON_SYNC));
+    }
+
     public String getUsernameLdapAttribute() {
         String username = config.getFirst(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
         if (username == null) {
