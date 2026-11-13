@@ -40,6 +40,10 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
     private String redirectUri;
 
     public ExecuteActionsActionToken(String userId, int absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
+        this(userId, (long) absoluteExpirationInSecs, requiredActions, redirectUri, clientId);
+    }
+
+    public ExecuteActionsActionToken(String userId, long absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
         setRequiredActions(requiredActions == null ? new LinkedList<>() : new LinkedList<>(requiredActions));
         setRedirectUri(redirectUri);
@@ -47,6 +51,10 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
     }
 
     public ExecuteActionsActionToken(String userId, String email, int absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
+        this(userId, email, (long) absoluteExpirationInSecs, requiredActions, redirectUri, clientId);
+    }
+
+    public ExecuteActionsActionToken(String userId, String email, long absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
         this(userId, absoluteExpirationInSecs, requiredActions, redirectUri, clientId);
         setEmail(email);
     }

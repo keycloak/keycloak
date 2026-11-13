@@ -28,6 +28,10 @@ public class ResetCredentialsActionToken extends DefaultActionToken {
     public static final String TOKEN_TYPE = "reset-credentials";
 
     public ResetCredentialsActionToken(String userId, String email, int absoluteExpirationInSecs, String compoundAuthenticationSessionId, String clientId) {
+        this(userId, email, (long) absoluteExpirationInSecs, compoundAuthenticationSessionId, clientId);
+    }
+
+    public ResetCredentialsActionToken(String userId, String email, long absoluteExpirationInSecs, String compoundAuthenticationSessionId, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.issuedFor = clientId;
         setEmail(email);
