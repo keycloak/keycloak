@@ -88,6 +88,18 @@
 
     <profiles>
         <profile>
+            <id>checkerframework</id>
+            <dependencies>
+                <!-- The Checker Framework writes type annotations into the bytecode that reference jakarta.persistence types of upstream modules (provided scope, not transitive).
+                     JDK 22+ javac fails with "Cannot attach type annotations" if they are missing here, see https://github.com/typetools/checker-framework/issues/8346 -->
+                <dependency>
+                    <groupId>jakarta.persistence</groupId>
+                    <artifactId>jakarta.persistence-api</artifactId>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
             <id>db-snapshot</id>
             <build>
                 <plugins>
