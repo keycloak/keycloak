@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import org.keycloak.common.util.Retry;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
+import org.keycloak.connections.jpa.updater.liquibase.YugabyteDatabase;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.dblock.DBLockProvider;
@@ -69,11 +70,16 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
             try {
                 Liquibase liquibase = liquibaseProvider.getLiquibase(dbConnection, defaultSchema);
 
+                if (liquibase.getDatabase() instanceof YugabyteDatabase) {
+                    // The lock is held by the transaction of the SELECT FOR UPDATE, therefore it can't run in the auto-commit mode Liquibase enables for Yugabyte
+                    dbConnection.setAutoCommit(false);
+                }
+
                 this.lockService = new CustomLockService();
                 lockService.setChangeLogLockWaitTime(factory.getLockWaitTimeoutMillis());
                 lockService.setDatabase(liquibase.getDatabase());
                 initialized = true;
-            } catch (LiquibaseException exception) {
+            } catch (LiquibaseException | SQLException exception) {
                 safeRollbackConnection();
                 safeCloseConnection();
                 throw new IllegalStateException(exception);

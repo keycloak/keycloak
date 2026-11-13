@@ -99,11 +99,14 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
                 // We're inside a liquibase managed transaction at this point. Some RDBMS don't like updates to tables
                 // that were queried in the same transaction. So we need to create a savepoint and rollback to it so that
                 // this select is effectively removed from a transaction and doesn't interfere with an update that will come later.
-                Savepoint savepoint = connection.setSavepoint();
+                // There is no transaction and no savepoint support when Liquibase runs in auto-commit mode (for example on YugabyteDB).
+                Savepoint savepoint = connection.getAutoCommit() ? null : connection.setSavepoint();
                 try (Statement st = connection.createStatement(); ResultSet resultSet = st.executeQuery("SELECT ID FROM " + getTableName(correctedTableName))) {
                     return (resultSet.next());
                 } finally {
-                    connection.rollback(savepoint);
+                    if (savepoint != null) {
+                        connection.rollback(savepoint);
+                    }
                 }
             } else {
                 return false;
