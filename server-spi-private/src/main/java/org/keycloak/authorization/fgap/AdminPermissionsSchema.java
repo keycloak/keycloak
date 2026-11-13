@@ -117,6 +117,12 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     // group specific scope for delegation
     public static final String DELEGATE_MEMBERS = "delegate-members";
 
+    /**
+     * Permission config key that, when set to {@code true} on a permission for the {@link #GROUPS_RESOURCE_TYPE},
+     * extends the permission to all descendants of the groups it is associated with.
+     */
+    public static final String EXTEND_CHILDREN = "extendChildren";
+
     public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
     public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERSHIP_OF_MEMBERS, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS, DELEGATE_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
@@ -124,6 +130,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final ResourceType ORGANIZATIONS = new ResourceType(ORGANIZATIONS_RESOURCE_TYPE, Set.of(MANAGE, VIEW));
     private static final String AUTHORIZATION_USER = "kc.authz.fgap.user";
     private static final String SKIP_EVALUATION = "kc.authz.fgap.skip";
+    private static final String EXTEND_CHILDREN_CACHE = "kc.authz.fgap.extend.children";
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
     private final PartialEvaluator partialEvaluator = new PartialEvaluator();
@@ -293,6 +300,9 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
     public void throwExceptionIfResourceTypeOrScopesNotProvided(KeycloakSession session, ResourceServer resourceServer, AbstractPolicyRepresentation rep) {
         if (!supportsAuthorizationSchema(session, resourceServer)) {
+            if (rep instanceof ScopePermissionRepresentation scopePermission && Boolean.TRUE.equals(scopePermission.getExtendChildren())) {
+                throw new ModelValidationException("Extending permissions to children is only supported for admin permissions.");
+            }
             return;
         }
         if (rep instanceof ScopePermissionRepresentation) {
@@ -306,7 +316,73 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             if (decisionStrategy != null && !DecisionStrategy.UNANIMOUS.equals(decisionStrategy)) {
                 throw new ModelValidationException("Only UNANIMOUS decision strategy is supported for admin permissions.");
             }
+            if (Boolean.TRUE.equals(((ScopePermissionRepresentation) rep).getExtendChildren())) {
+                if (!GROUPS_RESOURCE_TYPE.equals(rep.getResourceType())) {
+                    throw new ModelValidationException("Extending permissions to children is only supported for resource type " + GROUPS_RESOURCE_TYPE + ".");
+                }
+                Set<String> resources = rep.getResources();
+                if (resources == null || resources.isEmpty() || resources.stream().anyMatch(id -> isResourceTypeResource(session, resourceServer, id))) {
+                    throw new ModelValidationException("Extending permissions to children requires specific groups.");
+                }
+            }
         }
+    }
+
+    private boolean isResourceTypeResource(KeycloakSession session, ResourceServer resourceServer, String id) {
+        if (GROUPS_RESOURCE_TYPE.equals(id)) {
+            return true;
+        }
+
+        // resources can also be referenced by the id of their authorization resource
+        Resource resource = getStoreFactory(session).getResourceStore().findById(resourceServer, id);
+
+        return resource != null && GROUPS_RESOURCE_TYPE.equals(resource.getName());
+    }
+
+    /**
+     * Returns {@code true} if the given {@code permission} is a permission for the {@link #GROUPS_RESOURCE_TYPE} that
+     * should also apply to the descendants of the groups it is associated with.
+     *
+     * @param permission the permission
+     * @return {@code true} if the permission extends to children groups
+     */
+    public boolean isExtendChildren(Policy permission) {
+        return Boolean.parseBoolean(permission.getConfig().get(EXTEND_CHILDREN)) && targetsSpecificGroups(permission);
+    }
+
+    /**
+     * Returns {@code true} if the given {@code permission} is a permission for the {@link #GROUPS_RESOURCE_TYPE} that is
+     * associated with specific groups rather than with all groups, which is required to extend it to children groups.
+     *
+     * @param permission the permission
+     * @return {@code true} if the permission targets specific groups
+     */
+    public boolean targetsSpecificGroups(Policy permission) {
+        return GROUPS_RESOURCE_TYPE.equals(permission.getResourceType())
+                && permission.getResources().stream().map(Resource::getName).noneMatch(GROUPS_RESOURCE_TYPE::equals);
+    }
+
+    /**
+     * Returns {@code true} if at least one permission for the {@link #GROUPS_RESOURCE_TYPE} extends to children groups,
+     * so that callers can skip walking the group hierarchy otherwise. The result is cached for the lifetime of the session.
+     *
+     * @param session the session
+     * @param resourceServer the resource server of the admin permissions client
+     * @return {@code true} if there are permissions extending to children groups
+     */
+    public boolean hasExtendChildrenPermissions(KeycloakSession session, ResourceServer resourceServer) {
+        String key = EXTEND_CHILDREN_CACHE + "." + resourceServer.getId();
+        Boolean result = session.getAttribute(key, Boolean.class);
+
+        if (result == null) {
+            AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+            result = authorization.getStoreFactory().getPolicyStore().findByResourceType(resourceServer, GROUPS_RESOURCE_TYPE)
+                    .stream()
+                    .anyMatch(this::isExtendChildren);
+            session.setAttribute(key, result);
+        }
+
+        return result;
     }
 
     public Scope getScope(KeycloakSession session, ResourceServer resourceServer, String resourceType, String id) {
