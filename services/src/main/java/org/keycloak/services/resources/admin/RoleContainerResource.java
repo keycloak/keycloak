@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
@@ -69,6 +69,7 @@ import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
+import org.keycloak.utils.StreamsUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -88,6 +89,8 @@ import org.jboss.resteasy.reactive.NoCache;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class RoleContainerResource extends RoleResource {
+    private static final int COMPOSITE_FLAG_CHUNK_SIZE = 1000;
+
     private final RealmModel realm;
     protected AdminPermissionEvaluator auth;
 
@@ -146,10 +149,18 @@ public class RoleContainerResource extends RoleResource {
             roleModels = roleContainer.getRolesStream();
         }
 
-        Function<RoleModel, RoleRepresentation> toRoleRepresentation = briefRepresentation ?
-                ModelToRepresentation::toBriefRepresentation :
-                ModelToRepresentation::toRepresentation;
-        return roleModels.map(toRoleRepresentation);
+        // Resolving the composite flag per role would run one COMPOSITE_ROLE lookup per role, so it is
+        // resolved a chunk at a time rather than loading the whole listing into memory.
+        return StreamsUtil.closing(StreamsUtil.chunkedStream(roleModels, COMPOSITE_FLAG_CHUNK_SIZE)
+                .flatMap(roleChunk -> {
+                    Set<String> compositeIds = session.roles().getCompositeRoleIds(realm,
+                            roleChunk.stream().map(RoleModel::getId).collect(Collectors.toSet()));
+
+                    return roleChunk.stream().map(role -> briefRepresentation
+                            ? ModelToRepresentation.toBriefRepresentation(role, compositeIds.contains(role.getId()))
+                            : ModelToRepresentation.toRepresentation(role, compositeIds.contains(role.getId())));
+                })
+                .onClose(roleModels::close));
     }
 
     /**
