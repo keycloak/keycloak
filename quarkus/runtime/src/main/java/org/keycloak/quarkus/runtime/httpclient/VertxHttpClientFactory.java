@@ -45,6 +45,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     private int maxRetries;
     private long initialBackoffMillis;
     private double backoffMultiplier;
+    private long requestTimeoutMs;
     private boolean useJitter;
     private double jitterFactor;
     private ProxyMappings proxyMappings;
@@ -53,7 +54,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     public HttpClientProvider create(KeycloakSession session) {
         lazyInit(session);
         return new VertxHttpClientProvider(webClient, httpClient, maxConsumedResponseSize, socketTimeoutMs,
-                maxRetries, initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor, proxyMappings);
+                requestTimeoutMs, maxRetries, initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor, proxyMappings);
     }
 
     @Override
@@ -73,6 +74,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         maxConsumedResponseSize = config.getLong("max-consumed-response-size",
                 HttpClientProvider.DEFAULT_MAX_CONSUMED_RESPONSE_SIZE);
         socketTimeoutMs = config.getLong("socket-timeout-millis", 5000L);
+        requestTimeoutMs = config.getLong("request-timeout-millis", 30000L);
 
         maxRetries = config.getInt("max-retries", 0);
         initialBackoffMillis = config.getLong("initial-backoff-millis", 1000L);
