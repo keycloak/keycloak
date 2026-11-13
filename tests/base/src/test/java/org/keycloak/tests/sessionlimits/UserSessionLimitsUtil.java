@@ -28,6 +28,10 @@ public class UserSessionLimitsUtil {
     }
 
     protected static void configureSessionLimits(RealmModel realm, AuthenticationFlowModel flow, String behavior, String realmLimit, String clientLimit) {
+        configureSessionLimits(realm, flow, behavior, realmLimit, clientLimit, false);
+    }
+
+    protected static void configureSessionLimits(RealmModel realm, AuthenticationFlowModel flow, String behavior, String realmLimit, String clientLimit, boolean countSessionsPerFlow) {
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(flow.getId());
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
@@ -40,6 +44,7 @@ public class UserSessionLimitsUtil {
         sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.BEHAVIOR, behavior);
         sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, realmLimit);
         sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, clientLimit);
+        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.COUNT_SESSIONS_PER_FLOW, String.valueOf(countSessionsPerFlow));
         sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE, ERROR_TO_DISPLAY);
         configModel.setConfig(sessionAuthenticatorConfig);
         configModel.setAlias("user-session-limits-" + flow.getId());
