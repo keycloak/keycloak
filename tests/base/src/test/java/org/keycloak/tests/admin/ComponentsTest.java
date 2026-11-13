@@ -56,6 +56,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.providers.components.TestComponentProvider;
 import org.keycloak.tests.providers.components.TestComponentProviderFactory;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.util.JsonSerialization;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -64,6 +65,8 @@ import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -301,6 +304,59 @@ public class ComponentsTest {
 
         returned = components.component(id).toRepresentation();
         assertEquals("myupdatedcomponent", returned.getName());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, false", "false, true", "true, true"})
+    public void testPartialUpdateWithoutProviderFields(boolean omitType, boolean omitId) throws Exception {
+        ComponentRepresentation initial = createComponentRepresentation("mycomponent");
+        initial.getConfig().putSingle("required", "required-value");
+        initial.getConfig().putSingle("secret", "original-secret");
+        String id = createComponent(initial);
+        adminEvents.poll();
+
+        ComponentRepresentation update = new ComponentRepresentation();
+        update.setName("renamed");
+        if (!omitType) update.setProviderType(initial.getProviderType());
+        if (!omitId) update.setProviderId(initial.getProviderId());
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle("secret", "updated-secret");
+        update.setConfig(config);
+        components.component(id).update(update);
+
+        ComponentRepresentation stored = components.component(id).toRepresentation();
+        assertEquals("renamed", stored.getName());
+        assertEquals(initial.getProviderType(), stored.getProviderType());
+        assertEquals(initial.getProviderId(), stored.getProviderId());
+        assertEquals("required-value", stored.getConfig().getFirst("required"));
+        assertEquals(ComponentRepresentation.SECRET_VALUE, stored.getConfig().getFirst("secret"));
+        assertEquals("updated-secret", runOnServer.fetch(new TestComponents()).componentsDetailsMap()
+                .get("renamed").getConfig().get("secret").get(0));
+
+        AdminEventRepresentation event = adminEvents.poll();
+        assertThat(event.getRepresentation(), not(containsString("updated-secret")));
+        ComponentRepresentation eventRep = JsonSerialization.readValue(event.getRepresentation(), ComponentRepresentation.class);
+        assertEquals(initial.getProviderType(), eventRep.getProviderType());
+        assertEquals(initial.getProviderId(), eventRep.getProviderId());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, eventRep.getConfig().getFirst("secret"));
+
+        ComponentRepresentation withoutSecret = new ComponentRepresentation();
+        MultivaluedHashMap<String, String> otherConfig = new MultivaluedHashMap<>();
+        otherConfig.putSingle("val1", "changed");
+        withoutSecret.setConfig(otherConfig);
+        components.component(id).update(withoutSecret);
+        assertEquals("updated-secret", runOnServer.fetch(new TestComponents()).componentsDetailsMap()
+                .get("renamed").getConfig().get("secret").get(0));
+        assertEquals("required-value", components.component(id).toRepresentation().getConfig().getFirst("required"));
+        assertThat(adminEvents.poll().getRepresentation(), not(containsString("updated-secret")));
+
+        ComponentRepresentation nameOnly = new ComponentRepresentation();
+        nameOnly.setName("renamed-again");
+        components.component(id).update(nameOnly);
+        assertEquals("updated-secret", runOnServer.fetch(new TestComponents()).componentsDetailsMap()
+                .get("renamed-again").getConfig().get("secret").get(0));
+        assertEquals("required-value", components.component(id).toRepresentation().getConfig().getFirst("required"));
+        assertThat(adminEvents.poll().getRepresentation(), not(containsString("updated-secret")));
     }
 
     @Test
