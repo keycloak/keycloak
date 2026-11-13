@@ -160,10 +160,10 @@ public class UserVerifiableCredentialResource {
         checkOid4VCIEnabled();
 
         // Resolve name to ID
-        ClientScopeModel clientScope = realm.getClientScopesStream()
-                .filter(s -> s.getName().equals(credentialScopeName))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Client scope not found: " + credentialScopeName));
+        ClientScopeModel clientScope = realm.getClientScopeByName(credentialScopeName);
+        if (clientScope == null) {
+            throw new NotFoundException("Client scope not found: " + credentialScopeName);
+        }
 
         try {
             UserVerifiableCredentialModel updatedModel = session.users().updateVerifiableCredential(user.getId(), clientScope.getId());
@@ -207,10 +207,10 @@ public class UserVerifiableCredentialResource {
         checkOid4VCIEnabled();
 
         // Resolve name to ID
-        ClientScopeModel clientScope = realm.getClientScopesStream()
-                .filter(s -> s.getName().equals(credentialScopeName))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Client scope not found: " + credentialScopeName));
+        ClientScopeModel clientScope = realm.getClientScopeByName(credentialScopeName);
+        if (clientScope == null) {
+            throw new NotFoundException("Client scope not found: " + credentialScopeName);
+        }
 
         boolean removed = session.users().removeVerifiableCredential(user.getId(), clientScope.getId());
         if (!removed) {

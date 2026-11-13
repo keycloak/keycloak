@@ -1089,6 +1089,10 @@ public class RealmModelDelegate implements RealmModel {
         return delegate.getClientScopeById(id);
     }
 
+    public ClientScopeModel getClientScopeByName(String name) {
+        return delegate.getClientScopeByName(name);
+    }
+
     public void addDefaultClientScope(ClientScopeModel clientScope, boolean defaultScope) {
         delegate.addDefaultClientScope(clientScope, defaultScope);
     }

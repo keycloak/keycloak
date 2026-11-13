@@ -1241,6 +1241,19 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public ClientScopeModel getClientScopeByName(RealmModel realm, String name) {
+        TypedQuery<String> query = em.createNamedQuery("getClientScopeIdByName", String.class);
+        query.setParameter("realm", realm.getId());
+        query.setParameter("name", name);
+        // the database collation might match case-insensitively, therefore compare the name again
+        return query.getResultList().stream()
+                .map(id -> getClientScopeById(realm, id))
+                .filter(clientScope -> clientScope != null && Objects.equals(name, clientScope.getName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
     public ClientScopeModel addClientScope(RealmModel realm, String id, String name) {
         if (id == null) {
             id = KeycloakModelUtils.generateId();
