@@ -189,9 +189,8 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
         }
         validator.validate(client, context, Default.class);
         var proposedRepresentation = getProposedOldRepresentation(realm, client, schema);
-        if (client instanceof SAMLClientRepresentation samlClient) {
+        if (client instanceof SAMLClientRepresentation) {
             proposedRepresentation.setStandardFlowEnabled(null);
-            proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
         }
         
         try {

@@ -101,6 +101,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
     @JsonPropertyDescription("Allow ECP (Enhanced Client or Proxy) flow")
     private Boolean allowEcpFlow;
 
+    @Schema(defaultValue = "username")
     public NameIdFormat getNameIdFormat() {
         return nameIdFormat;
     }
@@ -109,6 +110,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.nameIdFormat = nameIdFormat;
     }
 
+    @Schema(defaultValue = "false")
     public Boolean getForceNameIdFormat() {
         return forceNameIdFormat;
     }
@@ -117,6 +119,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.forceNameIdFormat = forceNameIdFormat;
     }
 
+    @Schema(defaultValue = "true")
     public Boolean getIncludeAuthnStatement() {
         return includeAuthnStatement;
     }
@@ -125,6 +128,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.includeAuthnStatement = includeAuthnStatement;
     }
 
+    @Schema(defaultValue = "true")
     public Boolean getSignDocuments() {
         return signDocuments;
     }
@@ -133,6 +137,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signDocuments = signDocuments;
     }
 
+    @Schema(defaultValue = "false")
     public Boolean getSignAssertions() {
         return signAssertions;
     }
@@ -141,6 +146,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signAssertions = signAssertions;
     }
 
+    @Schema(defaultValue = "true")
     public Boolean getClientSignatureRequired() {
         return clientSignatureRequired;
     }
@@ -149,6 +155,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.clientSignatureRequired = clientSignatureRequired;
     }
 
+    @Schema(defaultValue = "true")
     public Boolean getForcePostBinding() {
         return forcePostBinding;
     }
@@ -157,6 +164,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.forcePostBinding = forcePostBinding;
     }
 
+    @Schema(defaultValue = "true")
     public Boolean getFrontChannelLogout() {
         return frontChannelLogout;
     }
@@ -165,6 +173,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.frontChannelLogout = frontChannelLogout;
     }
 
+    @Schema(defaultValue = "RSA_SHA256")
     public SignatureAlgorithm getSignatureAlgorithm() {
         return signatureAlgorithm;
     }
@@ -173,6 +182,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signatureAlgorithm = signatureAlgorithm;
     }
 
+    @Schema(defaultValue = "http://www.w3.org/2001/10/xml-exc-c14n#")
     public String getSignatureCanonicalizationMethod() {
         return signatureCanonicalizationMethod;
     }
@@ -189,6 +199,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signingCertificate = signingCertificate;
     }
 
+    @Schema(defaultValue = "false")
     public Boolean getAllowEcpFlow() {
         return allowEcpFlow;
     }

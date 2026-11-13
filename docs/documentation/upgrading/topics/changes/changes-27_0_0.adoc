@@ -422,6 +422,40 @@ This prevents an attacker who controls a brokered account with an unverified ema
 
 If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.
 
+=== Admin API v2 applies client defaults for null values
+// https://github.com/keycloak/keycloak/issues/49038
+
+Admin API v2 client representations now define schema defaults for `enabled` and SAML settings, resolving omitted or `null` values to those defaults on create (`POST`) and replace (`PUT`).
+
+On partial update (`PATCH`), omitted fields keep their current values, while fields explicitly set to `null` reset to their schema defaults.
+Clients that serialize only non-null fields (such as the Java admin client) must send desired values explicitly when patching.
+
+Previously, omitted or `null` fields on create or replace disabled the setting, left the client disabled, or removed the stored attribute.
+
+The following fields now default to `true` when omitted or `null`:
+
+* `enabled`
+* `includeAuthnStatement`
+* `signDocuments`
+* `clientSignatureRequired`
+* `forcePostBinding`
+* `frontChannelLogout`
+
+In addition, the following SAML fields resolve to defaults when omitted or `null`:
+
+* `nameIdFormat`: `username`
+* `signatureAlgorithm`: `RSA_SHA256`
+* `signatureCanonicalizationMethod`: `http://www.w3.org/2001/10/xml-exc-c14n#`
+* `forceNameIdFormat`, `signAssertions`, `allowEcpFlow`: `false`
+
+To disable a setting or create a disabled client, specify `false` explicitly.
+Review existing scripts or automation that relied on omitted or `null` fields to disable settings.
+
+Other notable behavior changes:
+
+* For existing SAML clients with no stored values for `includeAuthnStatement`, `signDocuments`, `clientSignatureRequired`, or `forcePostBinding`, the API now returns `false` (the effective runtime value) instead of `null`.
+* Client policies, such as the secure logout executor, evaluate an unset `frontChannelLogout` field as `true`.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
