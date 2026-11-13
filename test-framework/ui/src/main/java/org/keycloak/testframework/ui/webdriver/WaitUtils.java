@@ -37,8 +37,16 @@ public class WaitUtils {
     }
 
     public WaitUtils waitForOAuthCallback() {
-        waitForOAuthCallback(webdriver1 -> webdriver1.getCurrentUrl().contains(OAuth2Constants.CODE + "=") || webdriver1.getCurrentUrl().contains(OAuth2Constants.ERROR + "="));
+        waitForOAuthCallback(webdriver1 -> {
+            // match whole parameter names, as the login page URL contains "session_code="
+            String url = webdriver1.getCurrentUrl();
+            return hasUrlParameter(url, OAuth2Constants.CODE) || hasUrlParameter(url, OAuth2Constants.ERROR);
+        });
         return this;
+    }
+
+    private static boolean hasUrlParameter(String url, String name) {
+        return url.contains("?" + name + "=") || url.contains("&" + name + "=") || url.contains("#" + name + "=");
     }
 
     public WaitUtils waitForOAuthCallback(Function<? super WebDriver, Boolean> oAuthResponseIsPresent) {
