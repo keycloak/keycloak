@@ -335,7 +335,24 @@ export default function RealmRoleTabs() {
                 title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                 {...eventsTab}
               >
-                <AdminEvents resourcePath={`roles-by-id/${id}`} />
+                {clientId ? (
+                  // The name is only known once the role is loaded.
+                  roleName && (
+                    <AdminEvents
+                      resourcePath={[
+                        `clients/${clientId}/roles/${roleName}`,
+                        // Only the sub-resources that record events (composites), as role names can contain "/" and "/*" would match other roles.
+                        `clients/${clientId}/roles/${roleName}/composites`,
+                        `roles-by-id/${id}`,
+                        `roles-by-id/${id}/*`,
+                      ]}
+                    />
+                  )
+                ) : (
+                  <AdminEvents
+                    resourcePath={[`roles-by-id/${id}`, `roles-by-id/${id}/*`]}
+                  />
+                )}
               </Tab>
             )}
           </RoutableTabs>

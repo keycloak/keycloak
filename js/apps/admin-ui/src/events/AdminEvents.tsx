@@ -105,12 +105,36 @@ const DetailCell = (event: AdminEventRepresentation) => (
   </DescriptionList>
 );
 
+// The server matches the path with SQL LIKE, so `_` and `%` in names are wildcards as well.
+// A `\` in a name can't be matched at all, as the server doesn't escape it (see keycloak/keycloak#55126).
+// Returns a check that treats `_` and `%` literally and `*` as the wildcard, or undefined when the server already matches exactly.
+function literalMatcher(pattern: string | undefined) {
+  if (!pattern || !/[_%]/.test(pattern)) {
+    return undefined;
+  }
+  const regex = new RegExp(
+    `^${pattern
+      .split("*")
+      .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+      .join(".*")}$`,
+  );
+  return (path: string) => regex.test(path);
+}
+
 type AdminEventsProps = {
-  resourcePath?: string;
+  /**
+   * Resource path(s) to restrict the events to. The server accepts only one pattern per request,
+   * so multiple paths (for example an exact path plus its sub-resources) are queried separately and merged.
+   */
+  resourcePath?: string | string[];
 };
 
-export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
+export const AdminEvents = ({
+  resourcePath: resourcePathProp,
+}: AdminEventsProps) => {
   const { adminClient } = useAdminClient();
+  const resourcePaths = ([] as string[]).concat(resourcePathProp ?? []);
+  const resourcePath = resourcePaths[0];
 
   const { t } = useTranslation();
   const { realm } = useRealm();
@@ -176,15 +200,63 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
     [],
   );
 
-  function loader(first?: number, max?: number) {
-    return adminClient.realms.findAdminEvents({
-      resourcePath,
-      // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
-      ...(activeFilters as any),
-      realm,
-      first,
-      max,
-    });
+  async function loader(first?: number, max?: number) {
+    const find = (path: string | undefined, first?: number, max?: number) =>
+      adminClient.realms.findAdminEvents({
+        resourcePath: path,
+        // The admin client wants 'dateFrom' and 'dateTo' to be Date objects, however it cannot actually handle them so we need to cast to any.
+        ...(activeFilters as any),
+        realm,
+        first,
+        max,
+      });
+
+    if (
+      resourcePaths.length <= 1 &&
+      !resourcePaths.some((path) => literalMatcher(path))
+    ) {
+      return find(resourcePath, first, max);
+    }
+
+    // Rows that are filtered out don't count, so continue reading until enough rows are found.
+    const findMatching = async (path: string | undefined, needed?: number) => {
+      const matchPath = literalMatcher(path);
+      if (!matchPath) {
+        return find(path, 0, needed);
+      }
+      const pageSize = Math.max(needed ?? 100, 100);
+      const matching: Awaited<ReturnType<typeof find>> = [];
+      for (let offset = 0; ; offset += pageSize) {
+        const page = await find(path, offset, pageSize);
+        matching.push(
+          ...page.filter((event) => matchPath(event.resourcePath!)),
+        );
+        if (page.length < pageSize || (needed && matching.length >= needed)) {
+          return matching;
+        }
+      }
+    };
+
+    // Each query must return enough rows to fill the requested page after merging.
+    // Known limitation: events with the same timestamp can be cut differently per query at a page boundary,
+    // so an event can repeat or be skipped between pages. A single backend request would avoid this, see keycloak/keycloak#55126.
+    const skip = first ?? 0;
+    const results = await Promise.all(
+      resourcePaths.map((path) =>
+        findMatching(path, max === undefined ? undefined : skip + max),
+      ),
+    );
+    // Patterns can overlap when names contain wildcards, so the same event may be returned more than once.
+    const unique = new Map(
+      results.flat().map((event) => [event.id ?? JSON.stringify(event), event]),
+    );
+    const merged = [...unique.values()].sort(
+      (a, b) =>
+        (b.time ?? 0) - (a.time ?? 0) || (a.id ?? "").localeCompare(b.id ?? ""),
+    );
+    return max === undefined
+      ? merged.slice(skip)
+      : merged.slice(skip, skip + max);
   }
 
   function submitSearch() {
@@ -288,7 +360,8 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
       )}
       {!adminEventsEnabled && <EventsBanners type="adminEvents" />}
       <KeycloakDataTable
-        key={key}
+        // Remount to reload when the resource paths change.
+        key={`${key}-${resourcePaths.join("|")}`}
         loader={loader}
         detailColumns={[
           {

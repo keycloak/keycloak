@@ -302,7 +302,18 @@ export default function EditClientScope() {
                 title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                 {...eventsTab}
               >
-                <AdminEvents resourcePath={`*client-scopes/${id}`} />
+                <AdminEvents
+                  resourcePath={[
+                    `client-scopes/${id}`,
+                    `client-scopes/${id}/*`,
+                    // Events of changing the realm default scopes
+                    `default-default-client-scopes/${id}`,
+                    `default-optional-client-scopes/${id}`,
+                    // Events of assigning the scope to a client
+                    `clients/*/default-client-scopes/${id}`,
+                    `clients/*/optional-client-scopes/${id}`,
+                  ]}
+                />
               </Tab>
             )}
         </RoutableTabs>
