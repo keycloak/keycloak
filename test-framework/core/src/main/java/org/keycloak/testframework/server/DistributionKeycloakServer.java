@@ -70,7 +70,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 killPreviousProcess();
             }
 
-            ProviderDeployer providerDeployer = new ProviderDeployer(log, keycloakHomeDir, keycloakServerConfigBuilder.toDependencies(), KeycloakServer.getDependencyHotDeployEnabled());
+            ProviderDeployer providerDeployer = new ProviderDeployer(log, keycloakHomeDir, keycloakServerConfigBuilder, KeycloakServer.getDependencyHotDeployEnabled());
 
             if (!installationCreated && reuse && ping()) {
                 checkRunning();
@@ -93,6 +93,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
             } else {
                 providerDeployer.updateDependencies();
             }
+            // TODO manage updating the deployed jars
+            providerDeployer.deployProviderFactories();
 
             OutputHandler outputHandler = startKeycloak(args);
 
