@@ -41,6 +41,7 @@ test.describe.serial("Realm roles test", () => {
   const searchPlaceHolder = "Search role by name";
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

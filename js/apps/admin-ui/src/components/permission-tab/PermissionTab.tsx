@@ -36,11 +36,7 @@ import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import "./permissions-tab.css";
 
 type PermissionScreenType =
-  | "clients"
-  | "users"
-  | "groups"
-  | "roles"
-  | "identityProviders";
+  "clients" | "users" | "groups" | "roles" | "identityProviders";
 
 type PermissionsTabProps = {
   id?: string;
