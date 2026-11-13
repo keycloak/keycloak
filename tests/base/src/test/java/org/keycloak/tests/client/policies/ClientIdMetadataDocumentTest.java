@@ -1139,6 +1139,10 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setRequestUris(List.of("https://request.example.org/request"));
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
         cimd.getRepresentation().setRequestUris(null);
+
+        cimd.getRepresentation().setFrontChannelLogoutUri("https://frontchannel.example.org/logout");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        cimd.getRepresentation().setFrontChannelLogoutUri(null);
     }
 
     @Test
@@ -1371,6 +1375,13 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTosUri("https://www.example.co.jp/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost/mcp");
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+        cimd.getRepresentation().setClientUri("http://localhost:8500");
+        cimd.getRepresentation().setTosUri("https://localhost:8500/tos");
+
+        cimd.getRepresentation().setFrontChannelLogoutUri("https://www.example.com/logout");
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        cimd.getRepresentation().setFrontChannelLogoutUri(null);
     }
 
     @Test
