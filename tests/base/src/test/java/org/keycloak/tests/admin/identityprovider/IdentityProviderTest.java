@@ -11,6 +11,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.social.google.GoogleIdentityProvider;
+import org.keycloak.social.google.GoogleIdentityProviderConfig;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
@@ -145,9 +146,23 @@ public class IdentityProviderTest extends AbstractIdentityProviderTest {
         Response response = managedRealm.admin().identityProviders().create(createRep("google", "google", false, Map.of(OIDCIdentityProviderConfig.ISSUER, "bad-issuer")));
         Assertions.assertEquals(400, response.getStatus(), "Status");
 
-        create(createRep("google", "google"));
+        response = managedRealm.admin().identityProviders().create(createRep("google", "google", false,
+                Map.of(GoogleIdentityProviderConfig.GROUP_RETRIEVAL_MODE, "INVALID")));
+        Assertions.assertEquals(400, response.getStatus(), "Status");
+
+        response = managedRealm.admin().identityProviders().create(createRep("google", "google", false,
+                Map.of(GoogleIdentityProviderConfig.GROUP_RETRIEVAL_MODE, GoogleIdentityProviderConfig.GroupRetrievalMode.SCOPED.name())));
+        Assertions.assertEquals(400, response.getStatus(), "Status");
+
+        create(createRep("google", "google", false,
+                Map.of(GoogleIdentityProviderConfig.GROUP_RETRIEVAL_MODE, GoogleIdentityProviderConfig.GroupRetrievalMode.SCOPED.name(),
+                        GoogleIdentityProviderConfig.SCOPED_GROUPS, "01abc23def45ghi,groups/02xyz89uvw12rst")));
         IdentityProviderRepresentation googleIdentityProvider = managedRealm.admin().identityProviders().get("google").toRepresentation();
         Assertions.assertEquals(GoogleIdentityProvider.ISSUER_URL, googleIdentityProvider.getConfig().get(OIDCIdentityProviderConfig.ISSUER));
+        Assertions.assertEquals(GoogleIdentityProviderConfig.GroupRetrievalMode.SCOPED.name(),
+                googleIdentityProvider.getConfig().get(GoogleIdentityProviderConfig.GROUP_RETRIEVAL_MODE));
+        Assertions.assertEquals("01abc23def45ghi,groups/02xyz89uvw12rst",
+                googleIdentityProvider.getConfig().get(GoogleIdentityProviderConfig.SCOPED_GROUPS));
     }
 
 }
