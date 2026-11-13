@@ -88,6 +88,7 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
                 if (isGrantMatching(OAuth2Constants.CLIENT_CREDENTIALS)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case TOKEN_EXCHANGE_REQUEST:
+            case TOKEN_EXCHANGE_DELEGATION_REQUEST:
             case TOKEN_EXCHANGE_RESPONSE:
                 if (isGrantMatching(OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
