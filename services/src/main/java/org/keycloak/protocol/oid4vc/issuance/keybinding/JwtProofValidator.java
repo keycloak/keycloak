@@ -184,14 +184,9 @@ public class JwtProofValidator extends AbstractProofValidator {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing binding key. JWT must contain either jwk, kid, or x5c in header.");
         }
 
-        // If a key attestation is present, proof key must be one of attested_keys.
         if (attestationInfo.isPresent()) {
-            boolean attested = attestationInfo.attestedKeys().stream()
-                    .anyMatch(attestedKey -> jwkMaterialEquals(attestedKey, jwk));
-            if (!attested) {
-                throw new VCIssuerException(ErrorType.INVALID_PROOF,
-                        "JWT proof key is not included in attested_keys");
-            }
+            validateProofKeyAttestation(attestationInfo.attestedKeys(), jwk,
+                    vcIssuanceContext.getCredentialConfig().getRequiredProofKeyIndex());
         }
 
         // Rest of the validation
@@ -365,6 +360,36 @@ public class JwtProofValidator extends AbstractProofValidator {
         boolean isPresent() {
             return !attestedKeys.isEmpty();
         }
+    }
+
+    /**
+     * The proof key must be included in attested_keys (OpenID4VCI Appendix D). When a required index is
+     * configured, the key has to occupy exactly that position, as mandated by ETSI TS 119 472-3 and
+     * Regulation (EU) 2026/1731 (TR_KA-6).
+     */
+    void validateProofKeyAttestation(List<JWK> attestedKeys, JWK proofKey, Integer requiredIndex) {
+        int foundIndex = indexOfAttestedKey(attestedKeys, proofKey);
+        if (requiredIndex == null) {
+            if (foundIndex < 0) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "JWT proof key is not included in attested_keys");
+            }
+            return;
+        }
+        if (foundIndex != requiredIndex) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, foundIndex < 0
+                    ? "JWT proof key is not attested_keys[" + requiredIndex + "]"
+                    : "JWT proof key is not attested_keys[" + requiredIndex + "], it is at index " + foundIndex);
+        }
+    }
+
+    private int indexOfAttestedKey(List<JWK> attestedKeys, JWK proofKey) {
+        for (int i = 0; i < attestedKeys.size(); i++) {
+            if (jwkMaterialEquals(attestedKeys.get(i), proofKey)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
