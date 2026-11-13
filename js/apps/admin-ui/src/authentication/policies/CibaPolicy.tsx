@@ -41,7 +41,17 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
   const { addAlert, addError } = useAlerts();
 
   const setupForm = (realm: RealmRepresentation) =>
-    convertToFormValues(realm, form.setValue);
+    convertToFormValues(
+      {
+        ...realm,
+        // optional attribute, absent until set once: reset it explicitly so Reload discards unsaved input
+        attributes: {
+          cibaHttpAuthenticationChannelUri: "",
+          ...realm.attributes,
+        },
+      },
+      form.setValue,
+    );
 
   useEffect(() => setupForm(realm), []);
 
@@ -131,6 +141,18 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             options={["login_hint", "id_token_hint", "login_hint_token"]}
             controller={{ defaultValue: "" }}
             isDisabled
+          />
+          <TextControl
+            name="attributes.cibaHttpAuthenticationChannelUri"
+            type="url"
+            label={t("cibaHttpAuthenticationChannelUri")}
+            labelIcon={t("cibaHttpAuthenticationChannelUriHelp")}
+            rules={{
+              pattern: {
+                value: /^https?:\/\/[^\s/?#]+\S*$/i,
+                message: t("cibaHttpAuthenticationChannelUriInvalid"),
+              },
+            }}
           />
         </FormProvider>
         <ActionGroup>

@@ -17,7 +17,9 @@
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
 import java.io.IOException;
-import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -26,12 +28,14 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -40,17 +44,62 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";
 
+    private static final Pattern LENIENT_HOST_PORT = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9._-]*(:\\d{1,5})?");
+
     protected KeycloakSession session;
     protected MultivaluedMap<String, String> formParams;
     protected RealmModel realm;
-    protected Map<String, String> clientAuthAttributes;
     protected Cors cors;
     protected final String httpAuthenticationChannelUri;
 
     public HttpAuthenticationChannelProvider(KeycloakSession session, String httpAuthenticationRequestUri) {
+        this(session, httpAuthenticationRequestUri, false);
+    }
+
+    public HttpAuthenticationChannelProvider(KeycloakSession session, String httpAuthenticationRequestUri, boolean allowRealmOverride) {
         this.session = session;
         this.realm = session.getContext().getRealm();
-        this.httpAuthenticationChannelUri = httpAuthenticationRequestUri;
+        String realmUri = realm == null ? null : realm.getAttribute(CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI);
+        this.httpAuthenticationChannelUri = resolveHttpAuthenticationChannelUri(realmUri, httpAuthenticationRequestUri, allowRealmOverride);
+    }
+
+    /**
+     * Returns the realm-level authentication channel URI if set and realm override is allowed, otherwise the server-wide URI.
+     */
+    static String resolveHttpAuthenticationChannelUri(String realmUri, String serverUri, boolean allowRealmOverride) {
+        if (!allowRealmOverride || StringUtil.isBlank(realmUri)) {
+            return serverUri;
+        }
+        return realmUri;
+    }
+
+    /**
+     * Checks that the given URI is usable as an HTTP authentication channel URI.
+     */
+    public static boolean isValidHttpAuthenticationChannelUri(String uri) {
+        if (StringUtil.isBlank(uri)) {
+            return false;
+        }
+        try {
+            URI parsed = new URI(uri);
+            return parsed.isAbsolute()
+                    && ("http".equalsIgnoreCase(parsed.getScheme()) || "https".equalsIgnoreCase(parsed.getScheme()))
+                    && hasHost(parsed);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    /**
+     * {@link URI#getHost()} is null for host names that are not valid per RFC 2396, e.g. names containing '_',
+     * which are common in container networks. In that case the authority must be a plain {@code host[:port]}.
+     */
+    private static boolean hasHost(URI uri) {
+        if (uri.getHost() != null) {
+            return !uri.getHost().isBlank();
+        }
+        String authority = uri.getAuthority();
+        return authority != null && LENIENT_HOST_PORT.matcher(authority).matches();
     }
 
     @Override
@@ -112,10 +161,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
     }
 
     protected void checkAuthenticationChannel() {
-        if (httpAuthenticationChannelUri == null) {
-            throw new RuntimeException("Authentication Channel Request URI not set properly.");
-        }
-        if (!httpAuthenticationChannelUri.startsWith("http://") && !httpAuthenticationChannelUri.startsWith("https://")) {
+        if (!isValidHttpAuthenticationChannelUri(httpAuthenticationChannelUri)) {
             throw new RuntimeException("Authentication Channel Request URI not set properly.");
         }
     }
