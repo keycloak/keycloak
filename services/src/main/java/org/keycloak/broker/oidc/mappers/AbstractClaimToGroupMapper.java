@@ -17,6 +17,8 @@
 
 package org.keycloak.broker.oidc.mappers;
 
+import java.util.List;
+
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
@@ -35,13 +37,17 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, user, mapperModel, context);
-        if (group == null) {
+        List<GroupModel> groups = KeycloakModelUtils.getGroupsForIdpMapper(session, realm, user, mapperModel, context);
+        if (groups.isEmpty()) {
             return;
         }
 
-        if (applies(mapperModel, context) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
-            user.joinGroup(group);
+        if (applies(mapperModel, context)) {
+            groups.forEach(group -> {
+                if (isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
+                    user.joinGroup(group);
+                }
+            });
         }
     }
 
@@ -49,20 +55,22 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, user, mapperModel, context);
-        if (group == null) {
+        List<GroupModel> groups = KeycloakModelUtils.getGroupsForIdpMapper(session, realm, user, mapperModel, context);
+        if (groups.isEmpty()) {
             return;
         }
 
-        String groupId = group.getId();
-        if (!context.hasMapperAssignedGroup(groupId) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
-            if (applies(mapperModel, context)) {
-                context.addMapperAssignedGroup(groupId);
-                user.joinGroup(group);
-            } else {
-                user.leaveGroup(group);
+        groups.forEach(group -> {
+            final var groupId = group.getId();
+            if (!context.hasMapperAssignedGroup(groupId) && isAdminGroupJoinAllowed(session, realm, group, mapperModel)) {
+                if (applies(mapperModel, context)) {
+                    context.addMapperAssignedGroup(groupId);
+                    user.joinGroup(group);
+                } else {
+                    user.leaveGroup(group);
+                }
             }
-        }
+        });
     }
 
     /**
