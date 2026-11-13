@@ -54,7 +54,7 @@ export const VerifiableCredentials = () => {
     >
       <Stack hasGutter>
         <StackItem>
-          <Title headingLevel="h2" className="pf-v5-u-mb-lg" size="xl">
+          <Title headingLevel="h2" className="pf-v6-u-mb-lg" size="xl">
             {t("myVerifiableCredentials")}
           </Title>
           <DataList

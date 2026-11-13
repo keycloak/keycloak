@@ -1,4 +1,4 @@
-import { PageSection, Text, TextContent, Title } from "@patternfly/react-core";
+import { PageSection, Content, Title } from "@patternfly/react-core";
 import { PropsWithChildren } from "react";
 
 type PageProps = {
@@ -13,15 +13,15 @@ export const Page = ({
 }: PropsWithChildren<PageProps>) => {
   return (
     <>
-      <PageSection variant="light">
-        <TextContent>
+      <PageSection hasBodyWrapper={false}>
+        <Content>
           <Title headingLevel="h1" data-testid="page-heading">
             {title}
           </Title>
-          <Text component="p">{description}</Text>
-        </TextContent>
+          <Content component="p">{description}</Content>
+        </Content>
       </PageSection>
-      <PageSection variant="light">{children}</PageSection>
+      <PageSection hasBodyWrapper={false}>{children}</PageSection>
     </>
   );
 };
