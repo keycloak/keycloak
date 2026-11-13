@@ -23,7 +23,7 @@
 
 |User Info URL
 |An endpoint from where information about the user will be fetched from. When invoking this endpoint, {project_name} will send
-the request with the access token issued by the identity provider as a bearer token. As a result, it expects the response to be a
+the request with the access token issued by the identity provider as a bearer token or as a DPoP bound token when `Use DPoP` is on. As a result, it expects the response to be a
 JSON document with the claims that should be used to obtain user profile information like ID, username, email, and first and last names.
 
 |Client Authentication
@@ -42,6 +42,12 @@ In the case of JWT signed with private key or Client secret as jwt, it is requir
 |Client Assertion Audience
 |The audience to use for the client assertion. The default value is the IDP's token endpoint URL.
 
+|Issuer
+|The issuer identifier of the IDP, required to validate the issuer of the authorization response.
+
+|Validate issuer against discovery endpoint
+|{project_name} only saves the identity provider if the `Issuer` matches the discovery endpoint it was imported from (https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfigurationValidation[OpenID Connect Discovery 4.3] and https://datatracker.ietf.org/doc/html/rfc8414#section-3.3[RFC 8414 section 3.3]). Turn it off for an IDP whose issuer differs on purpose, such as a multi-tenant endpoint.
+
 |Default Scopes
 |A space separated list of scopes {project_name} sends with the authentication request.
 
@@ -55,6 +61,27 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 
 |Requires short state parameter
 |This switch needs to be enabled if identity provider does not support long value of the `state` parameter sent in the initial OAuth2 authorization request (EG. more than 100 characters). In this case, {project_name} will try to make shorter `state` parameter and may omit some client data to be sent in the initial request. This may result in the limited functionality in some very corner case scenarios (EG. in case that IDP redirects to {project_name} with the error in the OAuth2 authorization response, {project_name} might need to display error page instead of being able to redirect to the client in case that login session is expired).
+
+|Use pushed authorization requests
+|{project_name} pushes the authorization request to the IDP (https://datatracker.ietf.org/doc/html/rfc9126[RFC 9126]) with the same client authentication as the token endpoint. The user is then redirected with only the `request_uri` that the IDP returns instead of the request parameters. The switch is locked on when the IDP metadata sets `require_pushed_authorization_requests`.
+
+|Pushed authorization request URL
+|The pushed authorization request endpoint of the IDP. Importing the IDP metadata sets it from `pushed_authorization_request_endpoint`.
+
+|Use signed request objects
+|{project_name} sends the authorization request as a signed request object (https://datatracker.ietf.org/doc/html/rfc9101[RFC 9101]). The `Issuer` is the audience of the request object and must be set. With pushed authorization requests the request object is pushed instead of the request parameters. Otherwise it is passed by value and the `client_id`, `response_type` and `scope` are repeated as query parameters.
+
+|Request object signature algorithm
+|The algorithm of the request object. It is signed with the active realm key of this algorithm. The default is `PS256`, which is the default that the FAPI client profiles of {project_name} set for request objects.
+
+|Use DPoP
+|{project_name} sends https://datatracker.ietf.org/doc/html/rfc9449[DPoP] proofs to the pushed authorization request, token and user info endpoints so that the IDP binds its access tokens to a key. This includes token refresh. The proofs are signed with the active realm key of the DPoP signing algorithm. When the IDP asks for a nonce {project_name} retries once with it. The login fails if the IDP does not issue DPoP bound tokens.
+
+|DPoP signing algorithm
+|The algorithm of the DPoP proofs. The default is `ES256`. Importing IDP metadata with `dpop_signing_alg_values_supported` picks the first supported algorithm and prefers `ES256` and `PS256`.
+
+|Validate authorization response issuer
+|{project_name} rejects authorization responses without the `Issuer` of the IDP in the `iss` parameter (https://datatracker.ietf.org/doc/html/rfc9207[RFC 9207]). The `Issuer` must be set. Importing IDP metadata with `authorization_response_iss_parameter_supported` turns this switch on.
 
 |===
 

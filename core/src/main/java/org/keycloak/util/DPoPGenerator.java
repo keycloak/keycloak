@@ -64,8 +64,15 @@ public class DPoPGenerator {
     }
 
     public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, KeyWrapper keyWrapper, String accessToken) {
+        return generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, KeyWrapperUtil.createSignatureSignerContext(keyWrapper), accessToken, null);
+    }
+
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, SignatureSignerContext signer, String accessToken, String nonce) {
         DPoP dpop = generateDPoP(jti, htm, htu, iat, accessToken);
-        return sign(jwsHeader, dpop, keyWrapper);
+        if (nonce != null) {
+            dpop.setOtherClaims("nonce", nonce);
+        }
+        return sign(jwsHeader, dpop, signer);
     }
 
     public String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) {
@@ -95,8 +102,7 @@ public class DPoPGenerator {
         return keyWrapper;
     }
 
-    private static String sign(JWSHeader jwsHeader, DPoP dpop, KeyWrapper keyWrapper) {
-        SignatureSignerContext sigCtx = KeyWrapperUtil.createSignatureSignerContext(keyWrapper);
+    private static String sign(JWSHeader jwsHeader, DPoP dpop, SignatureSignerContext sigCtx) {
         return new JWSBuilder()
                 .header(jwsHeader)
                 .jsonContent(dpop)

@@ -1,10 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { switchOn } from "../utils/form.ts";
+import {
+  assertSelectValue,
+  assertSwitchIsChecked,
+  switchOn,
+} from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { clickTableRowItem } from "../utils/table.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 import {
   addMapper,
   assertAuthorizationUrl,
@@ -17,6 +22,7 @@ import {
   clickSaveButton,
   clickSaveMapper,
   createOIDCProvider,
+  fillOIDCProvider,
   goToMappersTab,
   reenterClientSecret,
   setUrl,
@@ -81,6 +87,60 @@ test.describe.serial("OIDC identity provider test", () => {
     await clickSaveButton(page);
 
     await assertNotificationMessage(page, "Provider successfully updated");
+  });
+});
+
+test.describe("OIDC identity provider FAPI 2.0 settings", () => {
+  const fapiRealmName = `idp-oidc-fapi-${uuid()}`;
+
+  test.beforeAll(() => adminClient.createRealm(fapiRealmName));
+
+  test.afterAll(() => adminClient.deleteRealm(fapiRealmName));
+
+  test.beforeEach(async ({ page }) => {
+    await login(page, {
+      to: { pathname: `/${fapiRealmName}/identity-providers` },
+    });
+    await fillOIDCProvider(page, "oidc", "123");
+  });
+
+  test("should keep the settings editable when using a discovery url", async ({
+    page,
+  }) => {
+    await page.getByText("Show metadata").click();
+    // from authorization_response_iss_parameter_supported
+    await assertSwitchIsChecked(
+      page,
+      "#config\\.authorizationResponseIssuerRequired",
+    );
+    await assertSwitchIsChecked(
+      page,
+      "#config\\.pushedAuthorizationRequestsEnabled",
+      true,
+    );
+    for (const name of [
+      "pkceEnabled",
+      "pushedAuthorizationRequestsEnabled",
+      "dpopEnabled",
+      "authorizationResponseIssuerRequired",
+      "validateDiscoveryIssuer",
+      "rejectOtherIdTokenAudiences",
+    ]) {
+      await expect(page.locator(`#config\\.${name}`)).toBeEnabled();
+    }
+
+    await switchOn(page, "#config\\.pushedAuthorizationRequestsEnabled");
+    await expect(
+      page.getByTestId("config.pushedAuthorizationRequestUrl"),
+    ).toHaveValue(
+      `${SERVER_URL}/realms/master/protocol/openid-connect/ext/par/request`,
+    );
+
+    await switchOn(page, "#config\\.requestObjectEnabled");
+    await assertSelectValue(
+      page.locator("#config\\.requestObjectSigningAlg"),
+      "PS256",
+    );
   });
 });
 

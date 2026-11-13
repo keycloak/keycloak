@@ -22,6 +22,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
@@ -38,6 +39,8 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     public static final String SUPPORTS_CLIENT_ASSERTIONS = "supportsClientAssertions";
     public static final String SUPPORTS_CLIENT_ASSERTION_REUSE = "supportsClientAssertionReuse";
     public static final String ALLOW_CLIENT_ID_AS_AUDIENCE = "allowClientIdAsAudience";
+    public static final String ID_TOKEN_SIGNING_ALG = "idTokenSigningAlg";
+    public static final String REJECT_OTHER_ID_TOKEN_AUDIENCES = "rejectOtherIdTokenAudiences";
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
@@ -164,6 +167,22 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
         getConfig().put(ALLOW_CLIENT_ID_AS_AUDIENCE, String.valueOf(allowClientIdAsAudience));
     }
 
+    public String getIdTokenSigningAlg() {
+        return getConfig().get(ID_TOKEN_SIGNING_ALG);
+    }
+
+    public void setIdTokenSigningAlg(String idTokenSigningAlg) {
+        getConfig().put(ID_TOKEN_SIGNING_ALG, idTokenSigningAlg);
+    }
+
+    public boolean isRejectOtherIdTokenAudiences() {
+        return Boolean.parseBoolean(getConfig().get(REJECT_OTHER_ID_TOKEN_AUDIENCES));
+    }
+
+    public void setRejectOtherIdTokenAudiences(boolean rejectOtherIdTokenAudiences) {
+        getConfig().put(REJECT_OTHER_ID_TOKEN_AUDIENCES, String.valueOf(rejectOtherIdTokenAudiences));
+    }
+
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
@@ -174,6 +193,10 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
         SslRequired sslRequired = realm.getSslRequired();
         checkUrl(sslRequired, getJwksUrl(), "jwks_url");
         checkUrl(sslRequired, getLogoutUrl(), "logout_url");
+
+        if (StringUtil.isNotBlank(getIdTokenSigningAlg()) && !isValidateSignature()) {
+            throw new IllegalArgumentException("The ID token signature algorithm requires validating the signatures of the tokens");
+        }
 
         if (isValidateSignature() || isJWTAuthorizationGrantEnabled() || isSupportsClientAssertions()) {
             String optionText = isValidateSignature() ? "Validate signatures" :

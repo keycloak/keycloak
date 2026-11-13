@@ -4,6 +4,7 @@ import {
   AlertVariant,
   Button,
   PageSection,
+  Title,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -18,6 +19,7 @@ import { toIdentityProviders } from "../routes/IdentityProviders";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { OpenIdConnectSettings } from "./OpenIdConnectSettings";
+import { ResponseValidationSettings } from "./ResponseValidationSettings";
 
 type DiscoveryIdentity = IdentityProviderRepresentation & {
   discoveryEndpoint?: string;
@@ -81,7 +83,14 @@ export default function AddOpenIdConnect() {
           >
             <OIDCGeneralSettings />
             <OpenIdConnectSettings isOIDC />
+            <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
+              {t("clientAuthentication")}
+            </Title>
             <OIDCAuthentication />
+            <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
+              {t("responseValidation")}
+            </Title>
+            <ResponseValidationSettings isOIDC />
             <ActionGroup>
               <Button
                 isDisabled={!isDirty}

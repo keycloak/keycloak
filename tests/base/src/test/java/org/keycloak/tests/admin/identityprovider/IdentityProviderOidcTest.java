@@ -209,6 +209,76 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     }
 
     @Test
+    public void failCreateInvalidAuthorizationRequestSettings() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+        newIdentityProvider.getConfig().put(OAuth2IdentityProviderConfig.PAR_REQUIRED, "true");
+        assertCreateRejected(newIdentityProvider, "The identity provider only accepts pushed authorization requests");
+
+        newIdentityProvider.getConfig().remove(OAuth2IdentityProviderConfig.PAR_REQUIRED);
+        newIdentityProvider.getConfig().put(OAuth2IdentityProviderConfig.REQUEST_OBJECT_ENABLED, "true");
+        assertCreateRejected(newIdentityProvider, "The issuer is required as the audience of the request object");
+    }
+
+    @Test
+    public void failCreateIdTokenSigningAlgWithoutSignatureValidation() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+        newIdentityProvider.getConfig().put(OIDCIdentityProviderConfig.ID_TOKEN_SIGNING_ALG, "ES256");
+        newIdentityProvider.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+        assertCreateRejected(newIdentityProvider, "The ID token signature algorithm requires validating the signatures of the tokens");
+    }
+
+    @Test
+    public void testIssuerIsValidatedAgainstTheDiscoveryEndpoint() {
+        String issuer = "https://idp.example.com/realms/test";
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+        newIdentityProvider.getConfig().put(OAuth2IdentityProviderConfig.VALIDATE_DISCOVERY_ISSUER, "true");
+        newIdentityProvider.getConfig().put(OAuth2IdentityProviderConfig.ISSUER, issuer);
+        assertCreateRejected(newIdentityProvider, "The discovery endpoint is required to validate its issuer");
+
+        // as in the conformance test FAPI2SPFinalClientTestDiscoveryIssuerMismatch
+        newIdentityProvider.getConfig().put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, issuer + "/.well-known/openid-configuration");
+        newIdentityProvider.getConfig().put(OAuth2IdentityProviderConfig.ISSUER, issuer + "INVALID");
+        assertCreateRejected(newIdentityProvider, "The issuer does not match the discovery endpoint");
+
+        newIdentityProvider.getConfig().remove(OAuth2IdentityProviderConfig.ISSUER);
+        assertCreateRejected(newIdentityProvider, "The issuer is required to validate it against the discovery endpoint");
+
+        // the discovery endpoint drops the trailing slash of the issuer
+        newIdentityProvider.getConfig().put(OAuth2IdentityProviderConfig.ISSUER, issuer + "/");
+        create(newIdentityProvider);
+        managedRealm.cleanup().add(r -> r.identityProviders().get("new-identity-provider").remove());
+
+        // RFC 8414 inserts the well-known path before the path of the issuer
+        IdentityProviderResource identityProviderResource = managedRealm.admin().identityProviders().get("new-identity-provider");
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+        representation.getConfig().put("clientSecret", "some secret value");
+        representation.getConfig().put(OAuth2IdentityProviderConfig.ISSUER, issuer);
+        representation.getConfig().put(IdentityProviderModel.METADATA_DESCRIPTOR_URL,
+                "https://idp.example.com/.well-known/oauth-authorization-server/realms/test");
+        identityProviderResource.update(representation);
+
+        representation.getConfig().put(OAuth2IdentityProviderConfig.ISSUER, issuer + "/");
+        representation.getConfig().put(IdentityProviderModel.METADATA_DESCRIPTOR_URL,
+                "https://idp.example.com/.well-known/oauth-authorization-server/realms/test/");
+        identityProviderResource.update(representation);
+    }
+
+    private void assertCreateRejected(IdentityProviderRepresentation identityProvider, String errorMessage) {
+        try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            assertEquals(errorMessage, response.readEntity(ErrorRepresentation.class).getErrorMessage());
+        }
+    }
+
+    @Test
     public void shouldFailWhenAliasHasSpaceDuringCreation() {
         IdentityProviderRepresentation newIdentityProvider = createRep("New Identity Provider", "oidc");
 

@@ -74,6 +74,7 @@ import { GeneralSettings } from "./GeneralSettings";
 import { OIDCAuthentication } from "./OIDCAuthentication";
 import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
+import { ResponseValidationSettings } from "./ResponseValidationSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { SpiffeSettings } from "./SpiffeSettings";
 import { AdminEvents } from "../../events/AdminEvents";
@@ -566,11 +567,9 @@ export default function DetailSettings() {
       panel: (
         <>
           <DiscoverySettings readOnly={false} isOIDC={isOIDC} />
-          <Form isHorizontal className="pf-v5-u-py-lg">
-            <Divider />
-            <OIDCAuthentication create={false} />
-          </Form>
-          <ExtendedNonDiscoverySettings />
+          <div className="pf-v5-u-pt-lg">
+            <ExtendedNonDiscoverySettings />
+          </div>
         </>
       ),
     },
@@ -580,13 +579,35 @@ export default function DetailSettings() {
       panel: (
         <>
           <DiscoverySettings readOnly={false} isOIDC={isOIDC} />
-          <Form isHorizontal className="pf-v5-u-py-lg">
-            <Divider />
-            <OIDCAuthentication create={false} />
-          </Form>
           <UserProfileClaimsSettings />
           <ExtendedOAuth2Settings />
         </>
+      ),
+    },
+    {
+      title: t("clientAuthentication"),
+      isHidden: !isOIDC && !isOAuth2,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <OIDCAuthentication create={false} />
+        </FormAccess>
+      ),
+    },
+    {
+      title: t("responseValidation"),
+      isHidden: !isOIDC && !isOAuth2,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <ResponseValidationSettings isOIDC={isOIDC} />
+        </FormAccess>
       ),
     },
     {
