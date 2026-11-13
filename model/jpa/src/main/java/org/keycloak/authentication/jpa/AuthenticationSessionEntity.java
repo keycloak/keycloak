@@ -212,12 +212,15 @@ public class AuthenticationSessionEntity implements AsynchronousCommitAllowed {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof AuthenticationSessionEntity that)) return false;
-        return Objects.equals(tabId, that.tabId);
+        // compare the root's ID via its getter, as the root might be a lazy proxy
+        return Objects.equals(tabId, that.tabId)
+                && Objects.equals(rootAuthenticationSession == null ? null : rootAuthenticationSession.getId(),
+                that.rootAuthenticationSession == null ? null : that.rootAuthenticationSession.getId());
     }
 
     @Override
     public int hashCode() {
-        return tabId != null ? tabId.hashCode() : 0;
+        return Objects.hash(tabId, rootAuthenticationSession == null ? null : rootAuthenticationSession.getId());
     }
 
     @Override

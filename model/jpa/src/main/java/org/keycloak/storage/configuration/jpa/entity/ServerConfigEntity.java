@@ -80,14 +80,11 @@ public class ServerConfigEntity {
         if (o == null || getClass() != o.getClass()) return false;
 
         ServerConfigEntity that = (ServerConfigEntity) o;
-        return version == that.version && Objects.equals(key, that.key) && Objects.equals(value, that.value);
+        return Objects.equals(key, that.key);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hashCode(key);
-        result = 31 * result + Objects.hashCode(value);
-        result = 31 * result + version;
-        return result;
+        return Objects.hashCode(key);
     }
 }
