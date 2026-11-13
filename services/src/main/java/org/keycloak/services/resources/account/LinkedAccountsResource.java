@@ -287,7 +287,7 @@ public class LinkedAccountsResource {
                 realm.getName(),
                 providerAlias);
         if (redirectUri == null) {
-            ErrorResponse.error(Messages.INVALID_REDIRECT_URI, Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(Messages.INVALID_REDIRECT_URI, Response.Status.BAD_REQUEST);
         }
 
         String errorMessage = checkCommonPreconditions(providerAlias);
