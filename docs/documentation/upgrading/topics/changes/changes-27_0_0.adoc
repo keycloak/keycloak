@@ -354,6 +354,14 @@ WARNING: With *Allow exchange token expiration after subject token expiration* o
 
 See the link:{securing_apps_token_exchange_link}#_standard-token-exchange-expiration[{securing_apps_token_exchange_name}] for more information.
 
+=== Account REST endpoint for removing credential removed
+// https://github.com/keycloak/keycloak/issues/47380
+
+The `DELETE /realms/\{realm}/account/credentials/\{credentialId}` endpoint of the Account REST API has been removed.
+It has been deprecated since {project_name} 24.0.3.
+
+To remove a credential of the current user, use the `delete_credential` application-initiated action, for example by adding `kc_action=delete_credential:<credentialId>` to the login URL.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

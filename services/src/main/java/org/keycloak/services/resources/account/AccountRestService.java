@@ -219,7 +219,7 @@ public class AccountRestService {
     @Path("/credentials")
     public AccountCredentialResource credentials() {
         checkAccountApiEnabled();
-        return new AccountCredentialResource(session, user, auth, event);
+        return new AccountCredentialResource(session, user, auth);
     }
 
     @Path("/resources")

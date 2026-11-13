@@ -41,7 +41,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.Constants;
@@ -67,7 +66,6 @@ import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.account.AccountRestClient;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
@@ -801,7 +799,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         oauth.openLoginForm();
         // Authentication without specific LOA results in level 1 authentication
         authenticateWithUsernamePassword();
-        TokenCtx token1 = assertLoggedInWithAcr("silver");
+        assertLoggedInWithAcr("silver");
 
         // Add "kc_action" for setup another OTP. Existing OTP authentication should be required. No offer for recovery-codes as they are different level
         oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
@@ -813,7 +811,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
-        TokenCtx token2 = assertLoggedInWithAcr("gold");
+        assertLoggedInWithAcr("gold");
 
         // Trying to add another OTP by "kc_action". Level 2 should be required and user can choose between 2 OTP codes
         oauth.loginForm().kcAction(UserModel.RequiredAction.CONFIGURE_TOTP.name()).open();
@@ -821,30 +819,6 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         loginTotpPage.assertOtpCredentialSelectorAvailability(true);
         List<String> availableOtps = loginTotpPage.getAvailableOtpCredentials();
         Assert.assertNames(availableOtps, OTPFormAuthenticator.UNNAMED, "totp2-label");
-
-        // Removing 2nd OTP by account REST API with regular token. Should fail as acr=2 is required
-        String otpCredentialId;
-        try (AccountRestClient accountRestClient = AccountRestClient
-                .builder(suiteContext)
-                .accessToken(token1.accessToken)
-                .build()) {
-            otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
-            try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
-                Assertions.assertEquals(403, response.getStatus());
-            }
-        }
-
-        // Removing 2nd OTP by account REST API with level2 token. Should work as acr=2 is required
-        try (AccountRestClient accountRestClient = AccountRestClient
-                .builder(suiteContext)
-                .accessToken(token2.accessToken)
-                .build()) {
-            otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
-            try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
-                Assertions.assertEquals(204, response.getStatus());
-            }
-            Assertions.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));
-        }
     }
 
     // Test that LoA enforcement works for the case when there is "AuthenticationFlowBindingOverride" with the enforced LoA flow for the particular client
