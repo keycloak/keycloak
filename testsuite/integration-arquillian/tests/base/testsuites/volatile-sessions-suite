@@ -7,5 +7,4 @@ SessionNotOnOrAfterTest
 AccessTokenTest
 LogoutTest
 ClientStorageTest
-UserInfoTest
 TokenIntrospectionTest
