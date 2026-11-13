@@ -844,7 +844,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // LDAP password policy requires a forced password change.
                 // Check for edit mode writable, so that user can modify LDAP password.
                 if (editMode != EditMode.WRITABLE) {
-                    logger.debugf("User '%s' in realm '%s' is forced to change password but editMode is not writable. Failing login.", user.getUsername(), realm.getName());
+                    logger.warnf("User '%s' in realm '%s' is forced to change the password in the directory, but editMode is '%s'. Failing login.", user.getUsername(), realm.getName(), editMode);
+                    reportPasswordChangeRequiredInDirectory();
                     return false;
                 }
                 if (user.getRequiredActionsStream()
@@ -877,6 +878,23 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         });
                 return processed.get();
             }
+        }
+    }
+
+
+    /**
+     * Reports on the authentication session that the directory requires the user to change the password, while this
+     * provider cannot perform the change, because the edit mode is not {@code WRITABLE}. Password authenticators read
+     * this note when the credential validation failed, so that the login outcome is not a generic invalid credentials
+     * error. Nothing is written to the directory.
+     */
+    public void reportPasswordChangeRequiredInDirectory() {
+        if (session == null || session.getContext() == null) {
+            return;
+        }
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+        if (authSession != null) {
+            authSession.setAuthNote(LDAPConstants.PASSWORD_CHANGE_REQUIRED_IN_DIRECTORY, "true");
         }
     }
 
