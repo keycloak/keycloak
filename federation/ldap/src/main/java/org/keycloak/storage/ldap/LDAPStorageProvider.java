@@ -66,6 +66,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
@@ -730,6 +731,22 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 // Search if there is already an existing user, which means the username might have changed in LDAP without Keycloak knowing about it
                 existingLocalUser = userProvider.searchForUserByUserAttributeStream(realm, LDAPConstants.LDAP_ID, ldapUser.getUuid())
                         .findFirst().orElse(null);
+                if (existingLocalUser == null) {
+                    try {
+                        imported = addUserInOwnTransaction(session, realm, ldapUsername, ldapUser);
+                    } catch (ModelDuplicateException e) {
+                        logger.debugf("LDAP user [%s] was imported by another node or thread at the same time", ldapUser.getDn());
+                    }
+                    if (imported == null) {
+                        existingLocalUser = userProvider.searchForUserByUserAttributeStream(realm, LDAPConstants.LDAP_ID, ldapUser.getUuid())
+                                .findFirst().orElse(null);
+                        if (existingLocalUser == null) {
+                            // The username belongs to another user, or the caller's transaction holds changes the inner one
+                            // can't see, such as a removal of the old user
+                            imported = userProvider.addUser(realm, ldapUsername);
+                        }
+                    }
+                }
                 if (existingLocalUser != null) {
                     imported = existingLocalUser;
                     if (importType == ImportType.NOT_FORCED_RETURN_NULL) {
@@ -743,8 +760,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     if (UserStorageUtil.userCache(session) != null) {
                         UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
                     }
-                } else {
-                    imported = userProvider.addUser(realm, ldapUsername);
                 }
             } else {
                 InMemoryUserAdapter adapter = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), ldapUsername).getId());
@@ -766,6 +781,30 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         UserModel proxy = proxy(realm, imported, ldapUser, false);
         return proxy;
+    }
+
+    /**
+     * Adds the local user in its own transaction, so a concurrent import of the same user by another node or thread
+     * fails here with {@link ModelDuplicateException} instead of leaving the caller's transaction rollback-only.
+     *
+     * @return the added user, or {@code null} if a user with this username already exists
+     */
+    private UserModel addUserInOwnTransaction(KeycloakSession session, RealmModel realm, String username, LDAPObject ldapUser) {
+        String userId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), innerSession -> {
+            RealmModel innerTransactionRealm = innerSession.realms().getRealm(realm.getId());
+            innerSession.getContext().setRealm(innerTransactionRealm);
+            UserProvider innerUserProvider = UserStoragePrivateUtil.userLocalStorage(innerSession);
+            // Insert only if this transaction sees no user with the same username, so it never waits on uncommitted
+            // changes of the caller's transaction
+            if (innerUserProvider.getUserByUsername(innerTransactionRealm, username) != null) {
+                return null;
+            }
+            UserModel user = innerUserProvider.addUser(innerTransactionRealm, username);
+            user.setFederationLink(model.getId());
+            user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapUser.getUuid());
+            return user.getId();
+        });
+        return userId == null ? null : UserStoragePrivateUtil.userLocalStorage(session).getUserById(realm, userId);
     }
 
     protected LDAPObject queryByEmail(RealmModel realm, String email) {
