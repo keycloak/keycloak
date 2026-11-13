@@ -100,8 +100,7 @@ public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
             UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, StandardCharsets.UTF_8);
             post.setEntity(form);
             try (CloseableHttpResponse response = httpClient.execute(post)) {
-                InputStream content = response.getEntity().getContent();
-                try {
+                try (InputStream content = response.getEntity().getContent()) {
                     Map json = JsonSerialization.readValue(content, Map.class);
                     return Boolean.TRUE.equals(json.get("success"));
                 } finally {

@@ -152,15 +152,15 @@ public class JAXPValidationUtil {
                 SecurityActions.setTCCL(prevTCCL);
             }
         }
-        try {
-            schema = schemaFactory.newSchema(sources());
+        try (SchemaInputStreams streams = new SchemaInputStreams()) {
+            schema = schemaFactory.newSchema(sources(streams));
         } catch (SAXException e) {
             logger.xmlCouldNotGetSchema(e);
         }
         return schema;
     }
 
-    private static Source[] sources() throws IOException {
+    private static Source[] sources(SchemaInputStreams streams) throws IOException {
         List<String> schemas = SchemaManagerUtil.getSchemas();
 
         Source[] sourceArr = new Source[schemas.size()];
@@ -170,7 +170,9 @@ public class JAXPValidationUtil {
             URL url = SecurityActions.loadResource(JAXPValidationUtil.class, schema);
             if (url == null)
                 throw logger.nullValueError("schema url:" + schema);
-            sourceArr[i++] = new StreamSource(url.openStream());
+            InputStream is = url.openStream();
+            streams.add(is);
+            sourceArr[i++] = new StreamSource(is);
         }
         return sourceArr;
     }

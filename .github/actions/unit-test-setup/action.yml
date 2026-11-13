@@ -1,11 +1,19 @@
 name: Setup unit test
 description: Download Maven caches needed for unit tests
 
+inputs:
+  java-version:
+    description: The Java version that is going to be set up.
+    required: false
+    default: "25"
+
 runs:
   using: composite
   steps:
     - name: Setup Java
       uses: ./.github/actions/java-setup
+      with:
+        java-version: ${{ inputs.java-version }}
 
     - id: maven-cache
       name: Maven cache
