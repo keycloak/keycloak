@@ -1678,6 +1678,8 @@
                                      Fully qualified names match nested/generic types; literal-dot character classes avoid backslash processing by forked javac's argument file. -->
                                 <arg>-AskipDefs=^(org[.]keycloak[.]adapters[.]cloned[.]SniSSLSocketFactory|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPContextManager|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPOperationManager|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPStartTlsClose|org[.]keycloak[.]connections[.]jpa[.]MSSQLAsyncCommitIntegrator|org[.]keycloak[.]connections[.]jpa[.]PostgreSQLAsyncCommitIntegrator|org[.]keycloak[.]exportimport[.]AbstractFileBasedImportProvider|org[.]keycloak[.]connections[.]httpclient[.]DefaultHttpClientFactory|org[.]keycloak[.]exportimport[.]ExportImportManager|org[.]keycloak[.]protocol[.]oidc[.]endpoints[.]IframeUtil|org[.]keycloak[.]services[.]resources[.]ThemeResource|org[.]keycloak[.]services[.]resources[.]WelcomeResource|org[.]keycloak[.]truststore[.]SSLSocketFactory)([.&lt;]|$)</arg>
                                 <arg>-Astubs=${maven.multiModuleProjectDirectory}/.mvn/checkerframework/jdk.astub</arg>
+                                <!-- Without this, the Resource Leak Checker 4.4.0 prints only the diagnostic key instead of its message, see https://github.com/typetools/checker-framework/issues/8562 -->
+                                <arg>-Adetailedmsgtext</arg>
                             </compilerArgs>
                         </configuration>
                     </plugin>
