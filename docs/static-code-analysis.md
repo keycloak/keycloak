@@ -184,12 +184,3 @@ This is expected and will not be fixed in the Checker Framework, see [typetools/
     </dependencies>
 </profile>
 ```
-
-#### `Compilation failure` without any error details
-
-**Observation:** building a single module with `-Pcheckerframework -pl <module>` fails with `Compilation failure`, and no error is shown.
-
-**Cause:** the `checkerframework` profile runs the compiler in a forked process, and Maven then doesn't show the compiler's error in this case.
-
-**Fix:** run `./mvnw -X compile -Pcheckerframework -pl <module>` to get the compiler options and classpath, and run `javac` with them to see the error.
-Usually a dependency is missing, see the previous entry.
