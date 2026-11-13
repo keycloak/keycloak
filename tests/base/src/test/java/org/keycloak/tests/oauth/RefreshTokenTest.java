@@ -551,8 +551,8 @@ public class RefreshTokenTest {
 
         // Refresh with old token is rejected - token has no x5t#S256 cnf
         response = oauth.doRefreshTokenRequest(refreshTokenString);
-        assertEquals(401, response.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         EventAssertion.assertError(events.poll()).type(EventType.REFRESH_TOKEN_ERROR).error(Errors.NOT_ALLOWED);
 
         clientRep.getAttributes().put(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, "false");
