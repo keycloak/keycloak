@@ -74,7 +74,7 @@ public class CibaRealmAuthenticationChannelUriTest {
     }
 
     @Test
-    public void serverAuthenticationChannelUriIsUsedWithoutRealmOverride() {
+    public void serverUriIsUsedIfRealmUriBlank() {
         realm.updateWithCleanup(r -> r.attribute(CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI, ""));
 
         String bindingMessage = "server-channel-uri";

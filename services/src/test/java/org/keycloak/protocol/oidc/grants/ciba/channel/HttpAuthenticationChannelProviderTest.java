@@ -34,6 +34,9 @@ public class HttpAuthenticationChannelProviderTest {
         assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://localhost:8500/ciba/request-authentication-channel"));
         assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("HTTPS://realm.example.com/ciba"));
         assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("Http://realm.example.com/ciba"));
+        // host names with underscores are not parsed as host by java.net.URI
+        assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:8080/call"));
+        assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("https://ciba_server/call"));
 
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri(null));
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri(""));

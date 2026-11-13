@@ -37,14 +37,10 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
 
-import org.jboss.logging.Logger;
-
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public class HttpAuthenticationChannelProvider implements AuthenticationChannelProvider{
-
-    private static final Logger logger = Logger.getLogger(HttpAuthenticationChannelProvider.class);
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";
 
@@ -63,10 +59,6 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         this.session = session;
         this.realm = session.getContext().getRealm();
         String realmUri = realm == null ? null : realm.getAttribute(CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI);
-        if (!allowRealmOverride && !StringUtil.isBlank(realmUri)) {
-            logger.warnf("Ignoring realm attribute '%s' in realm '%s' because realm override is not allowed for the '%s' authentication channel provider.",
-                    CibaConfig.CIBA_HTTP_AUTHENTICATION_CHANNEL_URI, realm.getName(), HttpAuthenticationChannelProviderFactory.PROVIDER_ID);
-        }
         this.httpAuthenticationChannelUri = resolveHttpAuthenticationChannelUri(realmUri, httpAuthenticationRequestUri, allowRealmOverride);
     }
 
@@ -89,9 +81,12 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
         }
         try {
             URI parsed = new URI(uri);
+            // getHost() is null for host names that are not valid per RFC 2396, e.g. names containing '_',
+            // which are common in container networks. Fall back to the authority in that case.
+            String host = parsed.getHost() != null ? parsed.getHost() : parsed.getAuthority();
             return parsed.isAbsolute()
                     && ("http".equalsIgnoreCase(parsed.getScheme()) || "https".equalsIgnoreCase(parsed.getScheme()))
-                    && !StringUtil.isBlank(parsed.getHost());
+                    && !StringUtil.isBlank(host);
         } catch (URISyntaxException e) {
             return false;
         }
