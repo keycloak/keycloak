@@ -10,6 +10,19 @@ In minor or patch releases, {project_name} will only introduce breaking changes 
 The Client Initiated Backchannel Authentication (CIBA) grant is now rejected for public clients, as required by the https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA specification], which mandates client authentication on both the backchannel authentication endpoint and the token endpoint.
 Previously, a public client with the CIBA grant enabled could complete the flow without authenticating and obtain tokens for the approving user.
 
+=== Client certificate REST API endpoints for key pair management
+
+Several REST API endpoints under `/admin/realms/\{realm}/clients/\{id}/certificates/\{attr}` that deal with server-side key pair generation or private key storage are now deprecated:
+
+* `POST .../generate` -- Generates a key pair on the server. Clients should generate their own key pairs locally and upload only the public certificate.
+* `POST .../upload` -- Superseded by `POST .../upload-certificate`, which is functionally identical but not deprecated.
+* `POST .../download` -- Downloads a keystore containing only the client's public certificate.
+* `POST .../generate-and-download` -- Generates a key pair and returns the private key as a keystore download. Clients should generate their own key pairs locally.
+
+These endpoints no longer store private keys in the database. The `generate` endpoint returns the private key in the response but only persists the public certificate. The `generate-and-download` endpoint returns the private key in the keystore download but only persists the public certificate.
+
+Use the `POST .../upload-certificate` endpoint to upload a public certificate or JWKS after generating your key pair locally.
+
 === Session note mappers no longer expose internal credentials or user models
 
 When a user authenticates through an external identity provider, {project_name} stores the tokens issued by that provider as notes on the user session.

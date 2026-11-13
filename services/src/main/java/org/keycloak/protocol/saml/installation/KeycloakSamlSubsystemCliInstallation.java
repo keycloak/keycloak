@@ -58,7 +58,7 @@ public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationP
             builder.append("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/SP=")
                     .append(quote(entityId))
                     .append("/Key=KEY1:add(signing=true, \\\nPrivateKeyPem=")
-                    .append(quote(samlClient.getClientSigningPrivateKey() == null ? "PRIVATE KEY NOT SET UP OR KNOWN" : includeSecrets ? samlClient.getClientSigningPrivateKey() : ComponentRepresentation.SECRET_VALUE))
+                    .append(quote(samlClient.getClientSigningPrivateKey() == null ? "PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY" : includeSecrets ? samlClient.getClientSigningPrivateKey() : ComponentRepresentation.SECRET_VALUE))
                     .append(", \\\nCertificatePem=")
                     .append(quote(samlClient.getClientSigningCertificate() == null ? "YOU MUST CONFIGURE YOUR_CLIENT's SIGNING CERTIFICATE" : samlClient.getClientSigningCertificate()))
                     .append(")\n\n");
@@ -67,7 +67,7 @@ public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationP
             builder.append("/subsystem=keycloak-saml/secure-deployment=YOUR-WAR.war/SP=")
                     .append(quote(entityId))
                     .append("/Key=KEY2:add(encryption=true,PrivateKeyPem=")
-                    .append(quote(samlClient.getClientEncryptingPrivateKey() == null ? "PRIVATE KEY NOT SET UP OR KNOWN" : includeSecrets ? samlClient.getClientEncryptingPrivateKey() : ComponentRepresentation.SECRET_VALUE))
+                    .append(quote(samlClient.getClientEncryptingPrivateKey() == null ? "PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY" : includeSecrets ? samlClient.getClientEncryptingPrivateKey() : ComponentRepresentation.SECRET_VALUE))
                     .append(")\n\n");
         }
         
