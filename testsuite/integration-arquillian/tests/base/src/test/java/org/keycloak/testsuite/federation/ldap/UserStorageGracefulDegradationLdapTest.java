@@ -28,6 +28,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -107,6 +108,36 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
         } finally {
             // Clean up - remove users (LDAP provider will be cleaned up by AbstractLDAPTest)
             session.users().removeUser(realm, localAdmin);
+            session.users().removeUser(realm, localUser);
+        }
+    }
+
+    @Test
+    @ModelTest
+    public void testGracefulDegradationWhenLdapBindFailsDuringPaginatedSearch(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealm("test");
+
+        // Add the user to the local storage only, so it is not registered in LDAP
+        UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, "bind-failure-local-user");
+        localUser.setEnabled(true);
+
+        try {
+            // The bind happens when the paginated search is initialized, make it fail with an AuthenticationException
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            ldapModel.getConfig().putSingle(LDAPConstants.PAGINATION, "true");
+            ldapModel.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "invalid-password");
+            realm.updateComponent(ldapModel);
+
+            Map<String, String> searchParams = new HashMap<>();
+            searchParams.put(UserModel.SEARCH, "bind-failure");
+
+            List<String> usernames = session.users().searchForUserStream(realm, searchParams, 0, 10)
+                    .map(UserModel::getUsername).toList();
+
+            // Should gracefully return local users despite LDAP rejecting the bind
+            Assertions.assertTrue(usernames.contains("bind-failure-local-user"),
+                            "Should find local user despite LDAP bind failure");
+        } finally {
             session.users().removeUser(realm, localUser);
         }
     }
