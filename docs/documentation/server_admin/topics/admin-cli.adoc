@@ -167,9 +167,9 @@ ENDPOINT is a target resource URI and can be absolute (starting with `http:` or 
 SERVER_URI/admin/realms/REALM/ENDPOINT
 ----
 
-For example, if you authenticate against the server http://localhost:8080{kc_base_path} and realm is `master`, using `users` as ENDPOINT creates the http://localhost:8080{kc_admins_path}/realms/master/users resource URL.
+For example, if you authenticate against the server http://localhost:8080{kc_base_path} and realm is `{realm-name}`, using `users` as ENDPOINT creates the http://localhost:8080{kc_admins_path}/realms/{realm-name}/users resource URL.
 
-If you set ENDPOINT to `clients`, the effective resource URI is http://localhost:8080{kc_admins_path}/realms/master/clients.
+If you set ENDPOINT to `clients`, the effective resource URI is http://localhost:8080{kc_admins_path}/realms/{realm-name}/clients.
 
 {project_name} has a `realms` endpoint that is the container for realms. It resolves to:
 [options="nowrap"]
@@ -193,7 +193,7 @@ $ kcadm.sh config credentials --server http://localhost:8080{kc_base_path} --rea
 $ kcadm.sh create users -s username=testuser -s enabled=true -r demorealm
 ----
 
-In this example, you start a session authenticated as the `admin` user in the `master` realm. You then perform a POST call against the resource URL `http://localhost:8080{kc_admins_path}/realms/demorealm/users`.
+In this example, you start a session authenticated as the `admin` user in the `master` realm. You then perform a POST call against the resource URL `http://localhost:8080{kc_admins_path}/realms/{realm-name}/users`.
 
 The `create` and `update` commands send a JSON body to the server. You can use `-f FILENAME` to read a pre-made document from a file. When you can use the `-f -` option, {project_name} reads the message body from the standard input. You can specify individual attributes and their values, as seen in the `create users` example. {project_name} composes the attributes into a JSON body and sends them to the server.
 
@@ -968,7 +968,7 @@ The response is in `.zip` format.
 For example:
 [options="nowrap",subs="attributes+"]
 ----
-$ kcadm.sh get http://localhost:8080{kc_admins_path}/realms/demorealm/clients/8f271c35-44e3-446f-8953-b0893810ebe7/installation/providers/docker-v2-compose-yaml -r demorealm > keycloak-docker-compose-yaml.zip
+$ kcadm.sh get http://localhost:8080{kc_admins_path}/realms/{realm-name}/clients/{client-id}/installation/providers/docker-v2-compose-yaml -r {realm-name} > keycloak-docker-compose-yaml.zip
 ----
 
 [discrete]
