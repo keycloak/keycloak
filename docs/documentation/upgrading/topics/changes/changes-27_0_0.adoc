@@ -4,6 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Client scope policy checks legacy client templates
+// https://github.com/keycloak/keycloak/issues/54456
+
+The *Allowed Client Scopes* client registration policy now checks scopes requested through the deprecated `clientTemplate` field using the same allowlist as `defaultClientScopes` and `optionalClientScopes`.
+Legacy template names are checked after converting spaces to underscores, matching the scope name used during client creation.
+Requests for a disallowed scope are rejected with HTTP `403 Forbidden`.
+
+Existing client scope assignments are not removed by this change.
+Administrators should review dynamically registered clients for unintended scope assignments and remove them through the Admin Console or Admin REST API.
+All nodes handling client registration requests must be upgraded for the check to apply consistently.
+
 === Client registration policies restrict default roles and full scope (CVE-2026-109081)
 // https://github.com/keycloak/keycloak/issues/54702
 

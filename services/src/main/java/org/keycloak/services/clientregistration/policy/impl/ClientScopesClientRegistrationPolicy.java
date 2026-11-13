@@ -27,6 +27,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
@@ -63,6 +64,11 @@ public class ClientScopesClientRegistrationPolicy implements ClientRegistrationP
 
         checkClientScopesAllowed(requestedDefaultScopeNames, allowedScopeNames);
         checkClientScopesAllowed(requestedOptionalScopeNames, allowedScopeNames);
+        if (context.getClient().getClientTemplate() != null) {
+            // Match the legacy name conversion performed during client creation.
+            String templateScope = KeycloakModelUtils.convertClientScopeName(context.getClient().getClientTemplate());
+            checkClientScopesAllowed(Collections.singletonList(templateScope), allowedScopeNames);
+        }
     }
 
     @Override

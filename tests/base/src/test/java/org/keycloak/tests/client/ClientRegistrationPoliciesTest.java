@@ -780,6 +780,59 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     }
 
 
+    @Test
+    public void testClientScopesPolicyRejectsLegacyTemplate() throws Exception {
+        configureLegacyTemplateScope();
+        ClientRepresentation client = createLegacyTemplateClient("legacy_scope");
+        assertFail(ClientRegOp.CREATE, client, 403, "Not permitted to use specified clientScope");
+        Assertions.assertTrue(managedRealm.admin().clients().findByClientId(client.getClientId()).isEmpty());
+    }
+
+    @Test
+    public void testClientScopesPolicyRejectsNormalizedLegacyTemplate() throws Exception {
+        configureLegacyTemplateScope();
+        ClientRepresentation client = createLegacyTemplateClient("legacy scope");
+        assertFail(ClientRegOp.CREATE, client, 403, "Not permitted to use specified clientScope");
+        Assertions.assertTrue(managedRealm.admin().clients().findByClientId(client.getClientId()).isEmpty());
+    }
+
+    @Test
+    public void testClientScopesPolicyAllowsNormalizedLegacyTemplate() throws Exception {
+        configureLegacyTemplateScope();
+        ComponentRepresentation scopePolicy = findPolicyByProviderAndAuth(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
+        String allowedScopes = ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES;
+        // Component updates merge omitted keys, so explicitly clear an originally absent allowlist during cleanup.
+        scopePolicy.getConfig().putIfAbsent(allowedScopes, Collections.emptyList());
+        managedRealm.cleanup().add(r -> r.components().component(scopePolicy.getId()).update(scopePolicy));
+        managedRealm.updateComponent(scopePolicy.getId(), policy -> policy.getConfig().putSingle(allowedScopes, "legacy_scope"));
+
+        ClientRepresentation client = reg.create(createLegacyTemplateClient("legacy scope"));
+        Assertions.assertTrue(client.getDefaultClientScopes().contains("legacy_scope"));
+    }
+
+    private void configureLegacyTemplateScope() {
+        ComponentRepresentation trustedHostPolicy = findPolicyByProviderAndAuth(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
+        managedRealm.updateComponent(trustedHostPolicy.getId(), policy ->
+                policy.getConfig().putSingle(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, "localhost"));
+
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("legacy_scope");
+        scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        String scopeId = ApiUtil.getCreatedId(managedRealm.admin().clientScopes().create(scope));
+        managedRealm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
+    }
+
+    private ClientRepresentation createLegacyTemplateClient(String templateName) throws Exception {
+        String clientId = uniqueClientId("legacy-template");
+        managedRealm.cleanup().add(r -> r.clients().findByClientId(clientId)
+                .forEach(client -> r.clients().get(client.getId()).remove()));
+
+        // Deserialize the getter-only legacy field as the registration endpoint does.
+        return JsonSerialization.readValue(JsonSerialization.writeValueAsBytes(Map.of(
+                "clientId", clientId, "clientTemplate", templateName)), ClientRepresentation.class);
+    }
+
+
     // PROTOCOL MAPPERS
 
     @Test
