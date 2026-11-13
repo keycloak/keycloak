@@ -27,20 +27,29 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationsResource;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class OrganizationIdentityProviderLinkTest extends AbstractOrganizationTest {
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
 
     private OrganizationIdentityProviderLinkRepresentation getOrgLink(IdentityProviderRepresentation idpRep, String orgId) {
         assertNotNull(idpRep.getOrganizationLinks());
@@ -70,6 +79,8 @@ public class OrganizationIdentityProviderLinkTest extends AbstractOrganizationTe
         OrganizationResource orgResource = realm.admin().organizations().get(org.getId());
         OrganizationIdentityProviderResource idpResource = orgResource.identityProviders()
                 .get("test-update-identity-provider");
+        String resourcePath = "organizations/" + org.getId() + "/identity-providers/test-update-identity-provider";
+        adminEvents.skipAll();
 
         OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation();
         linkRep.setAutoMembership(true);
@@ -83,6 +94,31 @@ public class OrganizationIdentityProviderLinkTest extends AbstractOrganizationTe
         OrganizationIdentityProviderLinkRepresentation updatedLink = getOrgLink(updated, org.getId());
         assertTrue(updatedLink.getAutoMembership());
         assertEquals("MANAGED", updatedLink.getMembershipType());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.ORGANIZATION)
+                .resourcePath(resourcePath)
+                .representation(linkRep);
+
+        try (Response response = idpResource.delete()) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.DELETE)
+                .resourceType(ResourceType.ORGANIZATION)
+                .resourcePath(resourcePath);
+
+        try (Response response = orgResource.identityProviders().addIdentityProvider(updated.getInternalId())) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.CREATE)
+                .resourceType(ResourceType.ORGANIZATION)
+                .resourcePath(resourcePath);
+        assertNull(adminEvents.poll());
     }
 
     @Test

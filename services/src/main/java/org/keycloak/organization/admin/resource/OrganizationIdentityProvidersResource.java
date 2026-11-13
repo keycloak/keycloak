@@ -34,6 +34,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -111,6 +112,8 @@ public class OrganizationIdentityProvidersResource {
             }
 
             if (organizationProvider.addIdentityProvider(organization, identityProvider)) {
+                adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
+                        .representation(id).success();
                 return Response.noContent().build();
             }
 
@@ -235,6 +238,8 @@ public class OrganizationIdentityProvidersResource {
 
             organizationProvider.updateIdentityProviderLink(organization, broker, autoMembership, membershipType);
 
+            adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
+
             return Response.noContent().build();
         } catch (ModelValidationException mve) {
             throw ErrorResponse.error(mve.getMessage(), Status.BAD_REQUEST);
@@ -268,6 +273,7 @@ public class OrganizationIdentityProvidersResource {
         }
 
         if (organizationProvider.removeIdentityProvider(organization, broker)) {
+            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         }
 
