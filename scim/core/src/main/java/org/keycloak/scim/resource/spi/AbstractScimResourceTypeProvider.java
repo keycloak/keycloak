@@ -114,6 +114,9 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                 schema.populate(resource, model, attributes, excludedAttributes);
             }
 
+            // the core schema is always required (RFC 7643, Section 3), even if only extension attributes are returned
+            resource.addSchema(getSchema());
+
             return resource;
         } catch (Exception e) {
             throw new RuntimeException("Could not create instance of resource type " + getResourceType(), e);

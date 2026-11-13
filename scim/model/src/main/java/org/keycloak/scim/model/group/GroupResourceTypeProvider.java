@@ -58,7 +58,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     private GroupResourceTypeProvider(KeycloakSession session, GroupCoreModelSchema schema) {
-        super(session, schema);
+        super(session, schema, List.of(new GroupExtensionModelSchema(session)));
         this.schema = schema;
     }
 
