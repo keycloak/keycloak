@@ -30,23 +30,20 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.roles.RoleService;
 import org.keycloak.utils.ProfileHelper;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -76,6 +73,7 @@ public class RoleByIdResource extends RoleResource {
     private final AdminEventBuilder adminEvent;
 
     private final KeycloakSession session;
+    private final RoleService roleService;
 
     public RoleByIdResource(KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         super(session.getContext().getRealm());
@@ -83,6 +81,7 @@ public class RoleByIdResource extends RoleResource {
         this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.adminEvent = adminEvent;
+        this.roleService = new RoleService(session, realm, auth);
     }
 
     /**
@@ -102,9 +101,7 @@ public class RoleByIdResource extends RoleResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public RoleRepresentation getRole(final @Parameter(description = "id of role") @PathParam("role-id") String id) {
-        RoleModel roleModel = getRoleModel(id);
-        auth.roles().requireView(roleModel);
-        return getRole(roleModel);
+        return getRole(call(() -> roleService.get(getRoleModel(id))));
     }
 
     protected RoleModel getRoleModel(String id) {
@@ -133,22 +130,12 @@ public class RoleByIdResource extends RoleResource {
     public void deleteRole(final @Parameter(description = "id of role") @PathParam("role-id") String id) {
         if (realm.getDefaultRole() == null) {
             logger.warnf("Default role for realm with id '%s' doesn't exist.", realm.getId());
-        } else if (realm.getDefaultRole().getId().equals(id)) {
-            throw ErrorResponse.error(realm.getDefaultRole().getName() + " is default role of the realm and cannot be removed.",
-                    Response.Status.BAD_REQUEST);
         }
 
-        RoleModel role = getRoleModel(id);
-        auth.roles().requireManage(role);
-        deleteRole(role);
+        RoleModel role = call(() -> roleService.delete(getRoleModel(id)));
 
-        if (role.isClientRole()) {
-            adminEvent.resource(ResourceType.CLIENT_ROLE);
-        } else {
-            adminEvent.resource(ResourceType.REALM_ROLE);
-        }
-
-        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.resource(resourceType(role))
+                .operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
     /**
@@ -168,17 +155,10 @@ public class RoleByIdResource extends RoleResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void updateRole(final @Parameter(description = "id of role") @PathParam("role-id") String id, final RoleRepresentation rep) {
-        RoleModel role = getRoleModel(id);
-        auth.roles().requireManage(role);
-        updateRole(rep, role, realm, session);
+        RoleModel role = call(() -> roleService.update(getRoleModel(id), rep.getName(), rep.getDescription(), rep.getAttributes()));
 
-        if (role.isClientRole()) {
-            adminEvent.resource(ResourceType.CLIENT_ROLE);
-        } else {
-            adminEvent.resource(ResourceType.REALM_ROLE);
-        }
-
-        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
+        adminEvent.resource(resourceType(role))
+                .operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
     }
 
     /**
@@ -198,9 +178,10 @@ public class RoleByIdResource extends RoleResource {
     })
     public void addComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles) {
         // any role by ID
-        RoleModel role = getRoleModel(id);
-        auth.roles().requireManage(role);
-        addComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
+        RoleModel role = call(() -> roleService.addComposites(getRoleModel(id), ids(roles)));
+
+        adminEvent.resource(resourceType(role))
+                .operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(roles).success();
     }
 
     /**
@@ -228,20 +209,8 @@ public class RoleByIdResource extends RoleResource {
     ) {
 
         logger.debugf("*** getRoleComposites: '%s'", id);
-        RoleModel role = getRoleModel(id);
-        auth.roles().requireView(role);
-
-        Stream<RoleModel> composites = role.getCompositesStream(search, null, null)
-                .filter(r -> auth.roles().canView(r));
-
-        if (first != null && first > 0) {
-            composites = composites.skip(first);
-        }
-        if (max != null && max >= 0) {
-            composites = composites.limit(max);
-        }
-
-        return composites.map(ModelToRepresentation::toBriefRepresentation);
+        return call(() -> roleService.getComposites(getRoleModel(id), search, first, max))
+                .map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -261,9 +230,7 @@ public class RoleByIdResource extends RoleResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<RoleRepresentation> getRealmRoleComposites(final @PathParam("role-id") String id) {
-        RoleModel role = getRoleModel(id);
-        auth.roles().requireView(role);
-        return getRealmRoleComposites(auth, role);
+        return call(() -> roleService.getRealmComposites(getRoleModel(id))).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -287,13 +254,7 @@ public class RoleByIdResource extends RoleResource {
     public Stream<RoleRepresentation> getClientRoleComposites(final @PathParam("role-id") String id,
                                                                 final @PathParam("clientUuid") String clientUuid) {
 
-        RoleModel role = getRoleModel(id);
-        auth.roles().requireView(role);
-        ClientModel clientModel = realm.getClientById(clientUuid);
-        if (clientModel == null) {
-            throw new NotFoundException("Could not find client");
-        }
-        return getClientRoleComposites(auth, clientModel, role);
+        return call(() -> roleService.getClientComposites(getRoleModel(id), clientUuid)).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -313,9 +274,10 @@ public class RoleByIdResource extends RoleResource {
     })
     public void deleteComposites(final @Parameter(description = "Role id") @PathParam("role-id") String id,
                                  @Parameter(description = "A set of roles to be removed") List<RoleRepresentation> roles) {
-        RoleModel role = getRoleModel(id);
-        auth.roles().requireManage(role);
-        deleteComposites(auth, adminEvent, session.getContext().getUri(), roles, role);
+        RoleModel role = call(() -> roleService.removeComposites(getRoleModel(id), ids(roles)));
+
+        adminEvent.resource(resourceType(role))
+                .operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(roles).success();
     }
 
     /**
