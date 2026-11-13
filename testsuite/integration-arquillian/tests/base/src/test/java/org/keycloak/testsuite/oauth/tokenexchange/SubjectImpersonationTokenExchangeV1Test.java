@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.AccessToken;
@@ -569,6 +570,29 @@ public class SubjectImpersonationTokenExchangeV1Test extends AbstractKeycloakTes
         }
     }
 
+
+    @Test
+    public void testExchangeWithoutSubjectTokenAndRequestedSubject() throws Exception {
+        testingClient.server().run(TokenExchangeTestUtils::setupRealm);
+        Client httpClient = AdminClientUtil.createResteasyClient();
+
+        WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
+                .path("/realms")
+                .path(TEST)
+                .path("protocol/openid-connect/token");
+
+        // neither subject_token nor requested_subject: there is no user to exchange, expect a client error and not a server error
+        try (Response response = exchangeUrl.request()
+                .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader("direct-exchanger", "secret"))
+                .post(Entity.form(
+                        new Form()
+                                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE)
+                ))) {
+            Assertions.assertEquals(400, response.getStatus());
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
+        }
+    }
 
     private Response checkTokenExchange() {
         Client httpClient = AdminClientUtil.createResteasyClient();
