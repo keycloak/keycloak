@@ -56,6 +56,14 @@ public class AbstractJsonUserAttributeMapperTest {
 	}
 
 	@Test
+	public void getJsonValue_missingFieldWithArrayIndex() throws IOException {
+		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_unknown[0]"));
+		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "nest1.value_unknown[0]"));
+		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_unknown[0]", true));
+		Assert.assertNull(AbstractJsonUserAttributeMapper.getJsonValue(getJsonNode(), "value_array.value_unknown[0]", true));
+	}
+
+	@Test
 	public void getJsonValue_simpleValues() throws IOException {
 
 		//unknown field returns null

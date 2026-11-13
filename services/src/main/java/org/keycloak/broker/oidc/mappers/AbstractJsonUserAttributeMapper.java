@@ -205,6 +205,14 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 
 
 	public static Object getJsonValue(JsonNode baseNode, String fieldPath) {
+		return getJsonValue(baseNode, fieldPath, false);
+	}
+
+	/**
+	 * @param keepArrays if true, an array is returned as the {@link JsonNode} itself, with all its
+	 *                   elements, instead of a list holding only its text elements
+	 */
+	public static Object getJsonValue(JsonNode baseNode, String fieldPath, boolean keepArrays) {
 		logger.debugf("Going to process JsonNode path %s on data %s", fieldPath, baseNode);
 		if (baseNode != null) {
 
@@ -238,7 +246,7 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 				}
 
 				currentNode = currentNode.get(currentNodeName);
-				if (arrayIndex > -1 && currentNode.isArray()) {
+				if (arrayIndex > -1 && currentNode != null && currentNode.isArray()) {
 					logger.debugf("Going to take array node at index %d", arrayIndex);
 					currentNode = currentNode.get(arrayIndex);
 				}
@@ -249,6 +257,10 @@ public abstract class AbstractJsonUserAttributeMapper extends AbstractIdentityPr
 				}
 
 				if (currentNode.isArray()) {
+					if (keepArrays) {
+						// keep walking the path, so that an array is only returned if it is the claim itself
+						continue;
+					}
 					List<String> values = new ArrayList<>();
 					for (JsonNode childNode : currentNode) {
 						if (childNode.isTextual()) {

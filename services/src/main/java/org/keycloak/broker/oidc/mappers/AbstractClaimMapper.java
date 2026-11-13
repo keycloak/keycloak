@@ -74,6 +74,15 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
     }
 
     public static Object getClaimValue(BrokeredIdentityContext context, String claim) {
+        return getClaimValue(context, claim, false);
+    }
+
+    /**
+     * @param keepUserInfoArrays if true, an array found in the UserInfo claim set is returned as the
+     *                           {@link JsonNode} itself, with all its elements, instead of a list
+     *                           holding only its text elements
+     */
+    public static Object getClaimValue(BrokeredIdentityContext context, String claim, boolean keepUserInfoArrays) {
         {  // search access token
             JsonWebToken token = (JsonWebToken)context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ACCESS_TOKEN);
             if (token != null) {
@@ -105,7 +114,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         {
             // Search the OIDC UserInfo claim set (if any)
             JsonNode profileJsonNode = (JsonNode) context.getContextData().get(OIDCIdentityProvider.USER_INFO);
-            Object value = AbstractJsonUserAttributeMapper.getJsonValue(profileJsonNode, claim);
+            Object value = AbstractJsonUserAttributeMapper.getJsonValue(profileJsonNode, claim, keepUserInfoArrays);
             if (value != null) return value;
         }
         return null;
