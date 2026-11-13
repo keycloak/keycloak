@@ -15,8 +15,6 @@ export async function editSAMLSettings(page: Page, samlProviderName: string) {
   await switchOff(page, "#-switch");
   await confirmModal(page);
   await assertNotificationMessage(page, "Provider successfully updated");
-  await page.getByTestId("last-alert").getByRole("button").click();
-  await expect(page.getByTestId("last-alert")).toBeHidden();
   await goToIdentityProviders(page);
   await expect(page.getByText("Disabled")).toBeVisible();
 

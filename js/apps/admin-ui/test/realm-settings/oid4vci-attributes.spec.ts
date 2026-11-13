@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { generatePath } from "react-router-dom";
 import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
-import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
 import { login } from "../utils/login.js";
+import { assertNotificationMessage } from "../utils/masthead.ts";
 import { selectItem } from "../utils/form.ts";
 
 test("OID4VCI section is hidden in Tokens tab when verifiable credentials are disabled", async ({
@@ -79,9 +78,7 @@ test("should render fields and save values with correct attribute keys", async (
   await nonceField.fill("60");
   await preAuthField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData).toBeDefined();
@@ -112,20 +109,13 @@ test("should persist values after page refresh", async ({ page }) => {
   await nonceField.fill("60");
   await preAuthField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
-  // Refresh the page
   await page.reload();
 
-  // Navigate back to realm settings using the same pattern as login
-  const url = new URL(
-    generatePath(ROOT_PATH, { realm: testBed.realm }),
-    SERVER_URL,
-  );
-  url.hash = toRealmSettings({ realm: testBed.realm }).pathname!;
-  await page.goto(url.toString());
+  // TimeSelector shows the saved values in the largest fitting unit (3600s = 1 hour, 120s = 2 minutes)
+  await expect(nonceField).toHaveValue("1");
+  await expect(preAuthField).toHaveValue("2");
 
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
   const realmData = await adminClient.getRealm(testBed.realm);
@@ -181,9 +171,7 @@ test("should validate form fields and save valid values", async ({ page }) => {
   await expect(saveButton).toBeEnabled();
 
   await saveButton.click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   // Verify the values were saved correctly
   const realmData = await adminClient.getRealm(testBed.realm);
@@ -279,9 +267,7 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   await batchIssuanceInput.fill("5");
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(
@@ -323,9 +309,7 @@ test("should save time-based correlation mitigation settings", async ({
   await randomizationWindowInput.fill("3600");
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   await selectItem(page, strategyField, "Round");
 
@@ -335,9 +319,7 @@ test("should save time-based correlation mitigation settings", async ({
   await selectItem(page, roundingUnitField, "Minutes");
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["oid4vci.time.claims.strategy"]).toBe("round");
@@ -370,9 +352,7 @@ test("should save Deflate Compression setting", async ({ page }) => {
   await deflateSwitch.click({ force: true });
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   let realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
@@ -381,9 +361,7 @@ test("should save Deflate Compression setting", async ({ page }) => {
 
   await deflateSwitch.click({ force: true });
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
@@ -419,9 +397,7 @@ test("should save Attestation Trust settings (Trusted Keys and IDs)", async ({
   await trustedKeysInput.fill(testTrustedKeysJson);
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["oid4vc.attestation.trusted_key_ids"]).toBe(
