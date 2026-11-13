@@ -189,13 +189,13 @@ public class DPoPUtil {
             throw new VerificationException("Invalid or missing type in DPoP header: " + header.getType());
         }
 
-        if (header.getAlgorithm() == null) {
+        String algorithm = header.getRawAlgorithm();
+        if (algorithm == null) {
             throw new VerificationException("No alg in DPoP header");
         }
 
-        String algorithm = header.getAlgorithm().name();
         if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
-            throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
+            throw new VerificationException("Unsupported DPoP algorithm: " + algorithm);
         }
 
         JWK jwk = header.getKey();
@@ -223,7 +223,7 @@ public class DPoPUtil {
             }
         }
 
-        key.setAlgorithm(header.getAlgorithm().name());
+        key.setAlgorithm(algorithm);
 
         SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(key);
         verifier.verifierContext(signatureVerifier);

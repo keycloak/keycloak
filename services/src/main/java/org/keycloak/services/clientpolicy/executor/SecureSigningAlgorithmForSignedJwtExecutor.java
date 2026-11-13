@@ -116,7 +116,7 @@ public class SecureSigningAlgorithmForSignedJwtExecutor implements ClientPolicyE
         } catch (JWSInputException e) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
         }
-        verifySecureSigningAlgorithm(jws.getHeader().getAlgorithm().name());
+        verifySecureSigningAlgorithm(jws.getHeader().getRawAlgorithm());
     }
 
     private boolean supportsClientAssertion(String clientAuthenticatorType) {

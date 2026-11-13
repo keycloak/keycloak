@@ -43,7 +43,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JWSHeader implements JOSEHeader {
     @JsonProperty("alg")
-    private Algorithm algorithm;
+    private String alg;
 
     @JsonProperty("typ")
     private String type;
@@ -66,30 +66,42 @@ public class JWSHeader implements JOSEHeader {
     }
 
     public JWSHeader(Algorithm algorithm, String type, String contentType) {
-        this.algorithm = algorithm;
+        setAlgorithm(algorithm);
         this.type = type;
         this.contentType = contentType;
     }
 
     public JWSHeader(Algorithm algorithm, String type, String keyId, JWK key) {
-        this.algorithm = algorithm;
+        setAlgorithm(algorithm);
         this.type = type;
         this.keyId = keyId;
         this.key = key;
     }
 
+    /**
+     * @return the algorithm, or {@code null} if the {@code alg} header is not one of {@link Algorithm} values
+     * (e.g. an algorithm implemented by a custom {@code SignatureProvider}). Use {@link #getRawAlgorithm()} to get it.
+     */
+    @JsonIgnore
     public Algorithm getAlgorithm() {
-        return algorithm;
+        if (alg == null) {
+            return null;
+        }
+        try {
+            return Algorithm.valueOf(alg);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     public void setAlgorithm(Algorithm algorithm) {
-        this.algorithm = algorithm;
+        this.alg = algorithm == null ? null : algorithm.name();
     }
 
     @JsonIgnore
     @Override
     public String getRawAlgorithm() {
-        return getAlgorithm().name();
+        return alg;
     }
 
     public String getType() {
