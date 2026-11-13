@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { AuthorizationPolicies } from "../clients/authorization/Policies";
 import { FormFields, SaveOptions } from "../clients/ClientDetails";
+import { omitClientScopes } from "../clients/utils";
 import { ConfirmDialogModal } from "../components/confirm-dialog/ConfirmDialog";
 import {
   RoutableTabs,
@@ -122,7 +123,7 @@ export default function PermissionsConfigurationSection() {
 
       await adminClient.clients.update(
         { id: adminPermissionsClient!.clientId! },
-        newClient,
+        omitClientScopes(newClient),
       );
       setupForm(newClient);
       setAdminPermissionsClient(newClient);
