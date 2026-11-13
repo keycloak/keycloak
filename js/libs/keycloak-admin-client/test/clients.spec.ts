@@ -968,12 +968,14 @@ describe("Clients", () => {
 
       expect(certificate).to.be.ok;
       expect(certificate.certificate).to.be.ok;
+      expect(certificate.privateKey).to.be.ok;
 
       const info = await kcAdminClient.clients.getKeyInfo({
         id: currentClient.id!,
         attr,
       });
-      expect(info).to.be.eql(certificate);
+      expect(info.privateKey).to.be.undefined;
+      expect(info.certificate).to.be.eql(certificate.certificate);
     });
 
     it("download key", async () => {

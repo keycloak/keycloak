@@ -60,7 +60,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
                 buffer.append("            <Key signing=\"true\">\n");
                 buffer.append("                <PrivateKeyPem>\n");
                 if (samlClient.getClientSigningPrivateKey() == null) {
-                    buffer.append("                    PRIVATE KEY NOT SET UP OR KNOWN\n");
+                    buffer.append("                    PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY\n");
                 } else {
                     buffer.append("                    ").append(includeSecrets ? samlClient.getClientSigningPrivateKey() : ComponentRepresentation.SECRET_VALUE).append("\n");
                 }
@@ -78,7 +78,7 @@ public class KeycloakSamlClientInstallation implements ClientInstallationProvide
                 buffer.append("            <Key encryption=\"true\">\n");
                 buffer.append("                <PrivateKeyPem>\n");
                 if (samlClient.getClientEncryptingPrivateKey() == null) {
-                    buffer.append("                    PRIVATE KEY NOT SET UP OR KNOWN\n");
+                    buffer.append("                    PRIVATE KEY NOT STORED ON SERVER - REPLACE WITH YOUR OWN PRIVATE KEY\n");
                 } else {
                     buffer.append("                    ").append(includeSecrets ? samlClient.getClientEncryptingPrivateKey() : ComponentRepresentation.SECRET_VALUE).append("\n");
                 }
