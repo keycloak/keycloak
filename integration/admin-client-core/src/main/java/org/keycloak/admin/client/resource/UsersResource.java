@@ -161,6 +161,42 @@ public interface UsersResource {
     List<UserRepresentation> searchByLastName(@QueryParam("lastName") String email, @QueryParam("exact") Boolean exact);
 
     /**
+     * Search for users matching the given search string, optionally including or excluding service accounts.
+     *
+     * @param search arbitrary search string, or {@code null} to list all users
+     * @param enabled Boolean representing if user is enabled or not
+     * @param includeServiceAccounts Boolean, which defines whether result list should include service accounts; {@code null} keeps the default behavior
+     * @return a list of {@link UserRepresentation}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByUserAccounts(@QueryParam("search") String search,
+                                                  @QueryParam("enabled") Boolean enabled,
+                                                  @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
+
+    /**
+     * Search for users matching the given search string, optionally including or excluding service accounts, with pagination.
+     *
+     * @param search arbitrary search string, or {@code null} to list all users
+     * @param enabled Boolean representing if user is enabled or not
+     * @param includeServiceAccounts Boolean, which defines whether result list should include service accounts; {@code null} keeps the default behavior
+     * @param firstResult the position of the first result to retrieve
+     * @param maxResults the maximum number of results to retrieve
+     * @param briefRepresentation Only return basic information (only guaranteed to return id, username, created, first and last name,
+     *  email, enabled state, email verification state, federation link, and access.
+     *  Note that it means that namely user attributes, required actions, and not before are not returned.)
+     * @return a list of {@link UserRepresentation}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByUserAccounts(@QueryParam("search") String search,
+                                                  @QueryParam("enabled") Boolean enabled,
+                                                  @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts,
+                                                  @QueryParam("first") Integer firstResult,
+                                                  @QueryParam("max") Integer maxResults,
+                                                  @QueryParam("briefRepresentation") Boolean briefRepresentation);
+
+    /**
      * Search for users based on the given filters.
      *
      * @param username a value contained in username
@@ -345,6 +381,21 @@ public interface UsersResource {
     Integer count(@QueryParam("search") String search);
 
     /**
+     * Returns the users that can be viewed and match the given filters.
+     *
+     * @param search criteria to search for
+     * @param enabled Boolean representing if user is enabled or not
+     * @param includeServiceAccounts Boolean, which defines whether result list should include service accounts
+     * @return number of users matching the search criteria
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer count(@QueryParam("search") String search,
+                  @QueryParam("enabled") Boolean enabled,
+                  @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
+
+    /**
      * Returns the number of users that can be viewed and match the given filters.
      * If none of the filters is specified this is equivalent to {{@link #count()}}.
      *
@@ -503,6 +554,44 @@ public interface UsersResource {
                   @QueryParam("q") String searchQuery,
                   @QueryParam("createdAfter") String createdAfter,
                   @QueryParam("createdBefore") String createdBefore);
+
+    /**
+     * Returns the number of users that can be viewed and match the given filters,
+     * including creation timestamp filters and the service account inclusion flag.
+     *
+     * @param search        arbitrary search string for all the fields below
+     * @param last          last name field of a user
+     * @param first         first name field of a user
+     * @param email         email field of a user
+     * @param emailVerified emailVerified field of a user
+     * @param username      username field of a user
+     * @param enabled       Boolean representing if user is enabled or not
+     * @param idpAlias      The alias of an Identity Provider linked to the user
+     * @param idpUserId     The userId at an Identity Provider linked to the user
+     * @param exact         Boolean which defines whether the params must match exactly
+     * @param searchQuery   A query to search for custom attributes
+     * @param createdAfter  only count users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
+     * @param createdBefore only count users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
+     * @param includeServiceAccounts Boolean, which defines whether service accounts are counted; {@code null} keeps the default behavior
+     * @return number of users matching the given filters
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer count(@QueryParam("search") String search,
+                  @QueryParam("lastName") String last,
+                  @QueryParam("firstName") String first,
+                  @QueryParam("email") String email,
+                  @QueryParam("emailVerified") Boolean emailVerified,
+                  @QueryParam("username") String username,
+                  @QueryParam("enabled") Boolean enabled,
+                  @QueryParam("idpAlias") String idpAlias,
+                  @QueryParam("idpUserId") String idpUserId,
+                  @QueryParam("exact") Boolean exact,
+                  @QueryParam("q") String searchQuery,
+                  @QueryParam("createdAfter") String createdAfter,
+                  @QueryParam("createdBefore") String createdBefore,
+                  @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
 
     /**
      * Returns the number of users with the given status for emailVerified.

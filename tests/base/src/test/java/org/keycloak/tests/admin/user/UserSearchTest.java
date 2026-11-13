@@ -916,7 +916,7 @@ public class UserSearchTest extends AbstractUserTest {
 
     @Test
     public void testCountAndSearchConsistencyWithMissingParameters() {
-        createUser("user1", "user1@example.com");
+        createUser("account", "user1@example.com");
 
         // Count users before creating service account (should be 1 regular user)
         Integer countBefore = managedRealm.admin().users().count(null, null, null, null, null, null, null, null, null, true, null);
@@ -931,6 +931,7 @@ public class UserSearchTest extends AbstractUserTest {
         client.setRedirectUris(Arrays.asList("http://localhost"));
 
         String clientId = ApiUtil.getCreatedId(managedRealm.admin().clients().create(client));
+        managedRealm.cleanup().add(r -> r.clients().get(clientId).remove());
         
         // Count users after creating service account (should be 2: 1 regular + 1 service account)
         Integer countAfter = managedRealm.admin().users().count(null, null, null, null, null, null, null, null, null, true, null);
@@ -940,6 +941,7 @@ public class UserSearchTest extends AbstractUserTest {
         Integer count = managedRealm.admin().users().count(null, null, null, null, null, null, null, null, null, true, null);
         List<UserRepresentation> users = managedRealm.admin().users().search(null, null, null, null, 0, 10, null, null, true);
         assertEquals(count.intValue(), users.size(), "Count and search should return same number with exact=true");
+        assertEquals(2, count.intValue(), "Default handling of service accounts should include service accounts with exact=true");
 
         // idpAlias parameter with service account inclusion inconsistency
         Integer countWithIdp = managedRealm.admin().users().count(null, null, null, null, null, null, null, "nonexistent-idp", null, null);
@@ -950,8 +952,70 @@ public class UserSearchTest extends AbstractUserTest {
         Integer countWithIdpUserId = managedRealm.admin().users().count(null, null, null, null, null, null, null, null, "nonexistent-user-id", null);
         List<UserRepresentation> usersWithIdpUserId = managedRealm.admin().users().search(null, null, null, null, null, null, "nonexistent-user-id", 0, 10, null, null);
         assertEquals(countWithIdpUserId.intValue(), usersWithIdpUserId.size(), "Count and search should return same number with idpUserId parameter");
-        
-        managedRealm.admin().clients().get(clientId).remove();
+
+        // search parameter ignores service accounts by default
+        Integer countWithSearch = managedRealm.admin().users().count("*account*", null, null, null, null, null, null, null, null, null);
+        List<UserRepresentation> usersWithSearch = managedRealm.admin().users().searchByUserAccounts("*account*", null, null);
+        assertEquals(countWithSearch.intValue(), usersWithSearch.size(), "Count and search should return same number with search parameter");
+        assertEquals(1, countWithSearch.intValue(), "Default handling of service accounts should exclude service accounts with search parameter");
+
+        // count and search without parameters excludes service account by default
+        Integer countAllAfter = managedRealm.admin().users().count(null, null, null, null, null, null, null, null, null, null, null);
+        List<UserRepresentation> usersAllAfter = managedRealm.admin().users().searchByUserAccounts(null, null, null);
+        assertEquals(countAllAfter.intValue(), usersAllAfter.size(), "Count and search should return same number without any parameters");
+        assertEquals(1, countAllAfter.intValue(), "Should have 1 (regular) user after service account creation");
+
+        // include service accounts in result list and enabled=true
+        Integer countWithServiceAccounts = managedRealm.admin().users().count(null, true, true);
+        List<UserRepresentation> usersWithServiceAccounts = managedRealm.admin().users().searchByUserAccounts(null, true, true);
+        assertEquals(countWithServiceAccounts.intValue(), usersWithServiceAccounts.size(), "Count and search enabled users should return same number with includeUserAccounts=true");
+        assertEquals(2, countWithServiceAccounts.intValue(), "Should have 2 enabled users including service accounts (1 regular + 1 service account)");
+
+        // include service accounts in result list and search parameter
+        Integer countSearchWithServiceAccounts = managedRealm.admin().users().count("*account*", null, true);
+        List<UserRepresentation> usersSearchWithServiceAccounts = managedRealm.admin().users().searchByUserAccounts("*account*", null, true);
+        assertEquals(countSearchWithServiceAccounts.intValue(), usersSearchWithServiceAccounts.size(), "Count and search should return same number with includeUserAccounts=true");
+        assertEquals(2, countSearchWithServiceAccounts.intValue(), "Should have 2 'account' users including service accounts (1 regular + 1 service account)");
+
+        // include service accounts in result list for all users
+        Integer countAllWithServiceAccounts = managedRealm.admin().users().count(null, null, true);
+        List<UserRepresentation> usersAllWithServiceAccounts = managedRealm.admin().users().searchByUserAccounts(null, null, true);
+        assertEquals(countAllWithServiceAccounts.intValue(), usersAllWithServiceAccounts.size(), "Count and list all users should return same number with includeUserAccounts=true");
+        assertEquals(2, countAllWithServiceAccounts.intValue(), "Should have 2 users including service accounts (1 regular + 1 service account)");
+
+        // exclude service accounts in result list and enabled=true
+        Integer countWithoutServiceAccounts = managedRealm.admin().users().count(null, true, false);
+        List<UserRepresentation> usersWithoutServiceAccounts = managedRealm.admin().users().searchByUserAccounts(null, true, false);
+        assertEquals(countWithoutServiceAccounts.intValue(), usersWithoutServiceAccounts.size(), "Count and search enabled users should return same number with includeUserAccounts=true");
+        assertEquals(1, countWithoutServiceAccounts.intValue(), "Should have 1 enabled user and no service accounts");
+
+        // exclude service accounts in result list and search parameter
+        Integer countSearchWithoutServiceAccounts = managedRealm.admin().users().count("account", null, false);
+        List<UserRepresentation> usersSearchWithoutServiceAccounts = managedRealm.admin().users().searchByUserAccounts("account", null, false);
+        assertEquals(countSearchWithoutServiceAccounts.intValue(), usersSearchWithoutServiceAccounts.size(), "Count and search should return same number with includeUserAccounts=true");
+        assertEquals(1, countSearchWithoutServiceAccounts.intValue(), "Should have 1 'account' user and no service accounts");
+
+        // exclude service accounts in result list for all users
+        Integer countAllWithoutServiceAccounts = managedRealm.admin().users().count(null, null, false);
+        List<UserRepresentation> usersAllWithoutServiceAccounts = managedRealm.admin().users().searchByUserAccounts(null, null, false);
+        assertEquals(countAllWithoutServiceAccounts.intValue(), usersAllWithoutServiceAccounts.size(), "Count and list all users should return same number with includeUserAccounts=true");
+        assertEquals(1, countAllWithoutServiceAccounts.intValue(), "Should have 1 user and no service accounts");
+
+        // prefixed search (id:) includes service accounts by default and honors the flag when set
+        String serviceAccountSearch = "id:" + managedRealm.admin().clients().get(clientId).toRepresentation().getServiceAccountUserId();
+        assertEquals(1, managedRealm.admin().users().count(serviceAccountSearch, null, null).intValue(), "Prefixed count should include service accounts by default");
+        assertEquals(1, managedRealm.admin().users().searchByUserAccounts(serviceAccountSearch, null, null).size(), "Prefixed search should include service accounts by default");
+        assertEquals(1, managedRealm.admin().users().count(serviceAccountSearch, null, true).intValue(), "Prefixed count should include service accounts with includeServiceAccounts=true");
+        assertEquals(1, managedRealm.admin().users().searchByUserAccounts(serviceAccountSearch, null, true).size(), "Prefixed search should include service accounts with includeServiceAccounts=true");
+        assertEquals(0, managedRealm.admin().users().count(serviceAccountSearch, null, false).intValue(), "Prefixed count should exclude service accounts with includeServiceAccounts=false");
+        assertEquals(0, managedRealm.admin().users().searchByUserAccounts(serviceAccountSearch, null, false).size(), "Prefixed search should exclude service accounts with includeServiceAccounts=false");
+
+        // pagination while including service accounts
+        List<UserRepresentation> firstPage = managedRealm.admin().users().searchByUserAccounts(null, null, true, 0, 1, true);
+        List<UserRepresentation> secondPage = managedRealm.admin().users().searchByUserAccounts(null, null, true, 1, 1, true);
+        assertEquals(1, firstPage.size(), "First page should contain 1 user");
+        assertEquals(1, secondPage.size(), "Second page should contain 1 user");
+        Assertions.assertNotEquals(firstPage.get(0).getId(), secondPage.get(0).getId(), "Pages should contain different users");
     }
 
     @Test
@@ -1058,7 +1122,7 @@ public class UserSearchTest extends AbstractUserTest {
         String today = LocalDate.now(ZoneOffset.UTC).toString();
         Integer isoCount = managedRealm.admin().users().count(
                 null, null, null, null, null, null, null, null, null, null, null,
-                today, today);
+                today, today, false);
         assertTrue(isoCount >= 2, "Should count at least 2 users created today using ISO date");
     }
 
