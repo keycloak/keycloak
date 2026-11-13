@@ -96,7 +96,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             WebAuthnCredentialData webAuthnData = WebAuthnCredentialModel.createFromCredentialModel(credential).getWebAuthnCredentialData();
 
             ObjectConverter converter = new ObjectConverter();
-            COSEKey pubKey = converter.getCborConverter().readValue(Base64Url.decode(webAuthnData.getCredentialPublicKey()), COSEKey.class);
+            COSEKey pubKey = converter.getCborMapper().readValue(Base64Url.decode(webAuthnData.getCredentialPublicKey()), COSEKey.class);
 
             CredentialData result = new CredentialData();
             result.hasCredentialId = webAuthnData.getCredentialId() != null;
