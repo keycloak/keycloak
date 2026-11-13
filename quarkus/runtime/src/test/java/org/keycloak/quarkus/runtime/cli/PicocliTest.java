@@ -2142,6 +2142,19 @@ Environment.setHomeDir(tmp);
     }
 
     @Test
+    public void testWindowsServiceRejectsNegativeStopTimeout() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.WIN;
+            }
+        };
+        KeycloakMain.main(new String[] {"tools", "windows-service", "install", "--stop-timeout=-1"}, nonRunningPicocli);
+        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
+        assertTrue(nonRunningPicocli.getErrString().contains("--stop-timeout must not be negative."));
+    }
+
+    @Test
     public void testWindowsServiceOnUnix() {
         NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
             @Override

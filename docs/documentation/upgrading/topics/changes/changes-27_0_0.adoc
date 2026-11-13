@@ -401,6 +401,18 @@ If you use auto-link flows with a SAML or custom identity provider that does not
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Graceful shutdown of Windows service
+// https://github.com/keycloak/keycloak/issues/54225
+
+{project_name} now shuts down gracefully when the Windows service is stopped.
+Previously, the server was forcefully terminated after the stop timeout.
+The default service stop timeout is now 60 seconds to allow more time for graceful shutdown.
+
+If you installed {project_name} as a Windows service in a previous version, uninstall and reinstall the service after upgrading to enable graceful shutdown.
+Reapply any custom service installation options when reinstalling.
+
+For more information, see the link:{server_guide_base_link}/windows-service[Running {project_name} as a Windows Service] guide.
+
 === Existing AES key sizes are recorded during migration
 
 When upgrading, existing `aes-generated` key providers without an explicit `secretSize` are updated to record the size of their stored key, including databases already running 26.8.x.
