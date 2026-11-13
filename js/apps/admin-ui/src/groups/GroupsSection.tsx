@@ -324,7 +324,6 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
                                 : [
                                     `groups/${id}`,
                                     `groups/${id}/role-mappings/*`,
-                                    `groups/${id}/management/*`,
                                   ]
                             }
                           />

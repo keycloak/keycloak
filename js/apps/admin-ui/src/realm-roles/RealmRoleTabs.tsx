@@ -341,9 +341,8 @@ export default function RealmRoleTabs() {
                     <AdminEvents
                       resourcePath={[
                         `clients/${clientId}/roles/${roleName}`,
-                        // Only the endpoints that record events, as role names can contain "/" and "/*" would match other roles.
+                        // Only the sub-resources that record events (composites), as role names can contain "/" and "/*" would match other roles.
                         `clients/${clientId}/roles/${roleName}/composites`,
-                        `clients/${clientId}/roles/${roleName}/management/permissions`,
                         `roles-by-id/${id}`,
                         `roles-by-id/${id}/*`,
                       ]}

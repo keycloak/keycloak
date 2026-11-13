@@ -209,13 +209,7 @@ export default function DetailOrganization() {
                     eventKey="adminEvents"
                     title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                   >
-                    <AdminEvents
-                      resourcePath={[
-                        `organizations/${id}`,
-                        `organizations/${id}/identity-providers/*`,
-                        `organizations/${id}/invitations/*`,
-                      ]}
-                    />
+                    <AdminEvents resourcePath={[`organizations/${id}`]} />
                   </Tab>
                   <Tab
                     eventKey="membershipEvents"
@@ -225,6 +219,7 @@ export default function DetailOrganization() {
                       resourcePath={[
                         `organizations/${id}/members`,
                         `organizations/${id}/members/*`,
+                        `organizations/${id}/invitations/*`,
                       ]}
                     />
                   </Tab>

@@ -106,17 +106,19 @@ const DetailCell = (event: AdminEventRepresentation) => (
 );
 
 // The server matches the path with SQL LIKE, so `_` and `%` in names are wildcards as well.
-// Returns a check for the literal path, or undefined when the server already matches exactly.
+// A `\` in a name can't be matched at all, as the server doesn't escape it (see keycloak/keycloak#55126).
+// Returns a check that treats `_` and `%` literally and `*` as the wildcard, or undefined when the server already matches exactly.
 function literalMatcher(pattern: string | undefined) {
   if (!pattern || !/[_%]/.test(pattern)) {
     return undefined;
   }
-  const prefix = pattern.endsWith("/*") ? pattern.slice(0, -1) : undefined;
-  if ((prefix ?? pattern).includes("*")) {
-    return undefined;
-  }
-  return (path: string) =>
-    prefix ? path.startsWith(prefix) : path === pattern;
+  const regex = new RegExp(
+    `^${pattern
+      .split("*")
+      .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+      .join(".*")}$`,
+  );
+  return (path: string) => regex.test(path);
 }
 
 type AdminEventsProps = {

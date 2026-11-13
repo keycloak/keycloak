@@ -377,6 +377,31 @@ class AdminClient {
     ]);
   }
 
+  // Adds the composite through the endpoint that addresses the role by name, which is recorded below the name path.
+  async addCompositeRoleByName(
+    clientUuid: string,
+    parentName: string,
+    child: RoleRepresentation,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    const accessToken = await this.#authClient.getAccessToken();
+    const response = await fetch(
+      `${SERVER_URL}/admin/realms/${realm}/clients/${clientUuid}/roles/${encodeURIComponent(parentName)}/composites`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify([child]),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Adding the composite failed: ${response.status}`);
+    }
+  }
+
   async getRealmRole(name: string, realm: string = this.#client.realmName) {
     await this.#login();
     return await this.#client.roles.findOneByName({ name, realm });

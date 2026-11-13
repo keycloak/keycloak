@@ -252,8 +252,8 @@ test.describe("Admin events tab of resources", () => {
     await adminClient.createClientRole(id, { name: "child", realm: realmName });
     const parent = await adminClient.getClientRole(id, "read*", realmName);
     const child = await adminClient.getClientRole(id, "child", realmName);
-    // Recorded below the role, so it matches both the exact and the sub-resource pattern.
-    await adminClient.addCompositeRole(parent!.id!, child!, realmName);
+    // Recorded below the role name, so it matches both the exact and the composites pattern.
+    await adminClient.addCompositeRoleByName(id, "read*", child!, realmName);
 
     await openRealm(page, realmName);
     await page.goto(
