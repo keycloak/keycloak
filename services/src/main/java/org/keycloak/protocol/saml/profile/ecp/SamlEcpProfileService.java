@@ -67,12 +67,14 @@ public class SamlEcpProfileService extends SamlService {
     }
 
     public Response authenticate(InputStream inputStream) {
-        try {
-            return authenticate(Soap.extractSoapMessage(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize)));
+        Document soapMessage;
+        try (InputStream limitedInputStream = SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize)) {
+            soapMessage = Soap.extractSoapMessage(limitedInputStream);
         } catch (Exception e) {
             logger.debugf(e, "Error while processing SOAP request.");
             return Soap.createFault().reason("Some error occurred while processing the SOAP request.").build();
         }
+        return authenticate(soapMessage);
     }
 
     public Response authenticate(Document soapMessage) {
