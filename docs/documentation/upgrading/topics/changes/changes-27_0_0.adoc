@@ -681,6 +681,16 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== Partial import reads the organizations of the file
+// https://github.com/keycloak/keycloak/issues/54343
+
+The partial import now imports the organizations of the file, without their members, when organizations are enabled for the realm.
+Previously, the organizations of the file were ignored.
+A request that sends a whole exported realm to the `partialImport` endpoint is affected when the file contains an organization that already exists in the realm.
+With `ifResourceExists=FAIL`, such a request now fails.
+With `ifResourceExists=OVERWRITE`, it fails as well, because the partial import does not overwrite organizations.
+To import the other resources of the file with these policies, remove the organizations from the file.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
