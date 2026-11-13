@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -33,9 +34,12 @@ import org.jboss.logging.Logger;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.PhysicalAddress;
+import org.jgroups.View;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.logging.Log;
+import org.jgroups.protocols.MERGE3;
 import org.jgroups.protocols.PingData;
+import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.protocols.relay.SiteUUID;
 import org.jgroups.stack.IpAddress;
 import org.jgroups.util.NameCache;
@@ -46,6 +50,7 @@ import org.jgroups.util.Util;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,6 +88,11 @@ public class JdbcPing2Test {
     }
 
     @Test
+    public void testConcurrentStartup() throws Exception {
+        runSingleTest();
+    }
+
+    @Test
     public void testClusterHealth() {
         var ping = new ControlledJdbcPing();
         var clusterHealth = new JdbcPingClusterHealthImpl();
@@ -101,10 +111,8 @@ public class JdbcPing2Test {
         // test exception
         ping.setException(new RuntimeException("Induced"));
         assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.ERROR, ping.healthStatus());
-        // A database exception do not change the cluster health.
-        // It relies on Quarkus database health check to mark the Keycloak instance as not ready.
         clusterHealth.triggerClusterHealthCheck();
-        assertTrue(clusterHealth.isHealthy());
+        assertFalse(clusterHealth.isHealthy());
         // Remove exception
         ping.setException(null);
 
@@ -151,6 +159,290 @@ public class JdbcPing2Test {
         assertTrue(clusterHealth.isHealthy());
     }
 
+    @Test
+    public void testMembersPublishOnlyTheirOwnEntry() throws Exception {
+        try (JChannel a = createChannel("A"); JChannel b = createChannel("B")) {
+            a.connect(CLUSTER);
+            b.connect(CLUSTER);
+            Util.waitUntilAllChannelsHaveSameView(5000, 20, a, b);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = a.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING member = b.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+
+            member.writeAll();
+            var entries = member.readFromDB(CLUSTER);
+            assertEquals(2, entries.size());
+            assertTrue(entries.stream().anyMatch(p -> p.getAddress().equals(a.getAddress()) && p.isCoord()));
+            assertTrue(entries.stream().anyMatch(p -> p.getAddress().equals(b.getAddress()) && !p.isCoord()));
+
+            setLastUpdate(member, b.getAddress(), Time.currentTime() - 120);
+            coordinator.writeAll();
+            assertEquals(List.of(a.getAddress()), coordinator.readFromDB(CLUSTER).stream().map(PingData::getAddress).toList());
+            member.writeAll();
+            assertEquals(2, member.readDiscoveryData(CLUSTER).partitions().get(a.getAddress()).size());
+        }
+    }
+
+    @Test
+    public void testDatabaseTaskOwnershipFallsBackToLowestFreshMember() throws Exception {
+        try (JChannel a = createChannel("A"); JChannel b = createChannel("B"); JChannel c = createChannel("C")) {
+            a.addAddressGenerator(() -> new UUID(0, 3));
+            b.addAddressGenerator(() -> new UUID(0, 1));
+            c.addAddressGenerator(() -> new UUID(0, 2));
+            a.connect(CLUSTER);
+            b.connect(CLUSTER);
+            c.connect(CLUSTER);
+            Util.waitUntilAllChannelsHaveSameView(5000, 20, a, b, c);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = a.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING first = b.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING second = c.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            View originalView = a.getView();
+
+            assertTrue(coordinator.isDatabaseTaskCoordinator());
+            assertFalse(first.isDatabaseTaskCoordinator());
+            assertFalse(second.isDatabaseTaskCoordinator());
+
+            setLastUpdate(first, a.getAddress(), Time.currentTime() - 120);
+            Time.setOffset(11);
+            assertFalse(coordinator.isDatabaseTaskCoordinator());
+            assertTrue(first.isDatabaseTaskCoordinator());
+            assertFalse(second.isDatabaseTaskCoordinator());
+
+            setLastUpdate(second, b.getAddress(), Time.currentTime() - 120);
+            Time.setOffset(22);
+            assertFalse(first.isDatabaseTaskCoordinator());
+            assertTrue(second.isDatabaseTaskCoordinator());
+
+            coordinator.writeAll();
+            Time.setOffset(33);
+            assertTrue(coordinator.isDatabaseTaskCoordinator());
+            assertFalse(first.isDatabaseTaskCoordinator());
+            assertFalse(second.isDatabaseTaskCoordinator());
+            assertEquals(originalView, a.getView());
+            assertEquals(originalView, b.getView());
+            assertEquals(originalView, c.getView());
+        } finally {
+            Time.setOffset(0);
+        }
+    }
+
+    @Test
+    public void testMemberStaysReadyWithoutCoordinatorDatabaseAccess() throws Exception {
+        try (JChannel a = createChannel("A"); JChannel b = createChannel("B")) {
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = a.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING member = b.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            member.staleness_timeout = 2000;
+            member.setInfoWriterSleepTime(1);
+            a.connect(CLUSTER);
+            b.connect(CLUSTER);
+            Util.waitUntilAllChannelsHaveSameView(5000, 20, a, b);
+            View originalView = a.getView();
+            var coordinatorHealth = new JdbcPingClusterHealthImpl();
+            var memberHealth = new JdbcPingClusterHealthImpl();
+            coordinatorHealth.init(coordinator, new WithinThreadExecutor());
+            memberHealth.init(member, new WithinThreadExecutor());
+            assertTrue(coordinatorHealth.isHealthy());
+            assertTrue(memberHealth.isHealthy());
+
+            try {
+                coordinator.setDatabaseAvailable(false);
+                setLastUpdate(member, a.getAddress(), Time.currentTime() - 120);
+                setLastUpdate(member, b.getAddress(), Time.currentTime() - 120);
+                coordinatorHealth.triggerClusterHealthCheck();
+                assertFalse(coordinatorHealth.isHealthy());
+
+                // No explicit write: the participant's periodic writer must restore its fresh entry.
+                await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+                    memberHealth.triggerClusterHealthCheck();
+                    assertTrue(memberHealth.isHealthy());
+                    assertEquals(List.of(b.getAddress()), member.readFromDB(CLUSTER).stream().map(PingData::getAddress).toList());
+                });
+                assertTrue(member.isDatabaseTaskCoordinator());
+                long firstPublication = lastUpdate(member, b.getAddress());
+                await().atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+                        assertTrue(lastUpdate(member, b.getAddress()) > firstPublication));
+                assertEquals(originalView, a.getView());
+                assertEquals(originalView, b.getView());
+
+                member.setDatabaseAvailable(false);
+                Time.setOffset(11);
+                memberHealth.triggerClusterHealthCheck();
+                assertFalse(memberHealth.isHealthy());
+                assertFalse(member.isDatabaseTaskCoordinator());
+                member.setDatabaseAvailable(true);
+                member.writeAll();
+                memberHealth.triggerClusterHealthCheck();
+                assertTrue(memberHealth.isHealthy());
+
+                coordinator.setDatabaseAvailable(true);
+                coordinator.writeAll();
+                Time.setOffset(22);
+                coordinatorHealth.triggerClusterHealthCheck();
+                assertTrue(coordinatorHealth.isHealthy());
+                assertTrue(coordinator.isDatabaseTaskCoordinator());
+                assertFalse(member.isDatabaseTaskCoordinator());
+            } finally {
+                Time.setOffset(0);
+                coordinator.setDatabaseAvailable(true);
+                member.setDatabaseAvailable(true);
+            }
+        }
+    }
+
+    @Test
+    public void testNewPartitionLosesAndMergesAfterCoordinatorRecovers() throws Exception {
+        try (JChannel a = createChannel("A"); JChannel b = createChannel("B"); JChannel c = createChannel("C")) {
+            a.addAddressGenerator(() -> new UUID(0, 1));
+            b.addAddressGenerator(() -> new UUID(0, 2));
+            c.addAddressGenerator(() -> new UUID(0, 3));
+            a.connect(CLUSTER);
+            b.connect(CLUSTER);
+            Util.waitUntilAllChannelsHaveSameView(5000, 20, a, b);
+            View originalView = a.getView();
+            for (JChannel channel : List.of(a, b)) {
+                MERGE3 merge = channel.getProtocolStack().findProtocol(MERGE3.class);
+                merge.stop();
+            }
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = a.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING member = b.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            try {
+                coordinator.setDatabaseAvailable(false);
+                setLastUpdate(member, a.getAddress(), Time.currentTime() - 120);
+                member.writeAll();
+                GMS gms = c.getProtocolStack().findProtocol(GMS.class);
+                gms.setJoinTimeout(100).setMaxJoinAttempts(1);
+                c.connect(CLUSTER);
+                MERGE3 merge = c.getProtocolStack().findProtocol(MERGE3.class);
+                merge.stop();
+                KEYCLOAK_JDBC_PING2_FOR_TESTING joiner = c.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+                assertEquals(1, c.getView().size());
+                assertEquals(originalView, a.getView());
+                assertEquals(originalView, b.getView());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, member.healthStatus());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, joiner.healthStatus());
+                assertTrue(member.isDatabaseTaskCoordinator());
+                assertFalse(joiner.isDatabaseTaskCoordinator());
+
+                coordinator.setDatabaseAvailable(true);
+                coordinator.writeAll();
+                await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+                    for (JChannel channel : List.of(a, b, c)) {
+                        MERGE3 protocol = channel.getProtocolStack().findProtocol(MERGE3.class);
+                        protocol.sendInfo();
+                    }
+                    for (JChannel channel : List.of(a, b, c)) {
+                        MERGE3 protocol = channel.getProtocolStack().findProtocol(MERGE3.class);
+                        protocol.checkInconsistencies();
+                    }
+                    assertEquals(3, a.getView().size());
+                    assertEquals(a.getView(), b.getView());
+                    assertEquals(a.getView(), c.getView());
+                });
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, member.healthStatus());
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, joiner.healthStatus());
+            } finally {
+                coordinator.setDatabaseAvailable(true);
+            }
+        }
+    }
+
+    @Test
+    public void testPartitionRankingWithoutCoordinatorEntry() throws Exception {
+        try (JChannel channel = createChannel("A")) {
+            Address a = new UUID(0, 1);
+            Address b = new UUID(0, 2);
+            Address c = new UUID(0, 3);
+            Address d = new UUID(0, 4);
+            channel.addAddressGenerator(() -> a);
+            channel.connect(CLUSTER);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING ping = channel.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            setLastUpdate(ping, a, Time.currentTime() - 120);
+            insertEntry(ping, b, false, a);
+            insertEntry(ping, c, true, c);
+            try {
+                // B is the only fresh witness of A's partition; its tie with C is won by A's lower address.
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.healthStatus());
+                assertEquals(List.of(c), ping.readFromDB(CLUSTER).stream()
+                        .filter(PingData::isCoord).map(PingData::getAddress).toList());
+                ping.removeStaleEntries();
+                assertFalse(ping.readFromDB(CLUSTER).stream().anyMatch(p -> p.getAddress().equals(a)));
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.healthStatus());
+
+                insertEntry(ping, d, false, c);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, ping.healthStatus());
+                setLastUpdate(ping, d, Time.currentTime() - 120);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.healthStatus());
+                setLastUpdate(ping, b, Time.currentTime() - 120);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, ping.healthStatus());
+                setLastUpdate(ping, c, Time.currentTime() - 120);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.NO_COORDINATOR, ping.healthStatus());
+            } finally {
+                try (Connection conn = ping.getConnection();
+                     PreparedStatement ps = conn.prepareStatement("DELETE FROM jgroups WHERE address != ? AND cluster = ?")) {
+                    ps.setString(1, Util.addressToString(a));
+                    ps.setString(2, CLUSTER);
+                    ps.executeUpdate();
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testStartingEntryDoesNotCreateAPartition() throws Exception {
+        try (JChannel channel = createChannel("A")) {
+            channel.connect(CLUSTER);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING ping = channel.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            Address starting = new UUID(0, 0);
+            insertEntry(ping, starting, false, null);
+            try {
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.healthStatus());
+                setLastUpdate(ping, channel.getAddress(), Time.currentTime() - 120);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.NO_COORDINATOR, ping.healthStatus());
+                assertFalse(ping.isDatabaseTaskCoordinator());
+            } finally {
+                try (Connection conn = ping.getConnection();
+                     PreparedStatement ps = conn.prepareStatement("DELETE FROM jgroups WHERE address = ?")) {
+                    ps.setString(1, Util.addressToString(starting));
+                    ps.executeUpdate();
+                }
+            }
+        }
+    }
+
+    private static void setLastUpdate(KEYCLOAK_JDBC_PING2_FOR_TESTING ping, Address address, long timestamp) throws Exception {
+        try (Connection conn = ping.getConnection();
+             PreparedStatement ps = conn.prepareStatement("UPDATE jgroups SET last_update = ? WHERE address = ?")) {
+            ps.setLong(1, timestamp);
+            ps.setString(2, Util.addressToString(address));
+            assertEquals(1, ps.executeUpdate());
+        }
+    }
+
+    private static long lastUpdate(KEYCLOAK_JDBC_PING2_FOR_TESTING ping, Address address) throws Exception {
+        try (Connection conn = ping.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT last_update FROM jgroups WHERE address = ?")) {
+            ps.setString(1, Util.addressToString(address));
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next());
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    private static void insertEntry(KEYCLOAK_JDBC_PING2_FOR_TESTING ping, Address address, boolean coordinator,
+                                   Address coordinatedBy) throws Exception {
+        try (Connection conn = ping.getConnection();
+             PreparedStatement ps = conn.prepareStatement(ping.getInsertSingleSql())) {
+            ps.setString(1, Util.addressToString(address));
+            ps.setString(2, address.toString());
+            ps.setString(3, CLUSTER);
+            ps.setString(4, "127.0.0.1:9999");
+            ps.setBoolean(5, coordinator);
+            ps.setLong(6, Time.currentTime());
+            ps.setString(7, coordinatedBy == null ? null : Util.addressToString(coordinatedBy));
+            ps.executeUpdate();
+        }
+    }
+
     @SuppressWarnings("resource")
     private static long runSingleTest() throws Exception {
         JChannel[] channels = new JChannel[NUM_NODES];
@@ -183,6 +475,33 @@ public class JdbcPing2Test {
             Arrays.stream(channels).filter(ch -> ch.view().getCoord() != ch.getAddress()).forEach(JChannel::close);
             Arrays.stream(channels).filter(ch -> !ch.isClosed()).forEach(JChannel::close);
             log.infof("Closed");
+        }
+    }
+
+    @Test
+    public void testOnlyCoordinatorClearsStaleEntriesOnViewChange() throws Exception {
+        try (JChannel a = createChannel("A"); JChannel b = createChannel("B")) {
+            a.connect(CLUSTER);
+            b.connect(CLUSTER);
+            Util.waitUntilAllChannelsHaveSameView(5000, 20, a, b);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING coordinator = a.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            KEYCLOAK_JDBC_PING2_FOR_TESTING member = b.getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            Address stale = UUID.randomUUID();
+            insertEntry(member, stale, false, stale);
+            long timestamp = Time.currentTime() - 120;
+            setLastUpdate(member, stale, timestamp);
+
+            member.handleView(b.getView(), b.getView(), true);
+            assertEquals(timestamp, lastUpdate(member, stale));
+
+            coordinator.handleView(a.getView(), a.getView(), true);
+            try (Connection conn = coordinator.getConnection();
+                 PreparedStatement ps = conn.prepareStatement("SELECT address FROM jgroups WHERE address = ?")) {
+                ps.setString(1, Util.addressToString(stale));
+                try (ResultSet rs = ps.executeQuery()) {
+                    assertFalse(rs.next());
+                }
+            }
         }
     }
 

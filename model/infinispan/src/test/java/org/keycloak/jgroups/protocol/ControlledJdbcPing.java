@@ -20,9 +20,12 @@ package org.keycloak.jgroups.protocol;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 import org.jgroups.Address;
 import org.jgroups.View;
@@ -39,6 +42,7 @@ public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
     }
 
     private volatile List<PingData> pingData = List.of();
+    private volatile Map<Address, Set<Address>> partitions = Map.of();
     private volatile Exception exception;
     private final Queue<HealthStatus> statusQueue = new ArrayDeque<>();
 
@@ -52,11 +56,11 @@ public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
     }
 
     @Override
-    protected List<PingData> readFromDB(String cluster) throws Exception {
+    protected DiscoveryData readDiscoveryData(String cluster) throws Exception {
         if (exception != null) {
             throw exception;
         }
-        return pingData;
+        return new DiscoveryData(pingData, partitions);
     }
 
     public void setPingData(List<Address> coordinators) {
@@ -64,6 +68,7 @@ public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
     }
 
     public void setPingData(List<Address> coordinators, Map<Address, Integer> addressCount) {
+        Map<Address, Set<Address>> partitions = new HashMap<>();
         this.pingData = coordinators.stream()
                 .flatMap(address -> {
                     ArrayList<PingData> partition = new ArrayList<>();
@@ -79,9 +84,11 @@ public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
                         }
                     }
                     coord.mbrs(members);
+                    partitions.put(address, new HashSet<>(members));
                     return partition.stream();
                 })
                 .toList();
+        this.partitions = partitions;
     }
 
     public void setException(Exception exception) {
