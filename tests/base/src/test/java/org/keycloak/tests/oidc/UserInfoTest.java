@@ -14,26 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.oidc;
+package org.keycloak.tests.oidc;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -65,7 +64,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -77,27 +75,36 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.Urls;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.JwksProvider;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectJwksProvider;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RepresentationUtils;
 import org.keycloak.testframework.realm.RoleBuilder;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
-import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.KeyUtils;
-import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.TokenSignatureUtil;
-import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.Assert;
+import org.keycloak.tests.utils.KeyUtils;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
@@ -106,16 +113,14 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 
 import org.hamcrest.CoreMatchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static jakarta.ws.rs.client.ClientBuilder.newClient;
 
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.AbstractTestRealmKeycloakTest.TEST_REALM_NAME;
-import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -125,49 +130,56 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 /**
  * @author pedroigor
  */
-public class UserInfoTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class UserInfoTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm(config = TestRealmConfig.class)
+    ManagedRealm managedRealm;
 
-    @Page
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectOAuthClient(config = TestClientConfig.class, lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth;
+
+    @InjectJwksProvider
+    JwksProvider jwksProvider;
+
+    @InjectEvents
+    Events events;
+
+    @InjectPage
     protected LoginPage loginPage;
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
+    @BeforeEach
+    public void configureUserRoles() {
+        // Keep real client roles on the user even when asserting their absence from UserInfo.
+        ClientResource client = oauth.clientResource();
+        client.roles().create(RoleBuilder.create().name("customer-user").build());
+        RoleRepresentation role = client.roles().get("customer-user").toRepresentation();
+        AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost")
+                .roles().clientLevel(client.toRepresentation().getId()).add(Collections.singletonList(role));
     }
 
-    @Before
-    public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
-        RealmRepresentation testRealm = realm.build();
-        testRealms.add(testRealm);
-
-        ClientRepresentation samlApp = KeycloakModelUtils.createClient(testRealm, "saml-client");
-        samlApp.setSecret("secret");
-        samlApp.setServiceAccountsEnabled(true);
-        samlApp.setDirectAccessGrantsEnabled(true);
+    @AfterEach
+    public void removeUserSessions() {
+        runOnServer.run(RunHelpers.removeUserSessions());
     }
 
     public void testSuccessGet(String acceptHeader) throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken(), acceptHeader);
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken(), acceptHeader);
 
             UserInfo userInfo = testSuccessfulUserInfoResponse(response);
             testRolesAreNotInUserInfoResponse(userInfo);
 
-        } finally {
-            client.close();
         }
     }
 
@@ -183,63 +195,51 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccess_postMethod_header() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
                     .post(Entity.form(new Form()));
 
             testSuccessfulUserInfoResponse(response);
 
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testSuccess_postMethod_body() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             Form form = new Form();
             form.param("access_token", accessTokenResponse.getToken());
 
-            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .post(Entity.form(form));
 
             testSuccessfulUserInfoResponse(response);
 
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testSuccess_postMethod_charset_body() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             Form form = new Form();
             form.param("access_token", accessTokenResponse.getToken());
 
-            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_TYPE.withCharset("utf-8"))
                     .post(Entity.form(form));
 
             testSuccessfulUserInfoResponse(response);
 
-        } finally {
-            client.close();
         }
     }
 
@@ -256,12 +256,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .directAccessGrantsEnabled()
                 .build();
 
-        RealmResource realm = adminClient.realm("test");
+        RealmResource realm = managedRealm.admin();
 
         Response resp = realm.clients().create(clientRep);
         String clientUUID = ApiUtil.getCreatedId(resp);
         resp.close();
-        getCleanup().addClientUuid(clientUUID);
+        managedRealm.cleanup().add(realmResource -> realmResource.clients().get(clientUUID).remove());
 
         //Create role with dot in the name
         realm.clients().get(clientUUID).roles().create(RoleBuilder.create().name("my.foo.role").build());
@@ -281,32 +281,25 @@ public class UserInfoTest extends AbstractKeycloakTest {
         events.clear();
 
         // Send UserInfo request and ensure it is correct
-        Client client = AdminClientUtil.createResteasyClient();
-        try {
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
+        try (Client client = newClient()) {
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getAccessToken());
 
             testSuccessfulUserInfoResponse(response, clientId);
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testSuccess_postMethod_header_textEntity() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
                     .post(Entity.text(""));
 
             testSuccessfulUserInfoResponse(response);
 
-        } finally {
-            client.close();
         }
     }
 
@@ -355,15 +348,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private void testUserInfoSignatureAndEncryption(String sigAlgorithm, String curve, String algAlgorithm, String encAlgorithm) {
-        ClientResource clientResource = null;
-        ClientRepresentation clientRep = null;
-        try {
+        try (Client client = newClient()) {
             // generate and register encryption key onto client
-            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-            oidcClientEndpointsResource.generateKeys(algAlgorithm, curve);
+            Map<String, String> keyPair = jwksProvider.generateKeys(algAlgorithm, curve, true, false, null);
 
-            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-            clientRep = clientResource.toRepresentation();
+            ClientResource clientResource = oauth.clientResource();
+            ClientRepresentation clientRep = clientResource.toRepresentation();
             // set UserInfo response signature algorithm and encryption algorithms
             if(sigAlgorithm != null) {
                 OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(sigAlgorithm);
@@ -372,14 +362,13 @@ public class UserInfoTest extends AbstractKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseEnc(encAlgorithm);
             // use and set jwks_url
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
-            String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
+            String jwksUrl = jwksProvider.getUri();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
             clientResource.update(clientRep);
 
             // get User Info response
-            Client client = AdminClientUtil.createResteasyClient();
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             Assertions.assertEquals(200, response.getStatus());
             Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
@@ -392,7 +381,6 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             // get decryption key
             // not publickey , use privateKey
-            Map<String, String> keyPair = oidcClientEndpointsResource.getKeysAsPem();
             PrivateKey decryptionKEK = PemUtils.decodePrivateKey(keyPair.get("privateKey"));
 
             // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
@@ -420,7 +408,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             // verify JWS
             if (sigAlgorithm != null) {
                 // verify signature
-                JsonWebToken jsonWebToken = oauth.verifyToken(jwePayload, JsonWebToken.class);
+                oauth.verifyToken(jwePayload, JsonWebToken.class);
                 JWSInput jwsInput = new JWSInput(jwePayload);
                 userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
             } else {
@@ -431,18 +419,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
             Assertions.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
         } catch (JWSInputException | JWEException | IOException e) {
-            Assertions.fail();
-        } finally {
-            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-            clientRep = clientResource.toRepresentation();
-            // revert User Info response signature algorithm and encryption algorithms
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseAlg(null);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseEnc(null);
-            // revert jwks_url settings
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
-            clientResource.update(clientRep);
+            Assertions.fail(e);
         }
     }
 
@@ -478,18 +455,16 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Test
     public void testSuccessSignedResponse() throws Exception {
         // Require signed userInfo request
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientResource clientResource = oauth.clientResource();
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(Algorithm.RS256);
         clientResource.update(clientRep);
 
         // test signed response
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
                     .hasSessionId()
@@ -499,7 +474,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .details(Details.SIGNATURE_ALGORITHM, Algorithm.RS256);
 
             // Check signature and content
-            PublicKey publicKey = PemUtils.decodePublicKey(KeyUtils.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
+            PublicKey publicKey = PemUtils.decodePublicKey(KeyUtils.findActiveSigningKey(managedRealm.admin()).getPublicKey());
 
             Assertions.assertEquals(200, response.getStatus());
             Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
@@ -517,16 +492,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
             Assertions.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
 
             Assertions.assertTrue(userInfo.hasAudience("test-app"));
-            String expectedIssuer = Urls.realmIssuer(new URI(AUTH_SERVER_ROOT), "test");
+            String expectedIssuer = managedRealm.getBaseUrl();
             Assertions.assertEquals(expectedIssuer, userInfo.getIssuer());
 
-        } finally {
-            client.close();
         }
 
-        // Revert signed userInfo request
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
-        clientResource.update(clientRep);
     }
 
     @Test
@@ -546,15 +516,13 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSessionExpired() {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            String realmName = "test";
+            String realmName = managedRealm.getName();
             runOnServer.run(RunHelpers.removeUserSessions());
 
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
             String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
@@ -572,21 +540,17 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
             Assertions.assertNull(events.poll());
 
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testAccessTokenExpired() {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             timeOffSet.set(600);
 
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
@@ -603,8 +567,6 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .sessionId(null)
                     .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .clientId(null);
-        } finally {
-            client.close();
         }
     }
 
@@ -626,10 +588,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         events.clear();
 
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken());
+        try (Client client = newClient()) {
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getAccessToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
@@ -646,54 +606,55 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .sessionId(accessTokenResponse.getSessionState())
                     .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .clientId("test-app");
-        } finally {
-            client.close();
         }
     }
 
     // Issue 39037
     @Test
     public void testUserInfoWithOfflineAccessAndHybridFlow() throws Exception {
-        try (Client client = AdminClientUtil.createResteasyClient();
-             ClientAttributeUpdater oidcClient = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "test-app")
-                .setImplicitFlowEnabled(true)
-                .update()) {
+        ClientRepresentation clientRep = oauth.clientResource().toRepresentation();
+        clientRep.setImplicitFlowEnabled(true);
+        oauth.clientResource().update(clientRep);
+        try (Client client = newClient()) {
             oauth.scope(OAuth2Constants.SCOPE_OPENID + " " + OAuth2Constants.OFFLINE_ACCESS)
                     .responseType(OIDCResponseType.CODE + " " + OIDCResponseType.TOKEN)
                     .doLogin("test-user@localhost", "password");
             AuthorizationEndpointResponse authzEndpointResponse = oauth.parseLoginResponse();
 
             // UserInfo request with the accessToken returned from authz endpoint
-            Response response1 = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, authzEndpointResponse.getAccessToken());
-            assertResponseSuccessful(response1);
+            Response response1 = executeUserInfoRequest(client, authzEndpointResponse.getAccessToken());
+            assertEquals(Response.Status.Family.SUCCESSFUL, response1.getStatusInfo().getFamily());
+            response1.close();
 
             org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode());
 
             // Another userInfo request with the accessToken (but after tokens are exchanged)
-            Response response2 = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, authzEndpointResponse.getAccessToken());
-            assertResponseSuccessful(response2);
+            Response response2 = executeUserInfoRequest(client, authzEndpointResponse.getAccessToken());
+            assertEquals(Response.Status.Family.SUCCESSFUL, response2.getStatusInfo().getFamily());
+            response2.close();
 
             // UserInfo request with the token returned from token response
-            Response response3 = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, tokenResponse.getAccessToken());
-            assertResponseSuccessful(response3);
+            Response response3 = executeUserInfoRequest(client, tokenResponse.getAccessToken());
+            assertEquals(Response.Status.Family.SUCCESSFUL, response3.getStatusInfo().getFamily());
+            response3.close();
         }
     }
 
     @Test
     public void testNotBeforeTokens() {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             int time = Time.currentTime() + 60;
 
-            RealmResource realm = adminClient.realm("test");
+            RealmResource realm = managedRealm.admin();
             RealmRepresentation rep = realm.toRepresentation();
+            RealmRepresentation originalRealm = RepresentationUtils.clone(rep);
+            managedRealm.cleanup().add(r -> r.update(originalRealm));
             rep.setNotBefore(time);
             realm.update(rep);
 
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
@@ -711,12 +672,13 @@ public class UserInfoTest extends AbstractKeycloakTest {
             realm.update(rep);
 
             // do the same with client's notBefore
-            ClientResource clientResource = realm.clients().get(realm.clients().findByClientId("test-app").get(0).getId());
+            ClientResource clientResource = oauth.clientResource();
             ClientRepresentation clientRep = clientResource.toRepresentation();
             clientRep.setNotBefore(time);
             clientResource.update(clientRep);
 
-            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            response.close();
+            response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
@@ -741,7 +703,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
             rep.setNotBefore(time);
             realm.update(rep);
 
-            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            response.close();
+            response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
@@ -756,53 +719,53 @@ public class UserInfoTest extends AbstractKeycloakTest {
             clientRep.setNotBefore(0);
             clientResource.update(clientRep);
 
-            testingClient.server("test").run(session -> {
+            managedRealm.cleanup().add(r -> runOnServer.run(session -> {
+                RealmModel realmModel = session.getContext().getRealm();
+                UserModel userModel = session.users().getUserByUsername(realmModel, "test-user@localhost");
+                session.users().setNotBeforeForUser(realmModel, userModel, 0);
+            }));
+            runOnServer.run(session -> {
                 RealmModel realmModel = session.getContext().getRealm();
                 UserModel userModel = session.users().getUserByUsername(realmModel, "test-user@localhost");
                 session.users().setNotBeforeForUser(realmModel, userModel, time);
             });
 
-            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            response.close();
+            response = executeUserInfoRequest(client, accessTokenResponse.getToken());
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
-            testingClient.server("test").run(session -> {
+            runOnServer.run(session -> {
                 RealmModel realmModel = session.getContext().getRealm();
                 UserModel userModel = session.users().getUserByUsername(realmModel, "test-user@localhost");
                 session.users().setNotBeforeForUser(realmModel, userModel, 0);
             });
 
-            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            response.close();
+            response = executeUserInfoRequest(client, accessTokenResponse.getToken());
             assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            response.close();
 
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testSessionExpiredOfflineAccess() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true, true);
 
             runOnServer.run(RunHelpers.removeExpired());
 
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             testSuccessfulUserInfoResponse(response);
             response.close();
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testUnsuccessfulUserInfoRequest() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
-            try (Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "bad")) {
+        try (Client client = newClient()) {
+            try (Response response = executeUserInfoRequest(client, "bad")) {
                 assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
                 assertNoCacheHeaders(response);
 
@@ -819,76 +782,60 @@ public class UserInfoTest extends AbstractKeycloakTest {
                         .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
             }
 
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testUnsuccessfulUserInfoRequestWithEmptyAccessToken() {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
-            try (Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "")) {
+        try (Client client = newClient()) {
+            try (Response response = executeUserInfoRequest(client, "")) {
                 String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
                 assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
                 assertNoCacheHeaders(response);
-                assertEquals(wwwAuthHeader, "Bearer realm=\"test\"");
+                assertEquals(wwwAuthHeader, "Bearer realm=\"" + managedRealm.getName() + "\"");
             }
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testUnsuccessfulUserInfoRequestwithDuplicatedParams() {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             Form form = new Form();
             form.param("access_token", accessTokenResponse.getToken());
             form.param("access_token", accessTokenResponse.getToken());
 
-            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
             Response response = userInfoTarget.request().post(Entity.form(form));
             response.close();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testUnsuccessfulUserInfoRequestWithMultipleTokens() {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
             String accessToken = accessTokenResponse.getToken();
 
             Form form = new Form();
             form.param("access_token", accessToken);
 
-            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                     .post(Entity.form(form));
             response.close();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testUnsuccessfulUserInfoRequestWithoutOpenIDScope() {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, false, false);
-            try (Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken())) {
+            try (Response response = executeUserInfoRequest(client, accessTokenResponse.getToken())) {
                 assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
                 assertNoCacheHeaders(response);
 
@@ -904,23 +851,19 @@ public class UserInfoTest extends AbstractKeycloakTest {
                         .sessionId(null)
                         .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
             }
-        } finally {
-            client.close();
         }
     }
 
     @Test
     public void testUnsuccessfulUserInfoRequestWithDisabledUser() {
-        Client client = AdminClientUtil.createResteasyClient();
-        RealmResource realm = adminClient.realm("test");
+        RealmResource realm = managedRealm.admin();
         UserResource userResource = AdminApiUtil.findUserByUsernameId(realm, "test-user@localhost");
         UserRepresentation user = userResource.toRepresentation();
 
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-            user.setEnabled(false);
-            userResource.update(user);
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            managedRealm.updateUserWithCleanup("test-user@localhost", u -> u.enabled(false));
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
             response.close();
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
@@ -936,12 +879,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .userId(user.getId())
                     .hasSessionId()
                     .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
-        } finally {
-            client.close();
         }
 
-        user.setEnabled(true);
-        userResource.update(user);
     }
 
     @Test
@@ -950,14 +889,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
         String accessToken = oauth.client("saml-client", "secret").doPasswordGrantRequest( "test-user@localhost", "password").getAccessToken();
 
         // change client's protocol
-        ClientRepresentation samlClient = adminClient.realm("test").clients().findByClientId("saml-client").get(0);
-        samlClient.setProtocol("saml");
-        adminClient.realm("test").clients().get(samlClient.getId()).update(samlClient);
+        managedRealm.updateClientWithCleanup("saml-client", c -> c.protocol("saml"));
 
-        Client client = AdminClientUtil.createResteasyClient();
-        try {
+        try (Client client = newClient()) {
             events.clear();
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessToken);
+            Response response = executeUserInfoRequest(client, accessToken);
             response.close();
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
@@ -967,8 +903,6 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .userId(null)
                     .sessionId(null)
                     .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
-        } finally {
-            client.close();
         }
     }
 
@@ -977,16 +911,13 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         switchIncludeRolesInUserInfoEndpoint(true);
 
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken());
 
             UserInfo userInfo = testSuccessfulUserInfoResponse(response);
             testRolesInUserInfoResponse(userInfo);
         } finally {
-            client.close();
             switchIncludeRolesInUserInfoEndpoint(false);
         }
     }
@@ -996,9 +927,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private AccessTokenResponse executeGrantAccessTokenRequest(Client client, boolean requestOfflineToken, boolean openid) {
-        UriBuilder builder = UriBuilder.fromUri(AUTH_SERVER_ROOT);
-            URI grantUri = OIDCLoginProtocolService.tokenUrl(builder).build("test");
-        WebTarget grantTarget = client.target(grantUri);
+        WebTarget grantTarget = client.target(oauth.getEndpoints().getToken());
 
         String header = BasicAuthHelper.createHeader("test-app", "password");
         Form form = new Form();
@@ -1042,7 +971,16 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .details(Details.USERNAME, "test-user@localhost")
                 .details(Details.SIGNATURE_REQUIRED, "false")
                 .clientId(expectedClientId);
-        return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
+        try (response) {
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            assertEquals(MediaType.APPLICATION_JSON, response.getHeaderString(HttpHeaders.CONTENT_TYPE));
+            UserInfo userInfo = response.readEntity(UserInfo.class);
+            assertNotNull(userInfo);
+            assertNotNull(userInfo.getSubject());
+            assertEquals("test-user@localhost", userInfo.getEmail());
+            assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+            return userInfo;
+        }
     }
 
     private void assertNoCacheHeaders(Response response) {
@@ -1052,58 +990,47 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     private void testSuccessSignedResponse(String sigAlg, String acceptHeader) throws Exception {
 
-        try {
-            // Require signed userInfo request
-            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
-            ClientRepresentation clientRep = clientResource.toRepresentation();
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(sigAlg);
-            clientResource.update(clientRep);
+        // Require signed userInfo request
+        ClientResource clientResource = oauth.clientResource();
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(sigAlg);
+        clientResource.update(clientRep);
 
-            // test signed response
-            Client client = AdminClientUtil.createResteasyClient();
+        // test signed response
+        try (Client client = newClient()) {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            try {
-                AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+            Response response = executeUserInfoRequest(client, accessTokenResponse.getToken(), acceptHeader);
 
-                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken(), acceptHeader);
+            EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
+                    .hasSessionId()
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.SIGNATURE_REQUIRED, "true")
+                    .details(Details.SIGNATURE_ALGORITHM, sigAlg);
 
-                EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST)
-                        .hasSessionId()
-                        .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                        .details(Details.USERNAME, "test-user@localhost")
-                        .details(Details.SIGNATURE_REQUIRED, "true")
-                        .details(Details.SIGNATURE_ALGORITHM, sigAlg);
+            Assertions.assertEquals(200, response.getStatus());
+            Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
+            String signedResponse = response.readEntity(String.class);
+            response.close();
 
-                Assertions.assertEquals(200, response.getStatus());
-                Assertions.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
-                String signedResponse = response.readEntity(String.class);
-                response.close();
+            JWSInput jwsInput = new JWSInput(signedResponse);
 
-                JWSInput jwsInput = new JWSInput(signedResponse);
+            assertEquals(sigAlg, jwsInput.getHeader().getAlgorithm().name());
 
-                assertEquals(sigAlg, jwsInput.getHeader().getAlgorithm().name());
+            UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
 
-                UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
+            Assertions.assertNotNull(userInfo);
+            Assertions.assertNotNull(userInfo.getSubject());
+            Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
+            Assertions.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
 
-                Assertions.assertNotNull(userInfo);
-                Assertions.assertNotNull(userInfo.getSubject());
-                Assertions.assertEquals("test-user@localhost", userInfo.getEmail());
-                Assertions.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+            Assertions.assertTrue(userInfo.hasAudience("test-app"));
+            String expectedIssuer = managedRealm.getBaseUrl();
+            Assertions.assertEquals(expectedIssuer, userInfo.getIssuer());
 
-                Assertions.assertTrue(userInfo.hasAudience("test-app"));
-                String expectedIssuer = Urls.realmIssuer(new URI(AUTH_SERVER_ROOT), "test");
-                Assertions.assertEquals(expectedIssuer, userInfo.getIssuer());
-
-            } finally {
-                client.close();
-            }
-
-            // Revert signed userInfo request
-            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
-            clientResource.update(clientRep);
-        } finally {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
         }
+
     }
 
     private org.keycloak.testsuite.util.oauth.AccessTokenResponse loginAndForceNewLoginPage() {
@@ -1123,7 +1050,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     private void switchIncludeRolesInUserInfoEndpoint(boolean includeRoles) {
-        ClientScopesResource clientScopesResource = adminClient.realm("test").clientScopes();
+        ClientScopesResource clientScopesResource = managedRealm.admin().clientScopes();
         ClientScopeRepresentation rolesClientScope = clientScopesResource.findAll().stream()
                 .filter(clientScope -> "roles".equals(clientScope.getName()))
                 .findAny()
@@ -1137,6 +1064,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .findAny()
                 .get();
 
+        if (includeRoles) {
+            ProtocolMapperRepresentation original = RepresentationUtils.clone(realmRolesMapper);
+            managedRealm.cleanup().add(r -> r.clientScopes().get(rolesClientScope.getId())
+                    .getProtocolMappers().update(original.getId(), original));
+        }
         realmRolesMapper.getConfig().put(INCLUDE_IN_USERINFO, String.valueOf(includeRoles));
 
         ProtocolMapperRepresentation clientRolesMapper = protocolMappersResource.getMappers().stream()
@@ -1144,6 +1076,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .findAny()
                 .get();
 
+        if (includeRoles) {
+            ProtocolMapperRepresentation original = RepresentationUtils.clone(clientRolesMapper);
+            managedRealm.cleanup().add(r -> r.clientScopes().get(rolesClientScope.getId())
+                    .getProtocolMappers().update(original.getId(), original));
+        }
         clientRolesMapper.getConfig().put(INCLUDE_IN_USERINFO, String.valueOf(includeRoles));
 
         protocolMappersResource.update(realmRolesMapper.getId(), realmRolesMapper);
@@ -1165,12 +1102,10 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void test_noContentType() throws Exception {
-        Client client = AdminClientUtil.createResteasyClient();
-
-        try {
+        try (Client client = newClient()) {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            WebTarget userInfoTarget = getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessTokenResponse.getToken())
                     .build("POST")
@@ -1179,8 +1114,43 @@ public class UserInfoTest extends AbstractKeycloakTest {
             Assertions.assertEquals(200, response.getStatus());
             Assertions.assertEquals("OK", response.getStatusInfo().toString());
 
-        } finally {
-            client.close();
+        }
+    }
+
+    private WebTarget getUserInfoWebTarget(Client client) {
+        return client.target(oauth.getEndpoints().getUserInfo());
+    }
+
+    private Response executeUserInfoRequest(Client client, String accessToken) {
+        return executeUserInfoRequest(client, accessToken, null);
+    }
+
+    private Response executeUserInfoRequest(Client client, String accessToken, String acceptHeader) {
+        Invocation.Builder request = getUserInfoWebTarget(client).request()
+                .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken);
+        if (acceptHeader != null) {
+            request.header(HttpHeaders.ACCEPT, acceptHeader);
+        }
+        return request.get();
+    }
+
+    public static class TestRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.roles("user")
+                    // Match the legacy event queue, including events not stored by default.
+                    .enabledEventTypes(Arrays.stream(EventType.values()).map(EventType::name).toArray(String[]::new))
+                    .users(UserBuilder.create("test-user@localhost").email("test-user@localhost")
+                            .name("Tom", "Brady").password("password").realmRoles("user", "offline_access"))
+                    .clients(ClientBuilder.create("saml-client").secret("secret")
+                            .serviceAccountsEnabled(true).directAccessGrantsEnabled(true));
+        }
+    }
+
+    public static class TestClientConfig implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("test-app").secret("password").directAccessGrantsEnabled(true);
         }
     }
 }
