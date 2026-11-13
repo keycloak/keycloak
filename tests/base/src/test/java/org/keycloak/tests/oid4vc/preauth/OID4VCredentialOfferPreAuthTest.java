@@ -28,6 +28,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
@@ -35,9 +36,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
+import static org.keycloak.OID4VCConstants.OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY;
+import static org.keycloak.OID4VCConstants.OID4VCI_PRE_AUTH_ANONYMOUS_CLIENT_ATTRIBUTE_KEY;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS;
 import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.getCredentialOfferStateRecord;
 import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.injectTxCode;
 
@@ -441,6 +445,230 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testPreAuthOffer_AnonymousAccessDisabled() {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // Redeem Pre-Authorized Code without client authentication
+        //
+        oauth.client(null, null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("invalid_client", tokenResponse.getError());
+        assertEquals("Missing client_id parameter", tokenResponse.getErrorDescription());
+
+        // The rejected attempt did not consume the code
+        //
+        oauth.client(pubClient.getClientId(), null);
+        tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testPreAuthOffer_AnonymousAccess() throws Exception {
+
+        enableAnonymousAccess();
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // Redeem Pre-Authorized Code without client authentication
+        //
+        oauth.client(null, null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+        assertEquals(pubClient.getClientId(),
+                TokenVerifier.create(tokenResponse.getAccessToken(), AccessToken.class).getToken().getIssuedFor());
+
+        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+
+        // Send the CredentialRequest
+        //
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+                .credentialIdentifier(authorizedIdentifier)
+                .proofs(wallet.generateJwtProof(ctx))
+                .send().getCredentialResponse();
+
+        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+    }
+
+    @Test
+    public void testPreAuthOffer_AnonymousAccessWithoutClient() {
+
+        testRealm.updateWithCleanup(r -> r.attribute(OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY, "true"));
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // No client is configured for anonymous access
+        //
+        oauth.client(null, null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("invalid_client", tokenResponse.getError());
+    }
+
+    @Test
+    public void testPreAuthOffer_AnonymousAccessStillAuthenticatesClients() {
+
+        enableAnonymousAccess();
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // A wallet that sends client credentials is authenticated even if anonymous access is enabled
+        //
+        oauth.client(client.getClientId(), "wrong-secret");
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("unauthorized_client", tokenResponse.getError());
+    }
+
+    @Test
+    public void testPreAuthOffer_AnonymousAccessClientIdInQuery() {
+
+        enableAnonymousAccess();
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // X.509 client authentication also takes the client_id from the query, so the request is not anonymous
+        //
+        oauth.client(null, null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode)
+                .endpoint(oauth.getEndpoints().getToken() + "?client_id=" + client.getClientId())
+                .send();
+        assertEquals("invalid_client", tokenResponse.getError());
+    }
+
+    @Test
+    public void testPreAuthOffer_AnonymousAccessRequiresDPoP() {
+
+        enableAnonymousAccess();
+        managedPublicClient.updateWithCleanup(c -> c.attribute(DPOP_BOUND_ACCESS_TOKENS, "true"));
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // The anonymous access client requires DPoP bound access tokens
+        //
+        oauth.client(null, null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("invalid_request", tokenResponse.getError());
+        assertEquals("DPoP proof is missing", tokenResponse.getErrorDescription());
+
+        // The rejected attempt did not consume the code
+        //
+        String dpopProof = wallet.generateSignedDPoPProof(oauth.getEndpoints().getToken(), wallet.getECKeyPair(ctx), null);
+        tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode)
+                .header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof)
+                .send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, tokenResponse.getTokenType());
+    }
+
+    @Test
+    public void testPreAuthOffer_AnonymousAccessClientSendsClientId() throws Exception {
+
+        enableAnonymousAccess();
+        managedPublicClient.updateWithCleanup(c -> c.attribute(DPOP_BOUND_ACCESS_TOKENS, "true"));
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // A wallet that sends the client_id of the anonymous access client gets the same checks
+        //
+        oauth.client(pubClient.getClientId(), null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("invalid_request", tokenResponse.getError());
+        assertEquals("DPoP proof is missing", tokenResponse.getErrorDescription());
+
+        String dpopProof = wallet.generateSignedDPoPProof(oauth.getEndpoints().getToken(), wallet.getECKeyPair(ctx), null);
+        tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode)
+                .header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof)
+                .send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, tokenResponse.getTokenType());
+        assertEquals(pubClient.getClientId(),
+                TokenVerifier.create(tokenResponse.getAccessToken(), AccessToken.class).getToken().getIssuedFor());
+    }
+
+    @Test
+    public void testAnonymousAccessOnlyForPreAuthorizedCodeGrant() {
+
+        enableAnonymousAccess();
+
+        oauth.client(null, null);
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest(TEST_USER, TEST_PASSWORD);
+        assertEquals("invalid_client", tokenResponse.getError());
+    }
+
+    @Test
+    public void testAnonymousAccessMetadata() {
+
+        assertNull(oauth.doWellKnownRequest().getPreAuthorizedGrantAnonymousAccessSupported());
+
+        testRealm.updateWithCleanup(r -> r.attribute(OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY, "true"));
+
+        assertEquals(Boolean.TRUE, oauth.doWellKnownRequest().getPreAuthorizedGrantAnonymousAccessSupported());
+    }
+
+    private void enableAnonymousAccess() {
+        testRealm.updateWithCleanup(r -> r
+                .attribute(OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY, "true")
+                .attribute(OID4VCI_PRE_AUTH_ANONYMOUS_CLIENT_ATTRIBUTE_KEY, pubClient.getClientId()));
     }
 
     @Test
