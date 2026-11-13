@@ -36,6 +36,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.api.ListOptions;
 import org.keycloak.admin.api.PatchTypeNames;
+import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -48,6 +49,7 @@ import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.client.ClientSortField;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -1032,6 +1034,176 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId("client-invalid-root-url");
         rep.setAppUrl("http://localhost:3000#fragment");
         assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+    }
+
+    @Test
+    public void patchSamlClientActsOnCurrentState() throws Exception {
+        String clientId = "saml-patch-defaults";
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
+        rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
+        rep.setIncludeAuthnStatement(false);
+        rep.setSignDocuments(false);
+        rep.setClientSignatureRequired(false);
+        rep.setForcePostBinding(false);
+        rep.setFrontChannelLogout(false);
+        rep.setSigningCertificate("MIIC9TCCAd2gAwIBAg...");
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
+
+        // an unrelated patch must not change any of the values
+        var unrelated = (SAMLClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream("{\"description\":\"changed\"}".getBytes(StandardCharsets.UTF_8)));
+        assertThat(unrelated.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.EMAIL));
+        assertThat(unrelated.getIncludeAuthnStatement(), is(false));
+        assertThat(unrelated.getSignDocuments(), is(false));
+        assertThat(unrelated.getClientSignatureRequired(), is(false));
+        assertThat(unrelated.getForcePostBinding(), is(false));
+        assertThat(unrelated.getFrontChannelLogout(), is(false));
+
+        // explicit nulls resolve to the model level defaults
+        String nulls = "{\"includeAuthnStatement\":null,\"signDocuments\":null,"
+                + "\"clientSignatureRequired\":null,\"forcePostBinding\":null,\"frontChannelLogout\":null,"
+                + "\"nameIdFormat\":null}";
+        var defaulted = (SAMLClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream(nulls.getBytes(StandardCharsets.UTF_8)));
+        assertThat(defaulted.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.USERNAME));
+        assertThat(defaulted.getIncludeAuthnStatement(), is(true));
+        assertThat(defaulted.getSignDocuments(), is(true));
+        assertThat(defaulted.getClientSignatureRequired(), is(true));
+        assertThat(defaulted.getForcePostBinding(), is(true));
+        assertThat(defaulted.getFrontChannelLogout(), is(true));
+    }
+
+    @Test
+    public void legacySamlClientNameIdFormatPatchPreservesAndPutDefaults() throws Exception {
+        String clientId = "saml-patch-legacy-name-id";
+        var v1 = new ClientRepresentation();
+        v1.setClientId(clientId);
+        v1.setProtocol("saml");
+        v1.setRedirectUris(List.of("http://localhost/callback"));
+        try (var response = testRealm.admin().clients().create(v1)) {
+            assertEquals(201, response.getStatus());
+            String uuid = CreatedResponseUtil.getCreatedId(response);
+            testRealm.cleanup().add(realm -> realm.clients().get(uuid).remove());
+
+            // simulate a legacy client with no stored name id format
+            var stored = testRealm.admin().clients().get(uuid).toRepresentation();
+            stored.getAttributes().put("saml_name_id_format", "");
+            stored.getAttributes().put("saml_force_name_id_format", "true");
+            testRealm.admin().clients().get(uuid).update(stored);
+            assertThat(testRealm.admin().clients().get(uuid).toRepresentation().getAttributes().get("saml_name_id_format"), nullValue());
+        }
+
+        getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream("{\"description\":\"changed\"}".getBytes(StandardCharsets.UTF_8)));
+
+        // an omitted value on patch preserves the absent format
+        var after = testRealm.admin().clients().findByClientId(clientId).get(0);
+        assertThat(after.getAttributes().get("saml_name_id_format"), nullValue());
+
+        // a replace resolves the default just like a create
+        SAMLClientRepresentation replacement = new SAMLClientRepresentation();
+        replacement.setClientId(clientId);
+        replacement.setRedirectUris(Set.of("http://localhost/callback"));
+        replacement.setClientSignatureRequired(false);
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(replacement)) {
+            assertEquals(200, response.getStatus());
+            assertThat(response.readEntity(SAMLClientRepresentation.class).getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.USERNAME));
+        }
+    }
+
+    @Test
+    public void putSamlClientResolvesDefaultsLikeCreate() throws Exception {
+        String clientId = "saml-put-defaults";
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
+        rep.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
+        rep.setIncludeAuthnStatement(false);
+        rep.setSignDocuments(false);
+        rep.setClientSignatureRequired(false);
+        rep.setForcePostBinding(false);
+        rep.setFrontChannelLogout(false);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
+
+        // a replace without the optional values must not reuse the existing state
+        SAMLClientRepresentation replacement = new SAMLClientRepresentation();
+        replacement.setClientId(clientId);
+        replacement.setRedirectUris(Set.of("http://localhost/callback"));
+        replacement.setSigningCertificate("MIIC9TCCAd2gAwIBAg...");
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(replacement)) {
+            assertEquals(200, response.getStatus());
+            var replaced = response.readEntity(SAMLClientRepresentation.class);
+            assertThat(replaced.getEnabled(), is(true));
+            assertThat(replaced.getNameIdFormat(), is(SAMLClientRepresentation.NameIdFormat.USERNAME));
+            assertThat(replaced.getIncludeAuthnStatement(), is(true));
+            assertThat(replaced.getSignDocuments(), is(true));
+            assertThat(replaced.getClientSignatureRequired(), is(true));
+            assertThat(replaced.getForcePostBinding(), is(true));
+            assertThat(replaced.getFrontChannelLogout(), is(true));
+        }
+    }
+
+    @Test
+    public void putSamlClientSignatureRequiredOmittedCertificateFails() throws Exception {
+        String clientId = "saml-put-sig-required-omitted-cert-fails";
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setRedirectUris(Set.of("http://localhost/callback"));
+        rep.setClientSignatureRequired(false);
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
+            testRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
+        }
+
+        // a PUT replacement which omits clientSignatureRequired (defaults to true) and signingCertificate (removes it) must fail validation
+        SAMLClientRepresentation replacement = new SAMLClientRepresentation();
+        replacement.setClientId(clientId);
+        replacement.setRedirectUris(Set.of("http://localhost/callback"));
+        try (var response = getClientsApi().client(clientId).createOrUpdateClient(replacement)) {
+            assertEquals(400, response.getStatus());
+            String body = response.readEntity(String.class);
+            assertThat(body, containsString("Client signature is required, but no client signing certificate or metadata descriptor URL is configured."));
+        }
+    }
+
+    @Test
+    public void legacySamlClientNameIdFormatExplicitNullIsNoOp() throws Exception {
+        String clientId = "saml-patch-legacy-name-id-null";
+        var v1 = new ClientRepresentation();
+        v1.setClientId(clientId);
+        v1.setProtocol("saml");
+        v1.setRedirectUris(List.of("http://localhost/callback"));
+        try (var response = testRealm.admin().clients().create(v1)) {
+            assertEquals(201, response.getStatus());
+            String uuid = CreatedResponseUtil.getCreatedId(response);
+            testRealm.cleanup().add(realm -> realm.clients().get(uuid).remove());
+
+            // simulate a legacy client with no stored name id format
+            var stored = testRealm.admin().clients().get(uuid).toRepresentation();
+            stored.getAttributes().put("saml_name_id_format", "");
+            stored.getAttributes().put("saml_force_name_id_format", "true");
+            testRealm.admin().clients().get(uuid).update(stored);
+            assertThat(testRealm.admin().clients().get(uuid).toRepresentation().getAttributes().get("saml_name_id_format"), nullValue());
+        }
+
+        // PATCHing "nameIdFormat" explicitly to null on a client with no stored value is a no-op
+        var updated = (SAMLClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream("{\"nameIdFormat\":null}".getBytes(StandardCharsets.UTF_8)));
+        assertThat(updated.getNameIdFormat(), nullValue());
     }
 
     @Test

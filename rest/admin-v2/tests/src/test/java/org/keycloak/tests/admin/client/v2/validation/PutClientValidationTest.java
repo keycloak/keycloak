@@ -209,14 +209,18 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
+        // a PUT replaces the client, so for SAML the omitted clientSignatureRequired would default to true,
+        // which requires a signing certificate that this payload does not provide
+        String samlOnly = SAMLClientRepresentation.PROTOCOL.equals(protocol) ? "\"clientSignatureRequired\": false," : "";
         updateRequest.setEntity(new StringEntity("""
                 {
                     "protocol": "%s",
                     "clientId": "%s",
                     "uuid": "%s",
+                    %s
                     "enabled": true
                 }
-                """.formatted(protocol, clientId, actualUuid)));
+                """.formatted(protocol, clientId, actualUuid, samlOnly)));
 
         try (var response = client.execute(updateRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(200));

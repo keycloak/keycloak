@@ -394,6 +394,7 @@ public class InteropTest extends AbstractClientApiV2Test {
         v2Update.setSignAssertions(true);
         v2Update.setForcePostBinding(true);
         v2Update.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.RSA_SHA512);
+        v2Update.setClientSignatureRequired(false);
 
         try (var httpResponse = getClientsApi().client("update-saml-client").createOrUpdateClient(v2Update)) {
             assertThat(httpResponse.getStatus(), is(200));

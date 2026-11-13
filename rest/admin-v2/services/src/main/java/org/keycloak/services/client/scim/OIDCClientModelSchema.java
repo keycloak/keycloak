@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.schema.attribute.Attribute.ComplexAttributeOptions;
@@ -21,6 +22,13 @@ import org.keycloak.utils.KeycloakSessionUtil;
  * population of {@link OIDCClientRepresentation}.
  */
 public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClientRepresentation> {
+
+    // attribute names, which match the representation field names
+    public static final String ATTR_LOGIN_FLOWS = "loginFlows";
+    public static final String ATTR_AUTH = "auth";
+    public static final String ATTR_AUTH_METHOD = "auth.method";
+    public static final String ATTR_WEB_ORIGINS = "webOrigins";
+    public static final String ATTR_SERVICE_ACCOUNT_ROLES = "serviceAccountRoles";
 
     public static final OIDCClientModelSchema INSTANCE = new OIDCClientModelSchema();
 
@@ -37,7 +45,7 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
 
     static {
         List<Attribute<ClientModel, OIDCClientRepresentation>> subAttrs =
-                Attribute.<ClientModel, OIDCClientRepresentation>complex("auth", OIDCClientRepresentation.Auth.class)
+                Attribute.<ClientModel, OIDCClientRepresentation>complex(ATTR_AUTH, OIDCClientRepresentation.Auth.class)
                         .modelAttributeResolver(a -> "") // TODO: a dummy mapping allows the more complex mapping logic from ClientResourceTypeProvider to be used
                         .withAttribute("method", ComplexAttributeOptions.defaults().caseExact(),
                                 (model, name, value) -> model.setClientAuthenticatorType(value))
@@ -51,10 +59,10 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
 
     @Override
     protected void addProtocolAttributes(Map<String, Attribute<ClientModel, OIDCClientRepresentation>> map) {
-        map.put("loginFlows",          multivaluedStringAttr("loginFlows",          null,           (rep, v) -> rep.setLoginFlows(toFlowSet(v)), (BiConsumer<ClientModel, Set<OIDCClientRepresentation.Flow>>) (model, flows) -> setModelFromFlows(flows, model)));
-        map.put("auth",                customAttr           ("auth",                null,           OIDCClientRepresentation::setAuth,           (model, auth) -> setAuth(model, (OIDCClientRepresentation.Auth) auth)));
-        map.put("webOrigins",          multivaluedStringAttr("webOrigins",          "webOrigins",   (rep, v) -> rep.setWebOrigins(v),            (BiConsumer<ClientModel, Set<String>>) (model, origins) -> model.setWebOrigins(origins != null ? new LinkedHashSet<>(origins) : null)));
-        map.put("serviceAccountRoles", multivaluedStringAttr("serviceAccountRoles", null,           (rep, v) -> rep.setServiceAccountRoles(v),  null));
+        map.put(ATTR_LOGIN_FLOWS,           multivaluedStringAttr(ATTR_LOGIN_FLOWS,           null,           (rep, v) -> rep.setLoginFlows(toFlowSet(v)), (BiConsumer<ClientModel, Set<OIDCClientRepresentation.Flow>>) (model, flows) -> setModelFromFlows(flows, model)));
+        map.put(ATTR_AUTH,                  customAttr           (ATTR_AUTH,                  null,           OIDCClientRepresentation::setAuth,           (model, auth) -> setAuth(model, (OIDCClientRepresentation.Auth) auth)));
+        map.put(ATTR_WEB_ORIGINS,           multivaluedStringAttr(ATTR_WEB_ORIGINS,           "webOrigins",   (rep, v) -> rep.setWebOrigins(v),            (BiConsumer<ClientModel, Set<String>>) (model, origins) -> model.setWebOrigins(origins != null ? new LinkedHashSet<>(origins) : null)));
+        map.put(ATTR_SERVICE_ACCOUNT_ROLES, multivaluedStringAttr(ATTR_SERVICE_ACCOUNT_ROLES, null,           (rep, v) -> rep.setServiceAccountRoles(v),  null));
     }
 
     /**
@@ -64,7 +72,7 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
      */
     @Override
     public Attribute<ClientModel, OIDCClientRepresentation> getAttributeByPath(String path) {
-        if ("auth.method".equals(path)) {
+        if (ATTR_AUTH_METHOD.equals(path)) {
             return AUTH_METHOD_ATTR;
         }
         return super.getAttributeByPath(path);
@@ -73,23 +81,23 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
     @Override
     protected Object getAttributeValue(ClientModel model, String name) {
         return switch (name) {
-            case "loginFlows"          -> getLoginFlowNames(model);
-            case "auth"                -> getAuth(model);
-            case "webOrigins"          -> new LinkedHashSet<>(model.getWebOrigins());
-            case "serviceAccountRoles" -> getServiceAccountRoles(model);
-            default                    -> super.getAttributeValue(model, name);
+            case ATTR_LOGIN_FLOWS           -> getLoginFlowNames(model);
+            case ATTR_AUTH                  -> getAuth(model);
+            case ATTR_WEB_ORIGINS           -> new LinkedHashSet<>(model.getWebOrigins());
+            case ATTR_SERVICE_ACCOUNT_ROLES -> getServiceAccountRoles(model);
+            default                         -> super.getAttributeValue(model, name);
         };
     }
 
     @Override
     public Object getRepresentationValue(OIDCClientRepresentation rep, String name) {
         return switch (name) {
-            case "loginFlows"          -> rep.getLoginFlows();
-            case "auth"                -> rep.getAuth();
-            case "auth.method"         -> rep.getAuth() != null ? rep.getAuth().getMethod() : null;
-            case "webOrigins"          -> rep.getWebOrigins();
-            case "serviceAccountRoles" -> rep.getServiceAccountRoles();
-            default                    -> super.getRepresentationValue(rep, name);
+            case ATTR_LOGIN_FLOWS           -> rep.getLoginFlows();
+            case ATTR_AUTH                  -> rep.getAuth();
+            case ATTR_AUTH_METHOD           -> rep.getAuth() != null ? rep.getAuth().getMethod() : null;
+            case ATTR_WEB_ORIGINS           -> rep.getWebOrigins();
+            case ATTR_SERVICE_ACCOUNT_ROLES -> rep.getServiceAccountRoles();
+            default                         -> super.getRepresentationValue(rep, name);
         };
     }
 
@@ -110,6 +118,8 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
             model.setSecret(auth.getSecret());
         } else {
             model.setPublicClient(true);
+            model.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
+            model.setSecret(null);
         }
     }
 

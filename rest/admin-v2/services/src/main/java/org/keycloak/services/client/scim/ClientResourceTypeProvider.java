@@ -41,6 +41,8 @@ import org.keycloak.models.utils.StripSecretsUtilsV2;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.saml.SamlClient;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
@@ -78,6 +80,7 @@ import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.resources.admin.RoleContainerResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
@@ -143,7 +146,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             Root<RoleEntity> role = subquery.from(RoleEntity.class);
             subquery.where(cb.equal(role.get("clientId"), root.get("id")));
             return role.get("name");
-        } else if ("auth.method".equals(attribute.getName())) {
+        } else if (OIDCClientModelSchema.ATTR_AUTH_METHOD.equals(attribute.getName())) {
             return cb.selectCase().when(cb.and(cb.equal(root.get("protocol"), OIDCClientRepresentation.PROTOCOL),
                     cb.isFalse(root.get("publicClient"))), root.get("clientAuthenticatorType"));
         }
@@ -188,10 +191,10 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             throw new ServiceException("protocol cannot be changed for an existing client", Response.Status.BAD_REQUEST);
         }
         validator.validate(client, context, Default.class);
+        schema.applyDefaults(client, model, context == PatchClient.class);
         var proposedRepresentation = getProposedOldRepresentation(realm, client, schema);
-        if (client instanceof SAMLClientRepresentation samlClient) {
+        if (client instanceof SAMLClientRepresentation) {
             proposedRepresentation.setStandardFlowEnabled(null);
-            proposedRepresentation.setFrontchannelLogout(samlClient.getFrontChannelLogout());
         }
         
         try {
@@ -217,6 +220,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
                 session.getTransactionManager().setRollbackOnly();
                 throw new ServiceException(r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
             });
+            validateSamlClient(model);
             
             model.updateClient(); // this is fired for both create and update in RepresentationToModel
 
@@ -571,6 +575,17 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     
     public AdminPermissionEvaluator getPermissions() {
         return permissions;
+    }
+
+    private void validateSamlClient(ClientModel model) {
+        if (!SamlProtocol.LOGIN_PROTOCOL.equals(model.getProtocol())) {
+            return;
+        }
+        SamlClient samlClient = new SamlClient(model);
+        if (samlClient.requiresClientSignature() && StringUtil.isBlank(samlClient.getClientSigningCertificate())
+                && (!samlClient.isUseMetadataDescriptorUrl() || StringUtil.isBlank(samlClient.getMetadataDescriptorUrl()))) {
+            throw new ServiceException("Client signature is required, but no client signing certificate or metadata descriptor URL is configured.", Response.Status.BAD_REQUEST);
+        }
     }
 
 }

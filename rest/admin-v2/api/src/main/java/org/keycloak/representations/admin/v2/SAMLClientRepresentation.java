@@ -18,6 +18,7 @@
 package org.keycloak.representations.admin.v2;
 
 import java.util.Objects;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 
 import jakarta.validation.constraints.Size;
 
@@ -35,6 +36,19 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(description = "SAML Client configuration")
 public class SAMLClientRepresentation extends BaseClientRepresentation {
     public static final String PROTOCOL = "saml";
+
+    // Defaults for unset fields, shared by the @Schema documentation and the server side logic that applies them.
+    // Booleans are strings because annotation values must be constants.
+    public static final String DEFAULT_FORCE_NAME_ID_FORMAT = "false";
+    public static final String DEFAULT_INCLUDE_AUTHN_STATEMENT = "true";
+    public static final String DEFAULT_SIGN_DOCUMENTS = "true";
+    public static final String DEFAULT_SIGN_ASSERTIONS = "false";
+    public static final String DEFAULT_CLIENT_SIGNATURE_REQUIRED = "true";
+    public static final String DEFAULT_FORCE_POST_BINDING = "true";
+    public static final String DEFAULT_FRONT_CHANNEL_LOGOUT = "true";
+    public static final String DEFAULT_ALLOW_ECP_FLOW = "false";
+    public static final String DEFAULT_SIGNATURE_ALGORITHM = "RSA_SHA256";
+    public static final String DEFAULT_SIGNATURE_CANONICALIZATION_METHOD = CanonicalizationMethod.EXCLUSIVE;
 
     public SAMLClientRepresentation() {
         this.protocol = PROTOCOL;
@@ -63,7 +77,9 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         }
     }
 
-    @JsonPropertyDescription("Name ID format to use for the subject")
+    @JsonPropertyDescription("Name ID format to use for the subject. Set to username when a client is created without a value. "
+            + "A client without a stored format, such as one created before this setting was always populated, "
+            + "uses the format requested by the SAML client and is left unchanged unless a value is provided.")
     private NameIdFormat nameIdFormat;
 
     @JsonPropertyDescription("Force the specified Name ID format even if the client requests a different one")
@@ -109,6 +125,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.nameIdFormat = nameIdFormat;
     }
 
+    @Schema(defaultValue = DEFAULT_FORCE_NAME_ID_FORMAT)
     public Boolean getForceNameIdFormat() {
         return forceNameIdFormat;
     }
@@ -117,6 +134,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.forceNameIdFormat = forceNameIdFormat;
     }
 
+    @Schema(defaultValue = DEFAULT_INCLUDE_AUTHN_STATEMENT)
     public Boolean getIncludeAuthnStatement() {
         return includeAuthnStatement;
     }
@@ -125,6 +143,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.includeAuthnStatement = includeAuthnStatement;
     }
 
+    @Schema(defaultValue = DEFAULT_SIGN_DOCUMENTS)
     public Boolean getSignDocuments() {
         return signDocuments;
     }
@@ -133,6 +152,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signDocuments = signDocuments;
     }
 
+    @Schema(defaultValue = DEFAULT_SIGN_ASSERTIONS)
     public Boolean getSignAssertions() {
         return signAssertions;
     }
@@ -141,6 +161,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signAssertions = signAssertions;
     }
 
+    @Schema(defaultValue = DEFAULT_CLIENT_SIGNATURE_REQUIRED)
     public Boolean getClientSignatureRequired() {
         return clientSignatureRequired;
     }
@@ -149,6 +170,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.clientSignatureRequired = clientSignatureRequired;
     }
 
+    @Schema(defaultValue = DEFAULT_FORCE_POST_BINDING)
     public Boolean getForcePostBinding() {
         return forcePostBinding;
     }
@@ -157,6 +179,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.forcePostBinding = forcePostBinding;
     }
 
+    @Schema(defaultValue = DEFAULT_FRONT_CHANNEL_LOGOUT)
     public Boolean getFrontChannelLogout() {
         return frontChannelLogout;
     }
@@ -165,6 +188,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.frontChannelLogout = frontChannelLogout;
     }
 
+    @Schema(defaultValue = DEFAULT_SIGNATURE_ALGORITHM)
     public SignatureAlgorithm getSignatureAlgorithm() {
         return signatureAlgorithm;
     }
@@ -173,6 +197,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signatureAlgorithm = signatureAlgorithm;
     }
 
+    @Schema(defaultValue = DEFAULT_SIGNATURE_CANONICALIZATION_METHOD)
     public String getSignatureCanonicalizationMethod() {
         return signatureCanonicalizationMethod;
     }
@@ -189,6 +214,7 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
         this.signingCertificate = signingCertificate;
     }
 
+    @Schema(defaultValue = DEFAULT_ALLOW_ECP_FLOW)
     public Boolean getAllowEcpFlow() {
         return allowEcpFlow;
     }

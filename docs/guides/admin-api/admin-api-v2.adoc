@@ -56,6 +56,25 @@ The Admin API v2 uses the same CLI tool described in the {adminguide_link}#admin
 
 <@kc.admin parameters="--v2 config credentials --server http://localhost:8080 --realm master --user admin"/>
 
+== Update Semantics (PUT vs PATCH)
+
+The Admin API v2 separates full resource replacement from partial updates:
+
+* *Replace (`PUT`)*: Replaces the entire resource configuration with the representation provided in the request body.
+`PUT` does not preserve previous state for omitted fields.
+Any omitted field or field set to `null` is resolved to its default schema value (or removed if it has no default).
+* *Partial Update (`PATCH`)*: Modifies only the fields explicitly provided in the request body.
+Omitted fields retain their current persisted values.
+Setting a field with a schema default explicitly to `null` resets it to its default value, while setting optional fields without a schema or conditional default to `null` removes the stored configuration.
+If a field has a conditional default, the default is applied only when its condition holds, and setting the field to `null` otherwise leaves the field unset.
+The conditional defaults are:
+
+** SAML `nameIdFormat`: the default is `username`, but on `PATCH` it is applied only if a value was previously stored.
+A client without a stored value falls back to negotiating the format with the request, and `null` preserves that.
+** OIDC `auth.secret`: the default is a newly generated secret, applied only when the client uses a secret-based authentication method.
+Setting `auth.secret` to `null` on such a client generates a new secret, also when the client previously had none, such as when a public client is patched to use a secret-based method.
+Setting `auth` itself to `null` makes the client public and removes its secret.
+
 == Available Resources
 
 For details on filtering and projection, see <@links.adminapi id="querying" />.
