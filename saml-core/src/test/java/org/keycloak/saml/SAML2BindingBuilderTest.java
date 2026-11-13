@@ -17,7 +17,10 @@
  */
 package org.keycloak.saml;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.Arrays;
+import java.util.List;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
@@ -99,6 +102,44 @@ public class SAML2BindingBuilderTest {
         String[] result = Arrays.copyOf(part1, part1.length + part2.length);
         System.arraycopy(part2, 0, result, part1.length, part2.length);
         return result;
+    }
+
+    /**
+     * Test that attacker-supplied SigAlg and Signature in the redirect URI are replaced,
+     * not duplicated, when Keycloak signs the SAML redirect binding (incomplete fix for CVE-2026-18217).
+     */
+    @Test
+    public void sigAlgAndSignatureDuplicationTest() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        kpg.initialize(2048);
+        KeyPair keyPair = kpg.generateKeyPair();
+
+        TestSAML2BindingBuilder saml2BindingBuilder = new TestSAML2BindingBuilder();
+        saml2BindingBuilder.relayState("RS1");
+        saml2BindingBuilder.signDocument();
+        saml2BindingBuilder.signWith("test-key", keyPair);
+        TestSAML2BindingBuilder.RedirectBindingBuilder builder = new TestSAML2BindingBuilder.RedirectBindingBuilder(saml2BindingBuilder);
+
+        // Redirect URI already contains attacker-supplied SigAlg and Signature values
+        String attackerUri = "http://127.0.0.1:8080/acs?"
+                + GeneralConstants.SAML_REQUEST_KEY + "=SAMLDOC1"
+                + "&" + GeneralConstants.SAML_SIG_ALG_REQUEST_KEY + "=http%3A%2F%2Fattacker.evil%2Falgorithm"
+                + "&" + GeneralConstants.SAML_SIGNATURE_REQUEST_KEY + "=ATTACKER_SIG";
+
+        String redirectUri = builder.request(attackerUri);
+        MultivaluedHashMap<String, String> queryPars = UriUtils.parseQueryParameters(redirectUri.substring(redirectUri.indexOf("?") + 1), true);
+
+        // SigAlg must appear exactly once and must not be the attacker's value
+        List<String> sigAlgValues = queryPars.get(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
+        Assert.assertNotNull("SigAlg must be present", sigAlgValues);
+        Assert.assertEquals("SigAlg must not be duplicated", 1, sigAlgValues.size());
+        Assert.assertNotEquals("SigAlg must not be the attacker's value", "http://attacker.evil/algorithm", sigAlgValues.get(0));
+
+        // Signature must appear exactly once and must not be the attacker's value
+        List<String> sigValues = queryPars.get(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
+        Assert.assertNotNull("Signature must be present", sigValues);
+        Assert.assertEquals("Signature must not be duplicated", 1, sigValues.size());
+        Assert.assertNotEquals("Signature must not be the attacker's value", "ATTACKER_SIG", sigValues.get(0));
     }
 
     private void checkRedirectUriOperation(TestSAML2BindingBuilder.RedirectBindingBuilder builder, String[] samlParams, boolean asRequest) throws Exception {
