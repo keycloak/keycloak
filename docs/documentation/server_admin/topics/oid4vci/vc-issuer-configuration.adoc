@@ -222,7 +222,7 @@ Do not use a generated realm key to sign SD-JWT VCs. A generated key either has 
 Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recommended for OpenID4VC. To configure a suitable signing key:
 
 . Obtain a P-256 private key and a corresponding leaf certificate issued by a certificate authority. Include intermediate certificates when applicable. The example how to create valid ES256 key is in the https://github.com/keycloak/keycloak-playground/blob/main/fapi-playground/keystores/oid4vci-ssl-test/README-generate-keystore.md[Keycloak playground repository] (this is just for the development purposes and not officially supported).
-. Store the private key and its certificate chain in a supported Java keystore. The private-key entry must contain the leaf certificate first, followed by any intermediate certificates. You may append a self-signed root certificate, but you must not append a non-self-signed certificate that is intended to be the trust anchor.
+. Store the private key and its certificate chain in a supported Java keystore. The private-key entry must contain the leaf certificate first, followed by any intermediate certificates. You may then append a self-signed root certificate. Eventually, the topmost certificate other than the leaf itself is treated as a trusted anchor when either self-signed or explicitly marked as a certificate authority (CA).
 . In the Admin Console, go to *Realm Settings* > *Keys* > *Providers*.
 . Add a *java-keystore* provider and configure the keystore path, type, passwords, and key alias.
 . Set *Algorithm* to `ES256` and *Key use* to `sig`.
@@ -230,7 +230,9 @@ Elliptic Curve cryptography with the P-256 curve and `ES256` algorithm is recomm
 
 [NOTE]
 ====
-The keystore may contain a self-signed root certificate so that {project_name} can load and validate the complete chain. {project_name} removes a trailing self-signed root certificate from the SD-JWT VC and signed issuer metadata `x5c` headers. It does not remove a non-self-signed trust anchor, which must therefore be omitted from the configured chain.
+{project_name} can load a chain that does not end in a self-signed certificate, such as a lone leaf certificate or a chain ending in a non-self-signed CA.
+
+For the signed issuer metadata `x5c` header, {project_name} removes the topmost certificate other than the leaf itself when either self-signed or explicitly marked as a certificate authority (CA). When creating the SD-JWT VC, {project_name} removes only a trailing self-signed root certificate; a non-self-signed trust anchor must be omitted from the configured chain.
 
 For details about the keystore location and provider fields, see <<realm_keys,Configuring realm keys>>.
 ====

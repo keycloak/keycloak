@@ -368,6 +368,28 @@ public class JavaKeystoreKeyProviderTest {
     }
 
     @Test
+    public void createKeystoreWithSingleNonSelfSignedCertificate() throws Exception {
+        // A keystore whose only certificate is not self-signed (e.g. a leaf issued by an omitted CA) must be importable.
+        generateNonSelfSignedCertificateStore(cryptoHelper.keystore().getPreferredKeystoreType());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+
+        Response response = realm.admin().components().add(rep);
+        String id = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.components().component(id).remove());
+    }
+
+    @Test
+    public void createKeystoreWithLeafAndNonSelfSignedTrustAnchor() throws Exception {
+        // A keystore holding a leaf and a non-self-signed trust anchor (two certificates) must be importable.
+        generateLeafWithNonSelfSignedTrustAnchorStore(cryptoHelper.keystore().getPreferredKeystoreType());
+        ComponentRepresentation rep = createRep("valid", System.currentTimeMillis(), keyAlgorithm);
+
+        Response response = realm.admin().components().add(rep);
+        String id = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.components().component(id).remove());
+    }
+
+    @Test
     public void testExpiredCertificateInOneHour() throws Exception {
         this.keyAlgorithm = Algorithm.RS256;
         generateRSAExpiredInOneHourCertificateStore(cryptoHelper.keystore().getPreferredKeystoreType());
@@ -460,6 +482,30 @@ public class JavaKeystoreKeyProviderTest {
         Certificate cert = CertificateUtils.generateV1SelfSignedCertificate(
                 keyPair, "test", new BigInteger("1"), Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
         this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password", keyPair.getPrivate(), cert);
+    }
+
+    private void generateNonSelfSignedCertificateStore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
+        // A leaf certificate issued by a CA that is deliberately not part of the keystore, so the only certificate in
+        // the store is not self-signed.
+        KeyPair caKeyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        X509Certificate caCert = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "test-ca");
+        KeyPair leafKeyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        X509Certificate leafCert = CertificateUtils.generateV3Certificate(leafKeyPair, caKeyPair.getPrivate(), caCert, "test-leaf");
+        this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                leafKeyPair.getPrivate(), leafCert);
+    }
+
+    private void generateLeafWithNonSelfSignedTrustAnchorStore(KeystoreUtil.KeystoreFormat keystoreType) throws Exception {
+        // A keystore holding a leaf and a non-self-signed trust anchor (two certificates). The trust anchor is issued
+        // by an external root that is deliberately not part of the keystore, so it is not self-signed.
+        KeyPair rootKeyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        X509Certificate rootCert = CertificateUtils.generateV1SelfSignedCertificate(rootKeyPair, "test-external-root");
+        KeyPair anchorKeyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        X509Certificate anchorCert = CertificateUtils.generateV3Certificate(anchorKeyPair, rootKeyPair.getPrivate(), rootCert, "test-anchor");
+        KeyPair leafKeyPair = org.keycloak.common.util.KeyUtils.generateRsaKeyPair(2048);
+        X509Certificate leafCert = CertificateUtils.generateV3Certificate(leafKeyPair, anchorKeyPair.getPrivate(), anchorCert, "test-leaf");
+        this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                leafKeyPair.getPrivate(), new Certificate[] { leafCert, anchorCert });
     }
 
     private String getKeyKID(String providerId) {

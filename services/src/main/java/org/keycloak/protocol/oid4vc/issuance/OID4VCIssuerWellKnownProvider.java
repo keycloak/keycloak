@@ -341,16 +341,19 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         return jwt;
     }
 
-    private void addCertificateHeaders(JWSBuilder jwsBuilder, KeyWrapper keyWrapper, RealmModel realm) {
+    protected void addCertificateHeaders(JWSBuilder jwsBuilder, KeyWrapper keyWrapper, RealmModel realm) {
         if (keyWrapper.getCertificateChain() != null && !keyWrapper.getCertificateChain().isEmpty()) {
             List<X509Certificate> certificateChain = new ArrayList<>(keyWrapper.getCertificateChain());
             try {
-                while (certificateChain.size() > 1
-                        && CertificateUtils.isSelfSigned(certificateChain.get(certificateChain.size() - 1))) {
+                // Exclude the trailing certificate when it acts as a trust anchor (self-signed or marked CA:TRUE),
+                // since such a certificate should not be included in the x5c chain.
+                // See also [AS-AP-10-056](https://eudi.dev/3.0.0/annexes/annex-2/annex-2.03-high-level-requirements-by-category/#3-attestation-pid-providers)
+                if (certificateChain.size() > 1
+                        && isTrustAnchor(certificateChain.get(certificateChain.size() - 1))) {
                     certificateChain.remove(certificateChain.size() - 1);
                 }
             } catch (GeneralSecurityException e) {
-                LOGGER.warnf(e, "Failed to determine whether the trailing certificate is a self-signed trust anchor for realm '%s'. Using the configured certificate chain.", realm.getName());
+                LOGGER.warnf(e, "Failed to determine whether the trailing certificate is a trust anchor for realm '%s'. Using the configured certificate chain.", realm.getName());
                 certificateChain = keyWrapper.getCertificateChain();
             }
             jwsBuilder.x5c(certificateChain);
@@ -359,6 +362,16 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         } else {
             LOGGER.debugf("No certificate or certificate chain available for x5c header in realm: %s", realm.getName());
         }
+    }
+
+    /**
+     * Determines whether a certificate acts as a potential trust anchor based on
+     * whether it is self-signed or is marked as a CA (basic constraint CA:TRUE).
+     *
+     * @throws GeneralSecurityException if the certificate cannot be inspected
+     */
+    private static boolean isTrustAnchor(X509Certificate certificate) throws GeneralSecurityException {
+        return CertificateUtils.isSelfSigned(certificate) || certificate.getBasicConstraints() >= 0;
     }
 
     /**
