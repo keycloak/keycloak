@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
@@ -120,6 +121,9 @@ public class CRSerializationTest {
         assertEquals("MY_ENV_VAR", keycloak.getSpec().getEnv().get(0).getName());
         assertEquals("--- {}\n", Serialization.asYaml(keycloak.getSpec().getUpdateSpec().getSchedulingSpec()));
         assertEquals("x", keycloak.getSpec().getSchedulingSpec().getPriorityClassName());
+        assertEquals("my-theme-cm", keycloak.getSpec().getVolumes().get(0).getConfigMap().getName());
+        assertEquals("/opt/keycloak/themes/my-theme", keycloak.getSpec().getVolumeMounts().get(0).getMountPath());
+        assertEquals(Boolean.TRUE, keycloak.getSpec().getVolumeMounts().get(0).getReadOnly());
     }
 
     @Test
@@ -306,6 +310,14 @@ public class CRSerializationTest {
         assertThat(limitMemQuantity, notNullValue());
         assertThat(limitMemQuantity.getAmount(), is("8"));
         assertThat(limitMemQuantity.getFormat(), is("Gi"));
+    }
+
+    @Test
+    public void testEmptyVolumesAreNotSerialized() {
+        var yaml = Serialization.asYaml(new KeycloakSpec());
+
+        assertFalse(yaml.contains("volumes"), yaml);
+        assertFalse(yaml.contains("volumeMounts"), yaml);
     }
 
     @Test

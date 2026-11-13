@@ -65,7 +65,9 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
@@ -706,6 +708,82 @@ public class PodTemplateTest {
         assertThat(volume.getConfigMap().getName()).isEqualTo("cm");
 
         Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testSpecVolumesAndMounts() {
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .addNewVolume().withName("template-volume").withNewEmptyDir().endEmptyDir().endVolume()
+                .addNewContainer()
+                .addNewVolumeMount().withName("template-volume").withMountPath("/mnt/template").endVolumeMount()
+                .endContainer()
+                .endSpec()
+                .build();
+
+        var podTemplate = getDeployment(additionalPodTemplate, null, s -> s
+                .addToVolumes(new VolumeBuilder().withName("theme").withNewConfigMap().withName("theme-cm").endConfigMap().build())
+                .addToVolumes(new VolumeBuilder().withName("provider").withNewSecret().withSecretName("provider-secret").endSecret().build())
+                .addToVolumeMounts(new VolumeMountBuilder().withName("theme").withMountPath("/opt/keycloak/themes/mytheme").build())
+                .addToVolumeMounts(new VolumeMountBuilder().withName("provider").withMountPath("/opt/keycloak/providers/custom").withReadOnly().build()))
+                .getSpec().getTemplate();
+
+        assertThat(podTemplate.getSpec().getVolumes()).extracting(Volume::getName)
+                .containsSubsequence("template-volume", "theme", "provider")
+                .endsWith("theme", "provider");
+        assertThat(podTemplate.getSpec().getVolumes()).filteredOn(v -> v.getName().equals("theme")).singleElement()
+                .extracting(v -> v.getConfigMap().getName()).isEqualTo("theme-cm");
+
+        var volumeMounts = podTemplate.getSpec().getContainers().get(0).getVolumeMounts();
+        assertThat(volumeMounts).extracting(VolumeMount::getMountPath)
+                .contains("/mnt/template")
+                .endsWith("/opt/keycloak/themes/mytheme", "/opt/keycloak/providers/custom");
+        assertThat(volumeMounts).filteredOn(vm -> vm.getName().equals("provider")).singleElement()
+                .extracting(VolumeMount::getReadOnly).isEqualTo(true);
+
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("theme-cm")), Mockito.eq(ConfigMap.class), Mockito.any(), Mockito.any());
+        Mockito.verify(this.watchedResources).annotateDeployment(Mockito.eq(Watched.of("example-tls-secret", "instance-initial-admin", "provider-secret")), Mockito.eq(Secret.class), Mockito.any(), Mockito.any());
+    }
+
+    @Test
+    public void testSpecVolumeNameConflict() {
+        var e = Assertions.assertThrows(IllegalStateException.class, () -> getDeployment(null, null, s -> s
+                .addToVolumes(new VolumeBuilder().withName("keycloak-tls-certificates").withNewEmptyDir().endEmptyDir().build())));
+        assertThat(e.getMessage()).contains("keycloak-tls-certificates");
+    }
+
+    @Test
+    public void testSpecVolumeNameConflictWithPodTemplate() {
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec().addToVolumes(new VolumeBuilder().withName("theme").withNewEmptyDir().endEmptyDir().build()).endSpec()
+                .build();
+
+        Assertions.assertThrows(IllegalStateException.class, () -> getDeployment(additionalPodTemplate, null, s -> s
+                .addToVolumes(new VolumeBuilder().withName("theme").withNewConfigMap().withName("theme-cm").endConfigMap().build())));
+    }
+
+    @Test
+    public void testSpecVolumeMountPathConflict() {
+        var e = Assertions.assertThrows(IllegalStateException.class, () -> getDeployment(null, null, s -> s
+                .addToVolumes(new VolumeBuilder().withName("certs").withNewEmptyDir().endEmptyDir().build())
+                .addToVolumeMounts(new VolumeMountBuilder().withName("certs").withMountPath(Constants.CERTIFICATES_FOLDER).build())));
+        assertThat(e.getMessage()).contains(Constants.CERTIFICATES_FOLDER);
+    }
+
+    @Test
+    public void testUpdateJobInheritsSpecVolumes() {
+        Consumer<KeycloakSpecBuilder> addVolume = s -> s
+                .addToVolumes(new VolumeBuilder().withName("theme").withNewConfigMap().withName("theme-cm").endConfigMap().build())
+                .addToVolumeMounts(new VolumeMountBuilder().withName("theme").withMountPath("/opt/keycloak/themes/mytheme").build());
+
+        Job job = getUpdateJob(addVolume, addVolume, builder -> {});
+
+        var podSpec = job.getSpec().getTemplate().getSpec();
+        assertThat(podSpec.getVolumes()).extracting(Volume::getName).contains("theme");
+        assertThat(podSpec.getContainers().get(0).getVolumeMounts()).extracting(VolumeMount::getMountPath)
+                .contains("/opt/keycloak/themes/mytheme");
+        assertThat(podSpec.getInitContainers().get(0).getVolumeMounts()).extracting(VolumeMount::getMountPath)
+                .contains("/opt/keycloak/themes/mytheme");
     }
 
 
