@@ -14,11 +14,10 @@ import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
-import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
@@ -88,15 +87,12 @@ public class ClientRegistrationPermissionsTest extends AbstractClientRegistratio
     }
 
     private void testMapper_rolesUnavailableOnUser(List<ProtocolMapperRepresentation> protocolMappers) throws Exception {
-        ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
-        reg.auth(Auth.token(token));
-
-        // Try to add client with mappers
+        // Create a client with mappers
         ClientRepresentation clientRep = buildClient();
         clientRep.setDirectAccessGrantsEnabled(true);
         clientRep.setProtocolMappers(protocolMappers);
 
-        ClientRepresentation registeredClient = reg.create(clientRep);
+        ClientRepresentation registeredClient = createClient(clientRep);
         assertNotNull(registeredClient.getRegistrationAccessToken());
         managedRealm.cleanup().add(r -> r.clients().get(registeredClient.getId()).remove());
 
@@ -108,7 +104,7 @@ public class ClientRegistrationPermissionsTest extends AbstractClientRegistratio
 
         reg.auth(Auth.token(tokenResponse.getAccessToken()));
         try {
-            reg.get(REALM_MANAGEMENT_CLIENT_ID);
+            reg.oidc().get(REALM_MANAGEMENT_CLIENT_ID);
             fail("Expected 403");
         } catch (ClientRegistrationException e) {
             assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -116,15 +112,12 @@ public class ClientRegistrationPermissionsTest extends AbstractClientRegistratio
     }
 
     private void testMapper_rolesAvailableOnUser(List<ProtocolMapperRepresentation> protocolMappers) throws Exception {
-        ClientInitialAccessPresentation token = managedRealm.admin().clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
-        reg.auth(Auth.token(token));
-
-        // Try to add client with mappers
+        // Create a client with mappers
         ClientRepresentation clientRep = buildClient();
         clientRep.setDirectAccessGrantsEnabled(true);
         clientRep.setProtocolMappers(protocolMappers);
 
-        ClientRepresentation registeredClient = reg.create(clientRep);
+        ClientRepresentation registeredClient = createClient(clientRep);
         assertNotNull(registeredClient.getRegistrationAccessToken());
         managedRealm.cleanup().add(r -> r.clients().get(registeredClient.getId()).remove());
 
@@ -141,14 +134,14 @@ public class ClientRegistrationPermissionsTest extends AbstractClientRegistratio
         assertTrue(accessToken.getResourceAccess(REALM_MANAGEMENT_CLIENT_ID).getRoles().contains(AdminRoles.MANAGE_CLIENTS));
 
         reg.auth(Auth.token(tokenResponse.getAccessToken()));
-        ClientRepresentation realmMgmtClient = reg.get(REALM_MANAGEMENT_CLIENT_ID);
+        OIDCClientRepresentation realmMgmtClient = reg.oidc().get(REALM_MANAGEMENT_CLIENT_ID);
         assertNotNull(realmMgmtClient);
 
         // Remove roles from the user. Make sure he does not have permissions anymore
         userWithoutRoles.admin().roles().clientLevel(realmMgmtClientUUID).remove(manageClientsRole);
 
         try {
-            reg.get(REALM_MANAGEMENT_CLIENT_ID);
+            reg.oidc().get(REALM_MANAGEMENT_CLIENT_ID);
             fail("Expected 403");
         } catch (ClientRegistrationException e) {
             assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());

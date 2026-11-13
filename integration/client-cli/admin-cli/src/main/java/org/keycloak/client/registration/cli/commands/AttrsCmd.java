@@ -13,7 +13,6 @@ import org.keycloak.client.cli.common.AttributeKey;
 import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
 import org.keycloak.client.registration.cli.EndpointType;
 import org.keycloak.client.registration.cli.ReflectionUtil;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
 import picocli.CommandLine;
@@ -44,14 +43,14 @@ public class AttrsCmd extends BaseGlobalOptionsCmd {
 
     @Override
     protected void process() {
-        EndpointType regType = EndpointType.DEFAULT;
+        EndpointType regType = EndpointType.OIDC;
         PrintStream out = System.out;
 
         if (endpoint != null) {
             regType = EndpointType.of(endpoint);
         }
 
-        Class type = regType == EndpointType.DEFAULT ? ClientRepresentation.class : (regType == EndpointType.OIDC ? OIDCClientRepresentation.class : null);
+        Class type = regType == EndpointType.OIDC ? OIDCClientRepresentation.class : null;
         if (type == null) {
             throw new IllegalArgumentException("Endpoint not supported: " + regType);
         }
@@ -122,15 +121,12 @@ public class AttrsCmd extends BaseGlobalOptionsCmd {
         out.println("  Command specific options:");
         out.println("    ATTRIBUTE            Attribute key (if omitted all attributes for the endpoint type are listed)");
         out.println("                         Dot notation can be used to target sub-attributes.");
-        out.println("    -e, --endpoint TYPE  Endpoint type to use - one of: 'default', 'oidc' (if omitted 'default' is used)");
+        out.println("    -e, --endpoint TYPE  Endpoint type to use - one of: 'oidc' (if omitted 'oidc' is used)");
         out.println();
         out.println("Examples:");
         out.println();
-        out.println("List all attributes for default endpoint:");
+        out.println("List all attributes for the oidc endpoint:");
         out.println("  " + PROMPT + " " + CMD + " attrs");
-        out.println();
-        out.println("List (sub)attributes of 'protocolMappers' attribute for default endpoint:");
-        out.println("  " + PROMPT + " " + CMD + " attrs protocolMappers");
         out.println();
         out.println();
         out.println("Use '" + CMD + " help' for general information and a list of commands");

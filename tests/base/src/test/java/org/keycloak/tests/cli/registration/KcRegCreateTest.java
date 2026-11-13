@@ -53,7 +53,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
             // use initial token of another realm with server, and realm override
             String token = issueInitialAccessToken("test");
-            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -s clientId=my_first_client -t " + token);
+            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -s client_name=my_first_client -t " + token);
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
         }
@@ -83,93 +83,41 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             Assertions.assertEquals(token, config.ensureRealmConfigData(keycloakUrls.getBase(), realm).getInitialToken(), "Config initial access token");
 
             // create configuration from file using stdin redirect ... output an object
-            String content = "{\n" +
-                    "        \"clientId\": \"my_client\",\n" +
-                    "        \"enabled\": true,\n" +
-                    "        \"redirectUris\": [\"http://localhost:8980/myapp/*\"],\n" +
-                    "        \"serviceAccountsEnabled\": true,\n" +
-                    "        \"name\": \"My Client App\",\n" +
-                    "        \"implicitFlowEnabled\": false,\n" +
-                    "        \"publicClient\": true,\n" +
-                    "        \"protocol\": \"openid-connect\",\n" +
-                    "        \"webOrigins\": [\"http://localhost:8980/myapp\"],\n" +
-                    "        \"consentRequired\": false,\n" +
-                    "        \"baseUrl\": \"http://localhost:8980/myapp\",\n" +
-                    "        \"rootUrl\": \"http://localhost:8980/myapp\",\n" +
-                    "        \"bearerOnly\": true,\n" +
-                    "        \"standardFlowEnabled\": true\n" +
-                    "}";
+            String content = "{\"client_name\":\"My Client App\","
+                    + "\"redirect_uris\":[\"http://localhost:8980/myapp/*\"],"
+                    + "\"client_uri\":\"http://localhost:8980/myapp\"}";
 
             try (TempFileResource tmpFile = new TempFileResource(initTempFile(".json", content))) {
-
                 exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f - < '" + tmpFile.getName() + "'");
-
                 assertExitCodeAndStdErrSize(exe, 0, 2);
+                OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+                Assertions.assertNotNull(client.getClientId(), "generated client_id");
+                Assertions.assertEquals("My Client App", client.getClientName());
+                Assertions.assertEquals(List.of("http://localhost:8980/myapp/*"), client.getRedirectUris());
+                Assertions.assertEquals("http://localhost:8980/myapp", client.getClientUri());
 
-                ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-                Assertions.assertNotNull(client.getId(), "id");
-                Assertions.assertEquals("my_client", client.getClientId(), "clientId");
-                Assertions.assertEquals(true, client.isEnabled(), "enabled");
-                Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirectUris");
-                Assertions.assertEquals(true, client.isServiceAccountsEnabled(), "serviceAccountsEnabled");
-                Assertions.assertEquals("My Client App", client.getName(), "name");
-                Assertions.assertEquals(false, client.isImplicitFlowEnabled(), "implicitFlowEnabled");
-                Assertions.assertEquals(true, client.isPublicClient(), "publicClient");
-                // note there is no server-side check if protocol is supported
-                Assertions.assertEquals("openid-connect", client.getProtocol(), "protocol");
-                Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp"), client.getWebOrigins(), "webOrigins");
-                Assertions.assertEquals(false, client.isConsentRequired(), "consentRequired");
-                Assertions.assertEquals("http://localhost:8980/myapp", client.getBaseUrl(), "baseUrl");
-                Assertions.assertEquals("http://localhost:8980/myapp", client.getRootUrl(), "rootUrl");
-                Assertions.assertEquals(true, client.isStandardFlowEnabled(), "bearerOnly");
-                Assertions.assertNull(client.getProtocolMappers(), "mappers are null");
-
-                // create configuration from file as a template and override clientId and other attributes ... output an object
-                exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() +
-                        "' -s clientId=my_client2 -s enabled=false -s 'redirectUris=[\"http://localhost:8980/myapp2/*\"]'" +
-                        " -s 'name=My Client App II' -s protocol=openid-connect -s 'webOrigins=[\"http://localhost:8980/myapp2\"]'" +
-                        " -s baseUrl=http://localhost:8980/myapp2 -s rootUrl=http://localhost:8980/myapp2");
-
+                exe = execute("create --insecure --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName()
+                        + "' -s 'client_name=My Client App II' -s 'redirect_uris=[\"http://localhost:8980/myapp2/*\"]'");
                 assertExitCodeAndStdErrSize(exe, 0, 2);
+                OIDCClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+                Assertions.assertNotEquals(client.getClientId(), client2.getClientId());
+                Assertions.assertEquals("My Client App II", client2.getClientName());
+                Assertions.assertEquals(List.of("http://localhost:8980/myapp2/*"), client2.getRedirectUris());
 
-                ClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-                Assertions.assertNotNull(client2.getId(), "id");
-                Assertions.assertEquals("my_client2", client2.getClientId(), "clientId");
-                Assertions.assertEquals(false, client2.isEnabled(), "enabled");
-                Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp2/*"), client2.getRedirectUris(), "redirectUris");
-                Assertions.assertEquals(true, client2.isServiceAccountsEnabled(), "serviceAccountsEnabled");
-                Assertions.assertEquals("My Client App II", client2.getName(), "name");
-                Assertions.assertEquals(false, client2.isImplicitFlowEnabled(), "implicitFlowEnabled");
-                Assertions.assertEquals(true, client2.isPublicClient(), "publicClient");
-                Assertions.assertEquals("openid-connect", client2.getProtocol(), "protocol");
-                Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp2"), client2.getWebOrigins(), "webOrigins");
-                Assertions.assertEquals(false, client2.isConsentRequired(), "consentRequired");
-                Assertions.assertEquals("http://localhost:8980/myapp2", client2.getBaseUrl(), "baseUrl");
-                Assertions.assertEquals("http://localhost:8980/myapp2", client2.getRootUrl(), "rootUrl");
-                Assertions.assertEquals(true, client2.isStandardFlowEnabled(), "bearerOnly");
-                Assertions.assertNull(client2.getProtocolMappers(), "mappers are null");
-
-
-                // check that using an invalid attribute key is not ignored
-                exe = execute("create --config '" + configFile.getName() + "' -o -f '" + tmpFile.getName() + "' -s client_id=my_client3");
-
+                exe = execute("create --config '" + configFile.getName() + "' -f '" + tmpFile.getName() + "' -s clientId=my_client3");
                 assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-                Assertions.assertEquals("Failed to set attribute 'client_id' on document type 'default'", exe.stderrLines().get(0));
+                Assertions.assertEquals("Failed to set attribute 'clientId' on document type 'oidc'", exe.stderrLines().get(0));
             }
 
-            // simple create, output an id
-            exe = execute("create --insecure --config '" + configFile.getName() + "' -i -s clientId=my_client3");
-
+            exe = execute("create --insecure --config '" + configFile.getName() + "' -i -s client_name=my_client3");
             assertExitCodeAndStreamSizes(exe, 0, 1, 2);
-            Assertions.assertEquals("my_client3", exe.stdoutLines().get(0), "only clientId returned");
+            String generatedId = exe.stdoutLines().get(0);
+            Assertions.assertFalse(generatedId.isBlank(), "only generated client_id returned");
+            Assertions.assertTrue(handler.loadConfig().sessionRealmConfigData().getClients().containsKey(generatedId));
 
-            // simple create, default output
-            exe = execute("create --insecure --config '" + configFile.getName() + "' -s clientId=my_client4");
-
+            exe = execute("create --insecure --config '" + configFile.getName() + "' -s client_name=my_client4");
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
-            Assertions.assertEquals("Registered new client with client_id 'my_client4'", exe.stderrLines().get(exe.stderrLines().size() - 1), "only clientId returned");
-
-
+            Assertions.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Registered new client with client_id '"));
 
             // create using oidc endpoint - autodetect format
             content = "        {\n" +
@@ -202,8 +150,8 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                 // try use incompatible endpoint override
                 exe = execute("create --config '" + configFile.getName() + "' -e default -f '" + tmpFile.getName() + "'");
 
-                assertExitCodeAndStreamSizes(exe, 1, 0, 1);
-                Assertions.assertEquals("Attribute 'redirect_uris' not supported on document type 'default'", exe.stderrLines().get(0), "Error message");
+                assertExitCodeAndStreamSizes(exe, 2, 0, 2);
+                Assertions.assertTrue(exe.stderrLines().get(0).contains("Endpoint not supported: default"));
             }
 
             // TODO: SAML is not tested with FIPS enabled as it does not work. This needs to be revisited when SAML works with FIPS
@@ -246,12 +194,13 @@ public class KcRegCreateTest extends AbstractRegCliTest {
             assertExitCodeAndStreamSizes(exe, 0, 0, 3);
 
             String token = issueInitialAccessToken("test");
-            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -s clientId=authz-client -s authorizationServicesEnabled=true -t " + token);
-            assertExitCodeAndStreamSizes(exe, 0, 0, 3);
+            exe = execute("create --config '" + configFile.getName() + "' --insecure --server " + keycloakUrls.getBase() + " --realm test -o -s client_name=authz-client -s 'grant_types=[\"authorization_code\",\"client_credentials\",\"" + OAuth2Constants.UMA_GRANT_TYPE + "\"]' -t " + token);
+            assertExitCodeAndStdErrSize(exe, 0, 2);
+            OIDCClientRepresentation created = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
             RealmResource realm = adminClient.realm("test");
             ClientsResource clients = realm.clients();
-            ClientRepresentation clientRep = clients.findByClientId("authz-client").get(0);
+            ClientRepresentation clientRep = clients.findByClientId(created.getClientId()).get(0);
 
             ClientResource client = clients.get(clientRep.getId());
 
@@ -294,7 +243,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
                 Assertions.assertEquals("My Reg Authz", oidcClient.getClientName(), "client_name");
                 Assertions.assertEquals("http://localhost:8980/myapp5", oidcClient.getClientUri(), "client_uri");
 
-                client = clients.get(oidcClient.getClientId());
+                client = clients.get(clients.findByClientId(oidcClient.getClientId()).get(0).getId());
 
                 clientRep = client.toRepresentation();
                 Assertions.assertTrue(clientRep.getAuthorizationServicesEnabled());

@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -36,28 +36,19 @@ import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.CibaConfig;
-import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.FullNameMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
-import org.keycloak.protocol.saml.SamlConfigAttributes;
-import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.protocol.saml.mappers.UserPropertyAttributeStatementMapper;
-import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
-import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ComponentTypeRepresentation;
 import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.RegistrationAccessToken;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
@@ -94,13 +85,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         trustedHostPolicy.getConfig().putSingle(TrustedHostClientRegistrationPolicyFactory.CLIENT_URIS_MUST_MATCH, "true");
         trustedHostPolicy.getConfig().put(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, Collections.emptyList());
         managedRealm.admin().components().component(trustedHostPolicy.getId()).update(trustedHostPolicy);
-    }
-
-    private ClientRepresentation createRep(String clientId) {
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(clientId);
-        client.setSecret("test-secret");
-        return client;
     }
 
     private OIDCClientRepresentation createRepOidc() {
@@ -145,28 +129,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
             }
         }
     }
-
-    private void assertFail(ClientRegOp operation, ClientRepresentation client, int expectedStatusCode, String expectedErrorContains) {
-        try {
-            switch (operation) {
-                case CREATE: reg.create(client);
-                    break;
-                case UPDATE: reg.update(client);
-                    break;
-                case DELETE: reg.delete(client);
-                    break;
-            }
-
-            Assertions.fail("Not expected to successfuly run operation " + operation.toString() + " on client");
-        } catch (ClientRegistrationException expected) {
-            HttpErrorException httpEx = (HttpErrorException) expected.getCause();
-            Assertions.assertEquals(expectedStatusCode, httpEx.getStatusLine().getStatusCode());
-            if (expectedErrorContains != null) {
-                assertTrue(httpEx.getErrorResponse().contains(expectedErrorContains), "Error response doesn't contain expected text. The error response text is: " + httpEx.getErrorResponse());
-            }
-        }
-    }
-
 
     @Test
     public void testAnonCreateWithTrustedHost() throws Exception {
@@ -263,61 +225,32 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
 
     @Test
-    public void testAnonCreateWithClientUrisDefaultProvider() throws Exception {
-        setTrustedHost("localhost");
-
-        // The default provider sets the attributes directly, without going through the OIDC converter
-        ClientRepresentation client = createRep("client-uris-client");
-        client.setRootUrl("http://localhost:8080");
-
-        client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##http://untrusted.host/logout"));
-        assertFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
-
-        // The authority of a protocol-relative URI must not be hidden behind the trusted root URL
-        client.setAttributes(Map.of(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "//untrusted.host/frontchannel-logout"));
-        assertFail(ClientRegOp.CREATE, client, 403, "URL doesn't match");
-
-        client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##http://localhost:8080/logout"));
-        ClientRepresentation registered = reg.create(client);
-        reg.auth(Auth.token(registered));
-        for (String value : List.of("+##http://untrusted.host/logout", "*", "http://localhost/logout##http://untrusted.host/logout")) {
-            registered.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, value);
-            assertFail(ClientRegOp.UPDATE, registered, 403, "URI doesn't match");
-        }
-        for (String rootUrl : List.of("", "http://localhost:8080")) {
-            registered.setRootUrl(rootUrl);
-            registered.setAttributes(Map.of(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "//untrusted.host/logout"));
-            assertFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
-        }
-    }
-
-    @Test
     public void testTrustedHostsUriCheckCanStillBeDisabled() throws Exception {
         setTrustedHost("localhost");
         ComponentRepresentation policy = findPolicyByProviderAndAuth(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         policy.getConfig().putSingle(TrustedHostClientRegistrationPolicyFactory.CLIENT_URIS_MUST_MATCH, "false");
         managedRealm.admin().components().component(policy.getId()).update(policy);
 
-        ClientRepresentation client = createRep("uri-check-disabled");
-        client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "https://external.example/logout"));
-        ClientRepresentation registered = reg.create(client);
+        OIDCClientRepresentation client = createRepOidc();
+        client.setLogoUri("https://external.example/logo.png");
+        OIDCClientRepresentation registered = reg.oidc().create(client);
         reg.auth(Auth.token(registered));
-        registered.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "https://external.example/updated");
-        Assertions.assertEquals("https://external.example/updated", reg.update(registered).getAttributes().get(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS));
+        registered.setLogoUri("https://external.example/updated.png");
+        reg.oidc().update(registered);
+        Assertions.assertEquals("https://external.example/updated.png", getStoredAttribute(registered, OIDCConfigAttributes.LOGO_URI));
     }
 
     @Test
     public void testTrustedHostsPreservesDoubleSlashRedirectPaths() throws Exception {
         setTrustedHost("localhost");
-        ClientRepresentation client = createRep("double-slash-paths");
-        client.setRootUrl("https://localhost");
+        OIDCClientRepresentation client = createRepOidc();
         client.setRedirectUris(List.of("//callback/path"));
-        client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "//logout/path"));
-        ClientRepresentation registered = reg.create(client);
+        client.setPostLogoutRedirectUris(List.of("//logout/path"));
+        OIDCClientRepresentation registered = reg.oidc().create(client);
         reg.auth(Auth.token(registered));
-        ClientRepresentation updated = reg.update(registered);
+        OIDCClientRepresentation updated = reg.oidc().update(registered);
         Assertions.assertEquals(List.of("//callback/path"), updated.getRedirectUris());
-        Assertions.assertEquals("//logout/path", updated.getAttributes().get(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS));
+        Assertions.assertEquals(List.of("//logout/path"), updated.getPostLogoutRedirectUris());
     }
 
 
@@ -325,50 +258,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         OIDCClientRepresentation client = createRepOidc();
         uriSetter.accept(client);
         assertOidcFail(ClientRegOp.CREATE, client, 403, expectedErrorContains);
-    }
-
-    @Test
-    public void testTrustedHostsPreservesRelativeLogos() throws Exception {
-        setTrustedHost("localhost");
-        for (String root : Arrays.asList(null, "https://localhost/client-root")) {
-            for (String logo : List.of("images/logo.png", "../logo.png", "/images/logo.png")) {
-                reg.auth(null);
-                ClientRepresentation client = createRep(uniqueClientId("relative-logo"));
-                client.setRootUrl(root);
-                client.setRedirectUris(List.of("https://localhost/callback"));
-                client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, logo));
-                ClientRepresentation registered = reg.create(client);
-                Assertions.assertEquals(logo, registered.getAttributes().get(OIDCConfigAttributes.LOGO_URI));
-                reg.auth(Auth.token(registered));
-                registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, "../updated-logo.png");
-                registered = reg.update(registered);
-                reg.auth(Auth.token(registered));
-                Assertions.assertEquals("../updated-logo.png", registered.getAttributes().get(OIDCConfigAttributes.LOGO_URI));
-
-                for (String untrusted : List.of("//untrusted.host/logo.png", "///untrusted.host/logo.png", "\\\\untrusted.host\\logo.png")) {
-                    ClientRepresentation rejected = createRep(uniqueClientId("untrusted-logo"));
-                    rejected.setRootUrl(root);
-                    rejected.setRedirectUris(List.of("https://localhost/callback"));
-                    rejected.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, untrusted));
-                    reg.auth(null);
-                    assertFail(ClientRegOp.CREATE, rejected, 403, null);
-                    reg.auth(Auth.token(registered));
-                    registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, untrusted);
-                    assertFail(ClientRegOp.UPDATE, registered, 403, null);
-                }
-
-                registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, logo);
-                registered.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##https://untrusted.host/logout");
-                assertFail(ClientRegOp.UPDATE, registered, 403, "URI doesn't match");
-                client.setClientId(uniqueClientId("untrusted-logout-with-logo"));
-                client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, logo,
-                        OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##https://untrusted.host/logout"));
-                reg.auth(null);
-                assertFail(ClientRegOp.CREATE, client, 403, "URI doesn't match");
-                Assertions.assertEquals("../updated-logo.png", managedRealm.admin().clients().get(registered.getId())
-                        .toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
-            }
-        }
     }
 
     @Test
@@ -385,6 +274,18 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         registered = reg.oidc().update(registered);
         reg.auth(Auth.token(registered));
         Assertions.assertEquals("../updated-logo.png", resource.toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+
+        for (String untrusted : List.of("//untrusted.host/logo.png", "///untrusted.host/logo.png", "\\\\untrusted.host\\logo.png")) {
+            registered.setLogoUri(untrusted);
+            assertOidcFail(ClientRegOp.UPDATE, registered, 403, null);
+            OIDCClientRepresentation rejected = createRepOidc();
+            rejected.setLogoUri(untrusted);
+            reg.auth(null);
+            assertOidcFail(ClientRegOp.CREATE, rejected, 403, null);
+            reg.auth(Auth.token(registered));
+        }
+        Assertions.assertEquals("../updated-logo.png", resource.toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+
         registered.setLogoUri("../updated-logo.png");
         registered.setPostLogoutRedirectUris(List.of("+", "https://untrusted.host/logout"));
         assertOidcFail(ClientRegOp.UPDATE, registered, 403, "URI doesn't match");
@@ -397,93 +298,60 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     public void testTrustedHostsChecksRelativeLogoFrontendHost() throws Exception {
         setTrustedHost("localhost");
         managedRealm.updateWithCleanup(realm -> realm.attribute("frontendUrl", "https://untrusted.host"));
-        ClientRepresentation client = createRep(uniqueClientId("frontend-logo"));
-        client.setRootUrl("https://localhost/client-root");
-        client.setRedirectUris(List.of("https://localhost/callback"));
+        OIDCClientRepresentation client = createRepOidc();
         for (String logo : List.of("images/logo.png", "../logo.png", "/images/logo.png")) {
-            client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, logo));
-            assertFail(ClientRegOp.CREATE, client, 403, "URL doesn't match");
+            client.setLogoUri(logo);
+            assertOidcFail(ClientRegOp.CREATE, client, 403, "URL doesn't match");
         }
 
-        client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, "//localhost/logo.png"));
-        ClientRepresentation registered = reg.create(client);
+        client.setLogoUri("//localhost/logo.png");
+        OIDCClientRepresentation registered = reg.oidc().create(client);
         reg.auth(Auth.token(registered));
         for (String logo : List.of("images/logo.png", "../logo.png", "/images/logo.png")) {
-            registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, logo);
-            assertFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
+            registered.setLogoUri(logo);
+            assertOidcFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
         }
-        Assertions.assertEquals("//localhost/logo.png", managedRealm.admin().clients().get(registered.getId())
-                .toRepresentation().getAttributes().get(OIDCConfigAttributes.LOGO_URI));
+        Assertions.assertEquals("//localhost/logo.png", getStoredAttribute(registered, OIDCConfigAttributes.LOGO_URI));
     }
 
     @Test
     public void testTrustedHostsPreservesSpecialValuesAndAllowsAdditionalHosts() throws Exception {
         setTrustedHost("localhost");
-        ClientRepresentation client = createRep("special-uri-values");
-        client.setWebOrigins(List.of("+", "*", "null", "localhost:8080"));
-        client.setAttributes(Map.of(
-                OIDCConfigAttributes.LOGO_URI, "data:image/png;base64,aW1hZ2U=",
-                OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##-"));
-        ClientRepresentation registered = reg.create(client);
+        OIDCClientRepresentation client = createRepOidc();
+        client.setLogoUri("data:image/png;base64,aW1hZ2U=");
+        OIDCClientRepresentation registered = reg.oidc().create(client);
         reg.auth(Auth.token(registered));
-        registered = reg.update(registered);
+        registered = reg.oidc().update(registered);
         reg.auth(Auth.token(registered));
 
-        registered.getAttributes().put(OIDCConfigAttributes.LOGO_URI, "https://assets.example.org/logo.png");
-        assertFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
+        registered.setLogoUri("https://assets.example.org/logo.png");
+        assertOidcFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
 
         ComponentRepresentation policy = findPolicyByProviderAndAuth(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         policy.getConfig().put(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, List.of("localhost", "assets.example.org"));
         managedRealm.admin().components().component(policy.getId()).update(policy);
-        ClientRepresentation updated = reg.update(registered);
-        Assertions.assertEquals("https://assets.example.org/logo.png", updated.getAttributes().get(OIDCConfigAttributes.LOGO_URI));
-    }
-
-    @Test
-    public void testTrustedHostsValidatesSamlAttributesOnPartialUpdate() throws Exception {
-        setTrustedHost("localhost");
-        ClientRepresentation client = createRep("partial-saml-uris");
-        client.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-        client.setRedirectUris(List.of("https://localhost/callback"));
-        ClientRepresentation registered = reg.create(client);
-        reg.auth(Auth.token(registered));
-
-        for (String attribute : List.of(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE,
-                SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL)) {
-            ClientRepresentation update = new ClientRepresentation();
-            update.setClientId(registered.getClientId());
-            update.setAttributes(Map.of(attribute, "https://untrusted.host/endpoint"));
-            assertFail(ClientRegOp.UPDATE, update, 403, "URL doesn't match");
-            Assertions.assertNotEquals("https://untrusted.host/endpoint",
-                    managedRealm.admin().clients().get(registered.getId()).toRepresentation().getAttributes().get(attribute));
-
-            update.setAttributes(Map.of(attribute, "https://localhost/endpoint"));
-            ClientRepresentation updated = reg.update(update);
-            reg.auth(Auth.token(updated));
-            Assertions.assertEquals(SamlProtocol.LOGIN_PROTOCOL, updated.getProtocol());
-            Assertions.assertEquals("https://localhost/endpoint", updated.getAttributes().get(attribute));
-        }
+        reg.oidc().update(registered);
+        Assertions.assertEquals("https://assets.example.org/logo.png", getStoredAttribute(registered, OIDCConfigAttributes.LOGO_URI));
     }
 
     @Test
     public void testTrustedHostsValidatesMetadataOnCreateAndUpdate() throws Exception {
         setTrustedHost("localhost");
-        for (String attribute : List.of(OIDCConfigAttributes.LOGO_URI, OIDCConfigAttributes.POLICY_URI,
-                OIDCConfigAttributes.TOS_URI, OIDCConfigAttributes.JWKS_URL, OIDCConfigAttributes.SECTOR_IDENTIFIER_URI,
-                CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT,
-                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL)) {
+        Map<String, BiConsumer<OIDCClientRepresentation, String>> setters = Map.of(
+                OIDCConfigAttributes.LOGO_URI, OIDCClientRepresentation::setLogoUri,
+                OIDCConfigAttributes.POLICY_URI, OIDCClientRepresentation::setPolicyUri,
+                OIDCConfigAttributes.TOS_URI, OIDCClientRepresentation::setTosUri);
+        for (Map.Entry<String, BiConsumer<OIDCClientRepresentation, String>> entry : setters.entrySet()) {
             reg.auth(null);
-            ClientRepresentation client = createRep("uri-" + attribute);
-            client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-            client.setAttributes(Map.of(attribute, "https://untrusted.host/endpoint"));
-            assertFail(ClientRegOp.CREATE, client, 403, "URL doesn't match");
-            client.setAttributes(Map.of(attribute, "https://localhost/endpoint"));
-            ClientRepresentation registered = reg.create(client);
+            OIDCClientRepresentation client = createRepOidc();
+            entry.getValue().accept(client, "https://untrusted.host/endpoint");
+            assertOidcFail(ClientRegOp.CREATE, client, 403, "URL doesn't match");
+            entry.getValue().accept(client, "https://localhost/endpoint");
+            OIDCClientRepresentation registered = reg.oidc().create(client);
             reg.auth(Auth.token(registered));
-            registered.getAttributes().put(attribute, "https://another.host/updated");
-            assertFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
-            Assertions.assertEquals("https://localhost/endpoint",
-                    managedRealm.admin().clients().get(registered.getId()).toRepresentation().getAttributes().get(attribute));
+            entry.getValue().accept(registered, "https://another.host/updated");
+            assertOidcFail(ClientRegOp.UPDATE, registered, 403, "URL doesn't match");
+            Assertions.assertEquals("https://localhost/endpoint", getStoredAttribute(registered, entry.getKey()));
         }
     }
 
@@ -520,17 +388,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         OIDCClientRepresentation client = create();
 
         // Assert new client has consent required
-        String clientId = client.getClientId();
-        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), client.getClientId()).toRepresentation();
         Assertions.assertTrue(clientRep.isConsentRequired());
-
-        // Try update with disabled consent required. Should fail
-        clientRep.setConsentRequired(false);
-        assertFail(ClientRegOp.UPDATE, clientRep, 403, "Not permitted to update consentRequired to false");
-
-        // Try update with enabled consent required. Should pass
-        clientRep.setConsentRequired(true);
-        reg.update(clientRep);
     }
 
 
@@ -540,17 +399,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         OIDCClientRepresentation client = create();
 
         // Assert new client has fullScopeAllowed disabled
-        String clientId = client.getClientId();
-        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), client.getClientId()).toRepresentation();
         Assertions.assertFalse(clientRep.isFullScopeAllowed());
-
-        // Try update with disabled consent required. Should fail
-        clientRep.setFullScopeAllowed(true);
-        assertFail(ClientRegOp.UPDATE, clientRep, 403, "Not permitted to enable fullScopeAllowed");
-
-        // Try update with enabled consent required. Should pass
-        clientRep.setFullScopeAllowed(false);
-        reg.update(clientRep);
     }
 
 
@@ -581,9 +431,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
         Assertions.assertFalse(clientRep.isEnabled());
 
-        // Try enable client. Should fail
-        clientRep.setEnabled(true);
-        assertFail(ClientRegOp.UPDATE, clientRep, 401, "Not authorized to update client");
+        // The registration access token of a disabled client cannot be used. Should fail
+        assertOidcFail(ClientRegOp.UPDATE, client, 401, "Not authorized to update client");
 
         // Revert
         managedRealm.admin().components().component(policyId).remove();
@@ -696,7 +545,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     @Test
     public void testClientScopesPolicy() throws Exception {
         setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
 
         // Add some clientScope through Admin REST
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
@@ -707,25 +555,24 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         response.close();
 
         // I can't register new client with this scope
-        ClientRepresentation clientRep = createRep(clientId);
-        clientRep.setDefaultClientScopes(Collections.singletonList("foo"));
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "Not permitted to use specified clientScope");
+        OIDCClientRepresentation clientRep = createRepOidc();
+        clientRep.setScope("foo");
+        assertOidcFail(ClientRegOp.CREATE, clientRep, 403, "Not permitted to use specified clientScope");
 
         // Register client without scope - should success
-        ClientRepresentation clientWithoutScopes = createRep(clientId);
-        ClientRepresentation registeredClient = reg.create(clientWithoutScopes);
+        OIDCClientRepresentation registeredClient = reg.oidc().create(createRepOidc());
         reg.auth(Auth.token(registeredClient));
 
         // Try to update client with scope - should fail
-        registeredClient.setDefaultClientScopes(Collections.singletonList("foo"));
-        assertFail(ClientRegOp.UPDATE, registeredClient, 403, "Not permitted to use specified clientScope");
+        registeredClient.setScope("foo");
+        assertOidcFail(ClientRegOp.UPDATE, registeredClient, 403, "Not permitted to use specified clientScope");
 
         // Update client with the clientScope via Admin REST
-        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId);
-        client.addDefaultClientScope(clientScopeId);
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), registeredClient.getClientId());
+        client.addOptionalClientScope(clientScopeId);
 
         // Now the update via clientRegistration is permitted too as scope was already set
-        reg.update(registeredClient);
+        reg.oidc().update(registeredClient);
 
         // Revert client scope
         managedRealm.admin().clients().get(client.toRepresentation().getId()).remove();
@@ -736,7 +583,6 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     @Test
     public void testClientScopesPolicyWithPermittedScope() throws Exception {
         setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
 
         // Add some clientScope through Admin REST
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
@@ -747,27 +593,27 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         response.close();
 
         // I can't register new client with this scope
-        ClientRepresentation clientRep = createRep(clientId);
-        clientRep.setDefaultClientScopes(Collections.singletonList("foo"));
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "Not permitted to use specified clientScope");
+        OIDCClientRepresentation clientRep = createRepOidc();
+        clientRep.setScope("foo");
+        assertOidcFail(ClientRegOp.CREATE, clientRep, 403, "Not permitted to use specified clientScope");
 
         // Update the policy to allow the "foo" scope
         ComponentRepresentation clientScopesPolicyRep = findPolicyByProviderAndAuth(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         List<String> originalAllowedClientScopes = clientScopesPolicyRep.getConfig().get(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
         List<String> originalAllowedClientScopesCopy = originalAllowedClientScopes == null ? null : new ArrayList<>(originalAllowedClientScopes);
 
-        String registeredClientId = null;
+        String registeredClientUuid = null;
         try {
             clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo");
             managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
 
             // Check that I can register client now
-            ClientRepresentation registeredClient = reg.create(clientRep);
+            OIDCClientRepresentation registeredClient = reg.oidc().create(clientRep);
             Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
-            registeredClientId = registeredClient.getId();
+            registeredClientUuid = AdminApiUtil.findClientByClientId(managedRealm.admin(), registeredClient.getClientId()).toRepresentation().getId();
         } finally {
-            if (registeredClientId != null) {
-                managedRealm.admin().clients().get(registeredClientId).remove();
+            if (registeredClientUuid != null) {
+                managedRealm.admin().clients().get(registeredClientUuid).remove();
             }
             if (originalAllowedClientScopesCopy == null) {
                 clientScopesPolicyRep.getConfig().remove(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES);
@@ -783,251 +629,15 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     // PROTOCOL MAPPERS
 
     @Test
-    public void testProtocolMappersCreate() throws Exception {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
-        String secondClientId = uniqueClientId("test-app-2");
-
-        // Try to add client with some "hardcoded role" mapper. Should fail
-        ClientRepresentation clientRep = createRep(clientId);
-        clientRep.setProtocolMappers(Collections.singletonList(createHardcodedMapperRep()));
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-        // Try the same authenticated. Should still fail.
-        ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
-        reg.auth(Auth.token(token));
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-        // Update the "authenticated" realm attribute to allow hardcoded role mapper
-        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, HardcodedRole.PROVIDER_ID));
-
-        // authenticated policy should still fail. The mapper is included in realm attribute, but not in the policy
-        reg.auth(Auth.token(token));
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-        // Update the "authenticated" policy to allow hardcoded role mapper
-        ComponentRepresentation protocolMapperPolicyRep = findPolicyByProviderAndAuth(ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAuth());
-        protocolMapperPolicyRep.getConfig().add(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
-        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
-
-        // Check authenticated registration is permitted. As mapper is now included in both realm attribute and policy
-        ClientRepresentation registeredClient = reg.create(clientRep);
-        String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
-        Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
-
-        // Check "anonymous" registration still fails
-        clientRep = createRep(secondClientId);
-        clientRep.setProtocolMappers(Collections.singletonList(createHardcodedMapperRep()));
-        reg.auth(null);
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-        // Revert realm attribute to verify the policy alone is not sufficient
-        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
-        realmRep.getAttributes().remove(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS);
-        managedRealm.admin().update(realmRep);
-
-        // authenticated policy should fail. The mapper is included in policy, but not in the realm attribute
-        reg.auth(Auth.token(token));
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-        // Revert policy
-        protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
-        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
-    }
-
-
-    private ProtocolMapperRepresentation createHardcodedMapperRep() {
-        ProtocolMapperRepresentation protocolMapper = new ProtocolMapperRepresentation();
-        protocolMapper.setName("Hardcoded foo role");
-        protocolMapper.setProtocolMapper(HardcodedRole.PROVIDER_ID);
-        protocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        protocolMapper.getConfig().put(HardcodedRole.ROLE_CONFIG, "foo-role");
-        return protocolMapper;
-    }
-
-
-    @Test
-    public void testProtocolMappersUpdate() throws Exception {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
-
-        ProtocolMapperRepresentation protocolMapper = new ProtocolMapperRepresentation();
-        protocolMapper.setName("Full name");
-        protocolMapper.setProtocolMapper(FullNameMapper.PROVIDER_ID);
-        protocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-
-        ClientRepresentation clientRep = createRep(clientId);
-        clientRep.setProtocolMappers(Collections.singletonList(protocolMapper));
-
-        // Check I can't add client with full-name mapper — not allowed by default
-        assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-        // Allow FullNameMapper in the realm attribute
-        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, FullNameMapper.PROVIDER_ID));
-
-        // Now check I can add client with the allowed protocolMapper
-        ClientRepresentation registeredClient = reg.create(clientRep);
-        String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
-        reg.auth(Auth.token(registeredClient));
-
-        // Add some disallowed protocolMapper
-        registeredClient.getProtocolMappers().add(createHardcodedMapperRep());
-
-        // Check I can't update client because of the disallowed protocolMapper (new mapper → type check fires)
-        assertFail(ClientRegOp.UPDATE, registeredClient, 403, "ProtocolMapper type not allowed");
-
-        // Remove "bad" protocolMapper
-        registeredClient.getProtocolMappers().removeIf((ProtocolMapperRepresentation mapper) -> {
-            return mapper.getProtocolMapper().equals(HardcodedRole.PROVIDER_ID);
-        });
-
-        // Check I can update client now
-        reg.update(registeredClient);
-    }
-
-    @Test
-    public void testProtocolMappersBlockedWhenPolicyComponentDeleted() throws Exception {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
-
-        // Remove the "Allowed Protocol Mapper Types" policy for both auth types so the fallback guard is exercised
-        ComponentRepresentation anonPolicy = findPolicyByProviderAndAuth(ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
-        ComponentRepresentation authPolicy = findPolicyByProviderAndAuth(ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAuth());
-        managedRealm.admin().components().component(anonPolicy.getId()).remove();
-        managedRealm.admin().components().component(authPolicy.getId()).remove();
-
-        try {
-            // Anonymous DCR with a protocol mapper must be denied by the deny-all fallback
-            ClientRepresentation clientRep = createRep(clientId);
-            clientRep.setProtocolMappers(Collections.singletonList(createHardcodedMapperRep()));
-            assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-            // Authenticated DCR with a protocol mapper must also be denied by the deny-all fallback
-            ClientInitialAccessPresentation token = adminClient.realm(REALM_NAME).clientInitialAccess().create(new ClientInitialAccessCreatePresentation(0, 10));
-            reg.auth(Auth.token(token));
-            assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-
-            // Even with the realm attribute populated, the fallback (empty policy config) still blocks the mapper
-            // because allowed types are the intersection of the policy config and the realm attribute
-            managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, HardcodedRole.PROVIDER_ID));
-            assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
-        } finally {
-            // Restore removed policies so subsequent tests are not affected
-            reg.auth(null);
-            managedRealm.admin().components().add(anonPolicy);
-            managedRealm.admin().components().add(authPolicy);
-        }
-    }
-
-    @Test
-    public void passingAnAlreadyAssignedProtocolMapperWithDisallowedTypeDoesNotFail() throws Exception {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
-
-        ClientRepresentation clientRep = createRep(clientId);
-        // Create the client with a client registration disallowed protocolMapper
-        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
-        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
-        adminClientCreationResponse.close();
-
-        ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
-
-        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
-        // Check the client can be updated with a representation keeping the disallowed protocolMapper
-        reg.update(clientResource.toRepresentation());
-    }
-
-    @Test
-    public void passingNewProtocolMapperOfDisallowedTypeInAdditionToAnAlreadyAssignedOneOfTheSameTypeFails() {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
-
-        ClientRepresentation clientRep = createRep(clientId);
-        // Create the client with a client registration disallowed protocolMapper
-        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
-        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
-        adminClientCreationResponse.close();
-
-        ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
-
-        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
-
-        ClientRepresentation representation = clientResource.toRepresentation();
-        // Add a second mapper with the same name and no id. It matches the existing mapper by protocol%name,
-        // but its id is null (unlike the stored mapper's real uuid). The id mismatch counts as a change,
-        // so the disallowed type is checked and the request is rejected with 403.
-        representation.getProtocolMappers().add(createHardcodedMapperRep());
-        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
-    }
-
-    @Test
-    public void alteringAnAlreadyAssignedProtocolMappersConfigWithDisallowedTypeFails() {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
-
-        ClientRepresentation clientRep = createRep(clientId);
-        // Create the client with a client registration disallowed protocolMapper
-        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientUuid = ApiUtil.getCreatedId(adminClientCreationResponse);
-        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
-        adminClientCreationResponse.close();
-
-        ClientResource clientResource = managedRealm.admin().clients().get(clientUuid);
-
-        reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
-        // Check the client can be updated with a representation keeping the disallowed protocolMapper
-        ClientRepresentation representation = clientResource.toRepresentation();
-        representation.getProtocolMappers().forEach(mapper -> mapper.getConfig().put("foo", "bar"));
-        assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
-    }
-
-    @Test
     public void testProtocolMappersConsentRequired() throws Exception {
         setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
 
         // Register client and assert it doesn't have builtin protocol mappers
-        ClientRepresentation clientRep = createRep(clientId);
-        ClientRepresentation registeredClient = reg.create(clientRep);
-        String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
+        OIDCClientRepresentation registeredClient = reg.oidc().create(createRepOidc());
+        ClientRepresentation stored = AdminApiUtil.findClientByClientId(managedRealm.admin(), registeredClient.getClientId()).toRepresentation();
+        managedRealm.cleanup().add(r -> r.clients().get(stored.getId()).remove());
 
-        Assertions.assertNull(registeredClient.getProtocolMappers());
-    }
-
-
-    @Test
-    public void testProtocolMappersRemoveBuiltins() throws Exception {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("test-app");
-
-        // Change realm attribute and policy to allow hardcoded mapper
-        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, HardcodedRole.PROVIDER_ID));
-
-        ComponentRepresentation protocolMapperPolicyRep = findPolicyByProviderAndAuth(ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
-        protocolMapperPolicyRep.getConfig().add(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
-        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
-
-        // Create client with hardcoded mapper
-        ClientRepresentation clientRep = createRep(clientId);
-        clientRep.setProtocolMappers(Collections.singletonList(createHardcodedMapperRep()));
-        ClientRepresentation registeredClient = reg.create(clientRep);
-        String clientUuid = registeredClient.getId();
-        managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
-
-        Assertions.assertEquals(1, registeredClient.getProtocolMappers().size());
-        ProtocolMapperRepresentation hardcodedMapper = registeredClient.getProtocolMappers().get(0);
-
-        // Revert policy
-        protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
-        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
+        Assertions.assertTrue(stored.getProtocolMappers() == null || stored.getProtocolMappers().isEmpty());
     }
 
     @Test
@@ -1054,96 +664,10 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         Assertions.assertEquals("Client scopes not allowed: [foo2]", error.getErrorMessage());
     }
 
-    /**
-     * Verifies that swapping an existing mapper from an <em>allowed</em> type to a <em>disallowed</em> type
-     * is rejected. The new type is not in the allowlist, so the update must fail.
-     *
-     * @see #testSwappingDisallowedMapperTypeToAllowedTypeIsRejected() for the complementary direction
-     */
-    @Test
-    public void testMapperTypeSwap() {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("swap-test-client");
-
-        ProtocolMapperRepresentation allowedMapper = new ProtocolMapperRepresentation();
-        allowedMapper.setName("swap-mapper");
-        allowedMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-        allowedMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        allowedMapper.getConfig().put(HardcodedRole.ROLE_CONFIG, "realm-management.manage-users");
-        allowedMapper.getConfig().put("user.attribute", "attr");
-        allowedMapper.getConfig().put("claim.name", "claim");
-
-        ClientRepresentation clientRep = createRep(clientId);
-        clientRep.setProtocolMappers(List.of(allowedMapper));
-        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
-        adminClientCreationResponse.close();
-
-        try {
-            ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
-            reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
-            ClientRepresentation representation = clientResource.toRepresentation();
-
-            // Swap the mapper type from allowed (UserAttributeMapper) to disallowed (HardcodedRole)
-            representation.getProtocolMappers().forEach(mapper -> {
-                if ("swap-mapper".equals(mapper.getName())) {
-                    mapper.setProtocolMapper(HardcodedRole.PROVIDER_ID);
-                }
-            });
-
-            // The type-swap MUST be rejected with 403 because the new type is disallowed
-            assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
-        } finally {
-            managedRealm.admin().clients().get(clientTechnicalId).remove();
-        }
-    }
-
-    /**
-     * Verifies that swapping an existing mapper from a <em>disallowed</em> type to an <em>allowed</em> type
-     * is also rejected. Even though the requested (new) type is in the allowlist, the <em>old</em> stored type
-     * is not — and both the old and new types must be allowed for the update to succeed.
-     * This prevents a DCR client from effectively removing a disallowed mapper by renaming its type.
-     *
-     * @see #testMapperTypeSwap() for the complementary direction
-     */
-    @Test
-    public void testSwappingDisallowedMapperTypeToAllowedTypeIsRejected() throws Exception {
-        setTrustedHost("localhost");
-        String clientId = uniqueClientId("swap-disallowed-test-client");
-
-        // Create the client via admin with a disallowed mapper type (hardcoded-role)
-        ClientRepresentation clientRep = createRep(clientId);
-        clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
-        String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
-        adminClientCreationResponse.close();
-
-        // Allow UserPropertyMapper in the realm attribute so the incoming (new) type alone would pass the check
-        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, UserPropertyMapper.PROVIDER_ID));
-
-        try {
-            ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
-            reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
-            ClientRepresentation representation = clientResource.toRepresentation();
-
-            // Swap the disallowed type (hardcoded-role) to an allowlisted type (oidc-usermodel-property-mapper).
-            // The old stored type (hardcoded-role) is still not in the allowlist, so the update must be rejected.
-            representation.getProtocolMappers().forEach(mapper -> {
-                if (HardcodedRole.PROVIDER_ID.equals(mapper.getProtocolMapper())) {
-                    mapper.setProtocolMapper(UserPropertyMapper.PROVIDER_ID);
-                }
-            });
-
-            assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
-        } finally {
-            managedRealm.admin().clients().get(clientTechnicalId).remove();
-        }
-    }
-
     // HELPER METHODS
 
-    private String uniqueClientId(String prefix) {
-        return prefix + "-" + UUID.randomUUID();
+    private String getStoredAttribute(OIDCClientRepresentation client, String attribute) {
+        return AdminApiUtil.findClientByClientId(managedRealm.admin(), client.getClientId()).toRepresentation().getAttributes().get(attribute);
     }
 
     private String getPolicyAnon() {

@@ -23,6 +23,7 @@ import java.util.List;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -43,6 +44,7 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -92,10 +94,21 @@ public abstract class AbstractClientRegistrationTest {
         return client;
     }
 
+    /**
+     * Creates the client through the Admin REST API and returns its representation including the registration
+     * access token, which is what tests need for authenticating against the client registration endpoints.
+     */
     public ClientRepresentation createClient(ClientRepresentation client) throws ClientRegistrationException {
-        authManageClients();
-        ClientRepresentation response = reg.create(client);
-        reg.auth(null);
+        String id = ApiUtil.getCreatedId(managedRealm.admin().clients().create(client));
+        ClientResource clientResource = managedRealm.admin().clients().get(id);
+
+        String registrationAccessToken = clientResource.regenerateRegistrationAccessToken().getRegistrationAccessToken();
+
+        ClientRepresentation response = clientResource.toRepresentation();
+        response.setRegistrationAccessToken(registrationAccessToken);
+        if (client.getSecret() != null) {
+            response.setSecret(client.getSecret());
+        }
         return response;
     }
 

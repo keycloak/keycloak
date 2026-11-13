@@ -21,6 +21,7 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -74,17 +75,24 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
         reg.auth(Auth.token(client.getRegistrationAccessToken()));
     }
 
-    private ClientRepresentation assertRead(String id, String registrationAccess, boolean expectSuccess) throws ClientRegistrationException {
+    private OIDCClientRepresentation updateRep(String baseUrl) {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setClientId(client.getClientId());
+        rep.setClientUri(baseUrl);
+        return rep;
+    }
+
+    private OIDCClientRepresentation assertRead(String id, String registrationAccess, boolean expectSuccess) throws ClientRegistrationException {
         if (expectSuccess) {
             reg.auth(Auth.token(registrationAccess));
-            ClientRepresentation rep = reg.get(id);
+            OIDCClientRepresentation rep = reg.oidc().get(id);
             assertNotNull(rep);
             return rep;
         } else {
             reg.auth(Auth.token(registrationAccess));
             try {
-                reg.get(client.getClientId());
-                fail("Expected 403");
+                reg.oidc().get(client.getClientId());
+                fail("Expected 401");
             } catch (Exception e) {
                 assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
             }
@@ -96,7 +104,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     public void getClientWithRegistrationToken() throws ClientRegistrationException {
         timeOffSet.set(10);
 
-        ClientRepresentation rep = reg.get(client.getClientId());
+        OIDCClientRepresentation rep = reg.oidc().get(client.getClientId());
         assertNotNull(rep);
 
         assertEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
@@ -108,23 +116,23 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void getClientWrongClient() {
-        ClientRegistrationException e = assertThrows(ClientRegistrationException.class, () -> reg.get("SomeOtherClient"));
+        ClientRegistrationException e = assertThrows(ClientRegistrationException.class, () -> reg.oidc().get("SomeOtherClient"));
         assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
     }
 
     @Test
     public void getClientMissingClient() {
-        ClientRegistrationException e = assertThrows(ClientRegistrationException.class, () -> reg.get("nosuch"));
+        ClientRegistrationException e = assertThrows(ClientRegistrationException.class, () -> reg.oidc().get("nosuch"));
         assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
     }
 
     @Test
     public void getClientWithBadRegistrationToken() throws ClientRegistrationException {
         String oldToken = client.getRegistrationAccessToken();
-        reg.update(client);
+        reg.oidc().update(updateRep("http://newbase"));
         reg.auth(Auth.token(oldToken));
         try {
-            reg.get(client.getClientId());
+            reg.oidc().get(client.getClientId());
             fail("Expected 401");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -133,11 +141,9 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void updateClientWithRegistrationToken() throws ClientRegistrationException {
-        client.setRootUrl("http://newroot");
+        OIDCClientRepresentation rep = reg.oidc().update(updateRep("http://newbase"));
 
-        ClientRepresentation rep = reg.update(client);
-
-        assertEquals("http://newroot", getClient(client.getId()).getRootUrl());
+        assertEquals("http://newbase", getClient(client.getId()).getBaseUrl());
         assertNotEquals(client.getRegistrationAccessToken(), rep.getRegistrationAccessToken());
 
         // check registration access token is updated
@@ -148,31 +154,31 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
     @Test
     public void updateClientWithBadRegistrationToken() throws ClientRegistrationException {
         String oldToken = client.getRegistrationAccessToken();
-        reg.update(client);
+        reg.oidc().update(updateRep("http://newbase"));
         reg.auth(Auth.token(oldToken));
         try {
-            reg.update(client);
+            reg.oidc().update(updateRep("http://otherbase"));
             fail("Expected 401");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
 
-        assertEquals("http://root", getClient(client.getId()).getRootUrl());
+        assertEquals("http://newbase", getClient(client.getId()).getBaseUrl());
     }
 
     @Test
     public void deleteClientWithRegistrationToken() throws ClientRegistrationException {
-        reg.delete(client);
+        reg.oidc().delete(client.getClientId());
         assertNull(getClient(client.getId()));
     }
 
     @Test
     public void deleteClientWithBadRegistrationToken() throws ClientRegistrationException {
         String oldToken = client.getRegistrationAccessToken();
-        reg.update(client);
+        reg.oidc().update(updateRep("http://newbase"));
         reg.auth(Auth.token(oldToken));
         try {
-            reg.delete(client);
+            reg.oidc().delete(client.getClientId());
             fail("Expected 401");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -189,7 +195,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
         //get
         try {
-            reg.get(client.getClientId());
+            reg.oidc().get(client.getClientId());
             fail("Should not be able to get a disabled client using a registration access token");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -197,8 +203,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
         //update
         try {
-            client.setEnabled(true);
-            reg.update(client);
+            reg.oidc().update(updateRep("http://newbase"));
             fail("Should not be able to update a disabled client using a registration access token");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -206,7 +211,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
         //delete
         try {
-            reg.delete(client);
+            reg.oidc().delete(client.getClientId());
             fail("Should not be able to delete a disabled client using a registration access token");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
