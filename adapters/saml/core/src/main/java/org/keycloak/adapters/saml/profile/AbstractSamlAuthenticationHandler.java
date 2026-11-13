@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
 
@@ -206,6 +207,18 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 }
             }
             LogoutRequestType logout = (LogoutRequestType) requestAbstractType;
+
+            // Validate logout request issuer matches configured IdP entity ID
+            // SAML 2.0 Profiles spec (section 4.4.3.1) requires Issuer on LogoutRequest
+            NameIDType requestIssuer = logout.getIssuer();
+            if (requestIssuer == null || requestIssuer.getValue() == null
+                    || !requestIssuer.getValue().equals(deployment.getIDP().getEntityID())) {
+                log.errorf("LogoutRequest issuer '%s' does not match configured IdP entity ID '%s'",
+                        requestIssuer != null ? requestIssuer.getValue() : null,
+                        deployment.getIDP().getEntityID());
+                return failedTerminal();
+            }
+
             return logoutRequest(logout, relayState);
 
         } else {
@@ -384,21 +397,18 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                     : AssertionUtil.getAssertionElement(responseHolder);
             assertion = responseType.getAssertions().get(0).getAssertion();
             ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
-            SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), getSubjectConfirmationData(assertion), destinationValidator)
-                    .clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
             try {
                 cvb.clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
                 cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
                 if (responseType.getDestination() != null) {
                   // getDestination has been validated to match request URL already so it matches SAML endpoint
                   cvb.addAllowedAudience(URI.create(responseType.getDestination()));
-                  scdvb.allowedRecipient(responseType.getDestination());
                 }
 
             } catch (IllegalArgumentException ex) {
                 // warning has been already emitted in DeploymentBuilder
             }
-            if (!cvb.build().isValid() || !scdvb.build().isValid()) {
+            if (!cvb.build().isValid() || !isSubjectConfirmationDataValid(assertion, responseType)) {
                 // initiate the login but do not save the request cos it's /saml
                 return initiateLogin(false);
             }
@@ -420,6 +430,27 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
                 log.error("Error processing validation of SAML assertion: " + e.getMessage());
                 return failed(CHALLENGE_EXTRACTION_FAILURE);
             }
+        }
+
+        // Validate that assertion and response issuers match the configured IdP entity ID
+        String configuredIdpEntityId = deployment.getIDP().getEntityID();
+
+        // Response-level Issuer is optional per SAML 2.0 spec, but if present must match
+        NameIDType responseIssuer = responseType.getIssuer();
+        if (responseIssuer != null && responseIssuer.getValue() != null
+                && !responseIssuer.getValue().equals(configuredIdpEntityId)) {
+            log.errorf("Response issuer '%s' does not match configured IdP entity ID '%s'",
+                    responseIssuer.getValue(), configuredIdpEntityId);
+            return failed(CHALLENGE_EXTRACTION_FAILURE);
+        }
+
+        // Assertion Issuer is required per SAML 2.0 spec and must match
+        NameIDType assertionIssuer = assertion.getIssuer();
+        if (assertionIssuer == null || assertionIssuer.getValue() == null
+                || !assertionIssuer.getValue().equals(configuredIdpEntityId)) {
+            log.errorf("Assertion issuer '%s' does not match configured IdP entity ID '%s'",
+                    assertionIssuer != null ? assertionIssuer.getValue() : null, configuredIdpEntityId);
+            return failed(CHALLENGE_EXTRACTION_FAILURE);
         }
 
         SubjectType subject = assertion.getSubject();
@@ -534,17 +565,36 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         return failed(null);
     }
 
-    private SubjectConfirmationDataType getSubjectConfirmationData(AssertionType assertion) {
+    private List<SubjectConfirmationDataType> getSubjectConfirmationDataElements(AssertionType assertion) {
         if (assertion != null
                 && assertion.getSubject() != null
                 && assertion.getSubject().getConfirmation() != null) {
             return assertion.getSubject().getConfirmation().stream()
                     .filter(c -> JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get().equals(c.getMethod()))
-                    .findFirst()
                     .map(SubjectConfirmationType::getSubjectConfirmationData)
-                    .orElse(null);
+                    .collect(Collectors.toList());
         }
-        return null;
+        return Collections.emptyList();
+    }
+
+    /**
+     * Multiple Bearer confirmations are alternatives per the SAML 2.0 spec, so the assertion is valid
+     * if any one of them passes validation.
+     */
+    private boolean isSubjectConfirmationDataValid(AssertionType assertion, ResponseType responseType) {
+        List<SubjectConfirmationDataType> subjectConfirmationDataElements = getSubjectConfirmationDataElements(assertion);
+        if (subjectConfirmationDataElements.isEmpty()) {
+            subjectConfirmationDataElements = Collections.singletonList(null);
+        }
+
+        return subjectConfirmationDataElements.stream().anyMatch(subjectConfirmationDataElement -> {
+            SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), subjectConfirmationDataElement, destinationValidator)
+                    .clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
+            if (responseType.getDestination() != null) {
+                scdvb.allowedRecipient(responseType.getDestination());
+            }
+            return scdvb.build().isValid();
+        });
     }
 
     private boolean isSuccessfulSamlResponse(ResponseType responseType) {

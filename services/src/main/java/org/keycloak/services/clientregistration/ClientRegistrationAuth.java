@@ -141,7 +141,7 @@ public class ClientRegistrationAuth {
         return jwt;
     }
 
-    private boolean isBearerToken() {
+    boolean isBearerToken() {
         return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
@@ -336,6 +336,7 @@ public class ClientRegistrationAuth {
             }
         } else if (isRegistrationAccessToken()) {
             if (client != null && client.isEnabled() && client.getRegistrationToken() != null && client.getRegistrationToken().equals(jwt.getId())) {
+                checkClientProtocol(client);
                 return getRegistrationAuth();
             }
         }

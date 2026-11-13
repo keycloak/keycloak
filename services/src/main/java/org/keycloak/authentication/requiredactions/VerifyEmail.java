@@ -233,6 +233,8 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
         VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), absoluteExpirationInSecs, authSessionEncodedId, user.getEmail(), authSession.getClient().getClientId());
+        token.setNote(VerifyEmailActionToken.ORGANIZATION_EMAIL_VERIFICATION,
+                authSession.getAuthNote(VerifyEmailActionToken.ORGANIZATION_EMAIL_VERIFICATION));
         UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
                 authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
         String link = builder.build(realm.getName()).toString();

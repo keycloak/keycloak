@@ -31,6 +31,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -101,6 +102,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -759,6 +761,47 @@ public class UserStorageTest extends AbstractAuthTest {
             RealmModel realm = session.realms().getRealmByName("test");
             UserModel user = session.users().getUserByUsername(realm, "thor");
             Assertions.assertTrue(user instanceof CachedUserModel);
+        });
+    }
+
+    @Test
+    public void testGroupsStreamWhenCachedGroupIsRemovedInSameTransaction() {
+        List<String> gids = new ArrayList<>();
+        for (String name : List.of("stream-group-1", "stream-group-2", "stream-group-3")) {
+            GroupRepresentation g = new GroupRepresentation();
+            g.setName(name);
+            gids.add(ApiUtil.getCreatedId(testRealmResource().groups().add(g)));
+        }
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+            gids.forEach(gid -> user.joinGroup(realm.getGroupById(gid)));
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "thor");
+            assertThat(user, instanceOf(CachedUserModel.class));
+
+            // load the group membership into the cache
+            assertThat(user.getGroupsStream().count(), is(3L));
+
+            // remove the group in the middle of the order in which the store returns the memberships, which is
+            // the order of the cached ids; the bug only shows if groups come both before and after the removed one
+            List<String> storeOrder = UserStorageUtil.userFederatedStorage(session).getGroupsStream(realm, user.getId())
+                    .map(GroupModel::getId).toList();
+            assertThat(storeOrder, hasSize(3));
+            realm.removeGroup(realm.getGroupById(storeOrder.get(1)));
+
+            // the cached user still references the removed group
+            assertThat(user.getGroupsStream().map(GroupModel::getId).toList(),
+                    containsInAnyOrder(storeOrder.get(0), storeOrder.get(2)));
+        });
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            realm.getGroupsStream().filter(g -> g.getName().startsWith("stream-group-")).toList().forEach(realm::removeGroup);
         });
     }
 

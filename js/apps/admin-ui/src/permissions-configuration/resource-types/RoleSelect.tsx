@@ -42,12 +42,17 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
           values.map((id) => adminClient.roles.findOneById({ id })),
         );
         return Promise.all(
-          roles.map(async (role) => ({
-            role: role!,
-            client: role!.clientRole
-              ? await adminClient.clients.findOne({ id: role?.containerId! })
-              : undefined,
-          })),
+          roles
+            // A role deleted since it was selected comes back as null.
+            .filter((role) => role !== null)
+            .map(async (role) => ({
+              role,
+              client: role.clientRole
+                ? ((await adminClient.clients.findOne({
+                    id: role.containerId!,
+                  })) ?? undefined)
+                : undefined,
+            })),
         );
       }
       return [];

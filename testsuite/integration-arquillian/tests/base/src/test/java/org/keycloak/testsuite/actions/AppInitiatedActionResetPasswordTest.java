@@ -183,7 +183,13 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             });
 
             EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
-            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+            EventRepresentation updateCredentialEvent = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).getEvent();
+            String storedCredentialId = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost").credentials().stream()
+                    .filter(credential -> PasswordCredentialModel.TYPE.equals(credential.getType()))
+                    .findFirst()
+                    .orElseThrow()
+                    .getId();
+            assertEquals(storedCredentialId, updateCredentialEvent.getDetails().get(Details.CREDENTIAL_ID));
 
             MimeMessage[] receivedMessages = mail.getReceivedMessages();
             Assertions.assertEquals(2, receivedMessages.length);

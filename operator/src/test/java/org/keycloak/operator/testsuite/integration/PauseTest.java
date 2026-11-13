@@ -9,6 +9,7 @@ import org.keycloak.operator.testsuite.utils.K8sUtils;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -18,6 +19,8 @@ public class PauseTest extends BaseOperatorTest {
 
     @Test
     void testPause() throws Exception {
+        // no need to run as a remote test
+        Assumptions.assumeTrue(operatorDeployment == OperatorDeployment.local_apiserver);
         Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
         kc.getMetadata().getAnnotations().put(Constants.KEYCLOAK_PAUSE_ANNOTATION, "true");
 

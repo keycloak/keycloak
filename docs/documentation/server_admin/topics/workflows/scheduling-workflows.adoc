@@ -27,8 +27,8 @@ with the workflow. In the example above, the workflow is scheduled to run every 
 
 The `schedule` setting supports the following parameters:
 
-*   `after`: Defines the interval between each run of the workflow.
+*   `after`: Defines the interval between each run of the workflow. It must be at least 1 second.
 
-*   `batch-size`: Defines the maximum number of realm resources to process at each run.
+*   `batch-size`: Defines the maximum number of realm resources to process at each run. It must be greater than 0.
 
 

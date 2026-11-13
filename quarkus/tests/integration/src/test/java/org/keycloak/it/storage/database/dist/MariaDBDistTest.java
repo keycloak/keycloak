@@ -17,8 +17,11 @@
 
 package org.keycloak.it.storage.database.dist;
 
+import java.sql.Connection;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.storage.database.MariaDBTest;
 import org.keycloak.it.utils.RawDistRootPath;
@@ -52,6 +55,22 @@ public class MariaDBDistTest extends MariaDBTest {
     @Launch({"start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--db-pool-max-lifetime=28800"})
     public void testWarningForTooShortLifetime(CLIResult cliResult) {
         cliResult.assertMessage("set 'db-pool-max-lifetime' to a duration smaller than '28800' seconds.");
+    }
+
+    @Tag(DistributionTest.STORAGE)
+    @Test
+    public void testManualScriptProducesTheSchemaOfTheAutomaticMigration(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws Exception {
+        assertManualScriptMatchesAutomaticMigration(runner, rawDistRootPath);
+    }
+
+    @Override
+    protected void resetDatabase(Connection connection) throws Exception {
+        dropAllTables(connection);
+    }
+
+    @Override
+    protected boolean supportsSequences() {
+        return false;
     }
 
 }

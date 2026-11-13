@@ -34,7 +34,7 @@ function complexWorkflowStr(name: string): string {
   return `
     name: ${name}
     on: user_authenticated
-    if: "!has-role('realm-management/realm-admin')"
+    if: "not has-role(realm-management/realm-admin)"
     steps:
       - uses: notify-user
         after: "30"

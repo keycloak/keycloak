@@ -1,6 +1,17 @@
 package org.keycloak.testframework.util;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import org.junit.jupiter.api.Assertions;
 
@@ -26,4 +37,62 @@ public class ApiUtil {
         }
     }
 
+    /**
+     * Verify that a response has one of the expected statuses, and throw otherwise, including the actual status and
+     * the response body in the message. Several Admin API endpoints return a {@link Response} rather than throwing on
+     * a failure, which would otherwise let a failed create, update or delete pass unnoticed.
+     * <p>
+     * The response is not closed and its entity is left untouched, so this can be called inside a try-with-resources
+     * block that goes on to read the entity. If the check fails the entity is consumed to include the body in the
+     * error message, but the exception makes that unobservable to the caller.
+     *
+     * @param response the response to verify
+     * @param context what was attempted, phrased to follow "Failed to ", for example
+     *                <code>"update organization 'acme'"</code>
+     * @param expected the accepted statuses
+     * @throws IllegalStateException if the response has none of the expected statuses
+     */
+    public static void expectStatus(Response response, String context, Status... expected) {
+        for (Status status : expected) {
+            if (status.getStatusCode() == response.getStatus()) {
+                return;
+            }
+        }
+        throw new IllegalStateException("Failed to %s: expected status %s, but was %d. Response: %s".formatted(
+                context,
+                Arrays.stream(expected).map(s -> String.valueOf(s.getStatusCode())).collect(Collectors.joining(" or ")),
+                response.getStatus(),
+                readBody(response)));
+    }
+
+    private static String readBody(Response response) {
+        try {
+            return response.hasEntity() ? response.readEntity(String.class) : "<no body>";
+        } catch (RuntimeException e) {
+            return "<unreadable body: " + e.getMessage() + ">";
+        }
+    }
+
+    public static void addAdminApiClientScope(RealmResource realm, String clientId) {
+        ClientScopeRepresentation scope = realm.clientScopes().findAll().stream()
+                .filter(s -> Constants.KEYCLOAK_ADMIN_API_SCOPE.equals(s.getName()))
+                .findFirst().orElse(null);
+
+        if (scope == null) {
+            return;
+        }
+
+        List<ClientRepresentation> clients = realm.clients().findByClientId(clientId);
+        if (clients.isEmpty()) {
+            return;
+        }
+
+        ClientResource clientApi = realm.clients().get(clients.get(0).getId());
+        boolean alreadyAssigned = clientApi.getDefaultClientScopes().stream()
+                .anyMatch(s -> scope.getId().equals(s.getId()));
+
+        if (!alreadyAssigned) {
+            clientApi.addDefaultClientScope(scope.getId());
+        }
+    }
 }

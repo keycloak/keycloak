@@ -152,10 +152,22 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
     }
 
     private void validateHttpsIssuerUri(String issuerUri) throws VerificationException {
-        if (!issuerUri.startsWith("https://")) {
-            throw new VerificationException(
-                    "HTTPS URI required to retrieve JWT VC Issuer Metadata"
-            );
+        validateHttpsUri(issuerUri, "HTTPS URI required to retrieve JWT VC Issuer Metadata");
+    }
+
+    private void validateHttpsUri(String uri, String errorMessage) throws VerificationException {
+        // URI schemes are case-insensitive (RFC 3986), so parse and compare the scheme
+        // rather than prefix-matching the raw string. Malformed values surface as a
+        // VerificationException so they cannot slip past as an un-dereferenceable URI.
+        String scheme;
+        try {
+            scheme = URI.create(uri).getScheme();
+        } catch (IllegalArgumentException ex) {
+            throw new VerificationException(errorMessage, ex);
+        }
+
+        if (scheme == null || !scheme.equalsIgnoreCase("https")) {
+            throw new VerificationException(errorMessage);
         }
     }
 
@@ -192,6 +204,10 @@ public class JwtVcMetadataTrustedSdJwtIssuer implements TrustedSdJwtIssuer {
         JSONWebKeySet jwks = issuerMetadata.getJwks();
 
         if (jwks == null && jwksUri != null) {
+            // The JWKS URI yields the keys that verify the issuer-signed JWT, so it must be
+            // retrieved over HTTPS just like the issuer metadata endpoint that published it.
+            validateHttpsUri(jwksUri, "HTTPS URI required to retrieve issuer JWKS");
+
             // Dereference JWKS URI
             JsonNode jwksNode = fetchData(jwksUri);
 

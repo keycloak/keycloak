@@ -65,6 +65,7 @@ export const GroupComponent = ({
       orgId
         ? await adminClient.organizations
             .findOne({ id: orgId })
+            .then((organization) => organization ?? undefined)
             .catch(() => undefined)
         : undefined,
     setOrganization,

@@ -362,7 +362,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             dispatchSecurityEventTokens(streamTokens, transmitter);
         } finally {
             discardSnapshotQuietly(() -> session.realms().getRealm(adminEvent.getRealmId()),
-                    SsfUtil.userIdFromAdminEventPath(adminEvent));
+                    SsfUtil.userIdFromAdminEvent(adminEvent));
         }
     }
 
@@ -383,7 +383,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
 
     protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityEventTokensForAdminEvent(AdminEvent adminEvent, SsfTransmitterProvider transmitter) {
 
-        if (adminEvent.getResourceType() != ResourceType.USER) {
+        // USER_SESSION is the one non-user resource the mapper handles (admin
+        // deletion of a single session); canConvert has already gated on it.
+        if (adminEvent.getResourceType() != ResourceType.USER
+            && adminEvent.getResourceType() != ResourceType.USER_SESSION) {
             return List.of();
         }
 
@@ -399,7 +402,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         // row is gone before this event fires — still produces a subject. Bailing
         // here was previously the hard stop that made account-purged impossible.
         UserModel eventUser = PurgedUserSnapshot.resolveUserOrSnapshot(
-                session, realm, SsfUtil.userIdFromAdminEventPath(adminEvent));
+                session, realm, SsfUtil.userIdFromAdminEvent(adminEvent));
         if (eventUser == null) {
             return List.of();
         }

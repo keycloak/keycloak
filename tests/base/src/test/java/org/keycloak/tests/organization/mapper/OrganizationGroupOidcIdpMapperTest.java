@@ -47,7 +47,6 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.IdentityProviderMapperBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -608,27 +607,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     }
 
     private String addHardcodedOrganizationGroupMapper(OrganizationResource organization, String groupName, IdentityProviderMapperSyncMode syncMode) {
-        GroupRepresentation group = new GroupRepresentation();
-        group.setName(groupName);
-        String groupId;
-        try (Response response = organization.groups().addTopLevelGroup(group)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-            groupId = ApiUtil.getCreatedId(response);
-        }
-
-        String idpAlias = organizationName + "-identity-provider";
-        IdentityProviderMapperRepresentation mapper = IdentityProviderMapperBuilder.create()
-                .name("org-group-mapper")
-                .identityProviderMapper(HardcodedGroupMapper.PROVIDER_ID)
-                .identityProviderAlias(idpAlias)
-                .attribute(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
-                .attribute(ConfigConstants.GROUP, organization.groups().group(groupId).toRepresentation(false).getPath())
-                .attribute(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
-                .attribute(ConfigConstants.ORGANIZATION_ID, organization.toRepresentation().getId())
-                .build();
-        try (Response response = realm.admin().identityProviders().get(idpAlias).addMapper(mapper)) {
-            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
-        }
-        return groupId;
+        return addHardcodedOrganizationGroupMapper(organization,
+                realm.admin().identityProviders().get(organizationName + "-identity-provider"), groupName, syncMode);
     }
 }

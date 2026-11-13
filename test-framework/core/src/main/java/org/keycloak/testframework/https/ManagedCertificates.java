@@ -61,30 +61,36 @@ public class ManagedCertificates {
         keystoreFormat = configBuilder.getKeystoreFormat();
         tlsEnabled = configBuilder.isTlsEnabled();
         mTlsEnabled = configBuilder.isMTlsEnabled();
+        if (tlsEnabled) {
+            if (configBuilder.getServerKeystore() == null) {
+                serverKeystorePath = resolvePath("kc-testing-server-keystore");
+                serverTruststorePath = resolvePath("kc-testing-server-truststore");
+                clientKeystorePath = resolvePath("kc-testing-client-keystore");
+                clientTruststorePath = resolvePath("kc-testing-client-truststore");
 
-        if (configBuilder.getServerKeystore() == null) {
-            serverKeystorePath = resolvePath("kc-testing-server-keystore");
-            serverTruststorePath = resolvePath("kc-testing-server-truststore");
-            clientKeystorePath = resolvePath("kc-testing-client-keystore");
-            clientTruststorePath = resolvePath("kc-testing-client-truststore");
-
-            if (!Files.exists(serverKeystorePath) || !Files.exists(serverTruststorePath) || !Files.exists(clientKeystorePath) || !Files.exists(clientTruststorePath)) {
-                createStores();
+                if (!Files.exists(serverKeystorePath) || !Files.exists(serverTruststorePath) || !Files.exists(clientKeystorePath) || !Files.exists(clientTruststorePath)) {
+                    createStores();
+                } else {
+                    clientKeyStore = load(clientKeystorePath);
+                    clientTrustStore = load(clientTruststorePath);
+                }
             } else {
+                serverKeystorePath = checkPath(configBuilder.getServerKeystore());
+                serverTruststorePath = checkPath(configBuilder.getServerTruststore());
+                clientKeystorePath = checkPath(configBuilder.getClientKeystore());
+                clientTruststorePath = checkPath(configBuilder.getClientTruststore());
+
                 clientKeyStore = load(clientKeystorePath);
                 clientTrustStore = load(clientTruststorePath);
             }
+            clientSslContext = createClientSSLContext();
         } else {
-            serverKeystorePath = checkPath(configBuilder.getServerKeystore());
-            serverTruststorePath = checkPath(configBuilder.getServerTruststore());
-            clientKeystorePath = checkPath(configBuilder.getClientKeystore());
-            clientTruststorePath = checkPath(configBuilder.getClientTruststore());
-
-            clientKeyStore = load(clientKeystorePath);
-            clientTrustStore = load(clientTruststorePath);
+            serverKeystorePath = null;
+            serverTruststorePath = null;
+            clientKeystorePath = null;
+            clientTruststorePath = null;
+            clientSslContext = null;
         }
-
-        clientSslContext = tlsEnabled ? createClientSSLContext() : null;
     }
 
     /**
@@ -129,6 +135,14 @@ public class ManagedCertificates {
      */
     public SSLContext getClientSSLContext() {
         return clientSslContext;
+    }
+
+    /**
+     * Return the client keystore
+     * @return The client keystore
+     */
+    public KeyStore getClientKeyStore() {
+        return clientKeyStore;
     }
 
     /**

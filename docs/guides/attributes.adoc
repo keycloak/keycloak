@@ -29,11 +29,14 @@
 :adminguide_name: Server Administration Guide
 :adminguide_name_short: Server Administration
 :adminguide_link: {project_doc_base_url}/server_admin/
+:adminguide_vault: {adminguide_link}#_vault-key-resolvers
+:adminguide_user_locale: {adminguide_link}#_user_locale_selection
 :quickstartRepo_link: https://github.com/keycloak/keycloak-quickstarts
 :quickstartRepo_name: Keycloak Quickstarts Repository
 :quickstartRepo_dir: keycloak-quickstarts
 :securing_apps_link: https://www.keycloak.org/guides#securing-apps
 :upgrading_guide_link: {project_doc_base_url}/upgrading/
+:migrate_db: {upgrading_guide_link}#_migrate_db
 :developerguide_userstoragespi_link: {developerguide_link}#_user-storage-spi
 :developerguide_userstoragespi_name: User Storage SPI
 :kc_js_path: /js
@@ -43,4 +46,4 @@
 :keycloak_benchmark_name: Keycloak Benchmark Project
 :ui_customization_guide_name: UI Customization Guide
 :ui_customization_guide_link: {project_doc_base_url}/ui-customization/
-
+:server_providers: {developerguide_link}#_providers

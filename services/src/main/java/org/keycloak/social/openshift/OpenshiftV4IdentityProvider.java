@@ -1,6 +1,7 @@
 package org.keycloak.social.openshift;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
 
@@ -52,7 +53,9 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
             if (response.getStatusLine().getStatusCode() != 200) {
                 throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode());
             }
-            return new ObjectMapper().readValue(response.getEntity().getContent(), Map.class);
+            try (InputStream content = response.getEntity().getContent()) {
+                return new ObjectMapper().readValue(content, Map.class);
+            }
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not initialize oAuth metadata", e);
         }

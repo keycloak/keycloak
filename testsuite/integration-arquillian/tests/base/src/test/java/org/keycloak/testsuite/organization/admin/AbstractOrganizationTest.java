@@ -17,10 +17,12 @@
 
 package org.keycloak.testsuite.organization.admin;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -49,7 +51,9 @@ import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
+import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.TestCleanup;
 
 import org.hamcrest.Matchers;
@@ -95,6 +99,9 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
 
+    @Page
+    protected VerifyEmailPage verifyEmailPage;
+
     protected BrokerConfiguration bc = brokerConfigFunction.apply(organizationName);
 
     @Override
@@ -105,7 +112,6 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getClients().addAll(bc.createConsumerClients());
-        testRealm.setSmtpServer(null);
         testRealm.setOrganizationsEnabled(Boolean.TRUE);
         super.configureTestRealm(testRealm);
     }
@@ -258,14 +264,28 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             updateAccountInformationPage.updateAccountInformation(username, email, "Firstname", "Lastname");
         }
 
-        if (redirectToApp) {
-            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
-        }
-
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(username, Boolean.TRUE);
         if (!users.isEmpty()) {
             assertThat(users, Matchers.hasSize(1));
             getCleanup(bc.consumerRealmName()).addUserId(users.get(0).getId());
+        }
+
+        if (redirectToApp) {
+            if (!oauth.parseLoginResponse().isSuccess()) {
+                verifyEmail();
+            }
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        }
+    }
+
+    protected void verifyEmail() {
+        verifyEmailPage.assertCurrent();
+        MimeMessage message = mail.getLastReceivedMessage();
+        assertNotNull(message, "Verification email should have been sent");
+        try {
+            driver.navigate().to(MailUtils.getPasswordResetEmailLink(message));
+        } catch (IOException e) {
+            throw new AssertionError("Could not read verification email", e);
         }
     }
 

@@ -146,12 +146,12 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         keys.setName("enc-generated");
         keys.setProviderType(KeyProvider.class.getName());
-        keys.setProviderId("rsa-generated");
+        keys.setProviderId("rsa-enc-generated");
         keys.setParentId(realmId);
         keys.setConfig(new MultivaluedHashMap<>());
         keys.getConfig().putSingle("priority", "150");
         keys.getConfig().putSingle(Attributes.KEY_USE, KeyUse.ENC.getSpecName());
-        keys.getConfig().putSingle("algorithm", org.keycloak.crypto.Algorithm.RS256);
+        keys.getConfig().putSingle("algorithm", JWEConstants.RSA_OAEP);
 
         try (Response response = managedRealm.admin().components().add(keys)) {
             assertEquals(201, response.getStatus());
@@ -161,12 +161,12 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         keys.setName("enc-generated");
         keys.setProviderType(KeyProvider.class.getName());
-        keys.setProviderId("rsa-generated");
+        keys.setProviderId("rsa-enc-generated");
         keys.setParentId(realmId);
         keys.setConfig(new MultivaluedHashMap<>());
         keys.getConfig().putSingle("priority", "200");
         keys.getConfig().putSingle(Attributes.KEY_USE, KeyUse.ENC.getSpecName());
-        keys.getConfig().putSingle("algorithm", org.keycloak.crypto.Algorithm.PS256);
+        keys.getConfig().putSingle("algorithm", JWEConstants.RSA_OAEP_256);
 
         try (Response response = managedRealm.admin().components().add(keys)) {
             assertEquals(201, response.getStatus());
@@ -1460,14 +1460,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             String jwksUri = representation.getJwksUri();
             JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(jwksUri, httpClient).asJson(JSONWebKeySet.class);
             Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
-            String keyId = null;
-
-            if (keyId == null) {
-                KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils
-                        .findActiveEncryptingKey(managedRealm.admin(),
-                                Algorithm.PS256);
-                keyId = encKey.getKid();
-            }
+            KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils
+                    .findActiveEncryptingKey(managedRealm.admin(), encAlg);
+            String keyId = encKey.getKid();
 
             PublicKey decryptionKEK = keysForUse.get(keyId);
             JWE jwe = new JWE()
@@ -1497,6 +1492,56 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                 Algorithm.RSA_OAEP);
         JWEHeader jweHeader = new JWEHeader(RSA_OAEP, JWEConstants.A128CBC_HS256, null, encKey.getKid());
         assertRequestObjectEncryption(jweHeader);
+    }
+
+    /**
+     * A JWE whose header {@code alg} differs from the provisioned algorithm of the decryption key must be rejected.
+     */
+    @Test
+    public void testRequestObjectEncryptedWithWrongKeyManagementAlgorithmIsRejected() throws Exception {
+        KeysMetadataRepresentation.KeyMetadataRepresentation encKey =
+                KeyUtils.findActiveEncryptingKey(managedRealm.admin(), Algorithm.RSA_OAEP);
+
+        oauth.loginForm().request(encryptRequestObject(
+                new JWEHeader(JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256, null, encKey.getKid()), encKey.getKid())).open();
+
+        errorPage.assertCurrent();
+        assertEquals("Invalid Request", errorPage.getError());
+    }
+
+    /**
+     * A passive key is still advertised in the JWKS, so it must be usable when referenced by {@code kid},
+     * but must not be picked when the {@code kid} is missing.
+     */
+    @Test
+    public void testRequestObjectEncryptedWithPassiveKey() throws Exception {
+        KeysMetadataRepresentation.KeyMetadataRepresentation encKey =
+                KeyUtils.findActiveEncryptingKey(managedRealm.admin(), Algorithm.RSA_OAEP);
+        setKeyActive(encKey.getProviderId(), false);
+        try {
+            oauth.loginForm().request(encryptRequestObject(
+                    new JWEHeader(RSA_OAEP, JWEConstants.A128CBC_HS256, null, encKey.getKid()), encKey.getKid())).open();
+            loginPage.assertCurrent();
+
+            oauth.loginForm().request(encryptRequestObject(
+                    new JWEHeader(RSA_OAEP, JWEConstants.A128CBC_HS256, null), encKey.getKid())).open();
+            errorPage.assertCurrent();
+        } finally {
+            setKeyActive(encKey.getProviderId(), true);
+        }
+    }
+
+    private void setKeyActive(String componentId, boolean active) {
+        ComponentRepresentation component = managedRealm.admin().components().component(componentId).toRepresentation();
+        component.getConfig().putSingle(Attributes.ACTIVE_KEY, String.valueOf(active));
+        managedRealm.admin().components().component(componentId).update(component);
+    }
+
+    private String encryptRequestObject(JWEHeader header, String publicKeyKid) throws IOException, JWEException {
+        JWE jwe = new JWE().header(header).content(createAndSignRequestObject().getBytes());
+        jwe.getKeyStorage().setEncryptionKey(
+                JWKSUtils.getKeysForUse(oauth.keys().getRealmKeys(), JWK.Use.ENCRYPTION).get(publicKeyKid));
+        return jwe.encodeJwe();
     }
 
     private String createAndSignRequestObject() throws IOException {
@@ -1551,7 +1596,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
             if (keyId == null) {
                 KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils.findActiveEncryptingKey(managedRealm.admin(),
-                        Algorithm.PS256);
+                        jweHeader.getAlgorithm());
                 keyId = encKey.getKid();
             }
 
@@ -1602,7 +1647,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                 Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
 
                 KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils
-                        .findActiveEncryptingKey(managedRealm.admin(), Algorithm.PS256);
+                        .findActiveEncryptingKey(managedRealm.admin(), Algorithm.RSA_OAEP);
                 PublicKey encryptionKey = keysForUse.get(encKey.getKid());
 
                 JWE jwe = new JWE().header(new JWEHeader(RSA_OAEP, JWEConstants.A256GCM, null)).content(contentBytes);

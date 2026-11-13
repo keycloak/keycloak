@@ -1192,7 +1192,15 @@ public interface PicketLinkLogger {
     /** @param id */
     void samlSecurityTokenNotFoundInRegistry(String id);
 
-    IllegalArgumentException samlMetaDataFailedToCreateCacheDuration(String timeValue);
+    /**
+     * Do not use this method as it will log user-provided data in the exception.
+     */
+    @Deprecated(forRemoval = true, since = "27.0")
+    default IllegalArgumentException samlMetaDataFailedToCreateCacheDuration(String timeValue) {
+        return samlMetaDataFailedToCreateCacheDuration();
+    }
+
+    IllegalArgumentException samlMetaDataFailedToCreateCacheDuration();
 
     ConfigurationException samlMetaDataNoIdentityProviderDefined();
 

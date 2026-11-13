@@ -1,4 +1,5 @@
 import { test } from "@playwright/test";
+import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
@@ -19,6 +20,7 @@ import {
 import { goToChildGroupsTab } from "./util.ts";
 
 test.describe.serial("Members", () => {
+  const realmName = `groups-members-${uuid()}`;
   const predefinedGroups = ["level", "level1", "level2", "level3"];
   const emptyGroup = "empty-group";
   const users: { id: string; username: string }[] = [];
@@ -26,9 +28,14 @@ test.describe.serial("Members", () => {
   const tableName = "Members";
 
   test.beforeAll(async () => {
-    const createdGroups = await adminClient.createSubGroups(predefinedGroups);
+    await adminClient.createRealm(realmName);
+    const createdGroups = await adminClient.createSubGroups(
+      predefinedGroups,
+      realmName,
+    );
     for (let index = 0; index < 5; index++) {
       const { id } = await adminClient.createUser({
+        realm: realmName,
         username: username + index,
         enabled: true,
       });
@@ -39,26 +46,21 @@ test.describe.serial("Members", () => {
       await adminClient.addUserToGroup(
         users[index].id!,
         createdGroups[index % 3].id,
+        realmName,
       );
     }
-    await adminClient.createGroup(emptyGroup);
+    await adminClient.createGroup(emptyGroup, realmName);
     await adminClient.createUser({
+      realm: realmName,
       username: "new",
       enabled: true,
     });
   });
 
-  test.afterAll(async () => {
-    for (const user of users) {
-      await adminClient.deleteUser(user.username);
-    }
-    await adminClient.deleteUser("new");
-    await adminClient.deleteGroups();
-  });
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToGroups(page);
+    await login(page, { to: { pathname: `/${realmName}/groups` } });
     await clickTableRowItem(page, predefinedGroups[0]);
     await goToMembersTab(page);
   });

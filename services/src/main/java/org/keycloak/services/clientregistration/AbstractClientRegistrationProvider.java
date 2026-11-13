@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -103,6 +104,11 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                                 List.copyOf(client.getRegisteredNodes().keySet()),
                                 ClientPolicyEvent.REGISTER_NODE));
             }
+
+            // Service accounts and authorization services are
+            // allowed during registration via grant types; escalation risk is guarded on client update.
+            validateUntrustedAttributes(client, null);
+            stripPrivilegedAttributes(client);
 
             ClientModel clientModel = ClientManager.createClient(session, realm, client);
 
@@ -217,6 +223,18 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
                 );
             }
         }
+
+        validateUntrustedAttributes(rep, client);
+        stripPrivilegedAttributes(rep);
+        if (auth.isRegistrationAccessToken()
+                && rep.isServiceAccountsEnabled() != null
+                && rep.isServiceAccountsEnabled() != client.isServiceAccountsEnabled()) {
+            throw new ErrorResponseException(
+                    ErrorCodes.INVALID_CLIENT_METADATA,
+                    "Service accounts cannot be enabled or disabled via registration access token",
+                    Response.Status.BAD_REQUEST
+            );
+        }
         ClientResource.updateClientServiceAccount(session, client, rep.isServiceAccountsEnabled());
 
         try {
@@ -275,6 +293,40 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
 
         event.client(client.getClientId()).success();
         return rep;
+    }
+
+    private void validateUntrustedAttributes(ClientRepresentation rep, ClientModel existingClient) {
+        if (auth.isBearerToken()) {
+            // Admin callers retain authority to manage Vault expressions
+            return;
+        }
+
+        if (isVaultExpression(rep.getSecret()) && (existingClient == null
+                || !Objects.equals(rep.getSecret(), existingClient.getSecret()))) {
+            throw new ErrorResponseException(
+                    ErrorCodes.INVALID_CLIENT_METADATA,
+                    "Vault expressions cannot be set via client registration",
+                    Response.Status.BAD_REQUEST
+            );
+        }
+
+        if (rep.getAttributes() != null) {
+            for (Map.Entry<String, String> entry : rep.getAttributes().entrySet()) {
+                if (isVaultExpression(entry.getValue()) && (existingClient == null
+                        || !Objects.equals(entry.getValue(),
+                                existingClient.getAttribute(entry.getKey())))) {
+                    throw new ErrorResponseException(
+                            ErrorCodes.INVALID_CLIENT_METADATA,
+                            "Vault expressions cannot be set via client registration",
+                            Response.Status.BAD_REQUEST
+                    );
+                }
+            }
+        }
+    }
+
+    private boolean isVaultExpression(String secret) {
+        return secret != null && secret.startsWith("${vault.") && secret.endsWith("}");
     }
 
 
@@ -362,9 +414,10 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         removeDefaultRoles(client, remove.toArray(new String[] {}));
 
         for (String roleName : defaultRoles) {
-            if (!already.contains(roleName)) {
-                addDefaultRole(client, roleName);
+            if (roleName == null || already.contains(roleName)) {
+                continue;
             }
+            addDefaultRole(client, roleName);
         }
     }
 
@@ -383,5 +436,22 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
         }
         allowedOrigins.addAll(ClientRegistrationPolicyManager.getAllowedOrigins(session, auth.resolveRegistrationAuth()));
         return allowedOrigins;
+    }
+
+    /**
+     * Strips privileged {@code ssf.*} attributes from non-Admin representations.
+     *
+     * <p>Reserved for the Admin API; silently removed for DCR callers (IAT/RAT)
+     * without throwing an error.
+     */
+    private void stripPrivilegedAttributes(ClientRepresentation rep) {
+        if (auth.isBearerToken()) {
+            return; // Admin callers retain full write access
+        }
+        if (rep.getAttributes() == null || rep.getAttributes().isEmpty()) {
+            return;
+        }
+        rep.getAttributes().entrySet()
+                .removeIf(e -> e.getKey().startsWith("ssf."));
     }
 }

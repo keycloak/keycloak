@@ -30,6 +30,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -147,11 +149,13 @@ public class KcAdmV2KeystoreCLITest {
                 .substring(response.getLocation().getPath().lastIndexOf('/') + 1);
         response.close();
 
-        var serviceAccountUser = adminClient.realm("master").clients()
-                .get(clientUuid).getServiceAccountUser();
+        var serviceAccountUserId = adminClient.realm("master").clients()
+                .get(clientUuid).toRepresentation().getServiceAccountUserId();
         var adminRole = adminClient.realm("master").roles().get("admin").toRepresentation();
-        adminClient.realm("master").users().get(serviceAccountUser.getId())
+        adminClient.realm("master").users().get(serviceAccountUserId)
                 .roles().realmLevel().add(java.util.List.of(adminRole));
+
+        addAdminApiClientScope(adminClient.realm("master"), adminClient.realm("master").clients().get(clientUuid), true);
 
         try {
             String keystorePath = getClientKeystorePath();

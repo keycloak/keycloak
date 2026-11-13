@@ -34,6 +34,7 @@ import org.keycloak.exportimport.util.ExportImportSessionTask.Mode;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -141,8 +142,10 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
         Objects.requireNonNull(federatedUserFiles, "directory not found: " + getRootDirectory().getName());
 
         // Import realm first
-        InputStream is = parseFile(realmFile);
-        final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
+        final RealmRepresentation realmRep;
+        try (InputStream is = parseFile(realmFile)) {
+            realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
+        }
         if (!realmRep.getRealm().equals(realmName)) {
             throw new IllegalStateException(String.format("File name / realm name mismatch. %s, contains realm %s. File name should be %s", realmFile.getName(), realmRep.getRealm(), realmRep.getRealm() + "-realm.json"));
         }
@@ -166,8 +169,15 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
                 new ExportImportSessionTask() {
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
-                        session.getContext().setRealm(session.realms().getRealmByName(realmName));
-                        ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis, federated, new DefaultExportImportManager.Batcher());
+                        // the session may be shared with the realm import but the realm loaded here
+                        // is detached when the batch ends
+                        RealmModel previousRealm = session.getContext().getRealm();
+                        try {
+                            session.getContext().setRealm(session.realms().getRealmByName(realmName));
+                            ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis, federated, new DefaultExportImportManager.Batcher());
+                        } finally {
+                            session.getContext().setRealm(previousRealm);
+                        }
                         logger.infof("Imported %susers from %s", federated?"federated ":"", userFile.getAbsolutePath());
                     }
                 }.runTask(factory, Mode.BATCHED);

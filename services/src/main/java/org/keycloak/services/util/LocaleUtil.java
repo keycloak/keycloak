@@ -54,7 +54,7 @@ public class LocaleUtil {
     public static void processLocaleParam(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
         if (realm.isInternationalizationEnabled()) {
             String locale = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
-            if (locale != null) {
+            if (locale != null && realm.getSupportedLocalesStream().anyMatch(l -> locale.equals(l))) {
                 if (authSession != null) {
                     authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
                 } else {

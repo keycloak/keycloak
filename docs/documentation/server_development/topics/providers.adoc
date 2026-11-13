@@ -160,6 +160,36 @@ The pom.xml file for your SPI requires a `dependencyManagement` section with an 
 ----
 <1> Replace `VERSION` with the current version of {project_name}
 
+[[_provider_factory_lifecycle]]
+==== Provider factory lifecycle
+
+When {project_name} starts, it calls `init()` on every provider factory.
+After all factories are initialized, it calls `postInit()` on each of them.
+When the server shuts down, it calls `close()`.
+
+The order in which `postInit()` is called on different factories is not defined.
+If your factory uses another provider in `postInit()`, declare that provider in `dependsOn()`.
+{project_name} then calls `postInit()` on all factories of that provider before it calls `postInit()` on your factory.
+On shutdown, `close()` is called on your factory before it is called on the factories it depends on.
+
+For example, the JPA `EntityManagerFactory` is only available after `postInit()` has run on the JPA connection provider factory.
+A factory that accesses the database in `postInit()` must therefore depend on `JpaConnectionProvider`:
+
+[source,java]
+----
+@Override
+public void postInit(KeycloakSessionFactory factory) {
+    // uses JpaConnectionProvider, for example to load data from the database
+}
+
+@Override
+public Set<Class<? extends Provider>> dependsOn() {
+    return Set.of(JpaConnectionProvider.class);
+}
+----
+
+Without this dependency, your `postInit()` might run before the JPA connection provider is initialized, and the database access fails.
+
 [[_override_builtin_providers]]
 ==== Override built-in providers
 

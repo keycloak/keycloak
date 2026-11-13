@@ -19,6 +19,7 @@ package org.keycloak.models;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.credential.CredentialInput;
@@ -55,10 +56,39 @@ public interface SubjectCredentialManager {
     boolean updateCredential(CredentialInput input);
 
     /**
+     * Updates a credential of the entity with the inputs provided by the entity, and returns the credential as
+     * written to the Keycloak credential store.
+     * <p>
+     * The default implementation performs the update and reports no stored credential. Implementations writing
+     * credentials to the Keycloak credential store are expected to override it; leaving the default in place only
+     * means callers cannot identify the credential that was written.
+     *
+     * @return the credential written to the Keycloak credential store, or an empty {@link Optional} when nothing
+     * has been written there, for example because a user-storage provider handled the update
+     */
+    default Optional<CredentialModel> updateCredentialAndGet(CredentialInput input) {
+        updateCredential(input);
+        return Optional.empty();
+    }
+
+    /**
      * Updates a credential of the entity with an updated {@link CredentialModel}.
      * Usually called by a {@link org.keycloak.credential.CredentialProvider}.
      */
     void updateStoredCredential(CredentialModel cred);
+
+    /**
+     * Replaces a credential of the entity with a new version, but only if the stored credential still has the content
+     * of the old version. Use this to update a credential that was read earlier, so that changes made in the meantime
+     * are not overwritten.
+     * <p>
+     * Implementations must make the check and the replacement atomic, for example by locking the stored credential.
+     *
+     * @param oldCred the credential as it was read, identified by its id
+     * @param newCred the credential to store instead
+     * @return {@code true} if the credential was replaced, {@code false} if it was changed or removed in the meantime
+     */
+    boolean updateStoredCredential(CredentialModel oldCred, CredentialModel newCred);
 
     /**
      * Updates a credential of the entity with an updated {@link CredentialModel}.

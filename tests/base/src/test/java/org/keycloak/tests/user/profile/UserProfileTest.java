@@ -83,6 +83,7 @@ import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.LengthValidator;
+import org.keycloak.validate.validators.OptionsValidator;
 import org.keycloak.validate.validators.UriValidator;
 
 import org.hamcrest.Matchers;
@@ -1413,6 +1414,56 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testRequiredMultivaluedAttributeWithBlankValue() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRequiredMultivaluedAttributeWithBlankValue);
+    }
+
+    private static void testRequiredMultivaluedAttributeWithBlankValue(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
+        UPAttribute attribute = new UPAttribute(ATT_ADDRESS, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired());
+        attribute.setMultivalued(true);
+        attribute.addValidation(OptionsValidator.ID, Map.of(OptionsValidator.KEY_OPTIONS, List.of("opt1", "opt2")));
+        config.addOrReplaceAttribute(attribute);
+        config.addOrReplaceAttribute(new UPAttribute("department", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired()));
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("department", "sales");
+
+        // a value that is blank according to String.isBlank() would not be stored, so it does not satisfy the required check
+        attributes.put(ATT_ADDRESS, List.of("opt1"));
+        attributes.put("department", List.of(" "));
+        try {
+            provider.create(UserProfileContext.REGISTRATION, attributes).validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError("department"));
+        }
+        attributes.put("department", "sales");
+
+        // only blank values, as sent by the login theme when no checkbox is selected
+        attributes.put(ATT_ADDRESS, List.of(""));
+        try {
+            provider.create(UserProfileContext.REGISTRATION, attributes).validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(ATT_ADDRESS));
+        }
+
+        // blank value sent together with the selected values
+        attributes.put(ATT_ADDRESS, List.of("", "opt1", "opt2"));
+        UserProfile profile = provider.create(UserProfileContext.REGISTRATION, attributes);
+        profile.validate();
+        UserModel user = profile.create();
+        assertThat(user.getAttributes().get(ATT_ADDRESS), containsInAnyOrder("opt1", "opt2"));
+    }
+
+    @Test
     public void testNullAttributesInConfig() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNullAttributesInConfig);
     }
@@ -2550,6 +2601,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testInvalidConfigDefaultValue);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValue);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNoDefaultValueForRootAttributes);
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValueForReadOnlyAttribute);
     }
 
     private static void testInvalidConfigDefaultValue(KeycloakSession session) {
@@ -2586,6 +2638,33 @@ public class UserProfileTest extends AbstractUserProfileTest {
         List<String> actualValue = user.getAttributes().get("foo");
         List<String> expectedValue = List.of("def");
         assertThat(actualValue, Matchers.equalTo(expectedValue));
+    }
+
+    private static void testDefaultValueForReadOnlyAttribute(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig upConfig = UPConfigUtils.parseSystemDefaultConfig();
+        UPAttribute adminOnly = new UPAttribute("adminOnly", new UPAttributePermissions(Set.of(UserProfileConstants.ROLE_ADMIN), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        adminOnly.setDefaultValue("def");
+        upConfig.addOrReplaceAttribute(adminOnly);
+        UPAttribute userView = new UPAttribute("userView", new UPAttributePermissions(Set.of(UserProfileConstants.ROLE_USER, UserProfileConstants.ROLE_ADMIN), Set.of(UserProfileConstants.ROLE_ADMIN)));
+        userView.setDefaultValue("def");
+        upConfig.addOrReplaceAttribute(userView);
+        provider.setConfiguration(upConfig);
+
+        String userName = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, List.of(userName));
+        attributes.put(UserModel.EMAIL, List.of(userName + "@keycloak.org"));
+        attributes.put(UserModel.FIRST_NAME, List.of("Joe"));
+        attributes.put(UserModel.LAST_NAME, List.of("Doe"));
+        // values provided for read-only attributes are ignored in favor of the default value
+        attributes.put("userView", List.of("changed"));
+
+        UserModel user = provider.create(UserProfileContext.REGISTRATION, attributes).create();
+        user = session.users().getUserById(session.getContext().getRealm(), user.getId());
+
+        assertThat(user.getAttributes().get("adminOnly"), Matchers.equalTo(List.of("def")));
+        assertThat(user.getAttributes().get("userView"), Matchers.equalTo(List.of("def")));
     }
 
     private static void testNoDefaultValueForRootAttributes(KeycloakSession session) {

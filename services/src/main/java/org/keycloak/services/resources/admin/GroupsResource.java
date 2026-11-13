@@ -112,7 +112,12 @@ public class GroupsResource {
         }
 
         if (populateHierarchy) {
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator, subGroupsCount);
+            Stream<GroupRepresentation> hierarchy = GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator, subGroupsCount);
+            if (!briefRepresentation) {
+                // filterRolesInRepresentation recurses into subgroups, so applying it to the roots covers the whole tree
+                hierarchy = hierarchy.peek(rep -> GroupUtils.filterRolesInRepresentation(rep, realm, session, auth));
+            }
+            return hierarchy;
         }
 
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
@@ -121,6 +126,9 @@ public class GroupsResource {
 
         return stream.map(g -> {
             GroupRepresentation rep = GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation);
+            if (!briefRepresentation) {
+                GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+            }
 
             if (subGroupsCount) {
                 return GroupUtils.populateSubGroupCount(g, rep);
@@ -220,6 +228,7 @@ public class GroupsResource {
                     throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Status.BAD_REQUEST);
                 }
                 if (child.getParentId() != null) {
+                    auth.groups().requireManage(child);
                     realm.moveGroup(child, null);
                 }
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());

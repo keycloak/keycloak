@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 
 import org.keycloak.authentication.authenticators.util.LoAUtil;
@@ -57,6 +58,22 @@ public class AcrUtils {
             acrValues = getDefaultAcrValues(client);
         }
         return enforceMinimumAcr(acrValues, client);
+    }
+
+    /**
+     * Maps ACR values to LoA and returns the lowest. Unmapped or non-numeric ACRs fall back to {@link Constants#MINIMUM_LOA}.
+     */
+    public static OptionalInt getLowestLoaForAcrValues(List<String> acrValues, ClientModel client) {
+        Map<String, Integer> acrLoaMap = getAcrLoaMap(client);
+        return acrValues.stream().mapToInt(acr -> {
+            Integer loa = acrLoaMap.get(acr);
+            try {
+                return loa == null ? Integer.parseInt(acr) : loa;
+            } catch (NumberFormatException e) {
+                LOGGER.warnf("Requested acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct used ACR.", acr);
+                return Constants.MINIMUM_LOA;
+            }
+        }).min();
     }
 
     public static List<String> enforceMinimumAcr(List<String> acrValues, ClientModel client) {

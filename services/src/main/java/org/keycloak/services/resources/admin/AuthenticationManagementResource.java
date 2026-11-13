@@ -257,6 +257,10 @@ public class AuthenticationManagementResource {
             throw ErrorResponse.exists("Failed to create flow with empty alias name");
         }
 
+        if (flow.isBuiltIn()) {
+            throw new BadRequestException("It is not allowed to create a built-in flow");
+        }
+
         if (realm.getFlowByAlias(flow.getAlias()) != null) {
             throw ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
@@ -333,6 +337,14 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Illegal execution");
         }
 
+        // validate immutable flags before any mutations
+        if (flow.isBuiltIn() != checkFlow.isBuiltIn()) {
+            throw new BadRequestException("The authentication flow builtIn attribute cannot be changed");
+        }
+        if (flow.isTopLevel() != checkFlow.isTopLevel()) {
+            throw new BadRequestException("The authentication flow topLevel attribute cannot be changed");
+        }
+
         //if a different flow with the same name does already exist, throw an exception
         if (realm.getFlowByAlias(flow.getAlias()) != null && !checkFlow.getAlias().equals(flow.getAlias())) {
             throw ErrorResponse.exists("Flow alias name already exists");
@@ -343,14 +355,14 @@ public class AuthenticationManagementResource {
             checkFlow.setAlias(flow.getAlias());
         } else if (checkFlow.getAlias() == null && flow.getAlias() != null) {
             checkFlow.setAlias(flow.getAlias());
-	}
+ }
 
         //check if the description changed
         if (checkFlow.getDescription() != null && !checkFlow.getDescription().equals(flow.getDescription())) {
             checkFlow.setDescription(flow.getDescription());
         } else if (checkFlow.getDescription() == null && flow.getDescription() != null) {
             checkFlow.setDescription(flow.getDescription());
-	}
+ }
 
         //update the flow
         flow.setId(existingFlow.getId());

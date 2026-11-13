@@ -41,6 +41,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
 
     // Client ID Verification
     public static final String ALLOW_HTTP_SCHEME = "cimd-allow-http-scheme";
+    public static final String ALLOW_PRIVATE_USE_ADDRESSES = "cimd-allow-private-use-addresses";
 
     // Client ID Validation
     public static final String TRUSTED_DOMAINS = "cimd-allow-permitted-domains";
@@ -89,13 +90,25 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 false);
         configProperties.add(property);
 
+        property = new ProviderConfigProperty(
+                ALLOW_PRIVATE_USE_ADDRESSES,
+                "Allow private-use addresses",
+                "If OFF, then the executor rejects a URL that the server fetches itself, namely the Client ID URL and the " +
+                        "jwks_uri, sector_identifier_uri and request_uris properties of Client Metadata, whose host resolves to a " +
+                        "loopback, private, link-local, unique local or multicast address. Such URLs are rejected even if their host " +
+                        "matches one of the trusted domains, which prevents Server-Side Request Forgery (SSRF) against hosts only " +
+                        "reachable from the server. It can be ON only for development environment. It must be OFF in production environment.",
+                ProviderConfigProperty.BOOLEAN_TYPE,
+                false);
+        configProperties.add(property);
+
         // Client ID Validation
         property = new ProviderConfigProperty(
                 TRUSTED_DOMAINS,
                 "Trusted domains",
                 "If some domains are filled, the executor only accepts the following URL-formatted parameters whose host part matches one of the filled domains: " +
                         "Authorization request parameters: client_id, redirect_uri, " +
-                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri. " +
+                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri, sector_identifier_uri, request_uris. " +
                         "The domains are checked by using wildcard pattern matching (e.g. '*.example.org'). " +
                         "If the domains not filled, the executor denies all such the parameters and properties. " +
                         "For example, use pattern like '*.example.org' if you want to accept the parameter / property whose domain is 'example.org' or its subdomains.",

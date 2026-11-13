@@ -1,0 +1,5 @@
+{
+  "realm": "dir-import-migration",
+  "enabled": true,
+  "keycloakVersion": "18.0.0"
+}

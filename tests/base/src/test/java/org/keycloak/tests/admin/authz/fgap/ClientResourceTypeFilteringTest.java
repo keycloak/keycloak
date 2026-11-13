@@ -22,23 +22,43 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -46,6 +66,9 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @BeforeEach
     public void onBeforeEach() {
@@ -140,5 +163,73 @@ public class ClientResourceTypeFilteringTest extends AbstractPermissionTest {
         assertFalse(search.isEmpty());
         assertEquals(1, search.size());
         assertEquals(search.get(0).getClientId(), expectedClientId);
+    }
+
+    @Test
+    public void testClientSessionStatsRespectsClientVisibility() {
+        UserRepresentation admin = realm.admin().users().search("myadmin").get(0);
+        String realmManagementId = realm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
+        RoleRepresentation viewRealm = realm.admin().clients().get(realmManagementId).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+        realm.admin().users().get(admin.getId()).roles().clientLevel(realmManagementId).add(List.of(viewRealm));
+
+        UserRepresentation user = createUser("session-stats-user", "password");
+        try (Keycloak visibleSession = createSessionClient("visible-client", user);
+             Keycloak hiddenSession = createSessionClient("hidden-client", user);
+             Keycloak hiddenOfflineSession = createSessionClient("hidden-offline-client", user, OAuth2Constants.OFFLINE_ACCESS)) {
+            visibleSession.tokenManager().getAccessToken();
+            hiddenSession.tokenManager().getAccessToken();
+            hiddenOfflineSession.tokenManager().getAccessToken();
+
+            String visibleClientId = realm.admin().clients().findByClientId("visible-client").get(0).getId();
+            String hiddenClientId = realm.admin().clients().findByClientId("hidden-client").get(0).getId();
+            String hiddenOfflineClientId = realm.admin().clients().findByClientId("hidden-offline-client").get(0).getId();
+            assertThat(realm.admin().clients().get(hiddenOfflineClientId).getApplicationSessionCount().get("count"), is(0));
+
+            List<Map<String, String>> allStats = realm.admin().getClientSessionStats();
+            Map<String, String> visibleStats = Map.of("id", visibleClientId, "clientId", "visible-client",
+                    "active", "1", "offline", "0");
+            Map<String, String> hiddenStats = Map.of("id", hiddenClientId, "clientId", "hidden-client",
+                    "active", "1", "offline", "0");
+            Map<String, String> hiddenOfflineStats = Map.of("id", hiddenOfflineClientId, "clientId", "hidden-offline-client",
+                    "active", "0", "offline", "1");
+            assertThat(allStats, containsInAnyOrder(visibleStats, hiddenStats, hiddenOfflineStats));
+
+            UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Visible client policy", admin.getId());
+            ScopePermissionRepresentation permission = createPermission(adminPermissionsClient, Set.of(visibleClientId), CLIENTS_RESOURCE_TYPE, Set.of(MANAGE), policy);
+            ClientRepresentation managedClient = new ClientRepresentation();
+            managedClient.setName("Managed client");
+            realmAdminClient.realm(realm.getName()).clients().get(visibleClientId).update(managedClient);
+            assertThat(realm.admin().clients().get(visibleClientId).toRepresentation().getName(), is("Managed client"));
+            assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).clients().get(visibleClientId).toRepresentation());
+            assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).clients().get(visibleClientId).getApplicationSessionCount());
+            assertThat(realmAdminClient.realm(realm.getName()).getClientSessionStats(), empty());
+
+            permission.setScopes(Set.of(VIEW));
+            getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
+            assertThat(realmAdminClient.realm(realm.getName()).clients().get(visibleClientId).toRepresentation().getClientId(), is("visible-client"));
+            assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).clients().get(hiddenClientId).toRepresentation());
+            assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName()).clients().get(hiddenOfflineClientId).toRepresentation());
+            assertThat(realmAdminClient.realm(realm.getName()).getClientSessionStats(), contains(visibleStats));
+        }
+    }
+
+    private Keycloak createSessionClient(String clientId, UserRepresentation user, String... scopes) {
+        try (Response response = realm.admin().clients().create(ClientBuilder.create(clientId)
+                .secret("secret")
+                .directAccessGrantsEnabled(true)
+                .build())) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        return KeycloakBuilder.builder()
+                .serverUrl(keycloakUrls.getBaseUrl().toString())
+                .realm(realm.getName())
+                .grantType(OAuth2Constants.PASSWORD)
+                .clientId(clientId)
+                .clientSecret("secret")
+                .username(user.getUsername())
+                .password("password")
+                .scope(scopes.length == 0 ? null : String.join(" ", scopes))
+                .build();
     }
 }

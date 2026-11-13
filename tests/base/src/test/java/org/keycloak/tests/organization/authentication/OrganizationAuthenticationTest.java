@@ -17,28 +17,49 @@
 
 package org.keycloak.tests.organization.authentication;
 
+import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.common.util.UriUtils;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.ClaimsRepresentation;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -51,13 +72,17 @@ import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.ui.page.SelectOrganizationPage;
@@ -65,13 +90,21 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
+import org.openqa.selenium.JavascriptExecutor;
+
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -89,6 +122,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     @InjectRealm(ref = "provider", config = AbstractOrganizationTest.ProviderRealmConf.class)
     ManagedRealm providerRealm;
 
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
     @InjectWebDriver
     ManagedWebDriver driver;
 
@@ -103,6 +139,12 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @InjectPage
     LoginPasswordUpdatePage loginPasswordUpdatePage;
+
+    @InjectPage
+    LoginPasswordResetPage loginPasswordResetPage;
+
+    @InjectPage
+    LoginTotpPage loginTotpPage;
 
     @InjectPage
     ErrorPage errorPage;
@@ -351,6 +393,185 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testRequiresUserMembershipNotBypassedBySubmittedOrganization() {
+        setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString());
+
+        try {
+            OrganizationRepresentation orgA = createOrganization();
+            OrganizationRepresentation orgB = createOrganization("org-b");
+            // the user is a member of orgA only
+            UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+            // the client requests authentication in the scope of org-b, where the user is not a member
+            oauth.scope("organization:" + orgB.getAlias());
+            oauth.openLoginForm();
+            loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+
+            // the organization is resolved from a form parameter, and select-organization.ftl only ever renders the
+            // organizations the user belongs to. Submitting an organization the form never offered must not decide
+            // the membership check for a request scoped to a different organization.
+            submitIdentityFirstFormWithOrganization(orgA.getAlias());
+
+            assertFalse(loginPage.isPasswordInputPresent(),
+                    "Membership requirement bypassed: a non-member of " + orgB.getName()
+                            + " was prompted for a password by naming an organization they do belong to");
+            assertThat(errorPage.getError(),
+                    Matchers.containsString("User is not a member of the organization " + orgB.getName()));
+        } finally {
+            setAuthenticatorConfig(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.FALSE.toString());
+        }
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredForSpecificScope() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        // the user is a member of orgA only
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+        // membership is not required, the client requests a specific organization
+        oauth.scope("organization:" + orgB.getAlias());
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgA.getAlias());
+
+        // the parameter is ignored: the user is not treated as having selected an organization
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        assertLoginSuccess();
+
+        // the submitted organization must not be mapped to the token, and the requested one is not granted as the user is not a member
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+        assertThat(accessToken.getScope(), not(Matchers.containsString("organization")));
+    }
+
+    @Test
+    public void testSelectedOrganizationIgnoredWhenNotMember() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationRepresentation orgC = createOrganization("org-c");
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
+        // the user is a member of orgA and orgB only
+        UserRepresentation member = addMember(orgAResource, memberEmail, "John", "Doe");
+        realm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        loginUsernamePage.submit();
+
+        selectOrganizationPage.assertCurrent();
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+        assertFalse(selectOrganizationPage.isOrganizationButtonPresent(orgC.getAlias()));
+
+        // tamper the selection to submit an organization the user is not a member of
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "document.getElementById(arguments[0]).value = arguments[1];",
+                "organization-" + orgA.getAlias(), orgC.getAlias());
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
+
+        // membership is not required: the tampered selection is ignored and the user is asked to select an organization again
+        selectOrganizationPage.assertCurrent();
+        assertFalse(loginPage.isPasswordInputPresent());
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredWhenNotMember() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        // the user is a member of orgA only, so the selection page is never shown
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+        // membership is not required, the request maps to the scope that allows selecting an organization
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+
+        // the organization the user is not a member of is ignored and the login proceeds as if it was not sent
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredForUnknownUser() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+
+        // an existing user that is not a member of the selected organization
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        // an existing user that is a member of the selected organization must not be distinguishable either,
+        // switching is only enabled for users that belong to multiple organizations
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgA.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        // an unknown user must get the same response so that the selected organization cannot be used to probe for accounts
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("unknown@example.com");
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly("unknown@example.com");
+        submitIdentityFirstFormWithOrganization(orgA.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+    }
+
+    @Test
+    public void testSubmittedOrganizationIgnoredWhenDisabled() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        UserRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()));
+        realm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        orgB.setEnabled(false);
+        realm.admin().organizations().get(orgB.getId()).update(orgB).close();
+
+        // a disabled organization is treated as if no organization was selected, so the user is resolved
+        // to the only enabled organization they are a member of
+        oauth.scope("organization");
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        assertFalse(loginPage.isSwitchOrganizationPresent());
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        assertTrue(oauth.parseLoginResponse().isRedirected());
+        realm.admin().users().get(member.getId()).logout();
+
+        // when the user is a member of multiple enabled organizations, a disabled selection results in the selection prompt
+        OrganizationRepresentation orgC = createOrganization("org-c");
+        realm.admin().organizations().get(orgC.getId()).members().addMember(member.getId()).close();
+        oauth.openLoginForm();
+        loginUsernamePage.fillLoginWithUsernameOnly(member.getEmail());
+        submitIdentityFirstFormWithOrganization(orgB.getAlias());
+        selectOrganizationPage.assertCurrent();
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgC.getAlias()));
+        assertFalse(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+    }
+
+    @Test
     public void testLoginHint() {
         OrganizationRepresentation organization = createOrganization();
         OrganizationResource organizationResource = realm.admin().organizations().get(organization.getId());
@@ -365,6 +586,275 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.fillPassword(memberPassword);
         loginPage.submit();
         assertLoginSuccess();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "false, false, false",
+            "false, false, true",
+            "false, true, false",
+            "false, true, true",
+            "true, false, false",
+            "true, false, true",
+            "true, true, false",
+            "true, true, true"
+    })
+    public void testAutomaticBrokerLoginHint(boolean managed, boolean loginWithEmail, boolean multipleOrganizations) {
+        OrganizationResource organization = createLoginHintOrganization(true);
+        UserRepresentation member = addMember(organization, "john.doe@neworg.org", memberEmail, "John", "Doe", false);
+
+        if (managed) {
+            clearDomainRouting(organization);
+            linkBrokerIdentity(member, "external-user-id", member.getUsername());
+            try (Response response = organization.members().member(member.getId()).updateMembershipType(MembershipType.MANAGED)) {
+                assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+        }
+
+        if (multipleOrganizations) {
+            OrganizationRepresentation secondOrg = createOrganization("org-b");
+            realm.admin().organizations().get(secondOrg.getId()).members().addMember(member.getId()).close();
+            oauth.scope("organization");
+        }
+
+        String username = loginWithEmail ? member.getEmail() : member.getUsername();
+        submitUsername(username);
+
+        if (multipleOrganizations) {
+            selectOrganizationPage.assertCurrent();
+            selectOrganizationPage.selectOrganization(organizationName);
+        }
+
+        assertBrokerLoginHint(username);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testTamperedOrganizationSelectionUsesAuthenticatedBrokerIdentity(boolean memberOfSelectedOrganization) {
+        assertTamperedOrganizationSelectionUsesAuthenticatedBrokerIdentity(memberOfSelectedOrganization, false);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testTamperedOrganizationSelectionRequiredActionUsesAuthenticatedBrokerIdentity(boolean memberOfSelectedOrganization) {
+        assertTamperedOrganizationSelectionUsesAuthenticatedBrokerIdentity(memberOfSelectedOrganization, true);
+    }
+
+    private void assertTamperedOrganizationSelectionUsesAuthenticatedBrokerIdentity(boolean memberOfSelectedOrganization,
+            boolean updatePassword) {
+        OrganizationResource organization = createLoginHintOrganization(true);
+        clearDomainRouting(organization);
+
+        // Do not let broker login legitimately enroll the other account in the selected organization.
+        OrganizationIdentityProviderLinkRepresentation link = new OrganizationIdentityProviderLinkRepresentation();
+        link.setAutoMembership(false);
+        link.setMembershipType(MembershipType.UNMANAGED.name());
+        try (Response response = organization.identityProviders().get(orgBrokerAlias()).update(link)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        UserRepresentation initialUser = addMember(organization, "initial-user", "initial@neworg.org", "Initial", "User", false);
+        linkBrokerIdentity(initialUser, "initial-external-id", initialUser.getUsername());
+        try (Response response = organization.members().member(initialUser.getId()).updateMembershipType(MembershipType.MANAGED)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        OrganizationRepresentation secondOrg = createOrganization("org-b");
+        try (Response response = realm.admin().organizations().get(secondOrg.getId()).members().addMember(initialUser.getId())) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        UserRepresentation authenticatedUser = addMember(organization, "authenticated-user", "authenticated@neworg.org",
+                "Authenticated", "User", false);
+        if (!memberOfSelectedOrganization) {
+            try (Response response = organization.members().member(authenticatedUser.getId()).delete()) {
+                assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+        }
+        UserRepresentation providerUser = UserBuilder.create()
+                .username(authenticatedUser.getUsername())
+                .email(authenticatedUser.getEmail())
+                .emailVerified(true)
+                .name("Authenticated", "User")
+                .enabled(true)
+                .password(memberPassword)
+                .build();
+        String providerUserId;
+        try (Response response = providerRealm.admin().users().create(providerUser)) {
+            providerUserId = ApiUtil.getCreatedId(response);
+        }
+        linkBrokerIdentity(authenticatedUser, providerUserId, providerUser.getUsername());
+
+        if (updatePassword) {
+            UserRepresentation update = new UserRepresentation();
+            update.setRequiredActions(List.of(RequiredAction.UPDATE_PASSWORD.name()));
+            for (UserRepresentation user : List.of(initialUser, authenticatedUser)) {
+                realm.admin().users().get(user.getId()).update(update);
+            }
+        }
+
+        oauth.scope("organization");
+        submitUsername(initialUser.getUsername());
+        selectOrganizationPage.assertCurrent();
+
+        String tamperedUsername = "different@org-b.org";
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "var input = document.createElement('input');"
+                        + "input.type = 'hidden';"
+                        + "input.name = 'username';"
+                        + "input.value = arguments[0];"
+                        + "document.getElementById('kc-user-organizations').closest('form').appendChild(input);",
+                tamperedUsername);
+        selectOrganizationPage.selectOrganization(organizationName);
+        assertBrokerLoginHint(tamperedUsername);
+
+        loginPage.fillLogin(providerUser.getUsername(), memberPassword);
+        loginPage.submit();
+
+        String updatedPassword = "updated-password";
+        if (updatePassword) {
+            loginPasswordUpdatePage.assertCurrent();
+            assertTrue(driver.getCurrentUrl().startsWith(realm.getBaseUrl()));
+            loginPasswordUpdatePage.changePassword(updatedPassword, updatedPassword);
+        }
+
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull(code);
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+
+        assertEquals(authenticatedUser.getId(), accessToken.getSubject());
+        assertEquals(memberOfSelectedOrganization ? List.of(organizationName) : null,
+                accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION));
+        assertTrue(realm.admin().users().get(initialUser.getId()).getUserSessions().isEmpty());
+        assertEquals(providerUserId, realm.admin().users().get(authenticatedUser.getId()).getFederatedIdentity().get(0).getUserId());
+
+        if (updatePassword) {
+            assertTrue(realm.admin().users().get(initialUser.getId()).credentials().isEmpty());
+            assertEquals(List.of(RequiredAction.UPDATE_PASSWORD.name()),
+                    realm.admin().users().get(initialUser.getId()).toRepresentation().getRequiredActions());
+            assertTrue(realm.admin().users().get(authenticatedUser.getId()).toRepresentation().getRequiredActions().isEmpty());
+
+            String authenticatedUserId = authenticatedUser.getId();
+            runOnServer.run(session -> assertTrue(session.users()
+                    .getUserById(session.getContext().getRealm(), authenticatedUserId)
+                    .credentialManager().isValid(UserCredentialModel.password(updatedPassword))));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "false, false, true",
+            "true, false, true",
+            "true, true, true",
+            "false, false, false",
+            "true, false, false",
+            "true, true, false"
+    })
+    public void testManualBrokerLoginHint(boolean knownUser, boolean multipleOrganizations, boolean loginHintEnabled) {
+        OrganizationResource organization = createLoginHintOrganization(loginHintEnabled);
+        clearDomainRouting(organization);
+        String username = "john.doe+login@neworg.org";
+
+        if (knownUser) {
+            UserRepresentation member = addMember(organization, username, memberEmail, "John", "Doe", true);
+
+            if (multipleOrganizations) {
+                OrganizationRepresentation secondOrg = createOrganization("org-b");
+                realm.admin().organizations().get(secondOrg.getId()).members().addMember(member.getId()).close();
+                oauth.scope("organization");
+            }
+        }
+
+        submitUsername(username);
+
+        if (multipleOrganizations) {
+            selectOrganizationPage.assertCurrent();
+            selectOrganizationPage.selectOrganization(organizationName);
+        }
+
+        assertEquals(username, loginPage.getAttemptedUsername());
+        String expectedHint = loginHintEnabled ? username : null;
+        assertBrokerLoginLinkHint(expectedHint);
+        loginPage.clickSocial(orgBrokerAlias());
+        assertBrokerLoginHint(expectedHint);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testManualBrokerLoginLinkWithBraces(boolean loginHintEnabled) {
+        OrganizationResource organization = createLoginHintOrganization(loginHintEnabled);
+        clearDomainRouting(organization);
+        String username = "john{tag}@neworg.org";
+
+        submitUsername(username);
+
+        assertEquals(username, loginPage.getAttemptedUsername());
+        assertBrokerLoginLinkHint(loginHintEnabled ? username : null);
+    }
+
+    @Test
+    public void testManualBrokerLoginWithoutIdentifier() {
+        createLoginHintOrganization(true);
+        oauth.scope("organization:" + organizationName).openLoginForm();
+
+        loginPage.clickSocial(orgBrokerAlias());
+        assertBrokerLoginHint(null);
+    }
+
+    @Test
+    public void testPreEstablishedUserPreservesAttemptedUsername() {
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+        UserRepresentation member = addMember(organization, "john.doe", memberEmail, "John", "Doe", true);
+        realm.dirty();
+        runOnServer.run(session -> FlowUtil.inCurrentRealm(session)
+                .copyBrowserFlow("username-before-organization")
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(REQUIRED, flow -> flow
+                                .addAuthenticatorExecution(ALTERNATIVE, OrganizationAuthenticatorFactory.ID)
+                                .addAuthenticatorExecution(ALTERNATIVE, UsernamePasswordFormFactory.PROVIDER_ID)))
+                .defineAsBrowserFlow());
+
+        submitUsername(member.getEmail());
+
+        assertEquals(member.getEmail(), loginPage.getAttemptedUsername());
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+        assertLoginSuccess();
+    }
+
+    private void linkBrokerIdentity(UserRepresentation user, String providerUserId, String providerUsername) {
+        FederatedIdentityRepresentation identity = new FederatedIdentityRepresentation();
+        identity.setUserId(providerUserId);
+        identity.setUserName(providerUsername);
+        try (Response response = realm.admin().users().get(user.getId()).addFederatedIdentity(orgBrokerAlias(), identity)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    private OrganizationResource createLoginHintOrganization(boolean loginHintEnabled) {
+        IdentityProviderRepresentation broker = IdentityProviderBuilder.update(createRealOrgBroker(orgBrokerAlias(), providerRealm))
+                .attribute(IdentityProviderModel.LOGIN_HINT, Boolean.toString(loginHintEnabled))
+                .build();
+        OrganizationRepresentation org = createOrganization(realm, organizationName, broker, organizationName + ".org");
+        providerRealm.dirty();
+        return realm.admin().organizations().get(org.getId());
+    }
+
+    private void assertBrokerLoginLinkHint(String username) {
+        URI loginUri = URI.create(loginPage.findSocialButton(orgBrokerAlias()).getDomAttribute("href"));
+        Map<String, List<String>> parameters = UriUtils.parseQueryParameters(loginUri.getRawQuery(), true);
+        assertEquals(username == null ? null : List.of(username), parameters.get(OIDCLoginProtocol.LOGIN_HINT_PARAM));
+    }
+
+    private void assertBrokerLoginHint(String username) {
+        assertTrue(driver.getCurrentUrl().startsWith(providerRealm.getBaseUrl()),
+                "User should be redirected to the identity provider");
+        Map<String, List<String>> parameters = UriUtils.parseQueryParameters(URI.create(driver.getCurrentUrl()).getRawQuery(), true);
+        assertEquals(username == null ? null : List.of(username), parameters.get(OIDCLoginProtocol.LOGIN_HINT_PARAM));
+        assertEquals(username == null ? "" : username, loginPage.getUsername());
     }
 
     @Test
@@ -811,7 +1301,288 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         assertEquals(nonMatchingEmail, loginPage.getUsername(), "login_hint must be forwarded and pre-filled on the IdP login page");
     }
 
+    @Test
+    public void testStaleSsoAuthNoteAccountTakeover() {
+        // allow the reset-credentials transition used to clear the authenticated user mid-session
+        realm.updateWithCleanup(r -> r.resetPasswordAllowed(true));
+
+        // attacker: member of two orgs (forced to the select-organization challenge, which keeps SSO_AUTH set)
+        // victim: member of a single org whose email domain resolves to that org
+        StaleNoteAttackContext ctx = createStaleNoteAttackContext(null, null);
+        Runnable openLogin = () -> {
+            oauth.scope("organization");
+            oauth.openLoginForm();
+        };
+
+        // 1) attacker logs in to establish an SSO session and harvest their identity cookie
+        openLogin.run();
+        loginAttackerThroughSelectOrganization(ctx);
+        assertLoginSuccess();
+        Cookie identityCookie = harvestIdentityCookieAndClearSession();
+
+        // 2-5) in a fresh session: restart the flow with the attacker cookie so the cookie authenticator stamps
+        // SSO_AUTH with the attacker id, clear the authenticated user through reset-credentials and then submit the
+        // victim's username on the identity-first page.
+        //
+        // Secure expectation: the authentication session still carries the attacker's SSO_AUTH note (never removed
+        // by clearUser). Re-authentication must only be trusted for the user it was started for, so binding that note
+        // to a now-different user (the victim) must abort the flow instead of silently reusing the attacker's prior
+        // authentication state. No authorization code is issued for the victim.
+        replayStaleNotesAgainstVictim(openLogin, identityCookie, ctx.victimEmail());
+    }
+
+    @Test
+    public void testStaleLoaMapStepUpBypass() {
+        // allow the reset-credentials transition used to clear the authenticated user mid-session
+        realm.updateWithCleanup(r -> r.resetPasswordAllowed(true));
+
+        // add a LoA-based OTP step-up to the browser flow: when an authentication of level >= 2 is requested, the
+        // OTP form is required UNLESS level 2 was already reached in a previous authentication. "Previous level"
+        // is read from the per-level LOA_MAP note, which the cookie authenticator copies from the identity cookie.
+        addLoaOtpStepUp();
+
+        // attacker holds their OWN OTP credential, so they can legitimately reach level 2; the victim is protected
+        // by an OTP the attacker does NOT know (the attacker only needs the victim's password)
+        StaleNoteAttackContext ctx = createStaleNoteAttackContext(ATTACKER_TOTP_SECRET, VICTIM_TOTP_SECRET);
+        Runnable openLogin = this::openOrgLoginRequestingLoa2;
+
+        // 1) attacker performs a full level-2 login (password + their own OTP). This records level 2 in the
+        // LOA_MAP note of the attacker's SSO session, which the attacker identity cookie references.
+        openLogin.run();
+        loginAttackerThroughSelectOrganization(ctx);
+        loginTotpPage.assertCurrent();
+        // refresh the OTP generator clock just before use so it stays aligned with the server
+        setOtpTimeOffset();
+        loginTotpPage.login(totp.generateTOTP(ATTACKER_TOTP_SECRET));
+        assertLoginSuccess();
+        Cookie identityCookie = harvestIdentityCookieAndClearSession();
+
+        // 2-5) in a fresh session: restart the level-2 flow with the attacker cookie so the cookie authenticator copies
+        // the attacker's LOA_MAP (containing level 2) into the authentication session, clear the authenticated user
+        // through reset-credentials and then submit the victim's username on the identity-first page.
+        //
+        // Secure expectation: same as above, the stale SSO_AUTH note bound to a different user aborts the flow, so the
+        // attacker can never reuse the attacker's LOA_MAP to skip the victim's OTP.
+        replayStaleNotesAgainstVictim(openLogin, identityCookie, ctx.victimEmail());
+    }
+
     // --- Helper methods ---
+
+    private void submitIdentityFirstFormWithOrganization(String alias) {
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "var form = document.getElementById('kc-form-login');"
+                        + "var input = document.createElement('input');"
+                        + "input.type = 'hidden';"
+                        + "input.name = arguments[0];"
+                        + "input.value = arguments[1];"
+                        + "form.appendChild(input);",
+                OrganizationModel.ORGANIZATION_ATTRIBUTE, alias);
+        loginUsernamePage.submit();
+    }
+
+    private static final String STEPUP_BROWSER_FLOW = "stepup-loa-browser";
+    private static final String ATTACKER_EMAIL = "attacker@attacker.test";
+    private static final String ATTACKER_TOTP_SECRET = "attackerotpsecret";
+    private static final String VICTIM_TOTP_SECRET = "victimotpsecret99";
+
+    private final TimeBasedOTP totp = new TimeBasedOTP();
+
+    private record StaleNoteAttackContext(String attackerEmail, String victimEmail, String orgAlias) {
+    }
+
+    /**
+     * Two organizations, an attacker that is a member of both (forced to the select-organization challenge, which keeps
+     * the cookie authenticator from completing the flow so it only stamps its notes and defers) and a victim that is a
+     * member of a single org whose email domain resolves to that org.
+     *
+     * @param attackerTotpSecret optional TOTP secret for the attacker, {@code null} for password only
+     * @param victimTotpSecret   optional TOTP secret for the victim, {@code null} for password only
+     */
+    private StaleNoteAttackContext createStaleNoteAttackContext(String attackerTotpSecret, String victimTotpSecret) {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
+
+        // attacker email domain matches neither org
+        String attackerId = createOrgMember(orgAResource, ATTACKER_EMAIL, attackerTotpSecret);
+        orgBResource.members().addMember(attackerId).close();
+
+        String victimEmail = "victim@" + orgA.getName() + ".org";
+        createOrgMember(orgAResource, victimEmail, victimTotpSecret);
+
+        return new StaleNoteAttackContext(ATTACKER_EMAIL, victimEmail, orgA.getAlias());
+    }
+
+    /**
+     * Identity-first login as the attacker up to and including the password form.
+     */
+    private void loginAttackerThroughSelectOrganization(StaleNoteAttackContext ctx) {
+        loginUsernamePage.fillLoginWithUsernameOnly(ctx.attackerEmail());
+        loginUsernamePage.submit();
+        selectOrganizationPage.assertCurrent();
+        selectOrganizationPage.selectOrganization(ctx.orgAlias());
+        assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.fillPassword(memberPassword);
+        loginPage.submit();
+    }
+
+    /**
+     * Reads the (HttpOnly) attacker identity cookie from the Keycloak domain and then drops all cookies: the attack
+     * runs in a FRESH session, so the root authentication session gets a random id with no bound user session and the
+     * completion-time DIFFERENT_USER_AUTHENTICATED guard alone has nothing to compare against.
+     */
+    private Cookie harvestIdentityCookieAndClearSession() {
+        driver.open(oauth.getEndpoints().getIssuer());
+        Cookie identityCookie = driver.driver().manage().getCookieNamed("KEYCLOAK_IDENTITY");
+        assertNotNull(identityCookie, "attacker identity cookie not established");
+        driver.driver().manage().deleteAllCookies();
+        return identityCookie;
+    }
+
+    /**
+     * Replays the stale-notes attack and asserts it is rejected:
+     * <ol>
+     * <li>start a new request with no cookies -> identity-first username page, extract the login-actions URLs</li>
+     * <li>re-inject the attacker identity cookie and restart the flow: resetFlow clears the execution statuses, so the
+     * cookie authenticator runs again and stamps its notes (SSO_AUTH, LOA_MAP) for the attacker, then defers to the
+     * select-organization challenge. The identity cookie is dropped again.</li>
+     * <li>clear the authenticated user without finalizing the flow: the reset-credentials choose-user form renders (no
+     * identity cookie) and submitting an unknown username triggers clearUser(). The notes stay set on the still-open
+     * authentication session.</li>
+     * <li>re-enter the identity-first username page and submit the victim's username</li>
+     * <li>expect the error page and no authorization code</li>
+     * </ol>
+     */
+    private void replayStaleNotesAgainstVictim(Runnable openLogin, Cookie identityCookie, String victimEmail) {
+        openLogin.run();
+        loginUsernamePage.assertCurrent();
+
+        String flowUrl = driver.driver().findElements(By.tagName("form")).stream()
+                .map(f -> f.getAttribute("action"))
+                .filter(a -> a != null && a.contains("/login-actions/"))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("no login-actions form found on identity-first page"));
+        String clientId = queryParam(flowUrl, OAuth2Constants.CLIENT_ID);
+        String tabId = queryParam(flowUrl, "tab_id");
+        String clientData = queryParam(flowUrl, "client_data");
+        String loginActionsBase = flowUrl.substring(0, flowUrl.indexOf("/login-actions/")) + "/login-actions/";
+        String restartUrl = loginAction(loginActionsBase, "restart", clientId, tabId, clientData);
+        String resetUrl = loginAction(loginActionsBase, "reset-credentials", clientId, tabId, clientData);
+        String authenticateUrl = loginAction(loginActionsBase, "authenticate", clientId, tabId, clientData);
+
+        driver.driver().manage().addCookie(identityCookie);
+        driver.open(restartUrl);
+        selectOrganizationPage.assertCurrent();
+        driver.driver().manage().deleteCookieNamed("KEYCLOAK_IDENTITY");
+        driver.driver().manage().deleteCookieNamed("KEYCLOAK_IDENTITY_LEGACY");
+
+        driver.open(resetUrl);
+        loginPasswordResetPage.assertCurrent();
+        loginPasswordResetPage.changePassword("does-not-exist@nowhere.test");
+
+        driver.open(authenticateUrl);
+        loginUsernamePage.assertCurrent();
+        loginUsernamePage.fillLoginWithUsernameOnly(victimEmail);
+        loginUsernamePage.submit();
+
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), Matchers.containsString("Invalid username or password"));
+        assertNull(queryParam(driver.getCurrentUrl(), "code"),
+                "no authorization code should be issued for the victim without a credential");
+    }
+
+    private void setOtpTimeOffset() {
+        int offset = TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
+        timeOffSet.set(offset);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, offset);
+        totp.setCalendar(calendar);
+    }
+
+    private void openOrgLoginRequestingLoa2() {
+        ClaimsRepresentation.ClaimValue<String> acr = new ClaimsRepresentation.ClaimValue<>();
+        acr.setEssential(true);
+        acr.setValues(List.of("2"));
+        ClaimsRepresentation claims = new ClaimsRepresentation();
+        claims.setIdTokenClaims(Map.of(IDToken.ACR, acr));
+        oauth.loginForm().scope("openid", "organization").claims(claims).open();
+    }
+
+    private String createOrgMember(OrganizationResource organization, String email, String totpSecret) {
+        UserRepresentation user = new UserRepresentation();
+        user.setEmail(email);
+        user.setUsername(email);
+        user.setEnabled(true);
+        user.setEmailVerified(true);
+        user.setFirstName("First");
+        user.setLastName("Last");
+        List<CredentialRepresentation> credentials = new ArrayList<>();
+        credentials.add(CredentialBuilder.password(memberPassword).build());
+        if (totpSecret != null) {
+            credentials.add(CredentialBuilder.totp(totpSecret).build());
+        }
+        user.setCredentials(credentials);
+
+        String userId;
+        try (Response response = realm.admin().users().create(user)) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> {
+            try {
+                r.users().get(userId).remove();
+            } catch (NotFoundException ignored) {
+            }
+        });
+        organization.members().addMember(userId).close();
+        return userId;
+    }
+
+    private void addLoaOtpStepUp() {
+        // Built-in flows cannot be modified, so copy the browser flow and edit the copy. copyBrowserFlow() is
+        // idempotent: it restores the default binding and drops any previous copy with the same alias first.
+        runOnServer.run(session -> FlowUtil.inCurrentRealm(session)
+                .copyBrowserFlow(STEPUP_BROWSER_FLOW)
+                .inForms(forms -> {
+                    // Disable the built-in conditional 2FA subflow so the LoA step-up below is the ONLY OTP gate;
+                    // otherwise a user with an OTP credential would be prompted for OTP unconditionally, masking the
+                    // LoA behaviour. The organization identity-first authenticator in this subflow must be kept.
+                    List<AuthenticationExecutionModel> executions = forms.getExecutions();
+                    for (int i = 0; i < executions.size(); i++) {
+                        String flowId = executions.get(i).getFlowId();
+                        if (flowId != null && forms.getRealm().getAuthenticationFlowById(flowId).getAlias()
+                                .endsWith("Conditional 2FA")) {
+                            forms.updateExecution(i, e -> e.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED));
+                        }
+                    }
+
+                    // CONDITIONAL subflow: run only when a level >= 2 authentication is required and not yet satisfied
+                    forms.addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, subflow -> subflow
+                            .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED,
+                                    ConditionalLoaAuthenticatorFactory.PROVIDER_ID, config -> {
+                                        config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2");
+                                        config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, "36000");
+                                    })
+                            // the second factor enforced by the step-up
+                            .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED,
+                                    OTPFormAuthenticatorFactory.PROVIDER_ID));
+                })
+                .defineAsBrowserFlow());
+    }
+
+    private String loginAction(String base, String path, String clientId, String tabId, String clientData) {
+        String url = base + path + "?client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                + "&tab_id=" + URLEncoder.encode(tabId, StandardCharsets.UTF_8);
+        if (clientData != null) {
+            url += "&client_data=" + URLEncoder.encode(clientData, StandardCharsets.UTF_8);
+        }
+        return url;
+    }
+
+    private String queryParam(String url, String name) {
+        return UriUtils.parseQueryParameters(
+                URI.create(url).getRawQuery(), true).getFirst(name);
+    }
 
     private void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
         oauth.openLoginForm();

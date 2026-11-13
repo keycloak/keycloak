@@ -448,7 +448,7 @@ public final class CacheConfigurator {
         Stream.of(AUTHORIZATION_CACHE_NAME, REALM_CACHE_NAME, USER_CACHE_NAME)
                 .forEach(name -> builder.property()
                         .name(CacheConfigurator.lifespanConfigKey(name))
-                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, i.e., they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
+                        .helpText("Sets the lifespan of stored objects for cache %s. A zero or negative value makes the entries immortal, meaning they never expire. %s".formatted(name, OptionsUtil.DURATION_DESCRIPTION))
                         .label("lifespan")
                         .type(ProviderConfigProperty.STRING_TYPE)
                         .add());
@@ -599,7 +599,7 @@ public final class CacheConfigurator {
             case AUTHENTICATION_SESSIONS_CACHE_NAME:
             case LOGIN_FAILURE_CACHE_NAME:
                 if (clustered) {
-                    // lock-timeout < remote-timeout < retry budget in AbstractRefreshTokenProvider (12s).
+                    // lock-timeout (3s) < remote-timeout (5s) < lock entry expiry (15s) < retry budget (30s) in AbstractRefreshTokenProvider.
                     // Infinispan defaults (15s remote, 10s lock) are too high for a setup like Keycloak.
                     builder.clustering().cacheMode(CacheMode.DIST_SYNC)
                             // 5s remote-timeout is 10x the worst-case G1GC pause for in-memory caches.
@@ -607,7 +607,6 @@ public final class CacheConfigurator {
                     builder.locking()
                             // 3s lock-timeout is the inner timeout; must be less than remote-timeout.
                             .lockAcquisitionTimeout(3, TimeUnit.SECONDS);
-                    // 12s retry budget in AbstractRefreshTokenProvider allows 2 retries at ~5s each.
                 }
                 builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
                 return builder;

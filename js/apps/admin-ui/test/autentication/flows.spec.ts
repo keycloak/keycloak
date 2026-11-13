@@ -211,6 +211,8 @@ test.describe("Authentication flow details", () => {
     await selectActionToggleItem(page, "Bind flow");
     await fillBindFlowModal(page, "Direct grant flow");
     await clickSaveButton(page);
+    // Wait for the save to finish, otherwise the realm is deleted while the request is in flight.
+    await assertNotificationMessage(page, "Flow successfully updated");
   });
 
   test("drags and drops execution", async ({ page }) => {
@@ -322,6 +324,52 @@ test.describe("Password policies tab", () => {
     await assertNotificationMessage(
       page,
       "Password policies successfully updated",
+    );
+  });
+
+  test("adds password policies with only view-realm and manage-realm", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({ enabled: true });
+    const user = {
+      username: "realm-manager",
+      password: "realm-manager",
+    };
+    const { id } = await adminClient.createUser({
+      realm: testBed.realm,
+      username: user.username,
+      enabled: true,
+      email: "realm-manager@example.com",
+      firstName: "Realm",
+      lastName: "Manager",
+      credentials: [{ type: "password", value: user.password }],
+    });
+    await adminClient.addClientRoleToUser(
+      id!,
+      "realm-management",
+      ["view-realm", "manage-realm"],
+      testBed.realm,
+    );
+
+    await login(page, { realm: testBed.realm, ...user });
+
+    await expect(page.getByTestId("nav-item-clients")).toBeHidden();
+    await goToAuthentication(page);
+    await goToPoliciesTab(page);
+    await addPolicy(page, "Not Recently Used");
+    await clickSaveButton(page);
+    await assertNotificationMessage(
+      page,
+      "Password policies successfully updated",
+    );
+
+    await goToAuthentication(page);
+    await goToCreateItem(page);
+    await fillCreateForm(page, "Realm manager flow", "", "Basic flow");
+    await assertNotificationMessage(page, "Flow created");
+    // The toast shows on the forbidden page too; the header is the flow's own page.
+    await expect(page.getByTestId("view-header")).toHaveText(
+      "Realm manager flow",
     );
   });
 });

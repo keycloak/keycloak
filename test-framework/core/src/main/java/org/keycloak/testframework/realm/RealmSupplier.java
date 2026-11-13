@@ -120,6 +120,14 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
             return value;
         }
 
+        @Override
+        protected boolean applies(Interception interception, InstanceContext<?, ?> target) {
+            if (interception.getSupplier() instanceof RealmConfigInterceptor interceptor) {
+                return interceptor.appliesTo(interception.getAnnotation(), target);
+            }
+            return true;
+        }
+
     }
 
 }

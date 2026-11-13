@@ -410,7 +410,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 private String decodeValue(String value) {
                     if (decodeAsUuid) {
                         LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
-                        return LDAPUtil.decodeBase64ToUuid(value, ldapConfig);
+                        return LDAPUtil.decodeBase64ToUuid(value, ldapConfig, ldapAttrName);
                     }
                     return value;
                 }

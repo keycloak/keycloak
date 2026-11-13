@@ -123,7 +123,7 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
     }
 
     @Override
-    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri) {
+    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri, boolean includeSecrets) {
         String descriptor = getSPDescriptorForClient(client);
         return Response.ok(descriptor, MediaType.TEXT_PLAIN_TYPE).build();
     }

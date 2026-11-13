@@ -18,10 +18,10 @@ package org.keycloak.userprofile.validator;
 
 import java.util.List;
 
-import org.keycloak.services.validation.Validation;
 import org.keycloak.userprofile.AttributeContext;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.UserProfileAttributeValidationContext;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
@@ -61,16 +61,12 @@ public class AttributeRequiredByMetadataValidator implements SimpleValidator {
         @SuppressWarnings("unchecked")
         List<String> values = (List<String>) input;
 
-        if (values == null || values.isEmpty()) {
+        // blank values are discarded when the attribute is stored, so the attribute is only missing if there is no
+        // non-blank value (e.g. forms submitting an empty value alongside the selected values of a multivalued attribute)
+        if (values == null || values.stream().allMatch(StringUtil::isBlank)) {
             context.addError(new ValidationError(ID, inputHint, ERROR_USER_ATTRIBUTE_REQUIRED));
-        } else {
-            for (String value : values) {
-                if (Validation.isBlank(value)) {
-                    context.addError(new ValidationError(ID, inputHint, ERROR_USER_ATTRIBUTE_REQUIRED));
-                    return context;
-                }
-            }
         }
+
         return context;
     }
 }

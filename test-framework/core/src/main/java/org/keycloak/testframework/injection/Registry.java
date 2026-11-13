@@ -277,12 +277,12 @@ public class Registry implements AutoCloseable {
     private void executeSetup(Object testInstance, Class<? extends Annotation> annotation) {
         for (Method m : ReflectionUtils.listMethods(testInstance.getClass(), annotation)) {
             if (m.getParameterCount() != 0) {
-                throw new RuntimeException("Method with " + annotation.getName() + " has required parameters: " + m); // Update when https://github.com/keycloak/keycloak/pull/45869 is merged
+                throw new FatalTestClassException("Method with " + annotation.getName() + " has required parameters: " + m);
             }
             try {
                 m.invoke(testInstance);
             } catch (IllegalAccessException e) {
-                throw new RuntimeException("Method with " + annotation.getName() + " not accessible: " + m); // Update when https://github.com/keycloak/keycloak/pull/45869 is merged
+                throw new FatalTestClassException("Method with " + annotation.getName() + " not accessible: " + m);
             } catch (InvocationTargetException e) {
                 throw new RuntimeException(e);
             }

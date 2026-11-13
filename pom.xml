@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>3.2.0</asciidoctor.plugin.version>
 
-        <quarkus.version>3.40.1</quarkus.version>
-        <quarkus.build.version>3.40.1</quarkus.build.version>
+        <quarkus.version>3.40.1.2</quarkus.version>
+        <quarkus.build.version>3.40.1.2</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -128,6 +128,7 @@
         <apacheds.codec.version>2.1.8</apacheds.codec.version>
         <kerby.version>2.1.2</kerby.version>
         <google.zxing.version>3.4.0</google.zxing.version>
+        <jsoup.version>1.23.2</jsoup.version>
         <freemarker.version>2.3.35</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
         <antlr4.version>4.13.2</antlr4.version>
@@ -223,6 +224,8 @@
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <plugin.antrun.version>1.8</plugin.antrun.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+        <checkerframework.version>4.4.0</checkerframework.version>
+        <checkerframework.processors>org.checkerframework.checker.resourceleak.ResourceLeakChecker</checkerframework.processors>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
 
         <!-- Surefire Settings -->
@@ -463,6 +466,11 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${org.yaml.snakeyaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
             </dependency>
 
             <!--JAKARTA-->
@@ -1578,20 +1586,6 @@
                     <version>${exec-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <executions>
-                        <execution>
-                            <id>process-licenses</id>
-                            <goals>
-                                <goal>process</goal>
-                            </goals>
-                            <phase>process-resources</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.asciidoctor</groupId>
                     <artifactId>asciidoctor-maven-plugin</artifactId>
                     <version>${asciidoctor.plugin.version}</version>
@@ -1635,6 +1629,61 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>checkerframework</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                    <version>${checkerframework.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <fork>true</fork>
+                            <annotationProcessorPaths combine.children="append">
+                                <path>
+                                    <groupId>org.checkerframework</groupId>
+                                    <artifactId>checker</artifactId>
+                                    <version>${checkerframework.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>org.checkerframework</groupId>
+                                    <artifactId>checker-qual</artifactId>
+                                    <version>${checkerframework.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                                <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                                <arg>-Xlint:-removal</arg>
+                                <arg>-processor</arg>
+                                <!-- An explicit -processor list disables processor discovery; modules with other processors append them via this property. -->
+                                <arg>${checkerframework.processors}</arg>
+                                <!-- Exclude test sources and helpers by directory, regardless of their class names.
+                                     Backslashes are doubled for the forked javac argument file. -->
+                                <arg>-AskipFiles=(^|[/\\\\])src[/\\\\]test[/\\\\]</arg>
+                                <!-- Classes excluded due to outstanding ownership diagnostics; to be removed as part of keycloak/keycloak#54332.
+                                     Fully qualified names match nested/generic types; literal-dot character classes avoid backslash processing by forked javac's argument file. -->
+                                <arg>-AskipDefs=^(org[.]keycloak[.]adapters[.]cloned[.]SniSSLSocketFactory|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPContextManager|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPOperationManager|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPStartTlsClose|org[.]keycloak[.]connections[.]jpa[.]MSSQLAsyncCommitIntegrator|org[.]keycloak[.]connections[.]jpa[.]PostgreSQLAsyncCommitIntegrator|org[.]keycloak[.]exportimport[.]AbstractFileBasedImportProvider|org[.]keycloak[.]connections[.]httpclient[.]DefaultHttpClientFactory|org[.]keycloak[.]exportimport[.]ExportImportManager|org[.]keycloak[.]protocol[.]oidc[.]endpoints[.]IframeUtil|org[.]keycloak[.]services[.]resources[.]ThemeResource|org[.]keycloak[.]services[.]resources[.]WelcomeResource|org[.]keycloak[.]truststore[.]SSLSocketFactory)([.&lt;]|$)</arg>
+                                <arg>-Astubs=${maven.multiModuleProjectDirectory}/.mvn/checkerframework/jdk.astub</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>testsuite</id>
             <activation>
@@ -1762,6 +1811,16 @@
                 </property>
             </activation>
             <modules>
+                <module>operator</module>
+            </modules>
+        </profile>
+
+        <!-- Includes all modules that are not part of the default build, so that spotless:check / spotless:apply covers every Java source -->
+        <profile>
+            <id>spotless</id>
+            <modules>
+                <module>docs</module>
+                <module>distribution</module>
                 <module>operator</module>
             </modules>
         </profile>

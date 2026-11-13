@@ -8,7 +8,7 @@ summary="Configure a Distribution Registry to use {project_name}.">
 
 NOTE: Docker Registry has been renamed to Distribution Registry, however feature, endpoint and protocol are still called Docker.
 
-NOTE: Docker authentication is disabled by default. To enable see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+NOTE: Docker authentication is disabled by default. To enable see the <@links.server id="features" /> {section}.
 
 This section describes how you can configure a Distribution registry to use {project_name} as its authentication server.
 

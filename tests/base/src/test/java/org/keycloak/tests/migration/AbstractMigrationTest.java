@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,10 +44,13 @@ import org.keycloak.authentication.authenticators.broker.IdpUsernamePasswordForm
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.PrioritizedComponentModel;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.migration.migrators.MigrateTo26_8_3;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -54,6 +58,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.jpa.entities.ComponentEntity;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -135,7 +141,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class AbstractMigrationTest {
 
     private static final Logger LOG = Logger.getLogger(AbstractMigrationTest.class);
-    private static final String PREFERRED_DEFAULT_LOGIN_THEME = "keycloak.v2";
+    private static final String PREFERRED_DEFAULT_LOGIN_THEME = "keycloak.v3";
 
     static final String MIGRATION = "Migration";
     static final String MIGRATION2 = "Migration2";
@@ -198,6 +204,15 @@ public abstract class AbstractMigrationTest {
         Assertions.assertNotNull(client, "migration-saml-client client is missing");
         Assertions.assertEquals(1, client.size(), "migration-saml-client client is missing");
         Assertions.assertNull(client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY), "migration-saml-client login theme was not removed");
+    }
+
+    private void assertClientLoginTheme(RealmResource realm, String clientId, String expectedTheme) {
+        List<ClientRepresentation> clients = realm.clients().findByClientId(clientId);
+        Assertions.assertEquals(1, clients.size(), clientId + " client is missing");
+        Map<String, String> attributes = clients.get(0).getAttributes();
+        Assertions.assertEquals(expectedTheme,
+                attributes == null ? null : attributes.get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY),
+                clientId + " login theme was not migrated correctly");
     }
 
     protected void testHttpChallengeFlow(RealmResource realm) {
@@ -443,6 +458,58 @@ public abstract class AbstractMigrationTest {
 
     protected void testMigrationTo26_4_0() {
         testSamlEncryptionAttributes(migrationRealm);
+    }
+
+    protected void testMigrationTo26_8_3(RunOnServerClient runOnServer) {
+        List<ComponentRepresentation> providers = migrationRealm.components()
+                .query(migrationRealm.toRepresentation().getId(), KeyProvider.class.getName()).stream()
+                .filter(c -> "aes-generated".equals(c.getProviderId()))
+                .sorted(Comparator.comparing(ComponentRepresentation::getName)).toList();
+        assertThat(providers, hasSize(2));
+        for (ComponentRepresentation provider : providers) {
+            ComponentRepresentation imported = runOnServer.fetch(RunHelpers.internalComponent(provider.getId()));
+            // The fixture includes a key matching the current default size, which import validation does not backfill.
+            assertThat(provider.getConfig().get("secretSize"),
+                    equalTo(List.of(Integer.toString(Base64Url.decode(imported.getConfig().getFirst("secret")).length))));
+
+            String componentId = provider.getId();
+            runOnServer.run(session -> {
+                // Recreate legacy database state without model validation filling the size back in.
+                ComponentEntity entity = session.getProvider(JpaConnectionProvider.class).getEntityManager()
+                        .find(ComponentEntity.class, componentId);
+                entity.getComponentConfigs().removeIf(c -> "secretSize".equals(c.getName()));
+                session.getProvider(CacheRealmProvider.class).registerRealmInvalidation(
+                        session.getContext().getRealm().getId(), session.getContext().getRealm().getName());
+            });
+            ComponentRepresentation before = runOnServer.fetch(RunHelpers.internalComponent(componentId));
+            assertNull(before.getConfig().getFirst("secretSize"));
+
+            runOnServer.run(session -> new MigrateTo26_8_3().migrateRealm(session, session.getContext().getRealm()));
+
+            ComponentRepresentation migrated = runOnServer.fetch(RunHelpers.internalComponent(componentId));
+            assertThat(migrated.getConfig(), equalTo(imported.getConfig()));
+            assertThat(migrated.getConfig().getFirst("secret"), equalTo(before.getConfig().getFirst("secret")));
+            assertThat(migrated.getConfig().getFirst("kid"), equalTo(before.getConfig().getFirst("kid")));
+
+            migrationRealm.components().component(componentId).update(provider);
+
+            ComponentRepresentation after = runOnServer.fetch(RunHelpers.internalComponent(componentId));
+            assertThat(after.getConfig().getFirst("secret"), equalTo(before.getConfig().getFirst("secret")));
+            assertThat(after.getConfig().getFirst("kid"), equalTo(before.getConfig().getFirst("kid")));
+        }
+    }
+
+    protected void testMigrationTo27_0_0(RealmResource realmWithUnsetTheme) {
+        Assertions.assertEquals(PREFERRED_DEFAULT_LOGIN_THEME, migrationRealm.toRepresentation().getLoginTheme(),
+                "Login v1 realm theme was not migrated to keycloak.v3");
+        Assertions.assertEquals("custom-theme", migrationRealm2.toRepresentation().getLoginTheme(),
+                "Custom login theme should be preserved");
+        Assertions.assertNull(realmWithUnsetTheme.toRepresentation().getLoginTheme(),
+                "Unset login theme should be preserved");
+
+        assertClientLoginTheme(migrationRealm, "migration-test-client", PREFERRED_DEFAULT_LOGIN_THEME);
+        assertClientLoginTheme(migrationRealm, "broker", "keycloak-custom");
+        assertClientLoginTheme(migrationRealm, "admin-cli", null);
     }
 
     private void testClientContainsExpectedClientScopes() {

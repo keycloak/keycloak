@@ -1,5 +1,6 @@
 package org.keycloak.tests.oid4vc;
 
+import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,27 @@ public final class CredentialOfferStateUtils {
             String txCode,
             List<OID4VCAuthorizationDetail> authDetails
     ) {}
+
+    /**
+     * Injects a tx_code into an existing credential offer state, re-storing it.
+     * This is needed for testing because the REST API does not yet support setting tx_code at offer creation time.
+     */
+    public static void injectTxCode(RunOnServerClient runOnServer, String offerNonce, String txCode) {
+        runOnServer.run(session -> {
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            CredentialOfferState offerState = Optional.ofNullable(offerStorage.getOfferStateByNonce(offerNonce))
+                    .orElseThrow(() -> new IllegalStateException("No CredentialOfferState for nonce: " + offerNonce));
+            try {
+                Field txCodeField = CredentialOfferState.class.getDeclaredField("txCode");
+                txCodeField.setAccessible(true);
+                txCodeField.set(offerState, txCode);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Failed to inject txCode into CredentialOfferState", e);
+            }
+            offerStorage.removeOfferState(offerState);
+            offerStorage.putOfferState(offerState);
+        });
+    }
 
     public static CredentialOfferStateRecord getCredentialOfferStateRecord(RunOnServerClient runOnServer, String offerNonce) {
         var runtimeOfferState = runOnServer.fetchString(session -> {

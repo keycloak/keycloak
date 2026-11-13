@@ -35,7 +35,6 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
-import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -82,6 +81,7 @@ import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
 /**
@@ -919,6 +919,7 @@ public class AuthenticationProcessor {
         if (failure instanceof AuthenticationFlowException) {
             AuthenticationFlowException e = (AuthenticationFlowException) failure;
             ServicesLogger.LOGGER.failedClientAuthentication(e);
+            event.detail(Details.AUTHENTICATION_ERROR_DETAIL, e.getEventDetails());
             if (e.getError() == AuthenticationFlowError.CLIENT_NOT_FOUND) {
                 event.error(Errors.CLIENT_NOT_FOUND);
                 return ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Invalid client or Invalid client credentials");
@@ -1064,8 +1065,8 @@ public class AuthenticationProcessor {
         UserModel authUser = authenticationSession.getAuthenticatedUser();
         validateUser(authUser);
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
-        if (model == null) {
-            logger.debug("Cannot find execution, reseting flow");
+        if (model == null || !AuthenticatorUtil.checkExecutionBelongsToFlow(realm, flowId, model)) {
+            logger.debug("Cannot find execution in the authentication flow, reseting flow");
             logFailure(null);
             resetFlow();
             return authenticate();
@@ -1148,7 +1149,14 @@ public class AuthenticationProcessor {
 
     // May create new userSession too (if userSession argument is null)
     public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event) {
-        String username = authSession.getAuthenticatedUser().getUsername();
+        UserModel authenticatedUser = authSession.getAuthenticatedUser();
+
+        if (authenticatedUser == null) {
+            event.error(Errors.INVALID_AUTHENTICATION_SESSION);
+            throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER);
+        }
+
+        String username = authenticatedUser.getUsername();
         String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
         if (attemptedUsername != null) username = attemptedUsername;
         String rememberMe = authSession.getAuthNote(Details.REMEMBER_ME);
@@ -1160,9 +1168,15 @@ public class AuthenticationProcessor {
 
             userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
             if (userSession == null) {
+                // an attempt to re-authenticate but attaching a user session that does not exist
+                if (isSSOAuthentication(authSession)) {
+                    event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
+                    throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, authenticatedUser.getUsername());
+                }
+
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 
-                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
+                userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, authenticatedUser, username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId, persistenceState);
 
                 if (isLightweightUser(userSession.getUser())) {
@@ -1170,20 +1184,28 @@ public class AuthenticationProcessor {
                     lua.setOwningUserSessionId(userSession.getId());
                 }
             } else if (userSession.getUser() == null || !AuthenticationManager.isSessionValid(realm, userSession)) {
-                userSession.restartSession(realm, authSession.getAuthenticatedUser(), username, connection.getRemoteHost(), authSession.getProtocol()
+                userSession.restartSession(realm, authenticatedUser, username, connection.getRemoteHost(), authSession.getProtocol()
                         , remember, brokerSessionId, brokerUserId);
-            } else {
-                // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.
-                // We need to handle case when different user was used
-                logger.debugf("No SSO login, but found existing userSession with ID '%s' after finished authentication.", userSession.getId());
-                if (!authSession.getAuthenticatedUser().equals(userSession.getUser())) {
-                    event.detail(Details.EXISTING_USER, userSession.getUser().getId());
-                    event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
-                    throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, userSession.getUser().getUsername());
-                }
             }
             userSession.setState(UserSessionModel.State.LOGGED_IN);
             session.getContext().setUserSession(userSession);
+        } else {
+            // We have existing userSession even if it wasn't attached to authenticator. Could happen if SSO authentication was ignored (eg. prompt=login) and in some other cases.
+            logger.debugf("No SSO login, but found existing userSession with ID '%s' after finished authentication.", userSession.getId());
+        }
+
+        // We need to handle case when different user was used
+        UserModel user = userSession.getUser();
+
+        if (user == null) {
+            event.error(Errors.INVALID_AUTHENTICATION_SESSION);
+            throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_USER, authenticatedUser.getUsername());
+        }
+
+        if (!authenticatedUser.equals(user)) {
+            event.detail(Details.EXISTING_USER, user.getId());
+            event.error(Errors.DIFFERENT_USER_AUTHENTICATED);
+            throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.DIFFERENT_USER_AUTHENTICATED, user.getUsername());
         }
 
         if (remember) {
@@ -1207,7 +1229,7 @@ public class AuthenticationProcessor {
             clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
         }
 
-        event.user(userSession.getUser())
+        event.user(user)
                 .detail(Details.USERNAME, username)
                 .session(userSession);
 
@@ -1236,8 +1258,6 @@ public class AuthenticationProcessor {
     }
 
     protected Response authenticationComplete() {
-        new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
-
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
         AuthenticationManager.setClientScopesInSession(session, authenticationSession);
 
@@ -1246,11 +1266,6 @@ public class AuthenticationProcessor {
             Response response = AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
             return response;
         } else {
-
-            // Visit the LoginProtocol for authentication completeness
-            LoginProtocol loginProtocol = session.getProvider(LoginProtocol.class, authenticationSession.getProtocol());
-            loginProtocol.authenticationComplete(authenticationSession);
-
             event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
             Response response = AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
             return response;

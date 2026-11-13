@@ -415,10 +415,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
             .map(f -> f.get(0))
             .orElseThrow(() -> new AssertionError("Cannot find admin permissions client"));
 
+        // the client is internal, so the request is rejected by the permission check the same way it is for realm-management
         try (var response = getClientApi(realmAdminAdminClient, getRealmName(), adminPermissionsClientRep.getClientId()).deleteClient()) {
-            assertThat(response.getStatus(), is(400));
-            var body = response.readEntity(String.class);
-            assertThat(body, containsString("Could not delete client"));
+            assertThat(response.getStatus(), is(403));
         }
 
         // Verify the client still exists (was not deleted)

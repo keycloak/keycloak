@@ -78,6 +78,15 @@ public class EventBuilder {
         realm(realm);
     }
 
+    /**
+     * Starts from a copy of {@code event}, so it can be recorded later from another session.
+     */
+    public EventBuilder(RealmModel realm, KeycloakSession session, Event event) {
+        this(realm, session);
+        this.event = event.clone();
+        realm(realm);
+    }
+
     private static EventStoreProvider getEventStoreProvider(KeycloakSession session) {
         EventStoreProvider store = session.getProvider(EventStoreProvider.class);
         if (store == null) {

@@ -30,6 +30,7 @@ import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 
 import org.keycloak.Config;
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome;
 import org.keycloak.authorization.model.Policy;
@@ -46,6 +47,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.isSkipEvaluation;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
 
 public final class PartialEvaluator {
 
@@ -53,29 +55,37 @@ public final class PartialEvaluator {
     private static final String ID_FIELD = "id";
     private static final String PARTIAL_EVALUATION_CONTEXT_CACHE = "kc.authz.fgap.partial.evaluation.cache";
 
-    public List<Predicate> getPredicates(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+    /**
+     * @param adminUser the admin bound to the current management request, or {@code null} if none, in which case no filtering is applied
+     */
+    public List<Predicate> getPredicates(KeycloakSession session, UserModel adminUser, ResourceType resourceType, PartialEvaluationStorageProvider storage, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             // feature not enabled, if a storage evaluator is provided try to resolve any filter from there
             return storage == null ? List.of() : storage.getFilters(new PartialEvaluationContext(session, storage, builder, queryBuilder, path));
         }
 
-        // check before getUser() to avoid infinite recursion when called from a runWithoutAuthorization block
-        // (e.g. isReadOnlyOrganizationMember -> getByMember -> applyAuthorizationFilters -> getPredicates -> getUser -> getUserById -> validateUser -> isReadOnlyOrganizationMember -> ...)
-        if (isSkipEvaluation(session)) {
+        if (adminUser == null || isSkipEvaluation(session)) {
             return List.of();
         }
 
-        UserModel adminUser = session.getContext().getUser();
+        // Resolving the admin's roles and policies can itself query groups, for example through LDAP.
+        // Those internal lookups must not be filtered by the permissions being evaluated.
+        return runWithoutAuthorization(session, () -> {
+            if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
+                return List.of();
+            }
 
-        if (shouldSkipPartialEvaluation(session, adminUser, resourceType)) {
-            // only run partial evaluation if the admin user does not have view-* or manage-* role for specified resourceType or has any query-* role
-            return List.of();
+            PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
+            return buildPredicates(context);
+        });
+    }
+
+    public boolean isActive(KeycloakSession session, UserModel adminUser, ResourceType resourceType) {
+        if (adminUser == null || isSkipEvaluation(session)) {
+            return false;
         }
 
-        // collect the result from the partial evaluation so that the filters can be applied
-        PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
-
-        return buildPredicates(context);
+        return runWithoutAuthorization(session, () -> !shouldSkipPartialEvaluation(session, adminUser, resourceType));
     }
 
     private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
@@ -93,6 +103,7 @@ public final class PartialEvaluator {
         Set<String> allowedResources = new HashSet<>();
         Set<String> deniedResources = new HashSet<>();
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
 
         for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
             policyProvider.getPermissions(session, resourceType, groupResourceType, adminUser).forEach(permission -> {
@@ -100,6 +111,13 @@ public final class PartialEvaluator {
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
                 for (Policy policy : policies) {
+                    PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
+
+                    if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
+                        deniedResources.addAll(ids);
+                        continue;
+                    }
+
                     PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
 
                     if (provider == null) {
@@ -112,7 +130,7 @@ public final class PartialEvaluator {
                         continue;
                     }
 
-                    if (Outcome.FORCE_DENY.equals(granted)) {
+                    if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {
                         deniedResources.addAll(ids);
                         continue;
                     }
@@ -252,14 +270,6 @@ public final class PartialEvaluator {
     }
 
     private boolean shouldSkipPartialEvaluation(KeycloakSession session, UserModel user, ResourceType resourceType) {
-        if (user == null) {
-            return true;
-        }
-
-        if (isSkipEvaluation(session)) {
-            return true;
-        }
-
         ClientModel client = getRealmManagementClient(session);
 
         if (client == null) {

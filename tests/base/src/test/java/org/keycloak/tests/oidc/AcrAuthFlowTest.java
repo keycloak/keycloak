@@ -26,7 +26,12 @@ import java.util.List;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
+import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
@@ -60,9 +65,18 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
+import org.keycloak.testframework.ui.page.RegisterPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.ClientPoliciesUtil;
+import org.keycloak.testsuite.util.FlowUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
@@ -81,16 +95,32 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
     @InjectUser(config = AcrUserConfig.class)
     ManagedUser user;
 
+    @InjectUser(ref = "no-otp-user", config = NoOtpUserConfig.class)
+    ManagedUser noOtpUser;
+
     @InjectClient(config = AcrClientConfig.class)
     ManagedClient client;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
 
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectPage
+    LoginConfigTotpPage loginConfigTotpPage;
+
+    @InjectPage
+    RegisterPage registerPage;
+
     // config
     private static String TOTP_SECRET = "totpsecret";
     private static String PASSWORD_FLOW_ALIAS = "password-flow";
     private static String PASSWORD_OTP_FLOW_ALIAS = "password-otp-flow";
+    private static String USERNAME = "test-user";
 
     private TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -107,7 +137,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-password");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         Tokens tokens = assertLoginWithAcr(user.getId(), "acr-password");
 
         logout(user.getId(), tokens);
@@ -121,7 +151,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-password");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         Tokens tokens = assertLoginWithAcr(user.getId(), "default");
 
         logout(user.getId(), tokens);
@@ -142,7 +172,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-otp");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         authenticateTOTP(TOTP_SECRET);
         Tokens tokens = assertLoginWithAcr(user.getId(), "acr-otp");
 
@@ -160,7 +190,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
             add("acr-password");
         }});
 
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         authenticateTOTP(TOTP_SECRET);
         Tokens tokens = assertLoginWithAcr(user.getId(), "default");
 
@@ -183,18 +213,88 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
         loginWithAcr(new ArrayList<>() {{
             add("acr-password");
         }});
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         assertLoginWithAcr(user.getId(), "acr-password");
 
         // ensure re-auth forced with different acr
         loginWithAcr(new ArrayList<>() {{
             add("acr-otp");
         }});
-        authenticatePassword(user.getPassword());
+        authenticatePassword(USERNAME,user.getPassword());
         authenticateTOTP(TOTP_SECRET);
         tokens = assertLoginWithAcr(user.getId(), "acr-otp");
 
         logout(user.getId(), tokens);
+    }
+
+    @Test
+    public void test2FASetupBypassViaSessionRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaSessionRestartDuringReAuth() {
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        // Log in with password first, so the restart below goes through the re-authentication branch
+        loginWithAcr(List.of("acr-password"));
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(1, noOtpUser.admin().getUserSessions().size());
+
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+
+        restartAuthenticationSession();
+        Assertions.assertTrue(noOtpUser.admin().getUserSessions().isEmpty());
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupBypassViaRestartCookie() {
+        startForcedOtpSetup();
+
+        // Without AUTH_SESSION_ID the session is rebuilt from the KC_RESTART cookie
+        driver.driver().manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
+        driver.open(driver.getCurrentUrl());
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    @Test
+    public void test2FASetupEnforcedLoaSurvivesRestart() {
+        startForcedOtpSetup();
+
+        restartAuthenticationSession();
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        configureTOTP();
+
+        AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals("acr-otp", oauth.verifyToken(response.getAccessToken()).getAcr());
+    }
+
+    private void startForcedOtpSetup() {
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        loginWithAcr(List.of("acr-otp"));
+        authenticatePassword(noOtpUser.getUsername(), noOtpUser.getPassword());
+        loginConfigTotpPage.assertCurrent();
+    }
+
+    private void restartAuthenticationSession() {
+        // Swap the current login-actions sub-path for "restart", keeping the client_id/tab_id already in the URL
+        driver.open(driver.getCurrentUrl().replaceFirst("/login-actions/[^/?]+", "/login-actions/restart"));
+    }
+
+    private void configureTOTP() {
+        loginConfigTotpPage.assertCurrent();
+        loginConfigTotpPage.configure(totp.generateTOTP(loginConfigTotpPage.getTotpSecret()));
     }
 
     private void setAcrClientPolicy(String acr, String alias) {
@@ -249,6 +349,87 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
     }
 
 
+    @Test
+    public void testAuthFlowEssential() {
+        setAcrClientPolicy("acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        loginWithAcr(List.of("acr-password"), true);
+
+        authenticatePassword(USERNAME, user.getPassword());
+        Tokens tokens = assertLoginWithAcr(user.getId(), "acr-password");
+
+        logout(user.getId(), tokens);
+    }
+
+    @Test
+    public void testAuthFlowOTPEssential() {
+        setAcrClientPolicy("acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+
+        loginWithAcr(List.of("acr-otp"), true);
+
+        authenticatePassword(USERNAME, user.getPassword());
+        authenticateTOTP(TOTP_SECRET);
+        Tokens tokens = assertLoginWithAcr(user.getId(), "acr-otp");
+
+        logout(user.getId(), tokens);
+    }
+
+    /**
+     * The level of the selected flow applies also when the flow contains a level condition which is skipped.
+     * Expected: ACR = "acr-otp" for a user without OTP
+     */
+    @Test
+    public void testAuthFlowWithSkippedLevelConditionEssential() {
+        String flowAlias = "selected-step-up-flow";
+        runOnServer.run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(flowAlias));
+        runOnServer.run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(flowAlias)
+                .inForms(forms -> forms
+                        .clear()
+                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
+                        .addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, subflow -> subflow
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalUserConfiguredAuthenticatorFactory.PROVIDER_ID)
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
+                                        config -> {
+                                            config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "2");
+                                            config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, String.valueOf(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE));
+                                        })
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, OTPFormAuthenticatorFactory.PROVIDER_ID))));
+        setAcrClientPolicy("acr-otp", flowAlias, 3);
+
+        loginWithAcr(List.of("acr-otp"), true);
+        authenticatePassword("no-otp-user", noOtpUser.getPassword());
+        Tokens tokens = assertLoginWithAcr(noOtpUser.getId(), "acr-otp");
+
+        logout(noOtpUser.getId(), tokens);
+    }
+
+    /**
+     * The level of the selected flow applies only to logins completing that flow, a registration does not reach it.
+     * Expected: essential ACR requiring the level is rejected and no user is created
+     */
+    @Test
+    public void testRegistrationDoesNotReachAuthFlowLoaEssential() {
+        setAcrClientPolicy("acr-password", PASSWORD_FLOW_ALIAS, 2);
+        setAcrClientPolicy("acr-otp", PASSWORD_OTP_FLOW_ALIAS, 3);
+        managedRealm.updateWithCleanup(r -> r.registrationAllowed(true));
+
+        loginWithAcr(List.of("acr-otp"), true);
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        registerPage.register("First", "Last", "registered@example.com", "registered", "password");
+
+        errorPage.assertCurrent();
+        Assertions.assertEquals("Authentication requirements not fulfilled", errorPage.getError());
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.GENERIC_AUTHENTICATION_ERROR)
+                .details(Details.AUTHENTICATION_ERROR_DETAIL, "Forced level of authentication did not meet the requirements. Requested level: 3, Fulfilled level: 1");
+        Assertions.assertTrue(managedRealm.admin().users().searchByUsername("registered", true).isEmpty());
+    }
+
     private void loginWithAcr(List<String> acrValues) {
         loginWithAcr(acrValues, false);
     }
@@ -287,17 +468,6 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
                 .clientId(client.getClientId())
                 .userId(userId)
                 .withoutDetails(Details.REDIRECT_URI);
-    }
-
-    /**
-     * Helper function to authenticate with a username and password
-     *
-     * @param password The password to log in with
-     */
-    private void authenticatePassword(String password) {
-        loginPage.assertCurrent();
-        loginPage.fillLogin("test-user", password);
-        loginPage.submit();
     }
 
     /**
@@ -398,6 +568,18 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest {
                     .lastName("test-user")
                     .password("password")
                     .totpSecret(TOTP_SECRET);
+        }
+    }
+
+    private static class NoOtpUserConfig implements UserConfig {
+
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("no-otp-user")
+                    .email("no-otp-user@email.com")
+                    .firstName("no-otp-user")
+                    .lastName("no-otp-user")
+                    .password("password");
         }
     }
 

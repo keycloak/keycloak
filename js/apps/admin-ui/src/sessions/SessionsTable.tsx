@@ -26,7 +26,6 @@ import {
   LoaderFunction,
 } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { UserRoute, toUser } from "../user/routes/User";
 import { toUsers } from "../user/routes/Users";
 import { isLightweightUser } from "../user/utils";
@@ -101,7 +100,6 @@ export default function SessionsTable({
   const { adminClient } = useAdminClient();
 
   const { realm } = useRealm();
-  const { whoAmI } = useWhoAmI();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { addError } = useAlerts();
@@ -184,7 +182,7 @@ export default function SessionsTable({
       isOffline: false,
     });
 
-    if (session.userId === whoAmI.userId) {
+    if (session.id === keycloak.sessionId) {
       await keycloak.logout({ redirectUri: "" });
     } else if (isOnUserPage && isLightweightUser(session.userId)) {
       void navigate(toUsers({ realm: realm }));

@@ -17,12 +17,18 @@
 
 package org.keycloak.broker.oid4vp;
 
+import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.utils.StringUtil;
 
 public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
+    public static final String DEFAULT_CREDENTIAL_TYPES = "defaultCredentialTypes";
     public static final String DCQL_QUERY = "dcqlQuery";
     public static final String TRUSTED_ISSUER_JWKS = "trustedIssuerJwks";
     public static final String TRUST_MATERIAL_IDPS = "trustMaterialIdps";
@@ -40,7 +46,22 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
         super(model);
     }
 
-    // TODO: Revisit if configuring DCQL by hand should stay or eliminated completely by mapper-inferred auto-generation
+    public List<String> getDefaultCredentialTypes() {
+        String credentialTypes = getConfig().get(DEFAULT_CREDENTIAL_TYPES);
+        if (StringUtil.isBlank(credentialTypes)) {
+            return List.of();
+        }
+        return Arrays.stream(credentialTypes.split(","))
+                .map(String::trim)
+                .filter(StringUtil::isNotBlank)
+                .distinct()
+                .toList();
+    }
+
+    public void setDefaultCredentialTypes(List<String> credentialTypes) {
+        getConfig().put(DEFAULT_CREDENTIAL_TYPES, String.join(",", credentialTypes));
+    }
+
     public String getDcqlQuery() {
         return getConfig().get(DCQL_QUERY);
     }
@@ -97,9 +118,19 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
+        String walletScheme = this.getWalletScheme();
+        if (isForbiddenScheme(walletScheme)) {
+            throw new IllegalArgumentException(String.format("Invalid wallet scheme '%s'", walletScheme));
+        }
         String responseMode = getConfig().get(RESPONSE_MODE);
         if (StringUtil.isNotBlank(responseMode)) {
             ResponseMode.from(responseMode);
+        }
+        if (StringUtil.isNotBlank(getDcqlQuery())) {
+            DcqlQuery.parse(getDcqlQuery());
+        } else if (getDefaultCredentialTypes().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Default credential types are required unless a DCQL query is configured");
         }
         if (StringUtil.isBlank(getTrustedIssuerJwks()) && StringUtil.isBlank(getTrustMaterialIdps())) {
             throw new IllegalArgumentException(
@@ -114,5 +145,23 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
     public void setWalletScheme(String walletScheme) {
         getConfig().put(WALLET_SCHEME, walletScheme);
+    }
+
+    private static boolean isForbiddenScheme(String scheme) {
+        if (!scheme.contains("://")) {
+            scheme += "://";
+        }
+        scheme += "?";
+        URI uri;
+        try {
+            uri = URI.create(scheme);
+        } catch (Exception e) {
+            return true;
+        }
+        if (uri.getScheme() == null || uri.isOpaque() || StringUtil.isNotBlank(uri.getRawQuery()) || uri.getRawFragment() != null) {
+            return true;
+        }
+        scheme = uri.getScheme().toLowerCase(Locale.ROOT);
+        return OID4VPIdentityProviderFactory.getForbiddenWalletSchemes().contains(scheme);
     }
 }

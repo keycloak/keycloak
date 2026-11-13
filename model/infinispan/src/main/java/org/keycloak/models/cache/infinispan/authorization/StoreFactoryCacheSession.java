@@ -530,7 +530,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (invalidations.contains(id)) {
                 return getScopeStoreDelegate().findById(resourceServer, id);
             } else if (managedScopes.containsKey(id)) {
-                return managedScopes.get(id);
+                ScopeAdapter cachedScope = managedScopes.get(id);
+                if (resourceServer == null || resourceServer.getId().equals(cachedScope.getResourceServer().getId())) {
+                    return cachedScope;
+                }
             }
             if (resourceServer != null && !resourceServer.getId().equals(cached.getResourceServerId())) {
                 return null;
@@ -626,7 +629,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (invalidations.contains(id)) {
                 return getResourceStoreDelegate().findById(resourceServer, id);
             } else if (managedResources.containsKey(id)) {
-                return managedResources.get(id);
+                ResourceAdapter cachedResource = managedResources.get(id);
+                if (resourceServer == null || resourceServer.getId().equals(cachedResource.getResourceServer().getId())) {
+                    return cachedResource;
+                }
             }
             if (resourceServer != null && ! resourceServer.getId().equals(cached.getResourceServerId())) {
                 return null;
@@ -879,7 +885,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (invalidations.contains(id)) {
                 return getPolicyStoreDelegate().findById(resourceServer, id);
             } else if (managedPolicies.containsKey(id)) {
-                return managedPolicies.get(id);
+                PolicyAdapter cachedPolicy = managedPolicies.get(id);
+                if (resourceServer == null || resourceServer.getId().equals(cachedPolicy.getResourceServer().getId())) {
+                    return cachedPolicy;
+                }
             }
             if (resourceServer != null && !cached.getResourceServerId().equals(resourceServer.getId())) {
                 return null;
@@ -1131,7 +1140,10 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (invalidations.contains(id)) {
                 return getPermissionTicketStoreDelegate().findById(resourceServer, id);
             } else if (managedPermissionTickets.containsKey(id)) {
-                return managedPermissionTickets.get(id);
+                PermissionTicketAdapter cachedPermissionTicket = managedPermissionTickets.get(id);
+                if (resourceServer == null || resourceServer.getId().equals(cachedPermissionTicket.getResourceServer().getId())) {
+                    return cachedPermissionTicket;
+                }
             }
             if (resourceServer != null && !cached.getResourceServerId().equals(resourceServer.getId())) {
                 return null;

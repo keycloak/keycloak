@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
@@ -57,9 +58,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for SSF subject management: admin add/remove/ignore
- * endpoints, the dispatcher's subject subscription filter, and the
- * auto-notify-on-login behaviour.
+ * Integration tests for SSF subject management: the admin
+ * add/remove/ignore/check endpoints, the receiver add/remove endpoints
+ * with the add policy and admin ignores they must honor, and the
+ * dispatcher's subject subscription filter.
  *
  * <p>The realm is configured with {@code default_subjects=NONE} on the
  * receiver client so events are only delivered to explicitly subscribed
@@ -128,6 +130,10 @@ public class SsfSubjectManagementTests {
         // Drop any org created by an inspection test so the next test
         // starts from a clean slate.
         bestEffortDeleteAllOrganizations();
+        // Drop sessions created via the receiver and restore the default
+        // add policy so receiver-add tests don't leak into each other.
+        bestEffortLogoutTestUser();
+        setReceiverSubjectAddPolicy(null);
     }
 
     // ---- admin add / remove / ignore endpoints ----
@@ -351,7 +357,204 @@ public class SsfSubjectManagementTests {
                 "ignored user's event should NOT reach the receiver");
     }
 
+    // ---- receiver add: ssf.receiverSubjectAddPolicy ----
+
+    @Test
+    public void receiverAdd_defaultPolicy_unrelatedUser_notSubscribed() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+
+        // Silent mode: the denial is indistinguishable from success on the wire.
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("not_notified",
+                "a receiver must not subscribe a user who never authenticated via it");
+    }
+
+    @Test
+    public void receiverAdd_defaultPolicy_userAuthenticatedViaReceiver_subscribed() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        loginTestUserViaReceiver();
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("notified",
+                "a user with a session for the receiver may be added under AUTHENTICATED");
+    }
+
+    @Test
+    public void receiverAdd_adminIgnoredUser_staysIgnored() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        loginTestUserViaReceiver();
+        try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/ignore",
+                "user-email", TEST_EMAIL)) {}
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("ignored", "a receiver add must not lift an admin ignore");
+    }
+
+    @Test
+    public void receiverAdd_anyPolicy_unrelatedUser_subscribed() throws Exception {
+        setReceiverSubjectAddPolicy("ANY");
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("notified", "ANY lets the receiver add any realm user");
+    }
+
+    @Test
+    public void receiverAdd_nonePolicy_userAuthenticatedViaReceiver_notSubscribed() throws Exception {
+        setReceiverSubjectAddPolicy("NONE");
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        loginTestUserViaReceiver();
+
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("not_notified", "NONE rejects every receiver-driven add");
+    }
+
+    // ---- receiver remove: admin exclusion ----
+
+    @Test
+    public void receiverRemoveThenAdd_adminIgnoredUser_staysIgnored() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        // Without the ignore, AUTHENTICATED would permit the add.
+        loginTestUserViaReceiver();
+        try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/ignore",
+                "user-email", TEST_EMAIL)) {}
+
+        // The denied remove still answers 204, so it doesn't reveal the ignore.
+        Assertions.assertEquals(204, receiverRemove(token, stream.getStreamId(), TEST_EMAIL));
+        Assertions.assertEquals(200, receiverAdd(token, stream.getStreamId(), TEST_EMAIL));
+
+        assertCheckStatus("ignored",
+                "a receiver must not lift an admin ignore by removing and re-adding the subject");
+    }
+
+    @Test
+    public void receiverRemoveThenAdd_anyPolicy_adminIgnoredOrganization_staysIgnored() throws Exception {
+        // ANY is the only policy under which a receiver may add an organization.
+        setReceiverSubjectAddPolicy("ANY");
+        // The org carries the exclusion marker the admin console's "Ignore" writes.
+        String orgAlias = createOrgWithReceiverAttribute(false);
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+
+        Assertions.assertEquals(204, receiverRemoveOrganization(token, stream.getStreamId(), orgAlias));
+        Assertions.assertEquals(200, receiverAddOrganization(token, stream.getStreamId(), orgAlias));
+
+        assertCheckStatus("org-alias", orgAlias, "ignored",
+                "a receiver must not lift an admin ignore on an organization by removing and re-adding it");
+    }
+
+    @Test
+    public void adminRemove_afterReceiverRemove_liftsIgnore() throws Exception {
+        String token = obtainReceiverToken();
+        StreamConfig stream = createPushStream(token);
+        try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/ignore",
+                "user-email", TEST_EMAIL)) {}
+        Assertions.assertEquals(204, receiverRemove(token, stream.getStreamId(), TEST_EMAIL));
+
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/remove",
+                "user-email", TEST_EMAIL)) {
+            Assertions.assertEquals(200, res.getStatus());
+        }
+
+        assertCheckStatus("not_notified", "an admin remove must still lift an admin ignore");
+    }
+
     // ---- helpers ----
+
+    protected int receiverAdd(String token, String streamId, String email) throws IOException {
+        return receiverSubjectRequest("subjects/add", token, streamId, Map.of("format", "email", "email", email));
+    }
+
+    protected int receiverRemove(String token, String streamId, String email) throws IOException {
+        return receiverSubjectRequest("subjects/remove", token, streamId, Map.of("format", "email", "email", email));
+    }
+
+    protected int receiverAddOrganization(String token, String streamId, String orgAlias) throws IOException {
+        return receiverSubjectRequest("subjects/add", token, streamId, organizationSubject(orgAlias));
+    }
+
+    protected int receiverRemoveOrganization(String token, String streamId, String orgAlias) throws IOException {
+        return receiverSubjectRequest("subjects/remove", token, streamId, organizationSubject(orgAlias));
+    }
+
+    protected Map<String, Object> organizationSubject(String orgAlias) {
+        return Map.of(
+                "format", "complex",
+                "tenant", Map.of("format", "uri", "uri", SubjectResolver.ORG_URN_ALIAS_PREFIX + orgAlias));
+    }
+
+    protected int receiverSubjectRequest(String action, String token, String streamId,
+                                         Map<String, Object> subject) throws IOException {
+        Map<String, Object> body = Map.of(
+                "stream_id", streamId,
+                "subject", subject);
+        try (SimpleHttpResponse res = http.doPost(realm.getBaseUrl() + "/ssf/transmitter/" + action)
+                .json(body)
+                .auth(token)
+                .asResponse()) {
+            return res.getStatus();
+        }
+    }
+
+    protected void assertCheckStatus(String expected, String message) throws IOException {
+        assertCheckStatus("user-email", TEST_EMAIL, expected, message);
+    }
+
+    protected void assertCheckStatus(String type, String value, String expected, String message) throws IOException {
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/check", type, value)) {
+            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals(expected, res.asJson().get("status").asText(), message);
+        }
+    }
+
+    /**
+     * Password grant through the receiver client so the test user ends
+     * up with a user session holding a client session for the receiver.
+     */
+    protected void loginTestUserViaReceiver() throws IOException {
+        String tokenUrl = realm.getBaseUrl() + "/protocol/openid-connect/token";
+        try (SimpleHttpResponse response = http.doPost(tokenUrl)
+                .authBasic(RECEIVER, RECEIVER_SECRET)
+                .param("grant_type", "password")
+                .param("username", TEST_USER)
+                .param("password", TEST_PASSWORD)
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+        }
+    }
+
+    /**
+     * Sets the receiver's add policy; {@code null} restores the default.
+     * The default is restored by blanking the attribute rather than
+     * omitting it, because a client update only writes the attributes
+     * present in the representation — an omitted key keeps its stored
+     * value. A blank value parses to the default policy.
+     */
+    protected void setReceiverSubjectAddPolicy(String policy) {
+        ClientRepresentation client = findClientByClientId(RECEIVER);
+        client.getAttributes().put(ClientStreamStore.SSF_RECEIVER_SUBJECT_ADD_POLICY_KEY,
+                policy == null ? "" : policy);
+        realm.admin().clients().get(client.getId()).update(client);
+    }
+
+    protected void bestEffortLogoutTestUser() {
+        try {
+            realm.admin().users().searchByUsername(TEST_USER, true)
+                    .forEach(u -> realm.admin().users().get(u.getId()).logout());
+        } catch (Exception ignored) {
+        }
+    }
 
     protected SimpleHttpResponse adminSubjectRequest(String clientId, String action,
                                                      String type, String value) throws IOException {
@@ -535,7 +738,9 @@ public class SsfSubjectManagementTests {
                     ClientBuilder.create(RECEIVER)
                     .secret(RECEIVER_SECRET)
                     .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
+                    // Lets receiver-add tests give the test user a session
+                    // with this receiver via the password grant.
+                    .directAccessGrantsEnabled(true)
                     .publicClient(false)
                     .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
                     .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")

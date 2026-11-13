@@ -269,20 +269,6 @@ For more details on Point-in-Time Recovery options, refer to the https://cloudna
 After a recovery, any database modifications made after the last archived WAL segment or the PITR target time are lost.
 Some {project_name} tables require attention because stale data may affect cluster behavior or security.
 
-=== JGroups discovery table
-
-The `jgroups_ping` table stores the IP addresses and ports of {project_name} instances and is used as a discovery mechanism for cluster formation.
-After a recovery, this table may contain references to instances that are no longer running.
-This causes {project_name} to attempt to reach those instances during startup, resulting in a delay of up to 20 seconds (the default timeout).
-
-Clear the table after recovery to avoid startup delays:
-
-.SQL:
-[source,sql]
-----
-TRUNCATE jgroups_ping;
-----
-
 === Session tables
 
 The `offline_user_session` and `offline_client_session` tables store sessions for logged-in users and clients.

@@ -220,3 +220,28 @@ export async function saveOid4vci(page: Page) {
 export async function revertOid4vci(page: Page) {
   await page.getByTestId("oid4vciRevert").click();
 }
+
+export async function assertOid4vciSection(
+  page: Page,
+  featureEnabled: boolean,
+) {
+  // Sections render together; wait for one that is always present so a hidden OID4VC section is not a false positive from a page that is still loading.
+  await expect(page.getByTestId("OIDCAuthFlowOverrideSave")).toBeVisible();
+
+  const toggleSwitch = page.locator(oid4vciEnabledSwitch);
+  await expect(toggleSwitch).toBeVisible({ visible: featureEnabled });
+
+  if (!featureEnabled) {
+    return;
+  }
+
+  await toggleSwitch.scrollIntoViewIfNeeded();
+  await assertOid4vciEnabled(page, false);
+  await switchOid4vciEnabled(page, true);
+  await saveOid4vci(page);
+  await assertOid4vciEnabled(page, true);
+  await switchOid4vciEnabled(page, false);
+  await assertOid4vciEnabled(page, false);
+  await revertOid4vci(page);
+  await assertOid4vciEnabled(page, true);
+}

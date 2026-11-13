@@ -68,6 +68,7 @@ import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
 
+import org.checkerframework.checker.mustcall.qual.NotOwning;
 import org.jboss.logging.Logger;
 
 /**
@@ -197,6 +198,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getProvider(Class<T> clazz) {
         List<String> key = List.of(clazz.getName());
         return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz));
@@ -219,12 +221,14 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
         List<String> key = List.of(clazz.getName(), id);
         return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz, id));
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId) {
         final RealmModel realm = getContext().getRealm();
         if (realm == null) {
@@ -236,6 +240,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter) {
         List<String> key = List.of("component", clazz.getName(), componentId);
         final RealmModel realm = getContext().getRealm();
@@ -243,6 +248,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel) {
         String modelId = componentModel.getId();
 
@@ -270,6 +276,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> Set<T> getAllProviders(Class<T> clazz) {
         return listProviderIds(clazz).stream()
             .map(id -> getProvider(clazz, id))

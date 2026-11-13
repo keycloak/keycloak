@@ -26,6 +26,8 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import org.junit.jupiter.api.Test;
@@ -58,6 +60,9 @@ public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigra
     @InjectRealm(ref = "userProfile", fromJson = "migration-realm-19.0.3-user-profile.json")
     ManagedRealm userProfileManagedRealm;
 
+    @InjectRunOnServer(realmRef = "migration")
+    RunOnServerClient migrationRunOnServer;
+
     @Test
     void migration19_0_3Test() {
         checkRealmsImported();
@@ -69,6 +74,8 @@ public class JsonFileImport1903MigrationTest extends AbstractJsonFileImportMigra
         testMigrationTo25_0_0();
         testMigrationTo26_0_0(true);
         testMigrationTo26_3_0();
+        testMigrationTo26_8_3(migrationRunOnServer);
+        testMigrationTo27_0_0(userProfileManagedRealm.admin());
     }
 
     @Test

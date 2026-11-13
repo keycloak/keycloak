@@ -308,6 +308,30 @@ public class HttpDistTest {
     }
 
     @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void semicolonIsNotAQueryParamDelimiter(KeycloakRunner runner) {
+        runner.run("start-dev");
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master/test-resources/query-params?a=1;b=2")
+                .then().statusCode(200)
+                .body("decoded.a[0]", Matchers.is("1;b=2"))
+                .body("decoded.b", Matchers.nullValue())
+                .body("raw.a[0]", Matchers.is("1;b=2"));
+    }
+
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    public void rawQueryParamNamesResolveLikeInjectedParams(KeycloakRunner runner) {
+        runner.run("start-dev");
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master/test-resources/query-params?%53AMLResponse=crafted%2B&SAMLResponse=signed%2B")
+                .then().statusCode(200)
+                .body("injectedSAMLResponse", Matchers.contains("crafted+", "signed+"))
+                .body("decoded.SAMLResponse", Matchers.contains("crafted+", "signed+"))
+                .body("raw.SAMLResponse", Matchers.contains("crafted%2B", "signed%2B"));
+    }
+
+    @Test
     @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
     public void testHttpCertificateReloadPeriod(CLIResult result) {
         result.assertError("Invalid duration");

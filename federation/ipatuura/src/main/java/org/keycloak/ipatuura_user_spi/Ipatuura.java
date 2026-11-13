@@ -30,6 +30,7 @@ import org.keycloak.ipatuura_user_spi.schemas.SCIMUser;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 
+import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
@@ -73,8 +74,6 @@ public class Ipatuura {
 
     public Integer csrfAuthLogin() {
 
-        SimpleHttpResponse response;
-
         /* Get inputs */
         String server = model.getConfig().getFirst("scimurl");
         String username = model.getConfig().getFirst("loginusername");
@@ -83,23 +82,18 @@ public class Ipatuura {
         /* Execute GET to get initial csrftoken */
         String url = String.format("https://%s%s", server, "/admin/login/");
 
-        try {
-            response = SimpleHttp.create(session).doGet(url).asResponse();
+        try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(url).asResponse()) {
             parseSetCookie(response);
-            response.close();
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
             throw new RuntimeException(e);
         }
 
         /* Perform login POST */
-        try {
-            /* Here we retrieve the Response sessionid and csrftoken cookie */
-            response = SimpleHttp.create(session).doPost(url).header("X-CSRFToken", csrf_value).header("Cookie", csrf_cookie)
-                    .header("referer", url).param("username", username).param("password", password).asResponse();
-
+        /* Here we retrieve the Response sessionid and csrftoken cookie */
+        try (SimpleHttpResponse response = SimpleHttp.create(session).doPost(url).header("X-CSRFToken", csrf_value).header("Cookie", csrf_cookie)
+                .header("referer", url).param("username", username).param("password", password).asResponse()) {
             parseSetCookie(response);
-            response.close();
         } catch (Exception e) {
             logger.error("Error: " + e.getMessage());
             throw new RuntimeException(e);
@@ -201,6 +195,12 @@ public class Ipatuura {
         return response;
     }
 
+    static String buildFilter(String attribute, String value) {
+        /* SCIM filter string values are JSON strings (RFC 7644 section 3.4.2.2) */
+        String escaped = new String(JsonStringEncoder.getInstance().quoteAsString(value));
+        return String.format("%s eq \"%s\"", attribute, escaped);
+    }
+
     private SCIMSearchRequest setupSearch(String username, String attribute) {
         List<String> schemas = new ArrayList<String>();
         SCIMSearchRequest search = new SCIMSearchRequest();
@@ -209,7 +209,7 @@ public class Ipatuura {
         schemas.add(SCHEMA_API_MESSAGES_SEARCHREQUEST);
         search.setSchemas(schemas);
 
-        filter = String.format("%s eq \"%s\"", attribute, username);
+        filter = buildFilter(attribute, username);
         search.setFilter(filter);
         logger.debugv("filter: {0}", filter);
         logger.debugv("Schema: {0}", SCHEMA_API_MESSAGES_SEARCHREQUEST);
@@ -223,11 +223,8 @@ public class Ipatuura {
         String usersSearchUrl = "Users/.search";
         SCIMUser user = null;
 
-        SimpleHttpResponse response;
-        try {
-            response = clientRequest(usersSearchUrl, "POST", newSearch);
+        try (SimpleHttpResponse response = clientRequest(usersSearchUrl, "POST", newSearch)) {
             user = response.asJson(SCIMUser.class);
-            response.close();
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
             throw new RuntimeException(e);

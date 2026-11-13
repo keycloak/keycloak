@@ -30,6 +30,7 @@ import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -168,6 +169,13 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 		BrokeredIdentityContext identity = gitlabExtractFromProfile(profile);
 		identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
 		identity.getContextData().put(VALIDATED_ID_TOKEN, idToken);
+		identity.getContextData().put(FEDERATED_ACCESS_TOKEN, accessToken);
+		long accessTokenExpiration = tokenResponse.getExpiresIn() > 0
+				? Time.currentTime() + tokenResponse.getExpiresIn() : 0L;
+		identity.getContextData().put(FEDERATED_TOKEN_EXPIRATION, accessTokenExpiration);
+		if (tokenResponse.getRefreshToken() != null) {
+			identity.getContextData().put(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
+		}
 		processAccessTokenResponse(identity, tokenResponse);
 
 		return identity;

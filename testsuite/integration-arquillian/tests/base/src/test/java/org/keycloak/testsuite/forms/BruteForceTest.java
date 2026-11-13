@@ -48,6 +48,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
+import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -90,6 +91,9 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Page
+    protected InfoPage infoPage;
 
     @Page
     protected LoginPasswordResetPage passwordResetPage;
@@ -1095,6 +1099,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId);
 
+        assertTrue(mail.waitForIncomingEmail(1));
         MimeMessage message = mail.getReceivedMessages()[0];
         String passwordResetEmailLink = MailUtils.getPasswordResetEmailLink(message);
 
@@ -1108,6 +1113,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         assertEquals(Boolean.TRUE, bruteForceStatus.get("disabled"));
 
         updatePasswordPage.updatePasswords(getPassword("user2"), getPassword("user2"));
+        assertEquals("Your account has been updated.", infoPage.getInfo());
 
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
@@ -1117,6 +1123,8 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         bruteForceStatus = managedRealm.admin().attackDetection().bruteForceUserStatus(userId);
         assertEquals(Boolean.FALSE, bruteForceStatus.get("disabled"));
 
+        oauth.openLoginForm();
+        loginPage.login("user2", getPassword("user2"));
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String code = oauth.parseLoginResponse().getCode();

@@ -216,6 +216,7 @@ public class AdminConsole {
         }
 
         final String issuedFor = authResult.token().getIssuedFor();
+        // azp-restricted: it must be the admin console
         if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
             if (issuedFor == null) {
                 throw new ForbiddenException("No azp claim in the token");
@@ -368,18 +369,18 @@ public class AdminConsole {
                 map.put("devServerUrl", devServerUrl);
             }
 
-            final var manifestFile = theme.getResourceAsStream(".vite/manifest.json");
+            try (final var manifestFile = theme.getResourceAsStream(".vite/manifest.json")) {
+                if (devServerUrl == null && manifestFile != null) {
+                    final var manifest = ViteManifest.parseFromInputStream(manifestFile);
+                    final var entryChunk = manifest.getEntryChunk();
+                    final var entryStyles = entryChunk.css().orElse(new String[] {});
+                    final var entryScript = entryChunk.file();
+                    final var entryImports = entryChunk.imports().orElse(new String[] {});
 
-            if (devServerUrl == null && manifestFile != null) {
-                final var manifest = ViteManifest.parseFromInputStream(manifestFile);
-                final var entryChunk = manifest.getEntryChunk();
-                final var entryStyles = entryChunk.css().orElse(new String[] {});
-                final var entryScript = entryChunk.file();
-                final var entryImports = entryChunk.imports().orElse(new String[] {});
-
-                map.put("entryStyles", entryStyles);
-                map.put("entryScript", entryScript);
-                map.put("entryImports", entryImports);
+                    map.put("entryStyles", entryStyles);
+                    map.put("entryScript", entryScript);
+                    map.put("entryImports", entryImports);
+                }
             }
 
             final var freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);

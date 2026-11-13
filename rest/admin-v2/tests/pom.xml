@@ -87,7 +87,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client-jackson3</artifactId>
+                    <artifactId>keycloak-admin-client-jackson3-internal</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

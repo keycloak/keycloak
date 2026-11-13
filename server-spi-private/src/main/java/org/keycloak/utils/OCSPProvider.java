@@ -19,6 +19,7 @@
 package org.keycloak.utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.cert.CRLReason;
 import java.security.cert.CertPathValidatorException;
@@ -30,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
 import org.keycloak.models.KeycloakSession;
 
 import org.apache.http.HttpHeaders;
@@ -122,7 +124,8 @@ public abstract class OCSPProvider {
 
     protected byte[] getEncodedOCSPResponse(KeycloakSession session, byte[] encodedOCSPReq, URI responderUri) throws IOException {
 
-        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
+        CloseableHttpClient httpClient = httpClientProvider.getHttpClient();
         HttpPost post = new HttpPost(responderUri);
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
         post.setEntity(new ByteArrayEntity(encodedOCSPReq));
@@ -136,8 +139,10 @@ public abstract class OCSPProvider {
                     throw new IOException(errorMessage);
                 }
 
-                byte[] data = EntityUtils.toByteArray(response.getEntity());
-                return data;
+                try (InputStream content = new SafeInputStream(response.getEntity().getContent(),
+                        httpClientProvider.getMaxConsumedResponseSize())) {
+                    return content.readAllBytes();
+                }
             } finally {
                 EntityUtils.consumeQuietly(response.getEntity());
             }

@@ -1,6 +1,0 @@
-vulnerabilities:
-  - id: CVE-2024-6485
-    statement: Not affected, Bootstrap JavaScript component not distributed
-  - id: CVE-2025-1647
-    statement: Not affected, Bootstrap JavaScript component not distributed
-

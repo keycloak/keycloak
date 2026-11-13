@@ -121,6 +121,8 @@ final class UserStorageSyncTask implements ScheduledTask {
         RealmModel realm = session.getContext().getRealm();
 
         if (realm == null) {
+            // The realm was removed, cancel the scheduled task to avoid running it again on the next period
+            cancel(session);
             throw new ModelIllegalStateException("Realm with id " + realmId + " not found");
         }
 
@@ -163,6 +165,13 @@ final class UserStorageSyncTask implements ScheduledTask {
         int timeout = Math.max(TASK_EXECUTION_TIMEOUT, period);
 
         ExecutionResult<SynchronizationResult> task = clusterProvider.executeIfNotExecuted(taskKey, timeout, () -> {
+            // Stamp when this sync run started. The timer schedules each periodic run 'period'
+            // seconds after the previous run started, so the isSyncPeriod gate must measure from
+            // the start of the previous run as well. Recording the finish time instead makes the
+            // next timer tick skip whenever a run takes more than a second, which effectively
+            // doubles the configured sync period.
+            int syncStartTime = Time.currentTime();
+
             // Need to load component again in this transaction for updated data
             SynchronizationResult result = syncFunction.apply(sessionFactory, factory, provider);
 
@@ -170,7 +179,7 @@ final class UserStorageSyncTask implements ScheduledTask {
                 KeycloakModelUtils.runJobInTransaction(sessionFactory, s -> {
                     RealmModel realm = s.realms().getRealm(realmId);
                     s.getContext().setRealm(realm);
-                    updateLastSyncInterval(s);
+                    updateLastSyncInterval(s, syncStartTime);
                 });
             }
 
@@ -199,11 +208,14 @@ final class UserStorageSyncTask implements ScheduledTask {
     }
 
     // Update interval of last sync for given UserFederationProviderModel. Do it in separate transaction
-    private void updateLastSyncInterval(KeycloakSession session) {
+    private void updateLastSyncInterval(KeycloakSession session, int syncStartTime) {
         UserStorageProviderModel provider = getStorageModel(session);
 
+        // keep max lastSync/start time
+        int lastSync = Math.max(provider.getLastSync(syncMode), syncStartTime);
+
         // Update persistent provider in DB
-        provider.setLastSync(Time.currentTime(), syncMode);
+        provider.setLastSync(lastSync, syncMode);
 
         RealmModel realm = session.getContext().getRealm();
 

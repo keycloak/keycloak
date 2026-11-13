@@ -16,10 +16,10 @@ ifeval::[{project_community}==true]
 endif::[]
 
 ==== JavaScript (client-side)
-* https://www.keycloak.org/securing-apps/javascript-adapter[Keycloak JS adapter]
+* <@links.securingapps id="javascript-adapter" />
 
 ==== Node.js (server-side)
-* https://www.keycloak.org/securing-apps/nodejs-adapter[Keycloak Node.js adapter]
+* <@links.securingapps id="nodejs-adapter" />
 
 ifeval::[{project_community}==true]
 ==== C#

@@ -38,13 +38,19 @@ import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.AdminEventRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -58,6 +64,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -170,6 +177,19 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         }
 
         newPermission.getResources().remove(resourceB.getId());
+
+        newPermission.setResourceType("patient-data");
+
+        try {
+            protection.policy(resource.getId()).create(newPermission);
+            fail("Should fail, not allowed to set a resource type on a user-managed permission");
+        } catch (RuntimeException ignore) {
+            Throwable cause = ignore.getCause();
+            assertTrue(cause instanceof HttpResponseException);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), ((HttpResponseException) cause).getStatusCode());
+        }
+
+        newPermission.setResourceType(null);
 
         UmaPermissionRepresentation permission = protection.policy(resource.getId()).create(newPermission);
 
@@ -444,6 +464,39 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
             fail("Updates do not allow changing resources");
         } catch (RuntimeException denied) {
             assertTrue(denied.getMessage().contains("403"));
+        }
+    }
+
+    @Test
+    public void testUpdateResourceType() {
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName("Resource A");
+        resource.setType("patient-data");
+        resource.setOwnerManagedAccess(true);
+        resource.setOwner("marta");
+        resource.addScope("Scope A", "Scope B", "Scope C");
+
+        resource = getAuthzClient().protection("marta", "password").resource().create(resource);
+
+        UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
+
+        permission.setName("my-policy");
+        permission.addUser("kolo");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        permission = protection.policy(resource.getId()).create(permission);
+
+        permission.setResourceType("patient-data");
+
+        try {
+            protection.policy(resource.getId()).update(permission);
+            fail("Updates do not allow setting a resource type on a user-managed permission");
+        } catch (RuntimeException ignore) {
+            Throwable cause = ignore.getCause();
+            assertTrue(cause instanceof HttpResponseException);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), ((HttpResponseException) cause).getStatusCode());
         }
     }
 
@@ -768,6 +821,50 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         assertEquals(2, permission.getScopes().size());
         assertTrue(Arrays.asList("Scope A", "Scope C").containsAll(permission.getScopes()));
+    }
+
+    @Test
+    public void testAdminEventsOnUmaPolicyLifecycle() {
+        RealmEventsConfigRepresentation eventsConfig = getRealm().getRealmEventsConfig();
+
+        eventsConfig.setAdminEventsEnabled(true);
+        getRealm().updateRealmEventsConfig(eventsConfig);
+
+        ResourceRepresentation resource = new ResourceRepresentation();
+
+        resource.setName(UUID.randomUUID().toString());
+        resource.setOwner("marta");
+        resource.setOwnerManagedAccess(true);
+        resource.addScope("Scope A");
+
+        ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        resource = protection.resource().create(resource);
+
+        UmaPermissionRepresentation permission = new UmaPermissionRepresentation();
+
+        permission.setName("Custom User-Managed Policy");
+        permission.addRole("role_a");
+
+        PolicyResource policy = protection.policy(resource.getId());
+
+        permission = policy.create(permission);
+        permission.setDescription("Updated description");
+        policy.update(permission);
+        policy.delete(permission.getId());
+
+        List<AdminEventRepresentation> events = getRealm().getAdminEvents().stream()
+                .filter(event -> ResourceType.AUTHORIZATION_POLICY.name().equals(event.getResourceType()))
+                .toList();
+
+        assertEquals(3, events.size());
+
+        String policyPath = "authz/protection/uma-policy/" + permission.getId();
+
+        for (OperationType operation : List.of(OperationType.CREATE, OperationType.UPDATE, OperationType.DELETE)) {
+            assertTrue(events.stream().anyMatch(event -> operation.name().equals(event.getOperationType()) && policyPath.equals(event.getResourcePath())),
+                    operation + " event with resource path " + policyPath + " not found");
+        }
     }
 
     @Test
@@ -1140,6 +1237,69 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
             settings.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
             authzAdmin.update(settings);
         }
+    }
+
+    @Test
+    public void testResourceTypePolicyWithOwnerDoesNotGrantCrossOwnerAccess() {
+        // alice owns a resource of type "patient-data" that she never shares with kolo
+        ResourceRepresentation aliceResource = new ResourceRepresentation();
+        aliceResource.setName("alice-medical-records");
+        aliceResource.setType("patient-data");
+        aliceResource.setOwnerManagedAccess(true);
+        aliceResource.addScope("read");
+        aliceResource = getAuthzClient().protection("alice", "password").resource().create(aliceResource);
+
+        // marta owns a resource of the same type and has a (pre-existing / legacy) owner-bound policy that
+        // matches by resource type and grants kolo access; this simulates data created before this fix, since
+        // the Protection API no longer allows setting a resource type on a user-managed permission
+        ResourceRepresentation martaResource = new ResourceRepresentation();
+        martaResource.setName("marta-medical-records");
+        martaResource.setType("patient-data");
+        martaResource.setOwner("marta");
+        martaResource.setOwnerManagedAccess(true);
+        martaResource.addScope("read");
+        getAuthzClient().protection("marta", "password").resource().create(martaResource);
+
+        getTestingClient().server().run((RunOnServer) UserManagedPermissionServiceTest::createOwnerBoundResourceTypePolicy);
+
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.addPermission(aliceResource.getId(), "read");
+
+        try {
+            getAuthzClient().authorization("kolo", "password").authorize(request);
+            fail("kolo should not gain access to alice's resource through marta's owner-bound resource-type policy");
+        } catch (Exception e) {
+            assertTrue(e instanceof AuthorizationDeniedException);
+        }
+    }
+
+    private static void createOwnerBoundResourceTypePolicy(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        session.getContext().setRealm(realm);
+        ClientModel client = realm.getClientByClientId("resource-server-test");
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(client);
+        UserModel marta = session.users().getUserByUsername(realm, "marta");
+
+        UserPolicyRepresentation userPolicyRep = new UserPolicyRepresentation();
+        userPolicyRep.setName(KeycloakModelUtils.generateId());
+        userPolicyRep.addUser("kolo");
+
+        PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
+        Policy userPolicy = policyStore.create(resourceServer, userPolicyRep);
+        userPolicy.setOwner(marta.getId());
+
+        PolicyRepresentation policyRep = new PolicyRepresentation();
+        policyRep.setName(KeycloakModelUtils.generateId());
+        policyRep.setType("uma");
+        policyRep.addPolicy(userPolicy.getId());
+
+        Policy policy = policyStore.create(resourceServer, policyRep);
+        policy.setOwner(marta.getId());
+        policy.setResourceType("patient-data");
+
+        Scope scope = provider.getStoreFactory().getScopeStore().findByName(resourceServer, "read");
+        policy.addScope(scope);
     }
 
     private List<PolicyRepresentation> getAssociatedPolicies(UmaPermissionRepresentation permission) {

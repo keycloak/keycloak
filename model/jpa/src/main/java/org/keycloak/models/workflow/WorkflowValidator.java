@@ -14,6 +14,7 @@ import org.keycloak.models.workflow.expression.ConditionNameCollector;
 import org.keycloak.models.workflow.expression.ConditionTypeCollector;
 import org.keycloak.models.workflow.expression.EvaluatorUtils;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.utils.StringUtil;
 
@@ -40,6 +41,8 @@ public class WorkflowValidator {
             validateConditionExpression(session, rep.getRestartInProgress(), "restart-in-progress");
         }
 
+        validateSchedule(rep.getSchedule());
+
         // if a workflow has a restart step, at least one of the previous steps must be scheduled to prevent an infinite loop of immediate executions
         List<WorkflowStepRepresentation> steps = ofNullable(rep.getSteps()).orElse(List.of());
         if (steps.isEmpty()) {
@@ -60,7 +63,7 @@ public class WorkflowValidator {
                 throw new WorkflowInvalidStateException("workflowRestartStepMustBeLast");
             }
             MultivaluedHashMap<String, String> config = restartStep.getConfig();
-            int position = config == null ? 0 : Integer.parseInt(config.getFirstOrDefault("position", "0"));
+            int position = config == null ? 0 : parseRestartPosition(config.getFirstOrDefault(RestartWorkflowStepProviderFactory.CONFIG_POSITION, "0"));
             if (position < 0 || position >= steps.size()) {
                 throw new WorkflowInvalidStateException("workflowRestartStepInvalidPosition", position);
             }
@@ -97,6 +100,42 @@ public class WorkflowValidator {
         if (!supportedTypes.contains(workflowType)) {
             String formatted = supportedTypes.stream().map(Enum::name).collect(Collectors.joining(", "));
             throw new WorkflowInvalidStateException("workflowConditionTypesIncompatible", formatted, workflowType);
+        }
+    }
+
+    private static void validateSchedule(WorkflowScheduleRepresentation schedule) throws WorkflowInvalidStateException {
+        if (schedule == null) {
+            return;
+        }
+
+        String after = schedule.getAfter();
+        if (after != null) {
+            Duration interval;
+            try {
+                interval = DurationConverter.parseDuration(after);
+            } catch (IllegalArgumentException e) {
+                throw new WorkflowInvalidStateException("workflowScheduleAfterInvalid", after);
+            }
+            if (interval == null || interval.toSeconds() < 1) {
+                throw new WorkflowInvalidStateException("workflowScheduleAfterTooShort");
+            }
+            // the schedule interval is handled in seconds as an int
+            if (interval.toSeconds() > Integer.MAX_VALUE) {
+                throw new WorkflowInvalidStateException("workflowScheduleAfterInvalid", after);
+            }
+        }
+
+        Integer batchSize = schedule.getBatchSize();
+        if (batchSize != null && batchSize < 1) {
+            throw new WorkflowInvalidStateException("workflowScheduleBatchSizeNotPositive");
+        }
+    }
+
+    private static int parseRestartPosition(String position) throws WorkflowInvalidStateException {
+        try {
+            return Integer.parseInt(position);
+        } catch (NumberFormatException e) {
+            throw new WorkflowInvalidStateException("workflowRestartStepInvalidPosition", position);
         }
     }
 

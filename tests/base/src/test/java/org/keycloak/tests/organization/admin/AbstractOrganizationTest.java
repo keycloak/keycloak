@@ -17,19 +17,27 @@
 
 package org.keycloak.tests.organization.admin;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.broker.provider.HardcodedGroupMapper;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -37,6 +45,7 @@ import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
@@ -47,10 +56,12 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.IdentityProviderMapperBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -60,6 +71,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.MailUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -240,6 +252,13 @@ public abstract class AbstractOrganizationTest {
         return reps.get(0);
     }
 
+    protected static String getInvitationLink(MailServer mailServer) throws IOException {
+        assertTrue(mailServer.waitForIncomingEmail(10_000, 1), "invitation email not received");
+        MimeMessage message = mailServer.getLastReceivedMessage();
+        assertNotNull(message);
+        return MailUtils.getLink(MailUtils.getBody(message).getHtml()).trim();
+    }
+
     protected GroupRepresentation createGroup(RealmResource realmResource, String name) {
         GroupRepresentation group = new GroupRepresentation();
         group.setName(name);
@@ -271,6 +290,31 @@ public abstract class AbstractOrganizationTest {
         }
 
         orgScopeResource.getProtocolMappers().update(orgMapper.getId(), orgMapper);
+    }
+
+    public static String addHardcodedOrganizationGroupMapper(OrganizationResource organization, IdentityProviderResource identityProvider,
+            String groupName, IdentityProviderMapperSyncMode syncMode) {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName(groupName);
+        String groupId;
+        try (Response response = organization.groups().addTopLevelGroup(group)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            groupId = ApiUtil.getCreatedId(response);
+        }
+
+        IdentityProviderMapperRepresentation mapper = IdentityProviderMapperBuilder.create()
+                .name("org-group-mapper")
+                .identityProviderMapper(HardcodedGroupMapper.PROVIDER_ID)
+                .identityProviderAlias(identityProvider.toRepresentation().getAlias())
+                .attribute(IdentityProviderMapperModel.SYNC_MODE, syncMode.name())
+                .attribute(ConfigConstants.GROUP, organization.groups().group(groupId).toRepresentation(false).getPath())
+                .attribute(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
+                .attribute(ConfigConstants.ORGANIZATION_ID, organization.toRepresentation().getId())
+                .build();
+        try (Response response = identityProvider.addMapper(mapper)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        return groupId;
     }
 
     /**

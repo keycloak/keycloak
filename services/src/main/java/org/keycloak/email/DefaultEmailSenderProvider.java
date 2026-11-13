@@ -138,6 +138,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
         if (isStarttlsConfigured(config)) {
             props.setProperty("mail.smtp.starttls.enable", "true");
+            // Prevent STARTTLS downgrade: fail if the server does not advertise STARTTLS
+            props.setProperty("mail.smtp.starttls.required", "true");
         }
 
         if (isSslConfigured(config) || isStarttlsConfigured(config) || isAuthConfigured(config)) {

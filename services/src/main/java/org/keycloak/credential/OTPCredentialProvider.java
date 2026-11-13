@@ -51,7 +51,11 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
         if (credentialModel.getCreatedDate() == null) {
             credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
-        return user.credentialManager().createStoredCredential(credentialModel);
+        CredentialModel createdCredential = user.credentialManager().createStoredCredential(credentialModel);
+        if (createdCredential != null) {
+            credentialModel.setId(createdCredential.getId());
+        }
+        return createdCredential;
     }
 
     @Override
@@ -107,8 +111,7 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
                 return false;
             }
             otpCredentialModel.updateCounter(counter);
-            user.credentialManager().updateStoredCredential(otpCredentialModel);
-            return true;
+            return user.credentialManager().updateStoredCredential(credential, otpCredentialModel);
         } else if (OTPCredentialModel.TOTP.equals(credentialData.getSubType())) {
             TimeBasedOTP validator = new TimeBasedOTP(credentialData.getAlgorithm(), credentialData.getDigits(), credentialData.getPeriod(), policy.getLookAheadWindow());
             final boolean isValid = validator.validateTOTP(challengeResponse, otpCredentialModel.getDecodedSecret());

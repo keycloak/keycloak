@@ -16,6 +16,7 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticator;
 import org.keycloak.common.Profile;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -135,7 +136,10 @@ public class RecoveryAuthnCodesAction implements RequiredActionProvider, Require
             AuthenticatorUtil.logoutOtherSessions(reqActionContext);
         }
 
-        createRecoveryCodesCredential(reqActionContext.getSession(), reqActionContext.getRealm(), reqActionContext.getUser(), credentialModel, generatedCodes);
+        CredentialModel createdCredential = createRecoveryCodesCredential(reqActionContext.getSession(), reqActionContext.getRealm(), reqActionContext.getUser(), credentialModel, generatedCodes);
+        if (createdCredential != null) {
+            event.detail(Details.CREDENTIAL_ID, createdCredential.getId());
+        }
 
         reqActionContext.success();
     }

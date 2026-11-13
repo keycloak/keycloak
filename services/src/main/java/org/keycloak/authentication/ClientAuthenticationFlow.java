@@ -89,6 +89,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
 
                 // Check if client authentication matches
                 if (factory.getId().equals(expectedClientAuthType)) {
+                    processor.getEvent().detail(Details.CLIENT_AUTH_METHOD, factory.getId());
                     Response response = processResult(context);
                     if (response != null) return response;
 
@@ -99,7 +100,6 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
                     }
 
                     logger.debugv("Client {0} authenticated by {1}", client.getClientId(), factory.getId());
-                    processor.getEvent().detail(Details.CLIENT_AUTH_METHOD, factory.getId());
                     return null;
                 }
             }
@@ -154,7 +154,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             if (result.getChallenge() != null) {
                 return sendChallenge(result, execution);
             } else {
-                throw new AuthenticationFlowException(result.getError());
+                throw new AuthenticationFlowException(result.getError(), result.getEventDetails(), result.getUserErrorMessage());
             }
         } else if (status == FlowStatus.FORCE_CHALLENGE) {
             return sendChallenge(result, execution);
@@ -169,7 +169,8 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             return sendChallenge(result, execution);
         } else if (status == FlowStatus.ATTEMPTED) {
             logger.warnv("Client authentication was attempted did not complete for {0}", execution.getAuthenticator());
-            throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR);
+            throw new AuthenticationFlowException(result.getError() != null ? result.getError() : AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR,
+                    result.getEventDetails(), result.getUserErrorMessage());
         } else {
             ServicesLogger.LOGGER.unknownResultStatus();
             throw new AuthenticationFlowException(AuthenticationFlowError.INTERNAL_ERROR);
@@ -179,6 +180,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
     public Response sendChallenge(AuthenticationProcessor.Result result, AuthenticationExecutionModel execution) {
         logger.debugv("client authenticator: sending challenge for authentication execution {0}", execution.getAuthenticator());
 
+        result.getEvent().detail(Details.AUTHENTICATION_ERROR_DETAIL, result.getEventDetails());
         if (result.getError() != null) {
             String errorAsString = result.getError().toString().toLowerCase();
             result.getEvent().error(errorAsString);

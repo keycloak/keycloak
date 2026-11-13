@@ -75,7 +75,7 @@ export default function LdapMapperDetails() {
       return { components };
     },
     ({ components, fetchedMapper }) => {
-      setMapping(fetchedMapper);
+      setMapping(fetchedMapper ?? undefined);
       setComponents(components);
       if (mapperId !== "new" && !fetchedMapper) throw new Error(t("notFound"));
 

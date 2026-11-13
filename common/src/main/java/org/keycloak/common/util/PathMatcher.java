@@ -346,9 +346,11 @@ public abstract class PathMatcher<P> {
         // locates where the authority ends so the prefix can be sliced off by length.
         String prefix = "";
         String path = withoutQueryOrFragment;
-        // cheap pre-check - avoid constructing a URI (and the associated parsing cost) for the common case of a
-        // plain relative path, which can never have a scheme/authority prefix to preserve
-        if (withoutQueryOrFragment.contains(SCHEME_AUTHORITY_SEPARATOR)) {
+        // Only a colon before the first slash can introduce a scheme, so ordinary paths skip costly URI parsing.
+        // This also catches authority-less URIs such as "https:/api/admin", while leaving colons inside paths alone.
+        int colon = withoutQueryOrFragment.indexOf(':');
+        int slash = withoutQueryOrFragment.indexOf('/');
+        if (colon > 0 && (slash == -1 || colon < slash)) {
             try {
                 URI parsed = new URI(withoutQueryOrFragment.replace("{", "%7B").replace("}", "%7D"));
                 String scheme = parsed.getScheme();
@@ -368,13 +370,9 @@ public abstract class PathMatcher<P> {
                     prefix = withoutQueryOrFragment.substring(0, prefixLength);
                     path = withoutQueryOrFragment.substring(prefixLength);
                 }
-                // scheme == null: not actually an absolute URI - the "://" was just incidental text inside an
-                // ordinary relative path (e.g. "/api/redirect-to-https://example.com", which RFC 3986 permits
-                // unrestricted since a leading '/' can never be confused with a scheme) - fall through and treat
-                // the whole value as a plain path, as before
+                // scheme == null: the colon did not introduce a valid scheme; treat the value as a plain path
             } catch (URISyntaxException e) {
-                // the pre-check found "://", so this was meant to be an absolute URI - reject it outright rather
-                // than falling back to treating the raw, unmangled "scheme://" text as a plain path
+                // a possible scheme prefix failed to parse; do not treat it as a plain path
                 return null;
             }
         }
@@ -419,6 +417,16 @@ public abstract class PathMatcher<P> {
             }
         } catch (Exception e) {
             return null;
+        }
+
+        // URI.normalize() leaves leading parent segments unresolved. RFC 3986 section 5.2.4 removes them
+        // even when there is no preceding segment to remove. Do this after decoding so encoded dots and slashes
+        // are handled as well.
+        while (result.startsWith("/../")) {
+            result = result.substring(3);
+        }
+        if (result.equals("/..")) {
+            result = "/";
         }
 
         // strip trailing slash - prevents bypass via /api/admin/ which routes to /api/admin on the server

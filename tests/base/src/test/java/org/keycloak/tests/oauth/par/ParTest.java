@@ -49,7 +49,9 @@ import static org.keycloak.models.ParConfig.DEFAULT_PAR_REQUEST_URI_LIFESPAN;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -196,6 +198,87 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertThat(driver.getCurrentUrl(),
                 not(startsWith(realmA.getBaseUrl() + "/login-actions/authenticate")));
         errorPage.assertCurrent();
+    }
+
+    /**
+     * Verify that a PAR request_uri is still consumed after {@code /login-actions/restart}.
+     * Restart clears authentication-session notes but must not drop the PAR binding, otherwise the
+     * same request_uri can be replayed for a second authorization code (CVE-2026-117859).
+     */
+    @Test
+    public void testParSingleUseEnforcedAfterAuthenticationRestart() {
+        String origRedirectUri = oauth.getRedirectUri();
+
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+        oauth.loginForm().requestUri(requestUri).open();
+        loginPage.assertCurrent();
+
+        // Restart clears auth notes; PAR request_uri must survive as a client note
+        driver.open(driver.getCurrentUrl().replaceFirst("/login-actions/[^/?]+", "/login-actions/restart"));
+        loginPage.assertCurrent();
+
+        oauth.fillLoginForm(user.getUsername(), user.getPassword());
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        String code = loginResponse.getCode();
+        assertThat(code, notNullValue());
+
+        // Replay must fail — PAR was consumed on the post-restart completion
+        oauth.loginForm().requestUri(requestUri).open();
+        errorPage.assertCurrent();
+
+        oauth.redirectUri(origRedirectUri);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
+
+        driver.cookies().deleteAll();
+    }
+
+    /**
+     * Verify that a PAR request_uri is consumed (single-use enforced) even when the authorization
+     * endpoint short-circuits via the prompt=none silent authentication path (existing SSO session).
+     *
+     * Regression test for CVE-2026-96446: without the fix in OIDCLoginProtocol.authenticated(),
+     * the PAR entry survives the silent auth flow and can be replayed to mint additional authorization codes.
+     */
+    @Test
+    public void testParSingleUseEnforcedOnSilentAuthentication() {
+        String origRedirectUri = oauth.getRedirectUri();
+
+        // Step 1: Interactive login to establish an SSO session
+        oauth.doLogin(user.getUsername(), user.getPassword());
+        assertThat(oauth.parseLoginResponse().isSuccess(), is(true));
+
+        // Step 2: Push a new PAR request
+        ParResponse pResp = oauth.doPushedAuthorizationRequest();
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        // Step 3: First use of request_uri with prompt=none — must succeed via silent auth
+        oauth.redirectUri(null);
+        oauth.scope(null);
+        oauth.responseType(null);
+        oauth.loginForm().requestUri(requestUri).prompt("none").open();
+        AuthorizationEndpointResponse loginResponse = oauth.parseLoginResponse();
+        String code = loginResponse.getCode();
+        assertThat(code, notNullValue());
+
+        // Step 4: Replay the same request_uri — must be rejected (PAR already consumed)
+        oauth.loginForm().requestUri(requestUri).prompt("none").open();
+        errorPage.assertCurrent();
+
+        // Step 5: Verify the code from the first (legitimate) use is still valid
+        oauth.redirectUri(origRedirectUri);
+        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
+        assertEquals(200, res.getStatusCode());
+
+        // Clean up SSO session so it does not leak into other tests via the class-scoped WebDriver
+        driver.cookies().deleteAll();
     }
 
     // -------------------------------------------------------------------------

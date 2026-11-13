@@ -19,11 +19,13 @@ package org.keycloak.storage.ldap.idm.store.ldap;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -274,6 +276,36 @@ public class LDAPUtil {
             return decodeGuid(bytes);
         }
         return base64Value;
+    }
+
+    /**
+     * Decodes a base64-encoded binary UUID attribute value into a GUID/UUID string representation.
+     * Uses {@link #decodeObjectGUID(byte[])} for Active Directory (if the configuration indicates objectGUID or
+     * the LDAP attribute name is {@link LDAPConstants#OBJECT_GUID}), or {@link #decodeGuid(byte[])} for eDirectory.
+     * If neither matches and the decoded value is 16 bytes, converts to an RFC 4122 UUID.
+     * Returns the original base64 value if decoding cannot be performed or if the byte length is invalid.
+     *
+     * @param base64Value the base64-encoded binary value of the UUID attribute.
+     * @param config the LDAP configuration used to determine the UUID decoding strategy.
+     * @param ldapAttrName the LDAP attribute name being mapped.
+     * @return the decoded UUID string, or the original base64 value if no matching decoder is found.
+     */
+    public static String decodeBase64ToUuid(String base64Value, LDAPConfig config, String ldapAttrName) {
+        if (base64Value == null) return null;
+        byte[] bytes = Base64.getDecoder().decode(base64Value);
+        if (bytes.length != 16) {
+            logger.warnf("Binary attribute '%s' value is %d bytes but a UUID requires exactly 16 bytes. Returning base64-encoded value.", ldapAttrName, bytes.length);
+            return base64Value;
+        }
+        if (config.isObjectGUID() || LDAPConstants.OBJECT_GUID.equalsIgnoreCase(ldapAttrName)) {
+            return decodeObjectGUID(bytes);
+        }
+        if ((config.isEdirectory() && config.isEdirectoryGUID())
+                || (config.isEdirectory() && LDAPConstants.NOVELL_EDIRECTORY_GUID.equalsIgnoreCase(ldapAttrName))) {
+            return decodeGuid(bytes);
+        }
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        return new UUID(bb.getLong(), bb.getLong()).toString();
     }
 
     /**

@@ -55,7 +55,7 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
 
         String subjectKey = getSubjectKey(context);
         String bodyTemplate = getBodyTemplate();
-        Map<String, Object> bodyAttributes = getBodyAttributes(context);
+        Map<String, Object> bodyAttributes = getBodyAttributes(context, subjectKey);
         UserModel user = session.users().getUserById(realm, context.getResourceId());
         
         if (user != null) {
@@ -87,7 +87,8 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
         String customSubjectKey = stepModel.getConfig().getFirst("subject");
         
         if (customSubjectKey != null && !customSubjectKey.trim().isEmpty()) {
-            return customSubjectKey;
+            String subject = replaceProperties(customSubjectKey, new NotificationPropertyResolver(session, context));
+            return escapeMessageFormat(subject);
         }
 
         WorkflowStep nextStep = context.getNextStep();
@@ -103,7 +104,19 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
         return "workflow-notification.ftl";
     }
 
-    private Map<String, Object> getBodyAttributes(WorkflowExecutionContext context) {
+    /**
+     * Escapes {@code text} so that it is not interpreted as a {@link java.text.MessageFormat} pattern. Escaping is a
+     * no-op for a text without {@code MessageFormat} meta characters, so message bundle keys are left untouched.
+     */
+    private static String escapeMessageFormat(String text) {
+        if (text == null) {
+            return null;
+        }
+
+        return text.replace("'", "''").replace("{", "'{'").replace("}", "'}'");
+    }
+
+    private Map<String, Object> getBodyAttributes(WorkflowExecutionContext context, String subjectKey) {
         RealmModel realm = session.getContext().getRealm();
         Map<String, Object> attributes = new HashMap<>();
         WorkflowStep nextStep = context.getNextStep();
@@ -131,7 +144,7 @@ public class NotifyUserStepProvider implements WorkflowStepProvider {
             attributes.put("nextStepType", nextStep.getProviderId());
         }
 
-        attributes.put("subjectKey", getSubjectKey(context));
+        attributes.put("subjectKey", subjectKey);
         
         return attributes;
     }

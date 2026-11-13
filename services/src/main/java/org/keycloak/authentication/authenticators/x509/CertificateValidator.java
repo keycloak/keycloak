@@ -25,6 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.SignatureException;
@@ -67,6 +70,7 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.connections.httpclient.SafeInputStream;
 import org.keycloak.crl.CrlStorageProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -339,18 +343,25 @@ public class CertificateValidator {
                 throw new GeneralSecurityException("Unable to load CRL because no crl path is defined");
             }
 
+            // Exception messages can reach the client, so the CRL location and loader details are only logged.
             CrlStorageProvider crlCache = session.getProvider(CrlStorageProvider.class);
-            final X509CRL crl = crlCache.get(cRLPath, this::loadCRL);
+            final X509CRL crl;
+            try {
+                crl = crlCache.get(cRLPath, this::loadCRL);
+            } catch (GeneralSecurityException | RuntimeException e) {
+                logger.errorf(e, "Unable to load CRL from \"%s\"", cRLPath);
+                throw new GeneralSecurityException("Unable to load CRL");
+            }
 
             if (crl == null) {
-                throw new GeneralSecurityException(String.format("Unable to load CRL from \"%s\"", cRLPath));
+                logger.errorf("Unable to load CRL from \"%s\"", cRLPath);
+                throw new GeneralSecurityException("Unable to load CRL");
             }
 
             if (crl.getNextUpdate() != null && crl.getNextUpdate().compareTo(new Date(Time.currentTimeMillis())) < 0) {
-                final String message = String.format("CRL from '%s' is not refreshed. Next update is %s.", cRLPath, crl.getNextUpdate());
-                logger.warn(message);
+                logger.warnf("CRL from '%s' is not refreshed. Next update is %s.", cRLPath, crl.getNextUpdate());
                 if (abortIfNonUpdated) {
-                    throw new GeneralSecurityException(message);
+                    throw new GeneralSecurityException("CRL is not refreshed");
                 }
             }
 
@@ -385,12 +396,14 @@ public class CertificateValidator {
             try {
                 logger.debugf("Loading CRL from %s", remoteURI.toString());
 
-                CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+                HttpClientProvider httpClientProvider = session.getProvider(HttpClientProvider.class);
+                CloseableHttpClient httpClient = httpClientProvider.getHttpClient();
                 HttpGet get = new HttpGet(remoteURI);
                 get.setHeader("Pragma", "no-cache");
                 get.setHeader("Cache-Control", "no-cache, no-store");
                 try (CloseableHttpResponse response = httpClient.execute(get)) {
-                    try (InputStream content = response.getEntity().getContent()) {
+                    try (InputStream content = new SafeInputStream(response.getEntity().getContent(),
+                            httpClientProvider.getMaxConsumedResponseSize())) {
                         return loadFromStream(cf, content);
                     } finally {
                         EntityUtils.consumeQuietly(response.getEntity());
@@ -437,7 +450,13 @@ public class CertificateValidator {
             try {
                 String configDir = System.getProperty("jboss.server.config.dir");
                 if (configDir != null) {
-                    File f = new File(configDir + File.separator + relativePath);
+                    Path configPath = Paths.get(configDir).toAbsolutePath().normalize();
+                    Path crlPath = Paths.get(configDir + File.separator + relativePath).toAbsolutePath().normalize();
+                    if (!crlPath.startsWith(configPath)) {
+                        logger.warnf("Cannot load CRL from \"%s\" because it resolves outside of the configuration directory \"%s\"", relativePath, configPath);
+                        return null;
+                    }
+                    File f = crlPath.toFile();
                     if (f.isFile()) {
                         logger.debugf("Loading CRL from %s", f.getAbsolutePath());
 
@@ -449,6 +468,9 @@ public class CertificateValidator {
                         }
                     }
                 }
+            }
+            catch (InvalidPathException ex) {
+                logger.warnf("Cannot load CRL from \"%s\": %s", relativePath, ex.getMessage());
             }
             catch(IOException ex) {
                 logger.errorf(ex.getMessage());
@@ -517,7 +539,7 @@ public class CertificateValidator {
             throw new IllegalArgumentException("ocspChecker");
     }
 
-    private static void validateKeyUsage(X509Certificate[] certs, int expected) throws GeneralSecurityException {
+    private static void validateKeyUsage(X509Certificate[] certs, int expected, boolean legacyCriticalBehavior) throws GeneralSecurityException {
         boolean[] keyUsageBits = certs[0].getKeyUsage();
         if (keyUsageBits == null) {
             if (expected != 0) {
@@ -547,14 +569,14 @@ public class CertificateValidator {
             }
         }
         if (sb.length() > 0) {
-            if (isCritical) {
+            if (!legacyCriticalBehavior || isCritical) {
                 throw new GeneralSecurityException(sb.toString());
             }
         }
     }
 
-    private static void validateExtendedKeyUsage(X509Certificate[] certs, List<String> expectedEKU) throws GeneralSecurityException {
-        if (expectedEKU == null || expectedEKU.size() == 0) {
+    private static void validateExtendedKeyUsage(X509Certificate[] certs, List<String> expectedEKU, boolean legacyCriticalBehavior) throws GeneralSecurityException {
+        if (expectedEKU == null || expectedEKU.isEmpty()) {
             logger.debug("Extended Key Usage validation is not enabled.");
             return;
         }
@@ -576,7 +598,7 @@ public class CertificateValidator {
         for (String eku : expectedEKU) {
             if (!ekuList.contains(eku.toLowerCase())) {
                 String message = String.format("Extended Key Usage \'%s\' is missing.", eku);
-                if (isCritical) {
+                if (!legacyCriticalBehavior || isCritical) {
                     throw new GeneralSecurityException(message);
                 }
                 logger.warn(message);
@@ -616,12 +638,22 @@ public class CertificateValidator {
     }
 
     public CertificateValidator validateKeyUsage() throws GeneralSecurityException {
-        validateKeyUsage(_certChain, _keyUsageBits);
+        return validateKeyUsage(false);
+    }
+
+    @Deprecated(since = "26.8.1", forRemoval = true)
+    public CertificateValidator validateKeyUsage(boolean legacyCriticalBehavior) throws GeneralSecurityException {
+        validateKeyUsage(_certChain, _keyUsageBits, legacyCriticalBehavior);
         return this;
     }
 
     public CertificateValidator validateExtendedKeyUsage() throws GeneralSecurityException {
-        validateExtendedKeyUsage(_certChain, _extendedKeyUsage);
+        return validateExtendedKeyUsage(false);
+    }
+
+    @Deprecated(since = "26.8.1", forRemoval = true)
+    public CertificateValidator validateExtendedKeyUsage(boolean legacyCriticalBehavior) throws GeneralSecurityException {
+        validateExtendedKeyUsage(_certChain, _extendedKeyUsage, legacyCriticalBehavior);
         return this;
     }
 

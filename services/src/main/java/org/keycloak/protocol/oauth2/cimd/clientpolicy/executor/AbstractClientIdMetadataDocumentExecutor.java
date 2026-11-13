@@ -1,8 +1,11 @@
 package org.keycloak.protocol.oauth2.cimd.clientpolicy.executor;
 
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -41,7 +44,10 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.logging.Logger;
 
 /**
@@ -95,7 +101,8 @@ import org.jboss.logging.Logger;
  * According to the CIMD specification, the client metadata format is the same as for Dynamic Client Registration except for {@code client_id} property.
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7591>OAuth 2.0 Dynamic Client Registration Protocol [RFC 7591]</a>
  * Therefore, {@link OIDCClientRepresentation} is used for the client metadata format.
- * The CIMD specification allows the use of additional properties (MAY requirement level), but the class does not treat them.
+ * The CIMD specification allows the use of additional properties (MAY requirement level).
+ * Such properties are ignored when parsing a client metadata document.
  *
  * <p>Client Metadata Augmentation in {@code OIDCClientRepresentation}:
  * To successfully convert a fetched client metadata to {@code ClientRepresentation}, intentionally augment it.
@@ -133,6 +140,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // Client ID Verification
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOW_HTTP_SCHEME)
         protected boolean allowHttpScheme = false;
+        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOW_PRIVATE_USE_ADDRESSES)
+        protected boolean allowPrivateUseAddresses = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.TRUSTED_DOMAINS)
         protected List<String> trustedDomains = null;
 
@@ -155,6 +164,14 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         public void setAllowHttpScheme(boolean allowHttpScheme) {
             this.allowHttpScheme = allowHttpScheme;
+        }
+
+        public boolean isAllowPrivateUseAddresses() {
+            return allowPrivateUseAddresses;
+        }
+
+        public void setAllowPrivateUseAddresses(boolean allowPrivateUseAddresses) {
+            this.allowPrivateUseAddresses = allowPrivateUseAddresses;
         }
 
         public List<String> getTrustedDomains() {
@@ -362,6 +379,17 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         String clientId = preAuthorizationRequestContext.getClientId();
 
+        // determine if (re-)fetching a client metadata is needed, before any other check so that a client not managed
+        // by CIMD is neither rejected nor used to trigger a fetch of its client_id URL.
+        FetchOperation fetchOp = provider.determineFetchOperation(clientId);
+
+        // CREATE means no CIMD-registered client exists for this client_id, so an existing one was created otherwise
+        boolean managedByCimd = fetchOp != FetchOperation.CREATE || session.getContext().getRealm().getClientByClientId(clientId) == null;
+        if (!managedByCimd) {
+            getLogger().debugv("client not managed by CIMD, left untouched: clientId = {0}", clientId);
+            return;
+        }
+
         // Authorization Request verification
         URI redirectUriURI = verifyAuthorizationRequest(preAuthorizationRequestContext);
 
@@ -371,8 +399,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // Client ID validation
         validateClientId(clientIdURI);
 
-        // determine if (re-)fetching a client metadata is needed
-        FetchOperation fetchOp = provider.determineFetchOperation(clientId);
         if (fetchOp == FetchOperation.NO_UPDATE) {
             // no update, but the resource parameter still needs to be enforced on every authorization request.
             enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
@@ -431,6 +457,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     // Client ID / Client Metadata Verification Errors
     public static final String ERR_HOST_UNRESOLVED = "Invalid Client ID / Metadata: host unresolved.";
+    public static final String ERR_NOTALLOWED_ADDRESS = "Invalid Client ID / Metadata: address not allowed.";
+    public static final String ERR_INVALID_SCHEME = "Invalid Client ID / Metadata: invalid scheme.";
 
     // Client Metadata Validation Errors
     public static final String ERR_METADATA_URIS_SAMEDOMAIN = "Invalid Client Metadata: client_id parameter, redirect_uri parameter and at least one of redirect_uris properties in client metadata should be under the same domain.";
@@ -441,6 +469,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     // Implementation
     // Fetch Client Metadata
     public static final String ERR_METADATA_FETCH_FAILED = "Client Metadata fetch failed";
+    public static final String ERR_METADATA_PARSE_FAILED = "Invalid Client Metadata: cannot be parsed as a client metadata document.";
+
+    private static final ObjectMapper clientMetadataObjectMapper = JsonSerialization.createObjectMapperWithDefaults()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /**
      * Verifies an authorization request to check if the request includes required parameters and follows the expected format.
@@ -547,7 +579,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         //  It checks if an address resolved from a property whose value is URI is loopback address.
         //  It checks if an address resolved from a property whose value is URI is private address.
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
-        verifyUri(clientId, trustedDomains, (error, logMessageTemplate) -> {
+        verifyUri(clientId, trustedDomains, true, (error, logMessageTemplate) -> {
             getLogger().warnv(logMessageTemplate, "client_id", clientId);
             throw invalidClientIdMetadata(error);
         });
@@ -617,7 +649,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 }
             }
 
-            clientOIDC = response.asJson(OIDCClientRepresentation.class);
+            clientOIDC = parseClientMetadata(response.asString());
 
             // to successfully convert it to Client Representation, intentionally augment it.
             augmentClientOIDC(clientOIDC);
@@ -626,6 +658,23 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         } catch (IOException e) {
             getLogger().warnv("HTTP connection failure: {0}", e);
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, ERR_METADATA_FETCH_FAILED);
+        }
+    }
+
+    /**
+     * Parse a fetched client metadata document leniently, ignoring unknown properties as required by
+     * the CIMD specification (Section 4.1) and RFC 7591 (Section 2).
+     *
+     * @param clientMetadataDocument a fetched client metadata document as a JSON string
+     * @return {@code OIDCClientRepresentation} a parsed client metadata
+     * @throws ClientPolicyException when the document cannot be parsed as a client metadata document.
+     */
+    protected OIDCClientRepresentation parseClientMetadata(final String clientMetadataDocument) throws ClientPolicyException {
+        try {
+            return clientMetadataObjectMapper.readValue(clientMetadataDocument, OIDCClientRepresentation.class);
+        } catch (JsonProcessingException e) {
+            getLogger().warnv("failed to parse client metadata document: {0}", e);
+            throw invalidClientIdMetadata(ERR_METADATA_PARSE_FAILED);
         }
     }
 
@@ -688,6 +737,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // CIMD (mandatory): client_id
         // RFC 7591 (mandatory): redirect_uris
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
+        // OIDC Dynamic Client Registration (optional): sector_identifier_uri, request_uris, fetched by the
+        // authorization server after the registration
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
@@ -695,12 +746,18 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         for (String redirect_uri : clientOIDC.getRedirectUris()) {
             verifyUriProperty(redirect_uri, "redirect_uris", trustedDomains);
         }
- 
+
         verifyUriPropertyIfPresent(clientOIDC.getLogoUri(), "logo_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getClientUri(), "client_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getTosUri(), "tos_uri", trustedDomains);
         verifyUriPropertyIfPresent(clientOIDC.getPolicyUri(), "policy_uri", trustedDomains);
-        verifyUriPropertyIfPresent(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
+        verifyFetchedUriProperty(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
+        verifyFetchedUriProperty(clientOIDC.getSectorIdentifierUri(), "sector_identifier_uri", trustedDomains);
+
+        // distinct, so that a repeated URL is not resolved over and over
+        for (String requestUri : convertContentFilledList(clientOIDC.getRequestUris())) {
+            verifyFetchedUriProperty(requestUri, "request_uris", trustedDomains);
+        }
 
         URI clientIdURIfromMetadata;
         try {
@@ -715,7 +772,18 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     }
 
     private void verifyUriProperty(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
-        verifyUri(uriString, trustedDomains, (error, logMessageTemplate) -> {
+        verifyUri(uriString, trustedDomains, false, (error, logMessageTemplate) -> {
+            getLogger().warnv(logMessageTemplate, propertyName, uriString);
+            throw invalidClientIdMetadata(error);
+        });
+    }
+
+    // for a property whose URL the authorization server fetches itself
+    private void verifyFetchedUriProperty(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
+        if (uriString == null) {
+            return;
+        }
+        verifyUri(uriString, trustedDomains, true, (error, logMessageTemplate) -> {
             getLogger().warnv(logMessageTemplate, propertyName, uriString);
             throw invalidClientIdMetadata(error);
         });
@@ -735,7 +803,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         return UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find();
     }
 
-    private void verifyUri(String uriString, List<String> trustedDomains, ErrorHandler errorHandler) throws ClientPolicyException {
+    // fetchedByServer additionally verifies the scheme and the address the host resolves to
+    private void verifyUri(String uriString, List<String> trustedDomains, boolean fetchedByServer, ErrorHandler errorHandler) throws ClientPolicyException {
         if (trustedDomains.isEmpty()) {        // allow trusted domain
             getLogger().debug("trusted domain list is vacant.");
             throw invalidClientIdMetadata(ERR_NOTALLOWED_DOMAIN);
@@ -758,6 +827,49 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             getLogger().warnv("not trusted domain: host = {0}", uri.getHost());
             throw invalidClientIdMetadata(ERR_NOTALLOWED_DOMAIN);
         }
+
+        if (fetchedByServer && !isAllowedScheme(uri.getScheme())) {
+            errorHandler.onError(ERR_INVALID_SCHEME, "Invalid URL Scheme: {0} = {1}");
+            return;
+        }
+
+        if (fetchedByServer && !getConfiguration().isAllowPrivateUseAddresses()) {
+            verifyAddressClass(uri, errorHandler);
+        }
+    }
+
+    // allow list, so that a scheme the server cannot fetch anyway, like ftp or file, is rejected up front
+    private boolean isAllowedScheme(String scheme) {
+        return "https".equalsIgnoreCase(scheme) || (getConfiguration().isAllowHttpScheme() && "http".equalsIgnoreCase(scheme));
+    }
+
+    // SSRF countermeasure: a trusted domain is not enough, its owner controls the address the host resolves to
+    private void verifyAddressClass(URI uri, ErrorHandler errorHandler) throws ClientPolicyException {
+        final InetAddress[] addresses;
+        try {
+            addresses = InetAddress.getAllByName(uri.getHost());
+        } catch (UnknownHostException e) {
+            errorHandler.onError(ERR_HOST_UNRESOLVED, "Host unresolved: {0} = {1}");
+            return;
+        }
+
+        if (Arrays.stream(addresses).anyMatch(AbstractClientIdMetadataDocumentExecutor::isPrivateUseAddress)) {
+            errorHandler.onError(ERR_NOTALLOWED_ADDRESS, "Address not allowed: {0} = {1}");
+        }
+    }
+
+    private static boolean isPrivateUseAddress(InetAddress address) {
+        if (address.isLoopbackAddress() || address.isAnyLocalAddress() || address.isLinkLocalAddress()
+                || address.isSiteLocalAddress() || address.isMulticastAddress()) {
+            return true;
+        }
+        // the ranges below have no JDK predicate
+        byte[] bytes = address.getAddress();
+        if (address instanceof Inet6Address) {
+            return (bytes[0] & 0xFE) == 0xFC;                               // fc00::/7, RFC 4193
+        }
+        return (bytes[0] & 0xFF) == 0                                       // 0.0.0.0/8, RFC 1122
+                || ((bytes[0] & 0xFF) == 100 && (bytes[1] & 0xC0) == 0x40); // 100.64.0.0/10, RFC 6598
     }
 
     public interface ErrorHandler {

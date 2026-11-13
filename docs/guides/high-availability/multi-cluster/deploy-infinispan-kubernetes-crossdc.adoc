@@ -122,6 +122,7 @@ Instructions for creating the certificates and the stores are beyond the scope o
 +
 To upload the Keystore as a Secret, use the following command:
 +
+--
 .Deploy a Keystore
 [source,bash,subs="+attributes"]
 ----
@@ -133,9 +134,11 @@ kubectl -n {ns} create secret generic {ks-secret} \
 <1> The filename and the path to the Keystore.
 <2> The password to access the Keystore.
 <3> The Keystore type.
+--
 +
 To upload the Truststore as a Secret, use the following command:
 +
+--
 .Deploy a Truststore
 [source,bash,subs="+attributes"]
 ----
@@ -147,9 +150,12 @@ kubectl -n {ns} create secret generic {ts-secret} \
 <1> The filename and the path to the Truststore.
 <2> The password to access the Truststore.
 <3> The Truststore type.
+--
 +
+--
 NOTE: Keystore and Truststore must be uploaded in both {ocp} clusters.
-
+--
++
 . Create a Cluster for {jdgserver_name} with Cross-Site enabled
 +
 The {infinispan-operator-docs}#setting-up-xsite[Setting Up Cross-Site] documentation provides all the information on how to create and configure your {jdgserver_name} cluster with cross-site enabled, including the previous steps.
@@ -233,8 +239,8 @@ include::../examples/generated/ispn-site-a.yaml[tag=infinispan-cache-work]
 <4> The cross-site communication strategy, in this case, `SYNC`.
 <5> The cross-site replication timeout.
 <6> The cross-site replication failure policy.
---
 +
+
 The example above is the recommended configuration to achieve the best data consistency.
 +
 ====
@@ -256,13 +262,15 @@ NOTE: The `locking.acquireTimeout` can be reduced to fail fast in a deadlock sce
 The `backup.timeout` must always be higher than the `locking.acquireTimeout`.
 ====
 +
-For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 3 of the above diagram.
+. For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outlined in point 3 of the above diagram.
 +
 .Example for `actionTokens` cache in `{site-b}`
 [source,yaml]
 ----
 include::../examples/generated/ispn-site-b.yaml[tag=infinispan-cache-actionTokens]
 ----
+--
+
 == Verify the deployment
 
 Confirm that the {jdgserver_name} cluster is formed, and the cross-site connection is established between the {ocp} clusters.
@@ -310,6 +318,7 @@ This is optional, and it defaults to `11222`.
 <4> The Secret `name` and `key` with the {jdgserver_name} password credential.
 <5> Optionally, the name of the remote site. The caches are only created if they do not already exist.
 +
+
 [IMPORTANT]
 ====
 Using the option `cache-remote-backup-sites` only creates the caches in the local site.

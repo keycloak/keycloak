@@ -81,9 +81,57 @@ public class BrokerCacheTest {
         });
     }
 
+    @Test
+    public void testFederatedIdentityCacheDelimiterCollision() {
+        String realmName = managedRealm.getName();
+
+        createIdentityProvider("corp.saml");
+        createIdentityProvider("corp");
+
+        UserRepresentation user1 = new UserRepresentation();
+        user1.setUsername("alice");
+        String user1Id;
+        try (Response response = managedRealm.admin().users().create(user1)) {
+            user1Id = ApiUtil.getCreatedId(response);
+        }
+
+        FederatedIdentityRepresentation link1 = new FederatedIdentityRepresentation();
+        link1.setIdentityProvider("corp.saml");
+        link1.setUserId("alice");
+        link1.setUserName("alice");
+        try (Response response = managedRealm.admin().users().get(user1Id).addFederatedIdentity("corp.saml", link1)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Prime cache with (corp.saml, alice)
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            FederatedIdentityModel socialLink = new FederatedIdentityModel("corp.saml", "alice", "alice");
+            UserModel found = session.users().getUserByFederatedIdentity(realm, socialLink);
+            assertNotNull(found);
+            assertEquals("alice", found.getUsername());
+        });
+
+        // Lookup (corp, saml.alice) must NOT return alice due to delimiter collision
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            FederatedIdentityModel socialLink = new FederatedIdentityModel("corp", "saml.alice", "saml.alice");
+            UserModel found = session.users().getUserByFederatedIdentity(realm, socialLink);
+            assertNull(found, "Lookup for (corp, saml.alice) should not collide with (corp.saml, alice)");
+        });
+    }
+
     private void createIdentityProvider() {
+        createIdentityProvider(IDP_ALIAS);
+    }
+
+    private void createIdentityProvider(String alias) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
-        idp.setAlias(IDP_ALIAS);
+        idp.setAlias(alias);
         idp.setProviderId("oidc");
         idp.setEnabled(true);
         managedRealm.admin().identityProviders().create(idp).close();

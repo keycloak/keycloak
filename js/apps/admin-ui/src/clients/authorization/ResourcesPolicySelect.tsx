@@ -181,7 +181,8 @@ export const ResourcesPolicySelect = ({
         ),
       );
     },
-    (result: any[]) => setSelected(result.map((r) => convert(r))),
+    (result: any[]) =>
+      setSelected(result.filter((r) => r !== null).map((r) => convert(r))),
     [value],
   );
 

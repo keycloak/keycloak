@@ -56,7 +56,7 @@ export class Users extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string; userProfileMetadata?: boolean },
-    UserRepresentation | undefined
+    UserRepresentation | null
   >({
     method: "GET",
     path: "/{id}",

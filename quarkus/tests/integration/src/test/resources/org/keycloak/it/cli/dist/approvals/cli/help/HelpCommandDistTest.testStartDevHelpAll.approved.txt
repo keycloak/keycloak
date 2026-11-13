@@ -56,8 +56,8 @@ Cache:
                      Encrypts the network communication between Keycloak servers. If no additional
                        parameters about a keystore and truststore are provided, ephemeral key pairs
                        and certificates are created and rotated automatically, which is recommended
-                       for standard setups. Default: true. Available only when a TCP based
-                       cache-stack is used.
+                       for standard setups. Default: true. Available only when the embedded cache
+                       uses TCP transport.
 --cache-embedded-mtls-key-store-file <file>
                      The Keystore file path. The Keystore must contain the certificate to use by
                        the TLS protocol. By default, it looks up 'cache-mtls-keystore.p12' under
@@ -139,12 +139,6 @@ Cache:
                        optional if connecting to an unsecure external Infinispan cluster. If the
                        option is specified, 'cache-remote-password' is required as well. Available
                        only when remote host is set.
---cache-stack <stack>
-                     Define the default stack to use for cluster communication and node discovery.
-                       Defaults to 'jdbc-ping' if not set. Possible values are: jdbc-ping,
-                       kubernetes (deprecated), jdbc-ping-udp (deprecated), tcp (deprecated), udp
-                       (deprecated), ec2 (deprecated), azure (deprecated), google (deprecated), or
-                       a custom one. Available only when 'cache' type is set to 'ispn'.
 
 Config:
 
@@ -474,8 +468,8 @@ HTTP Access log:
                        Available only when HTTP Access log is enabled.
 --http-access-log-file-name <name>
                      The HTTP access log file base name, which will create a log file name
-                       concatenating base and suffix (e.g. 'keycloak-http-access.log'). The file is
-                       located in the '/data/log' directory of the distribution. Default:
+                       concatenating base and suffix (for example, 'keycloak-http-access.log'). The
+                       file is located in the '/data/log' directory of the distribution. Default:
                        keycloak-http-access. Available only when HTTP Access logging to file is
                        enabled.
 --http-access-log-file-rotate <true|false>
@@ -632,9 +626,11 @@ Proxy:
 --proxy-trusted-addresses <trusted proxies>
                      A comma separated list of trusted proxy addresses. If set, then proxy headers
                        from other addresses will be ignored. By default all addresses are trusted.
-                       A trusted proxy address is specified as an IP address (IPv4 or IPv6) or
-                       Classless Inter-Domain Routing (CIDR) notation. Available only when
-                       proxy-headers is set.
+                       A trusted proxy address is specified as an IP address (IPv4 or IPv6),
+                       hostname, or Classless Inter-Domain Routing (CIDR) notation. IPv6 addresses
+                       should use square brackets (e.g. [::1]). An optional port can be specified
+                       (e.g. 127.0.0.1:8084). Using hostnames is not recommended as it requires a
+                       DNS lookup on every request. Available only when proxy-headers is set.
 
 Vault:
 

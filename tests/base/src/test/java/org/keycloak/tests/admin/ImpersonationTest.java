@@ -293,7 +293,8 @@ public class ImpersonationTest {
         }
         managedRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        UserRepresentation user = AdminApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").getServiceAccountUser();
+        String saUserId = AdminApiUtil.findClientByClientId(managedRealm.admin(), "service-account-cl").toRepresentation().getServiceAccountUserId();
+        UserRepresentation user = managedRealm.admin().users().get(saUserId).toRepresentation();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
@@ -319,7 +320,8 @@ public class ImpersonationTest {
         }
         masterRealm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        UserRepresentation user = AdminApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").getServiceAccountUser();
+        String saUserId = AdminApiUtil.findClientByClientId(masterRealm.admin(), "service-account-cl").toRepresentation().getServiceAccountUserId();
+        UserRepresentation user = masterRealm.admin().users().get(saUserId).toRepresentation();
         user.setServiceAccountClientId("service-account-cl");
 
         // add impersonation roles
@@ -537,6 +539,10 @@ public class ImpersonationTest {
     private Keycloak createAdminClient(String realm, String clientId, String username) {
         String password = username.equals("admin") ? "admin" : "password";
 
+        // Ensure the client used to call the Admin REST API carries the kc-admin-api scope so it passes the
+        // audience check. The assignment is idempotent.
+        AdminApiUtil.addAdminApiClientScope((realm.equals(masterRealm.getName()) ? masterRealm : managedRealm).admin(), clientId);
+
         return clientFactory.create()
                 .realm(realm)
                 .username(username)
@@ -577,6 +583,7 @@ public class ImpersonationTest {
     }
 
     private Keycloak createServiceAccountClient(String serviceAccountRealm, UserRepresentation serviceAccount) {
+        AdminApiUtil.addAdminApiClientScope((serviceAccountRealm.equals(masterRealm.getName()) ? masterRealm : managedRealm).admin(), serviceAccount.getServiceAccountClientId());
         return clientFactory.create().realm(serviceAccountRealm).clientId(serviceAccount.getServiceAccountClientId()).clientSecret("password").grantType(OAuth2Constants.CLIENT_CREDENTIALS).build();
     }
 

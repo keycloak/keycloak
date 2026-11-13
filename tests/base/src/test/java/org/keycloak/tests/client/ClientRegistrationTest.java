@@ -49,17 +49,24 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
+import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.clientregistration.policy.impl.DefaultRolesClientRegistrationPolicyFactory;
+import org.keycloak.services.clientregistration.policy.impl.ScopeClientRegistrationPolicyFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -135,14 +142,14 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation rep = registerClient(clientRep, false);
 
-        UserRepresentation serviceAccountUser = managedRealm.admin().clients().get(rep.getId()).getServiceAccountUser();
+        String serviceAccountUserId = managedRealm.admin().clients().get(rep.getId()).toRepresentation().getServiceAccountUserId();
 
-        assertNotNull(serviceAccountUser);
+        assertNotNull(serviceAccountUserId);
 
         deleteClient(rep);
 
         try {
-            managedRealm.admin().users().get(serviceAccountUser.getId()).toRepresentation();
+            managedRealm.admin().users().get(serviceAccountUserId).toRepresentation();
             fail("Expected NotFoundException");
         } catch (NotFoundException e) {
         }
@@ -260,21 +267,242 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     @DatabaseTest
-    public void clientWithDefaultRoles() throws ClientRegistrationException {
+    public void clientWithDefaultRolesRejectedByPolicy() throws ClientRegistrationException {
         authCreateClients();
         ClientRepresentation client = buildClient();
         client.setDefaultRoles(new String[]{"test-default-role"});
-
-        ClientRepresentation createdClient = registerClient(client, true);
-        assertThat(createdClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+        assertCreateRejected(client, "Not permitted to set defaultRoles");
 
         authManageClients();
-        ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
-        assertThat(obtainedClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+        ClientRepresentation created = registerClient(buildClient(), true);
+        created.setDefaultRoles(new String[]{"test-default-role1", "test-default-role2"});
+        assertUpdateRejected(created, "Not permitted to modify defaultRoles");
+        assertNoDefaultRoles(managedRealm.admin().clients().get(created.getId()).toRepresentation(),
+                "test-default-role1", "test-default-role2");
+    }
 
-        client.setDefaultRoles(new String[]{"test-default-role1","test-default-role2"});
-        ClientRepresentation updatedClient = reg.update(client);
-        assertThat(updatedClient.getDefaultRoles(), Matchers.arrayContainingInAnyOrder("test-default-role1","test-default-role2"));
+    @Test
+    @DatabaseTest
+    public void clientWithDefaultRolesAllowedWhenPolicyRemoved() throws ClientRegistrationException {
+        ComponentRepresentation policy = findPolicyByProviderAndAuth(
+                DefaultRolesClientRegistrationPolicyFactory.PROVIDER_ID,
+                ClientRegistrationPolicyManager.getComponentTypeKey(RegistrationAuth.AUTHENTICATED));
+        managedRealm.admin().components().component(policy.getId()).remove();
+        try {
+            authManageClients();
+            ClientRepresentation client = buildClient();
+            client.setDefaultRoles(new String[]{"test-default-role"});
+
+            ClientRepresentation createdClient = registerClient(client, true);
+            assertThat(createdClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+
+            ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
+            assertThat(obtainedClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+
+            client.setDefaultRoles(new String[]{"test-default-role1", "test-default-role2"});
+            ClientRepresentation updatedClient = reg.update(client);
+            assertThat(updatedClient.getDefaultRoles(), Matchers.arrayContainingInAnyOrder("test-default-role1", "test-default-role2"));
+        } finally {
+            restoreDefaultRolesPolicy(RegistrationAuth.AUTHENTICATED);
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void initialAccessTokenCannotSetDefaultRoles() throws ClientRegistrationException {
+        reg.auth(Auth.token(createInitialAccessToken()));
+
+        ClientRepresentation client = buildClient();
+        client.setDefaultRoles(new String[]{"injected-default-role"});
+        assertCreateRejected(client, "Not permitted to set defaultRoles");
+
+        reg.auth(Auth.token(createInitialAccessToken()));
+        ClientRepresentation createdClient = registerClient(buildClient(), true);
+        createdClient.setDefaultRoles(new String[]{"injected-via-rat"});
+        reg.auth(Auth.token(createdClient.getRegistrationAccessToken()));
+        assertUpdateRejected(createdClient, "Not permitted to modify defaultRoles");
+        assertNoDefaultRoles(managedRealm.admin().clients().get(createdClient.getId()).toRepresentation(),
+                "injected-default-role", "injected-via-rat");
+    }
+
+    @Test
+    @DatabaseTest
+    public void defaultRolesAddedByAdminCannotBeRemovedWhilePolicyPresent() throws ClientRegistrationException {
+        reg.auth(Auth.token(createInitialAccessToken()));
+        ClientRepresentation createdClient = registerClient(buildClient(), true);
+
+        String adminDefaultRole = "admin-added-default-role";
+        addClientRoleToRealmDefaultRoles(createdClient.getId(), adminDefaultRole);
+
+        // Resending the existing default roles is fine
+        reg.auth(Auth.token(createdClient.getRegistrationAccessToken()));
+        ClientRepresentation update = reg.get(CLIENT_ID);
+        assertThat(update.getDefaultRoles(), Matchers.arrayContaining(adminDefaultRole));
+        ClientRepresentation updatedClient = reg.update(update);
+        assertThat(updatedClient.getDefaultRoles(), Matchers.arrayContaining(adminDefaultRole));
+
+        // Adding or removing through DCR is rejected
+        reg.auth(Auth.token(updatedClient.getRegistrationAccessToken()));
+        update = reg.get(CLIENT_ID);
+        update.setDefaultRoles(new String[]{adminDefaultRole, "injected-via-rat"});
+        assertUpdateRejected(update, "Not permitted to modify defaultRoles");
+
+        reg.auth(Auth.token(updatedClient.getRegistrationAccessToken()));
+        update = reg.get(CLIENT_ID);
+        update.setDefaultRoles(new String[0]);
+        assertUpdateRejected(update, "Not permitted to modify defaultRoles");
+        assertThat(getRealmDefaultRoleComposites(), Matchers.hasItem(adminDefaultRole));
+
+        authManageClients();
+        update = reg.get(CLIENT_ID);
+        update.setDefaultRoles(new String[0]);
+        assertUpdateRejected(update, "Not permitted to modify defaultRoles");
+        assertThat(getRealmDefaultRoleComposites(), Matchers.hasItem(adminDefaultRole));
+    }
+
+    @Test
+    @DatabaseTest
+    public void fullScopeAllowedCannotBeEnabledWithRegistrationAccessToken() throws ClientRegistrationException {
+        reg.auth(Auth.token(createInitialAccessToken()));
+        ClientRepresentation createdClient = registerClient(buildClient(), true);
+        assertFalse(createdClient.isFullScopeAllowed());
+
+        // Registration access token cannot enable full scope
+        reg.auth(Auth.token(createdClient.getRegistrationAccessToken()));
+        ClientRepresentation update = reg.get(CLIENT_ID);
+        assertFalse(update.isFullScopeAllowed());
+        update.setFullScopeAllowed(true);
+        assertUpdateRejected(update, "Not permitted to enable fullScopeAllowed");
+        assertFalse(managedRealm.admin().clients().get(createdClient.getId()).toRepresentation().isFullScopeAllowed());
+
+        // Sending the unchanged value or omitting it is fine
+        update.setFullScopeAllowed(false);
+        ClientRepresentation updatedClient = reg.update(update);
+        assertFalse(updatedClient.isFullScopeAllowed());
+
+        reg.auth(Auth.token(updatedClient.getRegistrationAccessToken()));
+        update = reg.get(CLIENT_ID);
+        update.setFullScopeAllowed(null);
+        updatedClient = reg.update(update);
+        assertFalse(updatedClient.isFullScopeAllowed());
+        assertFalse(managedRealm.admin().clients().get(createdClient.getId()).toRepresentation().isFullScopeAllowed());
+    }
+
+    @Test
+    @DatabaseTest
+    public void fullScopeAllowedCannotBeEnabledWithAuthenticatedBearer() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation createdClient = registerClient(buildClient(), true);
+        assertFalse(createdClient.isFullScopeAllowed());
+
+        createdClient.setFullScopeAllowed(true);
+        assertUpdateRejected(createdClient, "Not permitted to enable fullScopeAllowed");
+
+        ComponentRepresentation policy = findPolicyByProviderAndAuth(
+                ScopeClientRegistrationPolicyFactory.PROVIDER_ID,
+                ClientRegistrationPolicyManager.getComponentTypeKey(RegistrationAuth.AUTHENTICATED));
+        managedRealm.admin().components().component(policy.getId()).remove();
+        try {
+            authManageClients();
+            ClientRepresentation update = reg.get(CLIENT_ID);
+            update.setFullScopeAllowed(true);
+            ClientRepresentation updated = reg.update(update);
+            assertTrue(updated.isFullScopeAllowed());
+        } finally {
+            restoreScopePolicy(RegistrationAuth.AUTHENTICATED);
+        }
+    }
+
+    private String createInitialAccessToken() {
+        ClientInitialAccessCreatePresentation request = new ClientInitialAccessCreatePresentation();
+        request.setCount(1);
+        request.setExpiration(10000);
+        ClientInitialAccessPresentation iat = managedRealm.admin().clientInitialAccess().create(request);
+        return iat.getToken();
+    }
+
+    private void addClientRoleToRealmDefaultRoles(String clientUuid, String roleName) {
+        managedRealm.admin().clients().get(clientUuid).roles().create(new RoleRepresentation(roleName, null, false));
+        RoleRepresentation role = managedRealm.admin().clients().get(clientUuid).roles().get(roleName).toRepresentation();
+        String defaultRoleId = managedRealm.admin().toRepresentation().getDefaultRole().getId();
+        managedRealm.admin().rolesById().addComposites(defaultRoleId, List.of(role));
+        assertThat(getRealmDefaultRoleComposites(), Matchers.hasItem(roleName));
+    }
+
+    private Set<String> getRealmDefaultRoleComposites() {
+        String defaultRoleId = managedRealm.admin().toRepresentation().getDefaultRole().getId();
+        return managedRealm.admin().rolesById().getRoleComposites(defaultRoleId)
+                .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+    }
+
+    private void assertNoDefaultRoles(ClientRepresentation client, String... roleNames) {
+        List<String> defaultRoles = client.getDefaultRoles() != null ? Arrays.asList(client.getDefaultRoles()) : Collections.emptyList();
+        Set<String> composites = getRealmDefaultRoleComposites();
+        for (String roleName : roleNames) {
+            assertThat(defaultRoles, Matchers.not(Matchers.hasItem(roleName)));
+            assertThat(composites, Matchers.not(Matchers.hasItem(roleName)));
+        }
+    }
+
+    private ComponentRepresentation findPolicyByProviderAndAuth(String providerId, String authType) {
+        String parentId = managedRealm.admin().toRepresentation().getId();
+        List<ComponentRepresentation> reps = managedRealm.admin().components().query(parentId, ClientRegistrationPolicy.class.getName());
+        for (ComponentRepresentation rep : reps) {
+            if (authType.equals(rep.getSubType()) && providerId.equals(rep.getProviderId())) {
+                return rep;
+            }
+        }
+        return null;
+    }
+
+    private void restoreDefaultRolesPolicy(RegistrationAuth auth) {
+        if (findPolicyByProviderAndAuth(DefaultRolesClientRegistrationPolicyFactory.PROVIDER_ID,
+                ClientRegistrationPolicyManager.getComponentTypeKey(auth)) != null) {
+            return;
+        }
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setName("Default Roles Disabled");
+        rep.setParentId(managedRealm.admin().toRepresentation().getId());
+        rep.setProviderId(DefaultRolesClientRegistrationPolicyFactory.PROVIDER_ID);
+        rep.setProviderType(ClientRegistrationPolicy.class.getName());
+        rep.setSubType(ClientRegistrationPolicyManager.getComponentTypeKey(auth));
+        managedRealm.admin().components().add(rep).close();
+    }
+
+    private void restoreScopePolicy(RegistrationAuth auth) {
+        if (findPolicyByProviderAndAuth(ScopeClientRegistrationPolicyFactory.PROVIDER_ID,
+                ClientRegistrationPolicyManager.getComponentTypeKey(auth)) != null) {
+            return;
+        }
+        ComponentRepresentation rep = new ComponentRepresentation();
+        rep.setName("Full Scope Disabled");
+        rep.setParentId(managedRealm.admin().toRepresentation().getId());
+        rep.setProviderId(ScopeClientRegistrationPolicyFactory.PROVIDER_ID);
+        rep.setProviderType(ClientRegistrationPolicy.class.getName());
+        rep.setSubType(ClientRegistrationPolicyManager.getComponentTypeKey(auth));
+        managedRealm.admin().components().add(rep).close();
+    }
+
+    private void assertCreateRejected(ClientRepresentation client, String expectedErrorDescription) {
+        try {
+            reg.create(client);
+            fail("Expected the create to be rejected");
+        } catch (ClientRegistrationException e) {
+            HttpErrorException cause = (HttpErrorException) e.getCause();
+            assertThat(cause.getStatusLine().getStatusCode(), is(403));
+            assertThat(cause.getErrorResponse(), CoreMatchers.containsString(expectedErrorDescription));
+        }
+    }
+
+    private void assertUpdateRejected(ClientRepresentation client, String expectedErrorDescription) {
+        try {
+            reg.update(client);
+            fail("Expected the update to be rejected");
+        } catch (ClientRegistrationException e) {
+            HttpErrorException cause = (HttpErrorException) e.getCause();
+            assertThat(cause.getStatusLine().getStatusCode(), is(403));
+            assertThat(cause.getErrorResponse(), CoreMatchers.containsString(expectedErrorDescription));
+        }
     }
 
     @Test
@@ -466,6 +694,53 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         assertThat(updated.getProtocol(), is(SamlProtocol.LOGIN_PROTOCOL));
     }
 
+    @Test
+    public void samlClientCannotBeUpdatedOrDeletedViaOidcEndpointWithRegistrationToken() throws ClientRegistrationException {
+        // Register a SAML client through the protocol-agnostic endpoint; capture the RAT.
+        authManageClients();
+        ClientRepresentation samlClient = buildClient();
+        samlClient.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        ClientRepresentation created = registerClient(samlClient, true);
+        assertThat(created.getProtocol(), is(SamlProtocol.LOGIN_PROTOCOL));
+
+        // Present the SAML client's RAT to the OIDC registration endpoint.
+        reg.auth(Auth.token(created.getRegistrationAccessToken()));
+
+        OIDCClientRepresentation update = new OIDCClientRepresentation();
+        update.setClientId(created.getClientId());
+        update.setRedirectUris(Collections.singletonList("http://localhost:8080/callback"));
+
+        assertWrongClientProtocol(() -> reg.oidc().update(update));
+        assertWrongClientProtocol(() -> {
+            reg.oidc().delete(created.getClientId());
+            return null;
+        });
+
+        // The client must survive both attempts, unchanged.
+        ClientRepresentation afterAttempt = managedRealm.admin().clients().get(created.getId()).toRepresentation();
+        assertThat(afterAttempt.getProtocol(), is(SamlProtocol.LOGIN_PROTOCOL));
+    }
+
+    private void assertWrongClientProtocol(Callable<?> request) {
+        try {
+            request.call();
+            fail("Expected ClientRegistrationException — registration token must not be accepted by an endpoint of a different protocol");
+        } catch (Exception e) {
+            assertThat(e, Matchers.instanceOf(ClientRegistrationException.class));
+            HttpErrorException cause = (HttpErrorException) e.getCause();
+            assertThat(cause.getStatusLine().getStatusCode(), is(400));
+
+            OAuth2ErrorRepresentation errorRep;
+            try {
+                errorRep = JsonSerialization.readValue(cause.getErrorResponse(), OAuth2ErrorRepresentation.class);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            assertThat(errorRep.getError(), is(Errors.INVALID_CLIENT));
+            assertThat(errorRep.getErrorDescription(), CoreMatchers.containsString("Wrong client protocol"));
+        }
+    }
+
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
         testClientUriValidation(true, expectedRootUrlError, expectedBaseUrlError, expectedBackchannelLogoutUrlError, expectedRedirectUrisError, testUrls);
         testClientUriValidation(false, expectedRootUrlError, expectedBaseUrlError, expectedBackchannelLogoutUrlError, expectedRedirectUrisError, testUrls);
@@ -644,6 +919,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     @DatabaseTest
     public void addClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -660,7 +936,8 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     @Test
     @DatabaseTest
-    public void removeClientProtcolMappers() throws ClientRegistrationException {
+    public void removeClientProtocolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -677,6 +954,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     @Test
     @DatabaseTest
     public void updateClientProtcolMappers() throws ClientRegistrationException {
+        allowProtocolMapperTypeInRealm(UserAttributeMapper.PROVIDER_ID);
         authManageClients();
 
         ClientRepresentation initialClient = buildClient();
@@ -688,6 +966,13 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation updatedClient = reg.get(CLIENT_ID);
         assertThat("Updating protocolMapper failed", updatedClient.getProtocolMappers().get(0).getConfig().get("claim.name"), is("updatedClaimName"));
+    }
+
+    /**
+     * Allows the given protocol mapper type in realm. The allowed protocol mapper must be included in both realm and protocol-mappers client registration policy
+     */
+    private void allowProtocolMapperTypeInRealm(String mapperProviderType) {
+        managedRealm.updateWithCleanup(r -> r.attribute(Constants.ALLOWED_PROTOCOL_MAPPER_TYPES_FOR_CLIENT_ADMINISTRATORS, mapperProviderType));
     }
 
     private void addProtocolMapper(ClientRepresentation client, String mapperName) {
@@ -949,9 +1234,9 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         Response response = masterRealm.admin().clients().create(testAdminClient);
         testAdminClient = masterRealm.admin().clients().get( ApiUtil.getCreatedId(response)).toRepresentation();
 
-        UserRepresentation serviceAccountUser = masterRealm.admin().clients().get(testAdminClient.getId()).getServiceAccountUser();
+        String serviceAccountUserId = testAdminClient.getServiceAccountUserId();
         RoleRepresentation adminRole =  masterRealm.admin().roles().get(AdminRoles.ADMIN).toRepresentation();
-        masterRealm.admin().users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(adminRole));
+        masterRealm.admin().users().get(serviceAccountUserId).roles().realmLevel().add(List.of(adminRole));
 
         oauth.client(TEST_ADMIN_CLIENT, TEST_ADMIN_CLIENT);
         oauth.realm(masterRealm.getName());

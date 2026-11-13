@@ -20,7 +20,7 @@ export class Workflows extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string; includeId: boolean },
-    WorkflowRepresentation | undefined
+    WorkflowRepresentation | null
   >({
     method: "GET",
     path: "/{id}",
@@ -31,7 +31,7 @@ export class Workflows extends Resource<{ realm?: string }> {
 
   public scheduled = this.makeRequest<
     { userId: string },
-    WorkflowRepresentation[]
+    WorkflowRepresentation[] | null
   >({
     method: "GET",
     path: "/scheduled/{userId}",

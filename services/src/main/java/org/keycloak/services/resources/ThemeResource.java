@@ -160,10 +160,15 @@ public class ThemeResource {
 
             ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
 
-            InputStream resource;
+            InputStream resource = null;
             if (encodingProvider != null) {
-                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path), themeType, themeName, path.replace('/', File.separatorChar));
-            } else {
+                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path),
+                        theme.getType().toString().toLowerCase(), theme.getName(),
+                        path.replace('/', File.separatorChar));
+            }
+            if (resource == null) {
+                // Encoding failures should not prevent serving the original resource
+                encodingProvider = null;
                 resource = theme.getResourceAsStream(path);
             }
 

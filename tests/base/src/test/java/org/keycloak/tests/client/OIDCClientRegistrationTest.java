@@ -1048,4 +1048,48 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         OIDCClientRepresentation response = reg.oidc().create(clientRep);
         assertTrue(response.getPostLogoutRedirectUris().isEmpty());
     }
+
+    /**
+     * Regression test for https://github.com/keycloak/keycloak/issues/53749
+     */
+    @Test
+    public void testBackchannelLogoutOptions() throws Exception {
+        // Create with backchannel_logout_revoke_offline_tokens=true, session_required=false
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setBackchannelLogoutUri("https://backchannellogout/logout");
+        clientRep.setBackchannelLogoutSessionRequired(Boolean.FALSE);
+        clientRep.setBackchannelLogoutRevokeOfflineTokens(Boolean.TRUE);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+
+        // Both fields in the create response must be independently correct
+        Assertions.assertEquals(Boolean.FALSE, response.getBackchannelLogoutSessionRequired(),
+                "backchannel_logout_session_required should be false in the create response");
+        Assertions.assertEquals(Boolean.TRUE, response.getBackchannelLogoutRevokeOfflineTokens(),
+                "backchannel_logout_revoke_offline_tokens should be true in the create response");
+
+        // Verify via Keycloak admin representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assertions.assertFalse(config.isBackchannelLogoutSessionRequired());
+        Assertions.assertTrue(config.getBackchannelLogoutRevokeOfflineTokens());
+
+        // Update: flip both values
+        reg.auth(Auth.token(response));
+        response.setBackchannelLogoutSessionRequired(Boolean.TRUE);
+        response.setBackchannelLogoutRevokeOfflineTokens(Boolean.FALSE);
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+
+        // Both fields in the update response must reflect the new values
+        Assertions.assertEquals(Boolean.TRUE, updated.getBackchannelLogoutSessionRequired(),
+                "backchannel_logout_session_required should be true in the update response");
+        Assertions.assertEquals(Boolean.FALSE, updated.getBackchannelLogoutRevokeOfflineTokens(),
+                "backchannel_logout_revoke_offline_tokens should be false in the update response");
+
+        // Verify via Keycloak admin representation
+        kcClient = getClient(updated.getClientId());
+        config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        Assertions.assertTrue(config.isBackchannelLogoutSessionRequired());
+        Assertions.assertFalse(config.getBackchannelLogoutRevokeOfflineTokens());
+    }
 }

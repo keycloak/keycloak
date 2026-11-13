@@ -37,6 +37,7 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.http.HttpRequest;
@@ -59,6 +60,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.EmailValidationUtil;
@@ -268,6 +270,29 @@ public class Organizations {
         }
     }
 
+    /**
+     * Consumes an invitation token before membership is created, including in registration and broker flows that
+     * bypass the action token handler.
+     */
+    public static boolean useInvitationToken(KeycloakSession session, InviteOrgActionToken token) {
+        long lifespan = token.getExp() - Time.currentTimeSeconds();
+
+        if (lifespan < 0 || !session.revokedTokens().put(token.serializeKey(), lifespan + AuthenticationManager.CLOCK_SKEW_SECONDS)) {
+            // Discard any persisted revocation and user creation from the losing acceptance.
+            session.getTransactionManager().setRollbackOnly();
+            return false;
+        }
+
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+        if (authSession != null && token.serializeKey().equals(authSession.getAuthNote(AuthenticationManager.INVALIDATE_ACTION_TOKEN))) {
+            // The token is already consumed; required-action completion must not consume it again.
+            authSession.removeAuthNote(AuthenticationManager.INVALIDATE_ACTION_TOKEN);
+        }
+
+        return true;
+    }
+
     public static InviteOrgActionToken parseInvitationToken(KeycloakSession session, HttpRequest request) throws VerificationException {
         MultivaluedMap<String, String> queryParameters = request.getUri().getQueryParameters();
 
@@ -306,41 +331,53 @@ public class Organizations {
     }
 
     public static void validateDomain(String rawDomain) {
+        getDomainValidationError(rawDomain).ifPresent(error -> {
+            throw new ModelValidationException(error);
+        });
+    }
+
+    public static boolean isValidDomain(String rawDomain) {
+        return !isBlank(rawDomain) && getDomainValidationError(rawDomain).isEmpty();
+    }
+
+    private static Optional<String> getDomainValidationError(String rawDomain) {
         if (isBlank(rawDomain)) {
-            return;
+            return Optional.empty();
         }
 
         String domain = rawDomain;
 
         if (rawDomain.contains(WILDCARD_PREFIX)) {
             if (rawDomain.length() == WILDCARD_PREFIX.length()) {
-                throw new ModelValidationException("Wildcard domain must specify a base domain: " + rawDomain);
+                return Optional.of("Wildcard domain must specify a base domain: " + rawDomain);
             }
 
             if (!rawDomain.startsWith(WILDCARD_PREFIX)) {
-                throw new ModelValidationException("Wildcard domain must start with the wildcard");
+                return Optional.of("Wildcard domain must start with the wildcard");
             }
 
             domain = rawDomain.substring(2);
 
             if (domain.contains("*")) {
-                throw new ModelValidationException("Multiple wildcards are not allowed: " + rawDomain);
+                return Optional.of("Multiple wildcards are not allowed: " + rawDomain);
             }
 
             int parts = getDomainPartsSize(domain);
 
             if (parts < MIN_DOMAIN_PARTS) {
-                throw new ModelValidationException("Domain must have at least " + MIN_DOMAIN_PARTS + " parts (e.g. 'example.com'): " + domain);
+                return Optional.of("Domain must have at least " + MIN_DOMAIN_PARTS + " parts (e.g. 'example.com'): " + domain);
             }
 
             if (parts > MAX_DOMAIN_PARTS) {
-                throw new ModelValidationException("Domain has too many parts (max " + MAX_DOMAIN_PARTS + " allowed): " + domain);
+                return Optional.of("Domain has too many parts (max " + MAX_DOMAIN_PARTS + " allowed): " + domain);
             }
         }
 
         if (isBlank(domain) || !EmailValidationUtil.isValidEmail("user@" + domain)) {
-            throw new ModelValidationException("Invalid domain format: " + rawDomain);
+            return Optional.of("Invalid domain format: " + rawDomain);
         }
+
+        return Optional.empty();
     }
 
 
@@ -487,7 +524,7 @@ public class Organizations {
         if (organizations.isEmpty()) {
             // no membership, any org that matches the domain
             return resolveByDomain(ofNullable(emailDomain)
-                    .map(d -> getByDomainNameOrNull(provider, d))
+                    .map(provider::getByDomainName)
                     .map(List::of)
                     .orElse(List.of()), emailDomain);
         }
@@ -499,15 +536,6 @@ public class Organizations {
         }
 
         return resolveByDomain(organizations, emailDomain);
-    }
-
-    private static OrganizationModel getByDomainNameOrNull(OrganizationProvider provider, String domain) {
-        try {
-            return provider.getByDomainName(domain);
-        } catch (ModelValidationException e) {
-            // malformed domain (e.g. a typo in the login username, or an unvalidated stored email) - treat as no match
-            return null;
-        }
     }
 
     public static OrganizationProvider getProvider(KeycloakSession session) {

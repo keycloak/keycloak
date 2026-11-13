@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -58,7 +59,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     public Response createDefault(ClientRepresentation client) {
         DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(session, client, this);
         client = create(context);
+        ClientModel clientModel = session.getContext().getRealm().getClientByClientId(client.getClientId());
         validateClient(client, true);
+        client.setProtocolMappers(ModelToRepresentation.toRepresentation(clientModel, session).getProtocolMappers());
         URI uri = session.getContext().getUri().getAbsolutePathBuilder().path(client.getClientId()).build();
         return Response.created(uri).entity(client).build();
     }
@@ -82,6 +85,9 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
         client = update(clientId, context);
         updateAuthorizationSettings(client, authorizationSettings);
         validateClient(client, false);
+        client.setProtocolMappers(ModelToRepresentation.toRepresentation(session.getContext()
+                .getRealm()
+                .getClientByClientId(clientId), session).getProtocolMappers());
         return Response.ok(client).build();
     }
 
@@ -94,6 +100,14 @@ public class DefaultClientRegistrationProvider extends AbstractClientRegistratio
     private void updateAuthorizationSettings(ClientRepresentation rep, ResourceServerRepresentation authorizationSettings) {
         rep.setAuthorizationSettings(authorizationSettings);
         ClientModel client = session.getContext().getRealm().getClientByClientId(rep.getClientId());
+        boolean serviceAccountsEnabled = client.isServiceAccountsEnabled();
+
         RepresentationToModel.importAuthorizationSettings(rep, client, session);
+
+        // Restore service accounts state to prevent registration
+        // access tokens from re-enabling an admin-disabled flag during authorization settings import.
+        if (auth.isRegistrationAccessToken() && client.isServiceAccountsEnabled() != serviceAccountsEnabled) {
+            client.setServiceAccountsEnabled(serviceAccountsEnabled);
+        }
     }
 }

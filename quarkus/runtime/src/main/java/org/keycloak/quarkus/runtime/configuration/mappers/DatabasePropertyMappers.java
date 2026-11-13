@@ -18,8 +18,6 @@ import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
-import org.keycloak.config.CachingOptions;
-import org.keycloak.config.CachingOptions.Stack;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
@@ -51,7 +49,6 @@ import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_TYPE;
 import static org.keycloak.config.DatabaseOptions.DB_URL;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -73,10 +70,12 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
+    static final String AWS_JDBC_WRAPPER_DRIVER = "software.amazon.jdbc.Driver";
+
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     /**
-     * Minimum {@code db-pool-max-size} required for {@link Stack#jdbc_ping} and {@link Stack#jdbc_ping_udp}.
+     * Minimum {@code db-pool-max-size} required for {@link Stack#jdbc_ping}.
      * Determined experimentally — lower values cause startup failures due to connection pool exhaustion.
      * Verified by {@code KeycloakDeploymentTest#testDocumentedMinimalPoolMaxSizeWorks}.
      */
@@ -127,6 +126,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                    directly after the login. Once the connection is later acquired for a transaction, the UpdateSocketTimeoutOnConnectionAcquireInterceptor
                    will then later overwrite the socket timeout.
                    See https://github.com/keycloak/keycloak/issues/47174 for the discussion.
+                   PostgreSQL is intentionally excluded here: its socket timeout is set by
+                   UpdateSocketTimeoutOnConnectionAcquireInterceptor on every connection acquisition,
+                   including connections through the AWS JDBC Wrapper.
                  */
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(SOCKET_TIMEOUT)
@@ -358,11 +360,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isJdbcPingStack() {
-        if (!CachingPropertyMappers.cacheSetToInfinispan()) {
-            return false;
-        }
-        String stack = getOptionalKcValue(CachingOptions.CACHE_STACK).orElse(Stack.jdbc_ping.toString());
-        return Stack.jdbc_ping.toString().equals(stack) || Stack.jdbc_ping_udp.toString().equals(stack);
+        // jdbc-ping is now the only supported stack, so just check if ispn cache is enabled
+        return CachingPropertyMappers.cacheSetToInfinispan();
     }
 
     public static boolean isPostgresqlTargetServerTypeEnabled() {
@@ -388,6 +387,15 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         String db = Configuration.getConfigValue(DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElse(null);
         if (vendor != Database.Vendor.POSTGRES) {
+            return false;
+        }
+
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        // The AWS JDBC Wrapper passes this property through to the underlying PostgreSQL driver
+        boolean awsJdbcWrapper = AWS_JDBC_WRAPPER_DRIVER.equals(dbDriver);
+        // Any other custom driver is unknown, so do not add properties it might not support
+        boolean unknownCustomDriver = isCustomDriver(db, dbDriver) && !awsJdbcWrapper;
+        if (unknownCustomDriver) {
             return false;
         }
 
@@ -508,6 +516,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         };
     }
 
+    private static boolean isCustomDriver(String db, String dbDriver) {
+        return !Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver);
+    }
+
     private static boolean checkSettingsAndVendor(Collection<Vendor> validForVendors, String timeoutProperty, String datasource, Vendor vendor, String db) {
         if (!validForVendors.contains(vendor)) {
             // this jdbc property is not for this vendor
@@ -515,9 +528,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
 
         String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
-        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+        // The AWS JDBC Wrapper passes connection properties through to the underlying PostgreSQL driver
+        boolean awsJdbcWrapperOnPostgresql = vendor == Vendor.POSTGRES && AWS_JDBC_WRAPPER_DRIVER.equals(dbDriver);
+        // Any other custom driver is unknown, so do not add properties it might not support
+        boolean unknownCustomDriver = isCustomDriver(db, dbDriver) && !awsJdbcWrapperOnPostgresql;
+        if (unknownCustomDriver) {
             return true;
         }
 

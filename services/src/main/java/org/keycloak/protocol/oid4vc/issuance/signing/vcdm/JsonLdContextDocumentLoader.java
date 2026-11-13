@@ -235,11 +235,14 @@ public class JsonLdContextDocumentLoader implements DocumentLoader {
             HttpGet request = new HttpGet(targetUri);
             request.setHeader("Accept", requestProfile == null ? "application/ld+json" : requestProfile);
             try (CloseableHttpResponse response = client.execute(request)) {
-                return new HttpResponseImpl(response.getStatusLine().getStatusCode(),
+                // Fully buffered data owns no live resources, even if closing the HTTP response fails.
+                @SuppressWarnings("required.method.not.called")
+                HttpResponse bufferedResponse = new HttpResponseImpl(response.getStatusLine().getStatusCode(),
                         readBoundedBody(response.getEntity()),
                         response.getFirstHeader("content-type"),
                         response.getFirstHeader("location"),
                         response.getHeaders("link"));
+                return bufferedResponse;
             } catch (IOException e) {
                 throw new JsonLdError(JsonLdErrorCode.LOADING_DOCUMENT_FAILED, e);
             }

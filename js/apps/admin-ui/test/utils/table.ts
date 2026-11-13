@@ -1,6 +1,7 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
-const TABLE_LOAD_TIMEOUT_MS = 5_000;
+// The realm list can load slowly while parallel workers create and delete realms.
+const TABLE_LOAD_TIMEOUT_MS = 15_000;
 
 export async function searchItem(
   page: Page,
@@ -9,6 +10,8 @@ export async function searchItem(
 ) {
   await page
     .locator("table tbody")
+    // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
+    .first()
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
@@ -22,65 +25,24 @@ function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-async function clickLinkWhenAvailable(link: Locator): Promise<boolean> {
-  const candidate = link.first();
-  if ((await candidate.count()) === 0) {
-    return false;
-  }
-
-  try {
-    await candidate.waitFor({ state: "visible", timeout: 500 });
-    await candidate.click({ timeout: 500 });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function clickTableRowItem(page: Page, itemName: string) {
   const tableBody = page.locator("table tbody");
-  await tableBody.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
+  await tableBody
+    // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
+    .first()
+    .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
   const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
+  const anyMatch = tableBody.getByRole("link", { name: itemName }).first();
 
-  for (let attempt = 0; attempt < 6; attempt++) {
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: itemName, exact: true }),
-      )
-    ) {
-      return;
-    }
+  // The row may render after the search or page load completes, so wait for it instead of checking once.
+  await anyMatch.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
 
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: exactNameRegex }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody
-          .locator("tr")
-          .filter({ has: page.getByRole("link", { name: exactNameRegex }) })
-          .getByRole("link", { name: exactNameRegex }),
-      )
-    ) {
-      return;
-    }
-
-    if (
-      await clickLinkWhenAvailable(
-        tableBody.getByRole("link", { name: itemName }),
-      )
-    ) {
-      return;
-    }
-  }
-
-  throw new Error(`Table row item "${itemName}" not found`);
+  const exactMatch = tableBody
+    .getByRole("link", { name: exactNameRegex })
+    .first();
+  const target = (await exactMatch.count()) > 0 ? exactMatch : anyMatch;
+  await target.click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
@@ -188,17 +150,25 @@ export async function clickTableToolbarItem(
 }
 
 export async function getTableData(page: Page, name: string) {
-  const rowsLocator = await getTableRows(page, name);
-  const rowCount = await rowsLocator.count();
-  const tableData: string[][] = [];
-
-  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
-    const row = rowsLocator.nth(rowIndex);
-    tableData.push(
-      (await row.locator("td").allInnerTexts()).map((t) => t.trim()),
-    );
-  }
-
+  // Retry the complete data capture so the wait and read cannot race each other
+  // during React re-renders that momentarily empty the table.
+  let tableData: string[][] = [];
+  await expect
+    .poll(
+      async () => {
+        const rowsLocator = await getTableRows(page, name);
+        tableData = await rowsLocator.evaluateAll((rows) =>
+          rows.map((row) =>
+            Array.from(row.querySelectorAll("td"), (cell) =>
+              cell.innerText.trim(),
+            ),
+          ),
+        );
+        return tableData.length;
+      },
+      { timeout: TABLE_LOAD_TIMEOUT_MS },
+    )
+    .toBeGreaterThan(0);
   return tableData;
 }
 

@@ -44,6 +44,7 @@ import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
@@ -163,6 +164,10 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             return confirmMembershipResponse(organization, user, tokenContext, token);
         }
 
+        if (!Organizations.useInvitationToken(session, token)) {
+            return invalidTokenResponse(tokenContext, token);
+        }
+
         // if we made it this far then go ahead and add the user to the organization
         orgProvider.addMember(orgProvider.getById(token.getOrgId()), user);
 
@@ -194,6 +199,11 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         }
 
         return AuthenticationManager.redirectToRequiredActions(session, realm, authSession, uriInfo, nextAction);
+    }
+
+    @Override
+    public boolean canUseTokenRepeatedly(InviteOrgActionToken token, ActionTokenContext<InviteOrgActionToken> tokenContext) {
+        return false;
     }
 
     private Response invalidTokenResponse(ActionTokenContext<InviteOrgActionToken> tokenContext, InviteOrgActionToken token) {
@@ -256,13 +266,26 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .detail(Details.EMAIL, token.getEmail())
                 .detail(Details.ORG_ID, token.getOrgId())
                 .error(Errors.USER_ORG_MEMBER_ALREADY);
-        return session.getProvider(LoginFormsProvider.class)
+
+        String pageRedirectUri = null;
+        if (Constants.ACCOUNT_MANAGEMENT_CLIENT_ID.equals(authSession.getClient().getClientId())) {
+            pageRedirectUri = organization.getRedirectUrl();
+            if (pageRedirectUri != null) {
+                pageRedirectUri = RedirectUtils.verifyRedirectUri(session, pageRedirectUri, authSession.getClient());
+            }
+        }
+
+        LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class)
                 .setStatus(Status.BAD_REQUEST)
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
-                .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername(), organization.getName())
-                .setAttribute("pageRedirectUri", organization.getRedirectUrl())
-                .createInfoPage();
+                .setInfo(Messages.ORG_MEMBER_ALREADY, user.getUsername(), organization.getName());
+
+        if (pageRedirectUri != null) {
+            forms.setAttribute("pageRedirectUri", pageRedirectUri);
+        }
+
+        return forms.createInfoPage();
     }
 
     private Response confirmMembershipResponse(OrganizationModel organization, UserModel user, ActionTokenContext<InviteOrgActionToken> tokenContext, InviteOrgActionToken token) {

@@ -30,7 +30,8 @@
       ],
       "files": [
         "src",
-        "tsconfig.json"
+        "tsconfig.json",
+        "../../tsconfig.json"
       ],
       "output": [
         "lib"
@@ -42,7 +43,9 @@
         "generate:openapi"
       ],
       "files": [
-        "scripts/generate-doc-examples.ts"
+        "scripts/generate-doc-examples.ts",
+        "tsconfig.json",
+        "../../tsconfig.json"
       ],
       "output": [
         "src/generated/doc-examples"
@@ -82,7 +85,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.5.0",
-    "@kiota-community/kiota-gen": "^1.0.2",
+    "@kiota-community/kiota-gen": "^1.0.3",
     "@types/chai": "^5.2.2",
     "@types/lodash-es": "^4.17.12",
     "@types/mocha": "^10.0.10",

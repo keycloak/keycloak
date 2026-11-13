@@ -1,3 +1,4 @@
+<#-- Use <@passkeys.conditionalUIData/> to add conditional WebAuthn data and its alternative login action. -->
 <#macro conditionalUIData>
     <#if enableWebAuthnConditionalUI?has_content>
         <form id="webauth" action="${url.loginAction}" method="post">
@@ -40,7 +41,7 @@
            }
            </#outputformat>
         </script>
-        <a id="authenticateWebAuthnButton" href="#" class="${properties.kcButtonSecondaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
+        <a id="authenticateWebAuthnButton" href="#" class="${properties.kcButtonClass!} ${properties.kcButtonSecondaryClass!(properties.kcButtonDefaultClass!'')} ${properties.kcButtonBlockClass!} ${properties.kcMarginTopClass!}">
             ${msg("webauthn-doAuthenticate")}
         </a>
     </#if>

@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.grants.ciba.endpoints;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -51,6 +52,7 @@ import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAu
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequest;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.request.BackchannelAuthenticationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.grants.ciba.resolvers.CIBALoginUserResolver;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -88,6 +90,12 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
         HttpRequest httpRequest = session.getContext().getHttpRequest();
         CIBAAuthenticationRequest request = authorizeClient(httpRequest.getDecodedFormParameters());
+
+        if (CibaOtherClaimsValidator.hasForgedOtherClaims(request)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                    "Invalid parameter in CIBAAuthenticationRequest, found forged duplicity in otherClaims!",
+                    Response.Status.BAD_REQUEST);
+        }
 
         try {
             String authReqId = request.serialize(session);
@@ -197,7 +205,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
             validateBindingMessage(endpointRequest.getBindingMessage());
             request.setBindingMessage(endpointRequest.getBindingMessage());
         }
-        if (endpointRequest.getAcr() != null) request.setAcrValues(endpointRequest.getAcr());
+        List<String> acrValues = AcrUtils.getAcrValues(null, endpointRequest.getAcr(), client);
+        if (!acrValues.isEmpty()) {
+            request.setAcrValues(String.join(" ", acrValues));
+        }
 
         CibaConfig policy = realm.getCibaPolicy();
 

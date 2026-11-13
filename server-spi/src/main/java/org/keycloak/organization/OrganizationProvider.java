@@ -70,7 +70,8 @@ public interface OrganizationProvider extends Provider {
      * Returns a {@link OrganizationModel} by its internet domain.
      *
      * @param domainName the organization's internet domain (e.g. redhat.com)
-     * @return the organization that is linked to the given internet domain
+     * @return the organization that is linked to the given internet domain, or {@code null} if there is none.
+     * A {@code domainName} that is {@code null} or not a well-formed domain matches no organization.
      */
     OrganizationModel getByDomainName(String domainName);
 

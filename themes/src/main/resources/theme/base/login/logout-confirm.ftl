@@ -1,33 +1,23 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
     <#if section = "header">
         ${msg("logoutConfirmTitle")}
     <#elseif section = "form">
         <div id="kc-logout-confirm" class="content-area">
-            <p class="instruction">${msg("logoutConfirmHeader")}</p>
-
-            <form class="form-actions" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
+            <form class="form-actions ${properties.kcFormClass!}" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
+                <p class="instruction">${msg("logoutConfirmHeader")}</p>
                 <input type="hidden" name="session_code" value="${logoutConfirm.code}">
-                <div class="${properties.kcFormGroupClass!}">
-                    <div id="kc-form-options">
-                        <div class="${properties.kcFormOptionsWrapperClass!}">
-                        </div>
-                    </div>
-
-                    <div id="kc-form-buttons" class="${properties.kcFormGroupClass!}">
-                        <input tabindex="4"
-                               class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                               name="confirmLogout" id="kc-logout" type="submit" value="${msg("doLogout")}"/>
-                    </div>
-
-                </div>
+                <@buttons.actionGroup id="kc-form-buttons">
+                    <@buttons.button name="confirmLogout" id="kc-logout" label="doLogout" class=["kcButtonLargeClass"] value=msg("doLogout") tabindex="4" />
+                </@buttons.actionGroup>
             </form>
 
             <div id="kc-info-message">
                 <#if logoutConfirm.skipLink>
                 <#else>
                     <#if (client.baseUrl)?has_content>
-                        <p><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+                        <p class="${properties.kcMarginTopClass!}"><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
                     </#if>
                 </#if>
             </div>

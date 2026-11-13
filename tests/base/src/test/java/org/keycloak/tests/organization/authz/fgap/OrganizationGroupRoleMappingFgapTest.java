@@ -57,6 +57,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ROLES_RESOU
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -125,15 +126,24 @@ public class OrganizationGroupRoleMappingFgapTest {
     }
 
     @Test
-    public void testViewOrgPermissionAllowsListingRoleMappings() {
+    public void testViewOrgPermissionFiltersHiddenRealmRoleMappings() {
         UserPolicyRepresentation policy = createAdminPolicy();
         PermissionTestUtils.createPermission(clientResource, orgId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         // Add role mapping using realm admin
         realm.admin().organizations().get(orgId).groups().group(groupId).roles().realmLevel().add(List.of(testRole));
 
-        // myadmin with VIEW can list role mappings
+        // myadmin has VIEW on org but no view-realm — the realm role is hidden
         List<RoleRepresentation> roles = getAdminOrgGroup().roles().realmLevel().listAll();
+        assertThat(roles, empty());
+
+        // Grant view-realm — the realm role becomes visible
+        String realmMgmtId = AdminApiUtil.findClientByClientId(realm.admin(), Constants.REALM_MANAGEMENT_CLIENT_ID).toRepresentation().getId();
+        RoleRepresentation viewRealmRole = realm.admin().clients().get(realmMgmtId).roles().get(AdminRoles.VIEW_REALM).toRepresentation();
+        String myadminId = realm.admin().users().search("myadmin").get(0).getId();
+        realm.admin().users().get(myadminId).roles().clientLevel(realmMgmtId).add(List.of(viewRealmRole));
+
+        roles = getAdminOrgGroup().roles().realmLevel().listAll();
         assertThat(roles, hasSize(1));
         assertThat(roles.get(0).getName(), is("fgap-test-role"));
     }

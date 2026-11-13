@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
@@ -133,15 +132,23 @@ public class DefaultTokenManager implements TokenManager {
             try {
                 Optional<KeyWrapper> activeKey;
                 String kid = joseToken.getHeader().getKeyId();
+                // Per RFC 7516 §4.1.1, `alg` is REQUIRED in the JWE header.
+                // Reject early (defensive) so the filter below never receives a null headerAlg.
+                String headerAlg = joseToken.getHeader().getRawAlgorithm();
+                if (headerAlg == null) {
+                    throw new JWEException("Missing alg in JWE header");
+                }
                 Stream<KeyWrapper> keys = session.keys().getKeysStream(session.getContext().getRealm());
 
                 if (kid == null) {
-                    activeKey = keys.filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getPublicKey() != null)
-                            .sorted(Comparator.comparingLong(KeyWrapper::getProviderPriority).reversed())
+                    activeKey = keys.filter(k -> k.getStatus().isActive() && KeyUse.ENC.equals(k.getUse())
+                                    && k.getPublicKey() != null && headerAlg.equals(k.getAlgorithm()))
                             .findFirst();
                 } else {
+                    // Passive keys are still advertised in the realm JWKS, so they must remain usable when referenced by kid
                     activeKey = keys
-                            .filter(k -> KeyUse.ENC.equals(k.getUse()) && k.getKid().equals(kid)).findAny();
+                            .filter(k -> k.getStatus().isEnabled() && KeyUse.ENC.equals(k.getUse()) && k.getKid().equals(kid)
+                                    && headerAlg.equals(k.getAlgorithm())).findAny();
                 }
 
                 JWE jwe = JWE.class.cast(joseToken);

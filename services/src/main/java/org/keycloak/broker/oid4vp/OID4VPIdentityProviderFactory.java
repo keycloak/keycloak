@@ -17,7 +17,11 @@
 
 package org.keycloak.broker.oid4vp;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -33,14 +37,30 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
         implements EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "oid4vp";
+    public static final String FORBIDDEN_WALLET_SCHEMES_OPTION = "forbidden-wallet-schemes";
+
+    private static final Set<String> DEFAULT_FORBIDDEN_WALLET_SCHEMES = Set.of("javascript", "data");
+    private static Set<String> FORBIDDEN_WALLET_SCHEMES = DEFAULT_FORBIDDEN_WALLET_SCHEMES;
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
             .property()
+                .name(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES)
+                .label("Default Credential Types")
+                .helpText("Comma separated credential types (vct) the wallet may present, for example "
+                        + "'urn:eudi:pid:de:1,urn:eudi:pid:it:1'. The wallet presents one credential of any of "
+                        + "these types, disclosing the claims the identity provider mappers read. Required unless a "
+                        + "DCQL query is configured.")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .add()
+            .property()
                 .name(OID4VPIdentityProviderConfig.DCQL_QUERY)
                 .label("DCQL Query (JSON)")
-                .helpText("Digital Credentials Query Language query describing the requested credential and claims.")
+                .helpText("Digital Credentials Query Language query describing the requested credential and "
+                        + "claims. Leave empty to infer it: one credential of the default credential types, "
+                        + "disclosing the claims the identity provider mappers read and the principal attribute. "
+                        + "Set it only for queries the mappers cannot express. Only a single credential is "
+                        + "supported.")
                 .type(ProviderConfigProperty.TEXT_TYPE)
-                .required(true)
                 .add()
             .property()
                 .name(OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS)
@@ -126,5 +146,29 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
     @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VP);
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+        String[] forbiddenWalletSchemes = config.getArray(FORBIDDEN_WALLET_SCHEMES_OPTION);
+        if (forbiddenWalletSchemes != null) {
+            FORBIDDEN_WALLET_SCHEMES = Arrays.stream(forbiddenWalletSchemes).map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toUnmodifiableSet());
+        }
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+            .property()
+                .name(FORBIDDEN_WALLET_SCHEMES_OPTION)
+                .helpText(String.format("Forbidden schemes for the configuration property '%s'.", OID4VPIdentityProviderConfig.WALLET_SCHEME))
+                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+                .defaultValue(List.copyOf(DEFAULT_FORBIDDEN_WALLET_SCHEMES))
+                .add()
+            .build();
+    }
+
+    static Set<String> getForbiddenWalletSchemes() {
+        return FORBIDDEN_WALLET_SCHEMES;
     }
 }

@@ -19,6 +19,8 @@
 
 package org.keycloak.federation.kerberos;
 
+import java.util.Locale;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -34,7 +36,7 @@ public class KerberosPrincipal {
             throw new IllegalArgumentException("Kerberos principal '" + kerberosPrincipal + "' not valid");
         }
         this.prefix = parts[0];
-        this.realm = parts[1].toUpperCase();
+        this.realm = parts[1].toUpperCase(Locale.ROOT);
         this.kerberosPrincipal = prefix + "@" + realm;
     }
 

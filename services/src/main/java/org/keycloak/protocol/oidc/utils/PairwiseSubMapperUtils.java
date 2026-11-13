@@ -2,15 +2,27 @@ package org.keycloak.protocol.oidc.utils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
@@ -162,5 +174,39 @@ public class PairwiseSubMapperUtils {
         }
 
         return pairwiseMappers;
+    }
+
+    /**
+     * Tries to re-create "sub" claim from the ID of given user assuming that client, which the token was issued for, uses the pairwise subject mapper. Method
+     * returns true if "sub" computed from the userId by the pairwise mapper of referenced client matches with the "sub" claim from the token
+     */
+    public static boolean isPairwiseSubjectMatching(KeycloakSession session, RealmModel realm, UserModel user, JsonWebToken token) {
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+        if (client == null || !client.isEnabled()) {
+            return false;
+        }
+
+        List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(ModelToRepresentation.toRepresentation(client, session));
+        Map.Entry<ProtocolMapperModel, AbstractPairwiseSubMapper> tuple = foundPairwiseMappers.stream()
+                .map(RepresentationToModel::toModel)
+                .map(mapperModel -> {
+                    ProtocolMapper mapper = (ProtocolMapper) session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
+                    if (!(mapper instanceof AbstractPairwiseSubMapper)) {
+                        return null;
+                    } else {
+                        return new AbstractMap.SimpleEntry<>(mapperModel, (AbstractPairwiseSubMapper) mapper);
+                    }
+                })
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        if (tuple == null) {
+            return false;
+        }
+
+        ProtocolMapperModel mapperModel = tuple.getKey();
+        AbstractPairwiseSubMapper mapper = tuple.getValue();
+        String sub = mapper.generateSub(mapperModel, client, user);
+        return token.getSubject().equals(sub);
     }
 }

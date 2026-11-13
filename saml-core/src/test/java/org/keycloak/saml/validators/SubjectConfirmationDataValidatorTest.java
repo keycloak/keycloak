@@ -32,13 +32,30 @@ public class SubjectConfirmationDataValidatorTest {
 
     @Test
     public void testNull() {
+        // a Bearer confirmation without any SubjectConfirmationData element must not validate
         DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
-        Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", null, destVal).build().isValid());
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", null, destVal).build().isValid());
+    }
+
+    @Test
+    public void testMinimalValidConfirmation() {
+        // NotOnOrAfter is the only mandatory attribute when the caller configures no recipient/inResponseTo to check
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().notOnOrAfter(1000).build();
+        DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
+        Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).build().isValid());
+    }
+
+    @Test
+    public void testMissingNotOnOrAfter() {
+        // NotOnOrAfter is mandatory for Bearer confirmation, even if other attributes are present
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().recipient("https://keycloak.org").build();
+        DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).build().isValid());
     }
 
     @Test
     public void testNotBefore() {
-        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().notBefore(1000).build();
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().notBefore(1000).notOnOrAfter(1_000_000).build();
         DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
         Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).clockSkewInMillis(2000).build().isValid());
         Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).clockSkewInMillis(0).build().isValid());
@@ -63,23 +80,50 @@ public class SubjectConfirmationDataValidatorTest {
 
     @Test
     public void testInResponseTo() {
-        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().inResponseTo("id-123").build();
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().inResponseTo("id-123").notOnOrAfter(1000).build();
         DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
         Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).inResponseTo("id-123").build().isValid());
         Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).inResponseTo("id-567").build().isValid());
+        // caller expects a specific request id but the assertion doesn't carry InResponseTo at all
         scd = new SubjectConfirmationDataTypeBuilder().recipient("https://keycloak.org").notOnOrAfter(1000).build();
-        Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).inResponseTo("id-123").build().isValid());
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).inResponseTo("id-123").build().isValid());
+        // caller has no expected request id (e.g. IdP-initiated flow), so the missing attribute is not an error
+        Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).build().isValid());
     }
 
     @Test
     public void testRecipient() {
-        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().recipient("https://keycloak.org").build();
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().recipient("https://keycloak.org").notOnOrAfter(1000).build();
         DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
         Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.org").build().isValid());
         Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.com", "https://keycloak.org").build().isValid());
         Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.com").build().isValid());
-        scd = new SubjectConfirmationDataTypeBuilder().inResponseTo("id-123").notOnOrAfter(1000).build();
-        Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.org").build().isValid());
+        // caller configured no allowed recipients at all, so the check cannot be performed and is skipped
+        Assert.assertTrue(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).build().isValid());
+    }
+
+    @Test
+    public void testMissingRecipientWithAllowedRecipientsConfigured() {
+        // caller expects the recipient to be checked but the assertion doesn't carry a Recipient at all
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().inResponseTo("id-123").notOnOrAfter(1000).build();
+        DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.org").build().isValid());
+    }
+
+    @Test
+    public void testBlankRecipientWithAllowedRecipientsConfigured() {
+        // caller expects the recipient to be checked but the assertion carries a blank Recipient
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().recipient("   ").notOnOrAfter(1000).build();
+        DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).allowedRecipient("https://keycloak.org").build().isValid());
+    }
+
+    @Test
+    public void testBlankInResponseToWhenExpected() {
+        // caller expects a specific request id but the assertion carries a blank InResponseTo
+        SubjectConfirmationDataType scd = new SubjectConfirmationDataTypeBuilder().inResponseTo("   ").notOnOrAfter(1000).build();
+        DestinationValidator destVal = DestinationValidator.forProtocolMap(null);
+        Assert.assertFalse(new SubjectConfirmationDataValidator.Builder("id", scd, destVal).inResponseTo("id-123").build().isValid());
     }
 
     private static class SubjectConfirmationDataTypeBuilder {

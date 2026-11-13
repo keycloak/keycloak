@@ -18,8 +18,12 @@ permissions:
   contents: read
 
 env:
+  # Keep in sync with the "Configure Maven for CI" step in .github/actions/java-setup, which this workflow cannot use.
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25 -Daether.connector.http.retryHandler.count=5 -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504"
   # Quarkus branch to build snapshots from. Update when quarkus-next should track a different release stream.
-  QUARKUS_BRANCH: 3.39
+  QUARKUS_BRANCH: main
+  # QOSDK branch to build from. Must track a branch compatible with the Quarkus version above.
+  QOSDK_BRANCH: next
 
 jobs:
   build-quarkus-snapshot:
@@ -45,15 +49,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: quarkiverse/quarkus-operator-sdk
-          ref: main
+          ref: ${{ env.QOSDK_BRANCH }}
           path: quarkus-operator-sdk
 
-      # JDK 17 to match how Quarkus and QOSDK build and publish their own snapshots
+      # Quarkus main requires JDK 21 or later to build its snapshots.
       - name: Setup Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Key for daily rotation of cache
         id: cache-key
@@ -66,7 +70,7 @@ jobs:
           path: |
             ~/.m2/repository/io/quarkus
             ~/.m2/repository/io/quarkiverse/operatorsdk
-          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ steps.cache-key.outputs.date }}
+          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ env.QOSDK_BRANCH }}-${{ steps.cache-key.outputs.date }}
           enableCrossOsArchive: true
 
       - name: Build Quarkus snapshot
@@ -81,9 +85,11 @@ jobs:
         if: steps.quarkus-cache.outputs.cache-hit != 'true'
         run: |
           cd quarkus-operator-sdk
+          ./mvnw -N -B versions:set-property \
+            -Dproperty=quarkus.version \
+            -DnewVersion=${{ steps.quarkus-version.outputs.version }}
           ./mvnw -B -e --no-transfer-progress \
-            clean install -DskipTests -DskipITs -DskipDocs \
-            -Dquarkus.version=${{ steps.quarkus-version.outputs.version }}
+            clean install -DskipTests -DskipITs -DskipDocs
 
       - name: Extract QOSDK version
         id: qosdk-version

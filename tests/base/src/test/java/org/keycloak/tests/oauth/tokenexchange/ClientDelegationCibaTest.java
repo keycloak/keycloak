@@ -282,7 +282,7 @@ public class ClientDelegationCibaTest {
     private String getServiceAccountUserId() {
         return realm.admin().clients().findByClientId(AGENT_CLIENT_ID).stream()
                 .findFirst()
-                .map(c -> realm.admin().clients().get(c.getId()).getServiceAccountUser().getId())
+                .map(c -> realm.admin().clients().get(c.getId()).toRepresentation().getServiceAccountUserId())
                 .orElseThrow(() -> new AssertionError("agent-app client not found"));
     }
 

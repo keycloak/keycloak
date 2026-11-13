@@ -77,6 +77,9 @@ public interface RolePermissionEvaluator {
      * If the role is a realm role, it returns {@code true} if {@link RealmPermissions#canViewRealm()} returns {@code true}.
      * <p/>
      * If the role is a client role, it returns {@code true} if {@link ClientPermissions#canView(ClientModel)} returns {@code true}.
+     * <p/>
+     * Or, for both kinds of roles, if {@link #canMapRole(RoleModel)} returns {@code true}, as an administrator that is
+     * allowed to map a role to users is also allowed to view it.
      */
     boolean canView(RoleModel role);
 
@@ -100,6 +103,12 @@ public interface RolePermissionEvaluator {
      * Throws ForbiddenException if {@link #canMapClientScope(RoleModel)} returns {@code false}.
      */
     void requireMapClientScope(RoleModel role);
+
+    /**
+     * Returns {@code true} if the role may be listed among the scope mappings of a client or a client scope, that is
+     * if {@link #canView(RoleModel)} or {@link #canMapClientScope(RoleModel)} returns {@code true}.
+     */
+    boolean canViewScopeMapping(RoleModel role);
 
     /**
      * Returns {@code true} if {@link RolePermissions#canManageDefault(RoleModel)} and {@link RolePermissions#checkAdminRoles(RoleModel)} returns {@code true}.

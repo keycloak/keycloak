@@ -67,6 +67,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OAuth2Constants.ACCESS_TOKEN_TYPE;
+import static org.keycloak.representations.IDToken.ACT;
 import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertActPresent;
 import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertMayActNotPresent;
 import static org.keycloak.tests.oauth.tokenexchange.DelegationAssertions.assertMayActPresent;
@@ -533,11 +534,11 @@ public class ClientDelegationTest {
     }
 
     private String getServiceAccountUserId() {
-        return agentApp.admin().getServiceAccountUser().getId();
+        return agentApp.admin().toRepresentation().getServiceAccountUserId();
     }
 
     private String getServiceAccountUserId(String clientUuid) {
-        return realm.admin().clients().get(clientUuid).getServiceAccountUser().getId();
+        return realm.admin().clients().get(clientUuid).toRepresentation().getServiceAccountUserId();
     }
 
     private String createClient(String clientId, String clientSecret) {
@@ -585,7 +586,11 @@ public class ClientDelegationTest {
         Assertions.assertTrue(introspectRes.isSuccess());
         try {
             TokenMetadataRepresentation rep = introspectRes.asTokenMetadata();
+            Assertions.assertTrue(rep.isActive());
             Assertions.assertEquals(USERNAME, rep.getUserName());
+            assertActPresent(rep, expectedActorId, AGENT_CLIENT_ID);
+            Assertions.assertEquals(teToken.getOtherClaims().get(ACT), rep.getOtherClaims().get(ACT),
+                    "Introspection should preserve the complete act claim");
         } catch (IOException e) {
             Assertions.fail(e);
         }

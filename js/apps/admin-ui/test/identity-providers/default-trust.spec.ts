@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
@@ -7,27 +8,19 @@ import { clickTableRowItem } from "../utils/table.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
 
+const realmName = `idp-default-trust-${uuid()}`;
 const alias = "default-trust";
-const addDefaultTrustProviderUrl = `${SERVER_URL}/admin/master/console/#/master/identity-providers/default-trust/add`;
+const addDefaultTrustProviderUrl = `${SERVER_URL}/admin/master/console/#/${realmName}/identity-providers/default-trust/add`;
 const jwksUrl = "https://localhost/realms/test/protocol/openid-connect/certs";
 const jwks = '{"keys":[]}';
 
 test.describe.serial("Default Trust identity provider test", () => {
+  test.beforeAll(() => adminClient.createRealm(realmName));
+
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
   test.beforeEach(async ({ page }) => {
-    try {
-      await adminClient.deleteIdentityProvider(alias);
-    } catch {
-      // The provider may not exist before the test starts.
-    }
-
-    await login(page);
-    await goToIdentityProviders(page);
-  });
-
-  test.afterEach(async ({}, testInfo) => {
-    if (testInfo.title.includes("create and edit")) {
-      await adminClient.deleteIdentityProvider(alias);
-    }
+    await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
   });
 
   test("should only show trust material settings", async ({ page }) => {

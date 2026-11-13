@@ -23,11 +23,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.Constants;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -300,6 +303,52 @@ public class StripSecretsUtilsTest {
     }
 
     @Test
+    public void stripCertificate() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPrivateKey("MIIJQgIBADANBgkq...");
+        rep.setPublicKey("MIIBIjANBgkq...");
+        rep.setCertificate("MIIEnDCCAoSgAwIB...");
+        rep.setKid("7Nv-DdLhRJ2mF4qK");
+        rep.setJwks("{\"keys\":[{\"kty\":\"RSA\",\"d\":\"secret\"}]}");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getPrivateKey());
+        assertEquals(ComponentRepresentation.SECRET_VALUE, rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
+        assertEquals("MIIEnDCCAoSgAwIB...", rep.getCertificate());
+        assertEquals("7Nv-DdLhRJ2mF4qK", rep.getKid());
+    }
+
+    @Test
+    public void stripCertificateNullFields() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPublicKey("MIIBIjANBgkq...");
+        rep.setCertificate("MIIEnDCCAoSgAwIB...");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertNull(rep.getPrivateKey());
+        assertNull(rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
+        assertEquals("MIIEnDCCAoSgAwIB...", rep.getCertificate());
+    }
+
+    @Test
+    public void stripCertificateVaultValues() {
+        CertificateRepresentation rep = new CertificateRepresentation();
+        rep.setPrivateKey("${vault.client-private-key}");
+        rep.setJwks("${vault.client-jwks}");
+        rep.setPublicKey("MIIBIjANBgkq...");
+
+        StripSecretsUtils.stripSecrets(null, rep);
+
+        assertEquals("${vault.client-private-key}", rep.getPrivateKey());
+        assertEquals("${vault.client-jwks}", rep.getJwks());
+        assertEquals("MIIBIjANBgkq...", rep.getPublicKey());
+    }
+
+    @Test
     public void stripAuthenticatorConfig() {
         AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
         rep.setId("configId");
@@ -362,6 +411,34 @@ public class StripSecretsUtilsTest {
         StripSecretsUtils.stripAuthenticatorConfig(Set.of("site.key"), rep);
 
         assertNull(rep.getConfig());
+    }
+
+    @Test
+    public void stripAuthenticatorConfigCommonPropertiesNotMasked() {
+        AuthenticatorConfigRepresentation rep = new AuthenticatorConfigRepresentation();
+        rep.setId("configId");
+        rep.setConfig(new HashMap<>(Map.of(
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", "raw-secret-value")));
+
+        Set<String> nonSecretNames = StripSecretsUtils.collectNonSecretAuthenticatorPropertyNames(Stream.of(
+                new ProviderConfigProperty("secret.key", "Secret", null, ProviderConfigProperty.PASSWORD, null, true)));
+
+        StripSecretsUtils.stripAuthenticatorConfig(nonSecretNames, rep);
+
+        assertEquals(Map.of(
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "otp",
+                Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE, "300",
+                "secret.key", ComponentRepresentation.SECRET_VALUE), rep.getConfig());
+    }
+
+    @Test
+    public void collectNonSecretAuthenticatorPropertyNamesSecretTakesPrecedence() {
+        Set<String> nonSecretNames = StripSecretsUtils.collectNonSecretAuthenticatorPropertyNames(Stream.of(
+                new ProviderConfigProperty(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE, "Reference", null, ProviderConfigProperty.PASSWORD, null, true)));
+
+        assertEquals(Set.of(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE), nonSecretNames);
     }
 
 }
