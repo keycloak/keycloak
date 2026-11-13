@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 
 import jakarta.persistence.EntityManagerFactory;
 
+import org.keycloak.config.DatabaseOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -39,12 +40,14 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
 
     private String unitName;
     private String dataSourceName;
+    private boolean dataSourceRequired = true;
+    private boolean schemaMultiTenancy;
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         // Skip an inactive datasource's persistence unit instead of failing to resolve its (deactivated) EntityManagerFactory.
         String dsName = getDsName();
-        if (!DataSourceUtil.isDefault(dsName)) { // default DS is always active
+        if (dataSourceRequired && !DataSourceUtil.isDefault(dsName)) { // default DS is always active
             var dsInstance = Arc.requireContainer().select(AgroalDataSource.class, new DataSource.DataSourceLiteral(dsName));
             if (dsInstance.isResolvable() && !dsInstance.getHandle().getBean().isActive()) {
                 if (!isExplicitlyDisabled(dsName)) {
@@ -53,6 +56,11 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
                 }
                 return;
             }
+        }
+        // A tenant schema stays set on pooled server connections that Keycloak reuses; only db-schema keeps Keycloak's own SQL unaffected.
+        if (schemaMultiTenancy && Configuration.getOptionalKcValue(DatabaseOptions.DB_SCHEMA).isEmpty()) {
+            logger.warnf("Persistence unit '%s' sets tenant schemas on connections shared with the server; set 'db-schema' to the server's"
+                    + " schema to keep them out of server queries.", unitName);
         }
         super.postInit(factory);
     }
@@ -91,8 +99,28 @@ public final class NamedJpaConnectionProviderFactory extends AbstractJpaConnecti
         this.unitName = unitName;
     }
 
+    public String getDataSourceName() {
+        return dataSourceName;
+    }
+
     public void setDataSourceName(String dataSourceName) {
         this.dataSourceName = dataSourceName;
+    }
+
+    public boolean isDataSourceRequired() {
+        return dataSourceRequired;
+    }
+
+    public void setDataSourceRequired(boolean dataSourceRequired) {
+        this.dataSourceRequired = dataSourceRequired;
+    }
+
+    public boolean isSchemaMultiTenancy() {
+        return schemaMultiTenancy;
+    }
+
+    public void setSchemaMultiTenancy(boolean schemaMultiTenancy) {
+        this.schemaMultiTenancy = schemaMultiTenancy;
     }
 
     @Override
