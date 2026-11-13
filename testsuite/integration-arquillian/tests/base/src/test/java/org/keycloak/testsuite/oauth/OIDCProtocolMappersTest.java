@@ -1033,6 +1033,32 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
 
+    // Two realm role mappers writing realm_access.roles must not duplicate the roles in the ID token
+    @Test
+    public void testRealmRoleMappersWithSameClaimNotDuplicated() throws Exception {
+        ProtocolMapperRepresentation realmMapper1 = ProtocolMapperUtil.createUserRealmRoleMappingMapper(null, "Realm roles mapper 1", "realm_access.roles", true, true, true);
+        ProtocolMapperRepresentation realmMapper2 = ProtocolMapperUtil.createUserRealmRoleMappingMapper(null, "Realm roles mapper 2", "realm_access.roles", true, true, true);
+
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm("test"), "test-app").getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper1, realmMapper2));
+
+        try {
+            AccessTokenResponse response = browserLogin("test-user@localhost", "password");
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+            Map<String, Object> realmAccess = (Map<String, Object>) idToken.getOtherClaims().get("realm_access");
+            assertRolesString((List<String>) realmAccess.get("roles"), "user", "offline_access");
+        } finally {
+            for (String name : Arrays.asList("Realm roles mapper 1", "Realm roles mapper 2")) {
+                ProtocolMapperRepresentation mapper = ProtocolMapperUtil.getMapperByNameAndProtocol(protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, name);
+                if (mapper != null) {
+                    protocolMappers.delete(mapper.getId());
+                }
+            }
+        }
+    }
+
+
     @Test
 
     public void testUserGroupRoleToAttributeMappers() throws Exception {
