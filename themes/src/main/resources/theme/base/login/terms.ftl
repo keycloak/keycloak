@@ -8,7 +8,7 @@
         ${msg("termsTitle")}
     <#elseif section = "form">
     <form class="${properties.kcFormClass!}" action="${url.loginAction}" method="POST">
-        <div id="kc-terms-text">
+        <div id="kc-terms-text" class="${properties.kcTermsTextClass!}">
             ${kcSanitize(msg("termsText"))?no_esc}
         </div>
         <@buttons.actionGroup horizontal=true>
@@ -16,6 +16,5 @@
             <@buttons.button name="cancel" id="kc-decline" label="doDecline" type="secondary"/>
         </@buttons.actionGroup>
     </form>
-    <div class="clearfix"></div>
     </#if>
 </@layout.registrationLayout>

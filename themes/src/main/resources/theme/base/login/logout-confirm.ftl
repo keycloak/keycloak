@@ -17,7 +17,7 @@
                 <#if logoutConfirm.skipLink>
                 <#else>
                     <#if (client.baseUrl)?has_content>
-                        <p class="${properties.kcMarginTopClass!}"><a href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+                        <p><@buttons.buttonLink id="backToApplication" href=client.baseUrl label="backToApplication"/></p>
                     </#if>
                 </#if>
             </div>

@@ -37,7 +37,8 @@
 .login-pf body {
     background: var(--keycloak-bg-logo-url) no-repeat center center fixed;
     background-size: cover;
-    height: 100%;
+    min-height: 100%;
+    height: auto;
 }
 
 div.kc-logo-text {
@@ -144,6 +145,8 @@ hr {
 #kc-social-providers .pf-v6-c-button.pf-m-tertiary {
     --pf-v6-c-button--m-tertiary--BorderColor: var(--pf-t--global--border--color--default);
     --pf-v6-c-button--m-tertiary--hover--BorderColor: var(--pf-t--global--border--color--hover);
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 #kc-social-providers ul > li:last-child {
@@ -197,6 +200,7 @@ p.instruction {
 }
 
 p.instruction:last-child,
+p.instruction:has(+ .pf-v6-c-login__main-footer),
 .pf-v6-c-form p.instruction {
     margin-bottom: 0;
 }
@@ -205,3 +209,8 @@ p.instruction:last-child,
   margin-bottom: var(--pf-t--global--spacer--md);
 }
 
+.pf-v6-c-form__actions .pf-v6-c-button {
+    white-space: normal;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}

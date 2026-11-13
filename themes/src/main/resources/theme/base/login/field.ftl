@@ -1,5 +1,5 @@
 <#-- Nest a custom control in <@field.group name="field-id" label=msg("labelKey")> for its label and errors. -->
-<#macro group name label error="" required=false errorId="input-error-${name}">
+<#macro group name label error="" required=false errorId="input-error-${name}" renderError=true>
 
 <div class="${properties.kcFormGroupClass!}">
     <div class="${properties.kcFormGroupLabelClass!}">
@@ -16,7 +16,7 @@
     <div class="${properties.kcFormGroupControlClass!}">
         <#nested>
 
-        <@errorMessage name=name error=error errorId=errorId/>
+        <#if renderError><@errorMessage name=name error=error errorId=errorId/></#if>
     </div>
 </div>
 
@@ -67,7 +67,7 @@
 <#-- Use <@field.password name="password" label=msg("password")>; nest optional helper text or controls. -->
 <#macro password name label value="" required=false forgotPassword=false fieldName=name error=messagesPerField.get(fieldName) autocomplete="off" autofocus=false>
   <#local helperItems><#compress><#nested></#compress></#local>
-  <@group name=name label=label error=error required=required>
+  <@group name=name label=label error=error required=required renderError=false>
     <div class="${properties.kcInputGroup!}">
       <div class="${properties.kcInputGroupItemClass!} ${properties.kcFill!}">
         <span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
@@ -88,6 +88,7 @@
         </button>
       </div>
     </div>
+    <@errorMessage name=name error=error/>
     <#if helperItems?has_content || forgotPassword>
     <div class="${properties.kcFormHelperTextClass!}" aria-live="polite">
         <div class="${properties.kcInputHelperTextClass!}">
@@ -114,51 +115,49 @@
 <#-- Use <@field.clipboard name="code" label=msg("labelKey") value=code/> for copy and expand controls. -->
 <#macro clipboard name label ariaLabel=label value="" readonly=true>
   <@group name=name label=label>
-    <div class="${properties.kcCodeClipboardCopyClass!}" id="kc-${name}-clipboard">
+    <div class="${properties.kcCodeClipboardCopyClass!} <#if readonly>${properties.kcFormReadOnlyClass!}</#if>" id="kc-${name}-clipboard">
       <div class="${properties.kcCodeClipboardCopyGroupClass!}">
-        <div class="${properties.kcInputGroup!}">
-          <div class="${properties.kcInputGroupItemClass!}">
-            <button 
-              class="${properties.kcFormPasswordVisibilityButtonClass!}" 
-              type="button" 
-              aria-label="${msg("code-clipboard-label")}"
-              aria-expanded="false"
-              aria-controls="kc-${name}-content"
-              data-icon-expanded-class="${properties.kcAngleDownIconClass!}"
-              data-icon-collapsed-class="${properties.kcAngleRightIconClass!}"
-              data-expanded-class="${properties.kcExpandedClass!}"
-              id="kc-${name}-toggle"
-            >
-              <i id="kc-${name}-toggle-icon" class="${properties.kcAngleRightIconClass!}" aria-hidden="true"></i>
-            </button>
-          </div>
-          <div class="${properties.kcInputGroupItemClass!} ${properties.kcFill!}">
-            <span class="${properties.kcInputClass!} <#if readonly>${properties.kcFormReadOnlyClass!}</#if>">
-              <input
-                id="${name}"
-                name="${name}"
-                value="${value}"
-                type="text"
-                <#if readonly>readonly</#if>
-                aria-label="${ariaLabel}"
-              />
-            </span>
-          </div>
-          <div class="${properties.kcInputGroupItemClass!}">
-            <button
-              class="${properties.kcFormPasswordVisibilityButtonClass!}"
-              type="button"
-              aria-label="${msg("code-copy-label")}"
-              data-icon-success="${properties.kcCheckIconClass!}"
-              data-icon-failure="${properties.kcInputErrorIconClass!}"
-              data-success-label="${msg("code-copy-success")}"
-              data-failure-label="${msg("code-copy-failure")}"
-              id="kc-${name}-copy-button"
-            >
+        <button
+          class="${properties.kcFormPasswordVisibilityButtonClass!}"
+          type="button"
+          aria-label="${msg("code-clipboard-label")}"
+          aria-expanded="false"
+          aria-controls="kc-${name}-content"
+          data-icon-expanded-class="${properties.kcCodeClipboardCopyExpandedIconClass!properties.kcAngleDownIconClass!}"
+          data-icon-collapsed-class="${properties.kcCodeClipboardCopyCollapsedIconClass!properties.kcAngleRightIconClass!}"
+          data-expanded-class="${properties.kcExpandedClass!}"
+          id="kc-${name}-toggle"
+        >
+          <#if properties.kcButtonIconClass?has_content><span class="${properties.kcButtonIconClass}"></#if>
+            <#if properties.kcCodeClipboardCopyToggleIconClass?has_content><span class="${properties.kcCodeClipboardCopyToggleIconClass}"></#if>
+              <i id="kc-${name}-toggle-icon" class="${properties.kcCodeClipboardCopyCollapsedIconClass!properties.kcAngleRightIconClass!}" aria-hidden="true"></i>
+            <#if properties.kcCodeClipboardCopyToggleIconClass?has_content></span></#if>
+          <#if properties.kcButtonIconClass?has_content></span></#if>
+        </button>
+        <span class="${properties.kcInputClass!} <#if readonly>${properties.kcFormReadOnlyClass!}</#if>">
+          <input
+            id="${name}"
+            name="${name}"
+            value="${value}"
+            type="text"
+            <#if readonly>readonly</#if>
+            aria-label="${ariaLabel}"
+          />
+        </span>
+        <button
+          class="${properties.kcFormPasswordVisibilityButtonClass!}"
+          type="button"
+          aria-label="${msg("code-copy-label")}"
+          data-icon-success="${properties.kcCheckIconClass!}"
+          data-icon-failure="${properties.kcInputErrorIconClass!}"
+          data-success-label="${msg("code-copy-success")}"
+          data-failure-label="${msg("code-copy-failure")}"
+          id="kc-${name}-copy-button"
+        >
+          <#if properties.kcButtonIconClass?has_content><span class="${properties.kcButtonIconClass}"></#if>
               <i id="kc-${name}-copy-icon" class="${properties.kcCopyIconClass!}" aria-hidden="true"></i>
-            </button>
-          </div>
-        </div>
+          <#if properties.kcButtonIconClass?has_content></span></#if>
+        </button>
       </div>
       <div class="${properties.kcCodeClipboardCopyContentClass!}" id="kc-${name}-content" hidden>
         <pre><code aria-label="${ariaLabel}">${value}</code></pre>

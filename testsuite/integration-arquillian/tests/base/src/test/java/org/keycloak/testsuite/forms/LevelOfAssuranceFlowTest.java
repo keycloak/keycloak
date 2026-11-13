@@ -31,7 +31,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.AuthenticationFlow;
-import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
@@ -820,7 +819,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         loginTotpPage.assertCurrent();
         loginTotpPage.assertOtpCredentialSelectorAvailability(true);
         List<String> availableOtps = loginTotpPage.getAvailableOtpCredentials();
-        Assert.assertNames(availableOtps, OTPFormAuthenticator.UNNAMED, "totp2-label");
+        Assert.assertNames(availableOtps, "Default", "totp2-label");
 
         // Removing 2nd OTP by account REST API with regular token. Should fail as acr=2 is required
         String otpCredentialId;

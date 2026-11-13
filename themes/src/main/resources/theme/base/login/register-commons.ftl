@@ -5,7 +5,7 @@
         <div class="${properties.kcFormGroupClass!}">
             <div class="${properties.kcInputWrapperClass!}">
                 ${msg("termsTitle")}
-                <div id="kc-registration-terms-text">
+                <div id="kc-registration-terms-text" class="${properties.kcTermsTextClass!}">
                     ${kcSanitize(msg("termsText"))?no_esc}
                 </div>
             </div>
