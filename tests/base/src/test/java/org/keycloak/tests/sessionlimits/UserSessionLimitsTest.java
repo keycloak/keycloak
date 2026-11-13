@@ -199,7 +199,7 @@ public class UserSessionLimitsTest {
         EventAssertion.assertError(errorEvent)
                 .type(EventType.LOGIN_ERROR)
                 .userId(null)
-                .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                .error(Errors.ACCESS_DENIED);
         errorPage.assertCurrent();
         assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
     }
@@ -280,7 +280,7 @@ public class UserSessionLimitsTest {
             EventAssertion.assertError(errorEvent)
                     .type(EventType.LOGIN_ERROR)
                     .userId(null)
-                    .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                    .error(Errors.ACCESS_DENIED);
             errorPage.assertCurrent();
             assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
         } finally {
@@ -560,7 +560,7 @@ public class UserSessionLimitsTest {
             EventAssertion.assertError(event)
                     .type(EventType.RESET_PASSWORD_ERROR)
                     .clientId("account")
-                    .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                    .error(Errors.ACCESS_DENIED);
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
         }
@@ -663,7 +663,7 @@ public class UserSessionLimitsTest {
             EventAssertion.assertError(errorEvent)
                     .type(EventType.RESET_PASSWORD_ERROR)
                     .clientId("account")
-                    .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                    .error(Errors.ACCESS_DENIED);
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
@@ -777,7 +777,7 @@ public class UserSessionLimitsTest {
             EventRepresentation errorEvent = events.poll();
             EventAssertion.assertError(errorEvent)
                     .type(EventType.LOGIN_ERROR)
-                    .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                    .error(Errors.ACCESS_DENIED);
 
             errorPage.assertCurrent();
             assertEquals("There are too many sessions", errorPage.getError());
