@@ -1664,4 +1664,54 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
     }
+
+    /**
+     * The admin console "None" option stores {@code request.object.signature.alg=none}.
+     * A JWE whose decrypted content is raw JSON must be accepted for that value.
+     */
+    @Test
+    public void testJweWithUnsignedJsonAcceptedWhenSignatureAlgorithmNone() throws Exception {
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        try {
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(Algorithm.none);
+            clientResource.update(clientRep);
+
+            TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject =
+                    new TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject();
+            requestObject.id(KeycloakModelUtils.generateId());
+            requestObject.iat(Long.valueOf(Time.currentTime()));
+            requestObject.exp(requestObject.getIat() + Long.valueOf(300));
+            requestObject.nbf(requestObject.getIat());
+            requestObject.setClientId(oauth.getClientId());
+            requestObject.setResponseType("code");
+            requestObject.setRedirectUriParam(oauth.getRedirectUri());
+            requestObject.setScope("openid");
+            requestObject.setNonce(KeycloakModelUtils.generateId());
+
+            byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
+
+            try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+                OIDCConfigurationRepresentation representation = SimpleHttpDefault
+                        .doGet(getAuthServerRoot().toString() + "realms/" + oauth.getRealm() + "/.well-known/openid-configuration",
+                                httpClient).asJson(OIDCConfigurationRepresentation.class);
+                JSONWebKeySet jsonWebKeySet = SimpleHttpDefault.doGet(representation.getJwksUri(), httpClient).asJson(JSONWebKeySet.class);
+                Map<String, PublicKey> keysForUse = JWKSUtils.getKeysForUse(jsonWebKeySet, JWK.Use.ENCRYPTION);
+
+                KeysMetadataRepresentation.KeyMetadataRepresentation encKey = KeyUtils
+                        .findActiveEncryptingKey(managedRealm.admin(), Algorithm.RSA_OAEP);
+                PublicKey encryptionKey = keysForUse.get(encKey.getKid());
+
+                JWE jwe = new JWE().header(new JWEHeader(RSA_OAEP, JWEConstants.A256GCM, null)).content(contentBytes);
+                jwe.getKeyStorage().setEncryptionKey(encryptionKey);
+
+                oauth.loginForm().request(jwe.encodeJwe()).doLogin("test-user@localhost", "password");
+                EventAssertion.expectLoginSuccess(events.poll());
+            }
+        } finally {
+            clientRep = clientResource.toRepresentation();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(null);
+            clientResource.update(clientRep);
+        }
+    }
 }
