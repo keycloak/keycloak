@@ -124,8 +124,10 @@ public class FilterUtils {
     }
 
     /**
-     * Unescapes a JSON string value (without surrounding quotes) per RFC 8259.
-     * Unicode escape sequences are handled by the ANTLR lexer.
+     * Unescapes a JSON string value (without surrounding quotes) per RFC 8259,
+     * including {@code \\uXXXX} Unicode escape sequences. The ANTLR lexer only
+     * recognizes these escapes; it does not decode them, so {@code getText()}
+     * returns them verbatim and they must be decoded here like every other escape.
      */
     public static String unescapeJsonString(String s) {
         if (s.indexOf('\\') == -1) {
@@ -145,6 +147,22 @@ public class FilterUtils {
                     case 'n'  -> sb.append('\n');
                     case 'r'  -> sb.append('\r');
                     case 't'  -> sb.append('\t');
+                    case 'u'  -> {
+                        int cp = -1;
+                        if (i + 4 < s.length()) {
+                            try {
+                                cp = Integer.parseInt(s, i + 1, i + 5, 16);
+                            } catch (NumberFormatException ignored) {
+                                // not four hex digits - leave the escape literal
+                            }
+                        }
+                        if (cp >= 0) {
+                            sb.append((char) cp);
+                            i += 4;
+                        } else {
+                            sb.append('\\').append(next);
+                        }
+                    }
                     default   -> sb.append('\\').append(next);
                 }
             } else {
