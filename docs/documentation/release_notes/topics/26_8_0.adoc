@@ -162,6 +162,10 @@ ifeval::[{project_community}==true]
 Thanks to https://github.com/bilkoua[bilkoua] for this contribution.
 endif::[]
 
+== Client Policies for Admin REST API role mappings
+
+Client Policies are now evaluated before adding or removing realm-role and client-role mappings on users and groups through the Admin REST API. Custom executors can inspect and reject these operations before mappings change.
+
 == Protocol mapper allow-list for Admin REST API
 // https://github.com/keycloak/keycloak/issues/50131
 

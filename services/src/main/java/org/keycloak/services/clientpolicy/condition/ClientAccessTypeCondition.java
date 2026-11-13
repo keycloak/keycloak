@@ -76,6 +76,7 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
             return ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
+            if (client == null) return ClientPolicyVote.ABSTAIN;
             if (isClientAccessTypeMatched(client)) return ClientPolicyVote.YES;
             // In case that there is an attempt to update the client to the target access type, condition should be also evaluated to success
             if (context instanceof ClientCRUDContext && isProposedClientAccessTypeMatched((ClientCRUDContext) context)) return ClientPolicyVote.YES;

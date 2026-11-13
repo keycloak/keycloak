@@ -79,6 +79,7 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<
             return ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext) {
             ClientModel client = ((ClientModelContext) context).getClient();
+            if (client == null) return ClientPolicyVote.ABSTAIN;
             if (isRolesMatched(client)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         } else {
