@@ -279,6 +279,11 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         // Validate group IDs are preserved
         validateGroupIds(topLevelGroups, expectedGroupIds);
 
+        // Validate descriptions of top-level groups are preserved
+        for (GroupRepresentation group : topLevelGroups) {
+            assertEquals(groupDescription(group.getName()), group.getDescription(), "Group description mismatch for group: " + group.getName());
+        }
+
         // Validate subgroups
         validateSubGroups(organization, topLevelGroups, expectedGroupIds);
 
@@ -487,6 +492,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private String createTopLevelGroup(OrganizationResource organization, String name) {
         GroupRepresentation group = new GroupRepresentation();
         group.setName(name);
+        group.setDescription(groupDescription(name));
         try (Response response = organization.groups().addTopLevelGroup(group)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             return ApiUtil.getCreatedId(response);
@@ -500,5 +506,9 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             return response.readEntity(GroupRepresentation.class).getId();
         }
+    }
+
+    private static String groupDescription(String groupName) {
+        return "Description of " + groupName;
     }
 }
