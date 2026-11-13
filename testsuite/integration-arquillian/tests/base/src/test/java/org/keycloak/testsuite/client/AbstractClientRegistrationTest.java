@@ -21,7 +21,10 @@ import java.util.LinkedList;
 import java.util.List;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.CreatedResponseUtil;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -105,9 +108,16 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
     }
 
     public ClientRepresentation createClient(ClientRepresentation client) throws ClientRegistrationException {
-        authManageClients();
-        ClientRepresentation response = reg.create(client);
-        reg.auth(null);
+        String id;
+        try (Response response = adminClient.realm(REALM_NAME).clients().create(client)) {
+            id = CreatedResponseUtil.getCreatedId(response);
+        }
+        ClientResource resource = adminClient.realm(REALM_NAME).clients().get(id);
+        ClientRepresentation response = resource.toRepresentation();
+        response.setRegistrationAccessToken(resource.regenerateRegistrationAccessToken().getRegistrationAccessToken());
+        if (client.getSecret() != null) {
+            response.setSecret(client.getSecret());
+        }
         return response;
     }
 

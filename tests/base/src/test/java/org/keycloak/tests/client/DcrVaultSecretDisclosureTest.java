@@ -6,8 +6,6 @@ import java.util.Map;
 
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.client.registration.HttpErrorException;
-import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -21,14 +19,12 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest(config = DcrVaultSecretDisclosureTest.ServerConfig.class)
 public class DcrVaultSecretDisclosureTest extends AbstractClientRegistrationTest {
@@ -46,19 +42,6 @@ public class DcrVaultSecretDisclosureTest extends AbstractClientRegistrationTest
     @BeforeEach
     public void refreshRegistrationAccessToken() {
         clientWithRat = client.admin().regenerateRegistrationAccessToken();
-    }
-
-    @Test
-    public void testDcrUpdateRejectsVaultExpression() {
-        reg.auth(Auth.token(clientWithRat));
-
-        ClientRepresentation updateRep = new ClientRepresentation();
-        updateRep.setClientId(client.getClientId());
-        updateRep.setSecret(VAULT_EXPRESSION);
-
-        ClientRegistrationException ex = assertThrows(ClientRegistrationException.class, () -> reg.update(updateRep));
-        assertInstanceOf(HttpErrorException.class, ex.getCause());
-        assertEquals(400, ((HttpErrorException) ex.getCause()).getStatusLine().getStatusCode());
     }
 
     @ParameterizedTest
@@ -85,19 +68,6 @@ public class DcrVaultSecretDisclosureTest extends AbstractClientRegistrationTest
         } else {
             assertEquals(VAULT_EXPRESSION, config.getCredentials().get("secret"));
         }
-    }
-
-    @Test
-    public void testDcrUpdateRejectsVaultExpressionInRotatedSecretAttribute() {
-        reg.auth(Auth.token(clientWithRat));
-
-        ClientRepresentation updateRep = new ClientRepresentation();
-        updateRep.setClientId(client.getClientId());
-        updateRep.setAttributes(Map.of(ClientSecretConstants.CLIENT_ROTATED_SECRET, VAULT_EXPRESSION));
-
-        ClientRegistrationException ex = assertThrows(ClientRegistrationException.class, () -> reg.update(updateRep));
-        assertInstanceOf(HttpErrorException.class, ex.getCause());
-        assertEquals(400, ((HttpErrorException) ex.getCause()).getStatusLine().getStatusCode());
     }
 
     public static class ServerConfig implements KeycloakServerConfig {

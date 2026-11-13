@@ -22,7 +22,7 @@ import java.util.Arrays;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -30,12 +30,12 @@ import org.keycloak.representations.idm.ClientRepresentation;
 public class ClientRegistrationTester {
 
     public static void main(String[] args) throws ClientRegistrationException {
-        ClientRepresentation rep = createRep1();
+        OIDCClientRepresentation rep = createRep1();
 
         ClientRegistration reg = ClientRegistration.create().url("http://localhost:8081/auth", "test").build();
 
         try {
-            ClientRepresentation createdRep = reg.create(rep);
+            OIDCClientRepresentation createdRep = reg.oidc().create(rep);
             System.out.println("Created client: " + createdRep.getClientId());
         } catch (ClientRegistrationException ex) {
             HttpErrorException httpEx = (HttpErrorException) ex.getCause();
@@ -44,10 +44,9 @@ public class ClientRegistrationTester {
     }
 
 
-    private static ClientRepresentation createRep1() {
-        ClientRepresentation rep = new ClientRepresentation();
+    private static OIDCClientRepresentation createRep1() {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setRedirectUris(Arrays.asList("http://localhost:8080/app"));
-        rep.setDefaultRoles(new String[] { "foo-role" });
         return rep;
     }
 

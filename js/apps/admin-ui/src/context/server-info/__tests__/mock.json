@@ -497,7 +497,6 @@
     "client-registration": {
       "internal": true,
       "providers": {
-        "default": { "order": 0 },
         "install": { "order": 0 },
         "saml2-entity-descriptor": { "order": 0 },
         "openid-connect": { "order": 0 }

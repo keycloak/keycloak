@@ -422,6 +422,26 @@ This prevents an attacker who controls a brokered account with an unverified ema
 
 If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.
 
+=== Default client registration provider removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The `default` client registration provider, deprecated in {project_name} 26.8, has been removed.
+Requests to `/realms/<realm>/clients-registrations/default` and its client resources now return HTTP 404.
+The outer `ClientRegistration` methods `create(ClientRepresentation)`, `get(String)`, `update(ClientRepresentation)`, `delete(ClientRepresentation)` and `delete(String)` have also been removed from the Java client registration API.
+Use `reg.oidc()` with `OIDCClientRepresentation` for OIDC registration, or the Admin REST API for {project_name} Client Representations.
+The Admin REST API requires an administrator access token with appropriate client-management permissions and does not accept initial access tokens or registration access tokens.
+
+The `kcreg` create, get, update, delete and attrs commands now use OIDC metadata by default.
+The `-e default` option is no longer accepted.
+Replace fields such as `clientId`, `redirectUris` and `baseUrl` with the supported OIDC fields `client_name`, `redirect_uris` and `client_uri`, where appropriate.
+`client_name` is a display name; the server generates `client_id`, which must be used for subsequent get, update and delete commands.
+Use `kcreg create -i` to print that identifier, or retrieve it from the `-o` JSON output.
+Use the Admin REST API or `kcadm` for internal representation settings without an OIDC equivalent.
+
+Client registration policies that still apply to OIDC remain available, including protocol-mapper filtering after client creation.
+The default-roles policy is retained for existing realm components and custom registration providers; OIDC metadata does not expose `defaultRoles`.
+The `install` and `saml2-entity-descriptor` providers are not removed by this change.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

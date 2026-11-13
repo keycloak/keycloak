@@ -679,9 +679,6 @@
      "client-registration":{
         "internal":true,
         "providers":{
-           "default":{
-              "order":0
-           },
            "install":{
               "order":0
            },

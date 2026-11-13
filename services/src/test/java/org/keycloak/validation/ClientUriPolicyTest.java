@@ -42,7 +42,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 import org.keycloak.services.clientpolicy.executor.SamlSecureClientUrisExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisPatternExecutor;
-import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
+import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
@@ -160,14 +160,14 @@ public class ClientUriPolicyTest {
     @Test
     public void trustedHostAcceptsTrustedUri() {
         ClientRepresentation client = client(TRUSTED);
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
         trustedHostPolicy().beforeRegister(context);
         trustedHostPolicy().beforeUpdate(context, null);
     }
 
     @Test
     public void trustedHostsAppliesItsFieldScopeOnCreateAndUpdate() {
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client(UNTRUSTED), null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client(UNTRUSTED), null, null);
         assertTrustedHostViolation(() -> trustedHostPolicy().beforeRegister(context));
         assertTrustedHostViolation(() -> trustedHostPolicy().beforeUpdate(context, null));
     }
@@ -217,7 +217,7 @@ public class ClientUriPolicyTest {
         ClientRepresentation proposed = client(TRUSTED);
         proposed.setProtocol(null);
         ClientModel target = existingClient(protocol);
-        DefaultClientRegistrationContext registration = new DefaultClientRegistrationContext(null, proposed, null);
+        OIDCClientRegistrationContext registration = new OIDCClientRegistrationContext(null, proposed, null, null);
         trustedHostPolicy().beforeUpdate(registration, target);
         for (ClientCRUDContext context : List.of(new AdminClientUpdateContext(proposed, target, null),
                 new DynamicClientUpdateContext(registration, target, null, null))) {
@@ -232,7 +232,7 @@ public class ClientUriPolicyTest {
         ClientRepresentation proposed = client(UNTRUSTED);
         proposed.setProtocol(null);
         ClientModel target = existingClient(protocol);
-        DefaultClientRegistrationContext registration = new DefaultClientRegistrationContext(null, proposed, null);
+        OIDCClientRegistrationContext registration = new OIDCClientRegistrationContext(null, proposed, null, null);
         assertTrustedHostViolation(() -> trustedHostPolicy().beforeUpdate(registration, target));
         for (ClientCRUDContext context : List.of(new AdminClientUpdateContext(proposed, target, null),
                 new DynamicClientUpdateContext(registration, target, null, null))) {
@@ -248,7 +248,7 @@ public class ClientUriPolicyTest {
     public void protocolChangesPreservePolicyScope() {
         ClientRepresentation proposed = client(UNTRUSTED);
         ClientModel target = existingClient(SamlProtocol.LOGIN_PROTOCOL.equals(protocol) ? "openid-connect" : SamlProtocol.LOGIN_PROTOCOL);
-        DefaultClientRegistrationContext registration = new DefaultClientRegistrationContext(null, proposed, null);
+        OIDCClientRegistrationContext registration = new OIDCClientRegistrationContext(null, proposed, null, null);
         assertTrustedHostViolation(() -> trustedHostPolicy().beforeUpdate(registration, target));
         for (ClientCRUDContext context : List.of(new AdminClientUpdateContext(proposed, target, null),
                 new DynamicClientUpdateContext(registration, target, null, null))) {
@@ -267,7 +267,7 @@ public class ClientUriPolicyTest {
             ClientRepresentation proposed = client(UNTRUSTED);
             proposed.setProtocol(proposedProtocol);
             ClientModel target = existingClient(otherProtocol);
-            DefaultClientRegistrationContext registration = new DefaultClientRegistrationContext(null, proposed, null);
+            OIDCClientRegistrationContext registration = new OIDCClientRegistrationContext(null, proposed, null, null);
             assertTrustedHostViolation(() -> trustedHostPolicy().beforeRegister(registration));
             assertTrustedHostViolation(() -> trustedHostPolicy().beforeUpdate(registration, target));
             for (ClientCRUDContext context : List.of(new AdminClientRegisterContext(proposed, null),

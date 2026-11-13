@@ -33,7 +33,7 @@ import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisPatternExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisPatternExecutorFactory;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
-import org.keycloak.services.clientregistration.DefaultClientRegistrationContext;
+import org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
@@ -62,7 +62,7 @@ public class ClientUriFieldTest {
         assertEquals(List.of("+", "https://untrusted.example/logout", "https://localhost/logout"),
                 ClientUriField.POST_LOGOUT_REDIRECT_URIS.getValues(client));
         assertThrows(ClientRegistrationPolicyException.class,
-                () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new DefaultClientRegistrationContext(null, client, null)));
+                () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new OIDCClientRegistrationContext(null, client, null, null)));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ClientUriFieldTest {
         client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##-"));
         assertEquals(List.of("+", "-"), ClientUriField.POST_LOGOUT_REDIRECT_URIS.getValues(client));
         assertEquals(List.of("+"), ClientUriField.WEB_ORIGINS.getValues(client));
-        ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new DefaultClientRegistrationContext(null, client, null));
+        ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new OIDCClientRegistrationContext(null, client, null, null));
         new SecureClientUrisExecutor(null).executeOnEvent(new AdminClientRegisterContext(client, null));
     }
 
@@ -82,7 +82,7 @@ public class ClientUriFieldTest {
         ClientRepresentation client = new ClientRepresentation();
         client.setWebOrigins(List.of("*", "null", "localhost:8080"));
         client.setAttributes(Map.of(OIDCConfigAttributes.LOGO_URI, "data:image/png;base64,aW1hZ2U="));
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
         ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context);
         ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null);
     }
@@ -92,7 +92,7 @@ public class ClientUriFieldTest {
         for (String origin : List.of(Constants.AUTH_ADMIN_URL_PROP, Constants.AUTH_BASE_URL_PROP, "file://", "FILE://")) {
             ClientRepresentation client = new ClientRepresentation();
             client.setWebOrigins(List.of(origin));
-            DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+            OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
             assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context));
             assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null));
             SecureClientUrisExecutor secureUris = new SecureClientUrisExecutor(null);
@@ -110,7 +110,7 @@ public class ClientUriFieldTest {
         client.setRedirectUris(List.of("https://localhost/callback"));
         for (String marker : List.of("+", "-")) {
             client.setAttributes(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, marker + "##https://untrusted.example/logout"));
-            DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+            OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
             assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context));
             assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null));
         }
@@ -120,7 +120,7 @@ public class ClientUriFieldTest {
     public void trustedHostsDataLogoExceptionDoesNotApplyToEndpoints() {
         ClientRepresentation client = new ClientRepresentation();
         client.setAttributes(Map.of(OIDCConfigAttributes.JWKS_URL, "data:application/json;base64,e30="));
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
         assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context));
         assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null));
     }
@@ -133,7 +133,7 @@ public class ClientUriFieldTest {
         TrustedHostClientRegistrationPolicy policy = new TrustedHostClientRegistrationPolicy(null, component);
         ClientRepresentation client = new ClientRepresentation();
         client.setWebOrigins(List.of("127.0.0.1:8080", "[::1]:8080"));
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
         policy.beforeRegister(context);
         policy.beforeUpdate(context, null);
         client.setWebOrigins(List.of("127.0.0.2:8080"));
@@ -146,7 +146,7 @@ public class ClientUriFieldTest {
         ClientRepresentation client = new ClientRepresentation();
         client.setRootUrl("https://localhost");
         client.setAttributes(Map.of(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "/logout"));
-        ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new DefaultClientRegistrationContext(null, client, null));
+        ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new OIDCClientRegistrationContext(null, client, null, null));
     }
 
     @Test
@@ -156,13 +156,13 @@ public class ClientUriFieldTest {
             client.setRootUrl(root);
             for (String attribute : List.of(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OIDCConfigAttributes.LOGO_URI)) {
                 client.setAttributes(Map.of(attribute, "//untrusted.example/logout"));
-                DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+                OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
                 assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context));
                 assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null));
             }
             client.setAttributes(Map.of());
             client.setBaseUrl("//untrusted.example/logout");
-            DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+            OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
             assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context));
             assertThrows(ClientRegistrationPolicyException.class, () -> ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null));
         }
@@ -174,7 +174,7 @@ public class ClientUriFieldTest {
             ClientRepresentation client = new ClientRepresentation();
             client.setRootUrl(root);
             client.setAttributes(Map.of(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "//localhost/logout"));
-            ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new DefaultClientRegistrationContext(null, client, null));
+            ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new OIDCClientRegistrationContext(null, client, null, null));
         }
     }
 
@@ -183,7 +183,7 @@ public class ClientUriFieldTest {
         ClientRepresentation client = new ClientRepresentation();
         client.setAttributes(Map.of(OIDCConfigAttributes.REQUEST_URIS, "+"));
         assertThrows(ClientRegistrationPolicyException.class,
-                () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new DefaultClientRegistrationContext(null, client, null)));
+                () -> ClientUriPolicyTest.trustedHostPolicy().beforeRegister(new OIDCClientRegistrationContext(null, client, null, null)));
     }
 
     @Test
@@ -196,7 +196,7 @@ public class ClientUriFieldTest {
                 OIDCConfigAttributes.REQUEST_URIS, "//request/path",
                 OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "//backchannel/path",
                 OIDCConfigAttributes.JWKS_URL, "//keys/path"));
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
         ClientUriPolicyTest.trustedHostPolicy().beforeRegister(context);
         ClientUriPolicyTest.trustedHostPolicy().beforeUpdate(context, null);
     }
@@ -211,7 +211,7 @@ public class ClientUriFieldTest {
                 throw new ClientRegistrationPolicyException("Custom URI validation");
             }
         };
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, new ClientRepresentation(), null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, new ClientRepresentation(), null, null);
         assertEquals("Custom URI validation", assertThrows(ClientRegistrationPolicyException.class,
                 () -> policy.beforeUpdate(context, null)).getMessage());
     }
@@ -222,7 +222,7 @@ public class ClientUriFieldTest {
         component.getConfig().putSingle(TrustedHostClientRegistrationPolicyFactory.HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH, "false");
         ClientRepresentation client = new ClientRepresentation();
         client.setBaseUrl("https://custom.example/home");
-        DefaultClientRegistrationContext context = new DefaultClientRegistrationContext(null, client, null);
+        OIDCClientRegistrationContext context = new OIDCClientRegistrationContext(null, client, null, null);
         AtomicInteger invocations = new AtomicInteger();
         TrustedHostClientRegistrationPolicy policy = new TrustedHostClientRegistrationPolicy(null, component) {
             @Override

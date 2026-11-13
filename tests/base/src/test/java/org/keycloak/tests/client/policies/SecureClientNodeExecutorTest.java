@@ -22,13 +22,7 @@ import java.util.Map;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.client.registration.Auth;
-import org.keycloak.client.registration.ClientRegistration;
-import org.keycloak.client.registration.ClientRegistrationException;
-import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
-import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
@@ -298,95 +292,6 @@ public class SecureClientNodeExecutorTest extends AbstractClientPoliciesTest {
                 realm.admin().clients().get(confidentialClient.getId()).update(rep));
 
         Map<String, Integer> nodes = realm.admin().clients().get(confidentialClient.getId())
-                .toRepresentation().getRegisteredNodes();
-        Assertions.assertTrue(nodes == null || !nodes.containsKey(INVALID_HOST));
-    }
-
-    @Test
-    void dcrClient_withRegisteredNodes_validHostname_persisted() throws Exception {
-        setupPolicy(List.of(PATTERN_INTERNAL));
-
-        ClientInitialAccessPresentation token = realm.admin().clientInitialAccess()
-                .create(new ClientInitialAccessCreatePresentation(0, 10));
-
-        ClientRegistration reg = oauth.clientRegistration();
-        reg.auth(Auth.token(token));
-
-        ClientRepresentation rep = new ClientRepresentation();
-        rep.setClientId("dcr-node-valid");
-        rep.setSecret("secret");
-        rep.setPublicClient(false);
-        rep.setRegisteredNodes(Map.of(VALID_HOST, 100));
-
-        ClientRepresentation created = reg.create(rep);
-        Assertions.assertNotNull(created);
-        realm.cleanup().add(r -> r.clients().get(created.getId()).remove());
-
-        Map<String, Integer> nodes = realm.admin().clients().get(created.getId())
-                .toRepresentation().getRegisteredNodes();
-        Assertions.assertNotNull(nodes);
-        Assertions.assertTrue(nodes.containsKey(VALID_HOST));
-    }
-
-    @Test
-    void dcrClient_withRegisteredNodes_invalidHostname_rejected() throws Exception {
-        setupPolicy(List.of(PATTERN_INTERNAL));
-
-        ClientInitialAccessPresentation token = realm.admin().clientInitialAccess()
-                .create(new ClientInitialAccessCreatePresentation(0, 10));
-
-        ClientRegistration reg = oauth.clientRegistration();
-        reg.auth(Auth.token(token));
-
-        ClientRepresentation rep = new ClientRepresentation();
-        rep.setClientId("dcr-node-invalid");
-        rep.setSecret("secret");
-        rep.setPublicClient(false);
-        rep.setRegisteredNodes(Map.of(INVALID_HOST, 100));
-
-        ClientRegistrationException cre = Assertions.assertThrows(
-                ClientRegistrationException.class,
-                () -> reg.create(rep));
-        Assertions.assertTrue(cre.getCause() instanceof HttpErrorException);
-        Assertions.assertEquals(400, ((HttpErrorException) cre.getCause()).getStatusLine().getStatusCode());
-
-        // Verify client was not created
-        Assertions.assertNull(realm.admin().clients().findByClientId("dcr-node-invalid")
-                .stream().findFirst().orElse(null));
-    }
-
-    @Test
-    void dcrUpdateClient_withRegisteredNodes_invalidHostname_rejected() throws Exception {
-        setupPolicy(List.of(PATTERN_INTERNAL));
-
-        ClientInitialAccessPresentation token = realm.admin().clientInitialAccess()
-                .create(new ClientInitialAccessCreatePresentation(0, 10));
-
-        ClientRegistration reg = oauth.clientRegistration();
-        reg.auth(Auth.token(token));
-
-        // Create client with valid node first
-        ClientRepresentation rep = new ClientRepresentation();
-        rep.setClientId("dcr-node-update");
-        rep.setSecret("secret");
-        rep.setPublicClient(false);
-        rep.setRegisteredNodes(Map.of(VALID_HOST, 100));
-
-        ClientRepresentation created = reg.create(rep);
-        realm.cleanup().add(r -> r.clients().get(created.getId()).remove());
-
-        // Attempt update with invalid node using the registration access token
-        reg.auth(Auth.token(created.getRegistrationAccessToken()));
-        created.setRegisteredNodes(Map.of(INVALID_HOST, 100));
-
-        ClientRegistrationException cre = Assertions.assertThrows(
-                ClientRegistrationException.class,
-                () -> reg.update(created));
-        Assertions.assertTrue(cre.getCause() instanceof HttpErrorException);
-        Assertions.assertEquals(400, ((HttpErrorException) cre.getCause()).getStatusLine().getStatusCode());
-
-        // Verify rejected node was not persisted
-        Map<String, Integer> nodes = realm.admin().clients().get(created.getId())
                 .toRepresentation().getRegisteredNodes();
         Assertions.assertTrue(nodes == null || !nodes.containsKey(INVALID_HOST));
     }
