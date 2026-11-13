@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -40,6 +41,7 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.PreTokenRequestContext;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
 
@@ -369,15 +371,37 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 PreAuthorizationRequestContext preAuthorizationRequestContext = (PreAuthorizationRequestContext)context;
                 process(preAuthorizationRequestContext);
                 break;
+            case PRE_TOKEN_REQUEST:
+                PreTokenRequestContext preTokenRequestContext = (PreTokenRequestContext)context;
+                processTokenRequest(preTokenRequestContext);
+                break;
             default:
         }
     }
 
+    private void processTokenRequest(PreTokenRequestContext preTokenRequestContext) throws ClientPolicyException {
+        // Only the client credentials grant is handled at the token endpoint. Other grants (e.g. authorization code)
+        // were already preceded by an authorization request on which CIMD was enforced, so the client must not be
+        // re-fetched and re-validated here against token request specific rules.
+        if (!OAuth2Constants.CLIENT_CREDENTIALS.equals(preTokenRequestContext.getRequestParameters().getFirst(OAuth2Constants.GRANT_TYPE))) {
+            return;
+        }
+        processClientId(preTokenRequestContext.getClientId(), null, preTokenRequestContext.getRequestParameters().get(OAuth2Constants.RESOURCE));
+    }
+
     private void process(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
+        String resource = preAuthorizationRequestContext.getRequestParameters().getFirst(OAuth2Constants.RESOURCE);
+        processClientId(preAuthorizationRequestContext.getClientId(), preAuthorizationRequestContext, resource == null ? null : List.of(resource));
+    }
+
+    /**
+     * @param clientId a value of {@code client_id} parameter
+     * @param preAuthorizationRequestContext an authorization request, or {@code null} for a token request
+     * @param resources values of {@code resource} parameter of the request, or {@code null} if absent
+     */
+    private void processClientId(String clientId, PreAuthorizationRequestContext preAuthorizationRequestContext, List<String> resources) throws ClientPolicyException {
         provider = session.getProvider(ClientIdMetadataDocumentProvider.class, providerConfig.getCimdProviderName());
         provider.setConfiguration(getConfiguration());
-
-        String clientId = preAuthorizationRequestContext.getClientId();
 
         // determine if (re-)fetching a client metadata is needed, before any other check so that a client not managed
         // by CIMD is neither rejected nor used to trigger a fetch of its client_id URL.
@@ -390,8 +414,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             return;
         }
 
-        // Authorization Request verification
-        URI redirectUriURI = verifyAuthorizationRequest(preAuthorizationRequestContext);
+        // Authorization Request verification (not applicable to a token request)
+        URI redirectUriURI = preAuthorizationRequestContext != null ? verifyAuthorizationRequest(preAuthorizationRequestContext) : null;
 
         // Client ID verification
         URI clientIdURI = verifyClientId(clientId);
@@ -400,8 +424,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         validateClientId(clientIdURI);
 
         if (fetchOp == FetchOperation.NO_UPDATE) {
-            // no update, but the resource parameter still needs to be enforced on every authorization request.
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            // no update, but the resource parameter still needs to be enforced on every request.
+            enforceResourceIndicator(resources, session.getContext().getRealm().getClientByClientId(clientId));
             return;
         }
 
@@ -409,15 +433,19 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl = fetchClientMetadata(clientIdURI, fetchOp == FetchOperation.UPDATE, provider);
         if (clientOIDCWithCacheControl == null) {
             // fetched but no update
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            enforceResourceIndicator(resources, session.getContext().getRealm().getClientByClientId(clientId));
             return;
         }
 
-        // Client Metadata verification
-        verifyClientMetadata(clientIdURI, redirectUriURI, clientOIDCWithCacheControl.getOidcClientRepresentation());
-
-        // Client Metadata validation
-        validateClientMetadata(clientIdURI, redirectUriURI, clientOIDCWithCacheControl.getOidcClientRepresentation());
+        // Client Metadata verification and validation
+        OIDCClientRepresentation clientOIDC = clientOIDCWithCacheControl.getOidcClientRepresentation();
+        if (preAuthorizationRequestContext != null) {
+            verifyClientMetadata(clientIdURI, redirectUriURI, clientOIDC);
+            validateClientMetadata(clientIdURI, redirectUriURI, clientOIDC);
+        } else {
+            verifyClientMetadataForTokenRequest(clientIdURI, clientOIDC);
+            validateClientMetadataForTokenRequest(clientIdURI, clientOIDC);
+        }
 
         ClientModel clientModel;
         if (fetchOp == FetchOperation.CREATE) {
@@ -428,7 +456,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             clientModel = provider.updateClientMetadata(clientOIDCWithCacheControl);
         }
 
-        enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
+        enforceResourceIndicator(resources, clientModel);
     }
 
     // Authorization Request Verification Errors
@@ -691,37 +719,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         String clientId = clientIdURI.toString();
         String redirectUri = redirectUriURI.toString();
 
-        if (clientOIDC == null) {
-            getLogger().warn("client metadata does not have its content.");
-            throw invalidClientIdMetadata(ERR_METADATA_NOCONTENT);
-        }
-
-        // The client metadata document MUST contain a client_id property.
-        if (clientOIDC.getClientId() == null) {
-            getLogger().warn("client metadata does not include client_id property.");
-            throw invalidClientIdMetadata(ERR_METADATA_NOCLIENTID);
-        }
-
-        // The client_id property's value MUST match the URL of the document
-        // using simple string comparison as defined in [RFC3986] Section 6.2.1.
-        if (!clientOIDC.getClientId().equals(clientId)) {
-            getLogger().warnv("client_id property in client metadata does not exactly match client_id parameter in authorization request. property = {0}, parameter = {1}", clientOIDC.getClientId(), clientId);
-            throw invalidClientIdMetadata(ERR_METADATA_CLIENTID_UNMATCH);
-        }
-
-        // The token_endpoint_auth_method property MUST NOT include
-        // client_secret_post, client_secret_basic, client_secret_jwt,
-        // or any other method based around a shared symmetric secret.
-        if (clientOIDC.getTokenEndpointAuthMethod() != null && NOTALLOWED_ALGORITHMS.contains(clientOIDC.getTokenEndpointAuthMethod())) {
-            getLogger().warnv("not allowed client auth method: token_endpoint_auth_method = {0}", clientOIDC.getTokenEndpointAuthMethod());
-            throw invalidClientIdMetadata(ERR_METADATA_NOTALLOWED_CLIENTAUTH);
-        }
-
-        // The client_secret and client_secret_expires_at properties MUST NOT be used.
-        if (clientOIDC.getClientSecret() != null || clientOIDC.getClientSecretExpiresAt() != null) {
-            getLogger().warn("client metadata includes client_secret or client_secret_expires_at.");
-            throw invalidClientIdMetadata(ERR_METADATA_CLIENTSECRET);
-        }
+        verifyClientMetadataCommon(clientId, clientOIDC);
 
         // An authorization server MUST validate redirect URIs presented in an authorization request
         // against those in the metadata document.
@@ -747,17 +745,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             verifyUriProperty(redirect_uri, "redirect_uris", trustedDomains);
         }
 
-        verifyUriPropertyIfPresent(clientOIDC.getLogoUri(), "logo_uri", trustedDomains);
-        verifyUriPropertyIfPresent(clientOIDC.getClientUri(), "client_uri", trustedDomains);
-        verifyUriPropertyIfPresent(clientOIDC.getTosUri(), "tos_uri", trustedDomains);
-        verifyUriPropertyIfPresent(clientOIDC.getPolicyUri(), "policy_uri", trustedDomains);
-        verifyFetchedUriProperty(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
-        verifyFetchedUriProperty(clientOIDC.getSectorIdentifierUri(), "sector_identifier_uri", trustedDomains);
-
-        // distinct, so that a repeated URL is not resolved over and over
-        for (String requestUri : convertContentFilledList(clientOIDC.getRequestUris())) {
-            verifyFetchedUriProperty(requestUri, "request_uris", trustedDomains);
-        }
+        verifyUriProperty(clientOIDC, trustedDomains);
 
         URI clientIdURIfromMetadata;
         try {
@@ -769,6 +757,85 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
 
         return clientIdURIfromMetadata;
+    }
+
+
+
+    /**
+     * Verify a client metadata for a token request. This is similar to {@link #verifyClientMetadata} but
+     * does not check redirect_uri since it is not applicable to token endpoint requests (e.g., client_credentials).
+     *
+     * @param clientIdURI a value of {@code client_id} parameter of a token request in {@link URI}
+     * @param clientOIDC a client metadata
+     * @throws ClientPolicyException when verifying a client metadata fails.
+     */
+    protected void verifyClientMetadataForTokenRequest(final URI clientIdURI, final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
+        String clientId = clientIdURI.toString();
+
+        verifyClientMetadataCommon(clientId, clientOIDC);
+
+        // Trusted domains and SSRF attack countermeasure
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
+        verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
+
+        if (clientOIDC.getRedirectUris() != null) {
+            for (String redirect_uri : clientOIDC.getRedirectUris()) {
+                verifyUriProperty(redirect_uri, "redirect_uris", trustedDomains);
+            }
+        }
+
+        verifyUriProperty(clientOIDC, trustedDomains);
+    }
+
+    private void verifyUriProperty(OIDCClientRepresentation clientOIDC, List<String> trustedDomains) throws ClientPolicyException {
+        verifyUriPropertyIfPresent(clientOIDC.getLogoUri(), "logo_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getClientUri(), "client_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getTosUri(), "tos_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getPolicyUri(), "policy_uri", trustedDomains);
+        verifyFetchedUriProperty(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
+        verifyFetchedUriProperty(clientOIDC.getSectorIdentifierUri(), "sector_identifier_uri", trustedDomains);
+
+        // distinct, so that a repeated URL is not resolved over and over
+        for (String requestUri : convertContentFilledList(clientOIDC.getRequestUris())) {
+            verifyFetchedUriProperty(requestUri, "request_uris", trustedDomains);
+        }
+    }
+
+    /**
+     * Common verification logic for client metadata shared by both authorization request and token request paths.
+     */
+    private void verifyClientMetadataCommon(final String clientId, final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
+        if (clientOIDC == null) {
+            getLogger().warn("client metadata does not have its content.");
+            throw invalidClientIdMetadata(ERR_METADATA_NOCONTENT);
+        }
+
+        // The client metadata document MUST contain a client_id property.
+        if (clientOIDC.getClientId() == null) {
+            getLogger().warn("client metadata does not include client_id property.");
+            throw invalidClientIdMetadata(ERR_METADATA_NOCLIENTID);
+        }
+
+        // The client_id property's value MUST match the URL of the document
+        // using simple string comparison as defined in [RFC3986] Section 6.2.1.
+        if (!clientOIDC.getClientId().equals(clientId)) {
+            getLogger().warnv("client_id property in client metadata does not exactly match client_id parameter. property = {0}, parameter = {1}", clientOIDC.getClientId(), clientId);
+            throw invalidClientIdMetadata(ERR_METADATA_CLIENTID_UNMATCH);
+        }
+
+        // The token_endpoint_auth_method property MUST NOT include
+        // client_secret_post, client_secret_basic, client_secret_jwt,
+        // or any other method based around a shared symmetric secret.
+        if (clientOIDC.getTokenEndpointAuthMethod() != null && NOTALLOWED_ALGORITHMS.contains(clientOIDC.getTokenEndpointAuthMethod())) {
+            getLogger().warnv("not allowed client auth method: token_endpoint_auth_method = {0}", clientOIDC.getTokenEndpointAuthMethod());
+            throw invalidClientIdMetadata(ERR_METADATA_NOTALLOWED_CLIENTAUTH);
+        }
+
+        // The client_secret and client_secret_expires_at properties MUST NOT be used.
+        if (clientOIDC.getClientSecret() != null || clientOIDC.getClientSecretExpiresAt() != null) {
+            getLogger().warn("client metadata includes client_secret or client_secret_expires_at.");
+            throw invalidClientIdMetadata(ERR_METADATA_CLIENTSECRET);
+        }
     }
 
     private void verifyUriProperty(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
@@ -917,7 +984,48 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
 
         // required properties policy
-        List<String> requiredProperties = convertContentFilledList(getConfiguration().getRequiredProperties());
+        validateRequiredProperties(convertContentFilledList(getConfiguration().getRequiredProperties()), clientOIDC);
+    }
+
+    /**
+     * Validate a client metadata for a token request. This is similar to {@link #validateClientMetadata} but
+     * does not check redirect_uri-related constraints since they are not applicable to token endpoint requests.
+     *
+     * @param clientIdURI a value of {@code client_id} parameter of a token request in {@link URI}
+     * @param clientOIDC a client metadata
+     * @throws ClientPolicyException when validating a client metadata fails.
+     */
+    protected void validateClientMetadataForTokenRequest(final URI clientIdURI, final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
+        // same domain policy: client_id, redirect_uris, client_uri, logo_uri, tos_uri, policy_uri, jwks_uri
+        // A client registered or updated through a token request is later used for authorization requests
+        // without re-validation while its cached client metadata is effective. A token request has no redirect_uri
+        // parameter, so the domain of client_id parameter is used as the anchor and every redirect_uris property
+        // (not just at least one of them) must be under the same permitted domain.
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
+        if (getConfiguration().isRestrictSameDomain() && !trustedDomains.isEmpty()) {
+            List<String> l = Stream.concat(
+                    Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri()),
+                    Optional.ofNullable(clientOIDC.getRedirectUris()).orElse(List.of()).stream())
+                    .filter(Objects::nonNull).toList();
+            try {
+                for (String s : l) {
+                    URI u = new URI(s);
+                    if (u.getHost() == null || trustedDomains.stream().noneMatch(i -> checkTrustedDomain(u.getHost(), i) && checkTrustedDomain(clientIdURI.getHost(), i))) {
+                        getLogger().warnv("not under the same domain = {0}", u.getHost());
+                        throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+                    }
+                }
+            } catch (URISyntaxException e) {
+                getLogger().warnv("URI not resolved {0}", e);
+                throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+            }
+        }
+
+        // required properties policy
+        validateRequiredProperties(convertContentFilledList(getConfiguration().getRequiredProperties()), clientOIDC);
+    }
+
+    private void validateRequiredProperties(List<String> requiredProperties, final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
         if (requiredProperties != null && !requiredProperties.isEmpty()) {
             JsonNode jn = JsonSerialization.writeValueAsNode(clientOIDC);
             if (requiredProperties.stream().filter(i->!i.isBlank()).anyMatch(i->jn.get(i) == null)) {
@@ -933,30 +1041,50 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     /**
      * Enforces the Resource Indicators (RFC 8707) allow list configured for the executor against the {@code resource}
-     * parameter of an authorization request, and keeps an {@link AudienceProtocolMapper} (with a custom audience equal
-     * to the resource) attached to the client synchronized with the allow list. {@code ResourceIndicatorsPostProcessor}
-     * resolves the {@code aud} claim by matching the requested resource directly against the token's audience, which
-     * this mapper populates.
-     *
-     * <p>This is a no-op (permissive mode) if the Resource Indicators feature is disabled or the authorization
-     * request does not include the {@code resource} parameter.
+     * parameter of an authorization request.
      *
      * @param preAuthorizationRequestContext an authorization request
      * @param clientModel the client looked up, created, or updated by CIMD for this authorization request, not {@code null}
      * @throws ClientPolicyException when the {@code resource} parameter value is not allowed.
+     * @see #enforceResourceIndicator(List, ClientModel)
      */
     protected void enforceResourceIndicator(PreAuthorizationRequestContext preAuthorizationRequestContext, ClientModel clientModel) throws ClientPolicyException {
+        String resource = preAuthorizationRequestContext.getRequestParameters().getFirst(OAuth2Constants.RESOURCE);
+        enforceResourceIndicator(resource == null ? null : List.of(resource), clientModel);
+    }
+
+    /**
+     * Enforces the Resource Indicators (RFC 8707) allow list configured for the executor against the {@code resource}
+     * parameter values of an authorization request or a token request, and keeps an {@link AudienceProtocolMapper}
+     * (with a custom audience equal to the resource) attached to the client synchronized with the allow list.
+     * {@code ResourceIndicatorsPostProcessor} resolves the {@code aud} claim by matching the requested resource
+     * directly against the token's audience, which this mapper populates.
+     *
+     * <p>This is a no-op (permissive mode) if the Resource Indicators feature is disabled or the request does not
+     * include the {@code resource} parameter.
+     *
+     * @param resources values of {@code resource} parameter of the request, or {@code null} if absent
+     * @param clientModel the client looked up, created, or updated by CIMD for this request, not {@code null}
+     * @throws ClientPolicyException when one of the {@code resource} parameter values is not allowed.
+     */
+    protected void enforceResourceIndicator(List<String> resources, ClientModel clientModel) throws ClientPolicyException {
         if (!Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
             return;
         }
 
-        String resource = preAuthorizationRequestContext.getRequestParameters().getFirst(OAuth2Constants.RESOURCE);
-        if (resource == null) {
+        List<String> requested = convertContentFilledList(resources);
+        if (requested.isEmpty()) {
             // permissive mode: the executor does not require the resource parameter.
             return;
         }
 
         List<String> allowList = convertContentFilledList(getConfiguration().getResourceIndicatorAllowList());
+        for (String resource : requested) {
+            enforceResourceIndicator(resource, allowList, clientModel);
+        }
+    }
+
+    private void enforceResourceIndicator(String resource, List<String> allowList, ClientModel clientModel) throws ClientPolicyException {
         if (!allowList.contains(resource)) {
             // no longer (or never) allow-listed: remove its audience mapper to keep it synchronized, then reject.
             // this is persisted in a separate transaction so the change survives the rollback that happens

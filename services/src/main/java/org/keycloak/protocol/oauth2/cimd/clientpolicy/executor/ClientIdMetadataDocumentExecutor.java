@@ -100,7 +100,16 @@ public class ClientIdMetadataDocumentExecutor extends AbstractClientIdMetadataDo
     @Override
     protected void validateClientMetadata(final URI clientIdURI, final URI redirectUriURI, final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
         super.validateClientMetadata(clientIdURI, redirectUriURI, clientOIDC);
+        validateConfidentialClient(clientOIDC);
+    }
 
+    @Override
+    protected void validateClientMetadataForTokenRequest(final URI clientIdURI, final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
+        super.validateClientMetadataForTokenRequest(clientIdURI, clientOIDC);
+        validateConfidentialClient(clientOIDC);
+    }
+
+    private void validateConfidentialClient(final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
         // only accept a confidential client
         if (configuration.isOnlyAllowConfidentialClient()) {
             if (clientOIDC.getTokenEndpointAuthMethod() == null || !ALLOWED_ALGORITHMS.contains(clientOIDC.getTokenEndpointAuthMethod())) {
@@ -128,7 +137,6 @@ public class ClientIdMetadataDocumentExecutor extends AbstractClientIdMetadataDo
                 }
             }
         }
-
     }
 
     protected static final Set<String> ALLOWED_ALGORITHMS = new LinkedHashSet<>(Arrays.asList(
