@@ -127,10 +127,14 @@ admin view permissions but no edit permissions, it is treated as read-only:
 
 === Core SCIM attributes
 
-Core SCIM attributes such as `userName`, `displayName`, `name.givenName`, and `name.familyName` are always
+Core SCIM attributes such as `userName`, `name.givenName`, and `name.familyName` are always
 readable and writable through SCIM, regardless of User Profile permission settings. These attributes are governed
 by the SCIM protocol specification (https://datatracker.ietf.org/doc/html/rfc7643[RFC 7643]) and SCIM clients
 expect to be able to read and set them.
+
+Other core attributes, such as `displayName`, `title`, `nickName`, or `externalId`, are only stored when a user profile
+attribute is mapped to them. Values sent for a core attribute that is not mapped are ignored. See
+<<Adding custom attribute mappings>> for how to map them.
 
 == Mapping additional name attributes
 
@@ -281,5 +285,8 @@ curl "<scheme>://<host>:<port>/realms/myrealm/scim/v2/Users?filter=urn:my:params
 == Schema discovery
 
 Any attribute configured with a SCIM attribute mapping is automatically reflected in the schema
-discovery endpoints (`/Schemas` and `/ResourceTypes`). For more details on schema discovery, including how to
+discovery endpoints (`/Schemas` and `/ResourceTypes`). Optional core attributes, such as `displayName`, `title`, or
+`externalId`, are only listed in the `/Schemas` endpoint when a user profile attribute is mapped to them, so SCIM
+clients can tell which attributes are stored. The `name.formatted` sub-attribute is always listed, as `readOnly` when
+it is not mapped, because its value is derived from the other name sub-attributes. For more details on schema discovery, including how to
 use extension schemas beyond the core User schema, see <<_scim_managing_schema_extensions_,Managing schema extensions>>.
