@@ -1,0 +1,67 @@
+name: Azure Delete
+
+on:
+  workflow_run:
+    workflows: [Keycloak CI]
+    types: [completed]
+
+permissions:
+  actions: read
+
+jobs:
+  delete:
+    name: Delete Azure resource group
+    if: >-
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI_RUN_ID: ${{ github.event.workflow_run.id }}
+      CI_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+    steps:
+      - name: Check whether Azure provisioning could have started
+        id: azure-job
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HAS_AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS != '' }}
+        run: |
+          if [[ "$HAS_AZURE_CREDENTIALS" != "true" ]]; then
+            exit 0
+          fi
+
+          azure_job=$(gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/actions/runs/$CI_RUN_ID/attempts/$CI_RUN_ATTEMPT/jobs?per_page=100" \
+            --jq '.jobs[] | select(.name == "AzureDB IT" and .conclusion != "skipped") | .id')
+          if [[ -n "$azure_job" ]]; then
+            echo "ran=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to Azure
+        if: steps.azure-job.outputs.ran == 'true'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Delete and verify resource group
+        if: steps.azure-job.outputs.ran == 'true'
+        run: |
+          groups=$(az group list --query \
+            "[?tags.\"keycloak-ci-repository\"=='$GITHUB_REPOSITORY' && tags.\"keycloak-ci-run\"=='$CI_RUN_ID' && tags.\"keycloak-ci-attempt\"=='$CI_RUN_ATTEMPT'].[name, properties.provisioningState]" \
+            --output tsv)
+          if [[ -z "$groups" ]]; then
+            echo "No Azure resource group found for this CI attempt."
+            exit 0
+          fi
+
+          read -r group state <<< "$groups"
+          expected_name="^gh-action-[0-9a-f]+-${CI_RUN_ID}-${CI_RUN_ATTEMPT}$"
+          if [[ "$groups" == *$'\n'* || ! "$group" =~ $expected_name ]]; then
+            echo "::error::Expected one CI resource group with a name matching the triggering attempt."
+            exit 1
+          fi
+
+          if [[ "$state" != "Deleting" ]]; then
+            az group delete --name "$group" --yes --no-wait
+          fi
+          az group wait --name "$group" --deleted --timeout 1500
