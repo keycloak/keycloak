@@ -1238,7 +1238,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .flatMap(mapperModel -> {
                     LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
                     return ldapMapper.getUserAttributes().stream();
-                }).toList();
+                })
+                .distinct()
+                .toList();
 
         List<AttributeMetadata> metadatas = new ArrayList<>();
 
