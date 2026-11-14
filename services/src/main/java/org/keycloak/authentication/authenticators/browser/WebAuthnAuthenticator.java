@@ -213,6 +213,14 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         } else {
             // decode using the same charset as it has been encoded (see: WebAuthnRegister.java)
             userId = new String(Base64Url.decode(userHandle), StandardCharsets.UTF_8);
+            if (!isStorableUserId(userId)) {
+                // A user handle that cannot represent a stored user id, for example one carrying a
+                // NUL character, can never match a user. Reject it as an unknown user here so the
+                // request never reaches the database, where some stores raise an error on such input
+                // instead of returning no user.
+                setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND, null);
+                return;
+            }
             if (context.getUser() != null) {
                 // Resident Key supported public key credential was used,
                 // so need to confirm whether the already authenticated user is equals to one authenticated by the webauthn authenticator
@@ -324,6 +332,16 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
     @Override
     public WebAuthnCredentialProvider getCredentialProvider(KeycloakSession session) {
         return (WebAuthnCredentialProvider)session.getProvider(CredentialProvider.class, WebAuthnCredentialProviderFactory.PROVIDER_ID);
+    }
+
+    /**
+     * A stored user id is persisted as text and can never contain a NUL character. A user handle
+     * that decodes to such a value cannot match any user, so it must not be used for a lookup. Some
+     * databases, for example PostgreSQL, reject a NUL byte and would turn the lookup into a server
+     * error instead of the expected unknown-user result.
+     */
+    static boolean isStorableUserId(String userId) {
+        return userId.indexOf('\u0000') < 0;
     }
 
     protected void setErrorResponse(AuthenticationFlowContext context, final String errorCase, final String errorMessage, Object... parameters) {
