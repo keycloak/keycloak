@@ -1,4 +1,4 @@
-import { SelectOption } from "@patternfly/react-core";
+import { Chip, ChipGroup, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, ControllerRenderProps } from "react-hook-form";
 import { KeycloakSelect, SelectVariant } from "../select/KeycloakSelect";
@@ -76,7 +76,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
           <KeycloakSelect
             toggleId={attribute.name}
             onToggle={(b) => setOpen(b)}
-            onClear={() => setValue("", field)}
+            onClear={() => field.onChange(isMultiValue ? [] : "")}
             onSelect={(value) => {
               const option = value.toString();
               setValue(option, field);
@@ -86,8 +86,28 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
             }}
             selections={
               isMultiValue && Array.isArray(field.value)
-                ? field.value.map((option) => fetchLabel(option))
+                ? field.value
                 : fetchLabel(field.value)
+            }
+            // Chips must remove by option key, but display inputOptionLabels.
+            // Passing labels as selections made chip clicks toggle/add the label
+            // string instead of removing the selected option key.
+            chipGroupComponent={
+              isMultiValue && Array.isArray(field.value) ? (
+                <ChipGroup>
+                  {field.value.map((option: string) => (
+                    <Chip
+                      key={option}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setValue(option, field);
+                      }}
+                    >
+                      {fetchLabel(option)}
+                    </Chip>
+                  ))}
+                </ChipGroup>
+              ) : undefined
             }
             variant={
               isMultiValue
