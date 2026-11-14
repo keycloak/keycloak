@@ -19,9 +19,11 @@ const SECRET_MASK = "**********";
 
 export const ClientIdSecret = ({
   secretRequired = true,
+  hideSecret = false,
   create = true,
 }: {
   secretRequired?: boolean;
+  hideSecret?: boolean;
   create?: boolean;
 }) => {
   const { t } = useTranslation();
@@ -72,13 +74,17 @@ export const ClientIdSecret = ({
           required: t("required"),
         }}
       />
-      <PasswordControl
-        name="config.clientSecret"
-        label={t("clientSecret")}
-        labelIcon={t("clientSecretHelp")}
-        hasReveal={create}
-        rules={{ required: { value: secretRequired, message: t("required") } }}
-      />
+      {!hideSecret && (
+        <PasswordControl
+          name="config.clientSecret"
+          label={t("clientSecret")}
+          labelIcon={t("clientSecretHelp")}
+          hasReveal={create}
+          rules={{
+            required: { value: secretRequired, message: t("required") },
+          }}
+        />
+      )}
     </>
   );
 };

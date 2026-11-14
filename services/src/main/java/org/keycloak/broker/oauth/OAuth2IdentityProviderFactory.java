@@ -96,6 +96,7 @@ public class OAuth2IdentityProviderFactory extends AbstractIdentityProviderFacto
         if (rep.getIntrospectionEndpoint() != null) {
             config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
         }
+        config.setMtlsEndpointAliases(rep.getMtlsEndpointAliases());
         return config.getConfig();
     }
 }
