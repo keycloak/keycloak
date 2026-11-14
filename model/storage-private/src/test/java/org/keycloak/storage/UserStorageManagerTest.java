@@ -14,14 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.storage;
 
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -30,29 +31,110 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
-/**
- * Local and federated user storage share the realm's database with everything else, so a failure
- * there is a general outage, not an "external provider is unreachable" situation. Graceful
- * degradation (introduced for cases like a down LDAP server) must not swallow it.
- *
- * @see <a href="https://github.com/keycloak/keycloak/issues/51268">#51268</a>
- */
 public class UserStorageManagerTest {
 
     private static final RuntimeException FAILURE = new RuntimeException("simulated storage failure");
+
+    private final List<String> delegatedUsernames = new ArrayList<>();
+
+    private DefaultDatastoreProvider datastore;
+    private UserStorageManager manager;
+
+    @Before
+    public void setUp() {
+        UserProvider localStorage = stub(UserProvider.class, (method, args) -> {
+            if (method.getName().equals("addUser") && args.length == 5) {
+                delegatedUsernames.add((String) args[2]);
+                return null;
+            }
+            return defaultValue(method);
+        });
+
+        DefaultDatastoreProvider[] datastoreRef = new DefaultDatastoreProvider[1];
+        KeycloakSession session = stub(KeycloakSession.class, (method, args) -> {
+            if (method.getName().equals("getProvider")) {
+                Class<?> requested = (Class<?>) args[0];
+                if (requested == DatastoreProvider.class) {
+                    return datastoreRef[0];
+                }
+                if (requested == UserProvider.class) {
+                    return localStorage;
+                }
+            }
+            return defaultValue(method);
+        });
+        datastore = new DefaultDatastoreProvider(null, session);
+        datastoreRef[0] = datastore;
+
+        manager = (UserStorageManager) datastore.users();
+    }
+
+    @Test
+    public void rejectsMissingUsername() {
+        assertThrows(ModelException.class, () -> manager.addUser(null, null));
+        assertThrows(ModelException.class, () -> manager.addUser(null, "id", null, true, true));
+        assertTrue(delegatedUsernames.isEmpty());
+    }
+
+    @Test
+    public void rejectsEmptyUsername() {
+        assertThrows(ModelException.class, () -> manager.addUser(null, ""));
+        assertThrows(ModelException.class, () -> manager.addUser(null, "id", "", true, true));
+        assertTrue(delegatedUsernames.isEmpty());
+    }
+
+    @Test
+    public void rejectsWhitespaceUsername() {
+        assertThrows(ModelException.class, () -> manager.addUser(null, "   "));
+        assertThrows(ModelException.class, () -> manager.addUser(null, "id", "   ", true, true));
+        assertTrue(delegatedUsernames.isEmpty());
+    }
+
+    @Test
+    public void rejectsMissingUsernameThroughSessionUserProvider() {
+        assertThrows(ModelException.class, () -> datastore.users().addUser(null, "id", null, true, true));
+        assertThrows(ModelException.class, () -> datastore.users().addUser(null, null));
+        assertTrue(delegatedUsernames.isEmpty());
+    }
+
+    @Test
+    public void lowercasesUsernameBeforeDelegating() {
+        manager.addUser(null, "id", "JDoe", true, true);
+
+        assertEquals(List.of("jdoe"), delegatedUsernames);
+    }
+
+    private static Object defaultValue(Method method) {
+        Class<?> type = method.getReturnType();
+        if (!type.isPrimitive()) return null;
+        if (type == boolean.class) return false;
+        if (type == void.class) return null;
+        return 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T stub(Class<T> iface, BiFunction<Method, Object[], Object> handler) {
+        return (T) Proxy.newProxyInstance(iface.getClassLoader(), new Class<?>[]{iface},
+                (proxy, method, args) -> handler.apply(method, args));
+    }
 
     @Test
     public void realmRemovalNotifiesAfterCommitWithoutRepeatingComponentCleanup() {

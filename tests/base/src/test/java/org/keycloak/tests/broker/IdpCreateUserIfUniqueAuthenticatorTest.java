@@ -134,6 +134,25 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
         created.forEach(u -> consumerRealm.cleanup().add(r -> r.users().get(u.getId()).remove()));
     }
 
+    @Test // #53164
+    public void testIdpBrokerLoginRejectsUnresolvableUsernameTemplate() {
+        addUsernameTemplateMapper("unresolvable-username-mapper", "${ALIAS}.${CLAIM.non-existent-claim}");
+
+        createProviderUser();
+        int userCountBefore = consumerRealm.admin().users().count();
+
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+
+        loginPage.fillLogin(PROVIDER_USERNAME, "password");
+        loginPage.submit();
+
+        assertEquals("login-error", driver.page().getCurrentPageId(),
+                "A username template that cannot be resolved must reject the login");
+        assertEquals(userCountBefore, consumerRealm.admin().users().count().intValue(),
+                "A username template that cannot be resolved must not create a user");
+    }
+
     @Test // #50505
     public void testIdpBrokerLoginSetsDefaultValueForReadOnlyAttribute() {
         UPConfig originalConfig = consumerRealm.admin().users().userProfile().getConfiguration();
