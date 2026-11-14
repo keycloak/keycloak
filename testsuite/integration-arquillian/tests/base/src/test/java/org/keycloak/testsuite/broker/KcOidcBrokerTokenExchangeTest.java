@@ -114,6 +114,12 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
         IdentityProviderResource identityProviderResource = consumerRealm.identityProviders().get(bc.getIDPAlias());
 
+        IdentityProviderRepresentation idpRepresentation = identityProviderResource.toRepresentation();
+        if (!idpRepresentation.getConfig().get("issuer").startsWith(ServerURLs.getAuthServerContextRoot())) {
+            idpRepresentation.getConfig().put("issuer", ServerURLs.getAuthServerContextRoot() + "/auth/realms/provider");
+            identityProviderResource.update(idpRepresentation);
+        }
+
         IdentityProviderMapperRepresentation usernameTemplateMapper = new IdentityProviderMapperRepresentation();
         usernameTemplateMapper.setName("unresolvable-username-template");
         usernameTemplateMapper.setIdentityProviderAlias(bc.getIDPAlias());
