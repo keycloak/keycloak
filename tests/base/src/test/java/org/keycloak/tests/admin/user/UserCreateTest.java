@@ -272,6 +272,63 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    public void createUserWithIncompleteDeprecatedPasswordCredential() throws IOException {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_creds");
+        user.setEmail("email@localhost");
+
+        PasswordCredentialModel pcm = PasswordCredentialModel.createFromValues("my-algorithm", "theSalt".getBytes(), 22, "ABC");
+        String deprecatedCredential = "{\n" +
+                "      \"type\" : \"password\",\n" +
+                "      \"hashedSaltedValue\" : \"" + pcm.getPasswordSecretData().getValue() + "\",\n" +
+                "      \"salt\" : \"" + Base64.getEncoder().encodeToString(pcm.getPasswordSecretData().getSalt()) + "\"\n" +
+                "    }";
+
+        CredentialRepresentation deprecatedHashedPassword = JsonSerialization.readValue(deprecatedCredential, CredentialRepresentation.class);
+        deprecatedHashedPassword.setType(CredentialRepresentation.PASSWORD);
+
+        user.setCredentials(Arrays.asList(deprecatedHashedPassword));
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assertions.assertEquals("Invalid deprecated password credential format: missing hashIterations, algorithm", error.getErrorMessage());
+            Assertions.assertNull(adminEvents.poll());
+        }
+
+        // creation leaves no user behind
+        Assertions.assertTrue(managedRealm.admin().users().search("user_creds", null, null).isEmpty());
+    }
+
+    @Test
+    public void createUserWithIncompleteDeprecatedOtpCredential() throws IOException {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user_otp");
+        user.setEmail("email@localhost");
+
+        String deprecatedCredential = "{\n" +
+                "      \"type\" : \"totp\",\n" +
+                "      \"algorithm\" : \"HmacSHA1\",\n" +
+                "      \"hashedSaltedValue\" : \"ABC\"\n" +
+                "    }";
+
+        CredentialRepresentation deprecatedOtp = JsonSerialization.readValue(deprecatedCredential, CredentialRepresentation.class);
+        deprecatedOtp.setType("totp");
+
+        user.setCredentials(Arrays.asList(deprecatedOtp));
+
+        try (Response response = managedRealm.admin().users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assertions.assertEquals("Invalid deprecated OTP credential format: missing digits, counter, period", error.getErrorMessage());
+            Assertions.assertNull(adminEvents.poll());
+        }
+
+        // creation leaves no user behind
+        Assertions.assertTrue(managedRealm.admin().users().search("user_otp", null, null).isEmpty());
+    }
+
+    @Test
     public void createUserWithTemporaryCredentials() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user_temppw");

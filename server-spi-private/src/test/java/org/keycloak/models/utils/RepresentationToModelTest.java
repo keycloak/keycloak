@@ -17,21 +17,30 @@
 
 package org.keycloak.models.utils;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 public class RepresentationToModelTest {
 
@@ -54,6 +63,106 @@ public class RepresentationToModelTest {
 
         assertEquals(0, addedRoles.get());
         assertEquals("imported", existingRole.getDescription());
+    }
+
+    @Test
+    public void shouldRejectIncompleteDeprecatedPasswordCredential() throws Exception {
+        CredentialRepresentation deprecatedPassword = JsonSerialization.readValue(
+                "{ \"type\": \"password\" }", CredentialRepresentation.class);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("jane");
+        user.setCredentials(List.of(deprecatedPassword));
+
+        try {
+            invokeConvertDeprecatedCredentialsFormat(user);
+            fail("Expected ModelValidationException");
+        } catch (ModelValidationException expected) {
+            assertEquals("Invalid deprecated password credential format: missing hashIterations, algorithm, hashedSaltedValue, salt", expected.getMessage());
+        }
+    }
+
+    @Test
+    public void shouldNameMissingFieldForIncompleteDeprecatedPasswordCredential() throws Exception {
+        CredentialRepresentation deprecatedPassword = JsonSerialization.readValue(
+                "{ \"type\": \"password\", \"hashIterations\": 27500, \"algorithm\": \"pbkdf2-sha256\","
+                        + " \"hashedSaltedValue\": \"hash\" }",
+                CredentialRepresentation.class);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("jane");
+        user.setCredentials(List.of(deprecatedPassword));
+
+        try {
+            invokeConvertDeprecatedCredentialsFormat(user);
+            fail("Expected ModelValidationException");
+        } catch (ModelValidationException expected) {
+            assertEquals("Invalid deprecated password credential format: missing salt", expected.getMessage());
+        }
+    }
+
+    @Test
+    public void shouldConvertCompleteDeprecatedPasswordCredential() throws Exception {
+        CredentialRepresentation deprecatedPassword = JsonSerialization.readValue(
+                "{ \"type\": \"password\", \"hashIterations\": 27500, \"algorithm\": \"pbkdf2-sha256\","
+                        + " \"hashedSaltedValue\": \"hash\", \"salt\": \"salt\" }",
+                CredentialRepresentation.class);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("john");
+        user.setCredentials(List.of(deprecatedPassword));
+
+        invokeConvertDeprecatedCredentialsFormat(user);
+
+        assertNotNull(deprecatedPassword.getCredentialData());
+        assertNotNull(deprecatedPassword.getSecretData());
+        assertEquals(Integer.valueOf(10), deprecatedPassword.getPriority());
+    }
+
+    @Test
+    public void shouldRejectIncompleteDeprecatedOtpCredential() throws Exception {
+        CredentialRepresentation deprecatedOtp = JsonSerialization.readValue(
+                "{ \"type\": \"totp\" }", CredentialRepresentation.class);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("jane");
+        user.setCredentials(List.of(deprecatedOtp));
+
+        try {
+            invokeConvertDeprecatedCredentialsFormat(user);
+            fail("Expected ModelValidationException");
+        } catch (ModelValidationException expected) {
+            assertEquals("Invalid deprecated OTP credential format: missing digits, counter, period, algorithm, hashedSaltedValue", expected.getMessage());
+        }
+    }
+
+    @Test
+    public void shouldConvertCompleteDeprecatedOtpCredential() throws Exception {
+        CredentialRepresentation deprecatedOtp = JsonSerialization.readValue(
+                "{ \"type\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\","
+                        + " \"hashedSaltedValue\": \"secret\" }",
+                CredentialRepresentation.class);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("john");
+        user.setCredentials(List.of(deprecatedOtp));
+
+        invokeConvertDeprecatedCredentialsFormat(user);
+
+        assertNotNull(deprecatedOtp.getCredentialData());
+        assertNotNull(deprecatedOtp.getSecretData());
+        assertEquals(Integer.valueOf(20), deprecatedOtp.getPriority());
+        assertEquals("otp", deprecatedOtp.getType());
+    }
+
+    private static void invokeConvertDeprecatedCredentialsFormat(UserRepresentation user) throws Exception {
+        Method method = RepresentationToModel.class.getDeclaredMethod(
+                "convertDeprecatedCredentialsFormat", UserRepresentation.class);
+        method.setAccessible(true);
+        try {
+            method.invoke(null, user);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof Exception) {
+                throw (Exception) cause;
+            }
+            throw new RuntimeException(cause);
+        }
     }
 
     private static RealmModel realm(String clientId, ClientModel client) {
