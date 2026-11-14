@@ -12,6 +12,16 @@ requiredEnv AZURE_SUBSCRIPTION AZURE_ADMIN_USER AZURE_DB_USER
 
 # Login is expected to be done by the workflow via az login with service principal
 
+if [ "${AZURE_ALLOW_ALL_FIREWALL}" = "true" ]; then
+  RUNNER_IP=$(curl --ipv4 --fail --silent --show-error --connect-timeout 10 --max-time 30 https://ifconfig.me/ip)
+  if ! jq -en --arg ip "$RUNNER_IP" '$ip |
+    test("^[0-9]{1,3}(\\.[0-9]{1,3}){3}$") and
+    (split(".") | all(.[]; tonumber <= 255)) and . != "0.0.0.0"' >/dev/null; then
+    echo "ERROR: Could not determine a valid runner IPv4 address." >&2
+    exit 1
+  fi
+fi
+
 # Resource group (created via idempotent command)
 echo "Creating resource group ${AZURE_RG} in ${AZURE_REGION}"
 group_args=(--name "$AZURE_RG" --location "$AZURE_REGION" --subscription "$AZURE_SUBSCRIPTION")
@@ -39,24 +49,30 @@ az sql db create \
   --subscription ${AZURE_SUBSCRIPTION}
 
 if [ "${AZURE_ALLOW_ALL_FIREWALL}" = "true" ]; then
-  echo "Allowing Azure services and current IP (0.0.0.0) - use with caution"
+  echo "Allowing Azure services (0.0.0.0) - use with caution"
   az sql server firewall-rule create --resource-group ${AZURE_RG} --server ${AZURE_NAME}-sqlsrv --name AllowAll --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0 --subscription ${AZURE_SUBSCRIPTION}
+  echo "Allowing runner IPv4 address ${RUNNER_IP}"
+  az sql server firewall-rule create --resource-group "${AZURE_RG}" --server "${AZURE_NAME}-sqlsrv" --name AllowRunner --start-ip-address "$RUNNER_IP" --end-ip-address "$RUNNER_IP" --subscription "${AZURE_SUBSCRIPTION}"
+  trap '
+    az sql server firewall-rule delete --resource-group "$AZURE_RG" --server "$AZURE_NAME-sqlsrv" --name AllowRunner --subscription "$AZURE_SUBSCRIPTION"
+  ' EXIT
 fi
-
-# Create login in master and then create user in the database
-# Wait until server is provisioned
-echo "Waiting for SQL server to be provisioned..."
-for i in {1..30}; do
-  state=$(az sql server show --name ${AZURE_NAME}-sqlsrv --resource-group ${AZURE_RG} --subscription ${AZURE_SUBSCRIPTION} --query "state" -o tsv || echo "")
-  if [ "${state}" = "Ready" ] || [ -z "${state}" ]; then
-    break
-  fi
-  echo "server state=${state}, retrying..."
-  sleep 5
-done
 
 ENDPOINT="${AZURE_NAME}-sqlsrv.database.windows.net"
 ADMIN_USER_FULL="${AZURE_ADMIN_USER}@${AZURE_NAME}-sqlsrv"
+
+# Firewall rules can take several minutes to propagate.
+echo "Waiting for SQL connectivity..."
+for attempt in {1..30}; do
+  if sqlcmd -S "$ENDPOINT" -U "$ADMIN_USER_FULL" -P "$AZURE_ADMIN_PASSWORD" -d master -b -l 5 -t 5 -Q "SELECT 1"; then
+    break
+  fi
+  if [ "$attempt" -eq 30 ]; then
+    echo "ERROR: SQL server is not accessible after 30 connection attempts." >&2
+    exit 1
+  fi
+  sleep 10
+done
 
 echo "Creating login ${AZURE_DB_USER} in master via sqlcmd"
 PASS_ESCAPED=${AZURE_DB_PASSWORD//\'/''}
