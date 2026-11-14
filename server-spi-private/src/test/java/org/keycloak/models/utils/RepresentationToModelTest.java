@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -75,9 +75,27 @@ public class RepresentationToModelTest {
 
         try {
             invokeConvertDeprecatedCredentialsFormat(user);
-            fail("Expected ModelException");
-        } catch (ModelException expected) {
-            assertEquals("Invalid deprecated password credential format", expected.getMessage());
+            fail("Expected ModelValidationException");
+        } catch (ModelValidationException expected) {
+            assertEquals("Invalid deprecated password credential format: missing hashIterations, algorithm, hashedSaltedValue, salt", expected.getMessage());
+        }
+    }
+
+    @Test
+    public void shouldNameMissingFieldForIncompleteDeprecatedPasswordCredential() throws Exception {
+        CredentialRepresentation deprecatedPassword = JsonSerialization.readValue(
+                "{ \"type\": \"password\", \"hashIterations\": 27500, \"algorithm\": \"pbkdf2-sha256\","
+                        + " \"hashedSaltedValue\": \"hash\" }",
+                CredentialRepresentation.class);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("jane");
+        user.setCredentials(List.of(deprecatedPassword));
+
+        try {
+            invokeConvertDeprecatedCredentialsFormat(user);
+            fail("Expected ModelValidationException");
+        } catch (ModelValidationException expected) {
+            assertEquals("Invalid deprecated password credential format: missing salt", expected.getMessage());
         }
     }
 
@@ -108,9 +126,9 @@ public class RepresentationToModelTest {
 
         try {
             invokeConvertDeprecatedCredentialsFormat(user);
-            fail("Expected ModelException");
-        } catch (ModelException expected) {
-            assertEquals("Invalid deprecated OTP credential format", expected.getMessage());
+            fail("Expected ModelValidationException");
+        } catch (ModelValidationException expected) {
+            assertEquals("Invalid deprecated OTP credential format: missing digits, counter, period, algorithm, hashedSaltedValue", expected.getMessage());
         }
     }
 
