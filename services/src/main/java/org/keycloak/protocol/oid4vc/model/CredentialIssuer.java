@@ -20,10 +20,11 @@ package org.keycloak.protocol.oid4vc.model;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.json.RawJsonValue;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Represents a credentials issuer according to the OID4VCI Credentials Issuer Metadata
@@ -181,7 +182,7 @@ public class CredentialIssuer {
         private String format;
 
         @JsonProperty("data")
-        private JsonNode data;
+        private RawJsonValue data;
 
         public String getFormat() {
             return format;
@@ -192,11 +193,11 @@ public class CredentialIssuer {
             return this;
         }
 
-        public JsonNode getData() {
+        public RawJsonValue getData() {
             return data;
         }
 
-        public IssuerInfo setData(JsonNode data) {
+        public IssuerInfo setData(RawJsonValue data) {
             this.data = data;
             return this;
         }

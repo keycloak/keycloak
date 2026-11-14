@@ -4,6 +4,20 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Jackson 3 for server extensions
+// https://github.com/keycloak/keycloak/issues/54599
+
+The upgrade to Quarkus 4 switches JSON handling for REST endpoints to Jackson 3.
+Custom server extensions that use Jackson 2 APIs must migrate to Jackson 3.
+This includes custom REST endpoints, JSON serializers and deserializers, and extensions that inject an object mapper.
+
+Update Jackson core and databind dependencies and imports from `com.fasterxml.jackson` to `tools.jackson` and adapt to the Jackson 3 APIs.
+For example, a custom REST endpoint that returns `com.fasterxml.jackson.databind.JsonNode` must return `tools.jackson.databind.JsonNode` instead.
+Databind annotations, such as `JsonNaming` and `JsonDeserialize`, move to `tools.jackson.databind.annotation`.
+Annotations in `com.fasterxml.jackson.annotation`, such as `JsonProperty`, keep their existing package.
+
+For details, see the https://github.com/FasterXML/jackson/blob/main/jackson3/MIGRATING_TO_JACKSON_3.md[Jackson 3 migration guide].
+
 === Validation of client URI fields
 // https://github.com/keycloak/keycloak/issues/54046
 

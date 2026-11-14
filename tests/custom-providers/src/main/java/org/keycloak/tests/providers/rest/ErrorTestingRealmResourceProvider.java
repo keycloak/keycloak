@@ -1,9 +1,6 @@
 package org.keycloak.tests.providers.rest;
 
-import java.io.IOException;
-import java.time.LocalDate;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jakarta.enterprise.inject.spi.CDI;
@@ -18,6 +15,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.resource.RealmResourceProvider;
 
@@ -90,12 +88,13 @@ public class ErrorTestingRealmResourceProvider implements RealmResourceProvider 
     }
 
     @GET
-    @Path("json/legacy-mapper")
+    @Path("json/mapper")
     @Produces(MediaType.APPLICATION_JSON)
-    public String legacyMapper() throws IOException {
-        // Extension consumers must still be able to resolve the legacy CDI producer.
-        var mapper = CDI.current().select(com.fasterxml.jackson.databind.ObjectMapper.class).get();
-        return mapper.writeValueAsString(Map.of("optional", Optional.of("value"), "date", LocalDate.of(2026, 1, 2)));
+    public String mapper() {
+        var mapper = CDI.current().select(tools.jackson.databind.ObjectMapper.class).get();
+        var response = new AccessTokenResponse();
+        response.setToken("access-token");
+        return mapper.writeValueAsString(response);
     }
 
     private void trackTransaction(String transaction) {

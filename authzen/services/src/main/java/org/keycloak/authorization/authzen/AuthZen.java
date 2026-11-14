@@ -23,8 +23,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 public final class AuthZen {
 
@@ -108,8 +106,7 @@ public final class AuthZen {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-    public record Options(EvaluationsSemantic evaluationsSemantic) {}
+    public record Options(@JsonProperty("evaluations_semantic") EvaluationsSemantic evaluationsSemantic) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record EvaluationsRequest(
