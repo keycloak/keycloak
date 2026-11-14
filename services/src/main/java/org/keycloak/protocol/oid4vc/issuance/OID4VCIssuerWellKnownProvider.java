@@ -197,7 +197,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                     });
             if (issuerInfo == null || issuerInfo.stream().anyMatch(info -> info == null
                     || info.getFormat() == null || info.getFormat().isBlank()
-                    || info.getData() == null || info.getData().isNull())) {
+                    || info.getData() == null || info.getData().getValue() == null)) {
                 LOGGER.warnf("Invalid %s realm attribute. Skipping issuer_info.", ISSUER_INFO_ATTR);
                 return null;
             }

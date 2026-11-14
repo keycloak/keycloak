@@ -17,23 +17,17 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import java.io.IOException;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.ws.rs.ext.ContextResolver;
 import jakarta.ws.rs.ext.Provider;
 
-import org.keycloak.services.util.ObjectMapperResolver;
+import org.keycloak.json.jackson3.KeycloakAnnotationIntrospector3;
 import org.keycloak.ssf.subject.SubjectId;
-import org.keycloak.ssf.subject.SubjectIdJsonDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import tools.jackson.core.JsonParser;
-import tools.jackson.databind.DeserializationContext;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.ValueDeserializer;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
@@ -41,12 +35,11 @@ import tools.jackson.databind.module.SimpleModule;
 @ApplicationScoped
 public class QuarkusObjectMapperResolver implements ContextResolver<ObjectMapper> {
 
-    private final com.fasterxml.jackson.databind.ObjectMapper legacyMapper = new ObjectMapperResolver().getContext(Object.class);
-    private final ObjectMapper mapper = createMapper(legacyMapper);
+    private final ObjectMapper mapper = createMapper();
 
     @Produces
-    public com.fasterxml.jackson.databind.ObjectMapper getObjectMapper() {
-        return legacyMapper;
+    public ObjectMapper getObjectMapper() {
+        return mapper;
     }
 
     @Override
@@ -54,26 +47,11 @@ public class QuarkusObjectMapperResolver implements ContextResolver<ObjectMapper
         return mapper;
     }
 
-    private static ObjectMapper createMapper(com.fasterxml.jackson.databind.ObjectMapper legacyMapper) {
-        var subjectMapper = legacyMapper.copy().registerModule(new com.fasterxml.jackson.databind.module.SimpleModule()
-                .addDeserializer(SubjectId.class, new SubjectIdJsonDeserializer()));
+    private static ObjectMapper createMapper() {
         var builder = JsonMapper.builder()
                 .configureForJackson2()
-                .annotationIntrospector(new LegacyNamingAnnotationIntrospector())
-                .addModule(new LegacyJsonNodeAdapter(legacyMapper.getNodeFactory()))
-                .addModule(new SimpleModule().addDeserializer(SubjectId.class, new ValueDeserializer<SubjectId>() {
-                    @Override
-                    public SubjectId deserialize(JsonParser parser, DeserializationContext context) {
-                        try {
-                            var tree = LegacyJsonNodeAdapter.toLegacy(context.readTree(parser), subjectMapper.getNodeFactory());
-                            try (var subjectParser = tree.traverse(subjectMapper)) {
-                                return subjectMapper.readValue(subjectParser, SubjectId.class);
-                            }
-                        } catch (IOException exception) {
-                            return context.reportInputMismatch(SubjectId.class, "Unable to read the subject identifier");
-                        }
-                    }
-                }))
+                .annotationIntrospector(new KeycloakAnnotationIntrospector3())
+                .addModule(new SimpleModule().addDeserializer(SubjectId.class, new SubjectIdDeserializer()))
                 .changeDefaultPropertyInclusion(inclusion -> JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
                 .configure(SerializationFeature.INDENT_OUTPUT, Boolean.getBoolean("keycloak.jsonPrettyPrint"));
         if (Boolean.parseBoolean(System.getProperty("keycloak.jsonEnableJacksonModuleDiscovery", "true"))) {

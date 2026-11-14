@@ -94,13 +94,14 @@ class JacksonErrorResponseTest {
     }
 
     @Test
-    void legacyMapperRemainsAvailableThroughCdi() throws IOException {
-        HttpResponse response = client.execute(new HttpGet(uri("/legacy-mapper", null)));
+    void jackson3MapperIsAvailableThroughCdi() throws IOException {
+        HttpResponse response = client.execute(new HttpGet(uri("/mapper", null)));
         String json = EntityUtils.toString(response.getEntity());
         assertThat(json, response.getStatusLine().getStatusCode(), is(200));
         var body = JsonSerialization.mapper.readTree(json);
-        assertThat(body.get("optional").asText(), is("value"));
-        assertThat(body.get("date"), is(JsonSerialization.mapper.readTree("[2026,1,2]")));
+        assertThat(body.get("access_token").asText(), is("access-token"));
+        assertThat(body.has("refresh_token"), is(false));
+        assertThat(body.has("authorization_details"), is(false));
     }
 
     private HttpResponse post(String path, String body, String accept, String transaction) throws IOException {

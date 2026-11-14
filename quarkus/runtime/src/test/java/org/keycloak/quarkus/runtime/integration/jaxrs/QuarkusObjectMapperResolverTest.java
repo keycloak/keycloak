@@ -1,29 +1,50 @@
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.authzen.AuthZen;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.authorization.AuthorizationSchema;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.ssf.subject.ComplexSubjectId;
+import org.keycloak.ssf.subject.EmailSubjectId;
+import org.keycloak.ssf.subject.GenericSubjectId;
+import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.transmitter.resources.AddSubjectRequest;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 public class QuarkusObjectMapperResolverTest {
+
+    @Test
+    public void preserveIssuerInfoAcrossInternalAndRestMappers() throws Exception {
+        var mapper = new QuarkusObjectMapperResolver().getContext(CredentialIssuer.class);
+        for (String data : List.of("\"signed-certificate\"", "{\"nested\":[1,true,null]}",
+                "[\"value\",2]", "1.25", "true", "null")) {
+            String json = "{\"issuer_info\":[{\"format\":\"registration_cert\",\"data\":" + data + "}]}";
+            var issuer = JsonSerialization.readValue(json, CredentialIssuer.class);
+
+            assertThat(JsonSerialization.mapper.readTree(mapper.writeValueAsString(issuer)),
+                    equalTo(JsonSerialization.mapper.readTree(JsonSerialization.writeValueAsString(issuer))));
+            var restored = mapper.readValue(json, CredentialIssuer.class);
+            assertThat(JsonSerialization.mapper.readTree(JsonSerialization.writeValueAsString(restored)),
+                    equalTo(JsonSerialization.mapper.readTree(JsonSerialization.writeValueAsString(issuer))));
+        }
+    }
 
     @Test
     public void omitNullTokenResponseFields() throws Exception {
@@ -37,10 +58,6 @@ public class QuarkusObjectMapperResolverTest {
         assertThat(json.get("access_token").asString(), equalTo("access-token"));
         assertThat(json.has("authorization_details"), is(false));
         assertThat(json.has("refresh_token"), is(false));
-
-        var legacyMapper = resolver.getObjectMapper();
-        assertThat(legacyMapper.readTree(resolver.getContext(AccessTokenResponse.class).writeValueAsString(response)),
-                equalTo(legacyMapper.readTree(legacyMapper.writeValueAsString(response))));
     }
 
     @Test
@@ -80,187 +97,132 @@ public class QuarkusObjectMapperResolverTest {
     }
 
     @Test
-    public void preserveLegacyJsonNodes() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacyMapper = resolver.getObjectMapper();
-        var mapper = resolver.getContext(Object.class);
-
-        for (String json : List.of("\"signed-data\"", "{\"nested\":[1,true,null]}", "[\"value\",2]", "1.25", "true", "null")) {
-            var value = new LinkedHashMap<String, Object>();
-            value.put("data", legacyMapper.readTree(json));
-            assertThat(json, legacyMapper.readTree(mapper.writeValueAsString(value)),
-                    equalTo(legacyMapper.readTree(legacyMapper.writeValueAsString(value))));
-        }
-    }
-
-    @Test
     public void preserveWorkflowDeserialization() throws Exception {
         String json = "{\"name\":\"test\",\"on\":\"user-created\",\"steps\":[{\"uses\":\"set-user-attribute\",\"custom\":\"value\"}]}";
         var resolver = new QuarkusObjectMapperResolver();
-        var legacyMapper = resolver.getObjectMapper();
-        var expected = legacyMapper.readValue(json, WorkflowRepresentation.class);
         var actual = resolver.getContext(WorkflowRepresentation.class).readValue(json, WorkflowRepresentation.class);
 
-        assertThat(legacyMapper.readTree(legacyMapper.writeValueAsString(actual)),
-                equalTo(legacyMapper.readTree(legacyMapper.writeValueAsString(expected))));
+        assertThat(actual.getName(), equalTo("test"));
+        assertThat(actual.getOn(), equalTo("user-created"));
+        assertThat(actual.getSteps().size(), equalTo(1));
+        var step = actual.getSteps().get(0);
+        assertThat(step.getUses(), equalTo("set-user-attribute"));
+        assertThat(step.getConfig().get("custom"), equalTo(List.of("value")));
     }
 
     @Test
-    public void preserveAuthorizationSchemaForms() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
+    public void preserveAuthorizationSchemaForms() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(AuthorizationSchema.class);
         String resource = "{\"type\":\"document\",\"scopes\":[\"read\",\"write\"]}";
         for (String types : List.of("[" + resource + "]", "{\"document\":" + resource + "}")) {
-            String json = "{\"resourceTypes\":" + types + "}";
-            var expected = resolver.getObjectMapper().readValue(json, AuthorizationSchema.class);
-            var actual = resolver.getContext(AuthorizationSchema.class).readValue(json, AuthorizationSchema.class);
-            assertThat(actual.getResourceTypes().keySet(), equalTo(expected.getResourceTypes().keySet()));
-            assertThat(actual.getResourceTypes().get("document").getScopes(),
-                    equalTo(expected.getResourceTypes().get("document").getScopes()));
+            var actual = mapper.readValue("{\"resourceTypes\":" + types + "}", AuthorizationSchema.class);
+
+            assertThat(actual.getResourceTypes().keySet(), equalTo(Set.of("document")));
+            assertThat(actual.getResourceTypes().get("document").getScopes(), equalTo(Set.of("read", "write")));
         }
     }
 
     @Test
-    public void preserveWorkflowConfiguration() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacyMapper = resolver.getObjectMapper();
+    public void preserveWorkflowConfiguration() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(WorkflowRepresentation.class);
         var workflow = WorkflowRepresentation.withName("test")
                 .onEvent("user-created")
                 .withSteps(WorkflowStepRepresentation.create().of("set-user-attribute")
                         .withConfig("key", "value").withConfig("values", "first", "second").build())
                 .build();
-        String json = legacyMapper.writeValueAsString(workflow);
-        var actual = resolver.getContext(WorkflowRepresentation.class).readValue(json, WorkflowRepresentation.class);
+        String json = "{\"name\":\"test\",\"on\":\"user-created\",\"steps\":[{\"uses\":\"set-user-attribute\","
+                + "\"with\":{\"key\":\"value\",\"values\":[\"first\",\"second\"]}}]}";
+        var actual = mapper.readValue(json, WorkflowRepresentation.class);
 
-        assertThat(legacyMapper.readTree(legacyMapper.writeValueAsString(actual)), equalTo(legacyMapper.readTree(json)));
-        assertThat(legacyMapper.readTree(resolver.getContext(WorkflowRepresentation.class).writeValueAsString(workflow)),
-                equalTo(legacyMapper.readTree(json)));
+        assertThat(actual.getName(), equalTo("test"));
+        assertThat(actual.getOn(), equalTo("user-created"));
+        assertThat(actual.getSteps().size(), equalTo(1));
+        var step = actual.getSteps().get(0);
+        assertThat(step.getUses(), equalTo("set-user-attribute"));
+        assertThat(step.getConfig(), equalTo(Map.of("key", List.of("value"), "values", List.of("first", "second"))));
+        assertThat(mapper.readTree(mapper.writeValueAsString(workflow)), equalTo(mapper.readTree(json)));
     }
 
     @Test
-    public void preserveAuthZenOptions() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacyMapper = resolver.getObjectMapper();
-        for (var semantic : AuthZen.EvaluationsSemantic.values()) {
+    public void preserveAuthZenOptions() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(AuthZen.Options.class);
+        var semantics = Map.of(
+                AuthZen.EvaluationsSemantic.EXECUTE_ALL, "execute_all",
+                AuthZen.EvaluationsSemantic.DENY_ON_FIRST_DENY, "deny_on_first_deny",
+                AuthZen.EvaluationsSemantic.PERMIT_ON_FIRST_PERMIT, "permit_on_first_permit");
+        semantics.forEach((semantic, value) -> {
             var options = new AuthZen.Options(semantic);
-            String json = legacyMapper.writeValueAsString(options);
-            assertThat(resolver.getContext(AuthZen.Options.class).readValue(json, AuthZen.Options.class), equalTo(options));
-            assertThat(legacyMapper.readTree(resolver.getContext(AuthZen.Options.class).writeValueAsString(options)),
-                    equalTo(legacyMapper.readTree(json)));
-        }
+            String json = "{\"evaluations_semantic\":\"" + value + "\"}";
+
+            assertThat(mapper.readValue(json, AuthZen.Options.class), equalTo(options));
+            assertThat(mapper.readTree(mapper.writeValueAsString(options)), equalTo(mapper.readTree(json)));
+        });
     }
 
     @Test
-    public void preserveLegacyJsonNodeDeserialization() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacyMapper = resolver.getObjectMapper();
-        var mapper = resolver.getContext(LegacyTreeHolder.class);
-
-        for (String value : List.of("\"value\"", "{\"nested\":[1,true,null]}", "[1,2]", "1.25", "true", "null")) {
-            String json = "{\"data\":" + value + "}";
-            var expected = legacyMapper.readValue(json, LegacyTreeHolder.class);
-            var actual = mapper.readValue(json, LegacyTreeHolder.class);
-            assertThat(json, actual.data, equalTo(expected.data));
-        }
-    }
-
-    @Test
-    public void preserveLegacyTreeNumbers() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacy = resolver.getObjectMapper();
-        var mapper = resolver.getContext(LegacyTreeHolder.class);
-        for (String number : List.of("1", "2147483648", "123456789012345678901234567890", "1.2500", "-0.0", "1e400", "-1e400")) {
-            String json = "{\"data\":" + number + "}";
-            var expected = legacy.readValue(json, LegacyTreeHolder.class).data;
-            var actual = mapper.readValue(json, LegacyTreeHolder.class).data;
-            assertThat(number, actual.isNumber(), is(true));
-            assertThat(number, actual.numberType(), equalTo(expected.numberType()));
-            assertThat(number, actual.numberValue(), equalTo(expected.numberValue()));
-            assertThat(number, mapper.writeValueAsString(actual), equalTo(legacy.writeValueAsString(expected)));
-        }
-    }
-
-    @Test
-    public void preserveStructuredTreeConversions() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacy = resolver.getObjectMapper();
-        var mapper = resolver.getContext(LegacyTreeHolder.class);
-        var holder = new LegacyTreeHolder();
-        holder.data = legacy.readTree("{\"nested\":[1,true,null],\"explicitNull\":null}");
-
-        var tree = mapper.valueToTree(holder);
-        assertThat(tree.get("data").isObject(), is(true));
-        assertThat(tree.get("data").get("nested").isArray(), is(true));
-        assertThat(tree.get("data").get("explicitNull").isNull(), is(true));
-        assertThat(tree.get("data").has("absent"), is(false));
-        assertThat(mapper.convertValue(holder, Map.class), equalTo(legacy.convertValue(holder, Map.class)));
-        assertThat(mapper.treeToValue(tree, LegacyTreeHolder.class).data, equalTo(holder.data));
-        assertThat(mapper.convertValue(Map.of("data", holder.data), LegacyTreeHolder.class).data, equalTo(holder.data));
-
-        assertThat(mapper.readValue("{}", LegacyTreeHolder.class).data, nullValue());
-        assertThat(mapper.readValue("{\"data\":null}", LegacyTreeHolder.class).data.isNull(), is(true));
-    }
-
-    @Test
-    public void preserveInMemoryNumericTypesAndNonFinitePolicy() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacy = resolver.getObjectMapper();
-        var mapper = resolver.getContext(LegacyTreeHolder.class);
-        var factory = legacy.getNodeFactory();
-        for (var number : List.of(factory.numberNode(1), factory.numberNode(1L),
-                factory.numberNode(new BigInteger("123456789012345678901234567890")),
-                factory.numberNode(1.25f), factory.numberNode(1.25d),
-                factory.numberNode(new BigDecimal("1.2345678901234567890123456789")),
-                factory.numberNode(Double.POSITIVE_INFINITY), factory.numberNode(Double.NEGATIVE_INFINITY),
-                factory.numberNode(Double.NaN), factory.numberNode(Float.NaN))) {
-            var holder = new LegacyTreeHolder();
-            holder.data = number;
-            var tree = mapper.valueToTree(holder);
-            assertThat(tree.get("data").isNumber(), is(true));
-            assertThat(tree.get("data").numberValue(), equalTo(number.numberValue()));
-            var converted = mapper.convertValue(Map.of("data", number), LegacyTreeHolder.class).data;
-            assertThat(converted.numberType(), equalTo(number.numberType()));
-            assertThat(converted.numberValue(), equalTo(number.numberValue()));
-            assertThat(mapper.writeValueAsString(holder), equalTo(legacy.writeValueAsString(holder)));
-        }
-        // Like the legacy mapper, bare non-finite literals are not valid JSON input.
-        assertThrows(com.fasterxml.jackson.core.JsonProcessingException.class,
-                () -> legacy.readValue("{\"data\":NaN}", LegacyTreeHolder.class));
-        assertThrows(tools.jackson.core.JacksonException.class,
-                () -> mapper.readValue("{\"data\":NaN}", LegacyTreeHolder.class));
-    }
-
-    @Test
-    public void preserveEmbeddedTreeValues() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacy = resolver.getObjectMapper();
-        var mapper = resolver.getContext(LegacyTreeHolder.class);
-        var holder = new LegacyTreeHolder();
-        holder.data = legacy.getNodeFactory().binaryNode(new byte[] { 1, 2, 3 });
-        assertThat(mapper.writeValueAsString(holder), equalTo(legacy.writeValueAsString(holder)));
-        assertThat(mapper.valueToTree(holder).get("data").binaryValue(), equalTo(holder.data.binaryValue()));
-        holder.data = legacy.getNodeFactory().pojoNode(Map.of("nested", List.of(1, 2)));
-        assertThat(mapper.valueToTree(holder).get("data").isObject(), is(true));
-        assertThat(mapper.convertValue(holder, Map.class), equalTo(legacy.convertValue(holder, Map.class)));
-    }
-
-    @Test
-    public void preserveSubjectIdentifierFormatsAndExtensions() throws Exception {
-        var resolver = new QuarkusObjectMapperResolver();
-        var legacy = resolver.getObjectMapper();
-        var mapper = resolver.getContext(AddSubjectRequest.class);
-        for (String subject : List.of("null",
-                "{\"format\":\"iss_sub\",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}",
-                "{\"subject_type\":\"iss-sub\",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}",
-                "{\"format\":\"email\",\"email\":\"user@example.com\"}",
-                "{\"format\":\"complex\",\"user\":{\"format\":\"email\",\"email\":\"user@example.com\"}}",
-                "{\"format\":\"complex\",\"user\":{\"format\":\"iss_sub\",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}}",
-                "{\"format\":\"custom-format\",\"extension\":{\"values\":[1,true,null]}}")) {
-            String json = "{\"subject\":" + subject + "}";
-            var expected = legacy.readValue(json, AddSubjectRequest.class);
+    public void preserveIssuerSubjectIdentifier() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
+        String expected = "{\"subject\":{\"format\":\"iss_sub\",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}}";
+        for (String discriminator : List.of("\"format\":\"iss_sub\"", "\"subject_type\":\"iss-sub\"")) {
+            String json = "{\"subject\":{" + discriminator + ",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}}";
             var actual = mapper.readValue(json, AddSubjectRequest.class);
-            assertThat(subject, legacy.valueToTree(actual), equalTo(legacy.valueToTree(expected)));
-            assertThat(subject, legacy.readTree(mapper.writeValueAsString(actual)), equalTo(legacy.valueToTree(expected)));
+
+            assertThat(actual.getSubject().getClass(), equalTo(IssuerSubjectId.class));
+            var subject = (IssuerSubjectId) actual.getSubject();
+            assertThat(subject.getFormat(), equalTo("iss_sub"));
+            assertThat(subject.getIss(), equalTo("https://issuer.example"));
+            assertThat(subject.getSub(), equalTo("user"));
+            assertThat(mapper.readTree(mapper.writeValueAsString(actual)), equalTo(mapper.readTree(expected)));
         }
+    }
+
+    @Test
+    public void preserveEmailSubjectIdentifier() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
+        String json = "{\"subject\":{\"format\":\"email\",\"email\":\"user@example.com\"}}";
+        var actual = mapper.readValue(json, AddSubjectRequest.class);
+
+        assertThat(actual.getSubject().getClass(), equalTo(EmailSubjectId.class));
+        assertThat(((EmailSubjectId) actual.getSubject()).getEmail(), equalTo("user@example.com"));
+        assertThat(mapper.readTree(mapper.writeValueAsString(actual)), equalTo(mapper.readTree(json)));
+    }
+
+    @Test
+    public void preserveComplexSubjectIdentifier() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
+        for (String user : List.of("{\"format\":\"email\",\"email\":\"user@example.com\"}",
+                "{\"format\":\"iss_sub\",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}")) {
+            String json = "{\"subject\":{\"format\":\"complex\",\"user\":" + user + "}}";
+            var actual = mapper.readValue(json, AddSubjectRequest.class);
+
+            assertThat(actual.getSubject().getClass(), equalTo(ComplexSubjectId.class));
+            var subject = (ComplexSubjectId) actual.getSubject();
+            assertThat(subject.getUser().getClass(), equalTo(user.contains("email") ? EmailSubjectId.class : IssuerSubjectId.class));
+            assertThat(mapper.readTree(mapper.writeValueAsString(actual)), equalTo(mapper.readTree(json)));
+        }
+    }
+
+    @Test
+    public void preserveCustomSubjectIdentifierAttributes() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
+        String json = "{\"subject\":{\"format\":\"custom-format\",\"extension\":{\"values\":[1,true,null]}}}";
+        var actual = mapper.readValue(json, AddSubjectRequest.class);
+
+        assertThat(actual.getSubject().getClass(), equalTo(GenericSubjectId.class));
+        assertThat(actual.getSubject().getFormat(), equalTo("custom-format"));
+        assertThat(mapper.valueToTree(actual.getSubject().getAttributes()),
+                equalTo(mapper.readTree("{\"extension\":{\"values\":[1,true,null]}}")));
+        assertThat(mapper.readTree(mapper.writeValueAsString(actual)),
+                equalTo(mapper.readTree("{\"subject\":{\"format\":\"custom-format\"}}")));
+    }
+
+    @Test
+    public void omitNullSubjectIdentifier() {
+        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
+        var actual = mapper.readValue("{\"subject\":null}", AddSubjectRequest.class);
+
+        assertNull(actual.getSubject());
+        assertThat(mapper.writeValueAsString(actual), equalTo("{}"));
     }
 
     @Test
@@ -268,14 +230,9 @@ public class QuarkusObjectMapperResolverTest {
         var resolver = new QuarkusObjectMapperResolver();
         for (String subject : List.of("{}", "{\"format\":null}", "{\"format\":42}")) {
             String json = "{\"subject\":" + subject + "}";
-            assertThrows(com.fasterxml.jackson.core.JsonProcessingException.class,
-                    () -> resolver.getObjectMapper().readValue(json, AddSubjectRequest.class));
             assertThrows(tools.jackson.databind.exc.MismatchedInputException.class,
                     () -> resolver.getContext(AddSubjectRequest.class).readValue(json, AddSubjectRequest.class));
         }
     }
 
-    public static class LegacyTreeHolder {
-        public com.fasterxml.jackson.databind.JsonNode data;
-    }
 }
