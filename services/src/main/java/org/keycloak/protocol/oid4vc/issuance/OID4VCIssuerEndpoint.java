@@ -713,8 +713,6 @@ public class OID4VCIssuerEndpoint {
             eventBuilder.detail(Details.CREDENTIAL_TYPE, String.join(",", credOffer.getCredentialConfigurationIds()));
         }
 
-        LOGGER.debugf("Responding with offer: %s", JsonSerialization.valueAsString(credOffer));
-
         eventBuilder.success();
         return cors.add(Response.ok()
                 .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
@@ -1878,7 +1876,8 @@ public class OID4VCIssuerEndpoint {
 
         protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
-        LOGGER.debugf("The credential to sign is: %s", vc);
+        LOGGER.debugf("Signing credential: [id=%s, format=%s, claims=%s]",
+                credentialConfigId, credentialConfig.getFormat(), credentialSubjectClaims.keySet());
 
         // Build format-specific credential
         CredentialBody credentialBody;
