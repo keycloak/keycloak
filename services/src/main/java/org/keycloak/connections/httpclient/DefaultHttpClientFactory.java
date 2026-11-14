@@ -115,7 +115,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentD
             }
 
             @Override
-            public CloseableHttpClient getHttpClient(ClientCertificate certificate) {
+            public @NotOwning CloseableHttpClient getHttpClient(ClientCertificate certificate) {
                 return getClientCertificateHttpClient(session, certificate);
             }
 

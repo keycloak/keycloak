@@ -61,6 +61,8 @@ public interface HttpClientProvider extends Provider {
      * @return the client
      * @throws UnsupportedOperationException if the provider does not support client certificates
      */
+    @NotOwning
+    @MustCall({})
     default CloseableHttpClient getHttpClient(ClientCertificate certificate) {
         throw new UnsupportedOperationException("This HttpClientProvider does not support client certificates");
     }
