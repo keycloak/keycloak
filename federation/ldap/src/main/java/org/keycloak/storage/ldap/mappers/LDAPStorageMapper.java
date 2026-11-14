@@ -95,11 +95,23 @@ public interface LDAPStorageMapper extends Provider {
     Set<String> mandatoryAttributeNames();
 
     /**
-     * Method that returns user model attributes, which this mapper maps to Keycloak users
+     * Method that returns user model attributes, which this mapper maps to Keycloak users.
+     * All attributes managed by the mapper must be declared here so that they remain protected
+     * when the LDAP provider's edit mode is {@code READ_ONLY}.
      *
      * @return user model attributes. Returns empty set if not user attributes provided by this mapper. Never returns null.
      */
     Set<String> getUserAttributes();
+
+    /**
+     * Returns user model attributes that can be used to build LDAP search conditions.
+     * By default, all attributes mapped by this mapper are searchable in LDAP.
+     *
+     * @return user model attributes backed by LDAP. Never returns null.
+     */
+    default Set<String> getSearchableUserAttributes() {
+        return getUserAttributes();
+    }
 
     /**
      * Called when invoke proxy on LDAP federation provider

@@ -52,7 +52,8 @@ Operations that fetch a single user (for example during login) are usually cache
 Users and admins can modify user metadata, users through the <<_account-service, Account Console>>, and administrators through the Admin Console. The `Edit Mode` configuration on the LDAP configuration page defines the user's LDAP update privileges.
 
 READ_ONLY::
-You cannot change the username, email, first name, last name, and other mapped attributes. {project_name} shows an error anytime a user attempts to update these fields. Password updates are not supported.
+You cannot change the username, LDAP metadata, or attributes mapped from LDAP, such as email, first name, and last name. Password updates are not supported.
+When *Import Users* is enabled, you can add, update, and remove attributes stored only in {project_name}, subject to the permissions and validations configured in <<user-profile,User Profile>>.
 
 WRITABLE::
 You can change the username, email, first name, last name, and other mapped attributes and passwords and synchronize them automatically with the LDAP store.
