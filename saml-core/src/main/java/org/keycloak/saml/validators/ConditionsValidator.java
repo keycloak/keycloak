@@ -56,6 +56,11 @@ public class ConditionsValidator {
         protected abstract Result joinResult(Result otherResult);
     };
 
+    public interface OneTimeUseHandler {
+
+        boolean validate(String assertionId);
+    }
+
     public static class Builder {
 
         private final String assertionId;
@@ -69,6 +74,8 @@ public class ConditionsValidator {
         private final Set<URI> allowedAudiences = new HashSet<>();
 
         private boolean rejectProxyRestriction = false;
+
+        private OneTimeUseHandler oneTimeUseHandler;
 
         public Builder(String assertionId, CommonConditionsType conditions, DestinationValidator destinationValidator) {
             this.assertionId = assertionId;
@@ -91,8 +98,13 @@ public class ConditionsValidator {
             return this;
         }
 
+        public Builder oneTimeUseHandler(OneTimeUseHandler oneTimeUseHandler) {
+            this.oneTimeUseHandler = oneTimeUseHandler;
+            return this;
+        }
+
         public ConditionsValidator build() {
-            return new ConditionsValidator(assertionId, conditions, clockSkewInMillis, allowedAudiences, destinationValidator, rejectProxyRestriction);
+            return new ConditionsValidator(assertionId, conditions, clockSkewInMillis, allowedAudiences, destinationValidator, rejectProxyRestriction, oneTimeUseHandler);
         }
 
     }
@@ -115,13 +127,16 @@ public class ConditionsValidator {
 
     private final boolean rejectProxyRestriction;
 
-    private ConditionsValidator(String assertionId, CommonConditionsType conditions, int clockSkewInMillis, Set<URI> allowedAudiences, DestinationValidator destinationValidator, boolean rejectProxyRestriction) {
+    private final OneTimeUseHandler oneTimeUseHandler;
+
+    private ConditionsValidator(String assertionId, CommonConditionsType conditions, int clockSkewInMillis, Set<URI> allowedAudiences, DestinationValidator destinationValidator, boolean rejectProxyRestriction, OneTimeUseHandler oneTimeUseHandler) {
         this.assertionId = assertionId;
         this.conditions = conditions;
         this.clockSkewInMillis = clockSkewInMillis;
         this.allowedAudiences = allowedAudiences;
         this.destinationValidator = destinationValidator;
         this.rejectProxyRestriction = rejectProxyRestriction;
+        this.oneTimeUseHandler = oneTimeUseHandler;
     }
 
     public boolean isValid() {
@@ -227,6 +242,11 @@ public class ConditionsValidator {
 
         if (oneTimeConditionsCount > 1) {   // line 960
             LOG.info("Invalid conditions: Multiple <OneTimeUse/> conditions found.");
+            return Result.INVALID;
+        }
+
+        if (oneTimeUseHandler != null && !oneTimeUseHandler.validate(assertionId)) {
+            LOG.infof("Assertion %s with a <OneTimeUse/> condition was rejected as already used or too old.", assertionId);
             return Result.INVALID;
         }
 

@@ -73,6 +73,11 @@ public class SamlClient {
                 return post;
             }
 
+            @Override
+            public HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlResponse) {
+                return createSamlPostMessage(samlEndpoint, relayState, samlResponse, GeneralConstants.SAML_RESPONSE_KEY);
+            }
+
             private HttpPost createSamlPostMessage(URI samlEndpoint, String relayState, Document samlRequest, String messageType) {
                 HttpPost post = new HttpPost(samlEndpoint);
                 List<NameValuePair> parameters = new LinkedList<>();
@@ -140,6 +145,11 @@ public class SamlClient {
             }
 
             @Override
+            public HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlResponse) {
+                throw new UnsupportedOperationException("Unsigned responses are only supported with the POST binding");
+            }
+
+            @Override
             public URI getBindingUri() {
                 return JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
             }
@@ -148,6 +158,8 @@ public class SamlClient {
         public abstract HttpUriRequest createSamlUnsignedRequest(URI samlEndpoint, String relayState, Document samlRequest);
 
         public abstract HttpUriRequest createSamlArtifactRequest(URI samlEndpoint, String relayState, String artifact);
+
+        public abstract HttpPost createSamlUnsignedResponse(URI samlEndpoint, String relayState, Document samlResponse);
 
         public abstract URI getBindingUri();
     }

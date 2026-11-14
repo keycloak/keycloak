@@ -1,0 +1,12 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Security and Standards
+
+== SAML OneTimeUse condition enforced for identity brokering
+
+When an external SAML identity provider issues an assertion with a `OneTimeUse` condition, {project_name} now rejects any later attempt to present the same assertion, as required by the SAML 2.0 specification.
+This protects brokered logins against assertion replay, in particular in IdP-initiated flows where no `InResponseTo` binding is available.
+How long a consumed assertion is remembered is bounded by the new *OneTimeUse maximum age* setting of the SAML identity provider, which defaults to 1 hour.
+
+For detailed upgrade instructions, https://www.keycloak.org/docs/latest/upgrading/index.html[review the upgrading guide].
