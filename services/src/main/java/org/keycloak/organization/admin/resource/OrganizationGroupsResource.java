@@ -139,7 +139,7 @@ public class OrganizationGroupsResource {
                 }
 
                 builder = Response.status(204);
-                adminEvent.operation(OperationType.UPDATE);
+                adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
 
             } else {
                 // CREATE new top-level org group
@@ -158,12 +158,10 @@ public class OrganizationGroupsResource {
                 URI uri = session.getContext().getUri().getAbsolutePathBuilder()
                         .path(group.getId()).build();
                 builder = Response.created(uri);
-                adminEvent.operation(OperationType.CREATE);
+                adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), group.getId());
             }
 
-            adminEvent.resourcePath(session.getContext().getUri())
-                    .representation(rep)
-                    .success();
+            adminEvent.representation(rep).success();
 
             GroupRepresentation groupRep = ModelToRepresentation.groupToBriefRepresentation(group);
             return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(groupRep).build();
