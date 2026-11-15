@@ -1,5 +1,7 @@
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
+import java.util.LinkedHashMap;
+
 import org.keycloak.representations.idm.UserRepresentation;
 
 import org.junit.Test;
@@ -9,6 +11,7 @@ import tools.jackson.databind.exc.MismatchedInputException;
 import tools.jackson.databind.exc.UnrecognizedPropertyException;
 import tools.jackson.databind.json.JsonMapper;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -17,7 +20,28 @@ public class RepresentationAdaptersTest extends org.keycloak.json.jackson3.Repre
 
     @Override
     protected JsonMapper mapper() {
-        return (JsonMapper) new QuarkusObjectMapperResolver().getContext(Object.class);
+        var builder = JsonMapper.builder();
+        new KeycloakObjectMapperCustomizer().customize(builder);
+        return builder.build();
+    }
+
+    @Test
+    public void honorPrettyPrinting() {
+        String previous = System.getProperty("keycloak.jsonPrettyPrint");
+        try {
+            System.setProperty("keycloak.jsonPrettyPrint", "true");
+            var mapper = mapper();
+            var values = new LinkedHashMap<String, String>();
+            values.put("key", "value");
+
+            assertThat(mapper.writeValueAsString(values), containsString("\n"));
+        } finally {
+            if (previous == null) {
+                System.clearProperty("keycloak.jsonPrettyPrint");
+            } else {
+                System.setProperty("keycloak.jsonPrettyPrint", previous);
+            }
+        }
     }
 
     @Test

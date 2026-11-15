@@ -91,7 +91,7 @@ public class ErrorTestingRealmResourceProvider implements RealmResourceProvider 
     @Path("json/mapper")
     @Produces(MediaType.APPLICATION_JSON)
     public String mapper() {
-        var mapper = CDI.current().select(tools.jackson.databind.ObjectMapper.class).get();
+        var mapper = CDI.current().select(tools.jackson.databind.json.JsonMapper.class).get();
         var response = new AccessTokenResponse();
         response.setToken("access-token");
         return mapper.writeValueAsString(response);

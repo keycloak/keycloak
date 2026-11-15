@@ -1,10 +1,12 @@
-package org.keycloak.quarkus.runtime.integration.jaxrs;
+package test.org.keycloak.quarkus.json;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import jakarta.inject.Inject;
 
 import org.keycloak.authorization.authzen.AuthZen;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -19,20 +21,40 @@ import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.transmitter.resources.AddSubjectRequest;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Test;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTestProfile;
+import io.quarkus.test.junit.TestProfile;
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class QuarkusObjectMapperResolverTest {
+@QuarkusTest
+@TestProfile(KeycloakObjectMapperTest.MapperProfile.class)
+public class KeycloakObjectMapperTest {
+
+    @Inject
+    JsonMapper mapper;
+
+    public static class MapperProfile implements QuarkusTestProfile {
+
+        @Override
+        public Map<String, String> getConfigOverrides() {
+            return Map.of("kc.http-enabled", "true",
+                    "kc.hostname-strict", "false",
+                    "kc.db", "dev-mem",
+                    "kc.cache", "local",
+                    "kc.server-async-bootstrap", "false",
+                    "quarkus.class-loading.removed-artifacts", "io.quarkus:quarkus-jdbc-oracle,io.quarkus:quarkus-jdbc-oracle-deployment");
+        }
+    }
 
     @Test
     public void preserveIssuerInfoAcrossInternalAndRestMappers() throws Exception {
-        var mapper = new QuarkusObjectMapperResolver().getContext(CredentialIssuer.class);
         for (String data : List.of("\"signed-certificate\"", "{\"nested\":[1,true,null]}",
                 "[\"value\",2]", "1.25", "true", "null")) {
             String json = "{\"issuer_info\":[{\"format\":\"registration_cert\",\"data\":" + data + "}]}";
@@ -47,11 +69,15 @@ public class QuarkusObjectMapperResolverTest {
     }
 
     @Test
+    public void rejectTrailingTokensByDefault() {
+        assertThrows(tools.jackson.databind.exc.MismatchedInputException.class,
+                () -> mapper.readValue("{\"access_token\":\"access-token\"} {}", AccessTokenResponse.class));
+    }
+
+    @Test
     public void omitNullTokenResponseFields() throws Exception {
         var response = new AccessTokenResponse();
         response.setToken("access-token");
-        var resolver = new QuarkusObjectMapperResolver();
-        var mapper = resolver.getContext(AccessTokenResponse.class);
 
         var json = mapper.readTree(mapper.writeValueAsString(response));
 
@@ -62,8 +88,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void serializeStreamsAsArrays() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(Stream.class);
-
         assertThat(mapper.writeValueAsString(Stream.of("first", "second")), equalTo("[\"first\",\"second\"]"));
     }
 
@@ -72,35 +96,14 @@ public class QuarkusObjectMapperResolverTest {
         var values = new LinkedHashMap<String, Object>();
         values.put("visible", "value");
         values.put("hidden", null);
-        var mapper = new QuarkusObjectMapperResolver().getContext(values.getClass());
 
         assertThat(mapper.writeValueAsString(values), equalTo("{\"visible\":\"value\"}"));
     }
 
     @Test
-    public void honorPrettyPrinting() {
-        String previous = System.getProperty("keycloak.jsonPrettyPrint");
-        try {
-            System.setProperty("keycloak.jsonPrettyPrint", "true");
-            var mapper = new QuarkusObjectMapperResolver().getContext(Object.class);
-            var values = new LinkedHashMap<String, String>();
-            values.put("key", "value");
-
-            assertThat(mapper.writeValueAsString(values), containsString("\n"));
-        } finally {
-            if (previous == null) {
-                System.clearProperty("keycloak.jsonPrettyPrint");
-            } else {
-                System.setProperty("keycloak.jsonPrettyPrint", previous);
-            }
-        }
-    }
-
-    @Test
     public void preserveWorkflowDeserialization() throws Exception {
         String json = "{\"name\":\"test\",\"on\":\"user-created\",\"steps\":[{\"uses\":\"set-user-attribute\",\"custom\":\"value\"}]}";
-        var resolver = new QuarkusObjectMapperResolver();
-        var actual = resolver.getContext(WorkflowRepresentation.class).readValue(json, WorkflowRepresentation.class);
+        var actual = mapper.readValue(json, WorkflowRepresentation.class);
 
         assertThat(actual.getName(), equalTo("test"));
         assertThat(actual.getOn(), equalTo("user-created"));
@@ -112,7 +115,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void preserveAuthorizationSchemaForms() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(AuthorizationSchema.class);
         String resource = "{\"type\":\"document\",\"scopes\":[\"read\",\"write\"]}";
         for (String types : List.of("[" + resource + "]", "{\"document\":" + resource + "}")) {
             var actual = mapper.readValue("{\"resourceTypes\":" + types + "}", AuthorizationSchema.class);
@@ -124,7 +126,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void preserveWorkflowConfiguration() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(WorkflowRepresentation.class);
         var workflow = WorkflowRepresentation.withName("test")
                 .onEvent("user-created")
                 .withSteps(WorkflowStepRepresentation.create().of("set-user-attribute")
@@ -145,7 +146,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void preserveAuthZenOptions() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(AuthZen.Options.class);
         var semantics = Map.of(
                 AuthZen.EvaluationsSemantic.EXECUTE_ALL, "execute_all",
                 AuthZen.EvaluationsSemantic.DENY_ON_FIRST_DENY, "deny_on_first_deny",
@@ -161,7 +161,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void preserveIssuerSubjectIdentifier() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
         String expected = "{\"subject\":{\"format\":\"iss_sub\",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}}";
         for (String discriminator : List.of("\"format\":\"iss_sub\"", "\"subject_type\":\"iss-sub\"")) {
             String json = "{\"subject\":{" + discriminator + ",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}}";
@@ -178,7 +177,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void preserveEmailSubjectIdentifier() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
         String json = "{\"subject\":{\"format\":\"email\",\"email\":\"user@example.com\"}}";
         var actual = mapper.readValue(json, AddSubjectRequest.class);
 
@@ -189,7 +187,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void preserveComplexSubjectIdentifier() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
         for (String user : List.of("{\"format\":\"email\",\"email\":\"user@example.com\"}",
                 "{\"format\":\"iss_sub\",\"iss\":\"https://issuer.example\",\"sub\":\"user\"}")) {
             String json = "{\"subject\":{\"format\":\"complex\",\"user\":" + user + "}}";
@@ -204,7 +201,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void preserveCustomSubjectIdentifierAttributes() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
         String json = "{\"subject\":{\"format\":\"custom-format\",\"extension\":{\"values\":[1,true,null]}}}";
         var actual = mapper.readValue(json, AddSubjectRequest.class);
 
@@ -218,7 +214,6 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void omitNullSubjectIdentifier() {
-        var mapper = new QuarkusObjectMapperResolver().getContext(AddSubjectRequest.class);
         var actual = mapper.readValue("{\"subject\":null}", AddSubjectRequest.class);
 
         assertNull(actual.getSubject());
@@ -227,11 +222,10 @@ public class QuarkusObjectMapperResolverTest {
 
     @Test
     public void rejectInvalidSubjectIdentifierFormats() {
-        var resolver = new QuarkusObjectMapperResolver();
         for (String subject : List.of("{}", "{\"format\":null}", "{\"format\":42}")) {
             String json = "{\"subject\":" + subject + "}";
             assertThrows(tools.jackson.databind.exc.MismatchedInputException.class,
-                    () -> resolver.getContext(AddSubjectRequest.class).readValue(json, AddSubjectRequest.class));
+                    () -> mapper.readValue(json, AddSubjectRequest.class));
         }
     }
 
