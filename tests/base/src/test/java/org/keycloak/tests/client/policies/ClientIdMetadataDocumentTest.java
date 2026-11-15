@@ -7,6 +7,7 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -562,6 +563,99 @@ public class ClientIdMetadataDocumentTest {
         Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_LOOPBACK, errorPage.getError());
 
         // cleanup
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorForClientCredentialsGrant() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setOnlyAllowConfidentialClient(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a confidential client with client_credentials grant
+        cimd.getRepresentation().setGrantTypes(List.of("client_credentials"));
+
+        // send a client_credentials token request with private_key_jwt
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.clientCredentialsGrantRequest().client(CLIENT_ID).clientJwt(signedJwt).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        Assertions.assertEquals(CLIENT_ID, accessToken.getIssuedFor());
+
+        // check the persisted client settings
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertEquals("client-jwt", clientRepresentation.getClientAuthenticatorType());
+
+        // delete the persisted client
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorModifiedMetadataOnTokenRequest() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setOnlyAllowConfidentialClient(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata with no-store Cache-Control directive and grant_types including client_credentials
+        cimd.getRepresentation().setGrantTypes(List.of("authorization_code", "refresh_token", "client_credentials"));
+        cimd.setCacheControlHeader("no-store");
+
+        // a client redirects a user to send an authorization request in CIMD with no-store directive
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // check the persisted client settings
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertEquals("client-jwt", clientRepresentation.getClientAuthenticatorType());
+        Assertions.assertEquals(LOGO_URI, clientRepresentation.getAttributes().get("logoUri"));
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // the client modifies its own client metadata
+        cimd.getRepresentation().setLogoUri("http://localhost:8500/logo2.png");
+        cimd.getRepresentation().setScope("profile");
+
+        // move the time ahead so that the cached client metadata (no-store = min cache time) expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // the client sends a token request to keycloak
+        // keycloak fetches the modified client metadata because the cache has expired
+        signedJwt = createSignedRequestToken();
+        tokenResponse = oauth.clientCredentialsGrantRequest().client(CLIENT_ID).clientJwt(signedJwt).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        oauth.verifyToken(tokenResponse.getAccessToken());
+
+        // keycloak confirms that the client metadata is different from the one
+        // retrieved when keycloak received the first authorization request
+        clientRepresentation = findByClientIdByAdmin();
+        Map<String, String> m = clientRepresentation.getAttributes();
+        List<String> optionalScopeList = clientRepresentation.getOptionalClientScopes();
+        Assertions.assertEquals("http://localhost:8500/logo2.png", m.get("logoUri"));
+        Assertions.assertEquals(1, optionalScopeList.size());
+        Assertions.assertTrue(optionalScopeList.contains("profile"));
+
+        // delete the persisted client
         deleteClientByAdmin(clientRepresentation.getId());
     }
 
@@ -1371,6 +1465,42 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTosUri("https://www.example.co.jp/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost/mcp");
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorValidateClientMetadataRestrictSameDomainOnTokenRequest() throws Exception {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setOnlyAllowConfidentialClient(true);
+        executorConfig.setRestrictSameDomain(true);
+        updatePolicy(conditionConfig, executorConfig);
+
+        cimd.getRepresentation().setGrantTypes(List.of("authorization_code", "client_credentials"));
+
+        // one of redirect_uris is not under the same domain as client_id:
+        // the client must not be registered through the token endpoint, otherwise it would be used
+        // for authorization requests later without the same domain policy being enforced.
+        cimd.getRepresentation().setRedirectUris(List.of(REDIRECT_URI, "https://www.example.com/callback"));
+        AccessTokenResponse tokenResponse = oauth.clientCredentialsGrantRequest().client(CLIENT_ID).clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(400, tokenResponse.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
+        Assertions.assertEquals(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN, tokenResponse.getErrorDescription());
+        Assertions.assertTrue(realm.admin().clients().findByClientId(CLIENT_ID).isEmpty());
+
+        // another URI property is not under the same domain as client_id
+        cimd.getRepresentation().setRedirectUris(List.of(REDIRECT_URI));
+        cimd.getRepresentation().setTosUri("https://www.example.com/tos");
+        tokenResponse = oauth.clientCredentialsGrantRequest().client(CLIENT_ID).clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(400, tokenResponse.getStatusCode());
+        Assertions.assertEquals(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN, tokenResponse.getErrorDescription());
+        Assertions.assertTrue(realm.admin().clients().findByClientId(CLIENT_ID).isEmpty());
+
+        // all URIs under the same domain as client_id
+        cimd.getRepresentation().setTosUri("https://localhost:8500/tos");
+        tokenResponse = oauth.clientCredentialsGrantRequest().client(CLIENT_ID).clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        deleteClientByAdmin(findByClientIdByAdmin().getId());
     }
 
     @Test
