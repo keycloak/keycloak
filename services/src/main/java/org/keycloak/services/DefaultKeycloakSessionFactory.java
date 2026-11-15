@@ -53,6 +53,13 @@ import org.keycloak.provider.Spi;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.theme.ThemeManagerFactory;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import com.fasterxml.jackson.datatype.jdk8.StreamSerializer;
 import org.jboss.logging.Logger;
 
 public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFactory {
@@ -70,6 +77,56 @@ public abstract class DefaultKeycloakSessionFactory implements KeycloakSessionFa
     protected ComponentFactoryProviderFactory componentFactoryPF;
 
     private volatile boolean bootstrapCompleted;
+
+    private volatile ObjectMapper defaultObjectMapper;
+
+    /**
+     * Internal accessor for the server's shared, Keycloak configured {@link ObjectMapper}. This is intentionally not part
+     * of {@link KeycloakSessionFactory} so that the public SPI does not depend on a specific Jackson version.
+     * <p>
+     * The returned mapper is shared and must not be reconfigured, use {@link ObjectMapper#readerFor(Class)} / {@link ObjectMapper#copy()}
+     * to derive a variation.
+     * <p>
+     * Runtimes should override this to supply the mapper they manage.
+     */
+    public ObjectMapper getObjectMapper() {
+        ObjectMapper result = defaultObjectMapper;
+        if (result == null) {
+            synchronized (this) {
+                result = defaultObjectMapper;
+                if (result == null) {
+                    result = defaultObjectMapper = configureObjectMapper(new ObjectMapper());
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Applies the Keycloak specific configuration to the given mapper.
+     * <p>
+     * Runtimes that manage their own mapper can use this to apply the same configuration.
+     */
+    public static ObjectMapper configureObjectMapper(ObjectMapper mapper) {
+        JavaType type = TypeFactory.unknownType();
+        JavaType streamType = mapper.getTypeFactory().constructParametricType(Stream.class, type);
+
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(new StreamSerializer(streamType, type));
+        mapper.registerModule(module);
+
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        if (Boolean.parseBoolean(System.getProperty("keycloak.jsonPrettyPrint", "false"))) {
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        }
+
+        // allow to discover jackson mappers on the classpath
+        if (Boolean.parseBoolean(System.getProperty("keycloak.jsonEnableJacksonModuleDiscovery", "true"))) {
+            mapper.findAndRegisterModules();
+        }
+
+        return mapper;
+    }
 
     @Override
     public void register(ProviderEventListener listener) {

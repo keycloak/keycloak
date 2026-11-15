@@ -1,5 +1,7 @@
 package org.keycloak.json;
 
+import org.keycloak.util.JsonSerialization;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -9,7 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public final class Jackson2RawJsonValueSupport implements RawJsonValueSupport {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = JsonSerialization.plainMapper;
 
     private static JsonNode toNode(Object value) {
         if (value instanceof JsonNode) {
