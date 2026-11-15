@@ -1,4 +1,4 @@
-package org.keycloak.admin.client.jackson3;
+package org.keycloak.json.jackson3;
 
 import java.io.Serial;
 
@@ -17,7 +17,7 @@ import tools.jackson.databind.introspect.JacksonAnnotationIntrospector;
  * Jackson 3 cannot expand the inner {@code @JsonDeserialize} (wrong package),
  * so this introspector maps them to the Jackson 3 equivalents directly.
  */
-class KeycloakAnnotationIntrospector3 extends JacksonAnnotationIntrospector {
+public class KeycloakAnnotationIntrospector3 extends JacksonAnnotationIntrospector {
 
     @Serial
     private static final long serialVersionUID = 1L;

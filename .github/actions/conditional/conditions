@@ -62,6 +62,7 @@ js/libs/ui-shared/                          ci ci-webauthn
 *.tsx                                       codeql-typescript
 
 rest/admin-v2/                              admin-v2 ci-jackson3
+core-jackson3/                              ci-jackson3 ci-quarkus
 integration/admin-client-jackson3/          ci-jackson3
 integration/admin-client-core/              ci-jackson3
 integration/admin-client/                   ci-jackson3
