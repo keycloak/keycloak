@@ -17,13 +17,12 @@
 
 package org.keycloak.quarkus.runtime.services;
 
+import java.io.IOException;
 import java.util.Objects;
 
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
-import org.keycloak.services.util.ObjectMapperResolver;
+import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.jboss.logging.Logger;
@@ -36,7 +35,6 @@ import org.jboss.logging.Logger;
  */
 public class RejectNonNormalizedPathFilter implements Handler<RoutingContext> {
     private static final Logger LOGGER = Logger.getLogger(RejectNonNormalizedPathFilter.class);
-    private final ObjectMapper MAPPER = ObjectMapperResolver.createStreamSerializer();
 
     @Override
     public void handle(RoutingContext routingContext) {
@@ -46,8 +44,8 @@ public class RejectNonNormalizedPathFilter implements Handler<RoutingContext> {
             routingContext.response().headers().add("Content-Type", "application/json; charset=UTF-8");
             String jsonString;
             try {
-                jsonString = MAPPER.writeValueAsString(error);
-            } catch (JsonProcessingException e) {
+                jsonString = JsonSerialization.writeValueAsString(error);
+            } catch (IOException e) {
                 jsonString = "";
             }
             routingContext.response().setStatusCode(400).end(jsonString);
@@ -61,8 +59,8 @@ public class RejectNonNormalizedPathFilter implements Handler<RoutingContext> {
             routingContext.response().headers().add("Content-Type", "application/json; charset=UTF-8");
             String jsonString;
             try {
-                jsonString = MAPPER.writeValueAsString(error);
-            } catch (JsonProcessingException e) {
+                jsonString = JsonSerialization.writeValueAsString(error);
+            } catch (IOException e) {
                 jsonString = "";
             }
             routingContext.response().setStatusCode(400).end(jsonString);

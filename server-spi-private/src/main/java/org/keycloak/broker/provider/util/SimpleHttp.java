@@ -41,7 +41,6 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -74,7 +73,6 @@ import org.apache.http.message.BasicNameValuePair;
 @Deprecated
 public class SimpleHttp {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
     private static final int UNDEFINED_TIMEOUT = -1;
 
     private final HttpClient client;
@@ -261,7 +259,7 @@ public class SimpleHttp {
         if (headers == null || !headers.containsKey("Accept")) {
             header("Accept", "application/json");
         }
-        return mapper.readTree(asString());
+        return JsonSerialization.mapper.readTree(asString());
     }
 
     public <T> T asJson(Class<T> type) throws IOException {
@@ -443,7 +441,7 @@ public class SimpleHttp {
         }
 
         public JsonNode asJson() throws IOException {
-            return mapper.readTree(asString());
+            return JsonSerialization.mapper.readTree(asString());
         }
 
         public <T> T asJson(Class<T> type) throws IOException {

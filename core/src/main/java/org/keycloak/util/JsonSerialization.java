@@ -38,8 +38,35 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  * @version $Revision: 1 $
  */
 public class JsonSerialization {
+    /**
+     * The mapper with the Keycloak defaults: no null values are written, empty beans are allowed and the
+     * JDK 8 and Java time modules are registered.
+     * <p>
+     * Shared and must not be reconfigured.
+     */
     public static final ObjectMapper mapper = createObjectMapperWithDefaults();
+
+    /**
+     * A mapper with indented output that, like {@link #mapper}, does not write null values and allows empty beans.
+     * Unlike {@link #mapper} it does not register the JDK 8 and Java time modules.
+     * <p>
+     * Shared and must not be reconfigured.
+     */
     public static final ObjectMapper prettyMapper = createPrettyObjectMapperWithDefaults();
+
+    /**
+     * An {@link ObjectMapper} with the plain Jackson defaults, and no Keycloak specific configuration or modules.
+     * <p>
+     * Use this instead of creating a new {@code ObjectMapper} when the exact Jackson default behavior is required,
+     * for example when the serialized form is hashed or signed, or when {@link #mapper} would change the result by
+     * omitting null values. Prefer {@link #mapper} otherwise.
+     * <p>
+     * Shared and must not be reconfigured, as that would affect every other user. To derive a variation use
+     * {@link ObjectMapper#writer(com.fasterxml.jackson.core.PrettyPrinter)}, {@link ObjectMapper#readerFor(Class)},
+     * {@link ObjectMapper#writer(SerializationFeature)} or {@link ObjectMapper#copy()}. If a different configuration
+     * is needed, create a dedicated mapper instead.
+     */
+    public static final ObjectMapper plainMapper = new ObjectMapper();
 
     public static ObjectMapper createObjectMapperWithDefaults() {
         ObjectMapper mapper = new ObjectMapper();
