@@ -12,6 +12,7 @@ import org.keycloak.tests.db.AsyncCommitHqlTest;
 import org.keycloak.tests.db.JdbcPingReconnectCacheClearTest;
 import org.keycloak.tests.forms.RecoveryAuthnCodesAuthenticatorTest;
 import org.keycloak.tests.loginfailures.LoginFailureExpirationTest;
+import org.keycloak.tests.model.AuthenticationSessionExpirationTest;
 import org.keycloak.tests.model.AuthenticationSessionProviderTest;
 import org.keycloak.tests.model.SingleUseProviderTest;
 import org.keycloak.tests.model.UserSessionProviderOfflineTest;
@@ -41,6 +42,7 @@ import org.junit.platform.suite.api.Suite;
         KcAdmSessionTest.class,
         RecoveryAuthnCodesAuthenticatorTest.class,
         AsyncCommitHqlTest.class,
+        AuthenticationSessionExpirationTest.class,
         AuthenticationSessionProviderTest.class,
         SingleUseProviderTest.class,
         JdbcPingReconnectCacheClearTest.class,
