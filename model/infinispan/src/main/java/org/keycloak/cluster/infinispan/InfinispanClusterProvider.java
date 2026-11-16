@@ -191,20 +191,16 @@ public class InfinispanClusterProvider implements ClusterProvider {
     }
 
     @Override
-    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
-    }
-
-    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
-        notify(taskKey, events, ignoreSender, DCNotify.ALL_DCS);
+    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
+        notify(taskKey, Collections.singleton(event), ignoreSender);
     }
 
     @Override
-    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), dcNotify, ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), ignoreSender);
 
         String eventKey = SecretGenerator.getInstance().generateSecureID();
 

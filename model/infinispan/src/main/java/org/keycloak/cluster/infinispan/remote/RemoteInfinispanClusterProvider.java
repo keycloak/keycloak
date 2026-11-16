@@ -114,18 +114,13 @@ public class RemoteInfinispanClusterProvider implements ClusterProvider {
     }
 
     @Override
-    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        data.notificationManager().notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
+    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
+        data.notificationManager().notify(taskKey, Collections.singleton(event), ignoreSender);
     }
 
     @Override
     public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
-        data.notificationManager().notify(taskKey, events, ignoreSender, DCNotify.ALL_DCS);
-    }
-
-    @Override
-    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
-        data.notificationManager().notify(taskKey, events, ignoreSender, dcNotify);
+        data.notificationManager().notify(taskKey, events, ignoreSender);
     }
 
     @Override

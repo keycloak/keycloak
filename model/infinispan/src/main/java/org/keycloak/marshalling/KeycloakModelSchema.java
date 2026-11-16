@@ -41,7 +41,6 @@ import org.keycloak.models.cache.infinispan.authorization.events.ScopeUpdatedEve
 import org.keycloak.models.cache.infinispan.authorization.stream.InResourcePredicate;
 import org.keycloak.models.cache.infinispan.authorization.stream.InResourceServerPredicate;
 import org.keycloak.models.cache.infinispan.authorization.stream.InScopePredicate;
-import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientRemovedEvent;
@@ -189,7 +188,6 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 InRealmPredicate.class,
 
                 // models.cache.infinispan.events package
-                AuthenticationSessionAuthNoteUpdateEvent.class,
                 CacheKeyInvalidatedEvent.class,
                 ClientAddedEvent.class,
                 ClientUpdatedEvent.class,

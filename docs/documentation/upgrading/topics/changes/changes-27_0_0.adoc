@@ -735,3 +735,22 @@ These options were deprecated and were only relevant when using volatile user se
 With persistent user sessions enabled (the default since Keycloak 26), offline sessions are managed in the database and these lifespan override options have no effect.
 
 If you have these options in your configuration, remove them before upgrading to Keycloak 27.
+
+=== ClusterProvider cross-DC notification API removed
+// https://github.com/keycloak/keycloak/issues/39047
+
+The deprecated cross-datacenter notification API in `ClusterProvider` has been removed.
+These APIs were deprecated in Keycloak 26.3 when the `cache-embedded-remote-store` feature was removed.
+
+The following have been removed:
+
+* `ClusterProvider.DCNotify` enum
+* `ClusterProvider.notify(String, ClusterEvent, boolean, DCNotify)` method
+* `ClusterProvider.notify(String, Collection<? extends ClusterEvent>, boolean, DCNotify)` method
+* `AuthenticationSessionProvider.updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId, Map<String, String>)` method
+
+The remaining `notify()` methods in `ClusterProvider` are now abstract and notify all datacenters (`ALL_DCS` semantics).
+Third-party `ClusterProvider` implementations in `server-spi-private`, if any exist, must implement these methods directly instead of implementing the deprecated `DCNotify` variants.
+
+Multi-site deployments using external Infinispan are unaffected, as they never used the `DCNotify` parameter.
+All current callers already use the non-deprecated `notify()` methods which default to `ALL_DCS` semantics.

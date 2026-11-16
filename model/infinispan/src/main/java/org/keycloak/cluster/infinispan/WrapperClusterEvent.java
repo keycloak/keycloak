@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Objects;
 
 import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.marshalling.Marshalling;
 
 import org.infinispan.protostream.WrappedMessage;
@@ -61,15 +60,11 @@ public class WrapperClusterEvent implements ClusterEvent {
         return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteFilter, events);
     }
 
-    public static WrapperClusterEvent wrap(String eventKey, Collection<? extends ClusterEvent> events, String senderAddress, String senderSite, ClusterProvider.DCNotify dcNotify, boolean ignoreSender) {
+    public static WrapperClusterEvent wrap(String eventKey, Collection<? extends ClusterEvent> events, String senderAddress, String senderSite, boolean ignoreSender) {
         senderAddress = ignoreSender ? Objects.requireNonNull(senderAddress) : null;
-        senderSite = dcNotify == ClusterProvider.DCNotify.ALL_DCS ? null : senderSite;
-        var siteNotification = switch (dcNotify) {
-            case ALL_DCS -> SiteFilter.ALL;
-            case LOCAL_DC_ONLY -> SiteFilter.LOCAL;
-            case ALL_BUT_LOCAL_DC -> SiteFilter.REMOTE;
-        };
-        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteNotification, events);
+        // Always use ALL semantics - notify all datacenters
+        senderSite = null;
+        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, SiteFilter.ALL, events);
     }
 
     @ProtoField(5)
