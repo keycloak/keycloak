@@ -3,23 +3,21 @@ package org.keycloak.tests.admin.client.v2.validation;
 import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.error.ViolationExceptionResponse;
+import org.keycloak.services.error.ProblemDetail;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 
 @KeycloakIntegrationTest(config = AbstractClientValidationTest.AdminV2Config.class)
 public class PatchClientValidationTest extends AbstractClientValidationTest {
@@ -62,9 +60,10 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
         try (var response = client.execute(patchRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: uuid is server-managed and must not be user-specified"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("uuid", "uuid is server-managed and must not be user-specified"));
         }
 
         // Patch the client with the same UUID (should succeed)
@@ -91,8 +90,9 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
         try (var response = client.execute(patchRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            String responseBody = EntityUtils.toString(response.getEntity());
-            assertThat(responseBody, containsString("Invalid patch"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.INVALID_PATCH.getType()));
+            assertThat(body.detail(), is("Invalid patch"));
         }
     }
 

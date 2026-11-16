@@ -14,7 +14,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -30,6 +29,7 @@ import org.keycloak.scim.resource.spi.SortField;
 import org.keycloak.scim.resource.spi.SortField.SortOrder;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.scim.ClientResourceTypeProvider;
+import org.keycloak.services.error.ProblemType;
 
 public class DefaultClientsApi implements ClientsApi {
 
@@ -62,7 +62,7 @@ public class DefaultClientsApi implements ClientsApi {
                 .map(DefaultClientsApi::parseSortField)
                 .collect(Collectors.toUnmodifiableList());
         if (parsedSortSegments.isEmpty()) {
-            throw new IllegalArgumentException("sort must specify at least one field");
+            throw ServiceException.invalid("sort", "sort must specify at least one field");
         }
         return parsedSortSegments;
     }
@@ -71,7 +71,7 @@ public class DefaultClientsApi implements ClientsApi {
         String[] parts = segment.split("\\|", 2);
         String fieldName = parts[0].trim();
         if (fieldName.isEmpty()) {
-            throw new IllegalArgumentException("sort must specify at least one field");
+            throw ServiceException.invalid("sort", "sort must specify at least one field");
         }
         SortOrder order = parts.length == 1 ? SortOrder.ASC : parseSortOrder(parts[1].trim());
         return new SortField(fieldName, order);
@@ -86,59 +86,45 @@ public class DefaultClientsApi implements ClientsApi {
                 return order;
             }
         }
-        throw new IllegalArgumentException("sort direction must be asc or desc");
+        throw ServiceException.invalid("sort", "sort direction must be asc or desc");
     }
     
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Override
     public Stream<BaseClientRepresentation> getClients(ListOptions listOptions) {
-        try {
-            Integer offset = listOptions.getOffset();
-            Integer limit = listOptions.getLimit();
-            if (offset != null && offset < 0) {
-                throw new WebApplicationException("offset must be greater than or equal to 0", Response.Status.BAD_REQUEST);
-            }
-            if (limit != null && limit < 1) {
-                throw new WebApplicationException("limit must be greater than or equal to 1", Response.Status.BAD_REQUEST);
-            }
-            int normalizedOffset = offset != null ? offset : 0;
-            int normalizedLimit = limit != null ? limit : Constants.DEFAULT_MAX_RESULTS;
-
-            var builder = SearchOptions.builder();
-            builder.withAttributes(Optional.ofNullable(listOptions.getFields()).map(List::copyOf).orElse(null))
-                    .withCount(normalizedLimit).withStartIndex(normalizedOffset).withFilter(listOptions.getQuery());
-            
-            String sort = listOptions.getSort();
-            try {
-                if (sort != null && !sort.isEmpty()) {
-                    builder.withSort(getSortFields(sort));
-                }
-            } catch (IllegalArgumentException e) {
-                throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
-            }
-            
-            return typeProvider.getAll(builder.build());
-            
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        } catch (org.keycloak.scim.protocol.ForbiddenException e) {
-            throw new jakarta.ws.rs.ForbiddenException();
+        Integer offset = listOptions.getOffset();
+        Integer limit = listOptions.getLimit();
+        if (offset != null && offset < 0) {
+            throw ServiceException.invalid("offset", "offset must be greater than or equal to 0");
         }
+        if (limit != null && limit < 1) {
+            throw ServiceException.invalid("limit", "limit must be greater than or equal to 1");
+        }
+        int normalizedOffset = offset != null ? offset : 0;
+        int normalizedLimit = limit != null ? limit : Constants.DEFAULT_MAX_RESULTS;
+
+        var builder = SearchOptions.builder();
+        builder.withAttributes(Optional.ofNullable(listOptions.getFields()).map(List::copyOf).orElse(null))
+                .withCount(normalizedLimit).withStartIndex(normalizedOffset).withFilter(listOptions.getQuery());
+
+        String sort = listOptions.getSort();
+        if (sort != null && !sort.isEmpty()) {
+            builder.withSort(getSortFields(sort));
+        }
+
+        return typeProvider.getAll(builder.build());
     }
 
     @POST
     @Override
     public Response createClient(@Valid BaseClientRepresentation client) {
-        try {
-            return Response.status(Response.Status.CREATED)
-                    .entity(typeProvider.create(client))
-                    .build();
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        } catch (org.keycloak.scim.protocol.ForbiddenException e) {
-            throw new jakarta.ws.rs.ForbiddenException();
+        if (client == null) {
+            throw new ServiceException(ProblemType.MALFORMED_BODY, "A request body is required");
         }
+        return Response.status(Response.Status.CREATED)
+                .entity(typeProvider.create(client))
+                .build();
     }
 
     /**

@@ -62,20 +62,31 @@ public class HeadersBodyStatus extends HeadersBody {
                 String description = (String) error.get("error_description");
                 String err = (String) error.get("error");
                 String msg = (String) error.get("errorMessage");
+                String detail = (String) error.get("detail");
 
                 if (allowJakartaValidationErrors) {
                     Object violations = error.get("violations");
                     if (violations instanceof Iterable<?> violationList) {
                         StringBuilder violationsString = new StringBuilder();
                         for (Object v : violationList) {
-                            violationsString.append("\n\t- ").append(v);
+                            if (v instanceof Map<?, ?> vMap) {
+                                Object field = vMap.get("field");
+                                Object vMsg = vMap.get("message");
+                                violationsString.append("\n\t- ");
+                                if (field != null) {
+                                    violationsString.append(field).append(": ");
+                                }
+                                violationsString.append(vMsg);
+                            } else {
+                                violationsString.append("\n\t- ").append(v);
+                            }
                         }
-                        message = "%s:%s".formatted(err != null ? err : "Invalid data", violationsString.toString());
+                        message = "%s:%s".formatted(detail != null ? detail : (err != null ? err : "Invalid data"), violationsString.toString());
                     }
                 }
 
                 if (message == null) {
-                    message = msg != null ? msg : err != null ? (description != null ? description + " [" + err + "]" : err) : null;
+                    message = detail != null ? detail : (msg != null ? msg : (err != null ? (description != null ? description + " [" + err + "]" : err) : description));
                 }
             }
             throw new HttpResponseException(getStatusCodeAndReason(), message, new RuntimeException(content));

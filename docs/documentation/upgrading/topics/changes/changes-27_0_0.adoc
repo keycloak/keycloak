@@ -4,6 +4,17 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Consistent RFC 9457 error responses in Admin API v2
+// https://github.com/keycloak/keycloak/issues/50671
+
+All error responses from Admin API v2 endpoints under `/admin/api/**` now consistently use the RFC 9457 Problem Details (`application/problem+json`) format.
+Previously, error responses returned varying structures including OAuth2 error shapes (`error`, `error_description`), plain strings, or HTML error pages.
+
+Every error response now returns a JSON object containing `type`, `title`, and `status`.
+Invalid input returns `type: "urn:keycloak:admin-api:v2:problem:validation-failed"` with a `violations` array of structured objects containing `field` and `message` properties instead of colon-separated strings.
+This covers bean validation, unknown fields, an unsupported protocol, a mismatched identifier, and invalid `offset`, `limit`, `sort`, `fields` and `q` query parameters.
+Creating a client with an existing UUID now returns HTTP `409 Conflict` with `type: "urn:keycloak:admin-api:v2:problem:conflict"` rather than HTTP `400 Bad Request`.
+
 === Client scope policy checks legacy client templates
 // https://github.com/keycloak/keycloak/issues/54456
 

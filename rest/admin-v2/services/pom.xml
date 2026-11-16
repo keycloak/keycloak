@@ -89,6 +89,12 @@
             <artifactId>smallrye-open-api-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!-- provides the jakarta.ws.rs.ext.RuntimeDelegate needed to build a Response in unit tests -->
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

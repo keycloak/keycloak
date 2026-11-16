@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -54,6 +55,8 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
     public static final String ERROR_RESPONSE_TEXT = "Error response {0}";
 
+    private static final String ADMIN_API_V2_PATH = "admin/api";
+
     @Context
     KeycloakSession session;
 
@@ -62,9 +65,35 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         return getResponse(session, throwable);
     }
 
+    /**
+     * Holder for the optional Admin API v2 formatter, which lives in a module this one cannot depend on.
+     */
+    private static class AdminApiV2ErrorFormatterHolder {
+        private static final AdminApiV2ErrorFormatter INSTANCE = ServiceLoader
+                .load(AdminApiV2ErrorFormatter.class, KeycloakErrorHandler.class.getClassLoader())
+                .findFirst().orElse(null);
+    }
+
+    private static boolean isAdminApiV2Request(KeycloakSession session) {
+        String path = session.getContext().getUri().getPath();
+        if (path == null) {
+            return false;
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        return path.equals(ADMIN_API_V2_PATH) || path.startsWith(ADMIN_API_V2_PATH + "/");
+    }
+
     public static Response getResponse(KeycloakSession session, Throwable throwable) {
         KeycloakTransaction tx = session.getTransactionManager();
         tx.setRollbackOnly();
+
+        // Admin API v2 documents a single error format (RFC 9457), regardless of the Accept header
+        AdminApiV2ErrorFormatter v2Formatter = AdminApiV2ErrorFormatterHolder.INSTANCE;
+        if (v2Formatter != null && isAdminApiV2Request(session)) {
+            return v2Formatter.toResponse(throwable);
+        }
 
         Response.Status responseStatus = getResponseStatus(throwable);
         boolean isServerError = responseStatus.getFamily().equals(Response.Status.Family.SERVER_ERROR);

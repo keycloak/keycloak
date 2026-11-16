@@ -1,12 +1,12 @@
 package org.keycloak.rest.admin.api;
 
-import jakarta.ws.rs.NotFoundException;
-
 import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.rest.admin.api.client.DefaultClientsApi;
+import org.keycloak.services.ServiceException;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.services.resources.admin.AdminRoot;
 
 public class DefaultAdminApi implements AdminApi {
@@ -17,7 +17,7 @@ public class DefaultAdminApi implements AdminApi {
         this.session = session;
         AdminRoot.authenticateRealmAdminRequest(session);
         RealmModel realm = session.realms().getRealmByName(realmName);
-        if (realm == null) throw new NotFoundException("Realm not found.");
+        if (realm == null) throw new ServiceException(ProblemType.NOT_FOUND, "Realm not found.");
         session.getContext().setRealm(realm);
         this.realm = realm;
     }

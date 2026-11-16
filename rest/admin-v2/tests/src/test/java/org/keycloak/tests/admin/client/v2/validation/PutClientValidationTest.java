@@ -1,6 +1,5 @@
 package org.keycloak.tests.admin.client.v2.validation;
 
-import java.util.Map;
 import java.util.UUID;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -11,7 +10,8 @@ import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenti
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.error.ViolationExceptionResponse;
+import org.keycloak.services.error.ProblemDetail;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -21,7 +21,6 @@ import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
@@ -69,9 +68,10 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("auth.secret: must not be blank when authentication method requires a secret"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("auth.secret", "must not be blank when authentication method requires a secret"));
         }
     }
 
@@ -99,9 +99,10 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("auth.secret: must not be blank when authentication method requires a secret"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("auth.secret", "must not be blank when authentication method requires a secret"));
         }
     }
 
@@ -128,11 +129,11 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
                 """.formatted(protocol, differentClientId, existingUuid)));
 
         try (var response = client.execute(updateRequest)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            assertThat(response.getStatusLine().getStatusCode(), is(409));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(Map.class);
-            
-            assertThat((String)body.get("error"), is("uuid already exists, but with a different clientId"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.CONFLICT.getType()));
+            assertThat(body.detail(), is("uuid already exists, but with a different clientId"));
         }
 
         // Try to create client with a different UUID (should pass)
@@ -199,9 +200,10 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
         try (var response = client.execute(updateRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: uuid is server-managed and must not be user-specified"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("uuid", "uuid is server-managed and must not be user-specified"));
         }
 
         // Update the client with the same UUID (should succeed)

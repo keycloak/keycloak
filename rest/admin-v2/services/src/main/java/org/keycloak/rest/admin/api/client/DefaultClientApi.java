@@ -9,10 +9,8 @@ import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
@@ -20,12 +18,12 @@ import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -53,12 +51,16 @@ public class DefaultClientApi implements ClientApi {
         this.typeProvider = typeProvider;
     }
 
+    private static ServiceException clientNotFound() {
+        return new ServiceException(ProblemType.NOT_FOUND, "Cannot find the specified client");
+    }
+
     @GET
     @Override
     public BaseClientRepresentation getClient() {
         try {
             BaseClientRepresentation result = Optional.ofNullable(typeProvider.get(clientId))
-                    .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
+                    .orElseThrow(DefaultClientApi::clientNotFound);
             
             // matches v1 behavior - the event is only triggered on getting a single client,
             // not on a search, nor other logic that does typeProvider.get
@@ -68,32 +70,25 @@ public class DefaultClientApi implements ClientApi {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(typeProvider.getModel(clientId), typeProvider.getPermissions().adminAuth()));
             return result;
         } catch (ClientPolicyException e) {
-            throw new WebApplicationException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        } catch (ForbiddenException e) {
-            throw new jakarta.ws.rs.ForbiddenException();
-        } 
+            throw new ServiceException(ProblemType.POLICY_VIOLATION, e.getErrorDetail());
+        }
     }
 
     @PUT
     @Override
     public Response createOrUpdateClient(BaseClientRepresentation client) {
+        if (client == null) {
+            throw new ServiceException(ProblemType.MALFORMED_BODY, "A request body is required");
+        }
         assertSameClientIds(clientId, client.getClientId());
 
-        try {
-            var current = typeProvider.get(clientId);
-            
-            if (current == null) {
-                return Response.status(Response.Status.CREATED).entity(typeProvider.create(client)).build();
-            }
-            
-            return Response.status(Response.Status.OK).entity(typeProvider.update(client)).build();
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        } catch (ForbiddenException e) {
-            throw new jakarta.ws.rs.ForbiddenException();
+        var current = typeProvider.get(clientId);
+
+        if (current == null) {
+            return Response.status(Response.Status.CREATED).entity(typeProvider.create(client)).build();
         }
+
+        return Response.status(Response.Status.OK).entity(typeProvider.update(client)).build();
     }
 
     /**
@@ -105,53 +100,47 @@ public class DefaultClientApi implements ClientApi {
     public BaseClientRepresentation patchClient(InputStream patch) {
         String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
         PatchType patchType = PatchType.getByMediaType(contentType)
-                .orElseThrow(() -> new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE));
-        
-        try {
-            var current = typeProvider.get(clientId);
-            
-            if (current == null) {
-                throw new NotFoundException("Cannot find the specified client");
-            }
-            
-            if (!typeProvider.hasPermission(current, AdminPermissionsSchema.MANAGE)) {
-                throw new jakarta.ws.rs.ForbiddenException();
-            }
-            
-            BaseClientRepresentation updated;
-            switch (patchType) {
-                case JSON_MERGE -> {
-                    JsonNode patchNode;
-                    try {
-                        patchNode = MAPPER.readValue(patch, JsonNode.class);
-                        if (!patchNode.isObject()) {
-                            throw new WebApplicationException("Cannot replace client resource with non-object", Response.Status.BAD_REQUEST);
-                        }
-                        final ObjectReader objectReader = MAPPER.readerForUpdating(current);
-                        updated = objectReader.readValue(patchNode);
-                    } catch (JsonMappingException e) {
-                        if (e.getPath().isEmpty()) {
-                            throw new WebApplicationException("Invalid patch", Response.Status.BAD_REQUEST);
-                        }
-                        var invalidField = e.getPath().stream().map(JsonMappingException.Reference::getFieldName).collect(Collectors.joining("."));
-                        throw new WebApplicationException("Invalid value for %s".formatted(invalidField), Response.Status.BAD_REQUEST);
-                    } catch (JsonProcessingException e) {
-                        throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
-                    } catch (IOException e) {
-                        throw new WebApplicationException("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
-                    }
-                }
-                default -> throw new WebApplicationException("Invalid patch type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
-            }
-            
-            assertSameClientIds(clientId, updated.getClientId());
+                .orElseThrow(() -> new ServiceException(ProblemType.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type"));
 
-            return typeProvider.update(updated);
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        } catch (ForbiddenException e) {
+        var current = typeProvider.get(clientId);
+
+        if (current == null) {
+            throw clientNotFound();
+        }
+
+        if (!typeProvider.hasPermission(current, AdminPermissionsSchema.MANAGE)) {
             throw new jakarta.ws.rs.ForbiddenException();
         }
+
+        BaseClientRepresentation updated;
+        switch (patchType) {
+            case JSON_MERGE -> {
+                JsonNode patchNode;
+                try {
+                    patchNode = MAPPER.readValue(patch, JsonNode.class);
+                    if (!patchNode.isObject()) {
+                        throw new ServiceException(ProblemType.INVALID_PATCH, "Cannot replace client resource with non-object");
+                    }
+                    final ObjectReader objectReader = MAPPER.readerForUpdating(current);
+                    updated = objectReader.readValue(patchNode);
+                } catch (JsonMappingException e) {
+                    if (e.getPath().isEmpty()) {
+                        throw new ServiceException(ProblemType.INVALID_PATCH, "Invalid patch");
+                    }
+                    var invalidField = e.getPath().stream().map(JsonMappingException.Reference::getFieldName).collect(Collectors.joining("."));
+                    throw new ServiceException(ProblemType.INVALID_PATCH, "Invalid value for %s".formatted(invalidField));
+                } catch (JsonProcessingException e) {
+                    throw new ServiceException(ProblemType.MALFORMED_BODY, "Cannot parse the JSON");
+                } catch (IOException e) {
+                    throw new ServiceException(ProblemType.INTERNAL_ERROR, "Unable to read the request body");
+                }
+            }
+            default -> throw new ServiceException(ProblemType.UNSUPPORTED_MEDIA_TYPE, "Invalid patch type");
+        }
+
+        assertSameClientIds(clientId, updated.getClientId());
+
+        return typeProvider.update(updated);
     }
     
     protected void assertSameClientIds(String pathId, String payloadId) {
@@ -160,24 +149,17 @@ public class DefaultClientApi implements ClientApi {
             return;
         }
         if (!Objects.equals(pathId, payloadId)) {
-            throw new WebApplicationException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
+            throw ServiceException.invalid("clientId", "Field 'clientId' in payload does not match the provided 'clientId'");
         }
     }
 
     @DELETE
     @Override
     public Response deleteClient() {
-        try {
-            if (typeProvider.get(clientId) == null) {
-                throw new NotFoundException("Cannot find the specified client");
-            }
-            typeProvider.delete(clientId); // TODO: not currently using the boolean return
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        } catch (ForbiddenException e) {
-            // TODO: a common error handler should be considered 
-            throw new jakarta.ws.rs.ForbiddenException();
+        if (typeProvider.get(clientId) == null) {
+            throw clientNotFound();
         }
+        typeProvider.delete(clientId); // TODO: not currently using the boolean return
         return Response.noContent().build();
     }
 }

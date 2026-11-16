@@ -380,7 +380,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
 
         assertThat("should fail without credentials",
                 result.exitCode(), is(not(0)));
-        assertThat(result.err(), containsString("HTTP 401 Unauthorized"));
+        assertThat(result.err(), containsString("401 Unauthorized"));
     }
 
     @Test
@@ -460,7 +460,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
                 "client", "create", "saml", "dummy-id");
 
         assertThat("should fail without credentials", result.exitCode(), is(not(0)));
-        assertThat(result.err(), containsString("HTTP 401 Unauthorized"));
+        assertThat(result.err(), containsString("401 Unauthorized"));
     }
 
     @Test

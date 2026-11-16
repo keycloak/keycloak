@@ -200,7 +200,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
             case "description"           -> model.getDescription();
             case "displayName"           -> model.getName();
             case "appUrl"                -> model.getBaseUrl();
-            case "redirectUris"          -> new LinkedHashSet<>(model.getRedirectUris());
+            case "redirectUris"          -> model.getRedirectUris() != null ? new LinkedHashSet<>(model.getRedirectUris()) : null;
             case "roles"                 -> model.getRolesStream().map(RoleModel::getName).collect(Collectors.toCollection(LinkedHashSet::new));
             case "createdTimestamp"      -> model.getCreatedTimestamp();
             case "updatedTimestamp"      -> model.getLastModifiedTimestamp();

@@ -26,7 +26,8 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.error.ViolationExceptionResponse;
+import org.keycloak.services.error.ProblemDetail;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -46,12 +47,14 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -102,6 +105,41 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         return getPayloadClientId(true);
     }
 
+    public static Matcher<Iterable<? super ProblemDetail.Violation>> hasViolation(String field, String message) {
+        return CoreMatchers.hasItem(new ProblemDetail.Violation(field, message));
+    }
+
+    public static Matcher<Iterable<? super ProblemDetail.Violation>> hasViolation(Matcher<? super String> fieldMatcher, Matcher<? super String> messageMatcher) {
+        return new TypeSafeDiagnosingMatcher<>() {
+            @Override
+            protected boolean matchesSafely(Iterable<? super ProblemDetail.Violation> item, Description mismatchDescription) {
+                for (Object v : item) {
+                    if (v instanceof ProblemDetail.Violation violation) {
+                        if (fieldMatcher.matches(violation.field()) && messageMatcher.matches(violation.message())) {
+                            return true;
+                        }
+                    }
+                }
+                mismatchDescription.appendText("was ").appendValue(item);
+                return false;
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("a violation matching field ").appendDescriptionOf(fieldMatcher)
+                        .appendText(" and message ").appendDescriptionOf(messageMatcher);
+            }
+        };
+    }
+
+    public static Matcher<Iterable<? super ProblemDetail.Violation>> hasViolation(String field, Matcher<? super String> messageMatcher) {
+        return hasViolation(is(field), messageMatcher);
+    }
+
+    public static Matcher<Iterable<? super ProblemDetail.Violation>> hasViolation(Matcher<? super String> fieldMatcher) {
+        return hasViolation(fieldMatcher, CoreMatchers.anything());
+    }
+
     // ===========================================
     // clientId validation tests
     // ===========================================
@@ -127,9 +165,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                 case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
                 default -> {
                     assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-                    assertThat(body.error(), is("Provided data is invalid"));
-                    assertThat(body.violations(), hasItem("clientId: must not be blank"));
+                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+                    assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+                    assertThat(body.detail(), is("Provided data is invalid"));
+                    assertThat(body.violations(), hasViolation("clientId", "must not be blank"));
                 }
             }
         }
@@ -155,13 +194,15 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
             switch (getHttpMethod()) {
                 case HttpPut.METHOD_NAME, HttpPatch.METHOD_NAME -> {
-                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-                    assertThat(body.error(), is("Field 'clientId' in payload does not match the provided 'clientId'"));
+                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+                    assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+                    assertThat(body.violations(), hasViolation("clientId", "Field 'clientId' in payload does not match the provided 'clientId'"));
                 }
                 default -> {
-                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-                    assertThat(body.error(), is("Provided data is invalid"));
-                    assertThat(body.violations(), hasItem("clientId: must not be blank"));
+                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+                    assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+                    assertThat(body.detail(), is("Provided data is invalid"));
+                    assertThat(body.violations(), hasViolation("clientId", "must not be blank"));
                 }
             }
         }
@@ -194,9 +235,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("clientId: must not be blank"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("clientId", "must not be blank"));
         }
     }
 
@@ -281,9 +323,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("appUrl: must be a valid URL"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("appUrl", "must be a valid URL"));
         }
     }
 
@@ -307,11 +350,12 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             // Should have violations for the invalid URLs (relative paths without root URL)
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem(containsString("redirectUris")));
+            assertThat(body.violations(), hasViolation(containsString("redirectUris")));
         }
     }
 
@@ -334,11 +378,12 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
             // Blank strings are caught by @NotBlank on Set elements
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: must not be blank"));
+            assertThat(body.violations(), hasViolation("redirectUris[].<iterable element>", "must not be blank"));
         }
     }
 
@@ -365,10 +410,11 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("roles[].<iterable element>: must not be blank"));
+            assertThat(body.violations(), hasViolation("roles[].<iterable element>", "must not be blank"));
         }
     }
 
@@ -389,10 +435,11 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("webOrigins[].<iterable element>: must not be blank"));
+            assertThat(body.violations(), hasViolation("webOrigins[].<iterable element>", "must not be blank"));
         }
     }
 
@@ -414,10 +461,11 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("serviceAccountRoles[].<iterable element>: must not be blank"));
+            assertThat(body.violations(), hasViolation("serviceAccountRoles[].<iterable element>", "must not be blank"));
         }
     }
 
@@ -475,11 +523,12 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             // Should have violations for both appUrl and redirectUris
-            assertThat(body.violations(), hasItem("appUrl: must be a valid URL"));
-            assertThat(body.violations(), hasItem(containsString("redirectUris")));
+            assertThat(body.violations(), hasViolation("appUrl", "must be a valid URL"));
+            assertThat(body.violations(), hasViolation(containsString("redirectUris")));
         }
     }
 
@@ -506,9 +555,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("displayName: size must be between 0 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("displayName", "size must be between 0 and 255"));
         }
     }
 
@@ -531,9 +581,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("description: size must be between 0 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("description", "size must be between 0 and 255"));
         }
     }
 
@@ -556,9 +607,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("appUrl: size must be between 0 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("appUrl", "size must be between 0 and 255"));
         }
     }
 
@@ -581,9 +633,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: size must be between 0 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("redirectUris[].<iterable element>", "size must be between 0 and 255"));
         }
     }
 
@@ -608,9 +661,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("redirectUris: size must be between 0 and 100"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("redirectUris", "size must be between 0 and 100"));
         }
     }
 
@@ -633,9 +687,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("roles[].<iterable element>: size must be between 0 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("roles[].<iterable element>", "size must be between 0 and 255"));
         }
     }
 
@@ -660,9 +715,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("roles: size must be between 0 and 300"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("roles", "size must be between 0 and 300"));
         }
     }
 
@@ -687,9 +743,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("webOrigins[].<iterable element>: size must be between 0 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("webOrigins[].<iterable element>", "size must be between 0 and 255"));
         }
     }
 
@@ -712,9 +769,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("webOrigins: size must be between 0 and 100"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("webOrigins", "size must be between 0 and 100"));
         }
     }
 
@@ -734,10 +792,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("webOrigins")));
-            assertThat(body.violations(), hasItem(containsString("must be a valid web origin")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation(containsString("webOrigins"), containsString("must be a valid web origin")));
         }
     }
 
@@ -760,9 +818,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("serviceAccountRoles[].<iterable element>: size must be between 0 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("serviceAccountRoles[].<iterable element>", "size must be between 0 and 255"));
         }
     }
 
@@ -787,9 +846,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("serviceAccountRoles: size must be between 0 and 300"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("serviceAccountRoles", "size must be between 0 and 300"));
         }
     }
 
@@ -813,9 +873,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("auth.method: must not be blank"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("auth.method", "must not be blank"));
         }
     }
 
@@ -835,10 +896,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("auth.method")));
-            assertThat(body.violations(), hasItem(containsString("valid client authenticator type is required")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation(containsString("auth.method"), containsString("valid client authenticator type is required")));
         }
     }
 
@@ -858,9 +919,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("auth.secret: size must be between 6 and 255"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("auth.secret", "size must be between 6 and 255"));
         }
     }
 
@@ -881,9 +943,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("auth.certificate: size must be between 0 and 65536"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("auth.certificate", "size must be between 0 and 65536"));
         }
     }
 
@@ -956,10 +1019,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("signatureCanonicalizationMethod")));
-            assertThat(body.violations(), hasItem(containsString("must be a valid XML canonicalization method URI")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation(containsString("signatureCanonicalizationMethod"), containsString("must be a valid XML canonicalization method URI")));
         }
     }
 
@@ -980,9 +1043,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("signingCertificate: size must be between 0 and 65536"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("signingCertificate", "size must be between 0 and 65536"));
         }
     }
 
@@ -1006,10 +1070,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("SERVICE_ACCOUNT")));
-            assertThat(body.violations(), hasItem(containsString("requires a confidential client")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("loginFlows", containsString("requires a confidential client")));
         }
     }
 
@@ -1029,10 +1093,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("TOKEN_EXCHANGE")));
-            assertThat(body.violations(), hasItem(containsString("requires a confidential client")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("loginFlows", containsString("requires a confidential client")));
         }
     }
 
@@ -1054,10 +1118,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("redirectUris")));
-            assertThat(body.violations(), hasItem(containsString("requires at least one redirect URI")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("redirectUris", containsString("requires at least one redirect URI")));
         }
     }
 
@@ -1079,10 +1143,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("redirectUris")));
-            assertThat(body.violations(), hasItem(containsString("requires at least one redirect URI")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("redirectUris", containsString("requires at least one redirect URI")));
         }
     }
 
@@ -1105,9 +1169,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem(containsString("serviceAccountRoles can only be set when SERVICE_ACCOUNT flow is enabled")));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasViolation("serviceAccountRoles", containsString("serviceAccountRoles can only be set when SERVICE_ACCOUNT flow is enabled")));
         }
     }
 
@@ -1192,8 +1257,9 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Field 'clientId' in payload does not match the provided 'clientId'"));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.violations(), hasViolation("clientId", "Field 'clientId' in payload does not match the provided 'clientId'"));
         }
     }
 
