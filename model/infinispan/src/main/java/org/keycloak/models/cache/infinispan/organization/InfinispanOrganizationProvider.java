@@ -695,10 +695,16 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         }
 
         String cacheKey = cacheKeyOrgDisabledExists(getRealm());
+
+        // an organization was created, updated or removed in this transaction. The result reflects uncommitted
+        // changes and must not be visible to other transactions, so it is not cached
+        if (isRealmCacheKeyInvalid(cacheKey)) {
+            return getDelegate().hasDisabledOrganizations();
+        }
+
         CachedExists cached = realmCache.getCache().get(cacheKey, CachedExists.class);
 
-        // cached and not invalidated
-        if (cached != null && !isRealmCacheKeyInvalid(cacheKey)) {
+        if (cached != null) {
             return cached.isExists();
         }
 

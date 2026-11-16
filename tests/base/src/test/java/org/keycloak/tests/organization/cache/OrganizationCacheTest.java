@@ -393,6 +393,45 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testHasDisabledOrganizationsDoesNotCacheUncommittedChanges() {
+        // disabling an organization invalidates the cached flag, leaving no entry in the cache
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            orgProvider.getByDomainName("orga.org").setEnabled(false);
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            String cacheKey = cacheKeyOrgDisabledExists(realm);
+
+            assertNull(realmCache.getCache().get(cacheKey, CachedExists.class));
+
+            // enable the only disabled organization without committing yet
+            orgProvider.getByDomainName("orga.org").setEnabled(true);
+
+            // the current transaction sees its own change
+            assertFalse(orgProvider.hasDisabledOrganizations());
+
+            // but the uncommitted result must not be cached, as other transactions would see it before commit
+            assertNull(realmCache.getCache().get(cacheKey, CachedExists.class));
+        });
+
+        // once committed, the change is visible and cached
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+
+            assertFalse(orgProvider.hasDisabledOrganizations());
+            CachedExists cached = realmCache.getCache().get(cacheKeyOrgDisabledExists(realm), CachedExists.class);
+            assertNotNull(cached);
+            assertFalse(cached.isExists());
+        });
+    }
+
+    @Test
     public void testCacheIDPByOrg() {
         IdentityProviderRepresentation idpRep = realm.admin().identityProviders().get("orga-identity-provider").toRepresentation();
         idpRep.setInternalId(null);
