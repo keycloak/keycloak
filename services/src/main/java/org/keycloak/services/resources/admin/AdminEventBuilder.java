@@ -242,15 +242,18 @@ public class AdminEventBuilder {
     }
 
     protected String getResourcePath(UriInfo uriInfo) {
+        return getResourcePath(uriInfo, "realms/", "realm");
+    }
+
+    /**
+     * Extracts the realm-relative path using the realm name matched in the request.
+     * The stored realm name can have different casing with a case-insensitive database collation.
+     */
+    protected String getResourcePath(UriInfo uriInfo, String realmPathPrefix, String realmParameter) {
         String path = uriInfo.getPath();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("/realms/");
-        sb.append(realm.getName());
-        sb.append("/");
-        String realmRelative = sb.toString();
-
-        return path.substring(path.indexOf(realmRelative) + realmRelative.length());
+        String realmRelative = realmPathPrefix + uriInfo.getPathParameters().getFirst(realmParameter) + "/";
+        int realmIndex = path.indexOf(realmRelative);
+        return realmIndex >= 0 ? path.substring(realmIndex + realmRelative.length()) : path;
     }
 
     public AdminEventBuilder representation(Object value) {

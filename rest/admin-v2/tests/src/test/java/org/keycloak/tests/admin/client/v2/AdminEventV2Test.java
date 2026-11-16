@@ -19,24 +19,34 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Locale;
 
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Encode;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.v2.AdminEventV2Builder;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
+import org.jboss.resteasy.specimpl.ResteasyUriInfo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_DETAIL_KEY;
 import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_V2;
@@ -66,6 +76,9 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     @InjectRealm
     ManagedRealm testRealm;
 
+    @InjectUser
+    ManagedUser testUser;
+
     @Override
     public String getRealmName() {
         return testRealm.getName();
@@ -93,6 +106,34 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
         runOnServer.run(session -> {
             // enable Admin v2 events on the server
             System.clearProperty("kc.admin-v2.client-service.events.enabled");
+        });
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void resourcePathUsesRequestedRealmName(boolean differentCase) {
+        String userId = testUser.getId();
+
+        // Use the resolved realm model so this also runs on case-sensitive databases.
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            AdminAuth auth = new AdminAuth(realm, null, session.users().getUserById(realm, userId), realm.getClientByClientId("account"));
+            AdminEventV2Builder builder = new AdminEventV2Builder(realm, auth, session, session.getContext().getConnection());
+            String requestedRealmName = differentCase ? realm.getName().toUpperCase(Locale.ROOT) : realm.getName();
+            String encodedRealmName = Encode.encodePathSegment(requestedRealmName);
+            String uriPrefix = "http://localhost/admin/api/" + encodedRealmName + "/";
+
+            ResteasyUriInfo uriInfo = new ResteasyUriInfo(uriPrefix + "clients/v2/Client%20Name+ID%2FChild", "");
+            uriInfo.addEncodedPathParameter("realmName", encodedRealmName);
+            builder.resourcePath(uriInfo);
+            assertThat(builder.getEvent().getResourcePath(), is("clients/v2/Client Name+ID/Child"));
+
+            for (String trailingSlash : List.of("", "/")) {
+                ResteasyUriInfo collectionUriInfo = new ResteasyUriInfo(uriPrefix + "clients/v2" + trailingSlash, "");
+                collectionUriInfo.addEncodedPathParameter("realmName", encodedRealmName);
+                builder.resourcePath(collectionUriInfo, "Client-ID");
+                assertThat(builder.getEvent().getResourcePath(), is("clients/v2/Client-ID"));
+            }
         });
     }
 
