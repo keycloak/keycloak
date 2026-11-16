@@ -92,7 +92,7 @@ public class RemoteInfinispanNotificationManager {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), ignoreSender);
 
         var eventKey = SecretGenerator.getInstance().generateSecureID();
 
@@ -167,7 +167,7 @@ public class RemoteInfinispanNotificationManager {
             return;
         }
 
-        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
+        if (event.rejectEvent(nodeInfo.nodeName())) {
             return;
         }
 

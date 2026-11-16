@@ -137,7 +137,6 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 LockEntry.class,
                 LockEntryPredicate.class,
                 WrapperClusterEvent.class,
-                WrapperClusterEvent.SiteFilter.class,
 
                 // keys.infinispan package
                 PublicKeyStorageInvalidationEvent.class,

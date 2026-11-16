@@ -200,7 +200,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), ignoreSender);
 
         String eventKey = SecretGenerator.getInstance().generateSecureID();
 
@@ -246,7 +246,7 @@ public class InfinispanClusterProvider implements ClusterProvider {
     }
 
     private void handleWrapperClusterEvent(WrapperClusterEvent event) {
-        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
+        if (event.rejectEvent(nodeInfo.nodeName())) {
             return;
         }
 

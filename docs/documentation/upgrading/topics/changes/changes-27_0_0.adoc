@@ -754,3 +754,7 @@ Third-party `ClusterProvider` implementations in `server-spi-private`, if any ex
 
 Multi-site deployments using external Infinispan are unaffected, as they never used the `DCNotify` parameter.
 All current callers already use the non-deprecated `notify()` methods which default to `ALL_DCS` semantics.
+
+The internal Infinispan classes that only supported this API have been removed as well.
+This includes the `AuthenticationSessionAuthNoteUpdateEvent` cluster event, the site-related fields of `WrapperClusterEvent`, and the `siteId` field of `SessionClusterEvent`.
+These classes are not part of the supported SPI.

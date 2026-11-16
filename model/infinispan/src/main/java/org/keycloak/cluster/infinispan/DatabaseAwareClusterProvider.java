@@ -118,7 +118,6 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
         var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events,
                 // append the cluster name to the node name to avoid situations where the same node name exists in both clusters
                 nodeInfo.nodeName() + "@" + nodeInfo.clusterName(),
-                nodeInfo.siteName(),
                 ignoreSender);
         byte[] data;
         try {
