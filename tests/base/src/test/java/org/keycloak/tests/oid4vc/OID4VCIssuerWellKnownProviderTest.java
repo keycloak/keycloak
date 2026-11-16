@@ -252,30 +252,23 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testSignedMetadataWithJavaKeystoreChainExcludesSelfSignedRoot() {
-        // V1: [leaf, self-signed root] -> only the topmost (root) is removed, leaf kept.
+        // [leaf, self-signed root] -> only the trailing self-signed root is removed, leaf kept.
         testSignedMetadataChain(MdocTestSigningKey.Variant.V1, "mdoc-v1-key-provider",
                 List.of("CN=Mdoc Test Signer"));
     }
 
     @Test
-    public void testSignedMetadataExcludesNonSelfSignedCaTrueTrustAnchor() {
-        // V2: [leaf, CA:TRUE intermediate] where the intermediate is not self-signed -> only the leaf is kept.
+    public void testSignedMetadataKeepsNonSelfSignedCaIntermediate() {
+        // [leaf, CA:TRUE intermediate] where the intermediate is not self-signed -> both are kept
         testSignedMetadataChain(MdocTestSigningKey.Variant.V2, "mdoc-v2-key-provider",
-                List.of("CN=Mdoc Test Signer"));
-    }
-
-    @Test
-    public void testSignedMetadataKeepsLeafAndIntermediateBelowSelfSignedRoot() {
-        // V3: [leaf, intermediate, self-signed root] -> only the topmost (root) is removed, leaf and intermediate kept.
-        testSignedMetadataChain(MdocTestSigningKey.Variant.V3, "mdoc-v3-key-provider",
                 List.of("CN=Mdoc Test Signer", "CN=Mdoc Test Intermediate CA"));
     }
 
     @Test
-    public void testSignedMetadataKeepsNonCaIntermediate() {
-        // V4: [leaf, non-CA intermediate] -> the intermediate is not a trust anchor, so it is kept.
-        testSignedMetadataChain(MdocTestSigningKey.Variant.V4, "mdoc-v4-key-provider",
-                List.of("CN=Mdoc Test Signer", "CN=Mdoc Test Intermediate"));
+    public void testSignedMetadataKeepsLeafAndIntermediateBelowSelfSignedRoot() {
+        // [leaf, intermediate, self-signed root] -> only the trailing self-signed root is removed, leaf and intermediate kept.
+        testSignedMetadataChain(MdocTestSigningKey.Variant.V3, "mdoc-v3-key-provider",
+                List.of("CN=Mdoc Test Signer", "CN=Mdoc Test Intermediate CA"));
     }
 
     /**

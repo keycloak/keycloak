@@ -56,12 +56,10 @@ final class MdocTestSigningKey {
     public enum Variant {
         /** Leaf issued by a self-signed root CA: {@code [leaf, self-signed root]}. */
         V1("self-signed-root"),
-        /** Leaf issued by a non-self-signed CA:TRUE intermediate: {@code [leaf, CA:TRUE intermediate]}. */
+        /** Leaf issued by a non-self-signed CA:TRUE intermediate (external root omitted): {@code [leaf, intermediate]}. */
         V2("ca-intermediate"),
         /** Leaf issued by an intermediate CA, issued by a self-signed root: {@code [leaf, intermediate, root]}. */
-        V3("full-chain"),
-        /** Leaf issued by a non-CA intermediate: {@code [leaf, non-CA intermediate]}. */
-        V4("non-ca-intermediate");
+        V3("full-chain");
 
         private final String fileName;
         Variant(String fileName) {
@@ -90,7 +88,6 @@ final class MdocTestSigningKey {
             KEY_STORE_PATHS.put(Variant.V1, writeKeystore(realmDir, Variant.V1, selfSignedRootChain(keyGenerator)));
             KEY_STORE_PATHS.put(Variant.V2, writeKeystore(realmDir, Variant.V2, caIntermediateChain(keyGenerator)));
             KEY_STORE_PATHS.put(Variant.V3, writeKeystore(realmDir, Variant.V3, fullChain(keyGenerator)));
-            KEY_STORE_PATHS.put(Variant.V4, writeKeystore(realmDir, Variant.V4, nonCaIntermediateChain(keyGenerator)));
         } catch (Exception e) {
             throw new RuntimeException("Failed to create mdoc test signing key", e);
         }
@@ -158,19 +155,6 @@ final class MdocTestSigningKey {
         return new KeyChain(leafKeyPair, new Certificate[] { leaf, intermediate, root });
     }
 
-    /** A leaf issued by a non-CA intermediate (external root omitted): {@code [leaf, intermediate]}. */
-    private static KeyChain nonCaIntermediateChain(KeyPairGenerator keyGenerator) throws Exception {
-        KeyPair externalRootKeyPair = keyGenerator.generateKeyPair();
-        KeyPair intermediateKeyPair = keyGenerator.generateKeyPair();
-        KeyPair leafKeyPair = keyGenerator.generateKeyPair();
-        X500Name rootName = new X500Name("CN=Mdoc Test External Root");
-        X500Name intermediateName = new X500Name("CN=Mdoc Test Intermediate");
-        X509Certificate intermediate = generateNonCaCertificate(rootName, intermediateName,
-                intermediateKeyPair.getPublic(), externalRootKeyPair);
-        X509Certificate leaf = generateLeafCertificate(intermediateName, leafKeyPair, intermediateKeyPair);
-        return new KeyChain(leafKeyPair, new Certificate[] { leaf, intermediate });
-    }
-
     /**
      * Creates a CA certificate (marked CA:TRUE) issued by the given issuer.
      * <p>
@@ -187,23 +171,6 @@ final class MdocTestSigningKey {
         X509v3CertificateBuilder builder = certificateBuilder(issuerName, subjectName, publicKey);
         builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
         builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
-        return sign(builder, issuerKeyPair);
-    }
-
-    /**
-     * Creates a non-CA certificate that is still allowed to sign (keyCertSign) but is not marked CA:TRUE.
-     * <p>
-     * Used to model intermediates that wallets should treat as part of the chain rather than as a trust anchor.
-     *
-     * @param issuerName the issuer of the certificate
-     * @param subjectName the subject of the certificate
-     * @param publicKey the public key to bind
-     * @param issuerKeyPair the key pair signing the certificate
-     */
-    private static X509Certificate generateNonCaCertificate(X500Name issuerName, X500Name subjectName,
-            PublicKey publicKey, KeyPair issuerKeyPair) throws Exception {
-        X509v3CertificateBuilder builder = certificateBuilder(issuerName, subjectName, publicKey);
-        builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign));
         return sign(builder, issuerKeyPair);
     }
 
