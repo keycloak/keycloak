@@ -24,10 +24,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
-import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestParametersContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -67,10 +67,11 @@ public class AcrCondition extends AbstractClientPolicyConditionProvider<AcrCondi
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        if (context.getEvent() == ClientPolicyEvent.AUTHORIZATION_REQUEST) {
-            AuthorizationRequestContext authorizationRequestContext = ((AuthorizationRequestContext) context);
+        if (context instanceof AuthorizationRequestParametersContext authorizationRequestContext) {
             if (containsAcr(authorizationRequestContext)) {
-                authorizationRequestContext.getAuthenticationSession().setAuthNote(Constants.CLIENT_POLICY_REQUESTED_ACR, configuration.getAcrProperty());
+                if (context instanceof AuthorizationRequestContext authenticatedRequestContext) {
+                    authenticatedRequestContext.getAuthenticationSession().setAuthNote(Constants.CLIENT_POLICY_REQUESTED_ACR, configuration.getAcrProperty());
+                }
                 return ClientPolicyVote.YES;
             }
             else {
@@ -80,7 +81,7 @@ public class AcrCondition extends AbstractClientPolicyConditionProvider<AcrCondi
         return ClientPolicyVote.ABSTAIN;
     }
 
-    private boolean containsAcr(AuthorizationRequestContext context) {
+    private boolean containsAcr(AuthorizationRequestParametersContext context) {
         List<String> acrValues = AcrUtils.getAcrValues(context.getAuthorizationEndpointRequest().getClaims(), context.getAuthorizationEndpointRequest().getAcr(), session.getContext().getClient());
         return acrValues != null && !acrValues.isEmpty() && acrValues.contains(configuration.getAcrProperty());
     }
