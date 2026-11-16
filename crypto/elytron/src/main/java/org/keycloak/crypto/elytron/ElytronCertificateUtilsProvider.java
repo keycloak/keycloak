@@ -175,6 +175,11 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
 
     @Override
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
+        return generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber, validityEndDate, false);
+    }
+
+    @Override
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate, boolean rsaPss) {
         try {
 
             X500Principal subjectdn = cnToX500Principal(subject);
@@ -202,7 +207,7 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
                     cbuilder.setSignatureAlgorithmName("SHA256withECDSA");
                     break;
                 default:
-                    cbuilder.setSignatureAlgorithmName("SHA256withRSA");
+                    cbuilder.setSignatureAlgorithmName(rsaPss ? "RSASSA-PSS" : "SHA256withRSA");
             }
 
             return cbuilder.build();

@@ -53,10 +53,10 @@ public final class Utils {
     private Utils() {
     }
 
-    public static JGroupsCertificate generateSelfSignedCertificate(Duration validity) {
+    public static JGroupsCertificate generateSelfSignedCertificate(Duration validity, int rsaKeySize) {
         var endDate = Date.from(Instant.now().plus(validity));
-        var keyPair = KeyUtils.generateRsaKeyPair(2048);
-        var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT, BigInteger.valueOf(System.currentTimeMillis()), endDate);
+        var keyPair = KeyUtils.generateRsaKeyPair(rsaKeySize);
+        var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT, BigInteger.valueOf(System.currentTimeMillis()), endDate, true);
 
         logger.debugf("Created JGroups certificate. Valid until %s", certificate.getNotAfter());
 
