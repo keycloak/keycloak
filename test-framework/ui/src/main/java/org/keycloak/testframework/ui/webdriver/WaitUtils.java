@@ -7,10 +7,12 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.testframework.ui.page.AbstractPage;
 
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 public class WaitUtils {
@@ -60,6 +62,39 @@ public class WaitUtils {
 
     public WaitUtils waitForTitle(String title) {
         createDefaultWait().until(d -> d.getTitle().equals(title));
+        return this;
+    }
+
+    /**
+     * Waits until the element is no longer attached to the current document, for example after a form submit
+     * replaced the page. Firefox reports this as a {@link StaleElementReferenceException}, while Chrome (CDP)
+     * throws a plain {@link WebDriverException} saying the node does not belong to the document.
+     */
+    public WaitUtils waitUntilStale(WebElement element) {
+        createDefaultWait().until(d -> {
+            try {
+                element.isEnabled();
+                return false;
+            } catch (StaleElementReferenceException e) {
+                return true;
+            } catch (WebDriverException e) {
+                if (e.getMessage() != null && e.getMessage().contains("does not belong to the document")) {
+                    return true;
+                }
+                throw e;
+            }
+        });
+        return this;
+    }
+
+    /**
+     * Waits until the current document has finished loading, so that its page source and elements are complete.
+     * WebDriver errors are ignored as the browser might still be switching documents (see {@link #waitForPage}).
+     */
+    public WaitUtils waitForDocumentComplete() {
+        createDefaultWait()
+                .ignoring(WebDriverException.class)
+                .until(d -> "complete".equals(((JavascriptExecutor) d).executeScript("return document.readyState")));
         return this;
     }
 

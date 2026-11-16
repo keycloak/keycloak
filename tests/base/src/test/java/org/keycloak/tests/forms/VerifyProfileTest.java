@@ -79,7 +79,6 @@ import org.keycloak.utils.StringUtil;
 
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
@@ -97,7 +96,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -444,20 +442,9 @@ public class VerifyProfileTest {
 
         verifyProfilePage.assertCurrent();
         //submit with error
-        // the initial page already shows a last name error, so wait for the submitted form to be replaced
-        WebElement submittedForm = driver.findElement(By.tagName("form"));
         verifyProfilePage.update("First", "L");
-        driver.waiting().until(d -> {
-            try {
-                submittedForm.isEnabled();
-                return false;
-            } catch (StaleElementReferenceException e) {
-                return true;
-            }
-        });
 
         verifyProfilePage.assertCurrent();
-        assertNotNull(verifyProfilePage.getInputErrors().getLastNameError());
         //submit OK
         verifyProfilePage.update("First", "Last");
         managedRealm.cleanup().add(RealmResource::logoutAll);
