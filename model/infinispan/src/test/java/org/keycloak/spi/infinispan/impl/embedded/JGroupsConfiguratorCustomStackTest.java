@@ -130,6 +130,31 @@ public class JGroupsConfiguratorCustomStackTest {
     }
 
     @Test
+    public void testFactoryInjectedIntoCustomUdpStack() {
+        var holder = new ParserRegistry().parse("""
+                <infinispan xmlns="urn:infinispan:config:16.0" xmlns:jg="urn:org:jgroups">
+                  <jgroups>
+                    <stack name="custom-udp" extends="udp">
+                      <jg:org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2 stack.combine="REPLACE" stack.position="PING"/>
+                    </stack>
+                  </jgroups>
+                  <cache-container>
+                    <transport cluster="test" stack="custom-udp"/>
+                  </cache-container>
+                </infinispan>
+                """);
+
+        assertTrue(JGroupsConfigurator.injectConnectionFactoryIntoCustomStack(holder, sessionFactory(new AtomicBoolean()), "JGROUPS_PING", "custom-udp", () -> null));
+
+        var transport = holder.getGlobalConfigurationBuilder().transport();
+        assertEquals("custom-udp-keycloak", transport.attributes().attribute(TransportConfiguration.STACK).get());
+        var protocols = ((EmbeddedJGroupsChannelConfigurator) transport.build().transport().jgroups().configurator("custom-udp-keycloak")).getProtocolStack();
+        assertEquals("UDP", protocols.get(0).getProtocolName());
+        assertTrue(protocols.stream().anyMatch(p -> p.getProtocolName().equals(KEYCLOAK_JDBC_PING2.class.getName())));
+        assertTrue(protocols.stream().noneMatch(p -> p.getProtocolName().equals("PING") || p.getProtocolName().equals("TCP")));
+    }
+
+    @Test
     public void testWrapperNameAvoidsExistingStack() {
         var holder = new ParserRegistry().parse("""
                 <infinispan xmlns="urn:infinispan:config:16.0" xmlns:jg="urn:org:jgroups">
