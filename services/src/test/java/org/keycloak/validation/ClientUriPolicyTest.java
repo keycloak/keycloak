@@ -143,8 +143,8 @@ public class ClientUriPolicyTest {
         assertThrows(ClientPolicyException.class, () -> executor.executeOnEvent(new AdminClientUpdatedContext(null, model, null)));
     }
 
-    private ClientModel clientModel(ClientRepresentation representation) {
-        return (ClientModel) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[]{ClientModel.class},
+    static ClientModel clientModel(ClientRepresentation representation) {
+        return (ClientModel) Proxy.newProxyInstance(ClientUriPolicyTest.class.getClassLoader(), new Class<?>[]{ClientModel.class},
                 (proxy, method, args) -> switch (method.getName()) {
                     case "getProtocol" -> representation.getProtocol();
                     case "getRootUrl" -> representation.getRootUrl();
@@ -283,6 +283,44 @@ public class ClientUriPolicyTest {
         }
     }
 
+    @Test
+    public void partialUpdatesRevalidateUrisKeptByTheStoredClient() {
+        for (ClientCRUDContext context : updateContexts(partialUpdate(), clientModel(client("http://localhost/callback")))) {
+            assertSecureUriViolation(() -> new SecureClientUrisExecutor(null).executeOnEvent(context));
+        }
+        for (ClientCRUDContext context : updateContexts(partialUpdate(), clientModel(client(UNTRUSTED)))) {
+            assertThrows(ClientPolicyException.class, () -> patternPolicy(List.of(field)).executeOnEvent(context));
+        }
+    }
+
+    @Test
+    public void partialUpdatesReplacingStoredUrisAreAccepted() throws Exception {
+        for (ClientCRUDContext context : updateContexts(proposedUpdate(TRUSTED), clientModel(client("http://localhost/callback")))) {
+            new SecureClientUrisExecutor(null).executeOnEvent(context);
+        }
+        for (ClientCRUDContext context : updateContexts(proposedUpdate(TRUSTED), clientModel(client(UNTRUSTED)))) {
+            patternPolicy(List.of(field)).executeOnEvent(context);
+        }
+    }
+
+    private List<ClientCRUDContext> updateContexts(ClientRepresentation proposed, ClientModel stored) {
+        DefaultClientRegistrationContext registration = new DefaultClientRegistrationContext(null, proposed, null);
+        return List.of(new AdminClientUpdateContext(proposed, stored, null),
+                new DynamicClientUpdateContext(registration, stored, null, null));
+    }
+
+    private ClientRepresentation partialUpdate() {
+        ClientRepresentation proposed = new ClientRepresentation();
+        proposed.setDescription("updated description");
+        return proposed;
+    }
+
+    private ClientRepresentation proposedUpdate(String uri) {
+        ClientRepresentation proposed = client(uri);
+        proposed.setProtocol(null);
+        return proposed;
+    }
+
     private void assertTrustedHostViolation(ThrowingRunnable action) {
         assertThrows(ClientRegistrationPolicyException.class, action);
     }
@@ -291,14 +329,11 @@ public class ClientUriPolicyTest {
         assertThrows(ClientPolicyException.class, action);
     }
 
+    /** An existing client that holds no URI of its own, so an update is judged on the proposed values alone. */
     static ClientModel existingClient(String protocol) {
-        return (ClientModel) Proxy.newProxyInstance(ClientUriPolicyTest.class.getClassLoader(), new Class<?>[]{ClientModel.class},
-                (proxy, method, args) -> {
-                    if (method.getName().equals("getProtocol")) {
-                        return protocol;
-                    }
-                    throw new UnsupportedOperationException(method.getName());
-                });
+        ClientRepresentation stored = new ClientRepresentation();
+        stored.setProtocol(protocol);
+        return clientModel(stored);
     }
 
     private ClientRepresentation client(String uri) {
@@ -318,7 +353,8 @@ public class ClientUriPolicyTest {
     static SecureClientUrisPatternExecutor patternPolicy(List<String> fields) {
         SecureClientUrisPatternExecutor executor = new SecureClientUrisPatternExecutor(null);
         SecureClientUrisPatternExecutor.Configuration configuration = new SecureClientUrisPatternExecutor.Configuration();
-        configuration.setAllowedPatterns(List.of("https://localhost/.*"));
+        // the bare origin is allowed as well: it is what a client without web origins of its own gets persisted
+        configuration.setAllowedPatterns(List.of("https://localhost", "https://localhost/.*"));
         configuration.setClientUriFields(fields);
         executor.setupConfiguration(configuration);
         return executor;

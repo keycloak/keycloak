@@ -17,11 +17,13 @@
 package org.keycloak.validation;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -335,6 +337,81 @@ public class ClientUriFieldTest {
             assertThrows(ClientPolicyException.class, () -> logout.executeOnEvent(new AdminClientRegisterContext(client, null)));
             assertThrows(ClientPolicyException.class, () -> logout.executeOnEvent(new AdminClientUpdateContext(client, null, null)));
         }
+    }
+
+    @Test
+    public void mergeKeepsStoredValuesForFieldsTheUpdateDoesNotSet() {
+        ClientModel stored = storedClient();
+        ClientRepresentation proposed = new ClientRepresentation();
+        proposed.setDescription("updated description");
+
+        assertEquals(List.of("https://stored.example"), ClientUriField.ROOT_URL.getValues(proposed, stored));
+        assertEquals(List.of("https://stored.example/callback"), ClientUriField.REDIRECT_URIS.getValues(proposed, stored));
+        assertEquals(List.of("https://stored.example/jwks"), ClientUriField.JWKS_URL.getValues(proposed, stored));
+    }
+
+    @Test
+    public void mergeTakesValuesTheUpdateSets() {
+        ClientModel stored = storedClient();
+        ClientRepresentation proposed = new ClientRepresentation();
+        proposed.setRootUrl("https://updated.example");
+        proposed.setRedirectUris(List.of("https://updated.example/callback"));
+        proposed.setAttributes(Map.of(OIDCConfigAttributes.JWKS_URL, "https://updated.example/jwks"));
+
+        assertEquals(List.of("https://updated.example"), ClientUriField.ROOT_URL.getValues(proposed, stored));
+        assertEquals(List.of("https://updated.example/callback"), ClientUriField.REDIRECT_URIS.getValues(proposed, stored));
+        assertEquals(List.of("https://updated.example/jwks"), ClientUriField.JWKS_URL.getValues(proposed, stored));
+    }
+
+    @Test
+    public void mergeLeavesNothingToValidateWhenTheUpdateClearsAField() {
+        ClientModel stored = storedClient();
+        ClientRepresentation proposed = new ClientRepresentation();
+        proposed.setRedirectUris(List.of());
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(OIDCConfigAttributes.JWKS_URL, null);
+        proposed.setAttributes(attributes);
+
+        assertEquals(List.of(), ClientUriField.REDIRECT_URIS.getValues(proposed, stored));
+        assertEquals(List.of(), ClientUriField.JWKS_URL.getValues(proposed, stored));
+
+        attributes.put(OIDCConfigAttributes.JWKS_URL, "");
+        assertEquals(List.of(), ClientUriField.JWKS_URL.getValues(proposed, stored));
+    }
+
+    @Test
+    public void mergeDerivesWebOriginsFromTheUpdatedRedirectUrisWhenNoneAreStored() {
+        ClientModel stored = storedClient();
+        ClientRepresentation proposed = new ClientRepresentation();
+        proposed.setRedirectUris(List.of("http://updated.example/callback"));
+
+        assertEquals(List.of("http://updated.example"), ClientUriField.WEB_ORIGINS.getValues(proposed, stored));
+    }
+
+    @Test
+    public void mergeDerivesWebOriginsFromTheRedirectUrisOfARegistration() {
+        ClientRepresentation proposed = new ClientRepresentation();
+        proposed.setRedirectUris(List.of("http://registered.example/callback", "/relative"));
+
+        assertEquals(List.of("http://registered.example"), ClientUriField.WEB_ORIGINS.getValues(proposed, null));
+    }
+
+    @Test
+    public void mergeKeepsStoredWebOriginsInsteadOfDerivingThem() {
+        ClientRepresentation storedRep = new ClientRepresentation();
+        storedRep.setRedirectUris(List.of("http://stored.example/callback"));
+        storedRep.setWebOrigins(List.of("https://origin.example"));
+        ClientModel stored = ClientUriPolicyTest.clientModel(storedRep);
+
+        assertEquals(List.of("https://origin.example"), ClientUriField.WEB_ORIGINS.getValues(new ClientRepresentation(), stored));
+    }
+
+    private static ClientModel storedClient() {
+        ClientRepresentation stored = new ClientRepresentation();
+        stored.setRootUrl("https://stored.example");
+        stored.setRedirectUris(List.of("https://stored.example/callback"));
+        stored.setAttributes(Map.of(OIDCConfigAttributes.JWKS_URL, "https://stored.example/jwks"));
+        return ClientUriPolicyTest.clientModel(stored);
     }
 
     private static SecureClientUrisPatternExecutor literalMarkerPattern(List<String> fields) {
