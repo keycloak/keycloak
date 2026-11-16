@@ -31,6 +31,7 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MigrateTo27_0_0Test {
@@ -38,12 +39,8 @@ public class MigrateTo27_0_0Test {
     private final MigrateTo27_0_0 migrator = new MigrateTo27_0_0();
 
     @Test
-    public void migrateDoesNotAccessPersistedRealms() {
-        migrator.migrate(null);
-    }
-
-    @Test
     public void migrateRealmUpdatesBuiltinLoginThemes() {
+        assertLoginThemeMigrated("keycloak", "keycloak.v3");
         assertLoginThemeMigrated("keycloak.v2", "keycloak.v3");
         assertLoginThemeMigrated("rh-sso.v2", "keycloak.v3");
     }
@@ -51,6 +48,22 @@ public class MigrateTo27_0_0Test {
     @Test
     public void migrateRealmLeavesCustomLoginTheme() {
         assertLoginThemeMigrated("my-custom-theme", "my-custom-theme");
+    }
+
+    @Test
+    public void migrateRealmUpdatesBuiltinAdminThemes() {
+        assertAdminThemeMigrated("keycloak.v2", "keycloak.v3");
+        assertAdminThemeMigrated("rh-sso.v2", "keycloak.v3");
+    }
+
+    @Test
+    public void migrateRealmLeavesCustomAdminTheme() {
+        assertAdminThemeMigrated("my-custom-admin-theme", "my-custom-admin-theme");
+    }
+
+    @Test
+    public void migrateRealmLeavesNullAdminTheme() {
+        assertAdminThemeMigrated(null, null);
     }
 
     @Test
@@ -82,10 +95,27 @@ public class MigrateTo27_0_0Test {
         assertThat(realm.getLoginTheme(), is("keycloak.v3"));
     }
 
+    @Test
+    public void migrateImportUpdatesAdminTheme() {
+        RealmModel realm = realmWithAdminTheme("keycloak.v2");
+        migrator.migrateImport(null, realm, new RealmRepresentation(), false);
+        assertThat(realm.getAdminTheme(), is("keycloak.v3"));
+    }
+
     private void assertLoginThemeMigrated(String before, String after) {
         RealmModel realm = realmWithLoginTheme(before);
         migrator.migrateRealm(null, realm);
         assertThat(realm.getLoginTheme(), is(equalTo(after)));
+    }
+
+    private void assertAdminThemeMigrated(String before, String after) {
+        RealmModel realm = realmWithAdminTheme(before);
+        migrator.migrateRealm(null, realm);
+        if (after == null) {
+            assertThat(realm.getAdminTheme(), nullValue());
+        } else {
+            assertThat(realm.getAdminTheme(), is(equalTo(after)));
+        }
     }
 
     private static RealmModel realmWithLoginTheme(String loginTheme) {
@@ -103,6 +133,37 @@ public class MigrateTo27_0_0Test {
             }
 
             @Override
+            public String getAdminTheme() {
+                return null;
+            }
+
+            @Override
+            public Stream<ClientModel> getClientsStream() {
+                return Stream.empty();
+            }
+        };
+    }
+
+    private static RealmModel realmWithAdminTheme(String adminTheme) {
+        return new RealmModelDelegate(null) {
+            private String theme = adminTheme;
+
+            @Override
+            public String getAdminTheme() {
+                return theme;
+            }
+
+            @Override
+            public void setAdminTheme(String theme) {
+                this.theme = theme;
+            }
+
+            @Override
+            public String getLoginTheme() {
+                return null;
+            }
+
+            @Override
             public Stream<ClientModel> getClientsStream() {
                 return Stream.empty();
             }
@@ -113,6 +174,11 @@ public class MigrateTo27_0_0Test {
         return new RealmModelDelegate(null) {
             @Override
             public String getLoginTheme() {
+                return null;
+            }
+
+            @Override
+            public String getAdminTheme() {
                 return null;
             }
 

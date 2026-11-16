@@ -46,8 +46,7 @@ export const MembershipTypeToggle = ({
     <Switch
       id={`membershipType-${orgId}-${userId}`}
       data-testid={`membershipType-${orgId}-${userId}`}
-      label={t("MANAGED")}
-      labelOff={t("UNMANAGED")}
+      label={checked ? t("MANAGED") : t("UNMANAGED")}
       aria-label={name ?? t("membershipType")}
       isChecked={checked}
       onChange={(_event, value) => update(value)}

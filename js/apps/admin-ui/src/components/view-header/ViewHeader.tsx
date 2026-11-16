@@ -1,6 +1,5 @@
 import {
   Badge,
-  Button,
   Divider,
   Dropdown,
   DropdownList,
@@ -9,8 +8,7 @@ import {
   MenuToggle,
   PageSection,
   Switch,
-  Text,
-  TextContent,
+  Content,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
@@ -36,9 +34,6 @@ export type ViewHeaderProps = {
   actionsDropdownId?: string;
   helpUrl?: string | undefined;
   dropdownItems?: ReactElement[];
-  lowerDropdownItems?: any;
-  lowerDropdownMenuTitle?: any;
-  lowerButton?: any;
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
   divider?: boolean;
@@ -63,9 +58,6 @@ export const ViewHeader = ({
   subKey,
   helpUrl,
   dropdownItems,
-  lowerDropdownMenuTitle,
-  lowerDropdownItems,
-  lowerButton,
   isEnabled = true,
   onToggle,
   divider = true,
@@ -77,27 +69,22 @@ export const ViewHeader = ({
   const { t, i18n } = useTranslation();
   const { enabled } = useHelp();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
-  const [isLowerDropdownOpen, setIsLowerDropdownOpen] = useState(false);
 
   const onDropdownToggle = () => {
     setDropdownOpen(!isDropdownOpen);
-  };
-
-  const onLowerDropdownToggle = () => {
-    setIsLowerDropdownOpen(!isLowerDropdownOpen);
   };
 
   const toKey = (value: string) => value.replace(/\s/g, "-");
 
   return (
     <>
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <Level hasGutter>
           <LevelItem>
             <Level>
               <LevelItem>
-                <TextContent className="pf-v5-u-mr-sm">
-                  <Text
+                <Content className="pf-v6-u-mr-sm">
+                  <Content
                     className={className}
                     component="h1"
                     data-testid="view-header"
@@ -105,8 +92,8 @@ export const ViewHeader = ({
                     {noTranslate || !i18n.exists(titleKey)
                       ? titleKey
                       : t(titleKey)}
-                  </Text>
-                </TextContent>
+                  </Content>
+                </Content>
               </LevelItem>
               {badges && (
                 <LevelItem>
@@ -127,7 +114,7 @@ export const ViewHeader = ({
             </Level>
           </LevelItem>
           <LevelItem>
-            <Toolbar className="pf-v5-u-p-0">
+            <Toolbar className="pf-v6-u-p-0">
               <ToolbarContent>
                 {onToggle && (
                   <ToolbarItem alignSelf="center">
@@ -135,8 +122,7 @@ export const ViewHeader = ({
                       id={`${toKey(titleKey)}-switch`}
                       data-testid={`${titleKey}-switch`}
                       label={t("enabled")}
-                      labelOff={t("disabled")}
-                      className="pf-v5-u-mr-lg"
+                      className="pf-v6-u-mr-lg"
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       aria-label={t("enabled")}
@@ -181,8 +167,8 @@ export const ViewHeader = ({
           </LevelItem>
         </Level>
         {enabled && (
-          <TextContent id="view-header-subkey">
-            <Text>
+          <Content id="view-header-subkey">
+            <Content component="p">
               {isValidElement(subKey)
                 ? subKey
                 : subKey
@@ -193,39 +179,11 @@ export const ViewHeader = ({
                   title={t("learnMore")}
                   href={helpUrl}
                   isInline
-                  className="pf-v5-u-ml-md"
+                  className="pf-v6-u-ml-md"
                 />
               )}
-            </Text>
-          </TextContent>
-        )}
-        {lowerDropdownItems && (
-          <Dropdown
-            className="keycloak__user-federation__dropdown"
-            onOpenChange={onLowerDropdownToggle}
-            toggle={(ref) => (
-              <MenuToggle
-                ref={ref}
-                onClick={onLowerDropdownToggle}
-                variant="primary"
-                id="ufToggleId"
-              >
-                {t(lowerDropdownMenuTitle)}
-              </MenuToggle>
-            )}
-            isOpen={isLowerDropdownOpen}
-          >
-            <DropdownList>{lowerDropdownItems}</DropdownList>
-          </Dropdown>
-        )}
-        {lowerButton && (
-          <Button
-            variant={lowerButton.variant}
-            onClick={lowerButton.onClick}
-            data-testid="viewHeader-lower-btn"
-          >
-            {lowerButton.lowerButtonTitle}
-          </Button>
+            </Content>
+          </Content>
         )}
       </PageSection>
       {divider && <Divider component="div" />}

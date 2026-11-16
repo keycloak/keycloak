@@ -68,6 +68,19 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
           min-height: 40rem;
           padding: 2rem 1rem;
         }
+
+        .login-preview .kc-logo-text {
+          position: absolute;
+          position-anchor: --logo;
+          position-area: start center;
+          margin-bottom: 3rem;
+        }
+        .login-preview .pf-v6-c-login__main {
+          anchor-name: --logo;
+        }
+        .login-preview .pf-v6-c-login__footer {
+          display: none;
+        }
       `}</style>
       <div className="login-preview login-pf" data-testid="login-page-preview">
         <div className="pf-v6-c-login">

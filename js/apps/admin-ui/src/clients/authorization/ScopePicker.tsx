@@ -71,7 +71,7 @@ export const ScopePicker = ({
   return (
     <FormGroup
       label={t("authorizationScopes")}
-      labelIcon={
+      labelHelp={
         <HelpItem helpText={t("clientScopesHelp")} fieldLabelId="scopes" />
       }
       fieldId="scopes"
@@ -90,7 +90,7 @@ export const ScopePicker = ({
                 toggleId="scopes"
                 variant={SelectVariant.typeaheadMulti}
                 chipGroupProps={{
-                  numChips: 3,
+                  numLabels: 3,
                   expandedText: t("hide"),
                   collapsedText: t("showRemaining"),
                 }}

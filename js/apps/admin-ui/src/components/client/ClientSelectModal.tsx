@@ -1,7 +1,14 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import { KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
-import { Button, Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
@@ -45,10 +52,24 @@ export const ClientSelectModal = ({
     <Modal
       data-testid="select-client-modal"
       variant={ModalVariant.large}
-      title={t("selectClient")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t("selectClient")}
+    >
+      <ModalHeader title={t("selectClient")} />
+      <ModalBody>
+        <KeycloakDataTable
+          onSelect={(rows) => setSelectedClients([...rows])}
+          searchPlaceholderKey="searchForClient"
+          isPaginated
+          canSelectAll={!isRadio}
+          isRadio={isRadio}
+          loader={loader}
+          ariaLabelKey="clientList"
+          columns={[{ name: "clientId" }, { name: "name" }]}
+        />
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="confirm"
           key="confirm"
@@ -60,7 +81,7 @@ export const ClientSelectModal = ({
           }}
         >
           {t("add")}
-        </Button>,
+        </Button>
         <Button
           data-testid="cancel"
           key="cancel"
@@ -68,19 +89,8 @@ export const ClientSelectModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        onSelect={(rows) => setSelectedClients([...rows])}
-        searchPlaceholderKey="searchForClient"
-        isPaginated
-        canSelectAll={!isRadio}
-        isRadio={isRadio}
-        loader={loader}
-        ariaLabelKey="clientList"
-        columns={[{ name: "clientId" }, { name: "name" }]}
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

@@ -3,6 +3,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { FormProvider, SubmitHandler, UseFormReturn } from "react-hook-form";
@@ -33,10 +36,37 @@ export const AddTranslationModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("addTranslation")}
       isOpen
       onClose={handleModalToggle}
-      actions={[
+      aria-label={t("addTranslation")}
+    >
+      <ModalHeader title={t("addTranslation")} />
+      <ModalBody>
+        <Form
+          id="translation-form"
+          isHorizontal
+          onSubmit={form.handleSubmit(save)}
+        >
+          <FormProvider {...form}>
+            <TextControl
+              name="key"
+              label={t("key")}
+              autoFocus
+              rules={{
+                required: t("required"),
+              }}
+            />
+            <TextControl
+              name="value"
+              label={t("value")}
+              rules={{
+                required: t("required"),
+              }}
+            />
+          </FormProvider>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
         <Button
           data-testid="add-translation-confirm-button"
           key="confirm"
@@ -45,7 +75,7 @@ export const AddTranslationModal = ({
           form="translation-form"
         >
           {t("create")}
-        </Button>,
+        </Button>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -56,32 +86,8 @@ export const AddTranslationModal = ({
           }}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <Form
-        id="translation-form"
-        isHorizontal
-        onSubmit={form.handleSubmit(save)}
-      >
-        <FormProvider {...form}>
-          <TextControl
-            name="key"
-            label={t("key")}
-            autoFocus
-            rules={{
-              required: t("required"),
-            }}
-          />
-          <TextControl
-            name="value"
-            label={t("value")}
-            rules={{
-              required: t("required"),
-            }}
-          />
-        </FormProvider>
-      </Form>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

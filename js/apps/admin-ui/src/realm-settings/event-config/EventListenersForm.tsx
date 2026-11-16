@@ -56,7 +56,7 @@ export const EventListenersForm = ({
         }}
         className="kc_eventListeners_select"
         chipGroupProps={{
-          numChips: 3,
+          numLabels: 3,
           expandedText: t("hide"),
           collapsedText: t("showRemaining"),
         }}

@@ -55,7 +55,7 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
         data-testid={name}
         to={`/${encodedRealm}${path}`}
         className={({ isActive }) =>
-          `pf-v5-c-nav__link${isActive ? " pf-m-current" : ""}`
+          `pf-v6-c-nav__link${isActive ? " pf-m-current" : ""}`
         }
       >
         {t(title)}
@@ -109,11 +109,11 @@ export const PageNav = () => {
   const showManageRealm = environment.masterRealm === environment.realm;
 
   return (
-    <PageSidebar className="keycloak__page_nav__nav">
+    <PageSidebar className="keycloak__page_nav__nav" tabIndex={0}>
       <PageSidebarBody>
         <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
           <h2
-            className="pf-v5-c-nav__section-title"
+            className="pf-v6-c-nav__section-title"
             style={{ wordWrap: "break-word" }}
           >
             <span data-testid="currentRealm">

@@ -265,7 +265,7 @@ function RealmSettingsGeneralTabForm({
   );
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormProvider {...form}>
         <FormAccess
           isHorizontal
@@ -286,7 +286,7 @@ function RealmSettingsGeneralTabForm({
                   data-testid="realmName"
                   onChange={field.onChange}
                 >
-                  {field.value}
+                  {field.value ?? ""}
                 </ClipboardCopy>
               )}
             />
@@ -324,7 +324,7 @@ function RealmSettingsGeneralTabForm({
           <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={
                   isStepUpAuthenticationSaml
@@ -438,7 +438,7 @@ function RealmSettingsGeneralTabForm({
           />
           <FormGroup
             label={t("endpoints")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("endpointsHelp")}
                 fieldLabelId="endpoints"

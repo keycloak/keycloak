@@ -60,11 +60,13 @@ export const App = () => {
           </FlexItem>
           <FlexItem grow={{ default: "grow" }} style={{ minHeight: 0 }}>
             <Page
-              header={<Header />}
+              masthead={<Header />}
               isManagedSidebar
               sidebar={<PageNav />}
               breadcrumb={<PageBreadCrumbs />}
               mainContainerId={mainPageContentId}
+              // PF6 Page main is overflow:auto; keep it keyboard-focusable for a11y.
+              mainTabIndex={0}
             >
               <ErrorBoundaryFallback fallback={ErrorRenderer}>
                 <Suspense fallback={<KeycloakSpinner />}>
