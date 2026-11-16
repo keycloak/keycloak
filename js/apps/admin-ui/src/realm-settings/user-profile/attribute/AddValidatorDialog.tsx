@@ -1,6 +1,14 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-import { Button, Form, Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Button,
+  Form,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -39,10 +47,31 @@ export const AddValidatorDialog = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("addValidator")}
       isOpen
       onClose={toggleDialog}
-      actions={[
+      aria-label={t("addValidator")}
+    >
+      <ModalHeader title={t("addValidator")} />
+      <ModalBody>
+        {allSelected ? (
+          t("emptyValidators")
+        ) : (
+          <Form id="add-validator" onSubmit={handleSubmit(save)}>
+            <ValidatorSelect
+              selectedValidators={selectedValidators.map(
+                (validator) => validator.key,
+              )}
+              onChange={setSelectedValidator}
+            />
+            {selectedValidator && (
+              <FormProvider {...form}>
+                <DynamicComponents properties={selectedValidator.properties} />
+              </FormProvider>
+            )}
+          </Form>
+        )}
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="save"
           data-testid="save-validator-role-button"
@@ -51,7 +80,7 @@ export const AddValidatorDialog = ({
           form="add-validator"
         >
           {t("save")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           data-testid="cancel-validator-role-button"
@@ -59,26 +88,8 @@ export const AddValidatorDialog = ({
           onClick={toggleDialog}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      {allSelected ? (
-        t("emptyValidators")
-      ) : (
-        <Form id="add-validator" onSubmit={handleSubmit(save)}>
-          <ValidatorSelect
-            selectedValidators={selectedValidators.map(
-              (validator) => validator.key,
-            )}
-            onChange={setSelectedValidator}
-          />
-          {selectedValidator && (
-            <FormProvider {...form}>
-              <DynamicComponents properties={selectedValidator.properties} />
-            </FormProvider>
-          )}
-        </Form>
-      )}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

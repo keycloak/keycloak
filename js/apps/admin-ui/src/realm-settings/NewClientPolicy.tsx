@@ -25,8 +25,8 @@ import {
   FormGroup,
   Label,
   PageSection,
-  Text,
-  TextVariants,
+  Content,
+  ContentVariants,
 } from "@patternfly/react-core";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { useState } from "react";
@@ -485,12 +485,12 @@ export default function NewClientPolicy() {
           </>
         )}
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           onSubmit={handleSubmit(save)}
           isHorizontal
           role="view-realm"
-          className="pf-v5-u-mt-lg"
+          className="pf-v6-u-mt-lg"
         >
           <FormProvider {...form}>
             <TextControl
@@ -559,13 +559,16 @@ export default function NewClientPolicy() {
               <>
                 <Flex>
                   <FlexItem>
-                    <Text className="kc-conditions" component={TextVariants.h1}>
+                    <Content
+                      className="kc-conditions"
+                      component={ContentVariants.h1}
+                    >
                       {t("conditions")}
                       <HelpItem
                         helpText={t("conditionsHelp")}
                         fieldLabelId="conditions"
                       />
-                    </Text>
+                    </Content>
                   </FlexItem>
                   {!isGlobalPolicy && (
                     <FlexItem align={{ default: "alignRight" }}>
@@ -664,13 +667,13 @@ export default function NewClientPolicy() {
                 ) : (
                   <>
                     <Divider />
-                    <Text
+                    <Content
                       data-testid="no-conditions"
                       className="kc-emptyConditions"
-                      component={TextVariants.h2}
+                      component={ContentVariants.h2}
                     >
                       {t("emptyConditions")}
-                    </Text>
+                    </Content>
                   </>
                 )}
               </>
@@ -680,16 +683,16 @@ export default function NewClientPolicy() {
               <>
                 <Flex>
                   <FlexItem>
-                    <Text
+                    <Content
                       className="kc-client-profiles"
-                      component={TextVariants.h1}
+                      component={ContentVariants.h1}
                     >
                       {t("clientProfiles")}
                       <HelpItem
                         helpText={t("clientProfilesHelp")}
                         fieldLabelId="clientProfiles"
                       />
-                    </Text>
+                    </Content>
                   </FlexItem>
                   {!isGlobalPolicy && (
                     <FlexItem align={{ default: "alignRight" }}>
@@ -779,12 +782,12 @@ export default function NewClientPolicy() {
                 ) : (
                   <>
                     <Divider />
-                    <Text
+                    <Content
                       className="kc-emptyClientProfiles"
-                      component={TextVariants.h2}
+                      component={ContentVariants.h2}
                     >
                       {t("emptyProfiles")}
-                    </Text>
+                    </Content>
                   </>
                 )}
               </>

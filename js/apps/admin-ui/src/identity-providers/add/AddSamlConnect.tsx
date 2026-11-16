@@ -65,7 +65,7 @@ export default function AddSamlConnect() {
   return (
     <>
       <ViewHeader titleKey={t("addSamlProvider")} />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-identity-providers"

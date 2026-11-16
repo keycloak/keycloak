@@ -10,8 +10,7 @@ import {
   CardHeader,
   CardTitle,
   PageSection,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
 import { SyncAltIcon } from "@patternfly/react-icons";
 import { saveAs } from "file-saver";
@@ -125,7 +124,7 @@ export const Keys = ({
   };
 
   return (
-    <PageSection variant="light" className="keycloak__form">
+    <PageSection hasBodyWrapper={false} className="keycloak__form">
       {openGenerateKeys && (
         <GenerateKeyDialog
           clientId={getValues("clientId")!}
@@ -136,14 +135,14 @@ export const Keys = ({
       {openImportKeys && (
         <ImportKeyDialog toggleDialog={toggleOpenImportKeys} save={importKey} />
       )}
-      <Card isFlat>
+      <Card>
         <CardHeader>
           <CardTitle>{t("jwksUrlConfig")}</CardTitle>
         </CardHeader>
         <CardBody>
-          <TextContent>
-            <Text>{t("keysIntro")}</Text>
-          </TextContent>
+          <Content>
+            <Content component="p">{t("keysIntro")}</Content>
+          </Content>
         </CardBody>
         <CardBody>
           <FormAccess
@@ -195,12 +194,13 @@ export const Keys = ({
                 {t("import")}
               </Button>
               <Button
+                icon={<SyncAltIcon />}
                 data-testid="reload"
                 variant="secondary"
                 onClick={refresh}
                 isDisabled={useJwksUrl === "true"}
               >
-                <SyncAltIcon /> {t("refresh")}
+                {t("refresh")}
               </Button>
             </ActionGroup>
           </FormAccess>

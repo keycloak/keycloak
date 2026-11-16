@@ -1,13 +1,7 @@
 import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
 import { DecisionEffect } from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type PolicyResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyResultRepresentation";
-import {
-  capitalize,
-  DescriptionList,
-  TextContent,
-  TextList,
-  TextListItem,
-} from "@patternfly/react-core";
+import { capitalize, DescriptionList, Content } from "@patternfly/react-core";
 import { ExpandableRowContent, Tbody, Td, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -85,10 +79,10 @@ export const AuthorizationEvaluateResourcePolicies = ({
                 isHorizontal
                 className="keycloak_resource_details"
               >
-                <TextContent>
-                  <TextList>
+                <Content>
+                  <Content component="ul">
                     {outerPolicy.associatedPolicies?.map((item) => (
-                      <TextListItem key="policyDetails">
+                      <Content component="li" key="policyDetails">
                         <Link
                           to={toPolicyDetails({
                             realm,
@@ -102,10 +96,10 @@ export const AuthorizationEvaluateResourcePolicies = ({
                         {t("votedToStatus", {
                           status: capitalize(item.status as string),
                         })}
-                      </TextListItem>
+                      </Content>
                     ))}
-                  </TextList>
-                </TextContent>
+                  </Content>
+                </Content>
               </DescriptionList>
             </ExpandableRowContent>
           )}

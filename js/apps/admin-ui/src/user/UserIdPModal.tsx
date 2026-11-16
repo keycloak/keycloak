@@ -6,6 +6,9 @@ import {
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   TextInput,
 } from "@patternfly/react-core";
@@ -59,13 +62,44 @@ export const UserIdpModal = ({
   };
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title={t("linkAccountTitle", {
-        provider: capitalize(federatedId),
-      })}
-      onClose={onClose}
-      actions={[
+    <Modal variant={ModalVariant.small} onClose={onClose} isOpen>
+      <ModalHeader
+        title={t("linkAccountTitle", {
+          provider: capitalize(federatedId),
+        })}
+      />
+      <ModalBody>
+        <Form id="group-form" onSubmit={handleSubmit(onSubmit)}>
+          <FormProvider {...form}>
+            <FormGroup label={t("identityProvider")} fieldId="identityProvider">
+              <TextInput
+                id="identityProvider"
+                data-testid="idpNameInput"
+                value={capitalize(federatedId)}
+                readOnly
+              />
+            </FormGroup>
+            <TextControl
+              name="userId"
+              label={t("userID")}
+              helperText={t("userIdHelperText")}
+              autoFocus
+              rules={{
+                required: t("required"),
+              }}
+            />
+            <TextControl
+              name="userName"
+              label={t("username")}
+              helperText={t("usernameHelperText")}
+              rules={{
+                required: t("required"),
+              }}
+            />
+          </FormProvider>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="confirm"
           data-testid="confirm"
@@ -75,7 +109,7 @@ export const UserIdpModal = ({
           isDisabled={!isValid}
         >
           {t("link")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           data-testid="cancel"
@@ -83,39 +117,8 @@ export const UserIdpModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-      isOpen
-    >
-      <Form id="group-form" onSubmit={handleSubmit(onSubmit)}>
-        <FormProvider {...form}>
-          <FormGroup label={t("identityProvider")} fieldId="identityProvider">
-            <TextInput
-              id="identityProvider"
-              data-testid="idpNameInput"
-              value={capitalize(federatedId)}
-              readOnly
-            />
-          </FormGroup>
-          <TextControl
-            name="userId"
-            label={t("userID")}
-            helperText={t("userIdHelperText")}
-            autoFocus
-            rules={{
-              required: t("required"),
-            }}
-          />
-          <TextControl
-            name="userName"
-            label={t("username")}
-            helperText={t("usernameHelperText")}
-            rules={{
-              required: t("required"),
-            }}
-          />
-        </FormProvider>
-      </Form>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

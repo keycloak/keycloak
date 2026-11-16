@@ -68,7 +68,7 @@ export const AttributePermission = () => {
       <FormGroup
         hasNoPaddingTop
         label={t("whoCanEdit")}
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("whoCanEditHelp")} fieldLabelId="whoCanEdit" />
         }
         fieldId="kc-who-can-edit"
@@ -78,7 +78,7 @@ export const AttributePermission = () => {
       <FormGroup
         hasNoPaddingTop
         label={t("whoCanView")}
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("whoCanViewHelp")} fieldLabelId="whoCanView" />
         }
         fieldId="kc-who-can-view"

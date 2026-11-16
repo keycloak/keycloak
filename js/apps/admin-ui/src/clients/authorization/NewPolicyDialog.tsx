@@ -1,10 +1,11 @@
 import { useTranslation } from "react-i18next";
 import {
+  Content,
+  ContentVariants,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
-  TextContent,
-  Text,
-  TextVariants,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 
@@ -37,40 +38,44 @@ export const NewPolicyDialog = ({
     <Modal
       aria-label={t("createPolicy")}
       variant={ModalVariant.medium}
-      header={
-        <TextContent>
-          <Text component={TextVariants.h1}>{t("chooseAPolicyType")}</Text>
-          <Text>{t("chooseAPolicyTypeInstructions")}</Text>
-        </TextContent>
-      }
       isOpen
       onClose={toggleDialog}
     >
-      <Table aria-label={t("policies")} variant="compact">
-        <Thead>
-          <Tr>
-            <Th>{t("name")}</Th>
-            <Th>{t("description")}</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {sortedPolicies.map((provider) => (
-            <Tr
-              key={provider.type}
-              data-testid={provider.type}
-              onRowClick={() => onSelect(provider)}
-              isClickable
-            >
-              <Td>{provider.name}</Td>
-              <Td style={{ textWrap: "wrap" }}>
-                {isValidComponentType(provider.type!)
-                  ? t(`policyProvider.${provider.type}`)
-                  : provider.description}
-              </Td>
+      <ModalHeader>
+        <Content>
+          <Content component={ContentVariants.h1}>
+            {t("chooseAPolicyType")}
+          </Content>
+          <Content component="p">{t("chooseAPolicyTypeInstructions")}</Content>
+        </Content>
+      </ModalHeader>
+      <ModalBody>
+        <Table aria-label={t("policies")} variant="compact">
+          <Thead>
+            <Tr>
+              <Th>{t("name")}</Th>
+              <Th>{t("description")}</Th>
             </Tr>
-          ))}
-        </Tbody>
-      </Table>
+          </Thead>
+          <Tbody>
+            {sortedPolicies.map((provider) => (
+              <Tr
+                key={provider.type}
+                data-testid={provider.type}
+                onRowClick={() => onSelect(provider)}
+                isClickable
+              >
+                <Td>{provider.name}</Td>
+                <Td style={{ textWrap: "wrap" }}>
+                  {isValidComponentType(provider.type!)
+                    ? t(`policyProvider.${provider.type}`)
+                    : provider.description}
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </ModalBody>
     </Modal>
   );
 };

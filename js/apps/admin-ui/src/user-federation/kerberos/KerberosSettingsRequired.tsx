@@ -85,7 +85,7 @@ export const KerberosSettingsRequired = ({
         />
         <FormGroup
           label={t("allowedKerberosRealms")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("allowedKerberosRealmsHelp")}
               fieldLabelId="allowedKerberosRealms"
@@ -118,7 +118,7 @@ export const KerberosSettingsRequired = ({
         />
         <FormGroup
           label={t("debug")}
-          labelIcon={
+          labelHelp={
             <HelpItem helpText={t("debugHelp")} fieldLabelId="debug" />
           }
           fieldId="kc-debug"
@@ -135,7 +135,6 @@ export const KerberosSettingsRequired = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("debug")}
               />
             )}
@@ -143,7 +142,7 @@ export const KerberosSettingsRequired = ({
         </FormGroup>
         <FormGroup
           label={t("allowPasswordAuthentication")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("allowPasswordAuthenticationHelp")}
               fieldLabelId="allowPasswordAuthentication"
@@ -163,7 +162,6 @@ export const KerberosSettingsRequired = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("allowPasswordAuthentication")}
               />
             )}
@@ -183,7 +181,7 @@ export const KerberosSettingsRequired = ({
         ) : null}
         <FormGroup
           label={t("updateFirstLogin")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("updateFirstLoginHelp")}
               fieldLabelId="updateFirstLogin"
@@ -203,7 +201,6 @@ export const KerberosSettingsRequired = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("updateFirstLogin")}
               />
             )}

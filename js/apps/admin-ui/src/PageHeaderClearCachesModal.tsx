@@ -6,6 +6,8 @@ import {
   List,
   ListItem,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useRealm } from "./context/realm-context/RealmContext";
@@ -41,78 +43,81 @@ export const PageHeaderClearCachesModal = ({
 
   return (
     <Modal
-      title={t("clearCachesTitle")}
       variant={ModalVariant.small}
       isOpen
       onClose={onClose}
       onClick={(e) => e.stopPropagation()}
+      aria-label={t("clearCachesTitle")}
     >
-      <List isPlain isBordered>
-        <ListItem>
-          <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
-            <FlexItem>
-              {t("realmCache")}{" "}
-              <HelpItem
-                helpText={t("clearRealmCacheHelp")}
-                fieldLabelId="clearRealmCacheHelp"
-              />
-            </FlexItem>
-            <FlexItem>
-              <Button onClick={() => clearRealmCache(realmName)}>
-                {t("clearButtonTitle")}
-              </Button>
-            </FlexItem>
-          </Flex>
-        </ListItem>
-        <ListItem>
-          <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
-            <FlexItem>
-              {t("userCache")}{" "}
-              <HelpItem
-                helpText={t("clearUserCacheHelp")}
-                fieldLabelId="clearUserCacheHelp"
-              />
-            </FlexItem>
-            <FlexItem>
-              <Button onClick={() => clearUserCache(realmName)}>
-                {t("clearButtonTitle")}
-              </Button>
-            </FlexItem>
-          </Flex>
-        </ListItem>
-        <ListItem>
-          <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
-            <FlexItem>
-              {t("keysCache")}{" "}
-              <HelpItem
-                helpText={t("clearKeysCacheHelp")}
-                fieldLabelId="clearKeysCacheHelp"
-              />
-            </FlexItem>
-            <FlexItem>
-              <Button onClick={() => clearKeysCache(realmName)}>
-                {t("clearButtonTitle")}
-              </Button>
-            </FlexItem>
-          </Flex>
-        </ListItem>
-        <ListItem>
-          <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
-            <FlexItem>
-              {t("crlCache")}{" "}
-              <HelpItem
-                helpText={t("clearCrlCacheHelp")}
-                fieldLabelId="clearCrlCacheHelp"
-              />
-            </FlexItem>
-            <FlexItem>
-              <Button onClick={() => clearCrlCache(realmName)}>
-                {t("clearButtonTitle")}
-              </Button>
-            </FlexItem>
-          </Flex>
-        </ListItem>
-      </List>
+      <ModalHeader title={t("clearCachesTitle")} />
+      <ModalBody>
+        <List isPlain isBordered>
+          <ListItem>
+            <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
+              <FlexItem>
+                {t("realmCache")}{" "}
+                <HelpItem
+                  helpText={t("clearRealmCacheHelp")}
+                  fieldLabelId="clearRealmCacheHelp"
+                />
+              </FlexItem>
+              <FlexItem>
+                <Button onClick={() => clearRealmCache(realmName)}>
+                  {t("clearButtonTitle")}
+                </Button>
+              </FlexItem>
+            </Flex>
+          </ListItem>
+          <ListItem>
+            <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
+              <FlexItem>
+                {t("userCache")}{" "}
+                <HelpItem
+                  helpText={t("clearUserCacheHelp")}
+                  fieldLabelId="clearUserCacheHelp"
+                />
+              </FlexItem>
+              <FlexItem>
+                <Button onClick={() => clearUserCache(realmName)}>
+                  {t("clearButtonTitle")}
+                </Button>
+              </FlexItem>
+            </Flex>
+          </ListItem>
+          <ListItem>
+            <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
+              <FlexItem>
+                {t("keysCache")}{" "}
+                <HelpItem
+                  helpText={t("clearKeysCacheHelp")}
+                  fieldLabelId="clearKeysCacheHelp"
+                />
+              </FlexItem>
+              <FlexItem>
+                <Button onClick={() => clearKeysCache(realmName)}>
+                  {t("clearButtonTitle")}
+                </Button>
+              </FlexItem>
+            </Flex>
+          </ListItem>
+          <ListItem>
+            <Flex justifyContent={{ default: "justifyContentSpaceBetween" }}>
+              <FlexItem>
+                {t("crlCache")}{" "}
+                <HelpItem
+                  helpText={t("clearCrlCacheHelp")}
+                  fieldLabelId="clearCrlCacheHelp"
+                />
+              </FlexItem>
+              <FlexItem>
+                <Button onClick={() => clearCrlCache(realmName)}>
+                  {t("clearButtonTitle")}
+                </Button>
+              </FlexItem>
+            </Flex>
+          </ListItem>
+        </List>
+      </ModalBody>
     </Modal>
   );
 };

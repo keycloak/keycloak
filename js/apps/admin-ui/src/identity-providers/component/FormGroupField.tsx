@@ -16,7 +16,7 @@ export const FormGroupField = ({
     <FormGroup
       label={t(label)}
       fieldId={label}
-      labelIcon={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
+      labelHelp={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
     >
       {children}
     </FormGroup>

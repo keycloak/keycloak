@@ -4,6 +4,9 @@ import {
   AlertVariant,
   Button,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -70,10 +73,37 @@ export const CreateVerifiableCredentialModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("createVerifiableCredential")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t("createVerifiableCredential")}
+    >
+      <ModalHeader title={t("createVerifiableCredential")} />
+      <ModalBody>
+        {oid4vcScopes.length === 0 ? (
+          <Alert
+            variant="warning"
+            isInline
+            title={t("noOid4vcScopesAvailable")}
+          />
+        ) : (
+          <FormProvider {...form}>
+            <SelectControl
+              name="credentialScopeName"
+              label={t("selectCredentialScope")}
+              labelIcon={t("credentialScopeName")}
+              controller={{
+                defaultValue: "",
+                rules: { required: t("required") },
+              }}
+              options={oid4vcScopes.map((scope) => ({
+                key: scope.name!,
+                value: scope.name!,
+              }))}
+            />
+          </FormProvider>
+        )}
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="create"
           variant="primary"
@@ -82,35 +112,11 @@ export const CreateVerifiableCredentialModal = ({
           isLoading={isSubmitting}
         >
           {t("create")}
-        </Button>,
+        </Button>
         <Button key="cancel" variant="link" onClick={onClose}>
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      {oid4vcScopes.length === 0 ? (
-        <Alert
-          variant="warning"
-          isInline
-          title={t("noOid4vcScopesAvailable")}
-        />
-      ) : (
-        <FormProvider {...form}>
-          <SelectControl
-            name="credentialScopeName"
-            label={t("selectCredentialScope")}
-            labelIcon={t("credentialScopeName")}
-            controller={{
-              defaultValue: "",
-              rules: { required: t("required") },
-            }}
-            options={oid4vcScopes.map((scope) => ({
-              key: scope.name!,
-              value: scope.name!,
-            }))}
-          />
-        </FormProvider>
-      )}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

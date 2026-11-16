@@ -28,7 +28,7 @@ export const ProviderInfo = () => {
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <TableToolbar
         inputGroupName="search"
         inputGroupPlaceholder={t("search")}
