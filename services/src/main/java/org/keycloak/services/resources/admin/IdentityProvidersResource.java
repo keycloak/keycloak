@@ -321,6 +321,7 @@ public class IdentityProvidersResource {
         Organizations.stripOrganizationId(representation);
 
         try {
+            IdentityProviderResource.requireManageRealmForVaultExpressions(auth, representation.getConfig(), null);
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM) && identityProvider.isAllowAdminRoleMapping()) {
                 throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
