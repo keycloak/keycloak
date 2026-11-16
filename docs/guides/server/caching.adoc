@@ -287,18 +287,9 @@ The keys and the certificate are stored in the database so they are available to
 By default, the certificate is valid for 60 days and is rotated at runtime every 30 days.
 Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
 
-To change the key of the generated certificate, use the following SPI options:
-
-`+spi-jgroups-mtls--default--algorithm+`:: `RSA` (default) or `ECDSA`.
-`+spi-jgroups-mtls--default--key-size+`:: The RSA key size in bits, at least `2048`. The default is `3072`. Ignored for `ECDSA`.
-`+spi-jgroups-mtls--default--curve+`:: The ECDSA curve, one of `secp256r1` (default), `secp384r1` or `secp521r1`. Ignored for `RSA`.
-
-For example: `+--spi-jgroups-mtls--default--algorithm=ECDSA --spi-jgroups-mtls--default--curve=secp384r1+`
-
-When a node starts and the stored certificate does not match the configured algorithm and key size or curve, the node generates a new certificate and stores it in the database.
-Nodes that are already running reload the new certificate when they reject the connection of the restarted node.
-Configure the same values on all nodes.
+Use the `+spi-jgroups-mtls--default--...+` SPI options if there is a compliance need to change them, otherwise use the default settings. When a node starts and the stored certificate does not match the configured algorithm and key size or curve, the node generates a new certificate, stores it in the database and the other nodes in the cluster will reload it. Configure the same values on all nodes.
 Otherwise, nodes with different values regenerate the certificate each time one of them starts.
+
 These options only apply to the generated certificate and are ignored when you provide your own keystore.
 
 === Running inside a service mesh
