@@ -45,4 +45,27 @@ test.describe("Groups", () => {
       page.locator("#groups-list li").filter({ hasText: /\/\S+$/ }),
     ).toHaveCount(4);
   });
+
+  test("names each direct membership checkbox after its group", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed(groupsRealm);
+    await waitForRealmReady();
+
+    await login(page, testBed.realm, "alice", "alice");
+    await page.getByTestId("groups").click();
+
+    await expect(
+      page.getByRole("checkbox", {
+        name: "Direct membership of /one",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("checkbox", {
+        name: "Direct membership of /one/subgroup",
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
 });
