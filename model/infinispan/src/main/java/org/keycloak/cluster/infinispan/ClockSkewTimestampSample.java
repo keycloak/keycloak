@@ -6,18 +6,14 @@ import org.infinispan.protostream.annotations.Proto;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
- * Timestamp sample from a cluster node used for clock skew detection.
- * Each node periodically publishes its current timestamp to the work cache,
- * allowing other nodes to detect if clocks are significantly ahead.
+ * Timestamp sample published by a node to the work cache, so that nodes of a newer version can detect clock skew in the cluster.
  * <p>
- * This supports the cluster-wide clock skew detection mechanism defined in issue #54284.
- * Nodes compare these samples against their local clocks to warn operators when NTP
- * configuration may be incorrect or when clock drift exceeds acceptable thresholds.
+ * This version of Keycloak never publishes or evaluates such samples.
+ * The class is only registered in the marshalling schema, so that a node does not fail when it receives a sample from a newer node
+ * in a mixed-version cluster, for example during a rolling update.
  *
  * @param nodeName the name of the node that published this timestamp
  * @param timestampMillis the timestamp in milliseconds since epoch (UTC)
- *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @ProtoTypeId(Marshalling.CLOCK_SKEW_TIMESTAMP_SAMPLE)
 @Proto
