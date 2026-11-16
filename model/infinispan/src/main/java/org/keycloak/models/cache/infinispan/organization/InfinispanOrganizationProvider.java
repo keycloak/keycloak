@@ -49,6 +49,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static final String ORG_COUNT_KEY_SUFFIX = ".org.count";
     private static final String ORG_EXISTS_KEY_SUFFIX = ".org.exists";
+    private static final String ORG_DISABLED_EXISTS_KEY_SUFFIX = ".org.disabled.exists";
     private static final String ORG_MEMBERS_COUNT_KEY_SUFFIX = ".members.count";
 
     private final KeycloakSession session;
@@ -71,6 +72,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static String cacheKeyOrgExists(RealmModel realm) {
         return realm.getId() + ORG_EXISTS_KEY_SUFFIX;
+    }
+
+    public static String cacheKeyOrgDisabledExists(RealmModel realm) {
+        return realm.getId() + ORG_DISABLED_EXISTS_KEY_SUFFIX;
     }
 
     public static String cacheKeyOrgMemberCount(RealmModel realm, OrganizationModel organization) {
@@ -542,6 +547,8 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
         if (realmCache != null) {
             realmCache.registerInvalidation(cacheKeyOrgId(getRealm(), id));
+            // the organization may have been enabled or disabled
+            realmCache.registerInvalidation(cacheKeyOrgDisabledExists(getRealm()));
             realmCache.registerInvalidation(id);
             CachedOrganization cachedOrg = realmCache.getCache().get(id, CachedOrganization.class);
 
@@ -584,6 +591,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         if (realmCache != null) {
             realmCache.registerInvalidation(cacheKeyOrgCount(getRealm()));
             realmCache.registerInvalidation(cacheKeyOrgExists(getRealm()));
+            realmCache.registerInvalidation(cacheKeyOrgDisabledExists(getRealm()));
         }
     }
 
@@ -678,5 +686,26 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         cached = new CachedExists(loaded, getRealm(), cacheKey, hasOrganizations);
         realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         return hasOrganizations;
+    }
+
+    @Override
+    public boolean hasDisabledOrganizations() {
+        if (realmCache == null) {
+            return getDelegate().hasDisabledOrganizations();
+        }
+
+        String cacheKey = cacheKeyOrgDisabledExists(getRealm());
+        CachedExists cached = realmCache.getCache().get(cacheKey, CachedExists.class);
+
+        // cached and not invalidated
+        if (cached != null && !isRealmCacheKeyInvalid(cacheKey)) {
+            return cached.isExists();
+        }
+
+        Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+        boolean hasDisabledOrganizations = getDelegate().hasDisabledOrganizations();
+        cached = new CachedExists(loaded, getRealm(), cacheKey, hasDisabledOrganizations);
+        realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+        return hasDisabledOrganizations;
     }
 }

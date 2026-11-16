@@ -46,6 +46,7 @@ import org.keycloak.utils.StringUtil;
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="existsByRealm", query="select o.id from OrganizationEntity o where o.realmId = :realmId"),
+        @NamedQuery(name="existsDisabledByRealm", query="select o.id from OrganizationEntity o where o.realmId = :realmId and o.enabled = false"),
 })
 public class OrganizationEntity {
 
