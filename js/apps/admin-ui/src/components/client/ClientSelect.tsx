@@ -89,7 +89,7 @@ export const ClientSelect = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
+      labelHelp={
         helpText ? (
           <HelpItem helpText={t(helpText)} fieldLabelId={name!} />
         ) : undefined

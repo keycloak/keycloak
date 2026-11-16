@@ -181,6 +181,8 @@ test.describe("Authentication flow details", () => {
 
     await openExecutionConfig(page, name);
     await page.getByTestId("clear").click();
+    // Wait for the clear action to finish and close the modal before reopening.
+    await expect(page.getByTestId("alias")).toBeHidden();
 
     await openExecutionConfig(page, name);
     await expect(page.getByTestId("alias")).toHaveValue("");

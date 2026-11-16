@@ -1,5 +1,5 @@
-.keycloak__user-federation__dropdown {
-  margin-top: var(--pf-v5-global--spacer--lg);
+.keycloak__user-federation__actions {
+  align-self: start;
 }
 
 .keycloak-admin--user-federation__gallery-item {

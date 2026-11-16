@@ -5,6 +5,8 @@ import {
   Button,
   ButtonVariant,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
@@ -163,18 +165,21 @@ export const UserVerifiableCredentials = ({
       {issuedCredentialsModalOpen && (
         <Modal
           variant={ModalVariant.large}
-          title={t("issuedCredentials")}
           isOpen={true}
           onClose={() => setIssuedCredentialsModalOpen(undefined)}
           width="90%"
+          aria-label={t("issuedCredentials")}
         >
-          <IssuedCredentialsDetailCell
-            userId={userId}
-            credentialScopeName={
-              issuedCredentialsModalOpen.credentialScopeName!
-            }
-            parentRevision={issuedCredentialsModalOpen.revision}
-          />
+          <ModalHeader title={t("issuedCredentials")} />
+          <ModalBody>
+            <IssuedCredentialsDetailCell
+              userId={userId}
+              credentialScopeName={
+                issuedCredentialsModalOpen.credentialScopeName!
+              }
+              parentRevision={issuedCredentialsModalOpen.revision}
+            />
+          </ModalBody>
         </Modal>
       )}
       {credentialOfferDialogCredential && (

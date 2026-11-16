@@ -2,18 +2,21 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
+  Button,
   ButtonVariant,
   CardTitle,
+  Dropdown,
   DropdownItem,
+  DropdownList,
   Gallery,
   GalleryItem,
   Icon,
+  MenuToggle,
   PageSection,
   Split,
   SplitItem,
-  Text,
-  TextContent,
-  TextVariants,
+  Content,
+  ContentVariants,
 } from "@patternfly/react-core";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
@@ -28,6 +31,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
 import { toUpperCase } from "../util";
+import useToggle from "../utils/useToggle";
 import { ManagePriorityDialog } from "./ManagePriorityDialog";
 import { toCustomUserFederation } from "./routes/CustomUserFederation";
 import { toNewCustomUserFederation } from "./routes/NewCustomUserFederation";
@@ -50,6 +54,7 @@ export default function UserFederationSection() {
   const navigate = useNavigate();
 
   const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
+  const [isAddProviderOpen, toggleAddProvider] = useToggle();
 
   const providers =
     useServerInfo().componentTypes?.[
@@ -88,12 +93,6 @@ export default function UserFederationSection() {
       )),
     [],
   );
-
-  const lowerButtonProps = {
-    variant: "link",
-    onClick: () => setManageDisplayDialog(true),
-    lowerButtonTitle: t("managePriorities"),
-  };
 
   let cards;
 
@@ -172,6 +171,8 @@ export default function UserFederationSection() {
     ));
   }
 
+  const hasFederations = !!userFederations && userFederations.length > 0;
+
   return (
     <>
       <DeleteConfirm />
@@ -185,28 +186,52 @@ export default function UserFederationSection() {
         titleKey="userFederation"
         subKey="userFederationExplain"
         helpUrl={helpUrls.userFederationUrl}
-        {...(userFederations && userFederations.length > 0
-          ? {
-              lowerDropdownItems: ufAddProviderDropdownItems,
-              lowerDropdownMenuTitle: "addNewProvider",
-              lowerButton: lowerButtonProps,
-            }
-          : {})}
       />
-      <PageSection>
-        {userFederations && userFederations.length > 0 ? (
-          <Gallery hasGutter>{cards}</Gallery>
+      <PageSection hasBodyWrapper={false} variant="secondary">
+        {hasFederations ? (
+          <>
+            <Split hasGutter className="keycloak__user-federation__actions">
+              <SplitItem>
+                <Dropdown
+                  onOpenChange={toggleAddProvider}
+                  toggle={(ref) => (
+                    <MenuToggle
+                      ref={ref}
+                      onClick={toggleAddProvider}
+                      variant="primary"
+                      id="ufToggleId"
+                    >
+                      {t("addNewProvider")}
+                    </MenuToggle>
+                  )}
+                  isOpen={isAddProviderOpen}
+                >
+                  <DropdownList>{ufAddProviderDropdownItems}</DropdownList>
+                </Dropdown>
+              </SplitItem>
+              <SplitItem>
+                <Button
+                  variant="link"
+                  onClick={() => setManageDisplayDialog(true)}
+                  data-testid="viewHeader-lower-btn"
+                >
+                  {t("managePriorities")}
+                </Button>
+              </SplitItem>
+            </Split>
+            <Gallery hasGutter>{cards}</Gallery>
+          </>
         ) : (
           <>
-            <TextContent>
-              <Text component={TextVariants.p}>{t("getStarted")}</Text>
-            </TextContent>
-            <TextContent>
-              <Text className="pf-v5-u-mt-lg" component={TextVariants.h2}>
+            <Content>
+              <Content component={ContentVariants.p}>{t("getStarted")}</Content>
+            </Content>
+            <Content>
+              <Content className="pf-v6-u-mt-lg" component={ContentVariants.h2}>
                 {t("add-providers")}
-              </Text>
-            </TextContent>
-            <hr className="pf-v5-u-mb-lg" />
+              </Content>
+            </Content>
+            <hr className="pf-v6-u-mb-lg" />
             <Gallery hasGutter>
               {providers.map((p) => (
                 <ClickableCard

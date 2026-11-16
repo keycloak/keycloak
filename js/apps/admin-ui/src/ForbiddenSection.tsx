@@ -16,7 +16,7 @@ export const ForbiddenSection = ({
     : [permissionNeeded];
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       {t("forbidden", { count: permissionNeededArray.length })}{" "}
       {permissionNeededArray.map((p) => p.toString()).join(", ")}
     </PageSection>

@@ -27,15 +27,14 @@ export const DefaultColorAccordion = (props: DefaultColorAccordionProps) => {
 
   return (
     <Accordion asDefinitionList={false} isBordered togglePosition="start">
-      <AccordionItem>
+      <AccordionItem isExpanded={expanded}>
         <AccordionToggle
           onClick={() => setExpanded(!expanded)}
-          isExpanded={expanded}
           id="default-color-toggle"
         >
           {t(props.label || "defaultColor")}
         </AccordionToggle>
-        <AccordionContent id="default-color-content" isHidden={!expanded}>
+        <AccordionContent id="default-color-content">
           <ColorControl
             {...rest}
             color={resolveColorToHex(color)}

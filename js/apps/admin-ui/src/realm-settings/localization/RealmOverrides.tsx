@@ -20,10 +20,9 @@ import {
   MenuToggle,
   SelectGroup,
   SelectOption,
-  Text,
-  TextContent,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
@@ -361,14 +360,14 @@ export const RealmOverrides = ({
           form={translationForm}
         />
       )}
-      <TextContent>
-        <Text
-          className="pf-v5-u-mt-lg pf-v5-u-ml-md"
-          component={TextVariants.p}
+      <Content>
+        <Content
+          className="pf-v6-u-mt-lg pf-v6-u-ml-md"
+          component={ContentVariants.p}
         >
           {t("realmOverridesDescription")}
-        </Text>
-      </TextContent>
+        </Content>
+      </Content>
       <PaginatingTableToolbar
         count={translations.length}
         first={first}
@@ -495,7 +494,7 @@ export const RealmOverrides = ({
           >
             <Thead>
               <Tr>
-                <Th className="pf-v5-u-px-lg">
+                <Th className="pf-v6-u-px-lg">
                   <input
                     type="checkbox"
                     aria-label={t("selectAll")}
@@ -505,8 +504,8 @@ export const RealmOverrides = ({
                     data-testid="selectAll"
                   />
                 </Th>
-                <Th className="pf-v5-u-py-lg">{t("key")}</Th>
-                <Th className="pf-v5-u-py-lg">{t("value")}</Th>
+                <Th className="pf-v6-u-py-lg">{t("key")}</Th>
+                <Th className="pf-v6-u-py-lg">{t("value")}</Th>
                 <Th aria-hidden="true" />
               </Tr>
             </Thead>
@@ -519,7 +518,7 @@ export const RealmOverrides = ({
                 return (
                   <Tr key={id}>
                     <Td
-                      className="pf-v5-u-px-lg"
+                      className="pf-v6-u-px-lg"
                       select={{
                         rowIndex,
                         onSelect: (_, isSelected) =>
@@ -528,11 +527,11 @@ export const RealmOverrides = ({
                         isDisabled: isDeleting,
                       }}
                     />
-                    <Td className="pf-m-sm pf-v5-u-px-sm" dataLabel={t("key")}>
+                    <Td className="pf-m-sm pf-v6-u-px-sm" dataLabel={t("key")}>
                       {key}
                     </Td>
                     <Td
-                      className="pf-m-sm pf-v5-u-px-sm"
+                      className="pf-m-sm pf-v6-u-px-sm"
                       dataLabel={t("value")}
                     >
                       <Form
@@ -547,14 +546,14 @@ export const RealmOverrides = ({
                       >
                         <FormGroup
                           fieldId="kc-translationValue"
-                          className="pf-v5-u-display-inline-block"
+                          className="pf-v6-u-display-inline-block"
                         >
                           {draft ? (
                             <>
                               <TextInput
                                 aria-label={t("editTranslationValue")}
                                 type="text"
-                                className="pf-v5-u-w-initial"
+                                className="pf-v6-u-w-initial"
                                 data-testid={`editTranslationValueInput-${rowIndex}`}
                                 value={draft.value}
                                 isDisabled={draft.isSaving || isDeletingRow}
@@ -593,6 +592,7 @@ export const RealmOverrides = ({
                                 key="edit"
                                 type="button"
                                 isDisabled={isDeletingRow}
+                                icon={<PencilAltIcon />}
                                 onClick={() => {
                                   setDrafts((previous) => ({
                                     ...previous,
@@ -603,9 +603,7 @@ export const RealmOverrides = ({
                                 variant="link"
                                 className="pf-m-plain"
                                 data-testid={`editTranslationBtn-${rowIndex}`}
-                              >
-                                <PencilAltIcon />
-                              </Button>
+                              />
                             </>
                           )}
                         </FormGroup>

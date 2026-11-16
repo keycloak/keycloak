@@ -7,7 +7,6 @@ import {
   ButtonVariant,
   Divider,
   PageSection,
-  PageSectionVariants,
 } from "@patternfly/react-core";
 import styles from "@patternfly/react-styles/css/components/Table/table";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
@@ -418,7 +417,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
               className="kc-setPasswordBtn-tbl"
               data-testid="setPasswordBtn-table"
               variant="primary"
-              form="userCredentials-form"
+              type="button"
               onClick={() => {
                 setIsOpen(true);
               }}
@@ -429,7 +428,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
           </>
         )}
       {groupedUserCredentials.length !== 0 && (
-        <PageSection variant={PageSectionVariants.light}>
+        <PageSection hasBodyWrapper={false}>
           <Table variant={"compact"}>
             <Thead>
               <Tr className="kc-table-header">
@@ -560,7 +559,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
         </PageSection>
       )}
       {useFederatedCredentials && hasCredentialTypes && (
-        <PageSection variant={PageSectionVariants.light}>
+        <PageSection hasBodyWrapper={false}>
           <Table variant="compact">
             <Thead>
               <Tr>

@@ -32,7 +32,7 @@ async function logSwitchDebug(switchElement: Locator, messageParts: string[]) {
 }
 
 export async function assertRequiredFieldError(page: Page, field: string) {
-  await expect(page.getByTestId(field + "-helper")).toHaveText(/required/i);
+  await expect(page.getByTestId(field + "-helper")).toContainText(/required/i);
 }
 
 export async function assertFieldError(
@@ -40,7 +40,7 @@ export async function assertFieldError(
   field: string,
   text: string,
 ) {
-  await expect(page.getByTestId(field + "-helper")).toHaveText(text);
+  await expect(page.getByTestId(field + "-helper")).toContainText(text);
 }
 
 /**
@@ -52,7 +52,7 @@ export async function assertFieldError(
  *
  * Use this for all {@link KeycloakSelect} dropdowns — including
  * `typeaheadMulti` variants — because `TypeaheadSelect`'s `onClick={toggle}`
- * on the PF5 `Select` wrapper closes the dropdown on every click.
+ * on the PF6 `Select` wrapper closes the dropdown on every click.
  *
  * Use {@link selectMultiItem} only for dropdowns that genuinely stay open after
  * selection: `SelectControl` (which calls `event.stopPropagation()` in
@@ -111,7 +111,7 @@ export async function selectMultiItem(
 }
 
 // The field element may be a combobox input (has aria-expanded itself) or a
-// container div wrapping a PF5 MenuToggle (aria-expanded is on a child button).
+// container div wrapping a PF6 MenuToggle (aria-expanded is on a child button).
 // Use .first() so the union never resolves to two elements (e.g. a MenuToggle
 // wrapper that itself has aria-expanded AND contains a child with it).
 function findExpandable(element: Locator): Locator {

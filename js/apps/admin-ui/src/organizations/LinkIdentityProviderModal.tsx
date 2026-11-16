@@ -6,6 +6,9 @@ import {
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   ToggleGroup,
   ToggleGroupItem,
@@ -101,10 +104,78 @@ export const LinkIdentityProviderModal = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("linkIdentityProvider")}
       isOpen
       onClose={onClose}
-      actions={[
+      aria-label={t("linkIdentityProvider")}
+    >
+      <ModalHeader title={t("linkIdentityProvider")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form id="form" onSubmit={handleSubmit(submitForm)}>
+            {identityProvider ? (
+              <FormGroup
+                label={t("identityProvider")}
+                fieldId="identityProvider"
+              >
+                {identityProvider.alias}
+              </FormGroup>
+            ) : (
+              <IdentityProviderSelect
+                name="alias"
+                label={t("identityProvider")}
+                helpText={t("linkIdentityProviderHelp")}
+                defaultValue={[]}
+                isRequired
+                orgId={orgId}
+                onIdpSelected={(idp) =>
+                  setManagedClaimed(hasManagedByOtherOrg(idp))
+                }
+              />
+            )}
+            <DefaultSwitchControl
+              name="autoMembership"
+              label={t("autoMembership")}
+              labelIcon={t("autoMembershipHelp")}
+              defaultValue={true}
+            />
+            <FormGroup
+              label={t("membershipType")}
+              labelHelp={
+                <HelpItem
+                  helpText={t("membershipTypeHelp")}
+                  fieldLabelId="membershipType"
+                />
+              }
+              fieldId="membershipType"
+            >
+              <Controller
+                name="membershipType"
+                defaultValue="UNMANAGED"
+                control={control}
+                render={({ field }) => (
+                  <ToggleGroup aria-label={t("membershipType")}>
+                    <ToggleGroupItem
+                      text={t("UNMANAGED")}
+                      buttonId="unmanaged"
+                      isSelected={field.value === "UNMANAGED"}
+                      onChange={() => field.onChange("UNMANAGED")}
+                    />
+                    {autoMembership && !managedClaimed && (
+                      <ToggleGroupItem
+                        text={t("MANAGED")}
+                        buttonId="managed"
+                        isSelected={field.value === "MANAGED"}
+                        onChange={() => field.onChange("MANAGED")}
+                      />
+                    )}
+                  </ToggleGroup>
+                )}
+              />
+            </FormGroup>
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <FormSubmitButton
           formState={formState}
           data-testid="confirm"
@@ -114,7 +185,7 @@ export const LinkIdentityProviderModal = ({
           allowNonDirty
         >
           {t("save")}
-        </FormSubmitButton>,
+        </FormSubmitButton>
         <Button
           id="modal-cancel"
           data-testid="cancel"
@@ -123,70 +194,8 @@ export const LinkIdentityProviderModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form id="form" onSubmit={handleSubmit(submitForm)}>
-          {identityProvider ? (
-            <FormGroup label={t("identityProvider")} fieldId="identityProvider">
-              {identityProvider.alias}
-            </FormGroup>
-          ) : (
-            <IdentityProviderSelect
-              name="alias"
-              label={t("identityProvider")}
-              helpText={t("linkIdentityProviderHelp")}
-              defaultValue={[]}
-              isRequired
-              orgId={orgId}
-              onIdpSelected={(idp) =>
-                setManagedClaimed(hasManagedByOtherOrg(idp))
-              }
-            />
-          )}
-          <DefaultSwitchControl
-            name="autoMembership"
-            label={t("autoMembership")}
-            labelIcon={t("autoMembershipHelp")}
-            defaultValue={true}
-          />
-          <FormGroup
-            label={t("membershipType")}
-            labelIcon={
-              <HelpItem
-                helpText={t("membershipTypeHelp")}
-                fieldLabelId="membershipType"
-              />
-            }
-            fieldId="membershipType"
-          >
-            <Controller
-              name="membershipType"
-              defaultValue="UNMANAGED"
-              control={control}
-              render={({ field }) => (
-                <ToggleGroup aria-label={t("membershipType")}>
-                  <ToggleGroupItem
-                    text={t("UNMANAGED")}
-                    buttonId="unmanaged"
-                    isSelected={field.value === "UNMANAGED"}
-                    onChange={() => field.onChange("UNMANAGED")}
-                  />
-                  {autoMembership && !managedClaimed && (
-                    <ToggleGroupItem
-                      text={t("MANAGED")}
-                      buttonId="managed"
-                      isSelected={field.value === "MANAGED"}
-                      onChange={() => field.onChange("MANAGED")}
-                    />
-                  )}
-                </ToggleGroup>
-              )}
-            />
-          </FormGroup>
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

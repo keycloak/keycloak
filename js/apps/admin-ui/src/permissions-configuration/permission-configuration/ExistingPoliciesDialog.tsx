@@ -13,6 +13,9 @@ import {
   DropdownList,
   MenuToggle,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { CaretDownIcon, FilterIcon } from "@patternfly/react-icons";
@@ -81,10 +84,78 @@ export const ExistingPoliciesDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("assignExistingPolicies")}
       isOpen={open}
       onClose={toggleDialog}
-      actions={[
+      aria-label={t("assignExistingPolicies")}
+    >
+      <ModalHeader title={t("assignExistingPolicies")} />
+      <ModalBody>
+        <KeycloakDataTable
+          key={filterType}
+          loader={loader}
+          ariaLabelKey={t("chooseAPolicyType")}
+          searchPlaceholderKey={t("searchClientAuthorizationPolicy")}
+          isSearching={true}
+          searchTypeComponent={
+            <Dropdown
+              onSelect={(_, value) => {
+                setFilterType(value as string | undefined);
+                toggleIsFilterTypeDropdownOpen();
+              }}
+              onOpenChange={toggleIsFilterTypeDropdownOpen}
+              toggle={(ref) => (
+                <MenuToggle
+                  ref={ref}
+                  data-testid="filter-type-dropdown-existingPolicies"
+                  id="toggle-id-10"
+                  onClick={toggleIsFilterTypeDropdownOpen}
+                  icon={<FilterIcon />}
+                  statusIcon={<CaretDownIcon />}
+                >
+                  {filterType ? filterType : t("allTypes")}
+                </MenuToggle>
+              )}
+              isOpen={isFilterTypeDropdownOpen}
+            >
+              <DropdownList>
+                <DropdownItem
+                  data-testid="filter-type-dropdown-existingPolicies-all"
+                  key="all"
+                  onClick={() => setFilterType(undefined)}
+                >
+                  {t("allTypes")}
+                </DropdownItem>
+                {providers.map((name) => (
+                  <DropdownItem
+                    data-testid={`filter-type-dropdown-existingPolicies-${name}`}
+                    key={name}
+                    onClick={() => setFilterType(name)}
+                  >
+                    {name}
+                  </DropdownItem>
+                ))}
+              </DropdownList>
+            </Dropdown>
+          }
+          canSelectAll
+          onSelect={(selectedRows) => setRows(selectedRows)}
+          columns={[
+            { name: "name" },
+            {
+              name: "type",
+              cellFormatters: [capitalizeFirstLetterFormatter()],
+            },
+            { name: "description" },
+          ]}
+          emptyState={
+            <ListEmptyState
+              message={t("emptyAssignExistingPolicies")}
+              instructions={t("emptyAssignExistingPoliciesInstructions")}
+            />
+          }
+        />
+      </ModalBody>
+      <ModalFooter>
         <>
           <Button
             id="modal-assignExistingPolicies"
@@ -112,73 +183,8 @@ export const ExistingPoliciesDialog = ({
           >
             {t("cancel")}
           </Button>
-        </>,
-      ]}
-    >
-      <KeycloakDataTable
-        key={filterType}
-        loader={loader}
-        ariaLabelKey={t("chooseAPolicyType")}
-        searchPlaceholderKey={t("searchClientAuthorizationPolicy")}
-        isSearching={true}
-        searchTypeComponent={
-          <Dropdown
-            onSelect={(_, value) => {
-              setFilterType(value as string | undefined);
-              toggleIsFilterTypeDropdownOpen();
-            }}
-            onOpenChange={toggleIsFilterTypeDropdownOpen}
-            toggle={(ref) => (
-              <MenuToggle
-                ref={ref}
-                data-testid="filter-type-dropdown-existingPolicies"
-                id="toggle-id-10"
-                onClick={toggleIsFilterTypeDropdownOpen}
-                icon={<FilterIcon />}
-                statusIcon={<CaretDownIcon />}
-              >
-                {filterType ? filterType : t("allTypes")}
-              </MenuToggle>
-            )}
-            isOpen={isFilterTypeDropdownOpen}
-          >
-            <DropdownList>
-              <DropdownItem
-                data-testid="filter-type-dropdown-existingPolicies-all"
-                key="all"
-                onClick={() => setFilterType(undefined)}
-              >
-                {t("allTypes")}
-              </DropdownItem>
-              {providers.map((name) => (
-                <DropdownItem
-                  data-testid={`filter-type-dropdown-existingPolicies-${name}`}
-                  key={name}
-                  onClick={() => setFilterType(name)}
-                >
-                  {name}
-                </DropdownItem>
-              ))}
-            </DropdownList>
-          </Dropdown>
-        }
-        canSelectAll
-        onSelect={(selectedRows) => setRows(selectedRows)}
-        columns={[
-          { name: "name" },
-          {
-            name: "type",
-            cellFormatters: [capitalizeFirstLetterFormatter()],
-          },
-          { name: "description" },
-        ]}
-        emptyState={
-          <ListEmptyState
-            message={t("emptyAssignExistingPolicies")}
-            instructions={t("emptyAssignExistingPoliciesInstructions")}
-          />
-        }
-      />
+        </>
+      </ModalFooter>
     </Modal>
   );
 };

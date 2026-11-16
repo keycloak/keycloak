@@ -6,9 +6,10 @@ import {
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
-
 type AccessTokenDialogProps = {
   token: string;
   toggleDialog: () => void;
@@ -21,28 +22,34 @@ export const AccessTokenDialog = ({
   const { t } = useTranslation();
   return (
     <Modal
-      title={t("initialAccessTokenDetails")}
       isOpen={true}
       onClose={toggleDialog}
       variant={ModalVariant.medium}
+      aria-label={t("initialAccessTokenDetails")}
     >
-      <Alert
-        title={t("copyInitialAccessToken")}
-        component="h2"
-        isInline
-        variant={AlertVariant.warning}
-      />
-      <Form className="pf-v5-u-mt-md">
-        <FormGroup label={t("initialAccessToken")} fieldId="initialAccessToken">
-          <ClipboardCopy
-            id="initialAccessToken"
-            data-testid="initialAccessToken"
-            isReadOnly
+      <ModalHeader title={t("initialAccessTokenDetails")} />
+      <ModalBody>
+        <Alert
+          title={t("copyInitialAccessToken")}
+          component="h2"
+          isInline
+          variant={AlertVariant.warning}
+        />
+        <Form className="pf-v6-u-mt-md">
+          <FormGroup
+            label={t("initialAccessToken")}
+            fieldId="initialAccessToken"
           >
-            {token}
-          </ClipboardCopy>
-        </FormGroup>
-      </Form>
+            <ClipboardCopy
+              id="initialAccessToken"
+              data-testid="initialAccessToken"
+              isReadOnly
+            >
+              {token}
+            </ClipboardCopy>
+          </FormGroup>
+        </Form>
+      </ModalBody>
     </Modal>
   );
 };

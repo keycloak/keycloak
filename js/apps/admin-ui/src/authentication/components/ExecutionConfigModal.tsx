@@ -9,6 +9,8 @@ import {
   Flex,
   Form,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
   Tooltip,
 } from "@patternfly/react-core";
@@ -44,7 +46,17 @@ export const ExecutionConfigModal = ({
     useState<AuthenticatorConfigInfoRepresentation>();
 
   const form = useForm<ExecutionConfigModalForm>();
-  const { setValue, handleSubmit, reset } = form;
+  const { setValue, handleSubmit, reset, getValues } = form;
+
+  const clearConfigForm = () => {
+    const existing = getValues("config");
+    reset({
+      alias: "",
+      // Beerified keys stay registered on the form; replacing config with {}
+      // leaves their previous values in place when the modal remounts.
+      config: Object.fromEntries(Object.keys(existing).map((key) => [key, ""])),
+    });
+  };
 
   // default config all executions should have
   const defaultConfigProperties = execution.authenticationFlow
@@ -107,8 +119,15 @@ export const ExecutionConfigModal = ({
   );
 
   useEffect(() => {
-    if (config) setupForm(config);
-  }, [config]);
+    if (!show) {
+      return;
+    }
+    if (config) {
+      setupForm(config);
+    } else {
+      clearConfigForm();
+    }
+  }, [show, config]);
 
   const save = async (saved: ExecutionConfigModalForm) => {
     const changedConfig = convertFormValuesToObject(saved);
@@ -142,77 +161,91 @@ export const ExecutionConfigModal = ({
     <>
       <Tooltip content={t("settings")}>
         <Button
+          icon={<CogIcon />}
           variant="plain"
           aria-label={t("settings")}
           onClick={() => setShow(true)}
-        >
-          <CogIcon />
-        </Button>
+        />
       </Tooltip>
       {configDescription && (
         <Modal
           variant={ModalVariant.small}
           isOpen={show}
-          title={t("executionConfig", { name: configDescription.name })}
           onClose={() => setShow(false)}
+          aria-label={t("executionConfig", { name: configDescription.name })}
         >
-          <Form id="execution-config-form" onSubmit={handleSubmit(save)}>
-            <FormProvider {...form}>
-              <TextControl
-                name="alias"
-                label={t("alias")}
-                labelIcon={t("authenticationAliasHelp")}
-                rules={{ required: t("required") }}
-                isDisabled={!!config}
-              />
-              <DynamicComponents
-                stringify
-                properties={configDescription.properties || []}
-              />
-            </FormProvider>
-            <ActionGroup>
-              <Flex
-                className="pf-v5-u-flex-grow-1"
-                justifyContent={{ default: "justifyContentSpaceBetween" }}
-              >
-                <div>
-                  <Button
-                    className="pf-v5-u-mr-md"
-                    data-testid="save"
-                    variant="primary"
-                    type="submit"
-                  >
-                    {t("save")}
-                  </Button>
-                  <Button
-                    data-testid="cancel"
-                    variant={ButtonVariant.link}
-                    onClick={() => {
-                      setShow(false);
-                    }}
-                  >
-                    {t("cancel")}
-                  </Button>
-                </div>
-                {config && (
-                  <Button
-                    data-testid="clear"
-                    variant={ButtonVariant.link}
-                    onClick={async () => {
-                      await adminClient.authenticationManagement.delConfig({
-                        id: config.id!,
-                      });
-                      setConfig(undefined);
-                      reset();
-                      setShow(false);
-                    }}
-                  >
-                    {t("clear")} <TrashIcon />
-                  </Button>
-                )}
-              </Flex>
-            </ActionGroup>
-          </Form>
+          <ModalHeader
+            title={t("executionConfig", { name: configDescription.name })}
+          />
+          <ModalBody>
+            <Form id="execution-config-form" onSubmit={handleSubmit(save)}>
+              <FormProvider {...form}>
+                <TextControl
+                  name="alias"
+                  label={t("alias")}
+                  labelIcon={t("authenticationAliasHelp")}
+                  rules={{ required: t("required") }}
+                  isDisabled={!!config}
+                />
+                <DynamicComponents
+                  stringify
+                  properties={configDescription.properties || []}
+                />
+              </FormProvider>
+              <ActionGroup>
+                <Flex
+                  className="pf-v6-u-flex-grow-1"
+                  justifyContent={{ default: "justifyContentSpaceBetween" }}
+                >
+                  <div>
+                    <Button
+                      className="pf-v6-u-mr-md"
+                      data-testid="save"
+                      variant="primary"
+                      type="submit"
+                    >
+                      {t("save")}
+                    </Button>
+                    <Button
+                      data-testid="cancel"
+                      variant={ButtonVariant.link}
+                      type="button"
+                      onClick={() => {
+                        setShow(false);
+                      }}
+                    >
+                      {t("cancel")}
+                    </Button>
+                  </div>
+                  {/* Keep Clear outside form submit semantics: PF Button
+                      defaults to type=button, but stay explicit and avoid
+                      racing form onSubmit when deleting a config. */}
+                  {config && (
+                    <Button
+                      icon={<TrashIcon />}
+                      iconPosition="end"
+                      data-testid="clear"
+                      variant={ButtonVariant.link}
+                      type="button"
+                      formNoValidate
+                      onClick={async (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        await adminClient.authenticationManagement.delConfig({
+                          id: config.id!,
+                        });
+                        setConfig(undefined);
+                        clearConfigForm();
+                        setShow(false);
+                      }}
+                    >
+                      {t("clear")}
+                    </Button>
+                  )}
+                </Flex>
+              </ActionGroup>
+            </Form>
+          </ModalBody>
         </Modal>
       )}
     </>

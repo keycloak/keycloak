@@ -63,7 +63,7 @@ export default function AddJWTAuthorizationGrantConnect() {
   return (
     <>
       <ViewHeader titleKey={t("addJWTAuthorizationGrantProvider")} />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormProvider {...form}>
           <FormAccess
             role="manage-identity-providers"

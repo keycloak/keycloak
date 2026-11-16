@@ -42,7 +42,7 @@ function mapTypeToColor(type: FlowType) {
     case "execution":
       return "blue";
     case "step":
-      return "cyan";
+      return "teal";
     default:
       return "grey";
   }

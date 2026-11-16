@@ -100,7 +100,7 @@ export const IssuedCredentialsDetailCell = ({
             name: "id",
             displayKey: "issuedCredentialId",
             cellRenderer: ({ id }) => (
-              <code className="pf-v5-u-font-size-sm">{id}</code>
+              <code className="pf-v6-u-font-size-sm">{id}</code>
             ),
             transforms: [cellWidth(30)],
           },
@@ -160,8 +160,8 @@ export const IssuedCredentialsDetailCell = ({
           } as Action<IssuedVerifiableCredentialRepresentation>,
         ]}
         emptyState={
-          <div className="pf-v5-u-text-align-center pf-v5-u-py-md">
-            <span className="pf-v5-u-color-200">
+          <div className="pf-v6-u-text-align-center pf-v6-u-py-md">
+            <span className="pf-v6-u-color-200">
               {t("noIssuedCredentials")}
             </span>
           </div>

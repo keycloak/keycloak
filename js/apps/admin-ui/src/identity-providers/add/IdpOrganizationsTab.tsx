@@ -88,7 +88,7 @@ export const IdpOrganizationsTab = ({
   });
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <UnlinkConfirm />
       {editOpen && selectedOrg && (
         <LinkIdentityProviderModal
