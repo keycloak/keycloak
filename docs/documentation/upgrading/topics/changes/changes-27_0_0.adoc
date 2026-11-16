@@ -110,7 +110,7 @@ node misc/scripts/migrate-login-theme-pf5-to-pf6.mjs --theme-path /path/to/your/
 Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
 After migration, validate your customizations manually for light and dark mode, social provider buttons, and custom CSS overrides.
 
-For a full walkthrough covering login, welcome, account, and admin custom themes, see the https://www.keycloak.org/migration/migrating-themes-to-patternfly-6[PatternFly 6 theme migration guide].
+For a full walkthrough covering login, welcome, account, and admin custom themes, see *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
 
 === Account Console moved to `keycloak.v4` and PatternFly 6
 // https://github.com/keycloak/keycloak/issues/52344
@@ -137,7 +137,7 @@ For CSS-only custom themes that only override resources of `keycloak.v3`, update
 If you explicitly enable `account:v3` (for example `--features=account:v3` or `KC_FEATURES=account:v3`), replace it with `account:v4`, or remove the entry because `account:v4` is enabled by default.
 Servers that still request `account:v3` fail feature validation at startup.
 
-See also the https://www.keycloak.org/migration/migrating-themes-to-patternfly-6[PatternFly 6 theme migration guide].
+See also *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
 
 === Admin console migrated to PatternFly 6
 // https://github.com/keycloak/keycloak/issues/52343
@@ -181,7 +181,7 @@ Run the script in dry-run mode first, review the generated report, and then reru
 The built-in quick-theme generator now produces admin themes with `parent=keycloak.v3`.
 Download a new quick theme after upgrading if you previously generated one for `keycloak.v2`.
 
-See also the https://www.keycloak.org/migration/migrating-themes-to-patternfly-6[PatternFly 6 theme migration guide].
+See also *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
 
 === OIDC identity providers accept a single issuer
 // https://github.com/keycloak/keycloak/issues/54458
