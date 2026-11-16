@@ -48,7 +48,7 @@ public class ECDSAProvider implements SignatureProvider {
     }
 
     public static boolean verify(JWSInput jws, PublicKey publicKey) {
-        String alg = jws.getHeader().getAlgorithm().name();
+        String alg = jws.getHeader().getRawAlgorithm();
         try {
             KeyWrapper kw = new KeyWrapper();
             kw.setPublicKey(publicKey);

@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.keycloak.VCFormat;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.common.Profile;
@@ -44,6 +46,8 @@ import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.keys.GeneratedMlDsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -946,7 +950,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         if (!bindingRequired) {
             assertNull(proofTypesSupported, "proof_types_supported should be omitted when binding is optional");
             MatcherAssert.assertThat(signingAlgsSupported,
-                    Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
+                    Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms(keycloak).toArray()));
             compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), credScope.getProtocolMappers());
             return;
         }
@@ -963,7 +967,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                 Matchers.everyItem(Matchers.isOneOf(ProofType.JWT, ProofType.ATTESTATION))
         );
 
-        List<String> expectedProofSigningAlgs = getAllAsymmetricAlgorithms();
+        List<String> expectedProofSigningAlgs = getAllAsymmetricAlgorithms(keycloak);
 
         KeyAttestationsRequired expectedKeyAttestationsRequired;
         if (credScope.isKeyAttestationRequired()) {
@@ -1014,18 +1018,23 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
             }
 
             MatcherAssert.assertThat(signingAlgsSupported,
-                    Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
+                    Matchers.containsInAnyOrder(expectedProofSigningAlgs.toArray()));
         });
 
         compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), credScope.getProtocolMappers());
     }
 
-    public static List<String> getAllAsymmetricAlgorithms() {
-        return List.of(
+    public static List<String> getAllAsymmetricAlgorithms(Keycloak keycloak) {
+        List<String> algorithms = new ArrayList<>(List.of(
                 Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
                 Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
                 Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
-                Algorithm.EdDSA);
+                Algorithm.EdDSA));
+        if (keycloak.serverInfo().getInfo().getComponentTypes().get(KeyProvider.class.getName()).stream()
+                .anyMatch(componentType -> GeneratedMlDsaKeyProviderFactory.ID.equals(componentType.getId()))) {
+            algorithms.addAll(List.of(Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87));
+        }
+        return algorithms;
     }
 
     private void compareDisplay(SupportedCredentialConfiguration supportedConfig, CredentialScopeRepresentation credScope) throws Exception {

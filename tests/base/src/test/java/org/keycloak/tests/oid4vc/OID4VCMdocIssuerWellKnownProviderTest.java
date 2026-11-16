@@ -75,7 +75,7 @@ public class OID4VCMdocIssuerWellKnownProviderTest extends OID4VCMdocTestBase {
         SupportedProofTypeData jwtProofSupport =
                 supportedConfig.getProofTypesSupported().getSupportedProofTypes().get(ProofType.JWT);
         assertNotNull(jwtProofSupport, "JWT proof support must be advertised for mDoc binding");
-        assertEquals(Set.copyOf(getAllAsymmetricAlgorithms()), Set.copyOf(jwtProofSupport.getSigningAlgorithmsSupported()));
+        assertEquals(Set.copyOf(getAllAsymmetricAlgorithms(keycloak)), Set.copyOf(jwtProofSupport.getSigningAlgorithmsSupported()));
 
         assertHasClaimPath(supportedConfig, List.of("org.example.credential", "given_name"));
         assertHasClaimPath(supportedConfig, List.of("org.example.credential", "family_name"));
