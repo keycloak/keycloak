@@ -33,6 +33,7 @@ import org.jboss.logging.Logger;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.PhysicalAddress;
+import org.jgroups.View;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.logging.Log;
 import org.jgroups.protocols.PingData;
@@ -244,6 +245,45 @@ public class JdbcPing2Test {
             }
         } finally {
             Time.setOffset(0);
+        }
+    }
+
+    @Test
+    public void testLeftCoordinatorRemovedOnViewChange() throws Exception {
+        JChannel channel = createChannel("0");
+        try (channel) {
+            channel.connect("ISPN");
+            KEYCLOAK_JDBC_PING2_FOR_TESTING jdbcPing = (KEYCLOAK_JDBC_PING2_FOR_TESTING) channel.getProtocolStack().getProtocols().stream().filter(protocol -> protocol instanceof KEYCLOAK_JDBC_PING2).findFirst().orElseThrow(() -> new RuntimeException("Didn't find JDBC_PING"));
+            try (Connection con = jdbcPing.getConnection()) {
+                // A previous coordinator that is coordinated by itself, and a node that never was in our view
+                UUID left = UUID.randomUUID();
+                UUID other = UUID.randomUUID();
+                for (UUID address : List.of(left, other)) {
+                    try (PreparedStatement ps = con.prepareStatement(jdbcPing.getInsertSingleSql())) {
+                        String addr = Util.addressToString(address);
+                        ps.setString(1, addr);
+                        ps.setString(2, "x");
+                        ps.setString(3, jdbcPing.getClusterName());
+                        ps.setString(4, "127.0.0.1:9999");
+                        ps.setBoolean(5, true);
+                        ps.setLong(6, Time.currentTime());
+                        ps.setString(7, addr);
+                        ps.executeUpdate();
+                    }
+                }
+
+                View newView = channel.view();
+                View oldView = View.create(left, 1, left, channel.getAddress());
+                jdbcPing.handleView(newView, oldView, true);
+
+                List<PingData> remaining = jdbcPing.readFromDB(jdbcPing.getClusterName());
+                assertFalse(remaining.stream().anyMatch(p -> p.getAddress().equals(left)));
+                assertTrue(remaining.stream().anyMatch(p -> p.getAddress().equals(other)));
+                try (PreparedStatement ps = con.prepareStatement("DELETE FROM jgroups WHERE address = ?")) {
+                    ps.setString(1, Util.addressToString(other));
+                    ps.executeUpdate();
+                }
+            }
         }
     }
 

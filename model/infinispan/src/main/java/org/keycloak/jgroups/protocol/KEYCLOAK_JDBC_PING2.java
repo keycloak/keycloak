@@ -154,12 +154,32 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
         super.handleView(new_view, old_view, coord_changed);
+        if (is_coord && old_view != null) {
+            removeLeftCoordinator(new_view, old_view);
+        }
         if (coord_changed) {
             try {
                 removeStaleEntries();
             } catch (Exception e) {
                 log.error(String.format("%s: failed handling view change", local_addr), e);
             }
+        }
+    }
+
+    /**
+     * Remove the row of the previous coordinator if it left the view. Its row is allocated to itself, so it would
+     * otherwise be kept until stale, and could win the split-brain decision against this node.
+     * If that member is still alive, it will write its row again.
+     */
+    private void removeLeftCoordinator(View new_view, View old_view) {
+        Address old_coord = old_view.getCoord();
+        if (old_coord == null || new_view.containsMember(old_coord)) {
+            return;
+        }
+        try (var conn = getConnection()) {
+            delete(conn, getClusterName(), old_coord);
+        } catch (Exception e) {
+            log.error(String.format("%s: failed removing the previous coordinator", local_addr), e);
         }
     }
 
