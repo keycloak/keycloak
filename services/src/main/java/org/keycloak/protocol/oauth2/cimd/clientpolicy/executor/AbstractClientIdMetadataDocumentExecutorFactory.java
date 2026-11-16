@@ -27,6 +27,7 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  *     <ul>
  *         <li>Restrict same domain: only allow {client_id} and {redirect_uri} parameter of an authorization request whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
  *         <li>Required properties: only allow a client metadata that includes all required properties</li>
+ *         <li>Allowed grant types: exclude grant types not included in the allow list from a client metadata</li>
  *     </ul>
  *     <li>Resource Indicators (RFC 8707) support</li>
  *     <ul>
@@ -49,6 +50,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
     // Client Metadata Validation
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
     public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
+    public static final String ALLOWED_GRANT_TYPES = "cimd-allowed-grant-types";
 
     // Resource Indicators (RFC 8707) support
     public static final String RESOURCE_INDICATOR_ALLOW_LIST = "cimd-resource-indicator-allow-list";
@@ -130,6 +132,22 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 REQUIRED_PROPERTIES,
                 "Required properties",
                 "If client metadata does not include all the properties, the executor does not accept the client metadata.",
+                ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+                null);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty(
+                ALLOWED_GRANT_TYPES,
+                "Allowed grant types",
+                "Grant types that a client metadata can enable for the client. " +
+                        "The executor excludes the grant types not included in this list from the grant_types property of the client metadata. " +
+                        "If the list is vacant, only 'authorization_code' and 'refresh_token' are allowed. " +
+                        "The executor also excludes the response types whose grant type is not allowed from the response_types property, and rejects the client metadata if no response type is left. " +
+                        "For an existing client, the executor disables the grant types no longer allowed even if the client metadata is not re-fetched or is not modified. " +
+                        "The executor also rejects a request obtaining a token by a grant type not allowed, for example a client_credentials grant request, the token response of the implicit or hybrid flow, or a UMA permission request. " +
+                        "'urn:ietf:params:oauth:grant-type:uma-ticket' is allowed only if 'client_credentials' is allowed too. " +
+                        "Be careful when adding other grant types, as a client metadata is fetched and registered without any authentication. " +
+                        "For example, 'client_credentials' gives the client a service account.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
         configProperties.add(property);

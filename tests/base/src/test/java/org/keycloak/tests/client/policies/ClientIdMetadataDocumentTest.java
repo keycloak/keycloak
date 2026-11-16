@@ -1,5 +1,7 @@
 package org.keycloak.tests.client.policies;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -7,10 +9,12 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -26,6 +30,7 @@ import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -72,15 +77,19 @@ import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.HttpHeaders;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -105,6 +114,8 @@ public class ClientIdMetadataDocumentTest {
     private static final String LOGO_URI = "http://localhost:8500/logo.png";
     private static final String RESOURCE = "https://mcp.example.com/api";
     private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
+    private static final String UMA_PUBLIC_CLIENT_ID = "uma-public-client";
+    private static final String UMA_RESOURCE_SERVER_ID = "uma-resource-server";
 
     @InjectRealm
     protected ManagedRealm realm;
@@ -1319,6 +1330,12 @@ public class ClientIdMetadataDocumentTest {
         ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        // allow jwt authorization grant, otherwise it is excluded before the public client check
+        executorConfig.setAllowedGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
         // acceptPublicClientWithConfidentialClientOnlyGrant is not set, so default value (false) is applied
         updatePolicy(conditionConfig, executorConfig);
 
@@ -1335,6 +1352,468 @@ public class ClientIdMetadataDocumentTest {
         // registration should fail because a public client cannot have
         // confidential-only grant types when acceptPublicClientWithConfidentialClientOnlyGrant is false
         assertLoginAndError("invalid request");
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorDefaultAllowedGrantTypes() throws Exception {
+        // register profiles without setting allowed grant types (default: authorization_code, refresh_token)
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // set Client Metadata for a confidential client requesting grant types that give it its own identity
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.CIBA_GRANT_TYPE,
+                OAuth2Constants.DEVICE_CODE_GRANT_TYPE,
+                OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT,
+                OAuth2Constants.UMA_GRANT_TYPE
+        ));
+
+        // send an authorization request (first registration)
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the not allowed grant types were excluded on registration
+        assertOnlyDefaultGrantTypesEnabled(findByClientIdByAdmin());
+
+        // the client cannot obtain a token for a service account
+        AccessTokenResponse clientCredentialsResponse = oauth.client(CLIENT_ID).clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(401, clientCredentialsResponse.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, clientCredentialsResponse.getError());
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // do authorization code flow again, forcing a re-fetch of CIMD
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the not allowed grant types are still excluded after re-fetch
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        assertOnlyDefaultGrantTypesEnabled(clientRepresentation);
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorConfiguredAllowedGrantTypes() throws Exception {
+        // register profiles explicitly allowing client_credentials
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setAllowedGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.CLIENT_CREDENTIALS
+        ));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.CIBA_GRANT_TYPE
+        ));
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check only the allowed grant types were kept
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertEquals("false", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        Assertions.assertNotEquals("true", attrs.get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+
+        // the client can obtain a token for a service account as an administrator allowed it
+        AccessTokenResponse clientCredentialsResponse = oauth.client(CLIENT_ID).clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, clientCredentialsResponse.getStatusCode());
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRefetchDisablesNotAllowedGrantTypesWhenGrantTypesOmitted() throws Exception {
+        registerClientWithServiceAccountAndAuthorizationServices();
+
+        // the administrator no longer allows them, and the client metadata omits grant_types
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+        cimd.getRepresentation().setGrantTypes(null);
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // do authorization code flow again, forcing a re-fetch of CIMD
+        String code = loginUserAndGetCode(false);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // the capabilities enabled before were disabled on re-fetch
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        assertOnlyDefaultGrantTypesEnabled(clientRepresentation);
+        assertClientCredentialsGrantRejected();
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotAllowedGrantTypesDisabledWithoutRefetch() throws Exception {
+        registerClientWithServiceAccountAndAuthorizationServices();
+
+        // the administrator no longer allows them
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // do authorization code flow again, while the client metadata cache is still effective
+        String code = loginUserAndGetCode(false);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // the capabilities enabled before were disabled without re-fetching the client metadata
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        assertOnlyDefaultGrantTypesEnabled(clientRepresentation);
+        assertClientCredentialsGrantRejected();
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotAllowedGrantTypesDisabledOnNotModifiedRefetch() throws Exception {
+        registerClientWithServiceAccountAndAuthorizationServices();
+
+        // the administrator no longer allows them, and the client always responds with 304 Not Modified
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+        cimd.setStatus(Response.Status.NOT_MODIFIED);
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // do authorization code flow again, re-fetching CIMD results in 304 Not Modified
+        String code = loginUserAndGetCode(false);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // the capabilities enabled before were disabled even though the client metadata was not modified
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        assertOnlyDefaultGrantTypesEnabled(clientRepresentation);
+        assertClientCredentialsGrantRejected();
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotAllowedGrantTypeRejectedOnTokenRequestWithoutAuthorizationRequest() throws Exception {
+        registerClientWithServiceAccountAndAuthorizationServices();
+
+        // the administrator no longer allows them, and no authorization request follows
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // the client cannot obtain a token for a service account directly from the token endpoint
+        assertClientCredentialsGrantRejectedByPolicy();
+
+        // the capabilities enabled before were disabled on the rejected token request
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        assertOnlyDefaultGrantTypesEnabled(clientRepresentation);
+        assertClientCredentialsGrantRejected();
+
+        // delete the persisted client
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotAllowedGrantTypeRejectedOnTokenRequestAfterRejectedRefetch() throws Exception {
+        registerClientWithServiceAccountAndAuthorizationServices();
+
+        // the administrator no longer allows them, and the re-fetched client metadata is rejected as no response type is left
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+        cimd.getRepresentation().setGrantTypes(List.of(OAuth2Constants.CLIENT_CREDENTIALS));
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // send an authorization request, re-fetching CIMD is rejected
+        oauth.redirectUri(REDIRECT_URI);
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALLOWED_RESPONSE_TYPE);
+
+        // the client still cannot obtain a token for a service account directly from the token endpoint
+        assertClientCredentialsGrantRejectedByPolicy();
+
+        // the capabilities enabled before were disabled on the rejected token request
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        assertClientCredentialsGrantRejected();
+
+        // delete the persisted client
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotAllowedRefreshTokenGrantRejected() throws Exception {
+        // register profiles without setting allowed grant types (default: authorization_code, refresh_token)
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // send an authorization request (first registration)
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        Assertions.assertNotNull(tokenResponse.getRefreshToken());
+
+        // the administrator no longer allows refresh_token
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setAllowedGrantTypes(List.of(OAuth2Constants.AUTHORIZATION_CODE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        // the client cannot refresh the token
+        AccessTokenResponse refreshResponse = oauth.client(CLIENT_ID).refreshRequest(tokenResponse.getRefreshToken()).clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(400, refreshResponse.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, refreshResponse.getError());
+        Assertions.assertEquals(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_GRANT_TYPE, refreshResponse.getErrorDescription());
+
+        // refresh tokens were disabled on the rejected token request
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertEquals("false", clientRepresentation.getAttributes().get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAuthorizationServicesRestoredWhenAllowedAgain() throws Exception {
+        registerClientWithServiceAccountAndAuthorizationServices();
+
+        // the administrator no longer allows them
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // move the time ahead so that the client metadata cache expires, and re-fetch CIMD
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+        String code = loginUserAndGetCode(false);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        assertOnlyDefaultGrantTypesEnabled(findByClientIdByAdmin());
+        logout(tokenResponse.getIdToken());
+
+        // the administrator allows them again
+        updatePolicy(createDefaultConditionConfig(), createExecutorConfigAllowingServiceAccountAndAuthorizationServices());
+
+        // move the time ahead again so that the client metadata cache expires, and re-fetch CIMD
+        timeOffSet.set(2 * (CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3));
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // the capabilities were restored without re-registering the client
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorUmaNotAllowedWithoutClientCredentials() throws Exception {
+        // register profiles allowing UMA authorization services but not client_credentials
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setAllowedGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.UMA_GRANT_TYPE
+        ));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.UMA_GRANT_TYPE
+        ));
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // UMA authorization services were not enabled, as they would give the client a service account
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        assertOnlyDefaultGrantTypesEnabled(clientRepresentation);
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorResponseTypesRestrictedByAllowedGrantTypes() throws Exception {
+        // register profiles without setting allowed grant types (default: authorization_code, refresh_token)
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // response types enabling the implicit flow, whose grant type is not allowed
+        cimd.getRepresentation().setResponseTypes(List.of(
+                OIDCResponseType.CODE,
+                OIDCResponseType.TOKEN,
+                OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN
+        ));
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // only the authorization code flow was enabled
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertFalse(clientRepresentation.isImplicitFlowEnabled());
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNoAllowedResponseType() throws Exception {
+        // register profiles without setting allowed grant types (default: authorization_code, refresh_token)
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+        oauth.redirectUri(REDIRECT_URI);
+
+        // no grant type is left, so the code response type must not be applied as a fallback
+        cimd.getRepresentation().setGrantTypes(List.of(OAuth2Constants.CLIENT_CREDENTIALS));
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALLOWED_RESPONSE_TYPE);
+
+        // only the response type of the implicit flow, whose grant type is not allowed
+        cimd.getRepresentation().setGrantTypes(List.of(OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT));
+        cimd.getRepresentation().setResponseTypes(List.of(OIDCResponseType.TOKEN));
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALLOWED_RESPONSE_TYPE);
+
+        // no client was registered
+        Assertions.assertTrue(realm.admin().clients().findByClientId(CLIENT_ID).isEmpty());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotAllowedImplicitRejectedOnInFlightLogin() throws Exception {
+        // register profiles allowing the implicit grant
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setAllowedGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.IMPLICIT
+        ));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.IMPLICIT
+        ));
+        cimd.getRepresentation().setResponseTypes(List.of(
+                OIDCResponseType.CODE,
+                OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN
+        ));
+
+        try {
+            // start a login by the hybrid flow (first registration)
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
+            oauth.loginForm().codeChallenge(null).nonce(KeycloakModelUtils.generateId()).open();
+
+            // the implicit flow was enabled
+            Assertions.assertTrue(findByClientIdByAdmin().isImplicitFlowEnabled());
+
+            // the administrator no longer allows the implicit grant while the login is in progress
+            updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+            // finish the login through the login actions, without another authorization request
+            oauth.fillLoginForm(user.getUsername(), user.getPassword());
+            grantPage.assertCurrent();
+            grantPage.accept();
+
+            // no token was issued by the front channel
+            AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+            Assertions.assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, authorizationEndpointResponse.getErrorDescription());
+            Assertions.assertNull(authorizationEndpointResponse.getIdToken());
+            Assertions.assertNull(authorizationEndpointResponse.getAccessToken());
+        } finally {
+            oauth.responseType(OIDCResponseType.CODE);
+        }
+
+        // the implicit flow was disabled on the rejected token response
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(clientRepresentation.isImplicitFlowEnabled());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+
+        // delete the persisted client and the user session
+        user.admin().logout();
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotAllowedUmaRejected() throws Exception {
+        // register profiles without setting allowed grant types (default: authorization_code, refresh_token)
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // send an authorization request (first registration)
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        try {
+            // the client cannot obtain a requesting party token with its access token as a bearer token
+            assertUmaRequestRejectedByPolicy(sendUmaRequestWithBearerToken(tokenResponse.getAccessToken()));
+
+            // nor with its access token as a subject token
+            assertUmaRequestRejectedByPolicy(sendUmaRequestWithSubjectToken(tokenResponse.getAccessToken()));
+
+            // nor through another client not managed by CIMD sending its access token as a subject token to a resource server,
+            // as the requesting party token would be issued for the client of the subject token
+            ClientRepresentation publicClient = new ClientRepresentation();
+            publicClient.setClientId(UMA_PUBLIC_CLIENT_ID);
+            publicClient.setPublicClient(true);
+            publicClient.setEnabled(true);
+            ClientRepresentation resourceServer = new ClientRepresentation();
+            resourceServer.setClientId(UMA_RESOURCE_SERVER_ID);
+            resourceServer.setPublicClient(false);
+            resourceServer.setSecret(KeycloakModelUtils.generateId());
+            resourceServer.setServiceAccountsEnabled(true);
+            resourceServer.setAuthorizationServicesEnabled(true);
+            resourceServer.setEnabled(true);
+            try {
+                createClientByAdmin(publicClient);
+                createClientByAdmin(resourceServer);
+                assertUmaRequestRejectedByPolicy(sendUmaRequestWithSubjectTokenByPublicClient(tokenResponse.getAccessToken(), UMA_PUBLIC_CLIENT_ID, UMA_RESOURCE_SERVER_ID));
+            } finally {
+                deleteClientsByClientIdByAdmin(UMA_PUBLIC_CLIENT_ID);
+                deleteClientsByClientIdByAdmin(UMA_RESOURCE_SERVER_ID);
+            }
+        } finally {
+            // delete the persisted client
+            logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
+        }
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAllowedUmaNotRejected() throws Exception {
+        registerClientWithServiceAccountAndAuthorizationServices();
+
+        // send an authorization request
+        String code = loginUserAndGetCode(false);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // the UMA request is not rejected by the executor, as the UMA grant type is allowed
+        Map<String, Object> umaResponse = sendUmaRequestWithBearerToken(tokenResponse.getAccessToken());
+        Assertions.assertNotEquals(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_GRANT_TYPE, umaResponse.get(OAuth2Constants.ERROR_DESCRIPTION));
+
+        // delete the persisted client
+        logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
     }
 
     @Test
@@ -1497,6 +1976,128 @@ public class ClientIdMetadataDocumentTest {
         oauth.openLoginForm();
         errorPage.assertCurrent();
         Assertions.assertEquals(errorMessage, errorPage.getError());
+    }
+
+    private ClientIdMetadataDocumentExecutor.Configuration createExecutorConfigAllowingServiceAccountAndAuthorizationServices() {
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setAllowedGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.UMA_GRANT_TYPE
+        ));
+        return executorConfig;
+    }
+
+    // registers a client with a service account and UMA authorization services allowed, then logs out
+    private void registerClientWithServiceAccountAndAuthorizationServices() {
+        updatePolicy(createDefaultConditionConfig(), createExecutorConfigAllowingServiceAccountAndAuthorizationServices());
+
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.UMA_GRANT_TYPE
+        ));
+
+        // send an authorization request (first registration)
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // the allowed grant types were enabled
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+
+        logout(tokenResponse.getIdToken());
+    }
+
+    private void assertClientCredentialsGrantRejected() {
+        AccessTokenResponse clientCredentialsResponse = oauth.client(CLIENT_ID).clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(401, clientCredentialsResponse.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, clientCredentialsResponse.getError());
+    }
+
+    // rejected by the executor, as the client still has a service account although client_credentials is no longer allowed
+    private void assertClientCredentialsGrantRejectedByPolicy() {
+        AccessTokenResponse clientCredentialsResponse = oauth.client(CLIENT_ID).clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).send();
+        Assertions.assertEquals(400, clientCredentialsResponse.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, clientCredentialsResponse.getError());
+        Assertions.assertEquals(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_GRANT_TYPE, clientCredentialsResponse.getErrorDescription());
+    }
+
+    private Map<String, Object> sendUmaRequestWithBearerToken(String accessToken) throws IOException {
+        HttpPost post = new HttpPost(oauth.getEndpoints().getToken());
+        post.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
+        post.setEntity(new UrlEncodedFormEntity(List.of(
+                new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE),
+                new BasicNameValuePair(OAuth2Constants.AUDIENCE, "account")
+        ), StandardCharsets.UTF_8));
+        return sendUmaRequest(post);
+    }
+
+    private Map<String, Object> sendUmaRequestWithSubjectToken(String accessToken) throws IOException {
+        HttpPost post = new HttpPost(oauth.getEndpoints().getToken());
+        post.setEntity(new UrlEncodedFormEntity(List.of(
+                new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE),
+                new BasicNameValuePair(OAuth2Constants.AUDIENCE, "account"),
+                new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, accessToken),
+                new BasicNameValuePair(OAuth2Constants.CLIENT_ID, CLIENT_ID),
+                new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT),
+                new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, createSignedRequestToken())
+        ), StandardCharsets.UTF_8));
+        return sendUmaRequest(post);
+    }
+
+    private void createClientByAdmin(ClientRepresentation clientRepresentation) {
+        try (Response response = realm.admin().clients().create(clientRepresentation)) {
+            Assertions.assertEquals(201, response.getStatus());
+        }
+    }
+
+    private void deleteClientsByClientIdByAdmin(String clientId) {
+        realm.admin().clients().findByClientId(clientId).forEach(c -> deleteClientByAdmin(c.getId()));
+    }
+
+    private Map<String, Object> sendUmaRequestWithSubjectTokenByPublicClient(String accessToken, String publicClientId, String audience) throws IOException {
+        HttpPost post = new HttpPost(oauth.getEndpoints().getToken());
+        post.setEntity(new UrlEncodedFormEntity(List.of(
+                new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE),
+                new BasicNameValuePair(OAuth2Constants.AUDIENCE, audience),
+                new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, accessToken),
+                new BasicNameValuePair(OAuth2Constants.CLIENT_ID, publicClientId)
+        ), StandardCharsets.UTF_8));
+        return sendUmaRequest(post);
+    }
+
+    private Map<String, Object> sendUmaRequest(HttpPost post) throws IOException {
+        try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+            Map<String, Object> body = JsonSerialization.readValue(response.getEntity().getContent(), Map.class);
+            body.put("status", response.getStatusLine().getStatusCode());
+            return body;
+        }
+    }
+
+    // rejected by the executor, as the UMA grant type is not allowed
+    private void assertUmaRequestRejectedByPolicy(Map<String, Object> umaResponse) {
+        Assertions.assertEquals(400, umaResponse.get("status"));
+        Assertions.assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, umaResponse.get(OAuth2Constants.ERROR));
+        Assertions.assertEquals(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_GRANT_TYPE, umaResponse.get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    private void assertOnlyDefaultGrantTypesEnabled(ClientRepresentation clientRepresentation) {
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertFalse(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        Assertions.assertFalse(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertFalse(clientRepresentation.isDirectAccessGrantsEnabled());
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        Assertions.assertNotEquals("true", attrs.get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
     }
 
     private ClientIdUriSchemeCondition.Configuration createDefaultConditionConfig() {

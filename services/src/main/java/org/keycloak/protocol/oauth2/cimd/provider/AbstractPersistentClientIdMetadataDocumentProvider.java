@@ -8,13 +8,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -25,6 +31,8 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientRegister
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientUpdateContext;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdClientUpdatedContext;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutor;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AbstractPairwiseSubMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
@@ -234,6 +242,7 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
 
             ClientResource.updateClientServiceAccount(session, clientModel, clientRep.isServiceAccountsEnabled());
             RepresentationToModel.updateClient(clientRep, clientModel, session);
+            updateAuthorizationServices(clientModel, clientRep);
             RepresentationToModel.updateClientProtocolMappers(clientRep, clientModel);
             RepresentationToModel.updateClientScopes(clientRep, clientModel);
 
@@ -307,6 +316,87 @@ public abstract class AbstractPersistentClientIdMetadataDocumentProvider<CONFIG 
                     .toList()
                     .forEach(clientModel::removeProtocolMapper);
         }
+    }
+
+    // RepresentationToModel.updateClient neither creates nor removes a resource server, so synchronize it like
+    // ClientResource does, for example when the grant type for UMA authorization services is no longer allowed or allowed again.
+    private void updateAuthorizationServices(ClientModel clientModel, ClientRepresentation clientRep) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            return;
+        }
+        if (Boolean.TRUE.equals(clientRep.getAuthorizationServicesEnabled())) {
+            ResourceServerStore resourceServerStore = getResourceServerStore();
+            if (resourceServerStore.findByClient(clientModel) == null) {
+                getLogger().debugv("enable authorization services: clientId = {0}", clientModel.getClientId());
+                RepresentationToModel.createResourceServer(clientModel, session, true);
+            }
+        } else {
+            disableAuthorizationServices(clientModel);
+        }
+    }
+
+    private void disableAuthorizationServices(ClientModel clientModel) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+            return;
+        }
+        ResourceServerStore resourceServerStore = getResourceServerStore();
+        if (resourceServerStore.findByClient(clientModel) != null) {
+            getLogger().debugv("disable authorization services: clientId = {0}", clientModel.getClientId());
+            resourceServerStore.delete(clientModel);
+        }
+    }
+
+    private ResourceServerStore getResourceServerStore() {
+        return session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceServerStore();
+    }
+
+    @Override
+    public void restrictGrantTypes(ClientModel clientModel, Collection<String> allowedGrantTypes) {
+        // only disables capabilities: without a fetched client metadata, there is nothing to derive an enabled capability from
+        if (!allowedGrantTypes.contains(OAuth2Constants.AUTHORIZATION_CODE) && clientModel.isStandardFlowEnabled()) {
+            logDisabledGrantType(clientModel, OAuth2Constants.AUTHORIZATION_CODE);
+            clientModel.setStandardFlowEnabled(false);
+        }
+        if (!allowedGrantTypes.contains(OAuth2Constants.IMPLICIT) && clientModel.isImplicitFlowEnabled()) {
+            logDisabledGrantType(clientModel, OAuth2Constants.IMPLICIT);
+            clientModel.setImplicitFlowEnabled(false);
+        }
+        if (!allowedGrantTypes.contains(OAuth2Constants.PASSWORD) && clientModel.isDirectAccessGrantsEnabled()) {
+            logDisabledGrantType(clientModel, OAuth2Constants.PASSWORD);
+            clientModel.setDirectAccessGrantsEnabled(false);
+        }
+        OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
+        if (!allowedGrantTypes.contains(OAuth2Constants.REFRESH_TOKEN) && configWrapper.isUseRefreshToken()) {
+            logDisabledGrantType(clientModel, OAuth2Constants.REFRESH_TOKEN);
+            configWrapper.setUseRefreshToken(false);
+        }
+        disableGrantAttribute(clientModel, allowedGrantTypes, OAuth2Constants.CIBA_GRANT_TYPE, CibaConfig.OIDC_CIBA_GRANT_ENABLED);
+        disableGrantAttribute(clientModel, allowedGrantTypes, OAuth2Constants.DEVICE_CODE_GRANT_TYPE, OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED);
+        disableGrantAttribute(clientModel, allowedGrantTypes, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE, OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED);
+        disableGrantAttribute(clientModel, allowedGrantTypes, OAuth2Constants.JWT_AUTHORIZATION_GRANT, OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED);
+        // before the service account, as authorization services depend on it
+        if (!allowedGrantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE)) {
+            disableAuthorizationServices(clientModel);
+        }
+        // Only the flag of the client is checked, not the service account user, as this runs on every authorization request,
+        // even when the client metadata is cached, and a missing service account user is not cached, so looking it up would
+        // query the database every time. A service account user left without the flag cannot obtain a token, as
+        // client_credentials requires the flag, and it is removed when the client metadata is re-fetched (updateClientServiceAccount).
+        if (!allowedGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS) && clientModel.isServiceAccountsEnabled()) {
+            logDisabledGrantType(clientModel, OAuth2Constants.CLIENT_CREDENTIALS);
+            new ClientManager(new RealmManager(session)).disableServiceAccount(clientModel);
+        }
+    }
+
+    private void disableGrantAttribute(ClientModel clientModel, Collection<String> allowedGrantTypes, String grantType, String attributeName) {
+        if (!allowedGrantTypes.contains(grantType) && Boolean.parseBoolean(clientModel.getAttribute(attributeName))) {
+            logDisabledGrantType(clientModel, grantType);
+            clientModel.setAttribute(attributeName, Boolean.FALSE.toString());
+        }
+    }
+
+    private void logDisabledGrantType(ClientModel clientModel, String grantType) {
+        getLogger().warnv("grant type no longer allowed, disabled for the client: clientId = {0}, grant type = {1}", clientModel.getClientId(), grantType);
     }
 
     // the same as OIDCClientRegistrationProvider.updateClientRepWithProtocolMappers

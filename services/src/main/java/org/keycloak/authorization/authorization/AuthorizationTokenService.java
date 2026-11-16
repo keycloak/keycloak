@@ -91,6 +91,8 @@ import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.PermissionTokenRequestContext;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -219,12 +221,15 @@ public class AuthorizationTokenService {
 
             request.setClaims(ticket.getClaims());
 
+            // the client sending the request, captured before validating the subject token as it changes the client in the session context
+            ClientModel requestingClient = request.getKeycloakSession().getContext().getClient();
             EvaluationContext evaluationContext = createEvaluationContext(request);
             KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
 
             if (identity != null) {
                 event.user(identity.getId());
                 request.getKeycloakSession().getContext().setBearerToken(identity.getAccessToken());
+                checkClientPolicyForTokenClient(request, identity, requestingClient);
             }
 
             ResourceServer resourceServer = getResourceServer(ticket, request);
@@ -287,6 +292,38 @@ public class AuthorizationTokenService {
         } catch (Exception cause) {
             logger.error("Unexpected error while evaluating permissions", cause);
             throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.SERVER_ERROR, "Unexpected error while evaluating permissions", Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // The RPT is issued for the client of the validated subject token (see createAuthorizationResponse), which can differ
+    // from the client sending the request, for example when a client sends a subject_token issued to another client.
+    // Client policies were applied only to the client sending the request, so they are also applied to the client of the token.
+    private void checkClientPolicyForTokenClient(KeycloakAuthorizationRequest request, KeycloakIdentity identity, ClientModel requestingClient) {
+        AccessToken accessToken = identity.getAccessToken();
+        if (accessToken == null || accessToken.getIssuedFor() == null) {
+            return;
+        }
+
+        KeycloakSession session = request.getKeycloakSession();
+        if (requestingClient != null && accessToken.getIssuedFor().equals(requestingClient.getClientId())) {
+            // client policies were already applied to this client
+            return;
+        }
+
+        ClientModel tokenClient = request.getRealm().getClientByClientId(accessToken.getIssuedFor());
+        if (tokenClient == null) {
+            return;
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new PermissionTokenRequestContext(session.getContext().getHttpRequest().getDecodedFormParameters(), tokenClient));
+        } catch (ClientPolicyException cpe) {
+            EventBuilder event = request.getEvent();
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(request.getCors(), cpe.getError(), cpe.getErrorDetail(), Status.BAD_REQUEST);
         }
     }
 

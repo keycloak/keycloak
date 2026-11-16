@@ -36,6 +36,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.PermissionTokenRequestContext;
 import org.keycloak.services.managers.AppAuthManager;
 
 /**
@@ -82,6 +84,8 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
 
             cors.checkAllowedOrigins(session, client);
             event.client(client);
+
+            checkClientPolicy(client);
         }
 
         String claimToken = null;
@@ -102,6 +106,8 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
         if (accessTokenString == null) {
             // in case no bearer token is provided, we force client authentication
             checkClient();
+
+            checkClientPolicy(client);
 
             // if a claim token is provided, we check if the format is a OpenID Connect IDToken and assume the token represents the identity asking for permissions
             if (AuthorizationTokenService.CLAIM_TOKEN_FORMAT_ID_TOKEN.equalsIgnoreCase(claimTokenFormat)) {
@@ -185,6 +191,19 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
         event.success();
 
         return authorizationResponse;
+    }
+
+    // triggered once the requesting client is resolved and before any token is issued
+    private void checkClientPolicy(ClientModel requestingClient) {
+        try {
+            session.clientPolicy().triggerOnEvent(new PermissionTokenRequestContext(formParams, requestingClient));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
+        }
     }
 
     @Override
