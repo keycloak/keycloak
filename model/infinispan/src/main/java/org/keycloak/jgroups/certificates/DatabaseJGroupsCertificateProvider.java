@@ -63,11 +63,11 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     private final Lock lock = new ReentrantLock();
     // not final to be updated for testing
     private volatile Duration rotationPeriod;
-    private final int keySize;
+    private final KeySpec keySpec;
     private volatile JGroupsCertificate currentCertificate;
 
-    private DatabaseJGroupsCertificateProvider(KeycloakSessionFactory sessionFactory, Duration rotationPeriod, int keySize) {
-        this.keySize = keySize;
+    private DatabaseJGroupsCertificateProvider(KeycloakSessionFactory sessionFactory, Duration rotationPeriod, KeySpec keySpec) {
+        this.keySpec = Objects.requireNonNull(keySpec);
         this.sessionFactory = Objects.requireNonNull(sessionFactory);
         this.rotationPeriod = Objects.requireNonNull(rotationPeriod);
         keyManager = new ReloadingX509ExtendedKeyManager();
@@ -75,8 +75,8 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         currentCertificate = new JGroupsCertificate();
     }
 
-    public static DatabaseJGroupsCertificateProvider create(KeycloakSessionFactory factory, Duration rotationPeriod, int keySize) {
-        var provider = new DatabaseJGroupsCertificateProvider(factory, rotationPeriod, keySize);
+    public static DatabaseJGroupsCertificateProvider create(KeycloakSessionFactory factory, Duration rotationPeriod, KeySpec keySpec) {
+        var provider = new DatabaseJGroupsCertificateProvider(factory, rotationPeriod, keySpec);
         provider.init();
         return provider;
     }
@@ -195,6 +195,6 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     }
 
     private String generateSelfSignedCertificate() {
-        return toJson(Utils.generateSelfSignedCertificate(rotationPeriod.multipliedBy(2L), keySize));
+        return toJson(Utils.generateSelfSignedCertificate(rotationPeriod.multipliedBy(2L), keySpec));
     }
 }

@@ -49,9 +49,9 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
     // config
     public static final String ACTIVATED = "activated";
     private static final String ROTATION = "rotation";
+    private static final String ALGORITHM = "algorithm";
     private static final String KEY_SIZE = "keySize";
-    public static final int DEFAULT_KEY_SIZE = 3072;
-    private static final int MIN_KEY_SIZE = 2048;
+    private static final String CURVE = "curve";
     private static final String KEYSTORE_PATH = "keystoreFile";
     private static final String KEYSTORE_PASSWORD = "keystorePassword";
     private static final String TRUSTSTORE_PATH = "truststoreFile";
@@ -109,15 +109,15 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
                   requireConfiguration(TRUSTSTORE_PASSWORD, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD)
             );
         }
-        return DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(requireRotationInDays()), keySize());
+        return DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(requireRotationInDays()), keySpec());
     }
 
-    private int keySize() {
-        var value = configuration.getInt(KEY_SIZE, DEFAULT_KEY_SIZE);
-        if (value < MIN_KEY_SIZE) {
-            throw new RuntimeException("Property '%s' must be at least %d but was %d.".formatted(KEY_SIZE, MIN_KEY_SIZE, value));
+    private KeySpec keySpec() {
+        try {
+            return KeySpec.of(configuration.get(ALGORITHM, "RSA"), configuration.getInt(KEY_SIZE), configuration.get(CURVE));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid certificate key configuration: " + e.getMessage(), e);
         }
-        return value;
     }
 
     private boolean isKeystoreOrTruststoreConfigured() {

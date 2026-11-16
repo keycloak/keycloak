@@ -102,7 +102,8 @@ public class JGroupsCertificate {
     @JsonIgnore
     public void setKeyPair(KeyPair keyPair) {
         Objects.requireNonNull(keyPair);
-        setPrivateKeyPem(PemUtils.encodeKey(keyPair.getPrivate()));
+        // PemUtils writes EC keys in the SEC1 format, which it cannot read back; always store PKCS#8
+        setPrivateKeyPem(java.util.Base64.getMimeEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
         setPublicKeyPem(PemUtils.encodeKey(keyPair.getPublic()));
     }
 

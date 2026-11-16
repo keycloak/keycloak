@@ -39,7 +39,6 @@ import javax.net.ssl.X509ExtendedTrustManager;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
 
 import org.jboss.logging.Logger;
@@ -53,12 +52,12 @@ public final class Utils {
     private Utils() {
     }
 
-    public static JGroupsCertificate generateSelfSignedCertificate(Duration validity, int rsaKeySize) {
+    public static JGroupsCertificate generateSelfSignedCertificate(Duration validity, KeySpec keySpec) {
         var endDate = Date.from(Instant.now().plus(validity));
-        var keyPair = KeyUtils.generateRsaKeyPair(rsaKeySize);
+        var keyPair = keySpec.generate();
         var certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, JGROUPS_SUBJECT, BigInteger.valueOf(System.currentTimeMillis()), endDate, true);
 
-        logger.debugf("Created JGroups certificate. Valid until %s", certificate.getNotAfter());
+        logger.debugf("Created JGroups %s certificate. Valid until %s", keySpec.description(), certificate.getNotAfter());
 
         var entity = new JGroupsCertificate();
         entity.setCertificate(certificate);
