@@ -12,6 +12,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -25,14 +26,15 @@ import org.keycloak.common.util.Time;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
+import org.keycloak.protocol.oauth2.cimd.resourceindicators.CimdResourceIndicatorAudienceMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -72,8 +74,10 @@ import org.jboss.logging.Logger;
  *     <li>Client Metadata Validation: if a client metadata is valid according to the policy.</li>
  *     <li>Client Metadata Augmentation in {@link OIDCClientRepresentation}: augment a fetched client metadata.</li>
  *     <li>Resource Indicators (RFC 8707) enforcement: validate the {@code resource} parameter against an allow list, and
- *     make the resolved resource available as the client's own audience by attaching an {@link AudienceProtocolMapper}
- *     with a custom audience equal to the resource, so {@code ResourceIndicatorsPostProcessor} can resolve it.</li>
+ *     make the resolved resource available as the client's own audience by attaching a
+ *     {@link CimdResourceIndicatorAudienceMapper} with a custom audience equal to the resource, so
+ *     {@code ResourceIndicatorsPostProcessor} can resolve it. The mapper adds the resource to the audience only while
+ *     the allow lists allow it for the client.</li>
  * </ul>
  *
  * <p>Roles of the abstract class and its concrete class:
@@ -927,25 +931,30 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
     }
 
-    // unique name prefix for the protocol mappers added below; the resource value itself is matched via the
-    // mapper's custom audience config, not the name, so multiple resources can each get their own mapper.
-    private static final String RESOURCE_INDICATOR_AUDIENCE_MAPPER_PREFIX = "cimd-resource-indicator-";
-
     /**
      * Enforces the Resource Indicators (RFC 8707) allow list configured for the executor against the {@code resource}
-     * parameter of an authorization request, and keeps an {@link AudienceProtocolMapper} (with a custom audience equal
-     * to the resource) attached to the client synchronized with the allow list. {@code ResourceIndicatorsPostProcessor}
+     * parameter of an authorization request, and attaches a {@link CimdResourceIndicatorAudienceMapper} (with a custom
+     * audience equal to the resource) to the client for an accepted resource. {@code ResourceIndicatorsPostProcessor}
      * resolves the {@code aud} claim by matching the requested resource directly against the token's audience, which
      * this mapper populates.
      *
-     * <p>This is a no-op (permissive mode) if the Resource Indicators feature is disabled or the authorization
-     * request does not include the {@code resource} parameter.
+     * <p>The mapper is not kept synchronized with the allow list: it adds the resource to the audience only while the
+     * resource is allowed for the client, which it evaluates whenever a token is issued. Therefore, tightening the
+     * allow list takes effect for all the ways the mapper is used (e.g. any grant type, token exchange) without any
+     * authorization request. Only when this executor rejects a resource, the mapper for that resource is removed from
+     * the client (see {@code removeRejectedResourceIndicatorAudienceMapperAfterCompletion}).
+     *
+     * <p>Apart from converting the mappers of the earlier versions, this is a no-op (permissive mode) if the Resource
+     * Indicators feature is disabled or the authorization request does not include the {@code resource} parameter.
      *
      * @param preAuthorizationRequestContext an authorization request
      * @param clientModel the client looked up, created, or updated by CIMD for this authorization request, not {@code null}
      * @throws ClientPolicyException when the {@code resource} parameter value is not allowed.
      */
     protected void enforceResourceIndicator(PreAuthorizationRequestContext preAuthorizationRequestContext, ClientModel clientModel) throws ClientPolicyException {
+        // regardless of the Resource Indicators feature, without which they would keep adding their resource.
+        adoptLegacyResourceIndicatorAudienceMappers(clientModel);
+
         if (!Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
             return;
         }
@@ -958,48 +967,98 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         List<String> allowList = convertContentFilledList(getConfiguration().getResourceIndicatorAllowList());
         if (!allowList.contains(resource)) {
-            // no longer (or never) allow-listed: remove its audience mapper to keep it synchronized, then reject.
-            // this is persisted in a separate transaction so the change survives the rollback that happens
-            // when the ClientPolicyException below is thrown.
-            String realmId = clientModel.getRealm().getId();
-            String clientId = clientModel.getId();
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), newSession -> {
-                RealmModel newRealm = newSession.realms().getRealm(realmId);
-                ClientModel newClientModel = newRealm == null ? null : newRealm.getClientById(clientId);
-                if (newClientModel != null) {
-                    removeResourceIndicatorAudienceMapper(newClientModel, resource);
-                }
-            });
             getLogger().warnv("resource parameter not allowed: resource = {0}", resource);
+            removeRejectedResourceIndicatorAudienceMapperAfterCompletion(clientModel, resource);
             throw invalidResourceIndicator();
         }
 
         // allow-listed: attach an audience mapper for the resource so ResourceIndicatorsPostProcessor can resolve it.
-        ensureResourceIndicatorAudienceMapper(clientModel, resource);
+        CimdResourceIndicatorAudienceMapper.ensureMapper(clientModel, resource);
     }
 
-    private ProtocolMapperModel findResourceIndicatorAudienceMapper(ClientModel clientModel, String resource) {
-        return clientModel.getProtocolMappersStream()
-                .filter(m -> m.getName().startsWith(RESOURCE_INDICATOR_AUDIENCE_MAPPER_PREFIX))
-                .filter(m -> AudienceProtocolMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
-                .filter(m -> resource.equals(m.getConfig().get(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE)))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private void ensureResourceIndicatorAudienceMapper(ClientModel clientModel, String resource) {
-        if (findResourceIndicatorAudienceMapper(clientModel, resource) != null) {
-            return;
+    /**
+     * Converts the audience mappers that an earlier version has added to the client to
+     * {@link CimdResourceIndicatorAudienceMapper}, e.g. the ones of a client imported from a representation of such a
+     * version. It is done in the current transaction, so that the tokens issued by the current request are already
+     * subject to the allow lists. If the current transaction is rolled back, e.g. because the request is rejected, it
+     * is done again in a separate transaction, so that the conversion does not depend on the request being accepted.
+     *
+     * @param clientModel the client
+     */
+    private void adoptLegacyResourceIndicatorAudienceMappers(ClientModel clientModel) {
+        if (CimdResourceIndicatorAudienceMapper.adoptLegacyMappers(clientModel)) {
+            runOnClientAfterCompletion(clientModel, false, "conversion of the audience mappers of an earlier version",
+                    (newSession, newClientModel) -> CimdResourceIndicatorAudienceMapper.adoptLegacyMappers(newClientModel));
         }
-        String mapperName = RESOURCE_INDICATOR_AUDIENCE_MAPPER_PREFIX + KeycloakModelUtils.generateId();
-        clientModel.addProtocolMapper(AudienceProtocolMapper.createClaimMapper(mapperName, null, resource, true, false, true));
     }
 
-    private void removeResourceIndicatorAudienceMapper(ClientModel clientModel, String resource) {
-        ProtocolMapperModel mapper = findResourceIndicatorAudienceMapper(clientModel, resource);
-        if (mapper != null) {
-            clientModel.removeProtocolMapper(mapper);
+    /**
+     * Removes the audience mapper for a resource that this executor has rejected from the client. The mapper already
+     * adds the resource only while the allow lists allow it for the client, but a client policy whose applicability
+     * depends on the values of an actual request alone does not make a resource regarded as not allowed. Therefore,
+     * when an executor actually rejects the resource, its mapper is removed, so that the resource is no longer added
+     * to the audience until an authorization request for it is accepted again.
+     *
+     * <p>The rejection rolls back the current transaction, so the removal is done in a separate transaction after the
+     * current one has completed. That transaction reads the committed client profiles and policies, and keeps the
+     * mapper if the rejection is obsolete, e.g. the resource has been allowed again while the request was processed.
+     *
+     * @param clientModel the client
+     * @param resource the resource rejected
+     */
+    private void removeRejectedResourceIndicatorAudienceMapperAfterCompletion(ClientModel clientModel, String resource) {
+        if (CimdResourceIndicatorAudienceMapper.hasMapper(clientModel, resource)) {
+            runOnClientAfterCompletion(clientModel, true, "removal of the audience mapper of a rejected resource",
+                    (newSession, newClientModel) -> CimdResourceIndicatorAudienceMapper.removeMappersOfRejectedResource(newSession, newClientModel, resource));
         }
+    }
+
+    /**
+     * Runs a job on the client in a separate transaction after the current transaction has completed, so that the job
+     * is persisted even if the current transaction is rolled back, and does not need a second database connection
+     * while the current transaction holds one. It never fails the caller: a failure is logged, and the job is done
+     * again by the next authorization request that needs it.
+     *
+     * @param clientModel the client
+     * @param afterCommit whether the job is also run if the current transaction is committed, not only if it is rolled back
+     * @param description what the job does, for the log
+     * @param job the job, run with a session whose context has the realm of the client
+     */
+    private void runOnClientAfterCompletion(ClientModel clientModel, boolean afterCommit, String description,
+                                            BiConsumer<KeycloakSession, ClientModel> job) {
+        KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
+        String realmId = clientModel.getRealm().getId();
+        String id = clientModel.getId();
+        String clientId = clientModel.getClientId();
+        Logger logger = getLogger();
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                if (afterCommit) {
+                    run();
+                }
+            }
+
+            @Override
+            protected void rollbackImpl() {
+                run();
+            }
+
+            private void run() {
+                try {
+                    KeycloakModelUtils.runJobInTransaction(factory, newSession -> {
+                        RealmModel newRealm = newSession.realms().getRealm(realmId);
+                        ClientModel newClientModel = newRealm == null ? null : newRealm.getClientById(id);
+                        if (newClientModel != null) {
+                            newSession.getContext().setRealm(newRealm);
+                            job.accept(newSession, newClientModel);
+                        }
+                    });
+                } catch (RuntimeException e) {
+                    logger.warnv(e, "{0} failed: client = {1}", description, clientId);
+                }
+            }
+        });
     }
 
     protected static ClientPolicyException invalidResourceIndicator() {

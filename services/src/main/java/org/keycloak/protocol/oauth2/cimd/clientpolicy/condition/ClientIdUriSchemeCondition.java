@@ -91,13 +91,38 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
             logger.debugv("not URL: clientId = {0}", clientId);
             return ClientPolicyVote.NO;
         }
-        if (isUriSchemeMatched(uri) && isTrustedDomainMatched(uri)) return ClientPolicyVote.YES;
+        if (isUriSchemeMatched(configuration.getClientIdUriSchemes(), uri) && isTrustedDomainMatched(uri)) return ClientPolicyVote.YES;
 
         return ClientPolicyVote.NO;
     }
 
-    private boolean isUriSchemeMatched(URI uri) {
-        return configuration.getClientIdUriSchemes().stream().anyMatch(i->i.equals(uri.getScheme()));
+    /**
+     * Checks if a client ID matches a configuration of this condition, in the same way as on the
+     * {@code PRE_AUTHORIZATION_REQUEST} and {@code AUTHORIZATION_REQUEST_REDIRECT_URI} events, without considering
+     * the negative logic of the configuration. Unlike evaluating the condition on the events, it does not log a mismatch.
+     *
+     * @param configuration a configuration of this condition
+     * @param clientId a client ID
+     * @return {@code true} if the client ID matches the configuration
+     */
+    public static boolean isClientIdMatched(Configuration configuration, String clientId) {
+        if (configuration == null || clientId == null || configuration.getClientIdUriSchemes() == null || configuration.getClientIdUriSchemes().isEmpty()) {
+            return false;
+        }
+        final URI uri;
+        try {
+            uri = new URI(clientId);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+        if (!isUriSchemeMatched(configuration.getClientIdUriSchemes(), uri) || uri.getHost() == null) {
+            return false;
+        }
+        return convertContentFilledList(configuration.getTrustedDomains()).stream().anyMatch(i -> checkTrustedDomain(uri.getHost(), i));
+    }
+
+    private static boolean isUriSchemeMatched(List<String> clientIdUriSchemes, URI uri) {
+        return convertContentFilledList(clientIdUriSchemes).stream().anyMatch(i->i.equals(uri.getScheme()));
     }
 
     private boolean isTrustedDomainMatched(URI uri) {
@@ -121,7 +146,7 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
     }
 
     // return a list with non-null, non-blank, and distinct values. If the input list is null, return an empty list.
-    private List<String> convertContentFilledList(List<String> list) {
+    private static List<String> convertContentFilledList(List<String> list) {
         if (list == null) {
             return Collections.emptyList();
         }
@@ -129,7 +154,7 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
     }
 
     // apply the same logic in TrustedHostClientRegistrationPolicy.
-    private boolean checkTrustedDomain(String hostname, String trustedDomain) {
+    private static boolean checkTrustedDomain(String hostname, String trustedDomain) {
         if (trustedDomain.startsWith("*.")) {
             String domain = trustedDomain.substring(2);
             return hostname.equals(domain) || hostname.endsWith("." + domain);

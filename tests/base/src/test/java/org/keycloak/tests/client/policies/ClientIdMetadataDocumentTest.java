@@ -1,16 +1,25 @@
 package org.keycloak.tests.client.policies;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -20,19 +29,29 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataD
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
 import org.keycloak.protocol.oauth2.cimd.provider.AbstractPersistentClientIdMetadataDocumentProvider;
+import org.keycloak.protocol.oauth2.cimd.resourceindicators.CimdResourceIndicatorAudienceMapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyMode;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientRolesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
+import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
+import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
@@ -43,6 +62,7 @@ import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExe
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -71,12 +91,14 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
+import org.keycloak.tests.providers.client.policies.ResourceParameterClientPolicyCondition;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.util.JsonSerialization;
 
+import com.sun.net.httpserver.HttpServer;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -129,6 +151,9 @@ public class ClientIdMetadataDocumentTest {
 
     @InjectHttpClient(followRedirects = false)
     CloseableHttpClient httpClient;
+
+    @InjectHttpServer
+    HttpServer httpServer;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
@@ -351,11 +376,768 @@ public class ClientIdMetadataDocumentTest {
         errorPage.assertCurrent();
         Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
 
-        // the audience mapper got synchronized (removed) to keep it aligned with the allow list.
+        // the audience mapper of the rejected resource got removed.
         ClientRepresentation clientRepresentation = findByClientIdByAdmin();
         Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
 
         deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenNoLongerAllowListedAndResourceParamOmitted() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        logout(tokenResponse.getIdToken());
+
+        // 2. remove the resource from the allow list, then send an authorization request without the resource parameter
+        // -> the resource is no longer included in the token's audience.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        MatcherAssert.assertThat(getAudience(tokenResponse.getAccessToken()), Matchers.not(Matchers.hasItem(RESOURCE)));
+
+        logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenNoLongerAllowListedAndOtherResourceRequested() throws Exception {
+        String otherResource = "https://mcp.example.com/other-api";
+
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE, otherResource));
+        updatePolicy(conditionConfig, executorConfig);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        logout(tokenResponse.getIdToken());
+
+        // 2. remove only the resource from the allow list, then request the other still allow-listed resource
+        // -> the audience mapper for the other resource is attached, and only the other resource is issued.
+        executorConfig.setResourceIndicatorAllowList(List.of(otherResource));
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(false, otherResource);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(otherResource).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        MatcherAssert.assertThat(getAudience(tokenResponse.getAccessToken()), Matchers.not(Matchers.hasItem(RESOURCE)));
+
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, otherResource));
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+        Assertions.assertTrue(isResourceIncludedInAudience(id, otherResource));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenNoLongerAllowListedOnRefreshTokenRequest() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        MatcherAssert.assertThat(getAudience(tokenResponse.getAccessToken()), Matchers.hasItem(RESOURCE));
+
+        // 2. remove the resource from the allow list, then refresh the token without any new authorization request
+        // -> the audience mapper does not add the resource, so the resource bound to the refresh token is no longer resolvable.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).clientJwt(createSignedRequestToken()).send();
+        Assertions.assertFalse(refreshResponse.isSuccess());
+        Assertions.assertEquals(OAuthErrorException.INVALID_TARGET, refreshResponse.getError());
+
+        logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenNoLongerAllowListedOnCodeExchange() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+
+        // 2. remove the resource from the allow list between the authorization request and the code exchange
+        // -> the token request does not get the audience of the revoked resource.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertFalse(tokenResponse.isSuccess());
+        Assertions.assertEquals(OAuthErrorException.INVALID_TARGET, tokenResponse.getError());
+
+        // the user session created by the authorization request remains, so log out by the admin.
+        realm.admin().logoutAll();
+        deleteClientByAdmin(findByClientIdByAdmin().getId());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenNoLongerAllowListedOnClientCredentialsGrant() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS
+        ));
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        logout(tokenResponse.getIdToken());
+
+        // the client credentials grant gets the audience of the resource while it is allow-listed.
+        AccessTokenResponse ccResponse = oauth.clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(ccResponse.isSuccess());
+        MatcherAssert.assertThat(getAudience(ccResponse.getAccessToken()), Matchers.hasItem(RESOURCE));
+
+        // 2. remove the resource from the allow list, then send a client credentials grant without any authorization request
+        // -> the audience mapper is still attached to the client, but the resource is no longer included in the token's audience.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        ccResponse = oauth.clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(ccResponse.isSuccess(), "error = " + ccResponse.getError() + ", " + ccResponse.getErrorDescription());
+        MatcherAssert.assertThat(getAudience(ccResponse.getAccessToken()), Matchers.not(Matchers.hasItem(RESOURCE)));
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, RESOURCE));
+
+        // requesting the revoked resource explicitly is rejected.
+        ccResponse = oauth.clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).resource(RESOURCE).send();
+        Assertions.assertEquals(OAuthErrorException.INVALID_TARGET, ccResponse.getError());
+
+        // 3. add the resource to the allow list again -> the resource is included in the token's audience again,
+        // without any authorization request.
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        ccResponse = oauth.clientCredentialsGrantRequest().clientJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(ccResponse.isSuccess());
+        MatcherAssert.assertThat(getAudience(ccResponse.getAccessToken()), Matchers.hasItem(RESOURCE));
+
+        deleteClientByAdmin(id);
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenNoLongerAllowListedOnImplicitFlowWithSso() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+        setCimdImplicitFlow();
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+
+        // 2. remove the resource from the allow list, then send an implicit flow authorization request completed
+        // through the existing SSO session in the same request -> the access token does not include the audience.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        try {
+            oauth.responseType(OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
+            oauth.loginForm().codeChallenge(null).nonce(KeycloakModelUtils.generateId()).open();
+            String accessToken = getFragmentParameter(oauth.getDriver().getCurrentUrl(), OAuth2Constants.ACCESS_TOKEN);
+            Assertions.assertNotNull(accessToken, "url = " + oauth.getDriver().getCurrentUrl());
+            MatcherAssert.assertThat(getAudience(accessToken), Matchers.not(Matchers.hasItem(RESOURCE)));
+        } finally {
+            oauth.responseType(OIDCResponseType.CODE);
+        }
+
+        logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenNoLongerAllowListedDuringImplicitFlowLogin() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+        setCimdImplicitFlow();
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        logout(tokenResponse.getIdToken());
+
+        // 2. start an implicit flow authorization request while the resource is allow-listed, then remove it from
+        // the allow list before the user completes the login -> the issued access token does not include the audience.
+        try {
+            oauth.responseType(OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
+            oauth.loginForm().codeChallenge(null).nonce(KeycloakModelUtils.generateId()).resource(RESOURCE).open();
+
+            executorConfig.setResourceIndicatorAllowList(List.of());
+            updatePolicy(conditionConfig, executorConfig);
+
+            oauth.fillLoginForm(user.getUsername(), user.getPassword());
+            String redirectedUrl = oauth.getDriver().getCurrentUrl();
+            MatcherAssert.assertThat(redirectedUrl, Matchers.startsWith(REDIRECT_URI));
+            String accessToken = getFragmentParameter(redirectedUrl, OAuth2Constants.ACCESS_TOKEN);
+            Assertions.assertNotNull(accessToken, "url = " + redirectedUrl);
+            MatcherAssert.assertThat(getAudience(accessToken), Matchers.not(Matchers.hasItem(RESOURCE)));
+        } finally {
+            oauth.responseType(OIDCResponseType.CODE);
+        }
+
+        realm.admin().logoutAll();
+        deleteClientByAdmin(findByClientIdByAdmin().getId());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenConditionHasNullUriScheme() throws Exception {
+        // 1. the condition includes a null URI scheme, which is ignored -> client registers and gets the audience
+        // mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        conditionConfig.setClientIdUriSchemes(Arrays.asList(null, "http", "https"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        // 2. remove the resource from the allow list -> the policy still applies to the client, so the resource is
+        // no longer issued.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenClientIdChanged() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+        logout(tokenResponse.getIdToken());
+
+        // 2. change the client ID to a non-URL one, by sending back the whole client representation including the
+        // audience mapper -> the CIMD policy no longer applies to the client, so the resource is no longer issued,
+        // although it is still allow-listed.
+        ClientRepresentation clientRepresentation = realm.admin().clients().get(id).toRepresentation();
+        clientRepresentation.setClientId("cimd-renamed-client");
+        realm.admin().clients().get(id).update(clientRepresentation);
+        Assertions.assertEquals("cimd-renamed-client", realm.admin().clients().get(id).toRepresentation().getClientId());
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        deleteClientByAdmin(id);
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenClientRoleCreated() throws Exception {
+        // 1. the CIMD policy applies to the client unless it has a client role, and its allow list includes the
+        // resource -> client registers and gets the audience mapper assigned.
+        String role = "cimd-role";
+        ClientRolesCondition.Configuration negatedClientRolesConditionConfig = new ClientRolesCondition.Configuration();
+        negatedClientRolesConditionConfig.setRoles(List.of(role));
+        negatedClientRolesConditionConfig.setNegativeLogic(Boolean.TRUE);
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updateCimdPolicies(executorConfig, null, createCimdPolicy("policy")
+                .condition(ClientRolesConditionFactory.PROVIDER_ID, negatedClientRolesConditionConfig).profile("executor").build());
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+        logout(tokenResponse.getIdToken());
+
+        // 2. the client role is created -> the policy no longer applies to the client, so the resource is no longer issued.
+        realm.admin().clients().get(id).roles().create(new RoleRepresentation(role, null, false));
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        deleteClientByAdmin(id);
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenClientRoleRemoved() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        logout(tokenResponse.getIdToken());
+
+        // 2. the client gets a client role, and the CIMD policy also requires it -> the policy still applies to the
+        // client, so the resource is still issued.
+        String role = "cimd-role";
+        realm.admin().clients().get(id).roles().create(new RoleRepresentation(role, null, false));
+        ClientRolesCondition.Configuration clientRolesConditionConfig = new ClientRolesCondition.Configuration();
+        clientRolesConditionConfig.setRoles(List.of(role));
+        updateCimdPolicies(executorConfig, null, createCimdPolicy("policy")
+                .condition(ClientRolesConditionFactory.PROVIDER_ID, clientRolesConditionConfig).profile("executor").build());
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        // 3. the client role is removed -> the policy no longer applies to the client, so the resource is no longer issued.
+        realm.admin().clients().get(id).roles().deleteRole(role);
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        deleteClientByAdmin(id);
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedToClientImportedWithNotAllowListedResource() throws Exception {
+        // the allow list does not include the resource.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        // import a client with an audience mapper added by CIMD for the resource (e.g. exported before the allow list
+        // was tightened) -> the resource is not issued.
+        ClientRepresentation importedClient = new ClientRepresentation();
+        importedClient.setClientId(CLIENT_ID);
+        importedClient.setProtocolMappers(List.of(createResourceIndicatorAudienceMapper(CimdResourceIndicatorAudienceMapper.PROVIDER_ID, RESOURCE)));
+        PartialImportRepresentation partialImport = new PartialImportRepresentation();
+        partialImport.setIfResourceExists(PartialImportRepresentation.Policy.FAIL.name());
+        partialImport.setClients(List.of(importedClient));
+        realm.admin().partialImport(partialImport).close();
+
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, RESOURCE));
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        // the resource is issued once the allow list includes it.
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        deleteClientByAdmin(id);
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedToNonUrlClientImportedWithAudienceMapper() throws Exception {
+        // the allow list includes the resource.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        // import a client whose client ID is not a URL with an audience mapper added by CIMD (e.g. a CIMD client
+        // renamed before an export) -> CIMD does not manage the client, so the resource is not issued.
+        String nonUrlClientId = "cimd-non-url-client";
+        ClientRepresentation importedClient = new ClientRepresentation();
+        importedClient.setClientId(nonUrlClientId);
+        importedClient.setProtocolMappers(List.of(createResourceIndicatorAudienceMapper(CimdResourceIndicatorAudienceMapper.PROVIDER_ID, RESOURCE)));
+        PartialImportRepresentation partialImport = new PartialImportRepresentation();
+        partialImport.setIfResourceExists(PartialImportRepresentation.Policy.FAIL.name());
+        partialImport.setClients(List.of(importedClient));
+        realm.admin().partialImport(partialImport).close();
+
+        List<ClientRepresentation> clients = realm.admin().clients().findByClientId(nonUrlClientId);
+        Assertions.assertEquals(1, clients.size());
+        String id = clients.get(0).getId();
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        deleteClientByAdmin(id);
+    }
+
+    @Test
+    public void testResourceIndicatorAudienceMapperOfEarlierVersionConvertedOnAuthorizationRequest() throws Exception {
+        // 1. the client registers without any resource, and the allow list does not include the resource.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        String id = findByClientIdByAdmin().getId();
+        logout(tokenResponse.getIdToken());
+
+        // 2. the client gets an audience mapper for the resource of the type that the earlier versions used (e.g. by
+        // importing a representation exported from such a version) -> it adds the resource regardless of the allow list.
+        realm.admin().clients().get(id).getProtocolMappers()
+                .createMapper(createResourceIndicatorAudienceMapper(AudienceProtocolMapper.PROVIDER_ID, RESOURCE)).close();
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        // 3. an authorization request of the client -> the audience mapper is converted, so that it adds the resource
+        // only while the resource is allow-listed.
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        MatcherAssert.assertThat(getAudience(tokenResponse.getAccessToken()), Matchers.not(Matchers.hasItem(RESOURCE)));
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, RESOURCE));
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorAudienceMappersOfEarlierVersionConvertedOnRejectedAuthorizationRequest() throws Exception {
+        String otherResource = "https://mcp.example.com/other-api";
+
+        // 1. the client registers without any resource, and the allow list includes no resource.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        try {
+            String code = loginUserAndGetCode(true);
+            AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+            Assertions.assertTrue(tokenResponse.isSuccess());
+            String id = findByClientIdByAdmin().getId();
+            logout(tokenResponse.getIdToken());
+
+            // 2. the client gets audience mappers of the type that the earlier versions used, for two resources -> they
+            // add the resources regardless of the allow list.
+            realm.admin().clients().get(id).getProtocolMappers()
+                    .createMapper(createResourceIndicatorAudienceMapper(AudienceProtocolMapper.PROVIDER_ID, RESOURCE)).close();
+            realm.admin().clients().get(id).getProtocolMappers()
+                    .createMapper(createResourceIndicatorAudienceMapper(AudienceProtocolMapper.PROVIDER_ID, otherResource)).close();
+            Assertions.assertTrue(isResourceIncludedInAudience(id, otherResource));
+
+            // 3. an authorization request for one of the resources is rejected -> although the request is rolled back,
+            // the audience mapper of the rejected resource is removed and the other one is converted, so that neither
+            // resource is issued.
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+            errorPage.assertCurrent();
+            Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+            Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+            Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, otherResource));
+            Assertions.assertFalse(isResourceIncludedInAudience(id, otherResource));
+        } finally {
+            deleteCimdClientAndSessions();
+        }
+    }
+
+    @Test
+    public void testResourceIndicatorNotAddedOnIntrospectionOfTokenIssuedWithoutIt() throws Exception {
+        // the client that introspects is not in the audience of the token, so let it introspect any token.
+        ClientRepresentation introspector = realm.admin().clients().findByClientId("test-app").get(0);
+        setAllowTokenIntrospectionWithoutAudienceCheck(introspector, true);
+        try {
+            // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+            ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+            executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+            updatePolicy(conditionConfig, executorConfig);
+
+            AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+            logout(tokenResponse.getIdToken());
+
+            // 2. remove the resource from the allow list, then get an access token -> it is issued without the resource.
+            executorConfig.setResourceIndicatorAllowList(List.of());
+            updatePolicy(conditionConfig, executorConfig);
+
+            String code = loginUserAndGetCode(false);
+            tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+            Assertions.assertTrue(tokenResponse.isSuccess());
+            MatcherAssert.assertThat(getAudience(tokenResponse.getAccessToken()), Matchers.not(Matchers.hasItem(RESOURCE)));
+
+            // 3. add the resource to the allow list again, then introspect that access token -> the resource is not
+            // added to the introspection response, because the token has not been issued for it.
+            executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+            updatePolicy(conditionConfig, executorConfig);
+
+            IntrospectionResponse introspectionResponse = oauth.client("test-app", "test-secret").doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+            Assertions.assertEquals(200, introspectionResponse.getStatusCode());
+            Assertions.assertTrue(introspectionResponse.asTokenMetadata().isActive());
+            String[] audience = introspectionResponse.asTokenMetadata().getAudience();
+            Assertions.assertFalse(audience != null && Arrays.asList(audience).contains(RESOURCE));
+        } finally {
+            setAllowTokenIntrospectionWithoutAudienceCheck(introspector, false);
+            deleteCimdClientAndSessions();
+        }
+    }
+
+    @Test
+    public void testResourceIndicatorIssuedInLightweightAccessToken() throws Exception {
+        // the client that introspects is not in the audience of the token, so let it introspect any token.
+        ClientRepresentation introspector = realm.admin().clients().findByClientId("test-app").get(0);
+        setAllowTokenIntrospectionWithoutAudienceCheck(introspector, true);
+        try {
+            // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+            executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+            updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+            AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+
+            // 2. the client uses lightweight access tokens, then refreshes the token -> the lightweight access token
+            // has the resource, and so has its introspection response, to which the audience mapper adds nothing.
+            setClientAttribute(findByClientIdByAdmin(), Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
+
+            AccessTokenResponse refreshResponse = oauth.client(CLIENT_ID).refreshRequest(tokenResponse.getRefreshToken()).clientJwt(createSignedRequestToken()).send();
+            Assertions.assertTrue(refreshResponse.isSuccess());
+            MatcherAssert.assertThat(getAudience(refreshResponse.getAccessToken()), Matchers.hasItem(RESOURCE));
+
+            IntrospectionResponse introspectionResponse = oauth.client("test-app", "test-secret").doIntrospectionAccessTokenRequest(refreshResponse.getAccessToken());
+            Assertions.assertEquals(200, introspectionResponse.getStatusCode());
+            Assertions.assertTrue(introspectionResponse.asTokenMetadata().isActive());
+            MatcherAssert.assertThat(Arrays.asList(introspectionResponse.asTokenMetadata().getAudience()), Matchers.hasItem(RESOURCE));
+        } finally {
+            setAllowTokenIntrospectionWithoutAudienceCheck(introspector, false);
+            deleteCimdClientAndSessions();
+        }
+    }
+
+    private void setAllowTokenIntrospectionWithoutAudienceCheck(ClientRepresentation client, boolean allow) {
+        setClientAttribute(client, OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, Boolean.toString(allow));
+    }
+
+    private void setClientAttribute(ClientRepresentation client, String name, String value) {
+        ClientRepresentation update = realm.admin().clients().get(client.getId()).toRepresentation();
+        Map<String, String> attributes = new HashMap<>(update.getAttributes() == null ? Map.of() : update.getAttributes());
+        attributes.put(name, value);
+        update.setAttributes(attributes);
+        realm.admin().clients().get(client.getId()).update(update);
+    }
+
+    // removes the client registered by a test and the sessions, also when the test has failed, so that the failure does
+    // not affect the other tests.
+    private void deleteCimdClientAndSessions() {
+        realm.admin().logoutAll();
+        realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
+    }
+
+    @Test
+    public void testResourceIndicatorKeptWhenAllowListedAgainWhileAuthorizationRequestRejectsIt() throws Exception {
+        // the sector identifier URI of the client is fetched when an authorization request updates the client metadata,
+        // i.e. after the request has read the client policies and before the executor checks the resource, so that
+        // the authorization request can be suspended there.
+        String sectorIdentifierPath = "/suspendable-sector-identifier-redirect-uris";
+        AtomicBoolean suspend = new AtomicBoolean();
+        CountDownLatch suspended = new CountDownLatch(1);
+        CountDownLatch resumed = new CountDownLatch(1);
+        httpServer.createContext(sectorIdentifierPath, exchange -> {
+            try (exchange) {
+                if (suspend.get()) {
+                    suspended.countDown();
+                    resumed.await(30, TimeUnit.SECONDS);
+                }
+                byte[] redirectUris = JsonSerialization.writeValueAsBytes(List.of(REDIRECT_URI));
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(Response.Status.OK.getStatusCode(), redirectUris.length);
+                exchange.getResponseBody().write(redirectUris);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        try {
+            // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+            ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+            executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+            updatePolicy(conditionConfig, executorConfig);
+            setCimdPublicClient();
+            cimd.getRepresentation().setSubjectType("pairwise");
+            cimd.getRepresentation().setSectorIdentifierUri("http://localhost:" + httpServer.getAddress().getPort() + sectorIdentifierPath);
+
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            String authorizationRequestUrl = oauth.loginForm().codeChallenge(null).resource(RESOURCE).build();
+            Assertions.assertEquals(200, sendAuthorizationRequest(authorizationRequestUrl));
+            String id = findByClientIdByAdmin().getId();
+            Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, RESOURCE));
+
+            // 2. remove the resource from the allow list, then send an authorization request for the resource, which
+            // re-fetches the expired client metadata, and is suspended after it has read the client policies.
+            executorConfig.setResourceIndicatorAllowList(List.of());
+            updatePolicy(conditionConfig, executorConfig);
+            timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+            suspend.set(true);
+            CompletableFuture<Integer> authorizationRequest = CompletableFuture.supplyAsync(() -> sendAuthorizationRequest(authorizationRequestUrl));
+            Assertions.assertTrue(suspended.await(30, TimeUnit.SECONDS));
+
+            // 3. meanwhile, the resource is allow-listed again.
+            executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+            updatePolicy(conditionConfig, executorConfig);
+
+            // 4. the authorization request rejects the resource according to the client policies it has read -> the
+            // audience mapper is kept, because the rejection is obsolete, so the resource is issued.
+            resumed.countDown();
+            Assertions.assertEquals(400, authorizationRequest.get(30, TimeUnit.SECONDS));
+            Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, RESOURCE));
+            Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+        } finally {
+            resumed.countDown();
+            httpServer.removeContext(sectorIdentifierPath);
+            deleteCimdClientAndSessions();
+        }
+    }
+
+    private int sendAuthorizationRequest(String url) {
+        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(url))) {
+            EntityUtils.consume(response.getEntity());
+            return response.getStatusLine().getStatusCode();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Test
+    public void testResourceIndicatorIssuedWhenStrictPolicyNeverAppliesOnAuthorizationRequest() throws Exception {
+        // the other CIMD policy is in the strict mode and has a grant-type condition, which abstains on authorization
+        // requests, so its executor never works.
+        GrantTypeCondition.Configuration grantTypeConditionConfig = new GrantTypeCondition.Configuration();
+        grantTypeConditionConfig.setGrantTypes(List.of(OAuth2Constants.AUTHORIZATION_CODE));
+        testResourceIndicatorIssuedWhenOtherPolicyNeverApplies(createCimdPolicy("other-policy").mode(ClientPolicyMode.STRICT)
+                .condition(GrantTypeConditionFactory.PROVIDER_ID, grantTypeConditionConfig)
+                .profile("other-executor").build());
+    }
+
+    @Test
+    public void testResourceIndicatorIssuedWhenNegatedAnyClientPolicyNeverApplies() throws Exception {
+        // the other CIMD policy has a negated any-client condition, which never matches, so its executor never works.
+        ClientPolicyConditionConfigurationRepresentation negatedAnyClientConfig = new ClientPolicyConditionConfigurationRepresentation();
+        negatedAnyClientConfig.setNegativeLogic(Boolean.TRUE);
+        testResourceIndicatorIssuedWhenOtherPolicyNeverApplies(ClientPolicyBuilder.create().name("other-policy")
+                .condition(AnyClientConditionFactory.PROVIDER_ID, negatedAnyClientConfig)
+                .profile("other-executor").build());
+    }
+
+    private void testResourceIndicatorIssuedWhenOtherPolicyNeverApplies(ClientPolicyRepresentation otherPolicy) throws Exception {
+        // 1. a CIMD policy allows the resource -> client registers and gets the audience mapper assigned.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+
+        // 2. add another CIMD policy that allows nothing, but never applies to the client on authorization requests
+        // -> the resource is still issued.
+        ClientIdMetadataDocumentExecutor.Configuration otherExecutorConfig = createDefaultExecutorConfig();
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of());
+        updateCimdPolicies(executorConfig, otherExecutorConfig, createCimdPolicy("policy").profile("executor").build(), otherPolicy);
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).clientJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(refreshResponse.isSuccess());
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorIssuedWhenPolicyForOtherDomainDoesNotAllowIt() throws Exception {
+        // a CIMD policy for the client's domain allows the resource, and another CIMD policy for another domain allows
+        // nothing -> the policy for the other domain does not apply to the client, so the resource is issued.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientIdUriSchemeCondition.Configuration otherConditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        otherConditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        otherConditionConfig.setTrustedDomains(List.of("*.example.com"));
+        ClientIdMetadataDocumentExecutor.Configuration otherExecutorConfig = createDefaultExecutorConfig();
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of());
+        updateCimdPolicies(executorConfig, otherExecutorConfig, createCimdPolicy("policy").profile("executor").build(),
+                ClientPolicyBuilder.create().name("other-policy").condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, otherConditionConfig)
+                        .profile("other-executor").build());
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenAnyApplicablePolicyNoLongerAllowsIt() throws Exception {
+        // two CIMD policies both applicable to the client allow the resource.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientIdMetadataDocumentExecutor.Configuration otherExecutorConfig = createDefaultExecutorConfig();
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientPolicyRepresentation policy = createCimdPolicy("policy").profile("executor").build();
+        ClientPolicyRepresentation otherPolicy = createCimdPolicy("other-policy").profile("other-executor").build();
+        updateCimdPolicies(executorConfig, otherExecutorConfig, policy, otherPolicy);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        // only one of them no longer allows the resource -> an authorization request with the resource would be
+        // rejected by that policy's executor, so the resource is no longer issued.
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of());
+        updateCimdPolicies(executorConfig, otherExecutorConfig, policy, otherPolicy);
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorNotIssuedWhenAnyExecutorOfPossiblyApplicablePolicyNoLongerAllowsIt() throws Exception {
+        // a CIMD policy with two CIMD executors both allowing the resource. whether the policy applies depends on the
+        // values of an actual request, so it only might apply to the client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientIdMetadataDocumentExecutor.Configuration otherExecutorConfig = createDefaultExecutorConfig();
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientPolicyRepresentation policy = createCimdPolicy("policy")
+                .condition(ResourceParameterClientPolicyCondition.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation())
+                .profile("executor", "other-executor").build();
+        updateCimdPolicies(executorConfig, otherExecutorConfig, policy);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        // only one of them no longer allows the resource -> both executors work whenever the policy applies, so an
+        // authorization request with the resource would be rejected, and the resource is no longer issued.
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of());
+        updateCimdPolicies(executorConfig, otherExecutorConfig, policy);
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        logoutAndDelete(id, tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorRemovedFromClientWhenRejectedByExecutorOfPossiblyApplicablePolicy() throws Exception {
+        // a CIMD policy always applicable to the client, and another CIMD policy that only might apply to the client,
+        // depending on the values of an actual request, both allow the resource.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientIdMetadataDocumentExecutor.Configuration otherExecutorConfig = createDefaultExecutorConfig();
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientPolicyRepresentation policy = createCimdPolicy("policy").profile("executor").build();
+        ClientPolicyRepresentation otherPolicy = createCimdPolicy("other-policy")
+                .condition(ResourceParameterClientPolicyCondition.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation())
+                .profile("other-executor").build();
+        updateCimdPolicies(executorConfig, otherExecutorConfig, policy, otherPolicy);
+
+        AccessTokenResponse tokenResponse = loginAndGetTokens(RESOURCE);
+        String id = findByClientIdByAdmin().getId();
+        logout(tokenResponse.getIdToken());
+
+        // the policy that only might apply no longer allows the resource -> it alone does not deny the resource, so
+        // the resource is still issued.
+        otherExecutorConfig.setResourceIndicatorAllowList(List.of());
+        updateCimdPolicies(executorConfig, otherExecutorConfig, policy, otherPolicy);
+        Assertions.assertTrue(isResourceIncludedInAudience(id, RESOURCE));
+
+        // an authorization request with the resource is rejected by the executor of that policy -> the audience mapper
+        // is removed although the request is rolled back, so the resource is no longer issued.
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+        Assertions.assertFalse(hasResourceIndicatorAudienceMapper(id, RESOURCE));
+        Assertions.assertFalse(isResourceIncludedInAudience(id, RESOURCE));
+
+        deleteClientByAdmin(id);
     }
 
     @Test
@@ -1607,8 +2389,85 @@ public class ClientIdMetadataDocumentTest {
 
     private boolean hasResourceIndicatorAudienceMapper(String clientId, String resource) {
         return realm.admin().clients().get(clientId).getProtocolMappers().getMappers().stream()
-                .filter(m -> AudienceProtocolMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
+                .filter(m -> CimdResourceIndicatorAudienceMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
                 .anyMatch(m -> resource.equals(m.getConfig().get(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE)));
+    }
+
+    // whether an access token issued to the client now includes the resource in its audience, according to the example
+    // access token that the admin API generates through the protocol mappers of the client.
+    private boolean isResourceIncludedInAudience(String clientId, String resource) {
+        String[] audience = realm.admin().clients().get(clientId).clientScopesEvaluate()
+                .generateAccessToken(OAuth2Constants.SCOPE_OPENID, user.getId(), null).getAudience();
+        return audience != null && Arrays.asList(audience).contains(resource);
+    }
+
+    private List<String> getAudience(String accessToken) {
+        String[] audience = oauth.verifyToken(accessToken).getAudience();
+        return audience == null ? List.of() : Arrays.asList(audience);
+    }
+
+    // an audience mapper for the resource as a CIMD executor adds it to a client, of the protocol mapper type given.
+    private static ProtocolMapperRepresentation createResourceIndicatorAudienceMapper(String protocolMapper, String resource) {
+        ProtocolMapperRepresentation mapper = ModelToRepresentation.toRepresentation(AudienceProtocolMapper.createClaimMapper(
+                CimdResourceIndicatorAudienceMapper.NAME_PREFIX + KeycloakModelUtils.generateId(), null, resource, true, false, true));
+        mapper.setProtocolMapper(protocolMapper);
+        return mapper;
+    }
+
+    // registers the client by an authorization request with the resource, and gets the tokens bound to the resource.
+    private AccessTokenResponse loginAndGetTokens(String resource) {
+        String code = loginUserAndGetCode(true, resource);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(resource).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        return tokenResponse;
+    }
+
+    private ClientPolicyBuilder createCimdPolicy(String name) {
+        return ClientPolicyBuilder.create().name(name).condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, createDefaultConditionConfig());
+    }
+
+    // the client profile "executor" and, if its configuration is given, the client profile "other-executor", each with a
+    // CIMD executor, and the client policies using them.
+    private void updateCimdPolicies(ClientIdMetadataDocumentExecutor.Configuration executorConfig,
+            ClientIdMetadataDocumentExecutor.Configuration otherExecutorConfig, ClientPolicyRepresentation... policies) {
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(ClientProfileBuilder.create().name("executor").executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig).build());
+            if (otherExecutorConfig != null) {
+                r.clientProfile(ClientProfileBuilder.create().name("other-executor").executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, otherExecutorConfig).build());
+            }
+            r.resetClientPolicies();
+            for (ClientPolicyRepresentation policy : policies) {
+                r.clientPolicy(policy);
+            }
+            return r;
+        });
+    }
+
+    private static String getFragmentParameter(String url, String name) {
+        int i = url.indexOf('#');
+        if (i < 0) {
+            return null;
+        }
+        for (String pair : url.substring(i + 1).split("&")) {
+            int j = pair.indexOf('=');
+            if (j > 0 && pair.substring(0, j).equals(name)) {
+                return java.net.URLDecoder.decode(pair.substring(j + 1), java.nio.charset.StandardCharsets.UTF_8);
+            }
+        }
+        return null;
+    }
+
+    private void setCimdImplicitFlow() {
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.IMPLICIT,
+                OAuth2Constants.REFRESH_TOKEN
+        ));
+        cimd.getRepresentation().setResponseTypes(List.of(
+                OIDCResponseType.CODE,
+                OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN
+        ));
     }
 
     private void deleteClientByAdmin(String id) {
@@ -1627,7 +2486,8 @@ public class ClientIdMetadataDocumentTest {
     public static class CimdServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS);
+            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS)
+                    .dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 

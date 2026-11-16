@@ -25,4 +25,11 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_OidcIssuerMigration"/>
     </changeSet>
 
+    <!-- The audience mappers that the CIMD executor added to clients for the resources it accepted were of the generic
+         audience mapper type, which adds the audience regardless of the resource indicator allow list. They are
+         converted to the type that adds the audience only while the resource is allowed for the client. -->
+    <changeSet author="keycloak" id="27.0.0-55131-cimd-resource-indicator-audience-mapper">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_CimdResourceIndicatorAudienceMapper"/>
+    </changeSet>
+
 </databaseChangeLog>

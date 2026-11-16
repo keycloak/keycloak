@@ -719,6 +719,26 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== Resource indicator audiences of OAuth Client ID Metadata Document clients follow the allow list
+// https://github.com/keycloak/keycloak/issues/55131
+
+When the experimental `cimd` and `resource-indicators` features are enabled, the `client-id-metadata-document` client policy executor adds an audience mapper to a client for each `resource` parameter value that it accepts.
+Previously, this mapper was of the `Audience` type, which kept adding the value to the `aud` claim after the value was removed from the *Resource indicator allow list* option.
+As a result, the client could still obtain access tokens for the removed resource, for example with the client credentials grant or a refresh token.
+
+The executor now adds a mapper of the new `Audience (CIMD Resource Indicator)` type.
+This mapper adds its value to the `aud` claim only while the allow lists of the executors that apply to the client allow the value.
+Removing a value from an allow list therefore takes effect on the tokens that are issued afterwards, for all grant types.
+The mapper adds its value when a token is issued, including a lightweight access token, and adds nothing when a token is introspected.
+The token introspection response therefore reports the `aud` claim that the token was issued with.
+The mapper stays on the client, so the value is added to the `aud` claim again if you add it to the allow list again.
+The mapper is removed only when the executor rejects an authorization request of the client for that value.
+
+During the upgrade, the existing mappers that the executor added to clients are converted to the new type in the database.
+A client that you import from a representation exported from 26.8.x still has mappers of the `Audience` type, which add their value regardless of the allow list.
+These mappers are converted when the client sends its next authorization request.
+If a value is no longer allowed, remove the mappers whose name starts with `cimd-resource-indicator-` from the representation before you import it.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
