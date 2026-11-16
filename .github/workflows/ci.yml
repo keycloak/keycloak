@@ -1331,12 +1331,12 @@ jobs:
           download-dist: true
 
       - name: Run tests
-        run: ./mvnw verify -pl tests/clustering
+        run: ./mvnw verify -pl tests/clustering -Dtest='org.keycloak.tests.compatibility.*'
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
       - name: Run tests with stateless
-        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportNameSuffix=stateless
+        run: ./mvnw verify -pl tests/clustering -Dtest='org.keycloak.tests.compatibility.*' -Dsurefire.reportNameSuffix=stateless
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
           KC_TEST_SERVER_STATELESS: "true"
