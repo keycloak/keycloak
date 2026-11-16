@@ -20,6 +20,9 @@ package org.keycloak.jgroups.certificates;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -182,6 +185,9 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
             currentCertificate = certificate;
             keyManager.reload(km);
             trustManager.reload(tm);
+            var x509 = certificate.getCertificate();
+            logger.infof("JGroups mTLS certificate in use: key=%s, signature=%s, valid until %s, rotation every %s.",
+                    describe(x509.getPublicKey()), x509.getSigAlgName(), x509.getNotAfter().toInstant(), rotationPeriod);
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -189,9 +195,32 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         }
     }
 
+    // describes the key of the certificate in use, which differs from the configured key until this node has regenerated or reloaded it
+    private static String describe(PublicKey publicKey) {
+        if (publicKey instanceof RSAPublicKey rsa) {
+            return "RSA-" + rsa.getModulus().bitLength();
+        }
+        if (publicKey instanceof ECPublicKey ec) {
+            return "ECDSA-" + ec.getParams().getOrder().bitLength() + "bit";
+        }
+        return publicKey.getAlgorithm();
+    }
+
     private JGroupsCertificate loadOrCreateCertificate(KeycloakSession session) {
         var storage = session.getProvider(ServerConfigStorageProvider.class);
-        return fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
+        var stored = fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
+        if (matchesKeySpec(stored)) {
+            return stored;
+        }
+        // Replace only if still mismatching, so concurrently starting nodes with the same configuration regenerate it once.
+        // Running nodes reload the new certificate when the trust manager rejects the connection of this node.
+        logger.infof("Stored JGroups certificate does not match the configured key (%s). Regenerating it.", keySpec.description());
+        storage.replace(CERTIFICATE_ID, json -> !matchesKeySpec(fromJson(json)), this::generateSelfSignedCertificate);
+        return fromJson(storage.find(CERTIFICATE_ID).orElseThrow());
+    }
+
+    private boolean matchesKeySpec(JGroupsCertificate certificate) {
+        return keySpec.matches(certificate.getCertificate().getPublicKey());
     }
 
     private String generateSelfSignedCertificate() {

@@ -76,4 +76,18 @@ public class UtilsTest {
         Assert.assertThrows(IllegalArgumentException.class, () -> KeySpec.of("ECDSA", null, "secp192r1"));
         Assert.assertThrows(IllegalArgumentException.class, () -> KeySpec.of("DSA", null, null));
     }
+
+    @Test
+    public void testKeySpecMatches() {
+        var rsa3072 = Utils.generateSelfSignedCertificate(Duration.ofDays(1), new KeySpec.Rsa(3072)).getCertificate().getPublicKey();
+        var rsa2048 = Utils.generateSelfSignedCertificate(Duration.ofDays(1), new KeySpec.Rsa(2048)).getCertificate().getPublicKey();
+        var p256 = Utils.generateSelfSignedCertificate(Duration.ofDays(1), new KeySpec.Ecdsa("secp256r1")).getCertificate().getPublicKey();
+
+        Assert.assertTrue(new KeySpec.Rsa(3072).matches(rsa3072));
+        Assert.assertFalse(new KeySpec.Rsa(3072).matches(rsa2048));
+        Assert.assertFalse(new KeySpec.Rsa(3072).matches(p256));
+        Assert.assertTrue(new KeySpec.Ecdsa("secp256r1").matches(p256));
+        Assert.assertFalse(new KeySpec.Ecdsa("secp384r1").matches(p256));
+        Assert.assertFalse(new KeySpec.Ecdsa("secp256r1").matches(rsa3072));
+    }
 }

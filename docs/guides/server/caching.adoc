@@ -281,10 +281,25 @@ The transport stack ensures that {project_name} nodes in a cluster communicate i
 Communication between nodes is encrypted using TLS by default.
 No additional CLI options or modifications of the cache XML are required.
 
-With TLS enabled, {project_name} auto-generates a self-signed RSA 2048 bit certificate to secure the connection and uses TLS 1.3 to secure the communication.
+With TLS enabled, {project_name} auto-generates a self-signed RSA 3072 bit certificate to secure the connection and uses TLS 1.3 to secure the communication.
+The certificate is signed with RSASSA-PSS.
 The keys and the certificate are stored in the database so they are available to all nodes.
 By default, the certificate is valid for 60 days and is rotated at runtime every 30 days.
 Use the option `cache-embedded-mtls-rotation-interval-days` to change this.
+
+To change the key of the generated certificate, use the following SPI options:
+
+`+spi-jgroups-mtls--default--algorithm+`:: `RSA` (default) or `ECDSA`.
+`+spi-jgroups-mtls--default--key-size+`:: The RSA key size in bits, at least `2048`. The default is `3072`. Ignored for `ECDSA`.
+`+spi-jgroups-mtls--default--curve+`:: The ECDSA curve, one of `secp256r1` (default), `secp384r1` or `secp521r1`. Ignored for `RSA`.
+
+For example: `+--spi-jgroups-mtls--default--algorithm=ECDSA --spi-jgroups-mtls--default--curve=secp384r1+`
+
+When a node starts and the stored certificate does not match the configured algorithm and key size or curve, the node generates a new certificate and stores it in the database.
+Nodes that are already running reload the new certificate when they reject the connection of the restarted node.
+Configure the same values on all nodes.
+Otherwise, nodes with different values regenerate the certificate each time one of them starts.
+These options only apply to the generated certificate and are ignored when you provide your own keystore.
 
 === Running inside a service mesh
 

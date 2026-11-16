@@ -18,8 +18,11 @@
 package org.keycloak.jgroups.certificates;
 
 import java.security.KeyPair;
+import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Locale;
-import java.util.Set;
+import java.util.Map;
 
 import org.keycloak.common.util.KeyUtils;
 
@@ -31,6 +34,11 @@ public sealed interface KeySpec {
     KeyPair generate();
 
     String description();
+
+    /**
+     * @return {@code true} if the public key was generated with this specification.
+     */
+    boolean matches(PublicKey publicKey);
 
     /**
      * @param keySize RSA modulus length in bits
@@ -55,6 +63,11 @@ public sealed interface KeySpec {
         public String description() {
             return "RSA-" + keySize;
         }
+
+        @Override
+        public boolean matches(PublicKey publicKey) {
+            return publicKey instanceof RSAPublicKey rsa && rsa.getModulus().bitLength() == keySize;
+        }
     }
 
     /**
@@ -63,11 +76,11 @@ public sealed interface KeySpec {
     record Ecdsa(String curve) implements KeySpec {
 
         public static final String DEFAULT_CURVE = "secp256r1";
-        private static final Set<String> SUPPORTED_CURVES = Set.of("secp256r1", "secp384r1", "secp521r1");
+        private static final Map<String, Integer> CURVE_BITS = Map.of("secp256r1", 256, "secp384r1", 384, "secp521r1", 521);
 
         public Ecdsa {
-            if (!SUPPORTED_CURVES.contains(curve)) {
-                throw new IllegalArgumentException("Unsupported ECDSA curve '%s', supported: %s.".formatted(curve, new java.util.TreeSet<>(SUPPORTED_CURVES)));
+            if (!CURVE_BITS.containsKey(curve)) {
+                throw new IllegalArgumentException("Unsupported ECDSA curve '%s', supported: %s.".formatted(curve, new java.util.TreeSet<>(CURVE_BITS.keySet())));
             }
         }
 
@@ -79,6 +92,11 @@ public sealed interface KeySpec {
         @Override
         public String description() {
             return "ECDSA-" + curve;
+        }
+
+        @Override
+        public boolean matches(PublicKey publicKey) {
+            return publicKey instanceof ECPublicKey ec && ec.getParams().getOrder().bitLength() == CURVE_BITS.get(curve);
         }
     }
 

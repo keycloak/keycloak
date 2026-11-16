@@ -19,6 +19,7 @@ package org.keycloak.jgroups.certificates;
 
 import java.io.File;
 import java.time.Duration;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.Config;
@@ -27,6 +28,8 @@ import org.keycloak.config.Option;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.JGroupsCertificateProviderFactory;
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
@@ -110,6 +113,32 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
             );
         }
         return DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(requireRotationInDays()), keySpec());
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                    .name(ALGORITHM)
+                    .type("string")
+                    .helpText("The key algorithm of the automatically generated certificate. Use the same value on all nodes. A stored certificate with a different algorithm is regenerated on startup. Supported values: RSA, ECDSA.")
+                    .options("RSA", "ECDSA")
+                    .defaultValue("RSA")
+                    .add()
+                .property()
+                    .name(KEY_SIZE)
+                    .type("int")
+                    .helpText("The RSA key size in bits of the automatically generated certificate, at least 2048. Use the same value on all nodes. A stored certificate with a different key size is regenerated on startup. Ignored if the algorithm is not RSA.")
+                    .defaultValue(KeySpec.Rsa.DEFAULT_KEY_SIZE)
+                    .add()
+                .property()
+                    .name(CURVE)
+                    .type("string")
+                    .helpText("The named curve of the automatically generated ECDSA certificate. Use the same value on all nodes. A stored certificate with a different curve is regenerated on startup. Ignored if the algorithm is not ECDSA.")
+                    .options("secp256r1", "secp384r1", "secp521r1")
+                    .defaultValue(KeySpec.Ecdsa.DEFAULT_CURVE)
+                    .add()
+                .build();
     }
 
     private KeySpec keySpec() {

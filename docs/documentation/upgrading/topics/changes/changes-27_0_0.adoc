@@ -428,6 +428,21 @@ If you use auto-link flows with a SAML or custom identity provider that does not
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Cache transport certificate uses RSA 3072 bits
+
+The automatically generated certificate that secures the communication between {project_name} nodes now uses a 3072-bit RSA key instead of a 2048-bit RSA key.
+It is signed using RSASSA-PSS instead of RSASSA-PKCS1-v1_5.
+This aligns with recommendations such as BSI TR-02102-2, which asks for RSA keys of at least 3000 bits.
+
+When a node starts and the certificate stored in the database was generated with a different key, the node generates a new certificate and stores it.
+Running nodes reload it when they reject the connection of the restarted node.
+During a rolling upgrade, this can cause short-lived connection retries.
+
+To keep the previous key size, set the SPI option `+spi-jgroups-mtls--default--key-size=2048+`.
+To use an ECDSA key instead, set `+spi-jgroups-mtls--default--algorithm=ECDSA+`, and optionally `+spi-jgroups-mtls--default--curve+`.
+Configure the same values on all nodes.
+For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
+
 === Existing AES key sizes are recorded during migration
 
 When upgrading, existing `aes-generated` key providers without an explicit `secretSize` are updated to record the size of their stored key, including databases already running 26.8.x.
