@@ -208,6 +208,8 @@
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
         <spotless-plugin.version>3.0.0</spotless-plugin.version>
+        <!-- Override the version inherited from jboss-parent to match newer Keycloak branches. -->
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <plugin.antrun.version>1.8</plugin.antrun.version>
 
         <!-- Surefire Settings -->
@@ -1567,6 +1569,11 @@
                             </importOrder>
                         </java>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
