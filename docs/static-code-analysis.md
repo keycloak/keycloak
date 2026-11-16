@@ -7,9 +7,11 @@ The checks run in CI and are opt-in locally via the `checkerframework` Maven pro
 
 ### Running the checks
 
-Use JDK 21 and a clean build, as incremental builds skip checks:
+Use a clean build, as incremental builds skip checks:
 
-    JAVA_HOME=/path/to/jdk-21/ ./mvnw clean package -DskipTests -Pcheckerframework -pl quarkus/dist -am
+    ./mvnw clean package -DskipTests -Pcheckerframework -pl quarkus/dist -am
+
+The checks run with the same JDK as the regular build and in CI.
 
 Test sources are not checked yet.
 Some modules and classes are excluded until they are fixed; see the comments in the `checkerframework` profiles of the `pom.xml` files.
@@ -124,3 +126,61 @@ They are valid only when the collection's owner actually closes every stream.
 Missing cleanup or an incorrect contract must still be fixed.
 
 See the [Resource Leak Checker manual](https://checkerframework.org/manual/#resource-leak-checker) for details.
+
+### Troubleshooting
+
+#### `[required.method.not.called]`
+
+**Observation:** the build fails with an error like this, pointing to a line of code:
+
+    SamlService.java:[1213,83] error: [required.method.not.called] $$ 1213 $$ method close $$ SamlProtocolUtils.limit(inputStream, maxSize) $$ ...
+
+The checker 4.4.0 prints only these arguments instead of a message text, see [typetools/checker-framework#8562](https://github.com/typetools/checker-framework/issues/8562).
+This section needs an update once the issue is fixed in a released version.
+
+**Cause:** the expression at that line creates or returns a resource, for example a stream, that is neither closed nor handed over to a new owner.
+The position is where the resource is created, not where it should have been closed.
+A typical case is a stream that is created inline and passed to a method whose parameter is not `@Owning`.
+
+**Fix:** close the resource, for example with try-with-resources:
+
+```java
+// Fails: the LimitedInputStream is never closed.
+Document soapBodyContents = Soap.extractSoapMessage(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize));
+
+// Fixed: close it when done.
+try (InputStream limitedInputStream = SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize)) {
+    soapBodyContents = Soap.extractSoapMessage(limitedInputStream);
+}
+```
+
+Fix it as described in [Fixing findings](#fixing-findings), and use a suppression only as the last resort.
+
+#### `Cannot attach type annotations ... class file for <class> not found`
+
+**Observation:** the build fails with an error that names a class in an upstream module's JAR instead of a source file, and the missing class on the second line:
+
+```
+keycloak-server-spi-private.jar(/org/keycloak/authorization/fgap/AdminPermissionsSchema.class): error: Cannot attach type annotations @org.checkerframework.checker.mustcall.qual.MustCall({}),...
+  class file for jakarta.persistence.criteria.CriteriaQuery not found
+```
+
+**Cause:** with JDK 22 and later, a module must have all classes that the checked upstream modules use in their method signatures on its classpath, even if it never calls those methods.
+Dependencies with `provided` scope are not passed on to downstream modules, so such a class is missing there.
+This is expected and will not be fixed in the Checker Framework, see [typetools/checker-framework#8346](https://github.com/typetools/checker-framework/issues/8346).
+
+**Fix:** declare a dependency that provides the missing class in the failing module, only in a `checkerframework` profile of its `pom.xml`, so regular builds are not changed:
+
+```xml
+<profile>
+    <id>checkerframework</id>
+    <dependencies>
+        <!-- Required by the type annotations the Checker Framework writes into upstream bytecode, see https://github.com/typetools/checker-framework/issues/8346 -->
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</profile>
+```

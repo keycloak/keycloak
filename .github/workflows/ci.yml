@@ -172,12 +172,6 @@ jobs:
       - id: unit-test-setup
         name: Unit test setup
         uses: ./.github/actions/unit-test-setup
-        with:
-          # JDK 22+ eagerly resolves types referenced by RuntimeVisibleTypeAnnotations (JDK-8225377).
-          # This breaks the Checker Framework, which writes type annotations referencing types
-          # that may not be on the downstream module's classpath.
-          # https://github.com/typetools/checker-framework/issues/8346
-          java-version: "21"
 
       - name: Run Checker Framework ResourceLeakChecker
         run: |
