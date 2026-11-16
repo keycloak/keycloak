@@ -26,6 +26,7 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -150,6 +151,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         protected boolean restrictSameDomain = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.REQUIRED_PROPERTIES)
         protected List<String> requiredProperties = null;
+        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.CLIENT_SCOPE_ALLOW_LIST)
+        protected List<String> clientScopeAllowList = null;
 
         // Resource Indicators (RFC 8707) allow list
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.RESOURCE_INDICATOR_ALLOW_LIST)
@@ -196,6 +199,14 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         public void setRequiredProperties(List<String> requiredProperties) {
             this.requiredProperties = requiredProperties;
+        }
+
+        public List<String> getClientScopeAllowList() {
+            return clientScopeAllowList;
+        }
+
+        public void setClientScopeAllowList(List<String> clientScopeAllowList) {
+            this.clientScopeAllowList = clientScopeAllowList;
         }
 
         public List<String> getResourceIndicatorAllowList() {
@@ -400,8 +411,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         validateClientId(clientIdURI);
 
         if (fetchOp == FetchOperation.NO_UPDATE) {
-            // no update, but the resource parameter still needs to be enforced on every authorization request.
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            // no update, but the client scope allow list and the resource parameter still need to be enforced on every authorization request.
+            ClientModel existingClientModel = session.getContext().getRealm().getClientByClientId(clientId);
+            enforceClientScopeAllowList(existingClientModel);
+            enforceResourceIndicator(preAuthorizationRequestContext, existingClientModel);
             return;
         }
 
@@ -409,7 +422,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl = fetchClientMetadata(clientIdURI, fetchOp == FetchOperation.UPDATE, provider);
         if (clientOIDCWithCacheControl == null) {
             // fetched but no update
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            ClientModel existingClientModel = session.getContext().getRealm().getClientByClientId(clientId);
+            enforceClientScopeAllowList(existingClientModel);
+            enforceResourceIndicator(preAuthorizationRequestContext, existingClientModel);
             return;
         }
 
@@ -419,6 +434,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // Client Metadata validation
         validateClientMetadata(clientIdURI, redirectUriURI, clientOIDCWithCacheControl.getOidcClientRepresentation());
 
+        // Client scope allow list: called here, not from validateClientMetadata, so that it cannot be skipped by overriding it
+        enforceClientScopeAllowList(clientOIDCWithCacheControl.getOidcClientRepresentation());
+
         ClientModel clientModel;
         if (fetchOp == FetchOperation.CREATE) {
             // Create Client Metadata
@@ -427,6 +445,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             // Update Client Metadata
             clientModel = provider.updateClientMetadata(clientOIDCWithCacheControl);
         }
+
+        // the client can obtain optional client scopes not from the scope property, e.g. realm default optional client scopes
+        // on creation, or the previously persisted ones on update when the scope property is absent.
+        enforceClientScopeAllowList(clientModel);
 
         enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
     }
@@ -924,6 +946,68 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 getLogger().warn("metadata does not include required properties");
                 throw invalidClientIdMetadata(ERR_METADATA_NO_REQUIRED_PROPERTIES);
             }
+        }
+
+    }
+
+    /**
+     * Restricts the client scopes that the {@code scope} property of a client metadata can attach to the client.
+     *
+     * <p>The {@code scope} property is converted to optional client scopes of the client, which are linked to any
+     * existing realm client scope by its name. To prevent a client metadata from attaching a client scope that an
+     * administrator does not intend for clients registered by CIMD, the scope names not included in the client scope
+     * allow list are removed from the {@code scope} property before the client is created or updated.
+     * If the allow list is vacant, no client scope is attached by the {@code scope} property.
+     *
+     * @param clientOIDC a client metadata
+     */
+    protected void enforceClientScopeAllowList(final OIDCClientRepresentation clientOIDC) {
+        String scope = clientOIDC.getScope();
+        if (scope == null) {
+            return;
+        }
+        List<String> allowList = convertContentFilledList(getConfiguration().getClientScopeAllowList());
+        List<String> requested = Arrays.stream(scope.trim().split("\\s+")).filter(i -> !i.isBlank()).distinct().toList();
+        List<String> allowed = requested.stream().filter(allowList::contains).toList();
+        if (allowed.size() != requested.size()) {
+            RealmModel realm = session.getContext().getRealm();
+            List<String> removed = requested.stream().filter(i -> !allowList.contains(i)).toList();
+            // only warn about names of existing realm client scopes, others (e.g. "openid") would never be attached anyway
+            List<String> removedClientScopes = removed.stream().filter(i -> KeycloakModelUtils.getClientScopeByName(realm, i) != null).toList();
+            if (!removedClientScopes.isEmpty()) {
+                getLogger().warnv("client metadata includes client scopes not allowed, they are removed: clientId = {0}, scopes = {1}",
+                        clientOIDC.getClientId(), removedClientScopes);
+            } else {
+                getLogger().debugv("client metadata includes scopes not allowed, they are removed: clientId = {0}, scopes = {1}",
+                        clientOIDC.getClientId(), removed);
+            }
+        }
+        clientOIDC.setScope(String.join(" ", allowed));
+    }
+
+    /**
+     * Removes the optional client scopes not included in the client scope allow list from a client managed by CIMD.
+     *
+     * <p>A client managed by CIMD can have an optional client scope that does not come from the {@code scope} property
+     * of its client metadata, e.g. a realm default optional client scope attached on creation when the {@code scope}
+     * property is absent, or a client scope persisted before the allow list was changed. The method is called on every
+     * authorization request so that the allow list is the only source of optional client scopes of such a client,
+     * even while its persisted client metadata is still effective.
+     *
+     * @param clientModel a client managed by CIMD
+     */
+    protected void enforceClientScopeAllowList(final ClientModel clientModel) {
+        if (clientModel == null) {
+            return;
+        }
+        List<String> allowList = convertContentFilledList(getConfiguration().getClientScopeAllowList());
+        List<ClientScopeModel> notAllowed = clientModel.getClientScopes(false).values().stream()
+                .filter(i -> !allowList.contains(i.getName()))
+                .toList();
+        for (ClientScopeModel clientScope : notAllowed) {
+            getLogger().debugv("optional client scope not allowed, it is removed: clientId = {0}, scope = {1}",
+                    clientModel.getClientId(), clientScope.getName());
+            clientModel.removeClientScope(clientScope);
         }
     }
 

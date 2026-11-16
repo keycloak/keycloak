@@ -245,6 +245,144 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientScopeAllowListStripsNotAllowedScopes() throws Exception {
+        // only "phone" is allowed, the client metadata requests "address phone"
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setClientScopeAllowList(List.of("phone"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        // on creating the client, "address" is not attached
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertEquals(List.of("phone"), clientRepresentation.getOptionalClientScopes());
+        logout(tokenResponse.getIdToken());
+
+        // the client metadata requests a realm client scope that is not intended for CIMD clients
+        cimd.getRepresentation().setScope("phone profile microprofile-jwt");
+        executorConfig.setClientScopeAllowList(List.of("phone", "profile"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        // move the time ahead so that the client metadata is re-fetched
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        // on updating the client, "microprofile-jwt" is not attached
+        clientRepresentation = findByClientIdByAdmin();
+        List<String> optionalScopeList = clientRepresentation.getOptionalClientScopes();
+        Assertions.assertEquals(2, optionalScopeList.size());
+        Assertions.assertTrue(optionalScopeList.contains("phone"));
+        Assertions.assertTrue(optionalScopeList.contains("profile"));
+        Assertions.assertFalse(optionalScopeList.contains("microprofile-jwt"));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientScopeAllowListTightenedWithoutRefetch() throws Exception {
+        // "address phone" are allowed and attached on creating the client
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        List<String> optionalScopeList = findByClientIdByAdmin().getOptionalClientScopes();
+        Assertions.assertEquals(2, optionalScopeList.size());
+        Assertions.assertTrue(optionalScopeList.contains("address"));
+        Assertions.assertTrue(optionalScopeList.contains("phone"));
+        logout(tokenResponse.getIdToken());
+
+        // remove "address" from the allow list while the persisted client metadata is still effective
+        executorConfig.setClientScopeAllowList(List.of("phone"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        // the client metadata is not re-fetched, but "address" is removed from the client
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertEquals(List.of("phone"), clientRepresentation.getOptionalClientScopes());
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientScopeAllowListMetadataWithoutScope() throws Exception {
+        // the client metadata does not include the scope property -> on creating the client,
+        // realm default optional client scopes not included in the allow list are not kept.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setClientScopeAllowList(List.of("phone"));
+        updatePolicy(conditionConfig, executorConfig);
+        cimd.getRepresentation().setScope(null);
+
+        // the client gets realm default client scopes, so the consent screen shows more than the client's hostname
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).open();
+        oauth.fillLoginForm(user.getUsername(), user.getPassword());
+        grantPage.assertCurrent();
+        grantPage.accept();
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        MatcherAssert.assertThat(clientRepresentation.getOptionalClientScopes(), Matchers.everyItem(Matchers.is("phone")));
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+
+        // the client is created with "address phone"
+        cimd.getRepresentation().setScope("address phone");
+        executorConfig.setClientScopeAllowList(List.of("address", "phone"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        code = loginUserAndGetCode(true);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        Assertions.assertEquals(2, findByClientIdByAdmin().getOptionalClientScopes().size());
+        logout(tokenResponse.getIdToken());
+
+        // the re-fetched client metadata does not include the scope property, and "address" is no longer allowed
+        // -> the previously persisted "address" is removed from the client on updating it.
+        cimd.getRepresentation().setScope(null);
+        executorConfig.setClientScopeAllowList(List.of("phone"));
+        updatePolicy(conditionConfig, executorConfig);
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertEquals(List.of("phone"), clientRepresentation.getOptionalClientScopes());
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientScopeAllowListVacant() throws Exception {
+        // the allow list is vacant -> no client scope is attached by the scope property of the client metadata
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setClientScopeAllowList(null);
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.getOptionalClientScopes() == null || clientRepresentation.getOptionalClientScopes().isEmpty());
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
     public void testResourceIndicatorPermissiveModeWithoutResourceParam() throws Exception {
         // Resource Indicators feature is enabled (server config), allow list is vacant, client not yet registered,
         // authorization request does not include the resource parameter -> CIMD should not enforce anything.
@@ -1499,6 +1637,7 @@ public class ClientIdMetadataDocumentTest {
     private static ClientIdMetadataDocumentExecutor.Configuration newExecutorConfig() {
         ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
         executorConfig.setAllowPrivateUseAddresses(true);
+        executorConfig.setClientScopeAllowList(List.of("address", "phone", "profile"));
         return executorConfig;
     }
 

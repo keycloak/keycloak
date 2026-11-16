@@ -27,6 +27,7 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  *     <ul>
  *         <li>Restrict same domain: only allow {client_id} and {redirect_uri} parameter of an authorization request whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
  *         <li>Required properties: only allow a client metadata that includes all required properties</li>
+ *         <li>Client scope allow list: only allow the scope property of a client metadata to attach the client scopes included in the allow list</li>
  *     </ul>
  *     <li>Resource Indicators (RFC 8707) support</li>
  *     <ul>
@@ -49,6 +50,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
     // Client Metadata Validation
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
     public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
+    public static final String CLIENT_SCOPE_ALLOW_LIST = "cimd-client-scope-allow-list";
 
     // Resource Indicators (RFC 8707) support
     public static final String RESOURCE_INDICATOR_ALLOW_LIST = "cimd-resource-indicator-allow-list";
@@ -130,6 +132,18 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 REQUIRED_PROPERTIES,
                 "Required properties",
                 "If client metadata does not include all the properties, the executor does not accept the client metadata.",
+                ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+                null);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty(
+                CLIENT_SCOPE_ALLOW_LIST,
+                "Client scope allow list",
+                "Names of the realm client scopes that a client registered by the executor is allowed to have as optional client scopes. " +
+                        "Any scope name in the scope property of client metadata that is not included in this allow list is removed from the client metadata before the client is created or updated. " +
+                        "Moreover, on every authorization request, any optional client scope of the client that is not included in this allow list is removed from the client, " +
+                        "including realm default optional client scopes and client scopes added by an administrator. Default client scopes are not affected. " +
+                        "If the allow list is vacant, the client has no optional client scope.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
         configProperties.add(property);
