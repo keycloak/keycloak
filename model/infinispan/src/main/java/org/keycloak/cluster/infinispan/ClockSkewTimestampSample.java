@@ -3,6 +3,7 @@ package org.keycloak.cluster.infinispan;
 import org.keycloak.marshalling.Marshalling;
 
 import org.infinispan.protostream.annotations.Proto;
+import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
@@ -17,5 +18,5 @@ import org.infinispan.protostream.annotations.ProtoTypeId;
  */
 @ProtoTypeId(Marshalling.CLOCK_SKEW_TIMESTAMP_SAMPLE)
 @Proto
-public record ClockSkewTimestampSample(String nodeName, long timestampMillis) {
+public record ClockSkewTimestampSample(@ProtoField(1) String nodeName, @ProtoField(2) long timestampMillis) {
 }
