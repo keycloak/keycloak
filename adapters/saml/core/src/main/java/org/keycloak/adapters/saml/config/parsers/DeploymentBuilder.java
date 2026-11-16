@@ -81,6 +81,7 @@ public class DeploymentBuilder {
         IDP idp = sp.getIdp();
         deployment.setSignatureCanonicalizationMethod(idp.getSignatureCanonicalizationMethod());
         deployment.setAutodetectBearerOnly(sp.isAutodetectBearerOnly());
+        deployment.setTurnOffChangeSessionIdOnLogin(sp.isTurnOffChangeSessionIdOnLogin());
         deployment.setKeepDOMAssertion(sp.isKeepDOMAssertion());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
         if (idp.getSignatureAlgorithm() != null) {
