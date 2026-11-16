@@ -34,6 +34,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.custom.CustomCreateIndexChange;
 import org.keycloak.models.KeycloakSession;
@@ -60,6 +61,8 @@ import liquibase.precondition.core.NotPrecondition;
 import liquibase.precondition.core.OrPrecondition;
 import liquibase.precondition.core.TableExistsPrecondition;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
+import org.hibernate.engine.jdbc.env.spi.IdentifierHelper;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.jboss.logging.Logger;
 
 /**
@@ -81,6 +84,8 @@ public class DatabaseIndexChecker implements Runnable {
     private final Supplier<Connection> connectionSupplier;
     private final KeycloakSessionFactory factory;
     private final String dbSchema;
+    // The configured schema resolved to the name as stored in the database, which may differ in case
+    private final String resolvedSchema;
     private final boolean autoCreate;
     private final int migrationTimeoutSeconds;
 
@@ -88,6 +93,7 @@ public class DatabaseIndexChecker implements Runnable {
         this.connectionSupplier = Objects.requireNonNull(connectionSupplier);
         this.factory = Objects.requireNonNull(factory);
         this.dbSchema = dbSchema;
+        this.resolvedSchema = resolveSchema(factory, dbSchema);
         this.autoCreate = autoCreate;
         this.migrationTimeoutSeconds = migrationTimeoutSeconds;
     }
@@ -284,8 +290,8 @@ public class DatabaseIndexChecker implements Runnable {
     private String qualifyPostgresIdentifier(String identifier) {
         // PostgreSQL folds unquoted identifiers to lowercase
         String quoted = "\"" + identifier.toLowerCase().replace("\"", "\"\"") + "\"";
-        if (dbSchema != null) {
-            return "\"" + dbSchema.replace("\"", "\"\"") + "\"." + quoted;
+        if (resolvedSchema != null) {
+            return "\"" + resolvedSchema.replace("\"", "\"\"") + "\"." + quoted;
         }
         return quoted;
     }
@@ -357,11 +363,26 @@ public class DatabaseIndexChecker implements Runnable {
         return expectedIndexes;
     }
 
+    // Ask Hibernate how it resolves the configured schema, so the lookup targets the schema Hibernate uses (including its case folding).
+    private static String resolveSchema(KeycloakSessionFactory factory, String dbSchema) {
+        if (dbSchema == null) {
+            return null;
+        }
+        IdentifierHelper identifierHelper;
+        try (var session = factory.create()) {
+            identifierHelper = session.getProvider(JpaConnectionProvider.class).getEntityManager()
+                    .getEntityManagerFactory().unwrap(SessionFactoryImplementor.class)
+                    .getJdbcServices().getJdbcEnvironment().getIdentifierHelper();
+        }
+        var schema = identifierHelper.toMetaDataSchemaName(identifierHelper.toIdentifier(dbSchema));
+        return schema != null ? schema : dbSchema;
+    }
+
     private Set<String> getExistingIndexesFromDatabase(DatabaseMetaData metaData, Collection<String> tables) throws SQLException {
         var existingIndexes = new HashSet<String>();
 
         for (var table : tables) {
-            try (var rs = metaData.getIndexInfo(null, dbSchema, table, false, true)) {
+            try (var rs = metaData.getIndexInfo(null, resolvedSchema, table, false, true)) {
                 while (rs.next()) {
                     var indexName = rs.getString("INDEX_NAME");
                     if (indexName != null) {
@@ -380,12 +401,12 @@ public class DatabaseIndexChecker implements Runnable {
             return Set.of();
         }
         var invalidIndexes = new HashSet<String>();
-        String sql = dbSchema != null
+        String sql = resolvedSchema != null
                 ? "SELECT UPPER(c.relname) FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = ? AND NOT i.indisvalid"
                 : "SELECT UPPER(c.relname) FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid JOIN pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = current_schema AND NOT i.indisvalid";
         try (var ps = connection.prepareStatement(sql)) {
-            if (dbSchema != null) {
-                ps.setString(1, dbSchema);
+            if (resolvedSchema != null) {
+                ps.setString(1, resolvedSchema);
             }
             try (var rs = ps.executeQuery()) {
                 while (rs.next()) {
