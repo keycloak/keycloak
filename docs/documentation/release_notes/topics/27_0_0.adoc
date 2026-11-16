@@ -43,7 +43,7 @@ The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry th
 * Admin Console theme is now `keycloak.v3` (replaces `keycloak.v2`).
 
 Built-in realm themes are migrated automatically during upgrade.
-If you maintain custom themes, see the link:{upgradingguide_link}[{upgradingguide_name}] and the https://www.keycloak.org/migration/migrating-themes-to-patternfly-6[PatternFly 6 theme migration guide].
+If you maintain custom themes, see the link:{upgradingguide_link}[{upgradingguide_name}] and *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
 
 == OID4VP verifier infers the DCQL query from mappers (experimental)
 
