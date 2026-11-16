@@ -111,7 +111,9 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
                     || (oldValue.getValue() != null && oldValue.getSourceOrdinal() > value.getSourceOrdinal())) {
                 value = oldValue;
             }
-            return Optional.ofNullable(config.convert(value.getValue(), clazz)).orElse(defaultValue);
+            return Optional.ofNullable(value.getValue())
+                    .map(raw -> config.requireConverter(clazz).convert(raw))
+                    .orElse(defaultValue);
         }
 
         @Override

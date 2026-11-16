@@ -98,9 +98,11 @@ public class KcEnvConfigSource extends PropertiesConfigSource {
                 }
             }
 
-            // KCRAW_ values escape $ as $$ to prevent SmallRye Config variable interpolation
-            // Then replace \$ with \\ to prevent SmallRye's escapeDollarIfExists from consuming backslashes before dollars
-            properties.put(transformedKey, isRaw ? value.replace("$", "$$").replace("\\$", "\\\\") : value);
+            // SmallRye processes backslash escapes only when the value contains an expression.
+            if (isRaw && value.contains("${")) {
+                value = value.replace("\\", "\\\\").replace("${", "\\${");
+            }
+            properties.put(transformedKey, value);
         }
 
         return properties;
