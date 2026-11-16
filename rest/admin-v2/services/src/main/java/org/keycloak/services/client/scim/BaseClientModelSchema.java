@@ -26,30 +26,49 @@ import org.keycloak.scim.resource.schema.attribute.Attribute;
 public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
         implements ModelSchema<ClientModel, R> {
 
+    // attribute names, which match the representation field names
+    public static final String ATTR_PROTOCOL = "protocol";
+    public static final String ATTR_UUID = "uuid";
+    public static final String ATTR_CLIENT_ID = "clientId";
+    public static final String ATTR_ENABLED = "enabled";
+    public static final String ATTR_DESCRIPTION = "description";
+    public static final String ATTR_DISPLAY_NAME = "displayName";
+    public static final String ATTR_APP_URL = "appUrl";
+    public static final String ATTR_REDIRECT_URIS = "redirectUris";
+    public static final String ATTR_ROLES = "roles";
+    public static final String ATTR_CREATED_TIMESTAMP = "createdTimestamp";
+    public static final String ATTR_UPDATED_TIMESTAMP = "updatedTimestamp";
     // TODO: should be metadata on the Attribute
     public static final Set<String> QUERYABLE_FIELDS = Set.of(
-            "roles", // TODO: see ClientQueryTest, only a single predicate is currently correctly supported
-            "clientId", "enabled", "description", "displayName",
-            "protocol", "appUrl", "createdTimestamp", "updatedTimestamp",
-            "auth.method");
+            ATTR_ROLES, // TODO: see ClientQueryTest, only a single predicate is currently correctly supported
+            ATTR_CLIENT_ID, ATTR_ENABLED, ATTR_DESCRIPTION, ATTR_DISPLAY_NAME,
+            ATTR_PROTOCOL, ATTR_APP_URL, ATTR_CREATED_TIMESTAMP, ATTR_UPDATED_TIMESTAMP,
+            OIDCClientModelSchema.ATTR_AUTH_METHOD);
 
     private final Map<String, Attribute<ClientModel, R>> attributes;
 
+    /** Defaults for unset fields, in the form accepted by the attribute's representation setter. */
+    private final Map<String, Object> defaults;
+
     protected BaseClientModelSchema() {
         Map<String, Attribute<ClientModel, R>> map = new LinkedHashMap<>();
-        map.put("protocol",         stringAttr("protocol",         "protocol",              BaseClientRepresentation::setProtocol,       ClientModel::setProtocol));
-        map.put("uuid",             stringAttr("uuid",             "id",                    BaseClientRepresentation::setUuid,           null));  // read-only
-        map.put("clientId",         stringAttr("clientId",         "clientId",              BaseClientRepresentation::setClientId,       ClientModel::setClientId));
-        map.put("enabled",          boolAttr  ("enabled",          "enabled",               BaseClientRepresentation::setEnabled,        (model, v) -> model.setEnabled(Boolean.TRUE.equals(v))));
-        map.put("description",      stringAttr("description",      "description",           BaseClientRepresentation::setDescription,    ClientModel::setDescription));
-        map.put("displayName",      stringAttr("displayName",      "name",                  BaseClientRepresentation::setDisplayName,    ClientModel::setName));
-        map.put("appUrl",           stringAttr("appUrl",           "baseUrl",               BaseClientRepresentation::setAppUrl,         ClientModel::setBaseUrl));
-        map.put("redirectUris",     multivaluedStringAttr("redirectUris",    "redirectUris", BaseClientRepresentation::setRedirectUris, (BiConsumer<ClientModel, Set<String>>) (model, uris) -> model.setRedirectUris(uris != null ? new LinkedHashSet<>(uris) : null)));
-        map.put("roles",            multivaluedStringAttr("roles",           "roles",       BaseClientRepresentation::setRoles, null));
-        map.put("createdTimestamp", longAttr  ("createdTimestamp", "createdTimestamp",      BaseClientRepresentation::setCreatedTimestamp,  null));  // read-only
-        map.put("updatedTimestamp", longAttr  ("updatedTimestamp", "lastModifiedTimestamp", BaseClientRepresentation::setUpdatedTimestamp, null));  // read-only
+        map.put(ATTR_PROTOCOL,          stringAttr(ATTR_PROTOCOL,          "protocol",              BaseClientRepresentation::setProtocol,          ClientModel::setProtocol));
+        map.put(ATTR_UUID,              stringAttr(ATTR_UUID,              "id",                    BaseClientRepresentation::setUuid,              null));  // read-only
+        map.put(ATTR_CLIENT_ID,         stringAttr(ATTR_CLIENT_ID,         "clientId",              BaseClientRepresentation::setClientId,          ClientModel::setClientId));
+        map.put(ATTR_ENABLED,           boolAttr  (ATTR_ENABLED,           "enabled",               BaseClientRepresentation::setEnabled,           (model, v) -> model.setEnabled(Boolean.TRUE.equals(v))));
+        map.put(ATTR_DESCRIPTION,       stringAttr(ATTR_DESCRIPTION,       "description",           BaseClientRepresentation::setDescription,       ClientModel::setDescription));
+        map.put(ATTR_DISPLAY_NAME,      stringAttr(ATTR_DISPLAY_NAME,      "name",                  BaseClientRepresentation::setDisplayName,       ClientModel::setName));
+        map.put(ATTR_APP_URL,           stringAttr(ATTR_APP_URL,           "baseUrl",               BaseClientRepresentation::setAppUrl,            ClientModel::setBaseUrl));
+        map.put(ATTR_REDIRECT_URIS,     multivaluedStringAttr(ATTR_REDIRECT_URIS,    "redirectUris", BaseClientRepresentation::setRedirectUris, (BiConsumer<ClientModel, Set<String>>) (model, uris) -> model.setRedirectUris(uris != null ? new LinkedHashSet<>(uris) : null)));
+        map.put(ATTR_ROLES,             multivaluedStringAttr(ATTR_ROLES,            "roles",        BaseClientRepresentation::setRoles, null));
+        map.put(ATTR_CREATED_TIMESTAMP, longAttr  (ATTR_CREATED_TIMESTAMP, "createdTimestamp",      BaseClientRepresentation::setCreatedTimestamp,  null));  // read-only
+        map.put(ATTR_UPDATED_TIMESTAMP, longAttr  (ATTR_UPDATED_TIMESTAMP, "lastModifiedTimestamp", BaseClientRepresentation::setUpdatedTimestamp,  null));  // read-only
         addProtocolAttributes(map);
         this.attributes = Map.copyOf(map);
+        Map<String, Object> defaultValues = new LinkedHashMap<>();
+        defaultValues.put(ATTR_ENABLED, Boolean.valueOf(BaseClientRepresentation.DEFAULT_ENABLED));
+        addProtocolDefaults(defaultValues);
+        this.defaults = Map.copyOf(defaultValues);
     }
 
     /**
@@ -58,6 +77,15 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
      */
     protected void addProtocolAttributes(Map<String, Attribute<ClientModel, R>> map) {
         // default: no additional attributes
+    }
+
+    /**
+     * Hook for subclasses to register protocol-specific defaults, keyed by attribute name, before the map is sealed.
+     * Values are in the form accepted by the attribute's representation setter.
+     * The defaults should match the {@code @Schema(defaultValue)} documented on the representation.
+     */
+    protected void addProtocolDefaults(Map<String, Object> defaults) {
+        // default: no additional defaults
     }
 
     @SuppressWarnings("unchecked")
@@ -193,18 +221,18 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
      */
     protected Object getAttributeValue(ClientModel model, String name) {
         return switch (name) {
-            case "protocol"              -> model.getProtocol();
-            case "uuid"                  -> model.getId();
-            case "clientId"              -> model.getClientId();
-            case "enabled"               -> model.isEnabled();
-            case "description"           -> model.getDescription();
-            case "displayName"           -> model.getName();
-            case "appUrl"                -> model.getBaseUrl();
-            case "redirectUris"          -> new LinkedHashSet<>(model.getRedirectUris());
-            case "roles"                 -> model.getRolesStream().map(RoleModel::getName).collect(Collectors.toCollection(LinkedHashSet::new));
-            case "createdTimestamp"      -> model.getCreatedTimestamp();
-            case "updatedTimestamp"      -> model.getLastModifiedTimestamp();
-            default                      -> null;
+            case ATTR_PROTOCOL               -> model.getProtocol();
+            case ATTR_UUID                   -> model.getId();
+            case ATTR_CLIENT_ID              -> model.getClientId();
+            case ATTR_ENABLED                -> model.isEnabled();
+            case ATTR_DESCRIPTION            -> model.getDescription();
+            case ATTR_DISPLAY_NAME           -> model.getName();
+            case ATTR_APP_URL                -> model.getBaseUrl();
+            case ATTR_REDIRECT_URIS          -> new LinkedHashSet<>(model.getRedirectUris());
+            case ATTR_ROLES                  -> model.getRolesStream().map(RoleModel::getName).collect(Collectors.toCollection(LinkedHashSet::new));
+            case ATTR_CREATED_TIMESTAMP      -> model.getCreatedTimestamp();
+            case ATTR_UPDATED_TIMESTAMP      -> model.getLastModifiedTimestamp();
+            default                          -> null;
         };
     }
 
@@ -214,7 +242,7 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
     // TODO: should be tracked by Attribute.isImmutable
     public Set<String> getWritableFields() {
         return getAttributes().keySet().stream()
-                .filter(name -> !Set.of("uuid", "createdTimestamp", "updatedTimestamp").contains(name))
+                .filter(name -> !Set.of(ATTR_UUID, ATTR_CREATED_TIMESTAMP, ATTR_UPDATED_TIMESTAMP).contains(name))
                 .collect(Collectors.toUnmodifiableSet());
     }
 
@@ -242,18 +270,18 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
      */
     public Object getRepresentationValue(R rep, String name) {
         return switch (name) {
-            case "protocol"         -> rep.getProtocol();
-            case "uuid"             -> rep.getUuid();
-            case "clientId"         -> rep.getClientId();
-            case "enabled"          -> rep.getEnabled();
-            case "description"      -> rep.getDescription();
-            case "displayName"      -> rep.getDisplayName();
-            case "appUrl"           -> rep.getAppUrl();
-            case "redirectUris"     -> rep.getRedirectUris();
-            case "roles"            -> rep.getRoles();
-            case "createdTimestamp" -> rep.getCreatedTimestamp();
-            case "updatedTimestamp" -> rep.getUpdatedTimestamp();
-            default                 -> null;
+            case ATTR_PROTOCOL          -> rep.getProtocol();
+            case ATTR_UUID              -> rep.getUuid();
+            case ATTR_CLIENT_ID         -> rep.getClientId();
+            case ATTR_ENABLED           -> rep.getEnabled();
+            case ATTR_DESCRIPTION       -> rep.getDescription();
+            case ATTR_DISPLAY_NAME      -> rep.getDisplayName();
+            case ATTR_APP_URL           -> rep.getAppUrl();
+            case ATTR_REDIRECT_URIS     -> rep.getRedirectUris();
+            case ATTR_ROLES             -> rep.getRoles();
+            case ATTR_CREATED_TIMESTAMP -> rep.getCreatedTimestamp();
+            case ATTR_UPDATED_TIMESTAMP -> rep.getUpdatedTimestamp();
+            default                     -> null;
         };
     }
 
@@ -277,6 +305,22 @@ public abstract class BaseClientModelSchema<R extends BaseClientRepresentation>
             Object value = getRepresentationValue(representation, attribute.getName());
             attribute.setModelAttribute(model, value);
         }
+    }
+
+    /**
+     * Applies the schema defaults to the unset fields of the representation,
+     * prior to it being mapped to a model.
+     * Subclasses should call {@code super.applyDefaults} and may add defaults that are conditional.
+     *
+     * @param existing the current model, or null when the client is being created
+     * @param patch true if the representation is the current state merged with a patch
+     */
+    public void applyDefaults(R representation, ClientModel existing, boolean patch) {
+        defaults.forEach((name, value) -> {
+            if (getRepresentationValue(representation, name) == null) {
+                attributes.get(name).set(representation, value);
+            }
+        });
     }
 
     @Override

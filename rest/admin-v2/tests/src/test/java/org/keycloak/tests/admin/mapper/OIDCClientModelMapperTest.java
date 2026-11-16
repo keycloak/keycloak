@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.services.client.scim.OIDCClientModelSchema;
@@ -403,6 +404,8 @@ public class OIDCClientModelMapperTest {
         try {
             // Start as confidential client
             clientModel.setPublicClient(false);
+            clientModel.setClientAuthenticatorType("client-jwt");
+            clientModel.setSecret("stale-secret");
 
             OIDCClientRepresentation rep = new OIDCClientRepresentation();
             rep.setEnabled(true);
@@ -416,6 +419,8 @@ public class OIDCClientModelMapperTest {
             schema.populate(clientModel, rep);
 
             assertThat(clientModel.isPublicClient(), is(true));
+            assertThat(clientModel.getClientAuthenticatorType(), is(KeycloakModelUtils.getDefaultClientAuthenticatorType()));
+            assertThat(clientModel.getSecret(), nullValue());
         } finally {
             realm.removeClient(clientModel.getId());
         }
@@ -439,9 +444,12 @@ public class OIDCClientModelMapperTest {
             rep.setLoginFlows(Set.of());
 
             OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            // defaults are applied to the representation prior to mapping
+            schema.applyDefaults(rep, clientModel, false);
             schema.populate(clientModel, rep);
 
-            assertThat(clientModel.isEnabled(), is(false));
+            // null falls back to the default (true), matching v1
+            assertThat(clientModel.isEnabled(), is(true));
         } finally {
             realm.removeClient(clientModel.getId());
         }
