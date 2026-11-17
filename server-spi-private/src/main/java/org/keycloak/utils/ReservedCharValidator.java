@@ -68,9 +68,10 @@ public class ReservedCharValidator {
     }
     
     public static void validateRealmName(String realmName) {
-    validate(realmName, RESERVED_CHARS_PATTERN);
-    validate(realmName, RESERVED_REALM_NAME_CHARS_PATTERN);
-}
+        validate(realmName, RESERVED_CHARS_PATTERN);
+        validate(realmName, RESERVED_REALM_NAME_CHARS_PATTERN);
+    }
+
         public static void validateLocales(Iterable<String> strIterable) {
         if (strIterable == null) return;
 
