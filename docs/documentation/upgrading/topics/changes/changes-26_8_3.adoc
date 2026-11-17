@@ -4,6 +4,11 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== PAR metadata omitted when PAR is disabled
+
+When the `par` feature is disabled, OpenID Connect discovery now omits `pushed_authorization_request_endpoint` from both the top-level metadata and `mtls_endpoint_aliases`, and omits `require_pushed_authorization_requests`.
+Clients must tolerate these absent properties. Enable the `par` feature if clients require PAR.
+
 === Validation of client URI fields
 // https://github.com/keycloak/keycloak/issues/54046
 
