@@ -46,6 +46,7 @@ import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.utils.EmailValidationUtil;
 import org.keycloak.utils.SMTPUtil;
 
+import org.eclipse.angus.mail.smtp.SMTPTransport;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isNotBlank;
@@ -81,6 +82,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
         final boolean allowutf8 = isAllowUTF8(config);
         final String convertedAddress = checkUserAddress(address, allowutf8);
         final String from = checkFromAddress(config.get("from"), allowutf8);
+        final boolean requiresSmtpUtf8 = allowutf8 && (Boolean.parseBoolean(config.get(CONFIG_REQUIRE_SMTPUTF8_FOR_TEST)) || containsNonAscii(convertedAddress)
+                || containsNonAscii(from) || containsNonAscii(config.get("replyTo")) || containsNonAscii(config.get("envelopeFrom")));
 
         Session session = Session.getInstance(buildEmailProperties(config, from));
 
@@ -90,6 +93,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
             EmailAuthenticator selectedAuthenticator = selectAuthenticatorBasedOnConfig(config);
             selectedAuthenticator.connect(this.session, config, transport);
+
+            if (requiresSmtpUtf8 && !(transport instanceof SMTPTransport smtpTransport && smtpTransport.supportsExtension("SMTPUTF8"))) {
+                throw new EmailException("SMTP server does not advertise SMTPUTF8, which is required for this email");
+            }
 
             transport.sendMessage(message, new InternetAddress[]{new InternetAddress(convertedAddress)});
 
@@ -243,6 +250,10 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
     private static boolean isAllowUTF8(Map<String, String> config) {
         return "true".equals(config.get(CONFIG_ALLOW_UTF8));
+    }
+
+    private static boolean containsNonAscii(String value) {
+        return value != null && value.chars().anyMatch(c -> c > 127);
     }
 
     private static boolean isDebugEnabled(Map<String, String> config) {
