@@ -44,7 +44,6 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -95,7 +94,7 @@ public class OfflineTokenRefreshTest {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
-    @InjectTimeOffSet
+    @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
     @InjectAdminClientFactory
@@ -142,8 +141,6 @@ public class OfflineTokenRefreshTest {
                 .offlineSessionIdleTimeout(7200)
                 .clientOfflineSessionMaxLifespan(1000)
                 .clientOfflineSessionIdleTimeout(7200));
-        runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
-        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
 
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.poll();
@@ -202,8 +199,6 @@ public class OfflineTokenRefreshTest {
                 .offlineSessionIdleTimeout(7200)
                 .clientOfflineSessionMaxLifespan(5000)
                 .clientOfflineSessionIdleTimeout(7200));
-        runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
-        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
 
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.poll();
@@ -256,8 +251,6 @@ public class OfflineTokenRefreshTest {
         oauth.client("offline-client", "secret1");
         oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
 
-        runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
-        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
 
         realm.updateWithCleanup(r -> r
                 .offlineSessionMaxLifespanEnabled(true)
@@ -307,8 +300,6 @@ public class OfflineTokenRefreshTest {
         oauth.client("offline-client", "secret1");
         oauth.redirectUri(OFFLINE_CLIENT_APP_URI);
 
-        runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
-        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
 
         realm.updateWithCleanup(r -> r
                 .offlineSessionMaxLifespanEnabled(true)

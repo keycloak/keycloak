@@ -90,6 +90,10 @@ public void testExpiredSession() {
 Setting `timeOffSet.set(0)` mid-test to reset the clock before performing further assertions is fine since that is
 part of the test logic, not cleanup.
 
+If the test depends on the time offset being applied to the Infinispan caches, use `@InjectTimeOffSet(enableForCaches = true)`.
+This enables the testing time service when a positive offset is set and disables it again when the offset is reset.
+Do not call `InfinispanTimeUtil.enableTestingTimeService()` and `disableTestingTimeService()` manually.
+
 # Static utility classes
 
 Static utility classes can be hard to discover. In many cases it is better to write suppliers to

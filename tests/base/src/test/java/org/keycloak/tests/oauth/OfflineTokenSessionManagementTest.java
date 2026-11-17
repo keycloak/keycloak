@@ -37,7 +37,6 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -89,7 +88,7 @@ public class OfflineTokenSessionManagementTest {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
-    @InjectTimeOffSet
+    @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
     @InjectAdminClientFactory
@@ -290,9 +289,6 @@ public class OfflineTokenSessionManagementTest {
         // expect that offline session expired by idle timeout
         final int MAX_LIFESPAN = 360000;
         final int IDLE_LIFESPAN = 900;
-
-        runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
-        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
 
         realm.updateWithCleanup(r -> r
                 .ssoSessionIdleTimeout(900)
@@ -508,8 +504,6 @@ public class OfflineTokenSessionManagementTest {
 
 
     private void testOfflineSessionExpiration(int idleTime, int maxLifespan, int offsetHalf, int offset) {
-        runOnServer.run(InfinispanTimeUtil.enableTestingTimeService());
-        realm.cleanup().add(r -> runOnServer.run(InfinispanTimeUtil.disableTestingTimeService()));
 
         realm.updateWithCleanup(r -> r
                 .offlineSessionMaxLifespanEnabled(true)
