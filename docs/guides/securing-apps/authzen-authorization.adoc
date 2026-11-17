@@ -447,9 +447,16 @@ Content-Type: application/json
 
 == Context and Properties
 
-Both the `resource.properties` and the top-level `context` maps are merged into the evaluation context available to
-{project_name}'s authorization policies. This allows policies to make decisions based on additional attributes beyond
-the resource, scope, and subject identity.
+Both the `resource.properties` and the top-level `context` maps are available to {project_name}'s authorization
+policies under their original attribute names, except for reserved names. If both maps contain the same key,
+the original attribute uses the value from `context`.
+
+Policies can read each source separately using these paths:
+
+* `authzen.resource.properties.classification` reads a resource property.
+* `authzen.context.ip_address` reads a context attribute.
+
+The `authzen` attribute name is reserved for these policy paths.
 
 For example, a policy could use the request context to enforce time-based or location-based access:
 
