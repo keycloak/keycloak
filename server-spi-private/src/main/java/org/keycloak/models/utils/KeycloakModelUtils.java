@@ -23,6 +23,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
@@ -969,6 +970,33 @@ public final class KeycloakModelUtils {
         StringBuilder sb = new StringBuilder();
         buildGroupPath(sb, group.getName(), otherParentGroup, group.escapeSlashesInGroupPath(), getOrgId(group));
         return sb.toString();
+    }
+
+    /**
+     * Returns the ancestor chain of the given group, ordered from the top-level group down to the
+     * given group, i.e. the reverse of walking up {@link GroupModel#getParent()}.
+     * <p>
+     * For {@link GroupModel.Type#ORGANIZATION} groups, the hierarchy consists of the group itself:
+     * organization groups form a hierarchy rooted at the internal organization group and should not
+     * be expanded above it.
+     *
+     * @param group the group to start from
+     * @return the list of groups from the top-level ancestor to {@code group}, or an empty list if
+     *         {@code group} is {@code null}
+     */
+    public static List<GroupModel> getGroupHierarchy(GroupModel group) {
+        if (group == null) {
+            return Collections.emptyList();
+        }
+        if (group.getType() == GroupModel.Type.ORGANIZATION) {
+            return Collections.singletonList(group);
+        }
+        List<GroupModel> hierarchy = new ArrayList<>();
+        for (GroupModel current = group; current != null; current = current.getParent()) {
+            hierarchy.add(current);
+        }
+        Collections.reverse(hierarchy);
+        return hierarchy;
     }
 
     /**

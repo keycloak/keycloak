@@ -19,14 +19,18 @@ package org.keycloak.protocol.oidc.mappers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -52,6 +56,14 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         property1.setDefaultValue("true");
         property1.setHelpText("Include full path to group i.e. /top/level1/level2, false will just specify the group name. Make sure to enable this setting if your realm has a group hierarchy with duplicated group names.");
         configProperties.add(property1);
+
+        ProviderConfigProperty property2 = new ProviderConfigProperty();
+        property2.setName("include.parent.groups");
+        property2.setLabel("Include parent groups");
+        property2.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property2.setDefaultValue("false");
+        property2.setHelpText("Include all parent groups of each group the user is a member of, i.e. if the user is a member of /Users/Superusers, the claim also contains /Users. The list of groups is de-duplicated.");
+        configProperties.add(property2);
 
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, GroupMembershipMapper.class);
     }
@@ -87,6 +99,10 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         return "true".equals(mappingModel.getConfig().get("full.path"));
     }
 
+    public static boolean includeParentGroups(ProtocolMapperModel mappingModel) {
+        return "true".equals(mappingModel.getConfig().get("include.parent.groups"));
+    }
+
 
     /**
      * Adds the group membership information to the {@link IDToken#otherClaims}.
@@ -97,7 +113,17 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {
         Function<GroupModel, String> toGroupRepresentation = useFullPath(mappingModel) ?
                 ModelToRepresentation::buildGroupPath : GroupModel::getName;
-        List<String> membership = userSession.getUser().getGroupsStream().map(toGroupRepresentation).collect(Collectors.toList());
+        Stream<GroupModel> groups = userSession.getUser().getGroupsStream();
+
+        if (includeParentGroups(mappingModel)) {
+            // de-duplicate by group id, as the user may be a direct member of a group and of one
+            // of its ancestors, and group names are not unique across the hierarchy
+            Set<String> seen = new HashSet<>();
+            groups = groups
+                    .flatMap(group -> KeycloakModelUtils.getGroupHierarchy(group).stream())
+                    .filter(group -> seen.add(group.getId()));
+        }
+        List<String> membership = groups.map(toGroupRepresentation).collect(Collectors.toList());
 
         // force multivalued as the attribute is not defined for this mapper.
         // do this on a copy of the model so that the shared, cached mapper config is not mutated
