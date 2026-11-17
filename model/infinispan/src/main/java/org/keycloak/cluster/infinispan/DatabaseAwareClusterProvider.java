@@ -99,34 +99,18 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
     }
 
     @Override
-    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        delegate.notify(taskKey, event, ignoreSender, dcNotify);
-        if (dcNotify != DCNotify.LOCAL_DC_ONLY) {
-            persistToDatabase(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
-        }
-    }
-
-    @Override
     public void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
         delegate.notify(taskKey, event, ignoreSender);
-        persistToDatabase(taskKey, Collections.singleton(event), ignoreSender, DCNotify.ALL_DCS);
-    }
-
-    @Override
-    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
-        delegate.notify(taskKey, events, ignoreSender, dcNotify);
-        if (dcNotify != DCNotify.LOCAL_DC_ONLY) {
-            persistToDatabase(taskKey, events, ignoreSender, dcNotify);
-        }
+        persistToDatabase(taskKey, Collections.singleton(event), ignoreSender);
     }
 
     @Override
     public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
         delegate.notify(taskKey, events, ignoreSender);
-        persistToDatabase(taskKey, events, ignoreSender, DCNotify.ALL_DCS);
+        persistToDatabase(taskKey, events, ignoreSender);
     }
 
-    private void persistToDatabase(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+    private void persistToDatabase(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
         if (events == null || events.isEmpty() || nodeInfo.clusterName() == null) {
             return;
         }
@@ -134,8 +118,7 @@ public class DatabaseAwareClusterProvider implements ClusterProvider {
         var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events,
                 // append the cluster name to the node name to avoid situations where the same node name exists in both clusters
                 nodeInfo.nodeName() + "@" + nodeInfo.clusterName(),
-                nodeInfo.siteName(),
-                dcNotify, ignoreSender);
+                ignoreSender);
         byte[] data;
         try {
             data = marshaller.objectToByteBuffer(wrappedEvent);

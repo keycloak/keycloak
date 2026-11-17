@@ -18,13 +18,9 @@
 package org.keycloak.models.sessions.infinispan;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
@@ -32,12 +28,9 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangesUtils;
-import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
-import org.keycloak.models.sessions.infinispan.entities.AuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.events.AbstractAuthSessionClusterListener;
 import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
@@ -71,8 +64,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     public static final String AUTH_SESSIONS_LIMIT = "authSessionsLimit";
 
     public static final int DEFAULT_AUTH_SESSIONS_LIMIT = 300;
-
-    public static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
 
     public static final String REALM_REMOVED_AUTHSESSION_EVENT = "REALM_REMOVED_EVENT_AUTHSESSIONS";
 
@@ -126,7 +117,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
             }
 
         });
-        cluster.registerListener(AUTHENTICATION_SESSION_EVENTS, this::updateAuthNotes);
 
         log.debug("Registered cluster listeners");
     }
@@ -139,48 +129,6 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
         return Set.of(InfinispanConnectionProvider.class, InfinispanTransactionProvider.class);
-    }
-
-    private void updateAuthNotes(ClusterEvent clEvent) {
-        if (! (clEvent instanceof AuthenticationSessionAuthNoteUpdateEvent event)) {
-            return;
-        }
-
-        var distribution = cacheHolder.cache().getAdvancedCache().getDistributionManager();
-        if (distribution != null && !distribution.getCacheTopology().getDistribution(event.getAuthSessionId()).isPrimary()) {
-            // Distribution is null for non-clustered caches (local-cache, used by start-dev mode).
-            // If not the primary owner of the key, skip event handling.
-            return;
-        }
-
-        SessionEntityWrapper<RootAuthenticationSessionEntity> authSession = cacheHolder.cache().get(event.getAuthSessionId());
-        updateAuthSession(authSession, event.getTabId(), event.getAuthNotesFragment());
-    }
-
-    private void updateAuthSession(SessionEntityWrapper<RootAuthenticationSessionEntity> rootAuthSessionWrapper, String tabId, Map<String, String> authNotesFragment) {
-        if (rootAuthSessionWrapper == null || rootAuthSessionWrapper.getEntity() == null) {
-            return;
-        }
-
-        RootAuthenticationSessionEntity rootAuthSession = rootAuthSessionWrapper.getEntity();
-        AuthenticationSessionEntity authSession = rootAuthSession.getAuthenticationSessions().get(tabId);
-
-        if (authSession != null) {
-            if (authSession.getAuthNotes() == null) {
-                authSession.setAuthNotes(new ConcurrentHashMap<>());
-            }
-
-            for (Entry<String, String> me : authNotesFragment.entrySet()) {
-                String value = me.getValue();
-                if (value == null) {
-                    authSession.getAuthNotes().remove(me.getKey());
-                } else {
-                    authSession.getAuthNotes().put(me.getKey(), value);
-                }
-            }
-        }
-
-        cacheHolder.cache().replace(rootAuthSession.getId(), new SessionEntityWrapper<>(rootAuthSessionWrapper.getLocalMetadata(), rootAuthSession));
     }
 
     @Override
