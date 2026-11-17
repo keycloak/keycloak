@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
@@ -105,8 +106,9 @@ public class AmrProtocolMapper extends AbstractOIDCProtocolMapper implements OID
      */
     protected List<String> getAmr(AuthenticatedClientSessionModel clientSession, RealmModel realmModel) {
         Map<String, Integer> executions = AuthenticatorUtils.parseCompletedExecutions(clientSession.getUserSession().getNote(Constants.AUTHENTICATORS_COMPLETED));
-        logger.debugf("found the following completed authentication executions: %s", executions.toString());
-        List<String> refs = AmrUtils.getAuthenticationExecutionReferences(executions, realmModel);
+        Set<String> currentAuthenticationExecutions = AuthenticatorUtils.parseExecutionIds(clientSession.getNote(Constants.AMR_CURRENT_AUTHENTICATION_EXECUTIONS));
+        logger.debugf("found the following completed authentication executions: %s, of which completed by the authentication attached to the client session: %s", executions, currentAuthenticationExecutions);
+        List<String> refs = AmrUtils.getAuthenticationExecutionReferences(executions, currentAuthenticationExecutions, realmModel);
         logger.debugf("amr %s set in token", refs);
         return refs;
     }
