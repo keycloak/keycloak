@@ -21,7 +21,7 @@ test.describe.serial("Realm role client lookup", () => {
   let clientObjectId: string;
 
   test.beforeAll(async () => {
-    await adminClient.createRealm(realmName);
+    await adminClient.createRealm(realmName, { enabled: true });
     await adminClient.createRealmRole({
       realm: realmName,
       name: roleName,
@@ -33,7 +33,11 @@ test.describe.serial("Realm role client lookup", () => {
       realm: realmName,
       username: restrictedUser.username,
       enabled: true,
+      emailVerified: true,
       credentials: [{ type: "password", value: restrictedUser.password }],
+      firstName: "Role",
+      lastName: "Manager",
+      email: "role-manager@keycloak.org",
     });
     await adminClient.addClientRoleToUser(
       id!,
