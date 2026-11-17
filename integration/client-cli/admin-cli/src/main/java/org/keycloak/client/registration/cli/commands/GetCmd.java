@@ -126,9 +126,6 @@ public class GetCmd extends AbstractAuthOptionsCmd {
                     });
                     break;
                 }
-                case SAML2: {
-                    break;
-                }
                 default: {
                     throw new RuntimeException("Unexpected type: " + regType);
                 }

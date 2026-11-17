@@ -17,4 +17,3 @@
 
 org.keycloak.services.clientregistration.DefaultClientRegistrationProviderFactory
 org.keycloak.services.clientregistration.oidc.OIDCClientRegistrationProviderFactory
-org.keycloak.protocol.saml.clientregistration.EntityDescriptorClientRegistrationProviderFactory
