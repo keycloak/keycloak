@@ -17,13 +17,13 @@
 
 package org.keycloak.quarkus.runtime.services.metrics;
 
+import jakarta.inject.Singleton;
+
 import org.keycloak.common.Version;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
-
-import jakarta.inject.Singleton;
 
 /**
  * Exposes the Keycloak version as an info-style constant gauge on the metrics endpoint, following the Prometheus
