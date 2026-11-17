@@ -174,7 +174,7 @@ export const DeviceActivity = () => {
                       )}
                     </GridItem>
                     <GridItem
-                      className="pf-v6-u-text-align-right"
+                      className="pf-v6-u-text-align-end"
                       sm={3}
                       md={2}
                       span={1}
