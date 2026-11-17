@@ -1138,7 +1138,11 @@ public class AuthenticationProcessor {
 
     // May create userSession too
     public ClientSessionContext attachSession() {
-        ClientSessionContext clientSessionCtx = attachSession(authenticationSession, userSession, session, realm, connection, event);
+        return attachSession(true);
+    }
+
+    public ClientSessionContext attachSession(boolean isCookie) {
+        ClientSessionContext clientSessionCtx = attachSession(authenticationSession, userSession, session, realm, connection, event, isCookie);
 
         if (userSession == null) {
             userSession = clientSessionCtx.getClientSession().getUserSession();
@@ -1149,6 +1153,10 @@ public class AuthenticationProcessor {
 
     // May create new userSession too (if userSession argument is null)
     public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event) {
+        return attachSession(authSession, userSession, session, realm, connection, event, true);
+    }
+
+    public static ClientSessionContext attachSession(AuthenticationSessionModel authSession, UserSessionModel userSession, KeycloakSession session, RealmModel realm, ClientConnection connection, EventBuilder event, boolean isCookie) {
         UserModel authenticatedUser = authSession.getAuthenticatedUser();
 
         if (authenticatedUser == null) {
@@ -1166,7 +1174,20 @@ public class AuthenticationProcessor {
 
         if (userSession == null) { // if no authenticator attached a usersession
 
-            userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
+            // check if user session can be retrieved using cookie
+            if (isCookie) {
+                AuthenticationManager.AuthResult result = AuthenticationManager.authenticateIdentityCookie(session, realm, true);
+                if (result != null) {
+                    userSession = result.session();
+                } else {
+                    userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
+                }
+                if (userSession != null && userSession.getState() != UserSessionModel.State.LOGGED_IN) {
+                    event.error(Errors.SESSION_EXPIRED);
+                    throw new ErrorPageException(session, authSession, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+                }
+            }
+
             if (userSession == null) {
                 // an attempt to re-authenticate but attaching a user session that does not exist
                 if (isSSOAuthentication(authSession)) {
