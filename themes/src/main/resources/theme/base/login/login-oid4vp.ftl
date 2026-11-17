@@ -10,8 +10,8 @@
                  data-oid4vp-wallet-url="${crossDeviceWalletUrl!''}">
                 <@qr.qrCode id="oid4vp-qr-code" content=crossDeviceQrCode alt=msg("oid4vpQrCodeAlt") title=msg("oid4vpScanQrCodeTitle") label=msg("oid4vpScanQrCode") />
             </div>
-            <div id="oid4vp-qr-expired" class="${properties.kcFormGroupClass!}" style="text-align: center" role="status" aria-live="polite" hidden>
-                ${msg("oid4vpQrExpired")} <a id="oid4vp-restart-login" href="${url.loginRestartFlowUrl}">${msg("doClickHere")}</a> .
+            <div id="oid4vp-qr-expired" style="text-align: center" role="status" aria-live="polite" hidden>
+                ${msg("oid4vpQrExpired")} <span class="${properties.kcTextNoWrapClass!}"><a id="oid4vp-restart-login" href="${url.loginRestartFlowUrl}">${msg("doClickHere")}</a>.</span>
             </div>
             <script type="module">
                 <#outputformat "JavaScript">

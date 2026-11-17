@@ -4,6 +4,29 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Client scope policy checks legacy client templates
+// https://github.com/keycloak/keycloak/issues/54456
+
+The *Allowed Client Scopes* client registration policy now checks scopes requested through the deprecated `clientTemplate` field using the same allowlist as `defaultClientScopes` and `optionalClientScopes`.
+Legacy template names are checked after converting spaces to underscores, matching the scope name used during client creation.
+Requests for a disallowed scope are rejected with HTTP `403 Forbidden`.
+
+Existing client scope assignments are not removed by this change.
+Administrators should review dynamically registered clients for unintended scope assignments and remove them through the Admin Console or Admin REST API.
+All nodes handling client registration requests must be upgraded for the check to apply consistently.
+
+=== Redirect URI loopback exceptions require literal IP addresses
+// https://github.com/keycloak/keycloak/issues/54413
+
+The *Allow IPv4 loopback address* and *Allow IPv6 loopback address* options of the *Secure Redirect URIs Enforcer* client policy executor now apply only to literal IP addresses.
+Hostnames, including `localhost`, are evaluated using the ordinary scheme and permitted-domain rules, regardless of the addresses they resolve to.
+The executor continues to reject `localhost` when *OAuth 2.1 Compliant* is enabled.
+
+The executor also validates the effective redirect URI during authorization, so previously registered callbacks can now be rejected.
+When a redirect URI is rejected, {project_name} displays an error page instead of redirecting to that URI.
+Review affected client configurations and use literal loopback addresses where appropriate, or ensure that legitimate hostnames satisfy the configured scheme and permitted-domain rules.
+Existing registrations are not automatically rewritten or removed.
+
 === Client registration policies restrict default roles and full scope (CVE-2026-109081)
 // https://github.com/keycloak/keycloak/issues/54702
 
@@ -421,6 +444,21 @@ Identity provider auto-linking now blocks the link when the IdP email is not ver
 This prevents an attacker who controls a brokered account with an unverified email from being automatically linked to a victim's existing consumer account.
 
 If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.
+
+=== SAML identity provider signature validation defaults to enabled
+
+When signature settings are absent from a SAML identity provider's configuration, {project_name} now treats them as enabled.
+This applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`).
+Assertions are also verified when *Want Assertions Signed* is enabled and *Validate Signature* is explicitly disabled, which requires a trusted signing key.
+
+After upgrading, logins may fail for providers that send unsigned assertions, or whose signatures {project_name} cannot verify.
+Configure the provider to sign its assertions and configure the corresponding signing certificates in {project_name}, either in *Validating X509 Certificates* or through *Use metadata descriptor URL*.
+
+If unsigned responses are required for compatibility, explicitly disable the relevant setting.
+Disable *Want Assertions Signed* if the provider does not sign assertions; if signatures are not to be verified, also disable *Validate Signature*.
+Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remain respected.
+
+Disabling signature validation reduces protection against forged identity-provider responses.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes

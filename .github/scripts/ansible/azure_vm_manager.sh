@@ -14,7 +14,7 @@ fi
 SSH_KEY="$CLUSTER"_"$REGION"
 ADMIN_USER="azureuser"
 VM_SIZE="Standard_D2s_v5"
-IMAGE="Ubuntu2404"
+IMAGE="Canonical:ubuntu-26_04-lts:server:latest"
 
 if [[ "$ACTION" == "create" ]]; then
   # 1. Resource group
@@ -34,6 +34,9 @@ if [[ "$ACTION" == "create" ]]; then
     --name "$CLUSTER-vm" \
     --image "$IMAGE" \
     --size "$VM_SIZE" \
+    --security-type TrustedLaunch \
+    --enable-secure-boot true \
+    --enable-vtpm true \
     --admin-username "$ADMIN_USER" \
     --ssh-key-values "${SSH_KEY}.pub" \
     --authentication-type ssh \

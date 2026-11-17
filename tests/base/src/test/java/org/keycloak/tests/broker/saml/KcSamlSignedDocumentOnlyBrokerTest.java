@@ -1,14 +1,10 @@
 package org.keycloak.tests.broker.saml;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
-import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.tests.broker.AbstractKcSamlBrokerTest;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -42,13 +38,5 @@ public class KcSamlSignedDocumentOnlyBrokerTest extends AbstractKcSamlBrokerTest
         // Sign the AuthnRequests sent to the provider so it can validate them.
         idp.getConfig().put(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true");
         consumerRealm.admin().identityProviders().get(getIdpAlias()).update(idp);
-    }
-
-    private static String activeRs256SigCert(ManagedRealm realm) {
-        return realm.admin().keys().getKeyMetadata().getKeys().stream()
-                .filter(k -> k.getCertificate() != null && KeyUse.SIG.equals(k.getUse())
-                        && Algorithm.RS256.equals(k.getAlgorithm()))
-                .map(KeyMetadataRepresentation::getCertificate)
-                .findFirst().orElseThrow();
     }
 }

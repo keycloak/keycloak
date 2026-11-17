@@ -7,7 +7,6 @@ import java.util.function.Consumer;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
@@ -190,7 +189,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals("first", loginTotpPage.getSelectedOtpCredential());
 
         // Select "second" factor (which is unnamed as it doesn't have userLabel) but try to connect with the OTP code from the "first" one
-        loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
+        loginTotpPage.selectOtpCredential("Default");
         loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
         Assertions.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
 
@@ -200,9 +199,31 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(INVALID_AUTH_CODE, oneTimeCodePage.getInputError());
 
         // Select "second" factor and try to connect with its OTP code
-        loginTotpPage.selectOtpCredential(OTPFormAuthenticator.UNNAMED);
+        loginTotpPage.selectOtpCredential("Default");
         loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP2_SECRET));
         Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
+    }
+
+    @Test
+    public void testOtpCredentialLabelIsNotLocalized() {
+        String username = "user-with-two-configured-otp";
+        String userLabel = "${defaultOtpAuth}";
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        String credentialId = user.credentials().stream()
+                .filter(credential -> "first".equals(credential.getUserLabel()))
+                .findFirst().orElseThrow().getId();
+
+        try {
+            user.setCredentialUserLabel(credentialId, userLabel);
+            provideUsernamePassword(username);
+            loginTotpPage.assertCurrent();
+            Assertions.assertEquals(Arrays.asList(userLabel, "Default"), loginTotpPage.getAvailableOtpCredentials());
+            loginTotpPage.selectOtpCredential(userLabel);
+            loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+        } finally {
+            user.setCredentialUserLabel(credentialId, "first");
+        }
     }
 
     private void testCredentialsOrder(String username, List<String> orderedCredentials) {
@@ -227,7 +248,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         int idxFirst = 0; // Credentials order is: first, password, second
 
         // Priority tells: first then second
-        testCredentialsOrder(username, Arrays.asList("first", OTPFormAuthenticator.UNNAMED));
+        testCredentialsOrder(username, Arrays.asList("first", "Default"));
 
         try {
             // Move first credential in last position
@@ -239,7 +260,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             changePasswords(username);
 
             // Priority tells: second then first
-            testCredentialsOrder(username, Arrays.asList(OTPFormAuthenticator.UNNAMED, "first"));
+            testCredentialsOrder(username, Arrays.asList("Default", "first"));
         } finally {
             // Restore default testrealm.json
             testRealmReps = null;

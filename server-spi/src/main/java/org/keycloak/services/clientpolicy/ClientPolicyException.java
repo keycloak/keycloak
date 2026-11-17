@@ -17,6 +17,9 @@
 
 package org.keycloak.services.clientpolicy;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -30,6 +33,7 @@ public class ClientPolicyException extends Exception {
     private String error = OAuthErrorException.INVALID_REQUEST;
     private String errorDetail ="NA";
     private Status errorStatus = Response.Status.BAD_REQUEST;
+    private final Map<String, Object> details = new HashMap<>();
 
     public ClientPolicyException(String error) {
         super(error);
@@ -84,6 +88,10 @@ public class ClientPolicyException extends Exception {
 
     public void setErrorStatus(Status errorStatus) {
         this.errorStatus = errorStatus;
+    }
+
+    public Map<String, Object> getDetails() {
+        return details;
     }
 
     /**
