@@ -301,7 +301,11 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
                 }
             }
 
-            page.submitButton.submit();
+            // A rejected submit re-renders the same page, so wait until the submitted document is replaced and the
+            // new one has loaded; otherwise a following assertion or submit might act on the old or a partial page.
+            WebElement submittedButton = page.driver.findElement(By.cssSelector("[type=\"submit\"]"));
+            submittedButton.submit();
+            page.driver.waiting().waitUntilStale(submittedButton).waitForDocumentComplete();
         }
     }
 
