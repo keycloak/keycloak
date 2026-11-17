@@ -41,6 +41,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -103,7 +104,7 @@ public class OrganizationInvitationTokenTest extends AbstractOrganizationTest {
         registerPage.assertCurrent();
         registerPage.register("Invited", "User", INVITEE_EMAIL, "invitee", "password");
 
-        assertEquals(1L, organization.members().count());
+        awaitMemberCount(organization, 1L);
         assertTrue(organization.invitations().list().isEmpty());
         assertInvitationConsumed(link);
     }
@@ -128,6 +129,15 @@ public class OrganizationInvitationTokenTest extends AbstractOrganizationTest {
         assertThat(errorPage.getError(), containsString("The link you clicked is no longer valid"));
         assertTrue(realm.admin().users().searchByEmail(INVITEE_EMAIL, true).isEmpty());
         assertEquals(0L, organization.members().count());
+    }
+
+    // The submit returns before the server has processed the request, so wait for the membership instead of reading it once
+    private void awaitMemberCount(OrganizationResource organization, long expected) {
+        try {
+            driver.waiting().until(d -> organization.members().count() == expected);
+        } catch (TimeoutException e) {
+            assertEquals(expected, organization.members().count());
+        }
     }
 
     private void assertInvitationConsumed(String link) {
