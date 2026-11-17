@@ -539,6 +539,7 @@ public class IdentityProviderResource {
         }
 
         permissions.idps().setPermissionsEnabled(identityProviderModel, ref.isEnabled());
+        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(ref).success();
         if (ref.isEnabled()) {
             return toMgmtRef(identityProviderModel, permissions);
         } else {

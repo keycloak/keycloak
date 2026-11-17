@@ -788,6 +788,7 @@ public class ClientResource {
         auth.clients().requireManage(client);
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.clients().setPermissionsEnabled(client, ref.isEnabled());
+        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(ref).success();
         if (ref.isEnabled()) {
             return toMgmtRef(client, permissions);
         } else {

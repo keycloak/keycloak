@@ -638,6 +638,7 @@ public class RealmAdminResource {
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.users().setPermissionsEnabled(ref.isEnabled());
+        adminEvent.operation(OperationType.UPDATE).resource(ResourceType.USER).resourcePath(session.getContext().getUri()).representation(ref).success();
         if (ref.isEnabled()) {
             return toUsersMgmtRef(permissions);
         } else {
