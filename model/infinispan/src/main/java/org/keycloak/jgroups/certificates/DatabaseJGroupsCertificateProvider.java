@@ -28,6 +28,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.KeyManager;
@@ -64,6 +67,12 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     private final ReloadingX509ExtendedKeyManager keyManager;
     private final ReloadingX509ExtendedTrustManager trustManager;
     private final Lock lock = new ReentrantLock();
+    // Keeps the handshake thread free. A request is dropped when a reload is already running (debounce).
+    private final ThreadPoolExecutor reloadExecutor = new ThreadPoolExecutor(0, 1, 10, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
+        var thread = new Thread(r, "jgroups-certificate-reload");
+        thread.setDaemon(true);
+        return thread;
+    }, new ThreadPoolExecutor.DiscardPolicy());
     // not final to be updated for testing
     private volatile Duration rotationPeriod;
     private final KeySpec keySpec;
@@ -89,6 +98,7 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         var cert = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, this::loadOrCreateCertificate), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
         useCertificate(cert);
         trustManager.setExceptionHandler(this::onTrustManagerException);
+        trustManager.setAcceptedIssuersHandler(this::reloadAsync);
     }
 
     @Override
@@ -143,10 +153,28 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         doReload();
     }
 
+    // A peer that rejects the certificate of this node aborts the handshake before the trust manager sees its certificate.
+    // Each incoming handshake therefore triggers a reload, so a node that still uses an outdated certificate picks up the new one.
+    private void reloadAsync() {
+        reloadExecutor.execute(() -> {
+            try {
+                doReload();
+            } catch (RuntimeException e) {
+                logger.warn("Failed to reload the JGroups certificate", e);
+            }
+        });
+    }
+
     private void doReload() {
-        KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, DatabaseJGroupsCertificateProvider::loadCertificateFromDatabase)
-                .map(JGroupsCertificate::fromJson)
-                .ifPresent(this::useCertificate);
+        // Read and apply under one lock, so a delayed reload cannot reinstall a certificate that a newer reload has superseded.
+        lock.lock();
+        try {
+            KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, DatabaseJGroupsCertificateProvider::loadCertificateFromDatabase)
+                    .map(JGroupsCertificate::fromJson)
+                    .ifPresent(this::useCertificate);
+        } finally {
+            lock.unlock();
+        }
     }
 
     private Duration delayUntilNextRotation(Instant certificateStartInstant, Instant certificateEndInstant) {
