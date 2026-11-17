@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -29,6 +30,17 @@ public class DatabaseIndexCheckerTest {
     private static final String INDEX_NAME = "IDX_OFFLINE_USS_BY_BROKER_SESSION_ID";
     private static final String TABLE_NAME = "OFFLINE_USER_SESSION";
     private static final String TEMP_INDEX_NAME = "IDX_USS_BROKER_SESSION_TMP";
+    private static final String OTHER_TABLE_NAME = "OFFLINE_CLIENT_SESSION";
+    // a table of the fully migrated schema without any expected index: the per-table scan of
+    // the checker never visits it, so it stands in for the tables outside the check
+    private static final String UNCHECKED_TABLE_NAME = "SERVER_CONFIG";
+    private static final String UNCHECKED_TABLE_COLUMN = "SERVER_CONFIG_KEY";
+    // a schema other than the one the checked tables live in: an index with the same name
+    // there must not be reported as a conflict, because index names are unique per schema
+    // and an occupant in another schema does not block the creation
+    private static final String OTHER_SCHEMA_NAME = "KC_INDEX_CHECKER_OTHER";
+    private static final String OTHER_SCHEMA_TABLE = "OTHER_SCHEMA_TABLE";
+    private static final String OTHER_SCHEMA_COLUMN = "OTHER_COL";
 
     @TestOnServer
     public void testDetectsMissingIndexWithCorrectSql(KeycloakSession session) {
@@ -126,6 +138,356 @@ public class DatabaseIndexCheckerTest {
         }
     }
 
+    @TestOnServer
+    public void testDetectsSameNamedIndexWithWrongColumns(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var schema = factory.getSchema();
+
+        // MySQL and MariaDB declare this index with a computed column, so the checker
+        // falls back to comparing the index name alone there and this scenario is a no-op.
+        var dbProduct = getDatabaseProduct(factory);
+        if (dbProduct.contains("mysql") || dbProduct.contains("mariadb")) {
+            return;
+        }
+
+        assertThat(checker(factory, session, schema).getMissingIndexesName(), is(empty()));
+
+        // Issue #53818: an index with the expected name but a wrong column list is
+        // silently accepted - the checker matched by name only. Rename the real index
+        // away and occupy the name with the pre-26.8.0 single-column list instead.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndex(factory, TABLE_NAME, INDEX_NAME, "BROKER_SESSION_ID");
+
+            var missing = checker(factory, session, schema).getMissingIndexesName();
+            assertThat(missing, hasItem(INDEX_NAME));
+
+            // restore the expected column list under the same name
+            dropIndex(factory, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                dropIndex(factory, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getMissingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testDetectsSameNamedIndexOnDifferentTable(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var schema = factory.getSchema();
+
+        assertThat(checker(factory, session, schema).getMissingIndexesName(), is(empty()));
+
+        // Variant from the issue: index names are unique per schema on PostgreSQL and
+        // Oracle and per table on MySQL, MariaDB and MSSQL, so an index with the same
+        // name may exist on a different table and must not satisfy the expectation for
+        // this one.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndex(factory, OTHER_TABLE_NAME, INDEX_NAME, "CLIENT_ID");
+
+            var missing = checker(factory, session, schema).getMissingIndexesName();
+            assertThat(missing, hasItem(INDEX_NAME));
+
+            dropIndex(factory, OTHER_TABLE_NAME, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                dropIndex(factory, OTHER_TABLE_NAME, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getMissingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testReportsConflictingIndexWithWrongColumnsInsteadOfUnusableSql(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var schema = factory.getSchema();
+
+        // MySQL and MariaDB declare this index with a computed column, so the checker
+        // falls back to comparing the index name alone there and no conflict is detected.
+        var dbProduct = getDatabaseProduct(factory);
+        if (dbProduct.contains("mysql") || dbProduct.contains("mariadb")) {
+            return;
+        }
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+
+        // An index with the expected name but a wrong column list occupies the name, so
+        // creating the expected index is guaranteed to fail: the conflict must be reported
+        // instead of handing out the unusable CREATE INDEX statement.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndex(factory, TABLE_NAME, INDEX_NAME, "BROKER_SESSION_ID");
+
+            var detect = checker(factory, session, schema);
+            assertThat(detect.getMissingIndexesName(), hasItem(INDEX_NAME));
+            assertThat(detect.getConflictingIndexesName(), hasItem(INDEX_NAME));
+            assertThat(detect.getMissingIndexesSql(), not(hasKey(INDEX_NAME)));
+
+            // the automatic path skips the doomed create as well: the conflicting index stays
+            // in place and is still reported afterwards
+            var autoCreate = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, true, 0);
+            autoCreate.run();
+
+            assertThat(checker(factory, session, schema).getMissingIndexesName(), hasItem(INDEX_NAME));
+            assertThat(checker(factory, session, schema).getConflictingIndexesName(), hasItem(INDEX_NAME));
+
+            dropIndex(factory, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                dropIndex(factory, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testReportsConflictOnlyWhereIndexNamesAreSchemaUnique(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var schema = factory.getSchema();
+        var dbProduct = getDatabaseProduct(factory);
+        // index names are unique per schema here (the same holds for PostgreSQL, Oracle and H2),
+        // while MySQL, MariaDB and MSSQL scope them per table
+        boolean schemaUniqueNames = !(dbProduct.contains("mysql") || dbProduct.contains("mariadb") || dbProduct.contains("microsoft"));
+
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndex(factory, OTHER_TABLE_NAME, INDEX_NAME, "CLIENT_ID");
+
+            var detect = checker(factory, session, schema);
+            assertThat(detect.getMissingIndexesName(), hasItem(INDEX_NAME));
+            if (schemaUniqueNames) {
+                // the name is blocked, so the expected index cannot be created until the
+                // existing one is renamed or dropped
+                assertThat(detect.getConflictingIndexesName(), hasItem(INDEX_NAME));
+                assertThat(detect.getMissingIndexesSql(), not(hasKey(INDEX_NAME)));
+            } else {
+                // the same-named index on another table does not block creating the
+                // expected index on its own table
+                assertThat(detect.getConflictingIndexesName(), is(empty()));
+                assertThat(detect.getMissingIndexesSql(), hasKey(INDEX_NAME));
+            }
+
+            dropIndex(factory, OTHER_TABLE_NAME, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                dropIndex(factory, OTHER_TABLE_NAME, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testReportsConflictForSameNamedIndexOnTableWithoutExpectedIndexes(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var schema = factory.getSchema();
+        var dbProduct = getDatabaseProduct(factory);
+        // index names are unique per schema here (the same holds for PostgreSQL and Oracle),
+        // while MySQL, MariaDB and MSSQL scope them per table
+        boolean schemaUniqueNames = !(dbProduct.contains("mysql") || dbProduct.contains("mariadb") || dbProduct.contains("microsoft"));
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+
+        // Variant of the conflict where the same-named index sits on a table that has no
+        // expected index of its own, so the per-table scan never visits it: on the databases
+        // with schema-unique index names it still occupies the name, so the expected index
+        // must be reported as conflicting, not as creatable.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndex(factory, UNCHECKED_TABLE_NAME, INDEX_NAME, UNCHECKED_TABLE_COLUMN);
+
+            var detect = checker(factory, session, schema);
+            assertThat(detect.getMissingIndexesName(), hasItem(INDEX_NAME));
+            if (schemaUniqueNames) {
+                // the name is blocked by a table outside the check, so the expected index
+                // cannot be created until the existing one is renamed or dropped
+                assertThat(detect.getConflictingIndexesName(), hasItem(INDEX_NAME));
+                assertThat(detect.getMissingIndexesSql(), not(hasKey(INDEX_NAME)));
+            } else {
+                // index names are scoped per table, so the same-named index on the unchecked
+                // table does not block creating the expected index on its own table
+                assertThat(detect.getConflictingIndexesName(), is(empty()));
+                assertThat(detect.getMissingIndexesSql(), hasKey(INDEX_NAME));
+            }
+
+            dropIndex(factory, UNCHECKED_TABLE_NAME, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                dropIndex(factory, UNCHECKED_TABLE_NAME, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testIgnoresIndexNameOccupantInOtherSchema(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        // the occupant lookup queries the JDBC metadata on H2 (and DB2, which is not part
+        // of the test matrix): PostgreSQL and Oracle take a vendor-specific branch and the
+        // MySQL family does not run the lookup at all, so there is nothing to pin there
+        if (!getDatabaseProduct(factory).contains("h2")) {
+            return;
+        }
+        var schema = factory.getSchema();
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+
+        // Same-named index in a schema other than the one of the checked tables: the lookup
+        // must stay in the schema of the checked tables, because the JDBC metadata calls
+        // treat a null schema pattern as no restriction and would report the foreign index
+        // as a conflict even though index names are unique per schema here.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndexInOtherSchema(factory, OTHER_SCHEMA_NAME, OTHER_SCHEMA_TABLE, new String[]{OTHER_SCHEMA_COLUMN}, INDEX_NAME);
+
+            var detect = checker(factory, session, schema);
+            assertThat(detect.getMissingIndexesName(), hasItem(INDEX_NAME));
+            // the name is free in the schema of the checked tables, so the expected index
+            // remains creatable and is not reported as conflicting
+            assertThat(detect.getConflictingIndexesName(), is(empty()));
+            assertThat(detect.getMissingIndexesSql(), hasKey(INDEX_NAME));
+
+            teardownOtherSchema(factory, OTHER_SCHEMA_NAME, OTHER_SCHEMA_TABLE, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                teardownOtherSchema(factory, OTHER_SCHEMA_NAME, OTHER_SCHEMA_TABLE, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getConflictingIndexesName(), is(empty()));
+    }
+
+    @TestOnServer
+    public void testDoesNotCountIndexOnSameNamedTableInOtherSchemaAsPresent(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        // the JDBC metadata treats a null schema pattern as no restriction, so on drivers
+        // that report the schema or catalog of the row the scan must not count an index of
+        // an identically named table in another schema towards the checked table
+        if (!getDatabaseProduct(factory).contains("h2")) {
+            return;
+        }
+        var schema = factory.getSchema();
+
+        assertThat(checker(factory, session, schema).getMissingIndexesName(), is(empty()));
+
+        // Rename the expected index away, so it is missing from the checked table, and
+        // create an identically named index with the expected columns on an identically
+        // named table in another schema: the primary scan must not report it as present.
+        renameIndex(factory, INDEX_NAME, TEMP_INDEX_NAME);
+        boolean restored = false;
+
+        try {
+            createIndexInOtherSchema(factory, OTHER_SCHEMA_NAME, TABLE_NAME, new String[]{"BROKER_SESSION_ID", "REALM_ID"}, INDEX_NAME);
+
+            var detect = checker(factory, session, schema);
+            // the index of the same-named table in the other schema satisfies neither the
+            // table nor the name in the schema of the checked tables
+            assertThat(detect.getMissingIndexesName(), hasItem(INDEX_NAME));
+            assertThat(detect.getMissingIndexesSql(), hasKey(INDEX_NAME));
+            // names are unique per schema on H2, but the foreign index is out of the scope
+            // of the occupant lookup as well, so the expected index stays creatable
+            assertThat(detect.getConflictingIndexesName(), is(empty()));
+
+            teardownOtherSchema(factory, OTHER_SCHEMA_NAME, TABLE_NAME, INDEX_NAME);
+            restored = true;
+        } finally {
+            if (!restored) {
+                teardownOtherSchema(factory, OTHER_SCHEMA_NAME, TABLE_NAME, INDEX_NAME);
+            }
+            renameIndex(factory, TEMP_INDEX_NAME, INDEX_NAME);
+        }
+
+        assertThat(checker(factory, session, schema).getMissingIndexesName(), is(empty()));
+    }
+
+    private static DatabaseIndexChecker checker(JpaConnectionProviderFactory factory, KeycloakSession session, String schema) {
+        return new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), schema, false, 0);
+    }
+
+    /**
+     * Creates a plain (non-unique) index with the given name and columns on the given table.
+     * Runs outside the @TestOnServer thread to avoid JTA enlistment issues with the DDL.
+     */
+    private static void createIndex(JpaConnectionProviderFactory factory, String tableName, String indexName, String... columns) {
+        var failure = new AtomicReference<RuntimeException>();
+        Thread thread = new Thread(() -> {
+            try {
+                try (Connection connection = factory.getConnection()) {
+                    connection.setAutoCommit(true);
+                    try (Statement stmt = connection.createStatement()) {
+                        DatabaseMetaData metaData = connection.getMetaData();
+                        String dbProduct = metaData.getDatabaseProductName().toLowerCase();
+                        boolean storesLower = metaData.storesLowerCaseIdentifiers();
+
+                        String indexId = storesLower ? indexName.toLowerCase() : indexName;
+                        String tableId = storesLower ? tableName.toLowerCase() : tableName;
+                        String columnList = String.join(", ", columns);
+
+                        if (dbProduct.contains("mysql") || dbProduct.contains("mariadb")) {
+                            stmt.executeUpdate(String.format("ALTER TABLE %s ADD INDEX %s (%s)", tableId, indexId, columnList));
+                        } else if (dbProduct.contains("microsoft")) {
+                            String schemaPrefix = connection.getSchema() != null ? connection.getSchema() + "." : "";
+                            stmt.executeUpdate(String.format("CREATE INDEX %s ON %s%s (%s)", indexId, schemaPrefix, tableId, columnList));
+                        } else {
+                            String schemaName = connection.getSchema();
+                            String qualified = schemaName != null ? schemaName + "." + indexId : indexId;
+                            stmt.executeUpdate(String.format("CREATE INDEX %s ON %s (%s)", qualified, tableId, columnList));
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                failure.set(new RuntimeException("Failed to create index " + indexName, e));
+            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+        if (failure.get() != null) {
+            throw failure.get();
+        }
+    }
+
     private static boolean supportsOnlineIndexCreation(JpaConnectionProviderFactory factory) {
         try (Connection connection = factory.getConnection()) {
             String productName = connection.getMetaData().getDatabaseProductName().toLowerCase();
@@ -181,6 +543,10 @@ public class DatabaseIndexCheckerTest {
     }
 
     private static void dropIndex(JpaConnectionProviderFactory factory, String indexName) {
+        dropIndex(factory, TABLE_NAME, indexName);
+    }
+
+    private static void dropIndex(JpaConnectionProviderFactory factory, String tableName, String indexName) {
         try (Connection connection = factory.getConnection();
              Statement stmt = connection.createStatement()) {
             DatabaseMetaData metaData = connection.getMetaData();
@@ -188,7 +554,7 @@ public class DatabaseIndexCheckerTest {
             boolean storesLower = metaData.storesLowerCaseIdentifiers();
 
             String indexId = storesLower ? indexName.toLowerCase() : indexName;
-            String tableId = storesLower ? TABLE_NAME.toLowerCase() : TABLE_NAME;
+            String tableId = storesLower ? tableName.toLowerCase() : tableName;
 
             if (dbProduct.contains("mysql") || dbProduct.contains("mariadb")) {
                 stmt.executeUpdate(String.format("ALTER TABLE %s DROP INDEX %s", tableId, indexId));
@@ -204,6 +570,54 @@ public class DatabaseIndexCheckerTest {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to drop index " + indexName, e);
+        }
+    }
+
+    private static void createIndexInOtherSchema(JpaConnectionProviderFactory factory, String schemaName, String tableName, String[] columns, String indexName) {
+        var declared = String.join(", ", Arrays.stream(columns).map(c -> c + " INT").toArray(String[]::new));
+        runDdlInOtherSchema(factory, schemaName,
+                "CREATE SCHEMA IF NOT EXISTS " + schemaName,
+                "CREATE TABLE " + schemaName + "." + tableName + " (K INT PRIMARY KEY, " + declared + ")",
+                "CREATE INDEX " + indexName + " ON " + schemaName + "." + tableName + " (" + String.join(", ", columns) + ")");
+    }
+
+    private static void teardownOtherSchema(JpaConnectionProviderFactory factory, String schemaName, String tableName, String indexName) {
+        runDdlInOtherSchema(factory, schemaName,
+                "DROP INDEX IF EXISTS " + schemaName + "." + indexName,
+                "DROP TABLE IF EXISTS " + schemaName + "." + tableName,
+                "DROP SCHEMA IF EXISTS " + schemaName);
+    }
+
+    /**
+     * Creates and removes the objects of the other-schema setup from a separate thread,
+     * mirroring {@link #createIndex(JpaConnectionProviderFactory, String, String, String...)}:
+     * the DDL must not enlist in the JTA transaction of the @TestOnServer thread.
+     */
+    private static void runDdlInOtherSchema(JpaConnectionProviderFactory factory, String schemaName, String... statements) {
+        var failure = new AtomicReference<RuntimeException>();
+        Thread thread = new Thread(() -> {
+            try {
+                try (Connection connection = factory.getConnection()) {
+                    connection.setAutoCommit(true);
+                    try (Statement stmt = connection.createStatement()) {
+                        for (String statement : statements) {
+                            stmt.executeUpdate(statement);
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                failure.set(new RuntimeException("Failed to run DDL in schema " + schemaName, e));
+            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+        if (failure.get() != null) {
+            throw failure.get();
         }
     }
 
