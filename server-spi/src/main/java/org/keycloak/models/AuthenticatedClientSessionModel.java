@@ -80,36 +80,6 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
     UserSessionModel getUserSession();
 
     /**
-     * @deprecated use {@link #getRefreshToken(String)}
-     */
-    @Deprecated
-    default String getCurrentRefreshToken() {
-        return null;
-    }
-
-    /**
-     *  @deprecated use {@link #setRefreshToken(String, String)}}
-     */
-    @Deprecated
-    default void setCurrentRefreshToken(String currentRefreshToken) {
-    }
-
-    /**
-     * @deprecated use {@link #getRefreshTokenUseCount(String)}
-     */
-    @Deprecated
-    default int getCurrentRefreshTokenUseCount() {
-        return 0;
-    }
-
-    /**
-     * @deprecated  use {@link #setRefreshTokenUseCount(String, int)}
-     */
-    @Deprecated
-    default void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount) {
-    }
-
-    /**
      * Returns the last refresh token that was successfully used for a token refresh.
      */
     default String getRefreshToken(String reuseId) {

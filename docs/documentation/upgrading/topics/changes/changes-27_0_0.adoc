@@ -796,3 +796,17 @@ All current callers already use the non-deprecated `notify()` methods which defa
 The internal Infinispan classes that only supported this API have been removed as well.
 This includes the `AuthenticationSessionAuthNoteUpdateEvent` cluster event, the site-related fields of `WrapperClusterEvent`, and the `siteId` field of `SessionClusterEvent`.
 These classes are not part of the supported SPI.
+
+=== Deprecated single-token refresh-token methods removed from `AuthenticatedClientSessionModel`
+// https://github.com/keycloak/keycloak/issues/55096
+
+The deprecated single-token refresh-token methods have been removed from `AuthenticatedClientSessionModel`.
+These methods were deprecated in favor of keyed methods that support refresh token reuse detection:
+
+* `getCurrentRefreshToken()` - replaced by `getRefreshToken(String reuseId)`
+* `setCurrentRefreshToken(String)` - replaced by `setRefreshToken(String reuseId, String refreshTokenId)`
+* `getCurrentRefreshTokenUseCount()` - replaced by `getRefreshTokenUseCount(String reuseId)`
+* `setCurrentRefreshTokenUseCount(int)` - replaced by `setRefreshTokenUseCount(String reuseId, int refreshTokenUseCount)`
+
+The removed methods were default no-op implementations that returned `null` or `0` and had no production callers.
+Custom implementations of `AuthenticatedClientSessionModel` that override these methods must remove the overrides and use the keyed replacement methods instead.
