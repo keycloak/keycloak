@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
@@ -50,9 +51,10 @@ public class AmrUtils {
 
     /**
      * Get the configured authenticator reference values for the specified executions. An execution completed by the
-     * authentication that attached to the client session is always reported. Any other execution was carried over from an
-     * earlier authentication in the SSO session and is reported only while within its configured max age. If no value is
-     * configured for the execution, null is returned instead of throwing an error.
+     * authentication that attached to the client session is always reported, whether or not the user session's completed
+     * executions still list it. Any other execution was carried over from an earlier authentication in the SSO session and
+     * is reported only while within its configured max age. If no value is configured for the execution, null is returned
+     * instead of throwing an error.
      *
      * @param executions Map of authenticator execution ids to the time the execution completed
      * @param currentAuthenticationExecutions The execution ids completed by the authentication that attached to the client session
@@ -60,13 +62,16 @@ public class AmrUtils {
      * @return The list of amr values.
      */
     public static List<String> getAuthenticationExecutionReferences(Map<String, Integer> executions, Set<String> currentAuthenticationExecutions, RealmModel realmModel) {
-        return executions.entrySet().stream()
+        Stream<String> current = currentAuthenticationExecutions.stream()
+            .map(executionId -> getAuthenticationExecutionReference(executionId, realmModel));
+        Stream<String> carriedOver = executions.entrySet().stream()
+            .filter(entry -> !currentAuthenticationExecutions.contains(entry.getKey()))
             .map(
                 entry -> {
                     try {
                         // extract the authenticator config and get the authenticator reference value
                         Map<String, String> config = realmModel.getAuthenticatorConfigById(realmModel.getAuthenticationExecutionById(entry.getKey()).getAuthenticatorConfig()).getConfig();
-                        if (currentAuthenticationExecutions.contains(entry.getKey()) || isAmrValid(config, entry.getValue())){
+                        if (isAmrValid(config, entry.getValue())){
                             return config.get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE);
                         }
                     } catch (NullPointerException e){
@@ -75,9 +80,19 @@ public class AmrUtils {
 
                     return null;
                 }
-            ).filter(
-                ref -> ref != null && !ref.isEmpty()
-            ).collect(Collectors.toList());
+            );
+        return Stream.concat(current, carriedOver)
+            .filter(ref -> ref != null && !ref.isEmpty())
+            .collect(Collectors.toList());
+    }
+
+    private static String getAuthenticationExecutionReference(String executionId, RealmModel realmModel) {
+        try {
+            return realmModel.getAuthenticatorConfigById(realmModel.getAuthenticationExecutionById(executionId).getAuthenticatorConfig()).getConfig()
+                .get(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE);
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     /**

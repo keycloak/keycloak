@@ -206,9 +206,10 @@ public final class Constants {
     public static final String AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION = "authenticators-completed-current-authentication";
 
     // Client session note containing a serialized list of the authentication executions completed by the authentication that
-    // attached to the client session, set next to LEVEL_OF_AUTHENTICATION. The Authentication Method Reference (AMR) protocol
-    // mapper reports their reference values regardless of the configured max age, which only applies to executions carried
-    // over from earlier authentications in the SSO session. Absent on client sessions attached before the note existed.
+    // attached to the client session, set by AuthenticationProcessor.attachSession next to LEVEL_OF_AUTHENTICATION and left
+    // alone by synthetic attachments such as token exchange. The Authentication Method Reference (AMR) protocol mapper reports
+    // their reference values regardless of the configured max age, which only applies to executions carried over from earlier
+    // authentications in the SSO session. Absent on client sessions attached before the note existed.
     public static final String AMR_CURRENT_AUTHENTICATION_EXECUTIONS = "amr-current-authentication-executions";
 
     // Authentication session (and user session) note, which contains map with authenticated levels and the times of their authentications,

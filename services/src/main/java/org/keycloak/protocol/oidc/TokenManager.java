@@ -581,14 +581,6 @@ public class TokenManager {
         }
 
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(session, authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
-        // The executions this authentication completed are fixed on the client session like its level: the amr claim reports
-        // them in every token of the client session, while carried over executions stay subject to their max age at mint time.
-        String currentAuthenticationExecutions = authSession.getAuthNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION);
-        if (currentAuthenticationExecutions != null) {
-            clientSession.setNote(Constants.AMR_CURRENT_AUTHENTICATION_EXECUTIONS, currentAuthenticationExecutions);
-        } else {
-            clientSession.removeNote(Constants.AMR_CURRENT_AUTHENTICATION_EXECUTIONS);
-        }
         clientSession.setTimestamp(userSession.getLastSessionRefresh());
         // Remove authentication session now (just current tab, not whole "rootAuthenticationSession" in case we have more browser tabs with "authentications in progress")
         new AuthenticationSessionManager(session).updateAuthenticationSessionAfterSuccessfulAuthentication(realm, authSession);
