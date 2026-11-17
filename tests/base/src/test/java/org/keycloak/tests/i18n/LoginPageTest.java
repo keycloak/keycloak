@@ -185,9 +185,9 @@ public class LoginPageTest {
     public void testIdentityProviderCapitalization(){
         oauth.openLoginForm();
         // contains even name of sub-item - svg element in this case
-        assertThat(loginPage.findSocialButton("github").getText(), is("GitHub"));
-        assertThat(loginPage.findSocialButton("mysaml").getText(), is("mysaml"));
-        assertThat(loginPage.findSocialButton("myoidc").getText(), is("MyOIDC"));
+        assertThat(loginPage.findSocialButton("github").getText(), is("Sign in with GitHub"));
+        assertThat(loginPage.findSocialButton("mysaml").getText(), is("Sign in with mysaml"));
+        assertThat(loginPage.findSocialButton("myoidc").getText(), is("Sign in with MyOIDC"));
     }
 
 
@@ -211,7 +211,7 @@ public class LoginPageTest {
         // Update password
         changePasswordPage.changePassword("password", "password");
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -233,7 +233,7 @@ public class LoginPageTest {
         // Confirm grant
         grantPage.accept();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Revert client
         oauth.client("test-app", "password");
@@ -252,7 +252,7 @@ public class LoginPageTest {
         loginPage.fillLogin("basic-user", "password");
         loginPage.submit();
 
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE).userId(user.getId()).details(Details.PREF_UPDATED + UserModel.LOCALE, "de");
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).userId(user.getId());
@@ -330,10 +330,20 @@ public class LoginPageTest {
 
         errorPage.selectLanguage("Deutsch");
         Assertions.assertEquals("Ungültiger Parameter: redirect_uri", errorPage.getError());
+        Assertions.assertNotNull(driver.driver().manage().getCookieNamed(CookieType.LOCALE.getName()));
+        Assertions.assertEquals("de", driver.driver().manage().getCookieNamed(CookieType.LOCALE.getName()).getValue());
 
-        // Add incorrect state checker parameter. Error page should be shown about expired action. Language won't be changed
+        // change to an invalid locale, cookie remains the same, language not changed
         String currentUrl = driver.getCurrentUrl();
         String newUrl = KeycloakUriBuilder.fromUri(new URI(currentUrl))
+                .replaceQueryParam(LocaleSelectorProvider.KC_LOCALE_PARAM, "invalid language").buildAsString();
+        driver.open(newUrl);
+        Assertions.assertEquals("Ungültiger Parameter: redirect_uri", errorPage.getError());
+        Assertions.assertEquals("de", driver.driver().manage().getCookieNamed(CookieType.LOCALE.getName()).getValue());
+
+        // Add incorrect state checker parameter. Error page should be shown about expired action. Language won't be changed
+        currentUrl = driver.getCurrentUrl();
+        newUrl = KeycloakUriBuilder.fromUri(new URI(currentUrl))
                 .replaceQueryParam(LocaleSelectorProvider.KC_LOCALE_PARAM, "en")
                 .replaceQueryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM, "invalid").buildAsString();
         driver.open(newUrl);
@@ -351,9 +361,7 @@ public class LoginPageTest {
 
         oauth.openLoginForm();
         oauth.fillLoginForm("basic-user", "invalid-password");
-        loginPage.assertCurrent();
-
-        assertThat(loginPage.getUsernameInputError(), is("Invalid username or password."));
+        loginPage.waitForUsernameInputError("Invalid username or password.");
         loginPage.fillLogin("basic-user", "password");
         loginPage.submit();
 
@@ -401,6 +409,36 @@ public class LoginPageTest {
 
         oauth.openLoginForm();
         switchLanguageToGermanAndBack(realmLocalizationMessageValueEn, realmLocalizationMessageValueDe, loginPage);
+    }
+
+    @Test
+    public void realmDisplayNamePlaceholderInTitleResolvedFromRealmLocalizationTexts() {
+        RealmRepresentation rep = realm.admin().toRepresentation();
+        String originalDisplayName = rep.getDisplayName();
+        realm.cleanup().add(r -> {
+            RealmRepresentation cleanupRep = r.toRepresentation();
+            // DefaultExportImportManager.updateRealm ignores a null display name, so an
+            // originally unset one can only be restored as an empty string, which makes
+            // RealmBean fall back to the realm name.
+            cleanupRep.setDisplayName(originalDisplayName == null ? "" : originalDisplayName);
+            r.update(cleanupRep);
+        });
+
+        saveLocalizationText(Locale.ENGLISH.toLanguageTag(), "myRealmDisplayNameKey", "My browser tab title");
+        rep.setDisplayName("${myRealmDisplayNameKey}");
+        realm.admin().update(rep);
+
+        driver.cookies().deleteAll();
+        oauth.openLoginForm();
+        assertEquals("Sign in to My browser tab title", driver.driver().getTitle());
+
+        // a display name without placeholders is rendered as is
+        rep.setDisplayName("Test Realm");
+        realm.admin().update(rep);
+
+        driver.cookies().deleteAll();
+        oauth.openLoginForm();
+        assertEquals("Sign in to Test Realm", driver.driver().getTitle());
     }
 
     // KEYCLOAK-18590

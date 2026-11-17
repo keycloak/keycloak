@@ -20,6 +20,7 @@ package org.keycloak.models;
 import java.net.URI;
 import java.util.Locale;
 
+import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.Token;
@@ -35,20 +36,28 @@ import org.keycloak.urls.UrlType;
  */
 public interface KeycloakContext {
 
+    /**
+     * @throws ContextNotActiveException if no request is active and a non-full URL hostname is configured
+     */
     URI getAuthServerUrl();
 
+    /**
+     * @throws ContextNotActiveException if no request is active and a non-full URL hostname is configured
+     */
     String getContextPath();
-    
+
      /**
      * @deprecated Use {@link #getHttpRequest()} to obtain the request headers.
+     * @throws ContextNotActiveException when no request is active
      */
     @Deprecated
     HttpHeaders getRequestHeaders();
-    
+
 
     /**
      * Returns the URI assuming it is a frontend request. To resolve URI for a backend request use {@link #getUri(UrlType)}
-     * @return
+     *
+     * method calls on the returned {@link KeycloakUriInfo} may throw a {@link ContextNotActiveException} if no request is active
      */
     KeycloakUriInfo getUri();
 
@@ -57,9 +66,11 @@ public interface KeycloakContext {
      * request (request from a client) should be set to false. Depending on the configure hostname provider it may
      * return a hard-coded base URL for frontend request (for example https://auth.mycompany.com) and use the
      * request URL for backend requests. Frontend URI should also be used for realm issuer fields in tokens.
+     * <p>
+     * Method calls on the returned {@link KeycloakUriInfo} may throw a {@link ContextNotActiveException} if no request is active.
      *
      * @param type the type of the request
-     * @return
+     * @throws ContextNotActiveException if no request is active and information from a current request is needed to determine the base URI.
      */
     KeycloakUriInfo getUri(UrlType type);
 
@@ -85,6 +96,9 @@ public interface KeycloakContext {
 
     void setOrganization(OrganizationModel organization);
 
+    /**
+     * If there is no active request, a {@link ClientConnection} will still be returned
+     */
     ClientConnection getConnection();
 
     Locale resolveLocale(UserModel user);
@@ -106,8 +120,14 @@ public interface KeycloakContext {
 
     void setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
+    /**
+     * If there is no active request, a {@link ContextNotActiveException} will be thrown
+     */
     HttpRequest getHttpRequest();
 
+    /**
+     * If there is no active request, a {@link ContextNotActiveException} will be thrown
+     */
     HttpResponse getHttpResponse();
 
     void setConnection(ClientConnection clientConnection);

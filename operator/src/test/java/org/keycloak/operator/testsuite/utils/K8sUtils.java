@@ -18,6 +18,7 @@
 package org.keycloak.operator.testsuite.utils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
@@ -69,12 +70,26 @@ public final class K8sUtils {
         deployKeycloak(client, kc, waitUntilReady, true);
     }
 
+    /**
+     * @param stream will be closed by this operation
+     */
     public static List<HasMetadata> set(KubernetesClient client, InputStream stream) {
         return set(client, stream, Function.identity());
     }
 
+    /**
+     * @param stream will be closed by this operation
+     */
     public static List<HasMetadata> set(KubernetesClient client, InputStream stream, Function<HasMetadata, HasMetadata> modifier) {
-        return client.load(stream).items().stream().map(modifier).filter(Objects::nonNull).map(i -> set(client, i)).collect(Collectors.toList());
+        try {
+            return client.load(stream).items().stream().map(modifier).filter(Objects::nonNull).map(i -> set(client, i)).collect(Collectors.toList());
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                Log.warn("Could not close stream", e);
+            }
+        }
     }
 
     public static <T extends HasMetadata> T set(KubernetesClient client, T hasMetadata) {

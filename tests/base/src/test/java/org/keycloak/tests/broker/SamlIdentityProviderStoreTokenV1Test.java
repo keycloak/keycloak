@@ -52,7 +52,7 @@ public class SamlIdentityProviderStoreTokenV1Test implements InterfaceIdentityPr
     @InjectRealm(ref = "external-realm", config = ExternalRealmConfig.class)
     ManagedRealm externalRealm;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(config = ExternalClientConfig.class)
     OAuthClient oauth;
 
     @InjectPage

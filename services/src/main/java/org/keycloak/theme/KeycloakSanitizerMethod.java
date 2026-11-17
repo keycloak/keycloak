@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import freemarker.template.TemplateMethodModelEx;
 import freemarker.template.TemplateModelException;
 import org.owasp.html.Encoding;
+import org.owasp.html.FilterUrlByProtocolAttributePolicy;
 
 /**
  * Allows sanitizing of html that uses Freemarker ?no_esc.  This way, html
@@ -33,7 +34,12 @@ import org.owasp.html.Encoding;
 public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
     
     private static final Pattern HREF_PATTERN = Pattern.compile("\\s+href=\"([^\"]*)\"");
-    
+
+    private static final Pattern NUMERIC_ENTITY = Pattern.compile("&#([xX][0-9a-fA-F]+|[0-9]+);?");
+
+    private static final FilterUrlByProtocolAttributePolicy URL_PROTOCOL_POLICY =
+            new FilterUrlByProtocolAttributePolicy(List.of("http", "https", "mailto"));
+
     @Override
     public Object exec(List list) throws TemplateModelException {
         if ((list.isEmpty()) || (list.get(0) == null)) {
@@ -80,6 +86,9 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
                 String href = matcher.group(1).replaceAll("&#61;", "=")
                         .replaceAll("\\.\\.", ".")
                         .replaceAll("&amp;", "&");
+                if (hasDisallowedScheme(href)) {
+                    href = "";
+                }
                 result.append(msg.substring(last, matcher.start(1))).append(href);
                 last = matcher.end(1);
             } while (matcher.find());
@@ -88,5 +97,34 @@ public class KeycloakSanitizerMethod implements TemplateMethodModelEx {
         }
         return msg;
     }
-    
+
+    private boolean hasDisallowedScheme(String href) {
+        return URL_PROTOCOL_POLICY.apply("a", "href", decodeNumericEntities(href)) == null;
+    }
+
+    private String decodeNumericEntities(String value) {
+        Matcher matcher = NUMERIC_ENTITY.matcher(value);
+        StringBuilder result = new StringBuilder(value.length());
+        int last = 0;
+        while (matcher.find()) {
+            result.append(value, last, matcher.start());
+            String digits = matcher.group(1);
+            try {
+                int codePoint = (digits.charAt(0) == 'x' || digits.charAt(0) == 'X')
+                        ? Integer.parseInt(digits.substring(1), 16)
+                        : Integer.parseInt(digits);
+                if (Character.isValidCodePoint(codePoint)) {
+                    result.appendCodePoint(codePoint);
+                } else {
+                    result.append(matcher.group());
+                }
+            } catch (NumberFormatException e) {
+                result.append(matcher.group());
+            }
+            last = matcher.end();
+        }
+        result.append(value, last, value.length());
+        return result.toString();
+    }
+
 }

@@ -8,7 +8,9 @@ import { assertNotificationMessage } from "../utils/masthead.ts";
 import { assertModalTitle, confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
+  assertRowExists,
   clearAllFilters,
+  clickNextPageButton,
   clickRowKebabItem,
   getRowByCellText,
   searchItem,
@@ -119,6 +121,36 @@ test.describe.serial("Clients test", () => {
     await expect(getRowByCellText(page, "account")).toBeVisible();
   });
 
+  test.describe.serial("Search from a later page", () => {
+    const pagedClient = "paged-client";
+    const otherClient = "other-client";
+
+    // One more than the default page size, so the results span two pages
+    test.beforeAll(async () => {
+      for (let i = 0; i < 11; i++) {
+        await adminClient.createClient({
+          clientId: `${pagedClient}-${i}`,
+          realm: realmName,
+        });
+      }
+      await adminClient.createClient({
+        clientId: otherClient,
+        realm: realmName,
+      });
+    });
+
+    test("Searching while on the second page shows the matches", async ({
+      page,
+    }) => {
+      await searchItem(page, placeHolder, pagedClient);
+      await clickNextPageButton(page);
+
+      await searchItem(page, placeHolder, otherClient);
+
+      await assertRowExists(page, otherClient);
+    });
+  });
+
   test.describe.serial("Clients import", () => {
     test.beforeAll(() =>
       adminClient.createClient({
@@ -128,7 +160,7 @@ test.describe.serial("Clients test", () => {
       }),
     );
 
-    test.afterAll(() => adminClient.deleteClient("identical"));
+    test.afterAll(() => adminClient.deleteClient("identical", realmName));
 
     test("Import client", async ({ page }) => {
       await page.getByTestId("importClient").click();

@@ -17,6 +17,8 @@
  */
 package org.keycloak.authorization.policy.provider;
 
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.provider.Provider;
 
@@ -26,4 +28,16 @@ import org.keycloak.provider.Provider;
 public interface PolicyProvider extends Provider {
 
     void evaluate(Evaluation evaluation);
+
+    /**
+     * Checks configuration without evaluating a subject or request. Partial evaluation uses this
+     * check even when the provider does not support partial evaluation of its policy conditions.
+     *
+     * @param policy the policy to validate
+     * @param authorization the authorization provider
+     * @return {@code false} if invalid configuration prevents evaluation
+     */
+    default boolean isValid(Policy policy, AuthorizationProvider authorization) {
+        return true;
+    }
 }

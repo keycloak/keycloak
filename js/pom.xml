@@ -39,7 +39,7 @@
     </dependencies>
 
     <properties>
-        <node.version>v24.9.0</node.version>
+        <node.version>v24.22.2</node.version>
         <pnpm.version>11.1.1</pnpm.version>
         <!-- The JavaScript projects use non-standard folders for their sources, therefore, name it here explicitly -->
         <maven.build.cache.input.1>src</maven.build.cache.input.1>

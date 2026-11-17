@@ -42,6 +42,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
@@ -59,6 +60,9 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
     // clientSession.note flag specifies if we imported new user to keycloak (true) or we just linked to an existing keycloak user (false)
     public static final String BROKER_REGISTERED_NEW_USER = "BROKER_REGISTERED_NEW_USER";
 
+    // Email verified locally during this first-broker login, before the provider imports the user.
+    public static final String BROKER_VERIFIED_EMAIL = "BROKER_VERIFIED_EMAIL";
+
     public static final String ACCOUNT_LINK_URL = "account-link-url";
     protected final KeycloakSession session;
     private final C config;
@@ -70,6 +74,10 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     public C getConfig() {
         return this.config;
+    }
+
+    protected String getFederatedAccessTokenKey() {
+        return FEDERATED_ACCESS_TOKEN + ":" + getConfig().getAlias();
     }
 
     @Override
@@ -175,6 +183,11 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+        updateBrokeredEmail(session, realm, user, context);
+    }
+
+    @Override
+    public void updateBrokeredEmail(KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
         updateEmail(user, context);
     }
 
@@ -190,6 +203,12 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
 
         if (email == null) {
             // do not set email if not provided by the IdP
+            return;
+        }
+
+        if (user.isEmailVerified() && email.equalsIgnoreCase(user.getEmail())
+                && email.equalsIgnoreCase(authSession.getAuthNote(BROKER_VERIFIED_EMAIL))) {
+            // Do not undo verification completed locally while the first-broker flow was running.
             return;
         }
 
@@ -230,12 +249,32 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return new DefaultDataMarshaller();
     }
 
-    protected String getFederatedAccessToken(UserSessionModel userSession) {
-        // return the FEDERATED_ACCESS_TOKEN but just if logged in using this identity provider
-        if (getConfig().getAlias().equals(userSession.getNote(Details.IDENTITY_PROVIDER))) {
-             return userSession.getNote(FEDERATED_ACCESS_TOKEN);
+    protected String getFederatedTokenNote(UserSessionModel userSession, String namespacedKey, String legacyKey) {
+        String value = userSession.getNote(namespacedKey);
+        if (value != null) {
+            return value;
+        }
+        // Fallback to un-namespaced key for backward compatibility
+        String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
+        if (brokerId == null) {
+            brokerId = userSession.getNote(EXTERNAL_IDENTITY_PROVIDER);
+        }
+        if (getConfig().getAlias().equals(brokerId)) {
+            return userSession.getNote(legacyKey);
         }
         return null;
+    }
+
+    protected String getFederatedAccessToken(UserSessionModel userSession) {
+        return getFederatedTokenNote(userSession, getFederatedAccessTokenKey(), FEDERATED_ACCESS_TOKEN);
+    }
+
+    protected void setFederatedAccessToken(UserSessionModel userSession, String token) {
+        userSession.setNote(getFederatedAccessTokenKey(), token);
+    }
+
+    protected void setFederatedAccessToken(AuthenticationSessionModel authSession, String token) {
+        authSession.setUserSessionNote(getFederatedAccessTokenKey(), token);
     }
 
     protected Response buildTokenResponse(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient,
@@ -244,6 +283,10 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         tokenResponse.setRefreshToken(null);
         tokenResponse.setRefreshExpiresIn(0);
         tokenResponse.getOtherClaims().clear();
+
+        if (tokenResponse.getTokenType() == null) {
+            tokenResponse.setTokenType(TokenUtil.TOKEN_TYPE_BEARER);
+        }
 
         tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
 

@@ -105,7 +105,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -183,7 +182,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInAsUserInIDPForFirstTime();
 
         String consumerClientBrokerAppId = adminClient.realm(bc.consumerRealmName()).clients().findByClientId("broker-app").get(0).getId();
@@ -204,7 +204,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         if (! isUsingTransientSessions()) {
             logInAsUserInIDP();
@@ -242,7 +243,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             clients.get(brokerApp.getId()).update(brokerApp);
 
             oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-            loginPage.open(bc.consumerRealmName());
+            oauth.realm(bc.consumerRealmName());
+            oauth.openLoginForm();
 
             logInWithBroker(bc);
 
@@ -306,7 +308,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         loginFetchingUserFromUserEndpoint();
 
@@ -323,7 +326,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -347,7 +351,8 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         oauth.client("broker-app", CONSUMER_BROKER_APP_SECRET);
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
@@ -494,7 +499,10 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         try (var c = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), CONSUMER_BROKER_APP_CLIENT_ID).setConsentRequired(true).update()) {
             oauth.client(CONSUMER_BROKER_APP_CLIENT_ID);
             oauth.realm(bc.consumerRealmName());
-            doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+            doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword()).isSuccess();
+
+            updateAccountInformationPage.assertCurrent();
+            updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 
             WaitUtils.waitForPageToLoad();
             consentPage.assertCurrent();
@@ -580,6 +588,9 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
 
         doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
 
+        updateAccountInformationPage.assertCurrent();
+        updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+
         EventRepresentation loginEvent;
         do {
             loginEvent = events.poll();
@@ -625,7 +636,6 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
                     .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
             assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
-            assertNull(offlineToken.getExp());
 
             assertTrue(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
 
@@ -639,14 +649,10 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             Assertions.assertEquals(400, response.getStatusCode());
             assertEquals("invalid_grant", response.getError());
 
-            EventRepresentation eventRep = EventAssertion.assertError(events.poll())
+            EventAssertion.assertError(events.poll())
                     .type(EventType.REFRESH_TOKEN_ERROR)
-                    .hasSessionId()
-                    .sessionId(newRefreshToken.getSessionState())
                     .clientId(CONSUMER_BROKER_APP_CLIENT_ID)
-                    .userId(null)
-                    .error(Errors.INVALID_TOKEN).getEvent();
-            Assertions.assertNotEquals(offlineToken.getId(), eventRep.getDetails().get(Details.REFRESH_TOKEN_ID));
+                    .error(Errors.INVALID_TOKEN);
         } finally {
             timeOffSet.set(0);
         }

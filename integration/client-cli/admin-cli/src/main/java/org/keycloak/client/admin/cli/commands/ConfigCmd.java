@@ -58,7 +58,7 @@ public class ConfigCmd extends AbstractAuthOptionsCmd {
     }
 
     @Override
-    protected String help() {
+    public String help() {
         return usage(v2);
     }
 
@@ -68,7 +68,7 @@ public class ConfigCmd extends AbstractAuthOptionsCmd {
 
     private static String usage(boolean v2) {
         String cmd = v2 ? CMD + " " + V2_FLAG : CMD;
-        String subcommands = v2 ? "'credentials', 'truststore', 'openapi'" : "'credentials', 'truststore'";
+        String subcommands = v2 ? "'credentials', 'truststore', 'openapi', 'editor'" : "'credentials', 'truststore'";
         String helpHint = v2 ? cmd + " config SUB_COMMAND --help" : CMD + " help config SUB_COMMAND";
 
         StringWriter sb = new StringWriter();

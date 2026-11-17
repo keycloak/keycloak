@@ -187,7 +187,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
         return findBestMatchingLocale(supportedLocales, localeStrings);
     }
 
-    static Locale findBestMatchingLocale(List<Locale> supportedLocales, String... localeStrings) {
+    public static Locale findBestMatchingLocale(List<Locale> supportedLocales, String... localeStrings) {
         for (String localeString : localeStrings) {
             if (localeString != null) {
                 Locale result = null;

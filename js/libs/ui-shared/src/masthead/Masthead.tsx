@@ -96,7 +96,11 @@ const KeycloakMasthead = ({
   return (
     <Masthead {...rest}>
       <MastheadToggle>
-        <PageToggleButton variant="plain" aria-label={t("navigation")}>
+        <PageToggleButton
+          data-testid="nav-toggle"
+          variant="plain"
+          aria-label={t("navigation")}
+        >
           <BarsIcon />
         </PageToggleButton>
       </MastheadToggle>
@@ -137,6 +141,7 @@ const KeycloakMasthead = ({
               <KeycloakDropdown
                 data-testid="options-kebab"
                 isKebab
+                toggleLabel={t("options")}
                 dropDownItems={[
                   ...(kebabDropdownItems || dropdownItems),
                   extraItems,

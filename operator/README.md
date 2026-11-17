@@ -25,6 +25,20 @@ This will build a container image from `Dockerfile`, using `docker` by default. 
 - Set the `DOCKER_HOST` environment variable to point at this user socket. For example: `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`.
 - You may also have to set `QUARKUS_DOCKER_EXECUTABLE_NAME=podman`
 
+## Helm chart
+
+A Helm chart is generated alongside the regular build, under `operator/target/helm/kubernetes/keycloak-operator-helm/`. The chart is produced by the `quarkus-helm` + `quarkus-operator-sdk-helm` extensions from the same source manifests as the `kubectl` install path — it is not a hand-written copy.
+
+To regenerate locally (from the repo root):
+
+```bash
+./mvnw -Poperator -Pcluster-wide -pl :keycloak-operator -am package -DskipTests
+```
+
+Then `helm install` / `helm template` against `operator/target/helm/kubernetes/keycloak-operator-helm/`. See the [Operator Installation guide](../docs/guides/operator/installation.adoc) for end-user instructions.
+
+Helm chart configuration lives in `operator/src/main/resources/application.properties` under the `quarkus.helm.*` keys. CRDs are post-processed by `operator/scripts/post-process-helm-chart.sh` (wrapping them in a `{{ if .Values.crds.enabled }}` guard) — the rest is purely declarative.
+
 ## Configuration
 
 The Keycloak image can be configured, when starting the operator, using the Java property:
@@ -46,9 +60,11 @@ kc.operator.keycloak.image-pull-policy
 Start minikube with `ingress` addon and `cilium` Container Network Interface (CNI).
 Vanilla minikube does not support Network Policies, and Cilium implements the CNI and supports Network Policies.
 Another CNI implementation may work too.
+Set the container runtime to `docker`, as the image build below uses the Minikube Docker daemon.
+Since minikube v1.39.0 the default runtime is `containerd`, where the build fails.
 
 ```bash
-minikube start --addons ingress --cni cilium --cpus=max
+minikube start --addons ingress --cni cilium --cpus=max --container-runtime=docker
 ```
 
 Enable the Minikube Docker daemon:
@@ -57,7 +73,7 @@ Enable the Minikube Docker daemon:
 eval $(minikube -p minikube docker-env)
 ```
 
-Compile the project and generate the Docker image with JIB:
+Compile the project and build the Docker image:
 
 ```bash
 mvn clean package -Dquarkus.kubernetes.image-pull-policy=IfNotPresent -Dquarkus.container-image.build=true
@@ -67,13 +83,7 @@ Install the CRD definition and the operator in the cluster in the `keycloak` nam
 
 ```bash
 kubectl create namespace keycloak
-kubectl apply -k target
-```
-
-to install in the `default` namespace:
-
-```bash
-kubectl apply -k overlays/default-namespace
+kubectl apply -k target/kubernetes
 ```
 
 Remove the created resources with:

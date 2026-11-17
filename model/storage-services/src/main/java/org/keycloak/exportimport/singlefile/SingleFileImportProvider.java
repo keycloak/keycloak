@@ -77,8 +77,9 @@ public class SingleFileImportProvider extends AbstractFileBasedImportProvider {
 
     protected void checkRealmReps() throws IOException {
         if (realmReps == null) {
-            InputStream is = parseFile(file);
-            realmReps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, is);
+            try (InputStream is = parseFile(file)) {
+                realmReps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, is);
+            }
         }
     }
 

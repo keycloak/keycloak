@@ -435,15 +435,18 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, boolean offline) {
-        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTimeMillis());
         return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, offline)
-                .filter(Predicate.not(expiration::isUserSessionExpired));
+                .filter(Predicate.not(expiration::isUserSessionExpired))
+                .filter(s -> s.getUser() != null);
     }
 
     private Stream<UserSessionModel> readOnlyStream(RealmModel realm, ClientModel client, boolean offline, int skip, int maxResults) {
-        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTime());
-        return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, client, offline, skip, maxResults)
-                .filter(Predicate.not(expiration::isUserSessionExpired));
+        var expiration = new SessionExpirationPredicates(realm, offline, Time.currentTimeMillis());
+        return paginatedStream(session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, client, offline, -1, -1)
+                        .filter(Predicate.not(expiration::isUserSessionExpired))
+                        .filter(s -> s.getUser() != null),
+                skip, maxResults);
     }
 
     protected void onRemoveUserSessionsEvent(String realmId) {
@@ -453,6 +456,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     // public for usage in the testsuite
     public void removeLocalUserSessions(String realmId, boolean offline) {
+        if (getCache(offline) == null) {
+            return; // use-caches is disabled
+        }
         Cache<String, SessionEntityWrapper<UserSessionEntity>> localCache = CacheDecorators.localCache(getCache(offline));
         var localClientSessionCache = CacheDecorators.localCache(getClientSessionCache(offline));
         final AtomicInteger userSessionsSize = new AtomicInteger();
@@ -928,6 +934,9 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     @Deprecated(since = "26.4", forRemoval = true)
     public void migrateNonPersistentSessionsToPersistentSessions() {
         var sessionCache = sessionTx.getCache(false);
+        if (sessionCache == null) {
+            return; // use-caches is disabled
+        }
         var clientSessionCache = clientSessionTx.getCache(false);
         JpaChangesPerformer<String, UserSessionEntity> userSessionPerformer = new JpaChangesPerformer<>(sessionCache.getName());
         JpaChangesPerformer<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionPerformer = new JpaChangesPerformer<>(clientSessionCache.getName());

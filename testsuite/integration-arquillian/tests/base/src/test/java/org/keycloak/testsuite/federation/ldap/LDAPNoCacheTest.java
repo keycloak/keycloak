@@ -38,7 +38,6 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -110,9 +109,6 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
 
     @Rule
     public MailServer mail = new MailServer();
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -209,6 +205,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
+        Assertions.assertTrue(mail.waitForIncomingEmail(expectedCountOfMessages));
         MimeMessage[] messages = mail.getReceivedMessages();
         Assertions.assertEquals(expectedCountOfMessages, messages.length);
         MimeMessage message = mail.getReceivedMessages()[expectedCountOfMessages - 1];

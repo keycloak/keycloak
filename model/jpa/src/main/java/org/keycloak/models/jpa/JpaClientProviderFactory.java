@@ -66,7 +66,7 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
         if (Profile.isFeatureEnabled(Profile.Feature.SSF)) {
             // needed to find SSF streams configured on SSF Receiver clients
             s.add("ssf.enabled");
-            s.add("ssf.streamId");
+            s.add("ssf.stream.id");
         }
         clientSearchableAttributes = Collections.unmodifiableSet(s);
     }

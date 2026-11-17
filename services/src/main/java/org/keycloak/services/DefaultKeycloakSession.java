@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.component.ComponentFactory;
@@ -47,6 +48,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RevokedTokenProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.ThemeManager;
@@ -66,6 +68,7 @@ import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
 import org.keycloak.vault.VaultTranscriber;
 
+import org.checkerframework.checker.mustcall.qual.NotOwning;
 import org.jboss.logging.Logger;
 
 /**
@@ -86,6 +89,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     private VaultTranscriber vaultTranscriber;
     private ClientPolicyManager clientPolicyManager;
     private boolean closed = false;
+    private boolean readOnly = false;
 
     public DefaultKeycloakSession(DefaultKeycloakSessionFactory factory) {
         this.factory = factory;
@@ -152,6 +156,33 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> T runAsReadOnly(Supplier<T> supplier) {
+        boolean previous = readOnly;
+        readOnly = true;
+        boolean restore = true;
+        try {
+            T result = supplier.get();
+            if (result instanceof Stream<?> stream) {
+                T closing = (T) stream.onClose(() -> readOnly = previous);
+                // the close handler is registered, so it takes over restoring the flag
+                restore = false;
+                return closing;
+            }
+            return result;
+        } finally {
+            if (restore) {
+                readOnly = previous;
+            }
+        }
+    }
+
+    @Override
     public KeycloakTransactionManager getTransactionManager() {
         return transactionManager;
     }
@@ -167,6 +198,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getProvider(Class<T> clazz) {
         List<String> key = List.of(clazz.getName());
         return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz));
@@ -189,12 +221,14 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
         List<String> key = List.of(clazz.getName(), id);
         return getOrCreateProvider(key, () -> factory.getProviderFactory(clazz, id));
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId) {
         final RealmModel realm = getContext().getRealm();
         if (realm == null) {
@@ -206,6 +240,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter) {
         List<String> key = List.of("component", clazz.getName(), componentId);
         final RealmModel realm = getContext().getRealm();
@@ -213,6 +248,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel) {
         String modelId = componentModel.getId();
 
@@ -240,6 +276,7 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @NotOwning
     public <T extends Provider> Set<T> getAllProviders(Class<T> clazz) {
         return listProviderIds(clazz).stream()
             .map(id -> getProvider(clazz, id))
@@ -295,6 +332,11 @@ public abstract class DefaultKeycloakSession implements KeycloakSession {
     @Override
     public SingleUseObjectProvider singleUseObjects() {
         return getDatastoreProvider().singleUseObjects();
+    }
+
+    @Override
+    public RevokedTokenProvider revokedTokens() {
+        return getDatastoreProvider().revokedTokens();
     }
 
     @Override

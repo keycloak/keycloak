@@ -123,44 +123,6 @@ public class FlowTest extends AbstractAuthenticationTest {
         addFlowToParent("child", "grandchild");
     }
 
-    @Test
-    public void testRemoveBuiltinSubflowFromCustomBrowserFlow() {
-        // Create a custom top-level browser flow that is NOT marked as builtin
-        createFlow(newFlow("CustomBrowser", "Custom Browser flow", "basic-flow", true, false));
-
-        // Add a sub-flow to the custom browser flow (it is not builtin by default)
-        addFlowToParent("CustomBrowser", "builtin-child");
-
-        // Locate the child sub-flow execution in the parent flow
-        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("CustomBrowser");
-        AuthenticationExecutionInfoRepresentation childExecution = executions.stream()
-                .filter(r -> "builtin-child".equals(r.getDisplayName()) && r.getLevel() == 0)
-                .findAny().orElse(null);
-        Assertions.assertNotNull(childExecution, "Expected to find the child sub-flow execution");
-
-        // Mark the sub-flow itself as builtin via the update API
-        String subFlowId = childExecution.getFlowId();
-        Assertions.assertNotNull(subFlowId, "Expected the child execution to reference a sub-flow");
-        AuthenticationFlowRepresentation subFlow = authMgmtResource.getFlow(subFlowId);
-        subFlow.setBuiltIn(true);
-        authMgmtResource.updateFlow(subFlowId, subFlow);
-        Assertions.assertTrue(authMgmtResource.getFlow(subFlowId).isBuiltIn(),
-                "Sub-flow should now be marked as builtin");
-
-        // Skip the admin events produced by addFlowToParent (CREATE AUTH_EXECUTION_FLOW)
-        // and updateFlow (UPDATE AUTH_FLOW) since they are not the focus of this test
-        adminEvents.skip(2);
-
-        // Removing the builtin-marked sub-flow from a non-builtin parent flow must succeed
-        authMgmtResource.removeExecution(childExecution.getId());
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE,
-                AdminEventPaths.authExecutionPath(childExecution.getId()), ResourceType.AUTH_EXECUTION);
-
-        // Verify the sub-flow execution is no longer present in the parent flow
-        executions = authMgmtResource.getExecutions("CustomBrowser");
-        Assertions.assertTrue(executions.isEmpty(),
-                "Expected no executions remaining in the custom browser flow after removal");
-    }
 
     private void addFlowToParent(String parentAlias, String childAlias) {
         Map<String, Object> data = new HashMap<>();
@@ -769,6 +731,51 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    public void testUpdateFlowCannotChangeBuiltInOrTopLevelFlags() {
+        List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
+
+        // builtIn flag: changing it must be rejected with 400
+        AuthenticationFlowRepresentation builtInFlow = flows.stream()
+                .filter(AuthenticationFlowRepresentation::isBuiltIn).findFirst().orElse(null);
+        Assertions.assertNotNull(builtInFlow, "There is no built-in flow in the realm");
+
+        String originalBuiltInAlias = builtInFlow.getAlias();
+        builtInFlow.setBuiltIn(false);
+        builtInFlow.setAlias("should-not-be-persisted");
+        BadRequestException e = Assertions.assertThrows(BadRequestException.class,
+                () -> authMgmtResource.updateFlow(builtInFlow.getId(), builtInFlow));
+        OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        Assertions.assertEquals("The authentication flow builtIn attribute cannot be changed", error.getError());
+        // alias must not have been mutated in the stored/cached flow
+        Assertions.assertEquals(originalBuiltInAlias, authMgmtResource.getFlow(builtInFlow.getId()).getAlias());
+
+        // topLevel flag: use a freshly created non-built-in top-level flow.
+        // Call the resource directly to avoid asserting the CREATE admin event here.
+        Response createResp = authMgmtResource.createFlow(newFlow("TopLevelTest", "Top level test flow", "basic-flow", true, false));
+        String id = ApiUtil.getCreatedId(createResp);
+        createResp.close();
+        managedRealm.cleanup().add(r -> r.flows().deleteFlow(id));
+        AuthenticationFlowRepresentation topLevelFlow = authMgmtResource.getFlow(id);
+        topLevelFlow.setTopLevel(false);
+        topLevelFlow.setAlias("should-not-be-persisted");
+        e = Assertions.assertThrows(BadRequestException.class,
+                () -> authMgmtResource.updateFlow(topLevelFlow.getId(), topLevelFlow));
+        error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        Assertions.assertEquals("The authentication flow topLevel attribute cannot be changed", error.getError());
+        // alias must not have been mutated in the stored/cached flow
+        Assertions.assertEquals("TopLevelTest", authMgmtResource.getFlow(topLevelFlow.getId()).getAlias());
+    }
+
+    @Test
+    public void testCreateFlowCannotBeBuiltIn() {
+        try (Response response = authMgmtResource.createFlow(newFlow("ShouldFail", "Should not be created", "basic-flow", true, true))) {
+            Assertions.assertEquals(400, response.getStatus());
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            Assertions.assertEquals("It is not allowed to create a built-in flow", error.getError());
+        }
+    }
+
+    @Test
     public void testExecutionConfigDuplicated() {
         AuthenticationFlowRepresentation existingFlow = null;
 
@@ -794,7 +801,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         AuthenticatorConfigRepresentation executionConfig = new AuthenticatorConfigRepresentation();
 
         executionConfig.setAlias("test-execution-config");
-        executionConfig.setConfig(Map.of("key", "value"));
+        executionConfig.setConfig(Map.of("site.key", "value"));
 
         try (Response response = authMgmtResource.newExecutionConfig(executionWithConfig.getId(), executionConfig)) {
             managedRealm.cleanup().add(r -> r.flows().removeAuthenticatorConfig(ApiUtil.getCreatedId(response)));

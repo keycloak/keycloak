@@ -17,6 +17,8 @@
 
 package org.keycloak.services.clientregistration;
 
+import java.util.Set;
+
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -25,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,6 +38,8 @@ public class ClientRegistrationService {
 
     private final KeycloakSession session;
 
+    private static final Set<String> DEPRECATED_PROVIDER_IDS = Set.of("default", "install", "saml2-entity-descriptor");
+
     public ClientRegistrationService(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.event = event;
@@ -43,6 +48,10 @@ public class ClientRegistrationService {
     @Path("{provider}")
     public Object provider(@PathParam("provider") String providerId) {
         checkSsl();
+
+        if (DEPRECATED_PROVIDER_IDS.contains(providerId)) {
+            ServicesLogger.LOGGER.deprecatedClientRegistrationProvider(providerId);
+        }
 
         ClientRegistrationProvider provider = session.getProvider(ClientRegistrationProvider.class, providerId);
 

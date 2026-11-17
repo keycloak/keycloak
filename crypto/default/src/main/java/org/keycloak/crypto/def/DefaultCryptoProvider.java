@@ -32,6 +32,7 @@ import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jwe.alg.RSAWrapperAlgorithmProvider;
 
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -56,9 +57,9 @@ public class DefaultCryptoProvider implements CryptoProvider {
         this.bcProvider = existingBc == null ? new BouncyCastleProvider() : existingBc;
 
         providers.put(CryptoConstants.A128KW, new AesKeyWrapAlgorithmProvider());
-        providers.put(CryptoConstants.RSA1_5, new DefaultRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding"));
-        providers.put(CryptoConstants.RSA_OAEP, new DefaultRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
-        providers.put(CryptoConstants.RSA_OAEP_256, new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
+        providers.put(CryptoConstants.RSA1_5, new RSAWrapperAlgorithmProvider(new DefaultRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding")));
+        providers.put(CryptoConstants.RSA_OAEP, new RSAWrapperAlgorithmProvider(new DefaultRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding")));
+        providers.put(CryptoConstants.RSA_OAEP_256, new RSAWrapperAlgorithmProvider(new DefaultRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding")));
         providers.put(CryptoConstants.ECDH_ES, new BCEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A128KW, new BCEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A192KW, new BCEcdhEsAlgorithmProvider());

@@ -33,6 +33,11 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
+import org.checkerframework.checker.calledmethods.qual.EnsuresCalledMethods;
+import org.checkerframework.checker.mustcall.qual.MustCallAlias;
+import org.checkerframework.checker.mustcall.qual.NotOwning;
+import org.checkerframework.checker.mustcall.qual.Owning;
+
 /**
  * Forked from wildfly-elytron
  *
@@ -40,9 +45,10 @@ import javax.net.ssl.SSLSocket;
  */
 abstract class AbstractDelegatingSSLSocket extends SSLSocket {
 
-    private final SSLSocket delegate;
+    private final @Owning SSLSocket delegate;
 
-    AbstractDelegatingSSLSocket(final SSLSocket delegate) {
+    @MustCallAlias
+    AbstractDelegatingSSLSocket(final @MustCallAlias SSLSocket delegate) {
         this.delegate = delegate;
     }
 
@@ -54,10 +60,12 @@ abstract class AbstractDelegatingSSLSocket extends SSLSocket {
         return delegate.getHandshakeApplicationProtocol();
     }
 
+    @SuppressWarnings("type.argument") // Resource types in generic arguments are not supported (manual section 8.10).
     public void setHandshakeApplicationProtocolSelector(BiFunction<SSLSocket, List<String>, String> selector) {
         delegate.setHandshakeApplicationProtocolSelector(selector);
     }
 
+    @SuppressWarnings("type.argument") // Resource types in generic arguments are not supported (manual section 8.10).
     public BiFunction<SSLSocket, List<String>, String> getHandshakeApplicationProtocolSelector() {
         return delegate.getHandshakeApplicationProtocolSelector();
     }
@@ -270,6 +278,7 @@ abstract class AbstractDelegatingSSLSocket extends SSLSocket {
         return delegate.getReuseAddress();
     }
 
+    @EnsuresCalledMethods(value = "delegate", methods = "close")
     public void close() throws IOException {
         delegate.close();
     }
@@ -294,6 +303,7 @@ abstract class AbstractDelegatingSSLSocket extends SSLSocket {
         return delegate.isBound();
     }
 
+    @SuppressWarnings("contracts.conditional.postcondition") // Closing the delegate also fulfills this wrapper's close obligation.
     public boolean isClosed() {
         return delegate.isClosed();
     }
@@ -310,6 +320,7 @@ abstract class AbstractDelegatingSSLSocket extends SSLSocket {
         delegate.setPerformancePreferences(connectionTime, latency, bandwidth);
     }
 
+    @NotOwning
     protected SSLSocket getDelegate() {
         return delegate;
     }

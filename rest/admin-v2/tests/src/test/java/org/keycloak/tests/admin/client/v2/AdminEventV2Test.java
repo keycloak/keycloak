@@ -24,7 +24,6 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -256,49 +255,6 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
                     "V2 event representation should contain clientId field");
         } finally {
             deleteTestClient();
-        }
-    }
-
-    @Test
-    public void stripSamlSigningCertificateFromRepresentation() throws Exception {
-        var SAML_CLIENT_ID = "saml-with-certificate";
-
-        SAMLClientRepresentation samlRep = new SAMLClientRepresentation();
-        samlRep.setEnabled(true);
-        samlRep.setClientId(SAML_CLIENT_ID);
-        samlRep.setSigningCertificate("""
-                -----BEGIN CERTIFICATE-----
-                MIIDqDCCApCgAwIBAgIUY0R7RzJQbQJx9z3Y+0l9v0E2XQkwDQYJKoZIhvcNAQEL
-                BQAwgYUxCzAJBgNVBAYTAkRFMRMwEQYDVQQIDApTb21lLVN0YXRlMRMwEQYDVQQH
-                DApTb21lLUNpdHkxFTATBgNVBAoMDEV4YW1wbGUgT3JnMR8wHQYDVQQLDBZJZGVu
-                dGl0eSAmIEFjY2VzczE-HELLO-HOW-ARE-YOU-AwwQZXhhbXBsZS5jb20wHhcNMj
-                MDAwWhcNMjYwMTAxMDAwMDAwWjCBhTELMAkGA1UEBhMCREUxEzARBgNVBAgMClNv
-                bWUtU3RhdGUxEzARBgNVBAcMClNvbWUtQ2l0eTEVMBMGA1UECgwMRXhhbXBsZSBP
-                cmcxHzAdBgNVBAsMFklkZW50aXR5ICYgQWNjZXNzMRkwFwYDVQQDDBBleGFtcGxl
-                LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL+...
-                -----END CERTIFICATE-----
-                """);
-
-        try (var response = getClientsApi().createClient(samlRep)) {
-            assertEquals(201, response.getStatus());
-        }
-
-        try {
-            List<AdminEventRepresentation> events = testRealm.admin().getAdminEvents();
-
-            // Find the v2 event
-            AdminEventRepresentation v2Event = events.stream()
-                    .filter(e -> e.getDetails() != null && API_VERSION_V2.equals(e.getDetails().get(API_VERSION_DETAIL_KEY)))
-                    .findFirst()
-                    .orElse(null);
-
-            assertThat("V2 event should be present", v2Event, notNullValue());
-            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
-            var representation = v2Event.getRepresentation();
-            assertThat("V2 event should have representation", representation, notNullValue());
-            assertThat("V2 event should have masked signing certificate in representation", representation, containsString("\"signingCertificate\":\"**********\""));
-        } finally {
-            deleteClient(SAML_CLIENT_ID);
         }
     }
 

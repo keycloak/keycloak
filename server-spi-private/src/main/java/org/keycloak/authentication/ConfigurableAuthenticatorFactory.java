@@ -18,11 +18,15 @@
 package org.keycloak.authentication;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,6 +38,25 @@ public interface ConfigurableAuthenticatorFactory extends ConfiguredProvider {
             AuthenticationExecutionModel.Requirement.REQUIRED,
             AuthenticationExecutionModel.Requirement.ALTERNATIVE,
             AuthenticationExecutionModel.Requirement.DISABLED};
+
+    /**
+     * Config properties every authenticator execution supports, in addition to the ones returned by
+     * {@link #getConfigProperties()}.
+     */
+    List<ProviderConfigProperty> COMMON_CONFIG_PROPERTIES = List.copyOf(ProviderConfigurationBuilder.create()
+            .property()
+            .name(Constants.AUTHENTICATION_EXECUTION_REFERENCE_VALUE)
+            .label("authenticatorRefConfig.value.label")
+            .helpText("authenticatorRefConfig.value.help")
+            .type(ProviderConfigProperty.STRING_TYPE)
+            .add()
+            .property()
+            .name(Constants.AUTHENTICATION_EXECUTION_REFERENCE_MAX_AGE)
+            .label("authenticatorRefConfig.maxAge.label")
+            .helpText("authenticatorRefConfig.maxAge.help")
+            .type(ProviderConfigProperty.STRING_TYPE)
+            .add()
+            .build());
 
     /**
      * Friendly name for the authenticator

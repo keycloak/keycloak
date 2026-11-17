@@ -34,8 +34,9 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
     private final int iterations;
     private final int parallelism;
     private final Semaphore cpuCoreSemaphore;
+    private final BlockChunkManager blockChunkManager;
 
-    public Argon2PasswordHashProvider(String version, String type, int hashLength, int memory, int iterations, int parallelism, Semaphore cpuCoreSemaphore) {
+    public Argon2PasswordHashProvider(String version, String type, int hashLength, int memory, int iterations, int parallelism, Semaphore cpuCoreSemaphore, BlockChunkManager blockChunkManager) {
         this.version = version;
         this.type = type;
         this.hashLength = hashLength;
@@ -43,13 +44,14 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         this.iterations = iterations;
         this.parallelism = parallelism;
         this.cpuCoreSemaphore = cpuCoreSemaphore;
+        this.blockChunkManager = blockChunkManager;
     }
 
     @Override
     public boolean policyCheck(PasswordPolicy policy, PasswordCredentialModel credential) {
         PasswordCredentialData data = credential.getPasswordCredentialData();
 
-        return iterations == data.getHashIterations() &&
+        return expectedIterations(policy != null ? policy.getHashIterations() : -1) == data.getHashIterations() &&
                 checkCredData(TYPE_KEY, type, data) &&
                 checkCredData(VERSION_KEY, version, data) &&
                 checkCredData(Argon2PasswordHashProviderFactory.HASH_LENGTH_KEY, hashLength, data) &&
@@ -58,19 +60,16 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
     }
 
     /**
-     * Password hashing iterations from password policy is intentionally ignored for now for two reasons. 1) default
-     * iterations are 210K, which is way too large for Argon2, and 2) it makes little sense to configure iterations only
-     * for Argon2, which should be combined with configuring memory, which is not currently configurable in password
-     * policy.
+     * Password hashing iterations from the password policy are only used if they are 100 or less, otherwise the
+     * provider's iterations are used. Larger values are most likely meant for PBKDF2 (default 210K), which is way too
+     * large for Argon2.
      */
     @Override
     public PasswordCredentialModel encodedCredential(String rawPassword, int iterations) {
-        if (iterations == -1) {
-            iterations = this.iterations;
-        } else if (iterations > 100) {
+        if (iterations > 100) {
             logger.warn("Iterations for Argon should be less than 100, using default");
-            iterations = this.iterations;
         }
+        iterations = expectedIterations(iterations);
 
         byte[] salt = Salt.generateSalt();
         String encoded = encode(rawPassword, salt, version, type, hashLength, parallelism, memory, iterations);
@@ -113,13 +112,17 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
         return tracing.trace(Argon2PasswordHashProvider.class, "encode", span -> {
             try {
                 cpuCoreSemaphore.acquire();
-                try {
-                    org.bouncycastle.crypto.params.Argon2Parameters parameters = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
+                try (BlockChunkManager.LeasedBlockPool pool = blockChunkManager != null ? blockChunkManager.lease() : null) {
+                    org.bouncycastle.crypto.params.Argon2Parameters.Builder builder = new org.bouncycastle.crypto.params.Argon2Parameters.Builder(Argon2Parameters.getTypeValue(type))
                             .withVersion(Argon2Parameters.getVersionValue(version))
                             .withSalt(salt)
                             .withParallelism(parallelism)
                             .withMemoryAsKB(memory)
-                            .withIterations(iterations).build();
+                            .withIterations(iterations);
+                    if (pool != null) {
+                        builder.withBlockPool(pool);
+                    }
+                    org.bouncycastle.crypto.params.Argon2Parameters parameters = builder.build();
 
                     Argon2BytesGenerator generator = new Argon2BytesGenerator();
                     generator.init(parameters);
@@ -135,6 +138,15 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * The iterations that {@link #encodedCredential(String, int)} uses for the given password policy iterations.
+     * {@link #policyCheck(PasswordPolicy, PasswordCredentialModel)} must use the same, otherwise a freshly created hash
+     * is considered outdated and re-hashed after every successful login.
+     */
+    private int expectedIterations(int policyIterations) {
+        return policyIterations == -1 || policyIterations > 100 ? this.iterations : policyIterations;
     }
 
     private boolean checkCredData(String key, int expectedValue, PasswordCredentialData data) {

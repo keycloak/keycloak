@@ -103,8 +103,9 @@ public class SingleFileExportProvider implements ExportProvider {
     }
 
     private void writeToFile(Object reps) throws IOException {
-        FileOutputStream stream = new FileOutputStream(this.file);
-        getObjectMapper().writeValue(stream, reps);
+        try (FileOutputStream stream = new FileOutputStream(this.file)) {
+            getObjectMapper().writeValue(stream, reps);
+        }
     }
 
     public ExportProvider withRealmName(String realmName) {

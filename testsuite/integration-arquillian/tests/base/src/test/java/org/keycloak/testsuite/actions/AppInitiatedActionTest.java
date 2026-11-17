@@ -25,7 +25,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
@@ -34,6 +33,7 @@ import org.keycloak.testsuite.util.MailServer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest.SUCCESS;
 
@@ -56,9 +56,6 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
     public MailServer mail = new MailServer();
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
 
     @Page
@@ -70,7 +67,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
@@ -80,10 +77,10 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void executeUnknownActionAfterBeingAuthenticated() {
         oauth.loginForm().doLogin("test-user@localhost", "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         oauth.loginForm().kcAction("nosuch").open();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
@@ -95,7 +92,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
         assertEquals("error", kcActionStatus);
@@ -112,7 +109,7 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
 
             loginPage.login("test-user@localhost", "password");
 
-            assertTrue(appPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             String kcActionStatus = oauth.parseLoginResponse().getKcActionStatus();
             assertEquals("error", kcActionStatus);
@@ -150,10 +147,41 @@ public class AppInitiatedActionTest extends AbstractTestRealmKeycloakTest {
             passwordUpdatePage.changePassword("password", "password");
 
             // once the AIA password is executed the terms and conditions should be displayed for the login
-            appPage.assertCurrent();
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             assertEquals(SUCCESS, oauth.parseLoginResponse().getKcActionStatus());
         } finally {
             termsAndConditions.setPriority(prevPriority);
+            termsAndConditions.setEnabled(prevEnabled);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
+        }
+    }
+
+    @Test
+    public void executeActionWithTermsAndConditionsUnsupportedAIAButAssignedToUser() throws IOException {
+        RealmResource realm = managedRealm.admin();
+        RequiredActionProviderRepresentation termsAndConditions = realm.flows().getRequiredAction(TermsAndConditions.PROVIDER_ID);
+        boolean prevEnabled = termsAndConditions.isEnabled();
+
+        try (UserAttributeUpdater userUpdater = UserAttributeUpdater
+                .forUserByUsername(realm, "test-user@localhost")
+                .setRequiredActions(UserModel.RequiredAction.TERMS_AND_CONDITIONS).update()) {
+
+            // enable terms and conditions
+            termsAndConditions.setEnabled(true);
+            realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
+
+            // request kc_action for terms and conditions which is not supported
+            oauth.loginForm().kcAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()).open();
+            loginPage.login("test-user@localhost", "password");
+
+            // Terms and conditions are displayed because it is assigned to the user
+            termsAndConditionsPage.assertCurrent();
+            termsAndConditionsPage.acceptTerms();
+
+            // assert login and kc_action_status is error because it was not allowed
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+            assertEquals("error", oauth.parseLoginResponse().getKcActionStatus());
+        } finally {
             termsAndConditions.setEnabled(prevEnabled);
             realm.flows().updateRequiredAction(TermsAndConditions.PROVIDER_ID, termsAndConditions);
         }

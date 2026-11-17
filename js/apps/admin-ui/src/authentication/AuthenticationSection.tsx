@@ -15,7 +15,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { sortBy } from "lodash-es";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -66,7 +66,11 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 export default function AuthenticationSection() {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realm: realmName } = useRealm();
+  const { realm: realmName, refresh: refreshRealm } = useRealm();
+
+  useEffect(() => {
+    refreshRealm();
+  }, []);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const { addAlert, addError } = useAlerts();

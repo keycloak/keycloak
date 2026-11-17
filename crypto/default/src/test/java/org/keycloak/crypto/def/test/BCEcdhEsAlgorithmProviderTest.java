@@ -39,6 +39,7 @@ import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.rule.CryptoInitRule;
 
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -81,6 +82,36 @@ public class BCEcdhEsAlgorithmProviderTest {
         byte[] derivedKey = BCEcdhEsAlgorithmProvider.deriveKey(encryptionPublicKey, ephemeralPrivateKey, 128,
                 "A128GCM", Base64Url.decode("QWxpY2U"), Base64Url.decode("Qm9i"));
         Assert.assertEquals("VqqN6vgjbSBcIijNcacQGg", Base64Url.encode(derivedKey));
+    }
+
+    /**
+     * Verify that an off-curve ephemeral public key is rejected during JWE decoding.
+     * This validates the defense-in-depth EC point validation added to toPublicKey().
+     * The assertion checks the exception message to confirm rejection comes from the
+     * explicit isValid() check, not from a downstream KeyFactory or JCA provider.
+     */
+    @Test
+    public void rejectsOffCurveEphemeralKey() throws Exception {
+        // Construct an EPK with coordinates not on P-256
+        ECPublicJWK offCurveEpk = new ECPublicJWK();
+        offCurveEpk.setCrv("P-256");
+        // Valid x coordinate from RFC 7518 Appendix C test vector
+        offCurveEpk.setX("weNJy2HscCSM6AEDTDg04biOvhFhyyWvOHQfeF_PxMQ");
+        // y = 1 is not on P-256 for this x
+        offCurveEpk.setY(Base64Url.encode(BigInteger.ONE.toByteArray()));
+
+        JWEHeader header = JWEHeader.builder()
+                .algorithm(Algorithm.ECDH_ES_A128KW)
+                .encryptionAlgorithm(JWEConstants.A128CBC_HS256)
+                .ephemeralPublicKey(offCurveEpk)
+                .build();
+
+        PrivateKey decryptionKey = getPrivateKey("P-256", "VEmDZpDXXK8p8N0Cndsxs924q6nS1RXFASRl6BfUqdw");
+        // decodeCek should throw IllegalArgumentException from the explicit isValid() check
+        IllegalArgumentException ex = Assert.assertThrows(IllegalArgumentException.class,
+                () -> new BCEcdhEsAlgorithmProvider().decodeCek(new byte[0], decryptionKey, header, null));
+        Assert.assertTrue("Expected rejection from EC point validation, got: " + ex.getMessage(),
+                ex.getMessage().contains("not on the named curve"));
     }
 
     @Test

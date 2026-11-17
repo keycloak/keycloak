@@ -39,7 +39,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.storage.StorageId;
 import org.keycloak.utils.StringUtil;
@@ -78,18 +77,18 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     protected final UserProfileContext context;
     protected final KeycloakSession session;
     private final Map<String, AttributeMetadata> metadataByAttribute;
-    private final UPConfig upConfig;
+    private final UnmanagedAttributePolicy unmanagedAttributePolicy;
     protected final UserModel user;
     private final Map<String, List<String>> unmanagedAttributes = new HashMap<>();
 
     public DefaultAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
-            UserProfileMetadata profileMetadata,
-            KeycloakSession session) {
+            UserProfileMetadata profileMetadata, KeycloakSession session,
+            UnmanagedAttributePolicy unmanagedAttributePolicy) {
         this.context = context;
         this.user = user;
         this.session = session;
         this.metadataByAttribute = configureMetadata(profileMetadata.getAttributes(), profileMetadata);
-        this.upConfig = session.getProvider(UserProfileProvider.class).getConfiguration();
+        this.unmanagedAttributePolicy = unmanagedAttributePolicy;
         putAll(Collections.unmodifiableMap(normalizeAttributes(attributes)));
     }
 
@@ -106,7 +105,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             return !isAllowEditUnmanagedAttribute();
         }
 
-        return getMetadata(name) == null;
+        return getMetadataReadOnly(name) == null;
     }
 
     private boolean isReadableOrWritableDuringRegistration(String name) {
@@ -122,20 +121,15 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     private boolean isAllowEditUnmanagedAttribute() {
-        UnmanagedAttributePolicy unmanagedAttributesPolicy = upConfig.getUnmanagedAttributePolicy();
-
         if (!isAllowUnmanagedAttribute()) {
             return false;
         }
 
-        switch (unmanagedAttributesPolicy) {
-            case ENABLED:
-                return true;
-            case ADMIN_EDIT:
-                return context.isAdminContext();
-        }
-
-        return false;
+        return switch (unmanagedAttributePolicy) {
+            case ENABLED -> true;
+            case ADMIN_EDIT -> context.isAdminContext();
+            default -> false;
+        };
     }
 
     /**
@@ -276,13 +270,16 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public AttributeMetadata getMetadata(String name) {
+        AttributeMetadata metadata = getMetadataReadOnly(name);
+        return metadata != null ? metadata.clone() : null;
+    }
+
+    private AttributeMetadata getMetadataReadOnly(String name) {
         if (unmanagedAttributes.containsKey(name)) {
             return createUnmanagedAttributeMetadata(name);
         }
 
-        return Optional.ofNullable(metadataByAttribute.get(name))
-                .map(AttributeMetadata::clone)
-                .orElse(null);
+        return metadataByAttribute.get(name);
     }
 
     @Override
@@ -290,7 +287,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         Map<String, List<String>> attributes = new HashMap<>(this);
 
         for (String name : nameSet()) {
-            AttributeMetadata metadata = getMetadata(name);
+            AttributeMetadata metadata = getMetadataReadOnly(name);
 
             if (metadata == null) {
                 attributes.remove(name);
@@ -322,7 +319,7 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             return true;
         }
 
-        AttributeMetadata metadata = getMetadata(name);
+        AttributeMetadata metadata = getMetadataReadOnly(name);
 
         return metadata != null && metadata.isDefault();
     }
@@ -498,22 +495,14 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     }
 
     protected boolean isAllowUnmanagedAttribute() {
-        UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
-
         if (unmanagedAttributePolicy == null) {
-            // unmanaged attributes disabled
             return false;
         }
 
-        switch (unmanagedAttributePolicy) {
-            case ADMIN_EDIT:
-            case ADMIN_VIEW:
-                // unmanaged attributes only available through the admin context
-                return context.isAdminContext();
-        }
-
-        // allow unmanaged attributes if enabled to all contexts
-        return UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy);
+        return switch (unmanagedAttributePolicy) {
+            case ADMIN_EDIT, ADMIN_VIEW -> context.isAdminContext();
+            default -> UnmanagedAttributePolicy.ENABLED.equals(unmanagedAttributePolicy);
+        };
     }
 
     protected void setUserName(Map<String, List<String>> newAttributes, List<String> values) {
@@ -591,21 +580,24 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
     @Override
     public Map<String, Object> getAnnotations(String name) {
-        AttributeMetadata metadata = getMetadata(name);
+        AttributeMetadata metadata = getMetadataReadOnly(name);
 
         if (metadata == null) {
             return Collections.emptyMap();
         }
 
         AttributeContext context = createAttributeContext(metadata);
+        Map<String, Object> annotations = metadata.getAnnotations(context);
 
-        return metadata.getAnnotations(context);
+        if (annotations == null) {
+            return null;
+        }
+
+        return new HashMap<>(annotations);
     }
 
     protected AttributeMetadata createUnmanagedAttributeMetadata(String name) {
         return new AttributeMetadata(name, Integer.MAX_VALUE) {
-            final UnmanagedAttributePolicy unmanagedAttributePolicy = upConfig.getUnmanagedAttributePolicy();
-
             @Override
             public boolean canView(AttributeContext context) {
                 return canEdit(context)

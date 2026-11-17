@@ -40,7 +40,7 @@ export const GroupSelect = ({
     getValues,
     formState: { errors },
   } = useFormContext();
-  const values: string[] = getValues(name!);
+  const values: string[] = getValues(name!) || [];
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
 
@@ -136,6 +136,7 @@ export const GroupSelect = ({
                     variant="link"
                     className="keycloak__client-authorization__policy-row-remove"
                     icon={<MinusCircleIcon />}
+                    aria-label={t("removeGroup", { name: group.path })}
                     onClick={() => {
                       setValue(name!, [
                         ...convertGroups(

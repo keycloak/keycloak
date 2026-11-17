@@ -59,23 +59,6 @@ public class DirExportProvider extends MultipleStepsExportProvider<DirExportProv
         return rootDirectory;
     }
 
-    public static boolean recursiveDeleteDir(File dirPath) {
-        if (dirPath.exists()) {
-            File[] files = dirPath.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                if (files[i].isDirectory()) {
-                    recursiveDeleteDir(files[i]);
-                } else {
-                    files[i].delete();
-                }
-            }
-        }
-        if (dirPath.exists())
-            return dirPath.delete();
-        else
-            return true;
-    }
-
     @Override
     public void writeRealm(String fileName, RealmRepresentation rep) throws IOException {
         File file = new File(getRootDirectory(), fileName);
@@ -87,15 +70,17 @@ public class DirExportProvider extends MultipleStepsExportProvider<DirExportProv
     @Override
     protected void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException {
         File file = new File(getRootDirectory(), fileName);
-        FileOutputStream os = new FileOutputStream(file);
-        ExportUtils.exportUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
+        try (FileOutputStream os = new FileOutputStream(file)) {
+            ExportUtils.exportUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
+        }
     }
 
     @Override
     protected void writeFederatedUsers(String fileName, KeycloakSession session, RealmModel realm, List<String> users) throws IOException {
         File file = new File(getRootDirectory(), fileName);
-        FileOutputStream os = new FileOutputStream(file);
-        ExportUtils.exportFederatedUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
+        try (FileOutputStream os = new FileOutputStream(file)) {
+            ExportUtils.exportFederatedUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
+        }
     }
 
     @Override

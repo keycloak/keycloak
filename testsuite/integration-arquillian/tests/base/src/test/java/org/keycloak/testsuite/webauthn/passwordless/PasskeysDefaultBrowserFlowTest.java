@@ -42,6 +42,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -134,7 +135,7 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
         final String totpSecret = loginConfigTotpPage.getTotpSecret();
         loginConfigTotpPage.configure(totp.generateTOTP(totpSecret), "totp");
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         logout();
         return totpSecret;
@@ -153,7 +154,7 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
 
         // force login using webauthn link
         webAuthnLoginPage.clickAuthenticate();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // expect success login
         EventAssertion.expectLoginSuccess(events.poll())
@@ -176,7 +177,7 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
 
         // login using password
         loginPage.login(USERNAME, getPassword(USERNAME));
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(user.getId())
                 .details(Details.USERNAME, USERNAME)
@@ -200,7 +201,7 @@ public class PasskeysDefaultBrowserFlowTest extends AbstractWebAuthnVirtualTest 
 
         // login using otp
         oneTimeCodePage.sendCode(new TimeBasedOTP().generateTOTP(totpSecret));
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventAssertion.expectLoginSuccess(events.poll())
                 .userId(user.getId())

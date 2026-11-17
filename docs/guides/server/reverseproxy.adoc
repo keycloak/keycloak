@@ -90,6 +90,33 @@ Mitigate this risk, for example, by restricting network access.
 
 * Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
 
+* Due to HTTP/2 connection coalescing, do not configure {project_name} to be the proxy's default backend when {project_name} is using a wildcard certificate and that certificate is shared among several services behind the proxy.
+In this configuration {project_name} will not be able to distinguish between misdirected requests and those sent by default - when no SNI information is sent or SNI does not match any backend.
+
+=== Backchannel access considerations
+
+If private backchannel access to {project_name} is requested, using a proxy might be challenging:
+
+* When the PROXY protocol is used for TLS passthrough, clients cannot connect directly to {project_name} without the PROXY protocol. Any direct connection would also allow spoofing of IP source addresses.
+
+* When using TLS re-encrypt, it might be impossible to restrict proxy traffic to specific source IP addresses when the proxy's IP addresses are dynamic. Not restricting the proxy traffic would allow clients to spoof proxy headers.
+
+In these setups, it might be better to stick with a single proxy and no backchannel access, or to deploy an internal proxy in addition to the external proxy.
+
+When deploying a second proxy, there are additional considerations:
+
+* Restrict network access so that {project_name} accepts connections only from the two proxies, for example, by adding network filtering.
+
+* Both proxies need to use the same mode.
+Either both need to use TLS passthrough, or both need to use TLS re-encrypt.
+
+* If using TLS passthrough mode, both proxies can forward requests using the PROXY protocol.
+As {project_name} presents a single TLS certificate for both paths, it needs to include a subject alternative name (SAN) for the second path so callers can validate TLS on both paths.
+Note that this SAN will be visible on both paths.
+While this is not a technical problem, it still leaks an internal hostname on the public path.
+
+* If using TLS re-encrypt mode, both proxies would filter incoming HTTP headers, and add trusted HTTP headers.
+
 == Port to be proxied
 
 {project_name} runs on the following ports by default:
@@ -164,17 +191,55 @@ Take extra precautions to ensure that the client address is properly set by your
 If these headers are incorrectly configured, rogue clients can inject false values and trick {project_name} into thinking the client is connecting from a different IP address than the actual one.
 This precaution is especially critical if you do any deny or allow listing of IP addresses.
 
+Similarly, if your deployment uses fully dynamic URLs (`--hostname-strict=false`), rogue clients can forge the request's host headers. This exposes {project_name} to Host header injection, allowing attackers to manipulate dynamically generated URLs.
+
 NOTE: When using the `xforwarded` setting, the `X-Forwarded-Port` takes precedence over any port included in the `X-Forwarded-Host`.
 
 NOTE: If the TLS connection is terminated at the reverse proxy (edge termination), enabling HTTP through the `http-enabled` setting is required.
 
 === Trusted Proxies
 
-To ensure that proxy headers are used only from proxies you trust, set the `proxy-trusted-addresses` option to a comma-separated list of IP addresses (IPv4 or IPv6) or Classless Inter-Domain Routing (CIDR) notations.
+By default, {project_name} accepts proxy headers from any source. To restrict this, set the `proxy-trusted-addresses` option to a comma-separated list of addresses that identify your trusted reverse proxies. When configured, proxy headers from any other address are ignored.
 
-For example:
+The following address formats are supported:
+
+[%autowidth]
+|===
+| Format | Description | Example
+
+| IPv4 address
+| A single IPv4 address.
+| `192.168.0.32`
+
+| IPv6 address
+| A single IPv6 address enclosed in square brackets.
+| `[::1]`
+
+| CIDR notation
+| An IP range in Classless Inter-Domain Routing notation. Use this to trust an entire subnet.
+| `127.0.0.0/8` or `::1/128`
+
+| Hostname
+| A DNS hostname such as `localhost` or `proxy.example.com`.
+| `localhost`
+
+| Address or hostname with port
+| An IP address or hostname with an optional port suffix. Use this when your proxy connects from a specific port.
+| `192.168.0.32:8084` or `[::1]:8084` or `proxy.example.com:8084`
+
+|===
+
+IMPORTANT: IPv6 addresses must be enclosed in square brackets, for example `[::1]` or `[0:0:0:0:0:0:0:1]`. If a bare IPv6 address without brackets is provided (for example `::1`), {project_name} automatically converts it to the bracketed form and logs a warning. To avoid this warning, always use brackets or CIDR notation for IPv6 addresses.
+
+WARNING: Using hostnames is deprecated and will be removed in a future version. The behavior of hostnames is unreliable: they are resolved to IP addresses at startup and will not track changes to DNS records. If the hostname cannot be resolved at startup, a DNS lookup is performed on every request, which slows down request processing. Use IP addresses or CIDR notation instead.
+
+For example, to trust a specific proxy IP and an entire subnet:
 
 <@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/>
+
+To trust both IPv4 and IPv6 loopback addresses using CIDR notation:
+
+<@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=127.0.0.1/32,::1/128"/>
 
 [[header-filtering-recommendations]]
 === Header filtering recommendations
@@ -189,13 +254,16 @@ Configure the proxy to apply the following rules to incoming requests before for
 * *Overwrite* `Forwarded` and `+X-Forwarded-*+` headers with the proxy's own values rather than removing them, because {project_name} relies on these headers when `--proxy-headers` is configured.
 * *Strip* all other headers listed below entirely.
 
+Depending on your security setup, you might want to allow some of the tracing headers through — either as-is or after sanitizing their values — for requests from trusted callers.
+This assessment depends on your trust boundaries and security trade-offs and is out of scope for this guide.
+
 [%autowidth]
 |===
 |Header(s) |Category |Risk if not filtered
 
 |`Forwarded`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`, `X-Forwarded-Prefix`
 |Proxy identity
-|Clients can spoof their IP address, protocol, or host, affecting access control and audit logging.
+|Clients can spoof their IP address, protocol, or host, affecting access control and audit logging. Forging the host allows Host header injection, enabling attackers to manipulate dynamically generated URLs.
 *Overwrite* these headers rather than stripping them.
 
 |`X-Original-Forwarded-For`
@@ -245,6 +313,7 @@ Same risks as other tracing headers.
 
 |===
 
+[#_exposed_path_recommendations]
 === Exposed path recommendations
 
 When using a reverse proxy, {project_name} only requires certain paths to be exposed.
@@ -261,13 +330,18 @@ The following table shows the recommended paths to expose.
 
 |/admin/
 | -
-|No
+|Only internally
 |Exposed admin paths lead to an unnecessary attack vector.
 
 |/realms/
 |/realms/
 |Yes
 |This path is needed to work correctly, for example, for OIDC endpoints.
+
+|/realms/master/
+|/realms/master/
+|Only internally
+|Assuming the administrative realm is called `master`, restrict `/realms/master/` to internal access. See <<isolating-master-realm, Isolating authentication for the administrative realm>> for more information.
 
 |/resources/
 |/resources/
@@ -289,67 +363,69 @@ The following table shows the recommended paths to expose.
 |No
 |Exposed health checks lead to an unnecessary attack vector.
 
+|/lb-check
+|/lb-check
+|Yes
+|Endpoint to be used for an external load balancer to check the availability of a {project_name} cluster.
+
 |===
 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
-If not, prefix the path with your desired one.
+If not, prefix the Reverse Proxy Path with your desired one. See <<context-path-on-reverse-proxy, Context path on reverse proxy>> for how the context path must be handled between the proxy and {project_name}.
 
 NOTE: If you configured an `http-relative-path` on the server, proceed as follows to use discovery with RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
 
-=== Different context path on reverse proxy
+The `lb-check` endpoint is only available when the `stateless` or the `multi-site` feature is enabled.
+It is intended for external load balancers when you do not want to expose the management interface and its `/health` endpoints publicly.
+This is a non-blocking endpoint and should remain responsive under high load, so the load balancer does not remove a healthy cluster from rotation during transient overload.
+
+[[isolating-master-realm]]
+=== Isolating authentication for the administrative realm
+
+As a security best practice, restrict access to the authentication protocol endpoints of the administrative realm from public IP addresses.
+The following description assumes {project_name}'s default settings and that this realm is called `master`.
+
+To do that, do not expose the path `/realms/master/` to the public internet.
+
+Depending on your topology, you can combine this with serving the Admin UI and Admin API on a dedicated hostname and port. See <@links.server id="hostname" anchor="administration-console-on-a-separate-hostname" /> for details.
+
+[#context-path-on-reverse-proxy]
+=== Context path on reverse proxy
 
 By default, {project_name} is exposed through the root context path (`/`).
-If the proxy uses a different context path than {project_name}, one of the following must be done:
+If the proxy exposes {project_name} under a context path, such as `/auth`, the proxy and {project_name} must agree on whether that path is part of the request URI that reaches the server. Choose one of the following approaches.
+
+WARNING: A mismatch between the request URI sent by the reverse proxy and the one expected by {project_name} typically results in `404 Not Found` errors, or in redirects and links that point to the wrong location.
+
+==== Proxy removes the context path
+
+The server keeps serving requests at the root context path, and the context path is only used by {project_name} to build the URLs it returns. To configure this, do one of the following:
 
 * Use a simple hostname for the `hostname` option, `xforwarded` for the `proxy-headers` option, and have the proxy set the `X-Forwarded-Prefix` header.
-* Use a full URL for the `hostname` option including the proxy context path, for example using `--hostname=https://my.keycloak.org/auth` if {project_name} is exposed through the reverse proxy on `/auth`.
-* Change the context path of {project_name} itself to match the context path for the reverse proxy using the `http-relative-path` option.
+* Use a full URL for the `hostname` option including the proxy context path, for example using `--hostname=https://my.keycloak.org/auth` if {project_name} is exposed through the reverse proxy on `/auth`. The `proxy-headers` option must also be set, otherwise the server logs a likely misconfiguration warning because the path in `hostname` does not match `http-relative-path`.
+
+In both cases, the reverse proxy must remove the context path from the request URI before forwarding the request to {project_name}. For example, a request to `/auth/realms/master` must be forwarded as `/realms/master`. Consult the documentation of your reverse proxy for how to rewrite or strip a path prefix.
+
+==== Proxy and server use the same context path
+
+Set the `http-relative-path` option on {project_name} to the same context path the proxy exposes, for example `--http-relative-path=/auth`. The server then serves requests under that path, so the reverse proxy must forward the request URI unchanged.
 
 For more details on exposing {project_name} on a different hostname or context path, including the Administration REST API and Console, see <@links.server id="hostname"/>.
 
-=== Enable sticky sessions
+=== Sticky sessions
 
-A typical cluster deployment consists of a load balancer (reverse proxy) and two or more {project_name} servers on a private network.
-For performance purposes, it may be useful if the load balancer forwards all requests related to a particular browser session to the same {project_name} backend node.
+In previous versions of {project_name}, sticky sessions could improve performance by routing all requests for a browser session to the same backend node, avoiding remote cache lookups for session data.
+{project_name} appended the owning node's route to the `AUTH_SESSION_ID` cookie (for example, `123.node2`) so that the load balancer could parse it for routing decisions.
 
-The reason is that {project_name} uses an Infinispan distributed cache internally to store data related to the current authentication session and user session.
-The Infinispan distributed caches are configured with a limited number of owners.
-That means that session-related data is stored only on some cluster nodes, and the other nodes need to look up the data remotely if they want to access it.
+Since the optimizations in 26.6, sticky sessions no longer bring a significant benefit given the complex setup on the proxy side to get this working.
+Authentication sessions are created on the node where the browser starts the session, and while a session may move to another node on a subsequent request, the overhead is low.
+Most interactions such as backchannel calls and token refreshes do not use cookies and are distributed across nodes regardless.
+The recommendation is to aim for an even distribution of load across {project_name} nodes instead of using sticky sessions.
 
-For example, if an authentication session with ID 123 is saved in the Infinispan cache on node1, and then node2 needs to look up this session, it needs to send the request to node1 over the network to retrieve the session entity.
-
-It is beneficial if a particular session entity is always available locally, which can be achieved with sticky sessions.
-The workflow in a cluster environment with a public frontend load balancer and two backend {project_name} nodes can be as follows:
-
-* The user sends the initial request to see the {project_name} login screen.
-
-* This request is served by the frontend load balancer, which forwards it to some random node (e.g., node1).
-Strictly speaking, the node does not need to be random, but can be chosen according to other criteria (client IP address, etc.).
-It all depends on the implementation and configuration of the underlying load balancer (reverse proxy).
-
-* {project_name} creates an authentication session with a random ID (e.g., 123) and saves it to the Infinispan cache.
-
-* The Infinispan distributed cache assigns the primary owner of the session based on the hash of the session ID.
-See the Infinispan documentation for more details.
-Assume that Infinispan assigns node2 as the owner of this session.
-
-* {project_name} creates the cookie `AUTH_SESSION_ID` with the format `<session-id>.<owner-node-id>`.
-In this example, the value is `123.node2`.
-
-* The response is returned to the user with the {project_name} login screen and the `AUTH_SESSION_ID` cookie in the browser.
-
-From this point, it is beneficial if the load balancer forwards all subsequent requests to node2, as this is the node that owns the authentication session with ID 123 and hence Infinispan can look up this session locally.
-After authentication is finished, the authentication session is converted to a user session, which is also saved on node2 because it has the same ID 123.
-
-Sticky sessions are not mandatory for a cluster setup; however, they improve performance for the reasons mentioned above.
-You need to configure your load balancer to use the `AUTH_SESSION_ID` cookie for session affinity.
-The appropriate procedure depends on your load balancer.
-
-If your proxy supports session affinity without processing cookies from backend nodes, you should set the `+spi-sticky-session-encoder--infinispan--should-attach-route+` option to `false` in order to avoid attaching the node to cookies and just rely on the reverse proxy capabilities.
+The options `+spi-sticky-session-encoder--infinispan--should-attach-route+` and `+spi-sticky-session-encoder--remote--should-attach-route+` are deprecated since {project_name} 26.8 and will be removed in a future release.
+To suppress the deprecation warning at startup, set those SPI options to `false`:
 
 <@kc.start parameters="--spi-sticky-session-encoder--infinispan--should-attach-route=false"/>
-
-By default, the `+spi-sticky-session-encoder--infinispan--should-attach-route+` option value is `true` so that the node name is attached to cookies to indicate to the reverse proxy the node that subsequent requests should be sent to.
 
 === Enabling client certificate lookup
 
@@ -464,6 +540,8 @@ Example HAProxy configuration:
 
 [source]
 ----
+http-request del-header Client-Cert
+http-request del-header Client-Cert-Chain
 http-request set-header Client-Cert %[ssl_c_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
 http-request set-header Client-Cert-Chain %[ssl_c_chain_der,base64] if { ssl_c_used } { ssl_c_verify 0 }
 ----

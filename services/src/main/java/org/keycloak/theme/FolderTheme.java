@@ -84,8 +84,8 @@ public class FolderTheme extends FileBasedTheme {
 
     @Override
     public URL getTemplate(String name) throws IOException {
-        File file = new File(themeDir, name);
-        return file.isFile() ? file.toURI().toURL() : null;
+        File file = ResourceLoader.getFile(themeDir, name);
+        return file != null && file.isFile() ? file.toURI().toURL() : null;
     }
 
     @Override

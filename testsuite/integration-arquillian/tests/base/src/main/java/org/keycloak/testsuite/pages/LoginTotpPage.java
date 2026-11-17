@@ -19,7 +19,6 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.common.util.Retry;
 import org.keycloak.testsuite.util.UIUtils;
 
 import org.junit.jupiter.api.Assertions;
@@ -36,15 +35,11 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     @FindBy(id = "otp")
     private WebElement otpInput;
 
-    @FindBy(id = "password-token")
-    private WebElement passwordToken;
-
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
-
     @FindBy(id = "input-error-otp")
     private WebElement totpInputCodeError;
 
@@ -56,14 +51,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         if (totp != null) otpInput.sendKeys(totp);
 
         UIUtils.clickLink(submitButton);
-    }
-
-    public String getAlertError() {
-        try {
-            return UIUtils.getTextFromElement(loginErrorMessage);
-        } catch (NoSuchElementException e) {
-            return null;
-        }
     }
 
     public String getInputError(){
@@ -78,19 +65,15 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         }
     }
 
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("otp"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-otp";
     }
 
     // If false, we don't expect that credentials combobox is available. If true, we expect that it is available on the page
     public void assertOtpCredentialSelectorAvailability(boolean expectedAvailability) {
         try {
-            driver.findElement(By.className("pf-v5-c-tile"));
+            driver.findElement(getCssSelectorForLookupAllRadios());
             Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
             Assertions.assertFalse(expectedAvailability);
@@ -107,23 +90,27 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
     public String getSelectedOtpCredential() {
         try {
             WebElement selected = driver.findElement(getCssSelectorForLookupActiveCard());
-            return selected.getText();
+            return driver.findElement(By.id(selected.getAttribute("aria-labelledby"))).getText();
         } catch (NoSuchElementException nse) {
             // No selected element found
             return null;
         }
     }
 
+    private By getCssSelectorForLookupAllRadios() {
+        return By.cssSelector("input[type='radio'][name='selectedCredentialId']");
+    }
+
     private By getXPathForLookupAllCards() {
-        return By.xpath("//span[contains(@class, 'pf-v5-c-tile__title')]");
+        return By.xpath("//*[starts-with(@id, 'kc-otp-credential-title-')]");
     }
 
     private By getCssSelectorForLookupActiveCard() {
-        return By.cssSelector(".pf-m-selected");
+        return By.cssSelector("input[name='selectedCredentialId']:checked");
     }
 
     private By getXPathForLookupCardWithName(String credentialName) {
-        return By.xpath("//div[contains(@class, 'pf-v5-c-tile')][normalize-space() = '"+ credentialName +"']");
+        return By.xpath("//input[@name='selectedCredentialId'][@aria-labelledby = //*[starts-with(@id, 'kc-otp-credential-title-')][normalize-space() = '" + credentialName + "']/@id]/following-sibling::label");
     }
 
 
@@ -131,16 +118,6 @@ public class LoginTotpPage extends LanguageComboboxAwarePage {
         WebElement webElement = driver.findElement(
                 getXPathForLookupCardWithName(credentialName));
         UIUtils.click(webElement);
-    }
-
-
-    // Workaround, but works with HtmlUnit (WaitUtils.waitForElement doesn't). Find better solution for the future...
-    private void waitForElement(By by) {
-        Retry.executeWithBackoff((currentCount) -> {
-
-            driver.findElement(by);
-
-        }, 10, 10);
     }
 
 }

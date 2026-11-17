@@ -1,7 +1,9 @@
 [[_action_token_handler_spi]]
 == Action Token Handler SPI
 
-An action token is a special instance of Json Web Token (JWT) that permits its bearer to perform some actions, e.g. to
+include::partial-private-spi.adoc[]
+
+An action token is a special instance of JSON Web Token (JWT) that permits its bearer to perform some actions, e.g. to
 reset a password or validate e-mail address. They are usually sent to users in form of a link that points to an endpoint
 processing action tokens for a particular realm.
 
@@ -136,7 +138,7 @@ public class DemoActionToken extends DefaultActionToken {
 To plug your own action token and its handler, you need to implement few interfaces on server side:
 
  *  `org.keycloak.authentication.actiontoken.ActionTokenHandler` - actual handler of action token for a particular
-    action (i.e. for a given value of `typ` token field).   
+    action (i.e. for a given value of `typ` token field).
 +
 The central method in that interface is `handleToken(token, context)` which defines actual operation executed upon
 receiving the action token. Usually it is some alteration of authentication session notes but generally it can be

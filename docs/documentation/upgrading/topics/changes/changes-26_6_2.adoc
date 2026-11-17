@@ -31,6 +31,8 @@ WARNING: Both server-wide and per-client options are deprecated and will be remo
 
 NOTE: For lightweight access tokens, the audience claim may only be present in the introspection response (not in the token itself). The audience check validates the transformed token returned by introspection, ensuring proper validation for both standard and lightweight tokens.
 
+NOTE: Refresh and offline tokens are not subject to the audience check, because their `aud` claim is the realm rather than a set of clients, and audience protocol mappers do not apply to them. Such a token can be introspected only by the client it was issued for (`azp`), and the compatibility options above do not relax that rule. {project_name} detects refresh and offline tokens from the token itself, so this applies whether or not `token_type_hint` is provided.
+
 === UserInfo endpoint rejects lightweight access tokens
 
 The UserInfo endpoint now rejects lightweight access tokens by default. Lightweight access tokens contain minimal claims and are designed for token introspection.
@@ -67,6 +69,10 @@ The WebAuthn policy presents the option **Acceptable AAGUIDs** to restrict the a
 Since this release, when this option is set up, the attestation is required to be present and signed with a valid certificate for the {project_name} trust-store. The `None` attestation format is explicitly not permitted. Previously, there were some corner cases in which a self attestation was accepted. The change is expected to be harmless, but maybe there are combinations of authenticators and WebAuthn policies that can present issues.
 
 See chapter link:{adminguide_link}#_webauthn-policy[Managing policy] in the {adminguide_name} for more information.
+
+=== Workflow schedule synchronization across cluster nodes
+
+A new cluster event was introduced to synchronize workflow scheduled settings across cluster nodes. You might see errors when updating workflow definitions during a rolling update when upgrading from 26.6.x. Defer updating workflow definitions until the rolling update has completed.
 
 === Required actions are one-time actions by default
 

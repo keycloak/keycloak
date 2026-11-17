@@ -68,6 +68,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
@@ -81,12 +82,13 @@ import static org.keycloak.operator.crds.v2beta1.deployment.spec.TelemetrySpec.c
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
-public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKubernetesDependentResource<StatefulSet, Keycloak> {
+public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
     public static final String HTTP_MANAGEMENT_SCHEME = "http-management-scheme";
 
     public static final String POD_IP = "POD_IP";
     public static final String HOST_IP_SPI_OPTION = "KC_SPI_CACHE_EMBEDDED_DEFAULT_MACHINE_NAME";
+    public static final String CACHE_EMBEDDED_NODE_NAME = "KC_CACHE_EMBEDDED_NODE_NAME";
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
 
@@ -585,6 +587,9 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
         // Using spec.nodeName to avoid exposing the IP addresses in the logs.
         envVars.add(new EnvVarBuilder().withName(HOST_IP_SPI_OPTION).withNewValueFrom().withNewFieldRef()
                 .withFieldPath("spec.nodeName").withApiVersion("v1").endFieldRef().endValueFrom().build());
+
+        envVars.add(new EnvVarBuilder().withName(CACHE_EMBEDDED_NODE_NAME).withNewValueFrom().withNewFieldRef()
+                .withFieldPath("metadata.name").withApiVersion("v1").endFieldRef().endValueFrom().build());
 
         return envVars;
     }

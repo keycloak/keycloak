@@ -93,5 +93,7 @@ public class MigrationTest extends AbstractMigrationTest {
         testMigrationTo26_1_0(true);
         testMigrationTo26_3_0();
         testMigrationTo26_4_0();
+        testMigrationTo26_7_0();
+        testMigrationTo27_0_0(masterRealm);
     }
 }

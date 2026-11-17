@@ -76,16 +76,22 @@ runs:
           echo "AZURE_DB_PASSWORD=$DB_PASSWORD"
         } >> $GITHUB_ENV
     
-    - name: Install sqlcmd (mssql-tools)
+    - name: Install sqlcmd (mssql-tools18)
       shell: bash
       run: |
         sudo apt-get update
-        sudo ACCEPT_EULA=Y apt-get install -y curl apt-transport-https gnupg
-        curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-        curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
-        sudo apt-get update
-        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools unixodbc-dev
-        echo "/opt/mssql-tools/bin" >> $GITHUB_PATH
+        if ! apt-cache show mssql-tools18 >/dev/null 2>&1; then
+          source /etc/os-release
+          repo_package=$(mktemp --suffix=.deb)
+          trap 'rm -f "$repo_package"' EXIT
+          curl --fail --silent --show-error --location \
+            "https://packages.microsoft.com/config/ubuntu/${VERSION_ID}/packages-microsoft-prod.deb" \
+            --output "$repo_package"
+          sudo dpkg -i "$repo_package"
+          sudo apt-get update
+        fi
+        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18
+        echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
 
     - id: create
       shell: bash

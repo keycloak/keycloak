@@ -1,22 +1,29 @@
 package org.keycloak.tests.oid4vc;
 
 import java.math.BigInteger;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -24,9 +31,15 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.representations.AccessToken;
 
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -35,6 +48,8 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 public final class OID4VCProofTestUtils {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private OID4VCProofTestUtils() {
     }
@@ -47,7 +62,7 @@ public final class OID4VCProofTestUtils {
         return generateJwtProofWithClaims(List.of(audience), nonce, null, null, null, null, createEcKeyPair("proof-key"));
     }
 
-    public static String generateJwtProof(String audience, KeyWrapper keyWrapper, String nonce) {
+    public static String generateJwtProof(String audience, String nonce, KeyWrapper keyWrapper) {
         return generateJwtProofWithClaims(List.of(audience), nonce, null, null, null, null, keyWrapper);
     }
 
@@ -74,6 +89,7 @@ public final class OID4VCProofTestUtils {
     ) {
         keyWrapper.setKid(null);
         JWK jwk = JWKBuilder.create().ec(keyWrapper.getPublicKey());
+        jwk.setAlgorithm(keyWrapper.getAlgorithm());
 
         AccessToken token = new AccessToken();
         List<String> resolvedAudiences = audiences != null ? audiences : List.of();
@@ -91,35 +107,6 @@ public final class OID4VCProofTestUtils {
                 .jwk(jwk)
                 .jsonContent(token)
                 .sign(new ECDSASignatureSignerContext(keyWrapper));
-    }
-
-    public static String generateJwtProofWithKidNoAttestation(String audience, String nonce) {
-        KeyWrapper keyWrapper = createEcKeyPair();
-
-        AccessToken token = new AccessToken();
-        token.addAudience(audience);
-        token.setNonce(nonce);
-        token.issuedNow();
-
-        return new JWSBuilder()
-                .type(JwtProofValidator.PROOF_JWT_TYP)
-                .kid(keyWrapper.getKid())
-                .jsonContent(token)
-                .sign(new ECDSASignatureSignerContext(keyWrapper));
-    }
-
-    public static Proofs attestationProofs(String nonce, List<JWK> attestedKeys, List<String> keyStorage, List<String> userAuthentication) {
-        return new Proofs().setAttestation(List.of(generateAttestationProof(nonce, attestedKeys, keyStorage, userAuthentication)));
-    }
-
-    public static String generateAttestationProof(
-            String nonce,
-            List<JWK> attestedKeys,
-            List<String> keyStorage,
-            List<String> userAuthentication
-    ) {
-        KeyWrapper attestationKey = createEcKeyPair("attestation-key");
-        return generateAttestationProof(attestationKey, nonce, attestedKeys, keyStorage, userAuthentication, null);
     }
 
     public static String generateAttestationProof(
@@ -150,10 +137,6 @@ public final class OID4VCProofTestUtils {
 
     public static KeyWrapper createEcKeyPair() {
         return createEcKeyPair("proof-key");
-    }
-
-    public static KeyWrapper newEcSigningKey(String keyId) {
-        return createEcKeyPair(keyId);
     }
 
     public static KeyWrapper createEcKeyPair(String keyId) {
@@ -215,5 +198,63 @@ public final class OID4VCProofTestUtils {
         } catch (NoSuchAlgorithmException | OperatorCreationException | CertificateException | NoSuchProviderException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static X509Certificate createCaCertificate(KeyPair caKeyPair, String commonName) {
+        X500Name caName = new X500Name("CN=" + commonName);
+        try {
+            X509v3CertificateBuilder builder = certificateBuilder(caName, caName, caKeyPair);
+            builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+            return signCertificate(builder, caKeyPair);
+        } catch (CertIOException | OperatorCreationException | CertificateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static X509Certificate createEndEntityCertificate(KeyPair subjectKeyPair, KeyPair caKeyPair,
+            X509Certificate caCertificate, String commonName) {
+        X500Name issuer = new X500Name(caCertificate.getSubjectX500Principal().getName());
+        X500Name subject = new X500Name("CN=" + commonName);
+        try {
+            X509v3CertificateBuilder builder = certificateBuilder(issuer, subject, subjectKeyPair);
+            builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+            builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
+            return signCertificate(builder, caKeyPair);
+        } catch (CertIOException | OperatorCreationException | CertificateException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static X509v3CertificateBuilder certificateBuilder(X500Name issuer, X500Name subject,
+            KeyPair subjectKeyPair) {
+        Instant now = Instant.now();
+        return new X509v3CertificateBuilder(
+                issuer,
+                new BigInteger(160, SECURE_RANDOM),
+                Date.from(now.minus(1, ChronoUnit.DAYS)),
+                Date.from(now.plus(365, ChronoUnit.DAYS)),
+                subject,
+                SubjectPublicKeyInfo.getInstance(subjectKeyPair.getPublic().getEncoded()));
+    }
+
+    // RSA-only: the signing key pair here always comes from an RSA test key generator in this
+    // class, so the algorithm is fixed rather than derived from the key type.
+    private static X509Certificate signCertificate(X509v3CertificateBuilder builder, KeyPair signingKeyPair)
+            throws OperatorCreationException, CertificateException {
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSAEncryption").build(signingKeyPair.getPrivate());
+        return new JcaX509CertificateConverter().getCertificate(builder.build(signer));
+    }
+
+    public static JSONWebKeySet toJwks(KeyWrapper... keys) {
+        List<JWK> jwkList = Arrays.stream(keys)
+                .map(JWKSServerUtils::toJwk)
+                .filter(Objects::nonNull)
+                .toList();
+
+        JSONWebKeySet jwks = new JSONWebKeySet();
+        jwks.setKeys(jwkList.toArray(new JWK[0]));
+
+        return jwks;
     }
 }

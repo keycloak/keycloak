@@ -197,7 +197,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
         oauth.redirectUri("https://localhost/app");
         oauth.openLoginForm();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
     }
 
     @Test

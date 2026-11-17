@@ -17,9 +17,12 @@
 
 package org.keycloak.jgroups.protocol;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 import org.jgroups.Address;
 import org.jgroups.View;
@@ -31,8 +34,22 @@ import org.jgroups.util.UUID;
  */
 public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
 
+    {
+        allow_multiple_clusters = true;
+    }
+
     private volatile List<PingData> pingData = List.of();
     private volatile Exception exception;
+    private final Queue<HealthStatus> statusQueue = new ArrayDeque<>();
+
+    public void enqueueStatus(HealthStatus... statuses) {
+        statusQueue.addAll(Arrays.asList(statuses));
+    }
+
+    @Override
+    public HealthStatus healthStatus() {
+        return statusQueue.isEmpty() ? super.healthStatus() : statusQueue.poll();
+    }
 
     @Override
     protected List<PingData> readFromDB(String cluster) throws Exception {

@@ -39,7 +39,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -68,7 +67,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -241,9 +240,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         passwordPage.assertCurrent();
         passwordPage.login(getPassword(DEFAULT_USERNAME));
 
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation eventRep = events.poll();
         EventAssertion.expectLoginSuccess(eventRep)

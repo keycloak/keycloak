@@ -60,4 +60,16 @@ public class OID4VCClient {
     public Oid4vcNonceResponse doNonceRequest() {
         return nonceRequest().send();
     }
+
+    public Oid4vpRequestObjectRequest oid4vpRequestObjectRequest(String requestUri) {
+        return new Oid4vpRequestObjectRequest(client, requestUri);
+    }
+
+    public Oid4vpRequestObjectResponse doOid4vpRequestObjectRequest(String requestUri) {
+        return oid4vpRequestObjectRequest(requestUri).send();
+    }
+
+    public Oid4vpDirectPostRequest oid4vpDirectPostRequest(String responseUri) {
+        return new Oid4vpDirectPostRequest(client, responseUri);
+    }
 }

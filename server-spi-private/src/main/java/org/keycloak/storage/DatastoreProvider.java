@@ -22,6 +22,7 @@ import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.RevokedTokenProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserLoginFailureProvider;
@@ -55,4 +56,6 @@ public interface DatastoreProvider extends Provider {
     UserSessionProvider userSessions();
 
     ExportImportManager getExportImportManager();
+
+    RevokedTokenProvider revokedTokens();
 }

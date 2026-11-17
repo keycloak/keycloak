@@ -3,6 +3,7 @@ import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/li
 import {
   HelpItem,
   KeycloakTextArea,
+  SelectControl,
   TextControl,
   useAlerts,
   useFetch,
@@ -57,10 +58,13 @@ type FormFields = Required<ClientPolicyRepresentation>;
 const defaultValues: FormFields = {
   name: "",
   description: "",
+  mode: "DEFAULT",
   conditions: [],
   enabled: true,
   profiles: [],
 };
+
+const CLIENT_POLICY_MODES = ["DEFAULT", "STRICT"];
 
 type PolicyDetailAttributes = {
   idx: number;
@@ -213,7 +217,9 @@ export default function NewClientPolicy() {
       setPolicies(updatedPolicies ?? []);
       setAllPolicies([...(globalPolicies ?? []), ...(updatedPolicies ?? [])]);
       setCurrentPolicy(createdPolicy);
-      navigate(toEditClientPolicy({ realm, policyName: createdPolicy.name! }));
+      void navigate(
+        toEditClientPolicy({ realm, policyName: createdPolicy.name! }),
+      );
       setShowAddConditionsAndProfilesForm(true);
     } catch (error) {
       addError("createClientPolicyError", error);
@@ -237,7 +243,7 @@ export default function NewClientPolicy() {
           policies: updatedPolicies,
         });
         addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           toClientPolicies({
             realm,
             tab: "policies",
@@ -265,7 +271,7 @@ export default function NewClientPolicy() {
               policies: policies,
             });
             addAlert(t("deleteConditionSuccess"), AlertVariant.success);
-            navigate(
+            void navigate(
               toEditClientPolicy({ realm, policyName: formValues.name! }),
             );
           } catch (error) {
@@ -281,7 +287,7 @@ export default function NewClientPolicy() {
               policies: updatedPolicies,
             });
             addAlert(t("deleteClientSuccess"), AlertVariant.success);
-            navigate(
+            void navigate(
               toClientPolicies({
                 realm,
                 tab: "policies",
@@ -311,7 +317,9 @@ export default function NewClientPolicy() {
           });
           addAlert(t("deleteClientPolicyProfileSuccess"), AlertVariant.success);
           form.setValue("profiles", currentPolicy?.profiles || []);
-          navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
+          void navigate(
+            toEditClientPolicy({ realm, policyName: formValues.name! }),
+          );
         } catch (error) {
           addError("deleteClientPolicyProfileError", error);
         }
@@ -325,7 +333,7 @@ export default function NewClientPolicy() {
             policies: updatedPolicies,
           });
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          navigate(
+          void navigate(
             toClientPolicies({
               realm,
               tab: "policies",
@@ -345,6 +353,10 @@ export default function NewClientPolicy() {
 
     if (currentPolicy?.description !== undefined) {
       form.setValue("description", currentPolicy.description);
+    }
+
+    if (currentPolicy?.mode !== undefined) {
+      form.setValue("mode", currentPolicy.mode);
     }
   };
 
@@ -382,7 +394,9 @@ export default function NewClientPolicy() {
       setAllPolicies(allClientPolicies);
       setCurrentPolicy(createdPolicy);
       form.setValue("profiles", createdPolicy.profiles);
-      navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
+      void navigate(
+        toEditClientPolicy({ realm, policyName: formValues.name! }),
+      );
       addAlert(t("addClientProfileSuccess"), AlertVariant.success);
     } catch (error) {
       addError("addClientProfileError", error);
@@ -501,6 +515,15 @@ export default function NewClientPolicy() {
                 {...form.register("description")}
               />
             </FormGroup>
+            <SelectControl
+              name="mode"
+              label={t("mode")}
+              labelIcon={t("clientPolicyModeHelp")}
+              controller={{
+                defaultValue: "DEFAULT",
+              }}
+              options={CLIENT_POLICY_MODES}
+            />
             <ActionGroup>
               <Button
                 variant="primary"
@@ -517,7 +540,7 @@ export default function NewClientPolicy() {
                   (showAddConditionsAndProfilesForm || policyName) &&
                   !isGlobalPolicy
                     ? reset()
-                    : navigate(
+                    : void navigate(
                         toClientPolicies({
                           realm,
                           tab: "policies",

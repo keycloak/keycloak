@@ -18,6 +18,12 @@ package org.keycloak.testsuite.model.clientscope;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.ClientModel;
@@ -26,12 +32,15 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
+import org.keycloak.testsuite.model.util.TransactionController;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -40,6 +49,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -124,6 +135,56 @@ public class ClientScopeModelTest extends KeycloakModelTest {
             return null;
         });
 
+    }
+
+    @Test
+    @RequireProvider(value=ClientScopeProvider.class, only="jpa")
+    public void testClientScopesByProtocolForUpdateSerializesRealmChanges() throws Exception {
+        String protocol = "client-scope-lock-test";
+        String clientScopeName = "client-scope-created-under-lock";
+        KeycloakSessionFactory sessionFactory = getFactory();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        try (TransactionController firstTransaction = new TransactionController(sessionFactory)) {
+            boolean firstTransactionCompleted = false;
+            firstTransaction.begin();
+            try {
+                firstTransaction.runStep(session -> {
+                    RealmModel realm = session.realms().getRealm(realmId);
+                    session.getContext().setRealm(realm);
+                    assertThat(session.clientScopes().getClientScopesByProtocolForUpdate(realm, protocol)
+                            .collect(Collectors.toList()), empty());
+
+                    ClientScopeModel clientScope = session.clientScopes().addClientScope(realm, clientScopeName);
+                    clientScope.setProtocol(protocol);
+                    return null;
+                });
+
+                CountDownLatch secondTransactionStarted = new CountDownLatch(1);
+                Future<List<String>> secondTransaction = executor.submit(() ->
+                        KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
+                            RealmModel realm = session.realms().getRealm(realmId);
+                            session.getContext().setRealm(realm);
+                            secondTransactionStarted.countDown();
+                            return session.clientScopes().getClientScopesByProtocolForUpdate(realm, protocol)
+                                    .map(ClientScopeModel::getName)
+                                    .collect(Collectors.toList());
+                        }));
+
+                assertTrue(secondTransactionStarted.await(5, TimeUnit.SECONDS));
+                assertThrows(TimeoutException.class, () -> secondTransaction.get(200, TimeUnit.MILLISECONDS));
+
+                firstTransaction.commit();
+                firstTransactionCompleted = true;
+                assertThat(secondTransaction.get(5, TimeUnit.SECONDS), containsInAnyOrder(clientScopeName));
+            } finally {
+                if (!firstTransactionCompleted) {
+                    firstTransaction.rollback();
+                }
+            }
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     private static void assertionsForClientScopesCaching(List<String> clientScopes, KeycloakSession session, RealmModel realm) {

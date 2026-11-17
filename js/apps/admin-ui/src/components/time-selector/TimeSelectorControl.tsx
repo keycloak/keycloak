@@ -23,6 +23,7 @@ export type TimeSelectorControlProps<
     name: string;
     label?: string;
     labelIcon?: string;
+    className?: string;
     controller: Omit<ControllerProps, "name" | "render">;
   };
 
@@ -34,6 +35,7 @@ export const TimeSelectorControl = <
   label,
   controller,
   labelIcon,
+  className,
   ...rest
 }: TimeSelectorControlProps<T, P>) => {
   const {
@@ -61,6 +63,7 @@ export const TimeSelectorControl = <
         render={({ field }) => (
           <TimeSelector
             {...rest}
+            className={className}
             id={name}
             data-testid={name}
             value={field.value}

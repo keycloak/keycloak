@@ -28,7 +28,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
-import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 
@@ -52,7 +51,11 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
         if (credentialModel.getCreatedDate() == null) {
             credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
-        return user.credentialManager().createStoredCredential(credentialModel);
+        CredentialModel createdCredential = user.credentialManager().createStoredCredential(credentialModel);
+        if (createdCredential != null) {
+            credentialModel.setId(createdCredential.getId());
+        }
+        return createdCredential;
     }
 
     @Override
@@ -98,7 +101,6 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
 
         CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialInput.getCredentialId());
         OTPCredentialModel otpCredentialModel = OTPCredentialModel.createFromCredentialModel(credential);
-        OTPSecretData secretData = otpCredentialModel.getOTPSecretData();
         OTPCredentialData credentialData = otpCredentialModel.getOTPCredentialData();
         OTPPolicy policy = realm.getOTPPolicy();
 
@@ -109,8 +111,7 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
                 return false;
             }
             otpCredentialModel.updateCounter(counter);
-            user.credentialManager().updateStoredCredential(otpCredentialModel);
-            return true;
+            return user.credentialManager().updateStoredCredential(credential, otpCredentialModel);
         } else if (OTPCredentialModel.TOTP.equals(credentialData.getSubType())) {
             TimeBasedOTP validator = new TimeBasedOTP(credentialData.getAlgorithm(), credentialData.getDigits(), credentialData.getPeriod(), policy.getLookAheadWindow());
             final boolean isValid = validator.validateTOTP(challengeResponse, otpCredentialModel.getDecodedSecret());

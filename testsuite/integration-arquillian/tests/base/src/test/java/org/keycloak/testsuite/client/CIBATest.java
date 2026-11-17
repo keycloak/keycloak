@@ -42,6 +42,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
@@ -203,6 +204,77 @@ public class CIBATest extends AbstractClientPoliciesTest {
     private final String TEST_REALM_NAME = "test";
     private final String TEST_CLIENT_NAME = "test-app";
     private final String TEST_CLIENT_PASSWORD = "password";
+
+    @Test
+    public void testBackchannelAuthenticationRequestFiltersReservedClaims() throws Exception {
+        testAuthenticationRequestFiltersReservedClaims(false, false);
+    }
+
+    @Test
+    public void testSignedAuthenticationRequestFiltersReservedClaims() throws Exception {
+        testAuthenticationRequestFiltersReservedClaims(true, false);
+    }
+
+    @Test
+    public void testRequestUriFiltersReservedClaims() throws Exception {
+        testAuthenticationRequestFiltersReservedClaims(true, true);
+    }
+
+    private void testAuthenticationRequestFiltersReservedClaims(boolean signedRequest, boolean useRequestUri) throws Exception {
+        String username = "nutzername-rot";
+        String userId = managedRealm.admin().users().searchByUsername(username, true).get(0).getId();
+        String otherUserId = managedRealm.admin().users().searchByUsername("nutzername-gelb", true).get(0).getId();
+        String bindingMessage = "reserved-claims";
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+
+        try {
+            prepareCIBASettings(clientResource, clientRep);
+            Map<String, String> additionalParameters = new HashMap<>();
+            additionalParameters.put("user_device", "mobile");
+
+            if (signedRequest) {
+                // In a signed request object the reserved names are legitimate JWT claims. A forged
+                // "sub"/"typ" is dropped and the server-controlled subject is preserved, so the request
+                // still succeeds.
+                AuthorizationEndpointRequestObject requestObject = createValidSharedAuthenticationRequest();
+                requestObject.setLoginHint(username);
+                requestObject.setBindingMessage(bindingMessage);
+                requestObject.subject(otherUserId);
+                requestObject.type("forged-type");
+                registerSharedAuthenticationRequest(requestObject, TEST_CLIENT_NAME, Algorithm.RS256, useRequestUri);
+
+                AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME,
+                        TEST_CLIENT_PASSWORD, username, bindingMessage, null, additionalParameters);
+                TestAuthenticationChannelRequest channelRequest = doAuthenticationChannelRequest(bindingMessage);
+                assertThat(channelRequest.getRequest().getAdditionalParameters().get(JsonWebToken.SUBJECT), nullValue());
+                assertThat(channelRequest.getRequest().getAdditionalParameters().get(JsonWebToken.TYPE), nullValue());
+                assertThat(channelRequest.getRequest().getAdditionalParameters().get("user_device"), is(equalTo("mobile")));
+                doAuthenticationChannelCallback(channelRequest);
+
+                AccessTokenResponse tokenResponse = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+                AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+                assertThat(accessToken.getSubject(), is(equalTo(userId)));
+                assertThat(oauth.verifyIDToken(tokenResponse.getIdToken()).getSubject(), is(equalTo(userId)));
+                doLogoutByRefreshToken(tokenResponse.getRefreshToken(), accessToken.getSessionId(), userId, false);
+            } else {
+                // In a form-encoded request body reserved protocol claim names are never valid, so the
+                // request is rejected outright and never reaches the authentication channel.
+                additionalParameters.put(JsonWebToken.SUBJECT, otherUserId);
+                additionalParameters.put(JsonWebToken.TYPE, "forged-type");
+
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username)
+                        .bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
+                assertThat(response.getStatusCode(), is(equalTo(Status.BAD_REQUEST.getStatusCode())));
+                assertThat(response.getAuthReqId(), nullValue());
+                assertThat("Rejected claims must not reach the authentication channel",
+                        doAuthenticationChannelRequest(bindingMessage), nullValue());
+            }
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
+    }
 
     @Test
     public void testAttackerClientUseVictimAuthReqIdAttack() throws Exception {
@@ -764,6 +836,78 @@ public class CIBATest extends AbstractClientPoliciesTest {
         additionalParameters.put(OAuth2Constants.CLIENT_ID, TEST_CLIENT_NAME);
         additionalParameters.put(OAuth2Constants.CLIENT_SECRET, TEST_CLIENT_PASSWORD);
         testBackchannelAuthenticationFlow(true, "ABCDE", additionalParameters);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowNotAllowedForPublicClient() throws Exception {
+        final String username = "nutzername-rot";
+        final String bindingMessage = "public-client-ciba";
+        final String clientId = generateSuffixedName("confidential-app");
+        final String clientSecret = "app-secret";
+
+        String cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setPublicClient(Boolean.FALSE);
+            Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+            attributes.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "poll");
+            attributes.put(CibaConfig.OIDC_CIBA_GRANT_ENABLED, Boolean.TRUE.toString());
+            clientRep.setAttributes(attributes);
+        });
+
+        // the user authenticates while the client is still confidential
+        AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(clientId, clientSecret, username, bindingMessage);
+        doAuthenticationChannelCallback(doAuthenticationChannelRequest(bindingMessage));
+
+        updateClientByAdmin(cid, (ClientRepresentation clientRep) -> clientRep.setPublicClient(Boolean.TRUE));
+        oauth.client(clientId);
+
+        // Token Request with a valid auth_req_id
+        AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
+        assertThat(tokenRes.getStatusCode(), is(equalTo(401)));
+        assertThat(tokenRes.getError(), is(OAuthErrorException.UNAUTHORIZED_CLIENT));
+
+        // Backchannel Authentication Request
+        AuthenticationRequestAcknowledgement publicClientResponse = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).send();
+        assertThat(publicClientResponse.getStatusCode(), is(equalTo(401)));
+        assertThat(publicClientResponse.getError(), is(OAuthErrorException.INVALID_CLIENT));
+    }
+
+    @Test
+    public void testBackchannelAuthenticationRequestUsesClientMinimumAcr() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-rot";
+            final String bindingMessage = "min-acr-ciba";
+
+            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            Map<String, Integer> acrLoaMap = new HashMap<>();
+            acrLoaMap.put("copper", 0);
+            acrLoaMap.put("silver", 1);
+            acrLoaMap.put("gold", 2);
+            clientRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setMinimumAcrValue("gold");
+            clientResource.update(clientRep);
+
+            // No acr_values on the backchannel request — client minimum ACR must still be forwarded
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage);
+
+            TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
+            AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
+            assertThat(authenticationChannelReq.getAcrValues(), is(equalTo("gold")));
+
+            doAuthenticationChannelCallback(testRequest);
+            doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
+        } finally {
+            if (clientRep != null) {
+                clientRep.getAttributes().remove(Constants.ACR_LOA_MAP);
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setMinimumAcrValue(null);
+            }
+            revertCIBASettings(clientResource, clientRep);
+        }
     }
 
     @Test
@@ -2354,9 +2498,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         // user Backchannel Authentication Request
         AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
-        assertThat(response.getStatusCode(), is(equalTo(400)));
+        assertThat(response.getStatusCode(), is(equalTo(401)));
         assertThat(response.getError(), is(OAuthErrorException.INVALID_CLIENT));
-        assertThat(response.getErrorDescription(), is("invalid client access type: public"));
+        assertThat(response.getErrorDescription(), is("Public client not allowed"));
 
         String clientConfidentialId = generateSuffixedName("confidential-app");
         String clientConfidentialSecret = "app-secret";
@@ -2382,9 +2526,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // user Token Request
         oauth.client(clientConfidentialId, clientConfidentialSecret);
         AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
-        assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
-        assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
-        assertThat(tokenRes.getErrorDescription(), is("invalid client access type: public"));
+        assertThat(tokenRes.getStatusCode(), is(equalTo(401)));
+        assertThat(tokenRes.getError(), is(OAuthErrorException.UNAUTHORIZED_CLIENT));
+        assertThat(tokenRes.getErrorDescription(), is("Public client not allowed to use OIDC CIBA Grant"));
     }
 
     @Test
@@ -2523,6 +2667,252 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         } finally {
             revertCIBASettings(clientResource, clientRep);
+        }
+    }
+
+    @Test
+    public void testBackchannelAuthnReqWithBruteForceProtectedUser() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        RealmRepresentation realmRep = null;
+        RealmRepresentation backupRealm = null;
+        Boolean originalDirectAccessGrantsEnabled = null;
+        try {
+            final String username = "nutzername-gelb";
+
+            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+
+            // Enable direct access grants for password grant to work
+            originalDirectAccessGrantsEnabled = clientRep.isDirectAccessGrantsEnabled();
+            clientRep.setDirectAccessGrantsEnabled(true);
+            clientResource.update(clientRep);
+
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
+            // Enable brute force protection on realm
+            realmRep = managedRealm.admin().toRepresentation();
+            backupRealm = new RealmRepresentation();
+            backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
+            backupRealm.setFailureFactor(realmRep.getFailureFactor());
+            backupRealm.setMaxDeltaTimeSeconds(realmRep.getMaxDeltaTimeSeconds());
+
+            realmRep.setBruteForceProtected(true);
+            realmRep.setFailureFactor(2);
+            realmRep.setMaxDeltaTimeSeconds(60);
+            managedRealm.admin().update(realmRep);
+
+            List<UserRepresentation> users = managedRealm.admin().users().search(username);
+            assertThat(users.size(), is(1));
+            UserRepresentation user = users.get(0);
+
+            // Trigger brute force lockout with failed login attempts
+            for (int i = 0; i < 3; i++) {
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                oauth.passwordGrantRequest(username, "wrongpassword").send();
+            }
+
+            // Verify user is actually locked by checking brute force status
+            Map<String, Object> userAttackInfo = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
+            assertThat((Boolean) userAttackInfo.get("disabled"), is(true));
+            // numFailures should be at least failureFactor (2), 3rd attempt after lock may not increment counter
+            assertThat((Integer) userAttackInfo.get("numFailures"), is(equalTo(2)));
+
+            // Verify user is temporarily disabled due to brute force
+            // Backchannel Authentication Request should fail
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("invalid_user"));
+
+            // Clear brute force lockout
+            managedRealm.admin().attackDetection().clearBruteForceForUser(user.getId());
+
+            // Verify CIBA works after clearing lockout
+            response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+            assertThat(response.getAuthReqId(), notNullValue());
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+            // Restore direct access grants setting
+            if (clientResource != null && clientRep != null && originalDirectAccessGrantsEnabled != null) {
+                clientRep.setDirectAccessGrantsEnabled(originalDirectAccessGrantsEnabled);
+                clientResource.update(clientRep);
+            }
+            // Restore realm brute force settings
+            if (realmRep != null && backupRealm != null) {
+                realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
+                realmRep.setFailureFactor(backupRealm.getFailureFactor());
+                realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
+                managedRealm.admin().update(realmRep);
+            }
+        }
+    }
+
+    @Test
+    public void testBackchannelAuthnReqWithPermanentlyLockedUser() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        RealmRepresentation realmRep = null;
+        RealmRepresentation backupRealm = null;
+        Boolean originalDirectAccessGrantsEnabled = null;
+        try {
+            final String username = "nutzername-schwarz";
+
+            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+
+            // Enable direct access grants for password grant to work
+            originalDirectAccessGrantsEnabled = clientRep.isDirectAccessGrantsEnabled();
+            clientRep.setDirectAccessGrantsEnabled(true);
+            clientResource.update(clientRep);
+
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
+            realmRep = managedRealm.admin().toRepresentation();
+            backupRealm = new RealmRepresentation();
+            backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
+            backupRealm.setFailureFactor(realmRep.getFailureFactor());
+            backupRealm.setMaxDeltaTimeSeconds(realmRep.getMaxDeltaTimeSeconds());
+            backupRealm.setPermanentLockout(realmRep.isPermanentLockout());
+            backupRealm.setMaxTemporaryLockouts(realmRep.getMaxTemporaryLockouts());
+
+            realmRep.setBruteForceProtected(true);
+            realmRep.setFailureFactor(2);
+            realmRep.setMaxDeltaTimeSeconds(60);
+            realmRep.setPermanentLockout(true);
+            // Enable permanent lockout brute force protection on realm
+            realmRep.setMaxTemporaryLockouts(0);
+            managedRealm.admin().update(realmRep);
+
+            List<UserRepresentation> users = managedRealm.admin().users().search(username);
+            assertThat(users.size(), is(1));
+            UserRepresentation user = users.get(0);
+
+            // Trigger permanent brute force lockout with failed login attempts
+            for (int i = 0; i < 3; i++) {
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                oauth.passwordGrantRequest(username, "wrongpassword").send();
+            }
+
+            // Verify user is actually locked by checking brute force status
+            Map<String, Object> userAttackInfo = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
+            assertThat((Boolean) userAttackInfo.get("disabled"), is(true));
+            // numFailures should be at least failureFactor (2), 3rd attempt after lock may not increment counter
+            assertThat((Integer) userAttackInfo.get("numFailures"), is(equalTo(2)));
+
+            // Verify user is permanently locked
+            AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("invalid_user"));
+
+            // Clear brute force lockout and re-enable user (permanent lockout disables the account)
+            managedRealm.admin().attackDetection().clearBruteForceForUser(user.getId());
+            user.setEnabled(true);
+            managedRealm.admin().users().get(user.getId()).update(user);
+
+            // Verify CIBA works after clearing permanent lockout and re-enabling user
+            response = oauth.ciba().backchannelAuthenticationRequest(username).send();
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+            assertThat(response.getAuthReqId(), notNullValue());
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+            // Restore direct access grants setting
+            if (clientResource != null && clientRep != null && originalDirectAccessGrantsEnabled != null) {
+                clientRep.setDirectAccessGrantsEnabled(originalDirectAccessGrantsEnabled);
+                clientResource.update(clientRep);
+            }
+            // Re-enable user if permanently locked (permanent lockout disables the account)
+            List<UserRepresentation> users = managedRealm.admin().users().search("nutzername-schwarz");
+            if (!users.isEmpty()) {
+                UserRepresentation userToRestore = users.get(0);
+                userToRestore.setEnabled(true);
+                managedRealm.admin().users().get(userToRestore.getId()).update(userToRestore);
+            }
+            // Restore realm brute force settings
+            if (realmRep != null && backupRealm != null) {
+                realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
+                realmRep.setFailureFactor(backupRealm.getFailureFactor());
+                realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
+                realmRep.setPermanentLockout(backupRealm.isPermanentLockout());
+                realmRep.setMaxTemporaryLockouts(backupRealm.getMaxTemporaryLockouts());
+                managedRealm.admin().update(realmRep);
+            }
+        }
+    }
+
+    @Test
+    public void testTokenRedemptionFailsForBruteForceLockedUser() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        RealmRepresentation realmRep = null;
+        RealmRepresentation backupRealm = null;
+        Boolean originalDirectAccessGrantsEnabled = null;
+        try {
+            final String username = "nutzername-rot";
+
+            clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            originalDirectAccessGrantsEnabled = clientRep.isDirectAccessGrantsEnabled();
+            clientRep.setDirectAccessGrantsEnabled(true);
+            clientResource.update(clientRep);
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+
+            realmRep = managedRealm.admin().toRepresentation();
+            backupRealm = new RealmRepresentation();
+            backupRealm.setBruteForceProtected(realmRep.isBruteForceProtected());
+            backupRealm.setFailureFactor(realmRep.getFailureFactor());
+            backupRealm.setMaxDeltaTimeSeconds(realmRep.getMaxDeltaTimeSeconds());
+            realmRep.setBruteForceProtected(true);
+            realmRep.setFailureFactor(2);
+            realmRep.setMaxDeltaTimeSeconds(60);
+            managedRealm.admin().update(realmRep);
+
+            AuthenticationRequestAcknowledgement response =
+                    doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "LOCKTEST");
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+
+            TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest("LOCKTEST");
+            doAuthenticationChannelCallback(testRequest);
+
+            List<UserRepresentation> users = managedRealm.admin().users().search(username);
+            assertThat(users.size(), is(1));
+            UserRepresentation user = users.get(0);
+
+            for (int i = 0; i < 3; i++) {
+                oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+                oauth.passwordGrantRequest(username, "wrongpassword").send();
+            }
+
+            Map<String, Object> attackInfo = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
+            assertThat((Boolean) attackInfo.get("disabled"), is(true));
+
+            oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
+            AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
+            assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
+            assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
+        } finally {
+            List<UserRepresentation> usersToRestore = managedRealm.admin().users().search("nutzername-rot");
+            if (!usersToRestore.isEmpty()) {
+                managedRealm.admin().attackDetection().clearBruteForceForUser(usersToRestore.get(0).getId());
+            }
+            revertCIBASettings(clientResource, clientRep);
+            if (clientResource != null && clientRep != null && originalDirectAccessGrantsEnabled != null) {
+                clientRep.setDirectAccessGrantsEnabled(originalDirectAccessGrantsEnabled);
+                clientResource.update(clientRep);
+            }
+            if (realmRep != null && backupRealm != null) {
+                realmRep.setBruteForceProtected(backupRealm.isBruteForceProtected());
+                realmRep.setFailureFactor(backupRealm.getFailureFactor());
+                realmRep.setMaxDeltaTimeSeconds(backupRealm.getMaxDeltaTimeSeconds());
+                managedRealm.admin().update(realmRep);
+            }
         }
     }
 
@@ -2910,7 +3300,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
         assertThat(refreshToken.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(refreshToken.getAudience()[0], is(equalTo(refreshToken.getIssuer())));
-        if (!isOfflineAccess) checkTokenExpiration(refreshToken, tokenRes.getRefreshExpiresIn());
+        checkTokenExpiration(refreshToken, tokenRes.getRefreshExpiresIn());
 
         IDToken idToken = oauth.verifyIDToken(tokenRes.getIdToken());
         assertThat(idToken.getPreferredUsername(), is(equalTo(username)));

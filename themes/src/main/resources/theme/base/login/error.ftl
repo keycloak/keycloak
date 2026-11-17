@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
         ${kcSanitize(msg("errorTitle"))?no_esc}
@@ -11,7 +12,7 @@
             <#if skipLink??>
             <#else>
                 <#if client?? && client.baseUrl?has_content>
-                    <p><a id="backToApplication" href="${client.baseUrl}">${msg("backToApplication")}</a></p>
+                    <p><@buttons.buttonLink id="backToApplication" href=client.baseUrl label="backToApplication"/></p>
                 </#if>
             </#if>
         </div>

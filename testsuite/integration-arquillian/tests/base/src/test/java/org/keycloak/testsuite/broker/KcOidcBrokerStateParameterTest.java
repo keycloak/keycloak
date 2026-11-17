@@ -21,10 +21,12 @@ package org.keycloak.testsuite.broker;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
 
 import org.hamcrest.Matchers;
@@ -43,9 +45,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBrokerTest {
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginExpiredPage loginExpiredPage;
@@ -101,7 +100,8 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
                 .sessionId(null)
                 .userId(null)
                 .clientId(null)
-                .error("invalidRequestMessage");
+                .details(Details.REASON, Messages.INVALID_REQUEST)
+                .error(Errors.IDENTITY_PROVIDER_ERROR);
 
         Assertions.assertNull(events.poll());
     }
@@ -110,7 +110,8 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
     @Test
     public void testCorrectStateParameterButIncorrectCode() {
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
         loginPage.clickSocial(bc.getIDPAlias());

@@ -83,8 +83,21 @@ public class LDAPQuery implements AutoCloseable {
 
     private int searchScope = SearchControls.SUBTREE_SCOPE;
 
+    // When true, the custom User LDAP filter from federation settings will be applied
+    // to lookupById queries. Should only be true for user searches, not group/role searches.
+    private boolean userQuery = false;
+
     public LDAPQuery(LDAPStorageProvider ldapProvider) {
         this.ldapFedProvider = ldapProvider;
+    }
+
+    public boolean isUserQuery() {
+        return userQuery;
+    }
+
+    public LDAPQuery setUserQuery(boolean userQuery) {
+        this.userQuery = userQuery;
+        return this;
     }
 
     public LDAPQuery addWhereCondition(Condition... condition) {
@@ -219,7 +232,8 @@ public class LDAPQuery implements AutoCloseable {
 
     public LDAPQuery initPagination() throws NamingException {
         this.ldapContextManager = LDAPContextManager.create(ldapFedProvider.getSession(),
-                ldapFedProvider.getLdapIdentityStore().getConfig());
+                ldapFedProvider.getLdapIdentityStore().getConfig(),
+                ldapFedProvider.getLdapIdentityStore().getRequestTimer());
         this.paginationContext = new PaginationContext(ldapContextManager.getLdapContext());
         return this;
     }

@@ -1,3 +1,4 @@
+import { NetworkError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { HelpItem, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
@@ -27,9 +28,6 @@ import { useTranslation } from "react-i18next";
 
 import { useAdminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { useRealm } from "../../../context/realm-context/RealmContext";
-import { addTrailingSlash } from "../../../util";
-import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 
 type SubjectType = "user-id" | "user-email" | "user-username" | "org-alias";
 type SubjectState =
@@ -47,7 +45,6 @@ export type SubjectsTabProps = {
 export const SubjectsTab = ({ client }: SubjectsTabProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 
   const [subjectType, setSubjectType] = useState<SubjectType>("user-email");
@@ -61,27 +58,14 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
     null,
   );
 
-  const callSubjectAdminEndpoint = async (
-    action:
-      | "subjects/add"
-      | "subjects/remove"
-      | "subjects/ignore"
-      | "subjects/check",
-  ) => {
-    const baseUrl = addTrailingSlash(adminClient.baseUrl);
-    const res = await fetch(
-      `${baseUrl}admin/realms/${realm}/ssf/clients/${client.clientId}/${action}`,
-      {
-        method: "POST",
-        headers: {
-          ...getAuthorizationHeaders(await adminClient.getAccessToken()),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ type: subjectType, value: subjectValue }),
-      },
-    );
-    return res;
-  };
+  const subjectRequest = () => ({
+    type: subjectType,
+    value: subjectValue,
+  });
+
+  const clientQuery = () => ({
+    clientId: client.clientId!,
+  });
 
   const checkSubjectViaAdminApi = async (): Promise<{
     state: SubjectState;
@@ -91,13 +75,16 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
     // dispatcher uses (per-user / per-org notify, default_subjects
     // fallback, org-membership inheritance) so the displayed status
     // matches what the dispatcher would actually decide.
-    const res = await callSubjectAdminEndpoint("subjects/check");
-    if (res.status === 404) return null;
-    if (!res.ok) return null;
-    const body = await res.json();
+    const body = await adminClient.ssf.checkSubject(
+      clientQuery(),
+      subjectRequest(),
+    );
+    if (body === null) {
+      return null;
+    }
     return {
-      state: body?.status as SubjectState,
-      sourceOrgAlias: body?.source_org_alias as string | undefined,
+      state: body.status as SubjectState,
+      sourceOrgAlias: body.source_org_alias,
     };
   };
 
@@ -160,25 +147,29 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
         return;
       }
 
-      const endpoint =
-        action === "add"
-          ? "subjects/add"
-          : action === "ignore"
-            ? "subjects/ignore"
-            : "subjects/remove";
-      const res = await callSubjectAdminEndpoint(endpoint);
-
-      if (res.status === 404) {
-        setSubjectValueError(t("ssfSubjectNotFound"));
-        return;
+      let data;
+      try {
+        data =
+          action === "add"
+            ? await adminClient.ssf.addSubject(clientQuery(), subjectRequest())
+            : action === "ignore"
+              ? await adminClient.ssf.ignoreSubject(
+                  clientQuery(),
+                  subjectRequest(),
+                )
+              : await adminClient.ssf.removeSubject(
+                  clientQuery(),
+                  subjectRequest(),
+                );
+      } catch (error) {
+        if (error instanceof NetworkError && error.response.status === 404) {
+          setSubjectValueError(t("ssfSubjectNotFound"));
+          return;
+        }
+        throw error;
       }
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`${res.status} ${body || res.statusText}`);
-      }
 
-      const data = await res.json();
-      const state = data?.status as SubjectState | undefined;
+      const state = data.status as SubjectState | undefined;
       if (state) {
         applySubjectState(state);
       }

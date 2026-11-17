@@ -3,6 +3,7 @@ import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/s
 import { type Page, expect } from "@playwright/test";
 import { clickRowKebabItem, getRowByCellText } from "../utils/table.ts";
 import { confirmModal } from "../utils/modal.ts";
+import { selectClient } from "../utils/form.ts";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 
 export async function goToAuthorizationTab(page: Page) {
@@ -110,9 +111,7 @@ export async function deletePolicy(page: Page, policyName: string) {
 }
 
 export async function inputClient(page: Page, clientName: string) {
-  await page.getByLabel("Type to filter").click();
-  await page.getByLabel("Type to filter").fill(clientName);
-  await page.getByRole("option", { name: clientName }).click();
+  await selectClient(page, clientName);
 }
 
 export async function goToPermissionsSubTab(page: Page) {
@@ -140,6 +139,25 @@ export async function selectResource(page: Page, resourceName: string) {
   await page.getByRole("option", { name: resourceName }).click();
 }
 
+export async function goToEvaluateSubTab(page: Page) {
+  await page.getByTestId("authorizationEvaluate").click();
+}
+
+export function getEvaluateResourceKeyInput(page: Page, rowIndex = 0) {
+  return page
+    .locator(`#resources\\.${rowIndex}\\.key`)
+    .getByRole("combobox", { name: "Select or type a key" });
+}
+
+// The evaluate form renders several selects, so option queries have to be
+// scoped to the key select rather than run against the whole page.
+export function getEvaluateResourceKeyOptions(page: Page, rowIndex = 0) {
+  return page
+    .locator(".kc-attribute-key-selectable")
+    .nth(rowIndex)
+    .getByRole("option");
+}
+
 export async function goToExportSubTab(page: Page) {
   await page.getByTestId("authorizationExport").click();
 }
@@ -164,4 +182,40 @@ export async function assertDownload(page: Page) {
 
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBeDefined();
+}
+
+// The server renames an evaluated resource to "<name> with scopes [...]", so
+// match on the start of the cell text rather than the exact resource name.
+export async function expandEvaluateResource(page: Page, resourceName: string) {
+  await page
+    .getByRole("row")
+    .filter({
+      has: page.getByRole("gridcell", { name: new RegExp(`^${resourceName}`) }),
+    })
+    .getByRole("button", { name: "Details" })
+    .click();
+}
+
+// The permission table is nested inside the expanded resource row, so take
+// the closest row around the permission link, not any row containing it.
+export function getEvaluatePermissionRow(page: Page, permissionName: string) {
+  return page
+    .getByRole("link", { name: permissionName, exact: true })
+    .locator("xpath=ancestor::tr[1]");
+}
+
+// Cells of an expanded permission row: expand toggle, permission, result,
+// decision strategy, granted scopes, denied scopes.
+export async function assertEvaluatePermissionScopes(
+  page: Page,
+  permissionName: string,
+  expected: { status: string; granted: string; denied: string },
+) {
+  const cells = getEvaluatePermissionRow(page, permissionName).getByRole(
+    "gridcell",
+  );
+
+  await expect(cells.nth(2)).toHaveText(expected.status);
+  await expect(cells.nth(4)).toHaveText(expected.granted);
+  await expect(cells.nth(5)).toHaveText(expected.denied);
 }

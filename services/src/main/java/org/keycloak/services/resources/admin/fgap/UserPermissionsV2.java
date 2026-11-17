@@ -18,6 +18,7 @@ package org.keycloak.services.resources.admin.fgap;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.ws.rs.ForbiddenException;
 
@@ -32,6 +33,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.UserModelRecord;
+
+import static org.keycloak.authorization.policy.evaluation.EvaluationContext.CLIENT_ID_ATTRIBUTE;
 
 class UserPermissionsV2 extends UserPermissions {
 
@@ -120,14 +123,41 @@ class UserPermissionsV2 extends UserPermissions {
 
     @Override
     public boolean canImpersonate(UserModel user, ClientModel requester) {
+        boolean hasImpersonationPermission;
+
         if (root.hasOneAdminRole(AdminRoles.IMPERSONATION)) {
-            return true;
+            hasImpersonationPermission = true;
+        } else {
+            DefaultEvaluationContext context = requester == null ? null :
+                    new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), Map.of(CLIENT_ID_ATTRIBUTE, List.of(requester.getClientId())), session);
+            hasImpersonationPermission = eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.IMPERSONATE);
         }
 
-        DefaultEvaluationContext context = requester == null ? null :
-                new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), Map.of("kc.client.id", List.of(requester.getClientId())), session);
+        if (hasImpersonationPermission && hasHigherPrivilegesThanAdmin(user)) {
+            return false;
+        }
 
-        return eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.IMPERSONATE);
+        return hasImpersonationPermission;
+    }
+
+    @Override
+    public boolean canDelegate(UserModel user) {
+        // When the evaluator's identity is a service account, include CLIENT_ID_ATTRIBUTE
+        // from its associated client so that FGAP Client policies can match on the client_id.
+        DefaultEvaluationContext context = Optional.ofNullable(root.admin())
+                .map(UserModel::getServiceAccountClientLink)
+                .map(root.realm::getClientById)
+                .map(client -> new DefaultEvaluationContext(root.identity(), Map.of(CLIENT_ID_ATTRIBUTE, List.of(client.getClientId())), session))
+                .orElse(null);
+
+        return eval.hasPermission(new UserModelRecord(user), context, AdminPermissionsSchema.DELEGATE);
+    }
+
+    @Override
+    public Map<String, Boolean> getAccess(UserModel user) {
+        Map<String, Boolean> map = super.getAccess(user);
+        map.put("delegate", canDelegate(user));
+        return map;
     }
 
     @Override

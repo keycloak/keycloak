@@ -19,8 +19,8 @@ Search for a user to view detailed information about the user, such as the user'
 The criteria used to match users depends on the syntax used on the search box:
 +
 .. `"somevalue"` -> performs exact search of the string `"somevalue"`;
-.. `\*somevalue*` -> performs infix search, akin to a `LIKE '%somevalue%'` DB query;
-.. `somevalue*` or `somevalue` -> performs prefix search, akin to a `LIKE 'somevalue%'` DB query.
+.. `+*somevalue*+` -> performs infix search, akin to a `LIKE '%somevalue%'` DB query;
+.. `+somevalue*+` or `somevalue` -> performs prefix search, akin to a `LIKE 'somevalue%'` DB query.
 
 == Search by fields
 

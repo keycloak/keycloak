@@ -136,6 +136,7 @@ public class AccountLoader {
             throw new NotAuthorizedException("Invalid audience for client " + client.getClientId());
         }
 
+        event.session(authResult.session());
         Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.user(), client, authResult.session(), false);
 
         Cors.builder().checkAllowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();

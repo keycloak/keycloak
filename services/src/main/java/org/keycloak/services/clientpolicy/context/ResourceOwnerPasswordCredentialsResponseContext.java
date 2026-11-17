@@ -27,18 +27,15 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ResourceOwnerPasswordCredentialsResponseContext implements ClientPolicyContext {
+public class ResourceOwnerPasswordCredentialsResponseContext extends AbstractClientSessionCtxTokenResponseContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;
-    private final ClientSessionContext clientSessionCtx;
-    private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
 
     public ResourceOwnerPasswordCredentialsResponseContext(MultivaluedMap<String, String> params,
                                                            ClientSessionContext clientSessionCtx,
                                                            TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+        super(clientSessionCtx, accessTokenResponseBuilder);
         this.params = params;
-        this.clientSessionCtx = clientSessionCtx;
-        this.accessTokenResponseBuilder = accessTokenResponseBuilder;
     }
 
     @Override
@@ -49,13 +46,4 @@ public class ResourceOwnerPasswordCredentialsResponseContext implements ClientPo
     public MultivaluedMap<String, String> getParams() {
         return params;
     }
-
-    public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
-        return accessTokenResponseBuilder;
-    }
-
-    public ClientSessionContext getClientSessionContext() {
-        return clientSessionCtx;
-    }
-
 }

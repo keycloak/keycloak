@@ -16,3 +16,5 @@
 #
 
 org.keycloak.quarkus.runtime.tracing.OTelHttpClientFactory
+org.keycloak.quarkus.runtime.httpclient.VertxHttpClientFactory
+org.keycloak.quarkus.runtime.tracing.OTelVertxHttpClientFactory

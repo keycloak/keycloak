@@ -43,6 +43,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-openapi</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlinx</groupId>
+                    <artifactId>kotlinx-metadata-jvm</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

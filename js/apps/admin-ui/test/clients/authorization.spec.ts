@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { Logic } from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 import adminClient from "../utils/AdminClient.ts";
-import { clickSaveButton } from "../utils/form.ts";
+import {
+  clickCancelButton,
+  clickSaveButton,
+  selectItem,
+} from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
@@ -18,6 +23,7 @@ import {
   assertClipboardHasText,
   assertDownload,
   assertEmptyStateNotVisible,
+  assertEvaluatePermissionScopes,
   assertTableIsPopulated,
   assertResource,
   assertRowNotVisible,
@@ -29,8 +35,12 @@ import {
   createPolicy,
   createResource,
   deletePolicy,
+  expandEvaluateResource,
   fillForm,
+  getEvaluateResourceKeyInput,
+  getEvaluateResourceKeyOptions,
   goToAuthorizationTab,
+  goToEvaluateSubTab,
   goToExportSubTab,
   goToPermissionsSubTab,
   goToPoliciesSubTab,
@@ -151,6 +161,27 @@ test.describe.serial("Client authentication subtab", () => {
     await assertRowExists(page, "The scope");
   });
 
+  test("Should cancel editing a scope and return to the scopes list", async ({
+    page,
+  }) => {
+    await goToScopesSubTab(page);
+    await clickTableRowItem(page, "The scope");
+
+    // The edit form keeps its Revert button and gains a Cancel button that
+    // navigates back without saving, like resources, policies and permissions.
+    await expect(page.getByTestId("revert")).toBeVisible();
+    await fillForm(page, { displayName: "Should not be saved" });
+    await clickCancelButton(page);
+
+    await expect(page).toHaveURL(/\/authorization\/scopes$/);
+    await assertRowExists(page, "The scope");
+
+    await clickTableRowItem(page, "The scope");
+    await expect(page.getByTestId("displayName")).toHaveValue(
+      "Display something",
+    );
+  });
+
   test("Should create a permission", async ({ page }) => {
     await goToPermissionsSubTab(page);
 
@@ -217,48 +248,51 @@ test.describe.serial("Client authentication subtab", () => {
 
 test.describe
   .serial("Client authorization tab access for view-realm-authorization", () => {
+  const realmName = `realm-view-authz-${crypto.randomUUID()}`;
+  const username = `test-view-authz-user-${crypto.randomUUID()}`;
   const clientId = `realm-view-authz-client-${crypto.randomUUID()}`;
   const resourceName = `test-resource-${crypto.randomUUID()}`;
 
   test.beforeAll(async () => {
-    await adminClient.createRealm("realm-view-authz");
+    await adminClient.createRealm(realmName);
     const testUser = await adminClient.createUser({
       // Create user in master realm
-      username: "test-view-authz-user",
+      username,
       enabled: true,
       credentials: [{ type: "password", value: "password" }],
     });
 
-    await adminClient.addClientRoleToUser(
-      testUser.id!,
-      "realm-view-authz-realm",
-      ["view-realm", "view-users", "view-authorization", "view-clients"],
-    );
+    await adminClient.addClientRoleToUser(testUser.id!, `${realmName}-realm`, [
+      "view-realm",
+      "view-users",
+      "view-authorization",
+      "view-clients",
+    ]);
     await adminClient.createClient({
-      realm: "realm-view-authz",
+      realm: realmName,
       clientId,
       authorizationServicesEnabled: true,
       serviceAccountsEnabled: true,
       standardFlowEnabled: true,
     });
     await adminClient.createResource(clientId, {
-      realm: "realm-view-authz",
+      realm: realmName,
       name: resourceName,
     });
   });
 
   test.afterAll(async () => {
-    await adminClient.deleteUser("test-view-authz-user");
-    await adminClient.deleteRealm("realm-view-authz");
+    await adminClient.deleteUser(username);
+    await adminClient.deleteRealm(realmName);
   });
 
   test("Should view authorization tab", async ({ page }) => {
     await login(page, {
-      username: "test-view-authz-user",
+      username,
       password: "password",
     });
 
-    await goToRealm(page, "realm-view-authz");
+    await goToRealm(page, realmName);
     await page.reload();
     await goToClients(page);
 
@@ -350,5 +384,263 @@ test.describe.serial("Client authorization resources pagination", () => {
     await page.locator('[aria-label="Go to next page"]').first().click();
     await expect(page.getByText("Resource-11", { exact: true })).toBeVisible();
     await expect(page.getByText("Resource-10", { exact: true })).toBeHidden();
+  });
+});
+
+test.describe.serial("Client authorization evaluate resource key", () => {
+  const clientId = `client-authz-evaluate-${crypto.randomUUID()}`;
+  const resourceNames = [
+    "alpha-resource",
+    "bravo-resource",
+    "charlie-resource",
+  ];
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    for (const name of resourceNames) {
+      await adminClient.createResource(clientId, { name });
+    }
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToEvaluateSubTab(page);
+  });
+
+  test("Should filter the resource key options while typing", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await key.pressSequentially("charlie");
+
+    await expect(key).toHaveValue("charlie");
+    await expect(options).toHaveText(["charlie-resource"]);
+
+    await key.press("Enter");
+    await expect(key).toHaveValue("charlie-resource");
+  });
+
+  test("Should replace an existing resource key selection by typing", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await options.filter({ hasText: "charlie-resource" }).click();
+    await expect(key).toHaveValue("charlie-resource");
+
+    // Typing over an existing selection must show what was typed, not the
+    // selection it replaces, and must narrow the menu down to it.
+    await key.click();
+    await key.press("ControlOrMeta+a");
+    await key.pressSequentially("alpha");
+
+    await expect(key).toHaveValue("alpha");
+    await expect(options).toHaveText(["alpha-resource"]);
+
+    await key.press("Enter");
+    await expect(key).toHaveValue("alpha-resource");
+  });
+
+  test("Should restore the selection when an edit is abandoned", async ({
+    page,
+  }) => {
+    const key = getEvaluateResourceKeyInput(page);
+    const options = getEvaluateResourceKeyOptions(page);
+
+    await key.click();
+    await options.filter({ hasText: "bravo-resource" }).click();
+    await expect(key).toHaveValue("bravo-resource");
+
+    await key.click();
+    await key.press("ControlOrMeta+a");
+    await key.pressSequentially("zzz");
+    await key.press("Escape");
+    await expect(key).toHaveValue("bravo-resource");
+
+    // Re-opening must offer the whole list again, not just the last filter.
+    await key.click();
+    await expect(options).toHaveText(resourceNames);
+  });
+
+  test("Should not satisfy a required select by clearing the input", async ({
+    page,
+  }) => {
+    await goToPermissionsSubTab(page);
+    await createPermission(page, "resource", {
+      name: "clear-input-permission",
+    });
+
+    // Clearing has to reset the consumer's value via onClear. Falling back to
+    // onSelect("") would store [""], which is non-empty and would let the
+    // required check pass with nothing actually selected.
+    const resources = page.locator("#resources").getByRole("combobox");
+    await resources.click();
+    await resources.pressSequentially("alpha");
+    await page.locator("#resources").getByLabel("Clear input value").click();
+
+    await clickSaveButton(page);
+    await expect(
+      page.getByText("Required field", { exact: true }),
+    ).toBeVisible();
+  });
+});
+
+test.describe.serial("Client authorization evaluate permission scopes", () => {
+  const clientId = `client-authz-evaluate-scopes-${crypto.randomUUID()}`;
+  const username = `evaluate-scopes-user-${crypto.randomUUID()}`;
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+    // No name or email, so the user select option reads exactly `username`.
+    const user = await adminClient.createUser({ username, enabled: true });
+
+    const scopes = Object.fromEntries(
+      await Promise.all(
+        ["order:read", "order:write", "order:delete", "invoice:read"].map(
+          async (name) => [
+            name,
+            await adminClient.createAuthorizationScope(clientId, { name }),
+          ],
+        ),
+      ),
+    );
+    const orders = await adminClient.createResource(clientId, {
+      name: "Orders",
+      scopes: [
+        scopes["order:read"],
+        scopes["order:write"],
+        scopes["order:delete"],
+      ],
+    });
+    const invoices = await adminClient.createResource(clientId, {
+      name: "Invoices",
+      scopes: [scopes["invoice:read"]],
+    });
+
+    const permit = await adminClient.createAuthzPolicy(clientId, {
+      name: "permit-user",
+      type: "user",
+      logic: Logic.POSITIVE,
+      users: [user.id!],
+    });
+    const deny = await adminClient.createAuthzPolicy(clientId, {
+      name: "deny-user",
+      type: "user",
+      logic: Logic.NEGATIVE,
+      users: [user.id!],
+    });
+
+    const permissions = [
+      {
+        name: "Read orders",
+        resource: orders,
+        scope: "order:read",
+        policy: permit,
+      },
+      {
+        name: "Write orders",
+        resource: orders,
+        scope: "order:write",
+        policy: deny,
+      },
+      {
+        name: "Delete orders",
+        resource: orders,
+        scope: "order:delete",
+        policy: deny,
+      },
+      {
+        name: "Read invoices",
+        resource: invoices,
+        scope: "invoice:read",
+        policy: permit,
+      },
+    ];
+    for (const { name, resource, scope, policy } of permissions) {
+      await adminClient.createAuthzPermission(clientId, {
+        name,
+        type: "scope",
+        resources: [resource._id!],
+        scopes: [scopes[scope].id!],
+        policies: [policy.id!],
+      });
+    }
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+    await adminClient.deleteUser(username);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToEvaluateSubTab(page);
+  });
+
+  test("Should show each permission's own scopes in the evaluation results", async ({
+    page,
+  }) => {
+    await selectItem(page, page.getByTestId("user"), username);
+    // No resources selected, so every permission of the client is evaluated.
+    await page.getByTestId("authorization-eval").click();
+
+    // The expanded rows used to read the scopes of the permission at the
+    // *resource's* row index, so every row under a resource showed the same
+    // scopes. Each row must show the scopes of its own permission instead.
+    await expandEvaluateResource(page, "Orders");
+    await assertEvaluatePermissionScopes(page, "Read orders", {
+      status: "Permit",
+      granted: "order:read",
+      denied: "-",
+    });
+    await assertEvaluatePermissionScopes(page, "Write orders", {
+      status: "Deny",
+      granted: "-",
+      denied: "order:write",
+    });
+    await assertEvaluatePermissionScopes(page, "Delete orders", {
+      status: "Deny",
+      granted: "-",
+      denied: "order:delete",
+    });
+
+    await expandEvaluateResource(page, "Invoices");
+    await assertEvaluatePermissionScopes(page, "Read invoices", {
+      status: "Permit",
+      granted: "invoice:read",
+      denied: "-",
+    });
   });
 });

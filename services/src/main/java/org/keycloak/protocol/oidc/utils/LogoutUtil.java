@@ -21,8 +21,8 @@ package org.keycloak.protocol.oidc.utils;
 import java.net.URI;
 
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.SystemClientUtil;
@@ -64,8 +64,9 @@ public class LogoutUtil {
         if (redirectUri == null) return null;
         String state = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM);
 
-        UriBuilder uriBuilder = UriBuilder.fromUri(redirectUri);
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false);
         if (state != null) {
+            uriBuilder.removeQueryParamByDecodedName(OIDCLoginProtocol.STATE_PARAM);
             uriBuilder.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
         }
         return uriBuilder.build();

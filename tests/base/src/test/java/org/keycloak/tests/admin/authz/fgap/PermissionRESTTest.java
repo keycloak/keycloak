@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -51,6 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -66,12 +68,15 @@ public class PermissionRESTTest extends AbstractPermissionTest {
 
     @Test
     public void testPreventDeletingAdminPermissionsClient() {
+        // the client is internal, so the request is rejected by the permission check the same way it is for realm-management
         try {
             adminPermissionsClient.remove();
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            assertThat(ex, instanceOf(BadRequestException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
+
+        assertThat(adminPermissionsClient.toRepresentation(), notNullValue());
     }
 
     @Test
@@ -79,6 +84,17 @@ public class PermissionRESTTest extends AbstractPermissionTest {
         ClientRepresentation representation = adminPermissionsClient.toRepresentation();
         assertFalse(representation.getAccess().get("manage"));
         assertFalse(representation.getAccess().get("configure"));
+
+        // enforcement has to agree with the access report above, even for a full admin
+        representation.setName("somethingNew");
+        try {
+            adminPermissionsClient.update(representation);
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+
+        assertThat(adminPermissionsClient.toRepresentation().getName(), nullValue());
     }
 
     @Test

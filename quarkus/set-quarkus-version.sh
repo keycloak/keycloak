@@ -35,7 +35,7 @@ fi
 SCRIPT_DIR=$(dirname "$0")
 DEFAULT_QUARKUS_VERSION="999-SNAPSHOT"
 QUARKUS_VERSION=${1:-"$DEFAULT_QUARKUS_VERSION"}
-QUARKUS_BRANCH="$QUARKUS_VERSION"
+QUARKUS_BRANCH="${QUARKUS_BRANCH:-$QUARKUS_VERSION}"
 
 EXCLUDED_DEPENDENCIES=(
     "infinispan"
@@ -69,8 +69,8 @@ QUARKUS_PARENT_POM=$(curl -f -s "$QUARKUS_PARENT_POM_URL")
 
 echo "Setting Quarkus version: $QUARKUS_VERSION"
 
-$SCRIPT_DIR/../mvnw -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
-$SCRIPT_DIR/../mvnw -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
+$SCRIPT_DIR/../mvnw -N -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
+$SCRIPT_DIR/../mvnw -N -B versions:set-property -f $SCRIPT_DIR/../pom.xml -Dproperty=quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null
 
 for dependency in "${VERSIONS_FROM_QUARKUS_PARENT[@]}"; do
     VERSION=$(grep -oP "(?<=<$dependency>)[^<]*(?=</$dependency>)" <<< "$QUARKUS_PARENT_POM")

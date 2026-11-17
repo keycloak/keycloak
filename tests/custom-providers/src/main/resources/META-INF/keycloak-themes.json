@@ -1,0 +1,16 @@
+{
+  "themes": [
+    {
+      "name": "custom-account-provider",
+      "types": [
+        "account"
+      ]
+    },
+    {
+      "name": "organization",
+      "types": [
+        "login"
+      ]
+    }
+  ]
+}

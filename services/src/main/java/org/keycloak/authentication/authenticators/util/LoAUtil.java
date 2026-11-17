@@ -74,7 +74,7 @@ public class LoAUtil {
         if (loaMaxAges.isEmpty()) {
             // Default values used when step-up conditions not used in the browser authentication flow.
             // This is used for backwards compatibility and in case when step-up is not configured in the authentication flow (returning 1 in case of "normal" authentication, 0 for SSO authentication)
-            return Stream.of(Constants.MINIMUM_LOA, 1);
+            return Stream.of(Constants.MINIMUM_LOA, Constants.DEFAULT_AUTHENTICATED_LOA);
         } else {
             // Add 0 as a level used for SSO cookie
             return Stream.concat(Stream.of(Constants.MINIMUM_LOA), loaMaxAges.keySet().stream());

@@ -25,9 +25,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.mapper.OIDCClientModelMapper;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.services.client.scim.OIDCClientModelSchema;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -70,8 +70,8 @@ public class OIDCClientModelMapperTest {
             clientModel.setServiceAccountsEnabled(false);
             clientModel.setWebOrigins(Set.of());
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            BaseClientRepresentation rep = mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            BaseClientRepresentation rep = schema.fromModel(clientModel);
 
             assertThat(rep, instanceOf(OIDCClientRepresentation.class));
             OIDCClientRepresentation oidcRep = (OIDCClientRepresentation) rep;
@@ -96,8 +96,8 @@ public class OIDCClientModelMapperTest {
             setupBasicClientModel(clientModel);
             RoleModel clientRole = clientModel.addRole("client-role");
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            BaseClientRepresentation rep = mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            BaseClientRepresentation rep = schema.fromModel(clientModel);
 
             assertThat(rep.getRoles(), contains("client-role"));
         } finally {
@@ -119,8 +119,8 @@ public class OIDCClientModelMapperTest {
             // Note: serviceAccountsEnabled is not set here as it requires a service account user to exist
             // for the mapper to work correctly. The SERVICE_ACCOUNT flow is tested separately.
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) schema.fromModel(clientModel);
 
             assertThat(rep.getLoginFlows(), containsInAnyOrder(
                     OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.IMPLICIT, OIDCClientRepresentation.Flow.DIRECT_GRANT
@@ -142,8 +142,8 @@ public class OIDCClientModelMapperTest {
             clientModel.setClientAuthenticatorType("client-secret");
             clientModel.setSecret("my-secret");
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) schema.fromModel(clientModel);
 
             assertThat(rep.getAuth(), notNullValue());
             assertThat(rep.getAuth().getMethod(), is("client-secret"));
@@ -163,8 +163,8 @@ public class OIDCClientModelMapperTest {
             setupBasicClientModel(clientModel);
             clientModel.setPublicClient(true);
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) schema.fromModel(clientModel);
 
             assertThat(rep.getAuth(), nullValue());
         } finally {
@@ -182,8 +182,8 @@ public class OIDCClientModelMapperTest {
             setupBasicClientModel(clientModel);
             clientModel.setWebOrigins(Set.of("http://localhost:3000", "http://localhost:4000"));
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) schema.fromModel(clientModel);
 
             assertThat(rep.getWebOrigins(), containsInAnyOrder("http://localhost:3000", "http://localhost:4000"));
         } finally {
@@ -217,8 +217,8 @@ public class OIDCClientModelMapperTest {
             serviceAccount.grantRole(role1);
             serviceAccount.grantRole(role2);
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) schema.fromModel(clientModel);
 
             assertThat(rep.getServiceAccountRoles(), hasItems("test-role-1", "test-role-2"));
         } finally {
@@ -246,8 +246,8 @@ public class OIDCClientModelMapperTest {
 
             serviceAccount.grantRole(clientRole);
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) schema.fromModel(clientModel);
 
             assertThat(rep.getServiceAccountRoles(), hasItems("mapper-client-sa-role"));
         } finally {
@@ -265,8 +265,8 @@ public class OIDCClientModelMapperTest {
             setupBasicClientModel(clientModel);
             clientModel.setServiceAccountsEnabled(false);
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) schema.fromModel(clientModel);
 
             assertThat(rep.getServiceAccountRoles(), empty());
         } finally {
@@ -291,8 +291,8 @@ public class OIDCClientModelMapperTest {
             rep.setWebOrigins(Set.of("http://example.com"));
             rep.setLoginFlows(Set.of());
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            mapper.toModel(rep, clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            schema.populate(clientModel, rep);
 
             assertThat(clientModel.isEnabled(), is(true));
             assertThat(clientModel.getClientId(), is("new-client"));
@@ -306,9 +306,6 @@ public class OIDCClientModelMapperTest {
         }
     }
 
-    private OIDCClientModelMapper getModelMapper(KeycloakSession session) {
-        return new OIDCClientModelMapper();
-    }
 
     @TestOnServer
     public void toModel_setsLoginFlows(KeycloakSession session) {
@@ -326,8 +323,8 @@ public class OIDCClientModelMapperTest {
             rep.setRedirectUris(Set.of());
             rep.setWebOrigins(Set.of());
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            mapper.toModel(rep, clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            schema.populate(clientModel, rep);
 
             assertThat(clientModel.isStandardFlowEnabled(), is(true));
             assertThat(clientModel.isImplicitFlowEnabled(), is(true));
@@ -356,8 +353,8 @@ public class OIDCClientModelMapperTest {
             rep.setRedirectUris(Set.of());
             rep.setWebOrigins(Set.of());
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            mapper.toModel(rep, clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            schema.populate(clientModel, rep);
 
             assertThat(clientModel.isStandardFlowEnabled(), is(false));
             assertThat(clientModel.isImplicitFlowEnabled(), is(false));
@@ -386,8 +383,8 @@ public class OIDCClientModelMapperTest {
             auth.setSecret("jwt-secret");
             rep.setAuth(auth);
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            mapper.toModel(rep, clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            schema.populate(clientModel, rep);
 
             assertThat(clientModel.isPublicClient(), is(false));
             assertThat(clientModel.getClientAuthenticatorType(), is("client-jwt"));
@@ -415,8 +412,8 @@ public class OIDCClientModelMapperTest {
             rep.setLoginFlows(Set.of());
             rep.setAuth(null);
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            mapper.toModel(rep, clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            schema.populate(clientModel, rep);
 
             assertThat(clientModel.isPublicClient(), is(true));
         } finally {
@@ -441,8 +438,8 @@ public class OIDCClientModelMapperTest {
             rep.setWebOrigins(Set.of());
             rep.setLoginFlows(Set.of());
 
-            OIDCClientModelMapper mapper = getModelMapper(session);
-            mapper.toModel(rep, clientModel);
+            OIDCClientModelSchema schema = OIDCClientModelSchema.INSTANCE;
+            schema.populate(clientModel, rep);
 
             assertThat(clientModel.isEnabled(), is(false));
         } finally {

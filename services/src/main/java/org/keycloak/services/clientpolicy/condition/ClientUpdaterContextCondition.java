@@ -26,7 +26,7 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
+import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -75,7 +75,10 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
         case UPDATE:
         case REGISTERED:
         case UPDATED:
-            if (isAuthMethodMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
+        case REGISTER_PROTOCOL_MAPPER:
+        case UPDATE_PROTOCOL_MAPPER:
+        case UNREGISTER_PROTOCOL_MAPPER:
+            if (isAuthMethodMatched((ClientPolicyCRUDContext)context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
             return ClientPolicyVote.ABSTAIN;
@@ -96,7 +99,7 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
         return expectedAuthMethods.stream().anyMatch(i -> i.equals(authMethod));
     }
 
-    private boolean isAuthMethodMatched(ClientCRUDContext context) {
+    private boolean isAuthMethodMatched(ClientPolicyCRUDContext context) {
         String authMethod = null;
 
         if (context.getToken() == null) {

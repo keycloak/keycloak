@@ -1,20 +1,26 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
-import { switchOff, switchOn } from "../utils/form.ts";
+import { clickSwitch, switchOff, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
-import { assertNotificationMessage } from "../utils/masthead.ts";
+import {
+  assertNotificationMessage,
+  selectActionToggleItem,
+} from "../utils/masthead.ts";
 import { confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   assertDisplayName,
   assertFrontendURL,
   assertRequireSSL,
+  clearAllowedMapperTypes,
   clickRevertButton,
   clickSaveRealm,
   fillDisplayName,
   fillFrontendURL,
   fillRequireSSL,
+  getAllowedMapperTypeChips,
+  selectAllowedMapperTypes,
 } from "./general.ts";
 import { SERVER_URL } from "../utils/constants.ts";
 
@@ -63,11 +69,13 @@ test.describe.serial("Realm settings general tab tests", () => {
 
   test("realm enable/disable switch", async ({ page }) => {
     // Enable realm
-    await switchOn(page, `#${realmName}-switch`);
+    const realmSwitch = page.locator(`#${realmName}-switch`);
+    await expect(realmSwitch).not.toBeChecked();
+    await switchOn(page, realmSwitch);
     await assertNotificationMessage(page, "Realm successfully updated");
 
     // Disable realm
-    await switchOff(page, `#${realmName}-switch`);
+    await clickSwitch(page, realmSwitch);
     await confirmModal(page);
     await assertNotificationMessage(page, "Realm successfully updated");
   });
@@ -119,5 +127,68 @@ test.describe.serial("Realm settings general tab tests", () => {
     await fillDisplayName(page, "should_be_reverted");
     await clickRevertButton(page);
     await assertDisplayName(page, "display_name");
+  });
+
+  test("Allowed protocol mapper types for client administrators", async ({
+    page,
+  }) => {
+    // Two well-known provider IDs present in every Keycloak installation.
+    const mapperIds = [
+      "oidc-usermodel-attribute-mapper",
+      "oidc-usermodel-property-mapper",
+    ];
+
+    // Select both mapper types and save.
+    await selectAllowedMapperTypes(page, mapperIds);
+    await clickSaveRealm(page);
+    await assertNotificationMessage(page, "Realm successfully updated");
+
+    // Verify the realm attribute is persisted as a comma-delimited string.
+    const savedRealm = await adminClient.getRealm(realmName);
+    expect(
+      savedRealm?.attributes?.[
+        "allowedProtocolMapperTypesForClientAdministrators"
+      ],
+    ).toBe(mapperIds.join(","));
+
+    // Reload the page and verify both chips are shown.
+    await goToClients(page);
+    await goToRealmSettings(page);
+    const chips = await getAllowedMapperTypeChips(page);
+    expect(chips.sort()).toEqual([...mapperIds].sort());
+
+    // Clear all selections, save, and verify the attribute is removed.
+    await clearAllowedMapperTypes(page);
+    await clickSaveRealm(page);
+    await assertNotificationMessage(page, "Realm successfully updated");
+    const clearedRealm = await adminClient.getRealm(realmName);
+    expect(
+      clearedRealm?.attributes?.[
+        "allowedProtocolMapperTypesForClientAdministrators"
+      ],
+    ).toBeFalsy();
+  });
+});
+
+test.describe("Realm settings delete", () => {
+  const realmName = `delete-realm-settings-${uuid()}`;
+
+  test.beforeAll(() =>
+    adminClient.createRealm(realmName, { displayName: "Display name only" }),
+  );
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
+  test("deletes the realm by its name when a display name is set", async ({
+    page,
+  }) => {
+    await login(page);
+    await goToRealm(page, realmName);
+    await goToRealmSettings(page);
+
+    await selectActionToggleItem(page, "Delete");
+    await confirmModal(page);
+
+    await assertNotificationMessage(page, "The realm has been deleted");
+    expect(await adminClient.getRealm(realmName)).toBeNull();
   });
 });

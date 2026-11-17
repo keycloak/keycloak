@@ -44,10 +44,9 @@ public class OID4VCIRestCredentialOfferFeatureEnabledTest extends OID4VCIssuerEn
 
     @Test
     public void testRestEndpoint() {
-        String scopeName = jwtTypeCredentialScope.getName();
         String credentialConfigurationId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
-        String token = getBearerToken(oauth, client, scopeName);
+        String token = getBearerToken(oauth, client);
 
         runOnServer.run(session -> {
                 BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);

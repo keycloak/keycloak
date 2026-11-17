@@ -44,9 +44,9 @@ export default function CreateClientScope() {
         clientScope.type,
       );
 
-      addAlert(t("createClientScopeSuccess", AlertVariant.success));
+      addAlert(t("createClientScopeSuccess"), AlertVariant.success);
 
-      navigate(
+      void navigate(
         toClientScope({
           realm,
           id: scope.id!,

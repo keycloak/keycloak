@@ -25,6 +25,7 @@ final class VaultPropertyMappers implements PropertyMapperGrouping {
                 fromOption(VaultOptions.VAULT_PASS)
                         .to("kc.spi-vault--keystore--pass")
                         .paramLabel("pass")
+                        .isMasked(true)
                         .build(),
                 fromOption(VaultOptions.VAULT_TYPE)
                         .to("kc.spi-vault--keystore--type")

@@ -48,6 +48,10 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public void put(String key, long lifespanSeconds, Map<String, String> notes) {
+        Objects.requireNonNull(key);
+        if (lifespanSeconds <= 0) {
+            throw new IllegalArgumentException("lifespanSeconds must be positive");
+        }
         if (key.endsWith(REVOKED_KEY)) {
             revokeToken(key, lifespanSeconds);
             return;
@@ -57,11 +61,13 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public Map<String, String> get(String key) {
+        Objects.requireNonNull(key);
         return unwrap(transaction.get(key));
     }
 
     @Override
     public Map<String, String> remove(String key) {
+        Objects.requireNonNull(key);
         try {
             // Using a get-before-remove allows us to return the value even in cases when a state transfer happens in Infinispan
             // where it might not return the value in all cases.
@@ -83,11 +89,16 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public boolean replace(String key, Map<String, String> notes) {
+        Objects.requireNonNull(key);
         return withReturnValue().replace(key, wrap(notes)) != null;
     }
 
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
+        Objects.requireNonNull(key);
+        if (lifespanInSeconds <= 0) {
+            throw new IllegalArgumentException("lifespanInSeconds must be positive");
+        }
         try {
             boolean result = withReturnValue().putIfAbsent(key, wrap(null), lifespanInSeconds, TimeUnit.SECONDS) == null;
             if (key.endsWith(REVOKED_KEY)) {
@@ -104,6 +115,7 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
 
     @Override
     public boolean contains(String key) {
+        Objects.requireNonNull(key);
         return transaction.getCache().containsKey(key);
     }
 

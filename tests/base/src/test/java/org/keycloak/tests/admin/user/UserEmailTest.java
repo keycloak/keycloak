@@ -214,6 +214,72 @@ public class UserEmailTest extends AbstractUserTest {
     }
 
     @Test
+    public void sendExecuteActionsEmailWithoutVerifyEmailDoesNotVerifyEmail() throws IOException {
+        UserRepresentation userRep = UserBuilder.create()
+                .username("user1").name("User", "One").email("user1@test.com").emailVerified(false).build();
+
+        String id = createUser(userRep);
+
+        UserResource user = managedRealm.admin().users().get(id);
+        Assertions.assertFalse(user.toRepresentation().isEmailVerified());
+
+        user.executeActionsEmail(Collections.singletonList(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assertions.assertEquals(1, mailServer.getReceivedMessages().length);
+
+        String link = MailUtils.getPasswordResetEmailLink(mailServer.getReceivedMessages()[0]);
+
+        driver.open(link);
+
+        proceedPage.assertCurrent();
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        proceedPage.clickProceedLink();
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        //the email should not be marked as verified as VERIFY_EMAIL was not among the actions
+        Assertions.assertFalse(user.toRepresentation().isEmailVerified());
+    }
+
+    @Test
+    public void sendExecuteActionsEmailWithVerifyEmailVerifiesEmail() throws IOException {
+        UserRepresentation userRep = UserBuilder.create()
+                .username("user1").name("User", "One").email("user1@test.com").emailVerified(false).build();
+
+        String id = createUser(userRep);
+
+        UserResource user = managedRealm.admin().users().get(id);
+        Assertions.assertFalse(user.toRepresentation().isEmailVerified());
+
+        user.executeActionsEmail(Arrays.asList(
+                UserModel.RequiredAction.VERIFY_EMAIL.name(),
+                UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assertions.assertEquals(1, mailServer.getReceivedMessages().length);
+
+        String link = MailUtils.getPasswordResetEmailLink(mailServer.getReceivedMessages()[0]);
+
+        driver.open(link);
+
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+
+        // VERIFY_EMAIL was among the actions, so the email is marked as verified
+        passwordUpdatePage.assertCurrent();
+
+        passwordUpdatePage.changePassword("new-pass", "new-pass");
+
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        Assertions.assertTrue(user.toRepresentation().isEmailVerified());
+    }
+
+    @Test
     public void sendTermsAndConditionsEmailSuccess() throws IOException {
         RequiredActionProviderRepresentation termsAndConds = managedRealm.admin().flows().getRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
         termsAndConds.setEnabled(true);

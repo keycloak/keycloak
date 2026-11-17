@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
-@EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+@EnableFeature(value = Profile.Feature.PARAMETERIZED_SCOPES, skipRestart = true)
 public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -101,7 +101,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
             String clientUUID = client.getId();
             AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
             session.getContext().setClient(client);
-            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, clientSession.getNote(OAuth2Constants.SCOPE))
+            List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, null, clientSession.getNote(OAuth2Constants.SCOPE))
                     .getAuthorizationDetailEntries().stream()
                     .map(AuthorizationRequestContextHolder.AuthorizationRequestHolder::new)
                     .collect(Collectors.toList());

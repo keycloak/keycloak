@@ -139,6 +139,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "client_credentials.use_refresh_token",
                       "token.response.type.bearer.lower-case",
                       "oauth2.jwt.authorization.grant.audience",
+                      "standard.token.exchange.allowTokenExpirationAfterSubjectTokenExpiration",
                     ])
                   }
                 />
@@ -220,7 +221,12 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                 <OpenIdVerifiableCredentials
                   client={client}
                   save={save}
-                  reset={() => resetFields(["oid4vci.enabled"])}
+                  reset={() =>
+                    resetFields([
+                      "oid4vci.enabled",
+                      "oid4vci.attester_trust_idps",
+                    ])
+                  }
                 />
               </>
             ),

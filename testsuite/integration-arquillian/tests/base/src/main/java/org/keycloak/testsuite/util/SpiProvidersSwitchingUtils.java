@@ -186,7 +186,7 @@ public class SpiProvidersSwitchingUtils {
                 spiSwitcher.unsetDefaultProvider(container, spi);
             }
         } else {
-            log.infof("Removing default provider for %s to %s", spi);
+            log.infof("Removing default provider for %s", spi);
             spiSwitcher.removeProviderConfig(container, spi);
         }
     }

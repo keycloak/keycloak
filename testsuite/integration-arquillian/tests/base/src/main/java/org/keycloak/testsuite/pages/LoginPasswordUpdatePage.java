@@ -37,7 +37,7 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
     @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
     @FindBy(className = "kc-feedback-text")
@@ -57,8 +57,9 @@ public class LoginPasswordUpdatePage extends LogoutSessionsPage {
         UIUtils.clickLink(cancelAIAButton);
     }
 
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Update password");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-update-password";
     }
 
     public String getError() {

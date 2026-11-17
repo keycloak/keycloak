@@ -19,6 +19,8 @@ package org.keycloak.saml.processing.api.saml.v2.sig;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.DigestMethod;
 import javax.xml.crypto.dsig.SignatureMethod;
@@ -187,14 +189,16 @@ public class SAML2Signature {
      * @return
      */
     public Node getNextSiblingOfIssuer(Document doc) {
-        // Find the sibling of Issuer
-        NodeList nl = doc.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ISSUER.get());
-        if (nl.getLength() > 0) {
-            Node issuer = nl.item(0);
-
-            return issuer.getNextSibling();
+        // Only the issuer of the element being signed determines signature placement.
+        // A Response may omit its issuer while containing an Assertion with an issuer.
+        Element root = doc.getDocumentElement();
+        for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if (JBossSAMLConstants.ISSUER.get().equals(child.getLocalName())
+                    && JBossSAMLURIConstants.ASSERTION_NSURI.get().equals(child.getNamespaceURI())) {
+                return child.getNextSibling();
+            }
         }
-        return null;
+        return root.getFirstChild();
     }
 
     /**
@@ -210,11 +214,12 @@ public class SAML2Signature {
         // Estabilish the IDness of the ID attribute.
         configureIdAttribute(document.getDocumentElement());
 
-        NodeList nodes = document.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
-                JBossSAMLConstants.ASSERTION.get());
-
-        for (int i = 0; i < nodes.getLength(); i++) {
-            configureIdAttribute((Element) nodes.item(i));
+        for (JBossSAMLConstants protocolElement : Stream.concat(Stream.of(JBossSAMLConstants.ASSERTION), JBossSAMLConstants.ARTIFACT_SIGNED_ELEMENTS.stream())
+                .collect(Collectors.toSet())) {
+            NodeList protocolNodes = document.getElementsByTagNameNS(protocolElement.getNsUri().get(), protocolElement.get());
+            for (int i = 0; i < protocolNodes.getLength(); i++) {
+                configureIdAttribute((Element) protocolNodes.item(i));
+            }
         }
     }
     

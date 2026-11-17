@@ -219,8 +219,10 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setBackchannelAuthenticationEndpoint(CibaGrantType.authorizationUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
         config.setBackchannelAuthenticationRequestSigningAlgValuesSupported(getSupportedBackchannelAuthenticationRequestSigningAlgorithms());
 
-        config.setPushedAuthorizationRequestEndpoint(ParEndpoint.parUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
-        config.setRequirePushedAuthorizationRequests(Boolean.FALSE);
+        if (Profile.isFeatureEnabled(Profile.Feature.PAR)) {
+            config.setPushedAuthorizationRequestEndpoint(ParEndpoint.parUrl(backendUriInfo.getBaseUriBuilder()).build(realm.getName()).toString());
+            config.setRequirePushedAuthorizationRequests(Boolean.FALSE);
+        }
 
         MTLSEndpointAliases mtlsEndpointAliases = getMtlsEndpointAliases(config);
         config.setMtlsEndpointAliases(mtlsEndpointAliases);
@@ -235,6 +237,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // HAIP-1.0 does not want to see this property (don't set to false)
         if (Profile.isFeatureEnabled(Profile.Feature.CIMD)) {
             config.setClientIdMetadataDocumentSupported(true);
+            if (!clientAuthMethodsSupported.contains("none")) {
+                clientAuthMethodsSupported.add("none");
+            }
         }
 
         config = checkConfigOverride(config);

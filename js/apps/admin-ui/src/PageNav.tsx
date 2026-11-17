@@ -14,6 +14,7 @@ import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
 import type { Environment } from "./environment-types";
 import { toPage } from "./page/routes";
+import { normalizeNavRoutePath } from "./page-nav-utils";
 import { routes } from "./routes";
 import { resolveDisplayName } from "./util";
 import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
@@ -31,9 +32,9 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
   const encodedRealm = encodeURIComponent(realm);
+  const navPath = id || path;
   const route = routes.find(
-    (route) =>
-      route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === (id || path),
+    (route) => normalizeNavRoutePath(route.path) === navPath,
   );
 
   const accessAllowed =
@@ -66,7 +67,7 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
 export const PageNav = () => {
   const { t } = useTranslation();
   const { environment } = useEnvironment<Environment>();
-  const { hasAccess, hasSomeAccess } = useAccess();
+  const { hasSomeAccess } = useAccess();
   const { componentTypes } = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
   const pages =
@@ -82,7 +83,7 @@ export const PageNav = () => {
   };
 
   const onSelect = (item: SelectedItem) => {
-    navigate(item.to);
+    void navigate(item.to);
     item.event.preventDefault();
   };
 
@@ -102,7 +103,8 @@ export const PageNav = () => {
   );
 
   const showWorkflows =
-    hasAccess("manage-realm") && isFeatureEnabled(Feature.Workflows);
+    hasSomeAccess("realm-admin", "admin") &&
+    isFeatureEnabled(Feature.Workflows);
 
   const showManageRealm = environment.masterRealm === environment.realm;
 

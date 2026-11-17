@@ -42,6 +42,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -55,6 +56,7 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -62,6 +64,7 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -256,30 +259,39 @@ public class ExportUtils {
         // Message Bundle
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
 
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION) && !options.isPartial()) {
+        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             orgProvider.getAllStream().map(model -> {
                 OrganizationRepresentation org = ModelToRepresentation.toRepresentation(model, false);
 
-                orgProvider.getMembersStream(model, (Map<String, String>) null, null, null, null)
-                        .forEach(user -> {
-                            MemberRepresentation member = new MemberRepresentation();
-                            member.setUsername(user.getUsername());
-                            member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
+                if (!options.isPartial()) {
+                    orgProvider.getMembersStream(model, (Map<String, String>) null, null, null, null)
+                            .forEach(user -> {
+                                MemberRepresentation member = new MemberRepresentation();
+                                member.setUsername(user.getUsername());
+                                member.setMembershipType(orgProvider.isManagedMember(model, user) ? MembershipType.MANAGED : MembershipType.UNMANAGED);
 
-                            // Export organization group memberships
-                            List<String> groupIds = orgProvider.getOrganizationGroupsByMember(model, user).map(GroupModel::getId).collect(Collectors.toList());
-                            if (!groupIds.isEmpty()) {
-                                member.setGroups(groupIds);
-                            }
+                                // Export organization group memberships
+                                List<String> groupIds = orgProvider.getOrganizationGroupsByMember(model, user).map(GroupModel::getId).collect(Collectors.toList());
+                                if (!groupIds.isEmpty()) {
+                                    member.setGroups(groupIds);
+                                }
 
-                            org.addMember(member);
-                        });
+                                org.addMember(member);
+                            });
+                }
 
                 orgProvider.getIdentityProviders(model)
                         .map(b -> {
                             IdentityProviderRepresentation broker = new IdentityProviderRepresentation();
                             broker.setAlias(b.getAlias());
+                            OrganizationIdentityProviderLinkModel link = orgProvider.getIdentityProviderLink(model, b);
+                            if (link != null) {
+                                OrganizationIdentityProviderLinkRepresentation linkRep = new OrganizationIdentityProviderLinkRepresentation(model.getId());
+                                linkRep.setAutoMembership(link.isAutoMembership());
+                                linkRep.setMembershipType(link.getMembershipType().name());
+                                broker.setOrganizationLinks(List.of(linkRep));
+                            }
                             return broker;
                         }).forEach(org::addIdentityProvider);
 
@@ -445,10 +457,18 @@ public class ExportUtils {
 
         // Verifiable credentials
         List<UserVerifiableCredentialRepresentation> verifiableCredentialReps = session.users().getVerifiableCredentialsByUser(user.getId())
-                .map(ModelToRepresentation::toRepresentation)
+                .map(model -> ModelToRepresentation.toRepresentation(model, realm))
                 .toList();
         if (!verifiableCredentialReps.isEmpty()) {
             userRep.setVerifiableCredentials(verifiableCredentialReps);
+        }
+
+        // Issued verifiable credentials
+        List<IssuedVerifiableCredentialRepresentation> issuedCredentialReps = session.users().getIssuedVerifiableCredentialsStreamByUser(user.getId())
+                .map(model -> ModelToRepresentation.toRepresentation(model, session, realm))
+                .toList();
+        if (!issuedCredentialReps.isEmpty()) {
+            userRep.setIssuedVerifiableCredentials(issuedCredentialReps);
         }
 
         // Service account
@@ -490,8 +510,7 @@ public class ExportUtils {
 
     public static void exportUsersToStream(KeycloakSession session, RealmModel realm, List<UserModel> usersToExport, ObjectMapper mapper, OutputStream os, ExportOptions options) throws IOException {
         JsonFactory factory = mapper.getFactory();
-        JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8);
-        try {
+        try (JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8)) {
             if (mapper.isEnabled(SerializationFeature.INDENT_OUTPUT)) {
                 generator.useDefaultPrettyPrinter();
             }
@@ -508,8 +527,6 @@ public class ExportUtils {
 
             generator.writeEndArray();
             generator.writeEndObject();
-        } finally {
-            generator.close();
         }
     }
 
@@ -519,8 +536,7 @@ public class ExportUtils {
 
     public static void exportFederatedUsersToStream(KeycloakSession session, RealmModel realm, List<String> usersToExport, ObjectMapper mapper, OutputStream os, ExportOptions options) throws IOException {
         JsonFactory factory = mapper.getFactory();
-        JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8);
-        try {
+        try (JsonGenerator generator = factory.createGenerator(os, JsonEncoding.UTF8)) {
             if (mapper.isEnabled(SerializationFeature.INDENT_OUTPUT)) {
                 generator.useDefaultPrettyPrinter();
             }
@@ -537,8 +553,6 @@ public class ExportUtils {
 
             generator.writeEndArray();
             generator.writeEndObject();
-        } finally {
-            generator.close();
         }
     }
 

@@ -215,6 +215,11 @@ public class KerberosFederationProvider implements UserStorageProvider,
 
                     return CredentialValidationOutput.fallback();
                 } else {
+                    String responseToken = spnegoAuthenticator.getResponseToken();
+                    if (responseToken != null) {
+                        state.put(KerberosConstants.RESPONSE_TOKEN, responseToken);
+                    }
+
                     String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                     if (delegationCredential != null) {
                         state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);

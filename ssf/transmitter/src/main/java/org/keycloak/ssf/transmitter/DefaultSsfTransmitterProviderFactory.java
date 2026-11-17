@@ -164,7 +164,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * bulk DELETE would drag the admin's removal transaction into a
      * timeout for receivers with a large backlog). Also handles
      * {@code ClientUpdatedEvent} to reject saves that would leave two
-     * clients in the same realm sharing an {@code ssf.streamId}
+     * clients in the same realm sharing an {@code ssf.stream.id}
      * ({@link ModelDuplicateException} propagates out of the event so
      * the admin fixes the duplicate instead of having SSF state
      * silently mutated).
@@ -651,7 +651,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     /**
      * Rejects any client save that would leave two clients in the same
-     * realm holding identical {@code ssf.streamId} attributes. Fires
+     * realm holding identical {@code ssf.stream.id} attributes. Fires
      * from the {@code ClientUpdatedEvent} hook that
      * {@link org.keycloak.models.utils.RepresentationToModel#createClient
      * createClient} and the representation-based update path both
@@ -694,7 +694,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         }
         throw new ModelDuplicateException(String.format(
                 "SSF stream id '%s' is already in use by another client in realm '%s'. "
-                        + "Two clients cannot share the same ssf.streamId — revise the client "
+                        + "Two clients cannot share the same ssf.stream.id — revise the client "
                         + "configuration (or delete the colliding receiver before re-importing).",
                 streamId, realm.getName()));
     }

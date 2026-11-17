@@ -25,6 +25,7 @@ import java.util.List;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -71,6 +72,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         testRealms.add(realm);
+        Profile.configure();
     }
 
 

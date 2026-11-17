@@ -41,7 +41,6 @@ import org.keycloak.models.cache.infinispan.authorization.events.ScopeUpdatedEve
 import org.keycloak.models.cache.infinispan.authorization.stream.InResourcePredicate;
 import org.keycloak.models.cache.infinispan.authorization.stream.InResourceServerPredicate;
 import org.keycloak.models.cache.infinispan.authorization.stream.InScopePredicate;
-import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
 import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientAddedEvent;
 import org.keycloak.models.cache.infinispan.events.ClientRemovedEvent;
@@ -63,6 +62,7 @@ import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEven
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.UserVerifiableCredentialsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.GroupListPredicate;
 import org.keycloak.models.cache.infinispan.stream.HasRolePredicate;
 import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
@@ -88,6 +88,7 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveAllUserLoginFailuresEvent;
 import org.keycloak.models.sessions.infinispan.events.RemoveUserSessionsEvent;
 import org.keycloak.models.sessions.infinispan.stream.AuthClientSessionSetMapper;
+import org.keycloak.models.sessions.infinispan.stream.AuthenticatedUserAuthSessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.ClientSessionFilterByUser;
 import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
@@ -136,7 +137,6 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 LockEntry.class,
                 LockEntryPredicate.class,
                 WrapperClusterEvent.class,
-                WrapperClusterEvent.SiteFilter.class,
 
                 // keys.infinispan package
                 PublicKeyStorageInvalidationEvent.class,
@@ -173,6 +173,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 RemoveUserSessionsEvent.class,
 
                 // models.sessions.infinispan.stream package
+                AuthenticatedUserAuthSessionPredicate.class,
                 SessionPredicate.class,
                 SessionWrapperPredicate.class,
                 UserSessionPredicate.class,
@@ -186,7 +187,6 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 InRealmPredicate.class,
 
                 // models.cache.infinispan.events package
-                AuthenticationSessionAuthNoteUpdateEvent.class,
                 CacheKeyInvalidatedEvent.class,
                 ClientAddedEvent.class,
                 ClientUpdatedEvent.class,
@@ -208,6 +208,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 UserFederationLinkUpdatedEvent.class,
                 UserFullInvalidationEvent.class,
                 UserUpdatedEvent.class,
+                UserVerifiableCredentialsUpdatedEvent.class,
 
                 // sessions.infinispan.entities package
                 AuthenticatedClientSessionStore.class,

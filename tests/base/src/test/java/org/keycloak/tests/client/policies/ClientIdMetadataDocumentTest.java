@@ -6,8 +6,11 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
@@ -16,8 +19,13 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdM
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
+import org.keycloak.protocol.oauth2.cimd.provider.AbstractPersistentClientIdMetadataDocumentProvider;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -25,6 +33,16 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory;
+import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -33,11 +51,16 @@ import org.keycloak.testframework.oauth.CimdProvider;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.OIDCClientRepresentationBuilder;
+import org.keycloak.testframework.oauth.SectorIdentifierRedirectUrisProvider;
 import org.keycloak.testframework.oauth.annotations.InjectCimdProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.oauth.annotations.InjectSectorIdentifierRedirectUrisProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -50,15 +73,23 @@ import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /**
  *
@@ -72,6 +103,7 @@ public class ClientIdMetadataDocumentTest {
     private static final String REDIRECT_URI = "http://localhost:8500/";
     private static final String JWKS_URI = "http://localhost:8500/idp/jwks";
     private static final String LOGO_URI = "http://localhost:8500/logo.png";
+    private static final String RESOURCE = "https://mcp.example.com/api";
     private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
 
     @InjectRealm
@@ -86,8 +118,17 @@ public class ClientIdMetadataDocumentTest {
     @InjectCimdProvider(config = CimdClientConfig.class, lifecycle = LifeCycle.METHOD)
     CimdProvider cimd;
 
+    @InjectSectorIdentifierRedirectUrisProvider
+    SectorIdentifierRedirectUrisProvider sectorIdentifierRedirectUrisProvider;
+
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectClient(config = StoredUriClientConfig.class, lifecycle = LifeCycle.METHOD)
+    ManagedClient storedUriClient;
+
+    @InjectHttpClient(followRedirects = false)
+    CloseableHttpClient httpClient;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
@@ -103,7 +144,7 @@ public class ClientIdMetadataDocumentTest {
         // register policies : no trusted domain
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("spiffe"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("localhost", "example.com","mcp.example.com"));
 
         updatePolicy(conditionConfig, executorConfig);
@@ -149,7 +190,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         executorConfig.setRestrictSameDomain(true);
         executorConfig.setAllowHttpScheme(true);
@@ -222,12 +263,108 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testResourceIndicatorPermissiveModeWithoutResourceParam() throws Exception {
+        // Resource Indicators feature is enabled (server config), allow list is vacant, client not yet registered,
+        // authorization request does not include the resource parameter -> CIMD should not enforce anything.
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        String code = loginUserAndGetCode(true);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        String[] audience = accessToken.getAudience();
+        Assertions.assertFalse(audience != null && Arrays.asList(audience).contains(RESOURCE));
+
+        logoutAndDelete(findByClientIdByAdmin().getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorRejectedWhenAllowListVacant() throws Exception {
+        // Resource Indicators feature is enabled (server config), allow list is vacant, client not yet registered,
+        // authorization request includes the resource parameter -> invalid_target.
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+    }
+
+    @Test
+    public void testResourceIndicatorAllowedForNewClientAssignsAudienceMapper() throws Exception {
+        // allow list includes the resource, client not yet registered -> client gets registered
+        // and an audience mapper for the resource is attached to the client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(signedJwt).send();
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        MatcherAssert.assertThat(Arrays.asList(accessToken.getAudience()), Matchers.hasItem(RESOURCE));
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testResourceIndicatorRejectedWhenNotInAllowList() throws Exception {
+        // allow list does not include the resource requested, client not yet registered -> invalid_target
+        // and no audience mapper is assigned to the newly registered client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of("https://mcp.example.com/other-api"));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+    }
+
+    @Test
+    public void testResourceIndicatorRemovedFromClientWhenNoLongerAllowListed() throws Exception {
+        // 1. allow list includes the resource -> client registers and gets the audience mapper assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        logout(tokenResponse.getIdToken());
+
+        // 2. remove the resource from the allow list -> the client's own cache is still valid (NO_UPDATE),
+        // but the resource indicator is still enforced on every authorization request.
+        executorConfig.setResourceIndicatorAllowList(List.of());
+        updatePolicy(conditionConfig, executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+
+        // the audience mapper got synchronized (removed) to keep it aligned with the allow list.
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorForPublicClient() throws Exception {
         // register profiles
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         executorConfig.setRestrictSameDomain(true);
         executorConfig.setAllowHttpScheme(true);
@@ -300,12 +437,197 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientPolicyAutoConfigurationAppliedOnCimdCreation() throws Exception {
+        // register CIMD profiles/policies
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setRestrictSameDomain(true);
+
+        // Also register auto-configure executors for all clients
+        RejectImplicitGrantExecutor.Configuration rejectImplicitConfig = new RejectImplicitGrantExecutor.Configuration();
+        rejectImplicitConfig.setAutoConfigure(true);
+        RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration rejectRopcConfig = new RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration();
+        rejectRopcConfig.setAutoConfigure(true);
+        PKCEEnforcerExecutor.Configuration pkceConfig = new PKCEEnforcerExecutor.Configuration();
+        pkceConfig.setAutoConfigure(true);
+
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("cimd-profile")
+                    .description("CIMD executor profile")
+                    .executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig)
+                    .build())
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("auto-configure-profile")
+                    .description("Auto-configure executors profile")
+                    .executor(RejectImplicitGrantExecutorFactory.PROVIDER_ID, rejectImplicitConfig)
+                    .executor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID, rejectRopcConfig)
+                    .executor(PKCEEnforcerExecutorFactory.PROVIDER_ID, pkceConfig)
+                    .build());
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("cimd-policy")
+                    .description("CIMD policy")
+                    .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                    .profile("cimd-profile")
+                    .build())
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("auto-configure-policy")
+                    .description("Auto-configure policy for all clients")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, null)
+                    .profile("auto-configure-profile")
+                    .build());
+            return r;
+        });
+
+        // set Client Metadata for a public client
+        setCimdPublicClient();
+
+        // send an authorization request with PKCE (required by PKCEEnforcer)
+        PkceGenerator pkce = PkceGenerator.s256();
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(pkce).open();
+        oauth.fillLoginForm(user.getUsername(), user.getPassword());
+
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        String code = oauth.parseLoginResponse().getCode();
+        Assertions.assertNotNull(code);
+
+        // get an access token with PKCE verifier
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).codeVerifier(pkce.getCodeVerifier()).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings - auto-configuration should have been applied
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        // Verify auto-configuration was applied during CIMD client creation
+        Assertions.assertFalse(clientRepresentation.isImplicitFlowEnabled(), "Implicit flow should be disabled by RejectImplicitGrantExecutor auto-configuration");
+        Assertions.assertFalse(clientRepresentation.isDirectAccessGrantsEnabled(), "Direct access grants should be disabled by RejectResourceOwnerPasswordCredentialsGrantExecutor auto-configuration");
+        Assertions.assertEquals("S256", clientRepresentation.getAttributes().get("pkce.code.challenge.method"), "PKCE should be configured by PKCEEnforcerExecutor auto-configuration");
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http, code, 400",
+            "http, , 400",
+            "https, code, 200"
+    })
+    public void testSecureRedirectUrisEnforcerWithClientIdUriCondition(String redirectScheme,
+            String responseType, int expectedStatus) throws Exception {
+        String redirectUri = redirectScheme + "://client.example.com/callback";
+        // The managed client's callbacks are stored before enabling the policy, as after an upgrade.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("https"));
+        conditionConfig.setTrustedDomains(List.of("client.example.com"));
+        SecureRedirectUrisEnforcerExecutor.Configuration executorConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        executorConfig.setAllowHttpScheme(false);
+        realm.updateWithCleanup(r -> r.resetClientProfiles().clientProfile(ClientProfileBuilder.create()
+                .name("redirect-uris-profile")
+                .executor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID, executorConfig)
+                .build())
+                .resetClientPolicies().clientPolicy(ClientPolicyBuilder.create()
+                        .name("redirect-uris-policy")
+                        .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                        .profile("redirect-uris-profile")
+                        .build()));
+
+        oauth.client(storedUriClient.getClientId()).redirectUri(redirectUri).responseType(responseType).scope("openid");
+        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(oauth.loginForm().build()))) {
+            Assertions.assertEquals(expectedStatus, response.getStatusLine().getStatusCode());
+            Assertions.assertNull(response.getFirstHeader(HttpHeaders.LOCATION));
+            String body = EntityUtils.toString(response.getEntity());
+            if (expectedStatus == 400) {
+                Assertions.assertTrue(body.contains(SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI));
+            } else {
+                Assertions.assertTrue(body.contains("name=\"username\""));
+            }
+        }
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerOnCimdCreate() throws Exception {
+        // register CIMD policy and SecureRedirectUrisEnforcer policy
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+
+        // SecureRedirectUrisEnforcer that does NOT allow http scheme
+        SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        redirectUrisConfig.setAllowHttpScheme(false);
+        redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
+
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        // set Client Metadata for a public client with http redirect URI (should be rejected)
+        setCimdPublicClient();
+        cimd.getRepresentation().setRedirectUris(List.of("http://localhost:8500/callback"));
+
+        // The SecureRedirectUrisEnforcer should reject the http redirect URI during CIMD creation
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri("http://localhost:8500/callback");
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI, errorPage.getError());
+    }
+
+    @Test
+    public void testSecureRedirectUrisEnforcerOnCimdUpdate() throws Exception {
+        // register CIMD policy and SecureRedirectUrisEnforcer policy
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+
+        // SecureRedirectUrisEnforcer that allows http scheme initially
+        SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        redirectUrisConfig.setAllowHttpScheme(true);
+        redirectUrisConfig.setAllowIPv4LoopbackAddress(true);
+
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        // set Client Metadata for a public client with http redirect URI (allowed initially)
+        setCimdPublicClient();
+
+        // CIMD creation should succeed with http redirect URI since allowHttpScheme=true
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // Now tighten the policy to disallow http scheme
+        redirectUrisConfig.setAllowHttpScheme(false);
+        updateCimdAndSecureRedirectUrisPolicy(conditionConfig, executorConfig, redirectUrisConfig);
+
+        // Move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // The CIMD update should now reject the http redirect URI
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.openLoginForm();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI, errorPage.getError());
+
+        // cleanup
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorNotModifiedClientMetadata() throws Exception {
         // register profiles
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
         executorConfig.setRestrictSameDomain(true);
         executorConfig.setAllowHttpScheme(true);
@@ -383,7 +705,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         updatePolicy(conditionConfig, executorConfig);
 
@@ -397,7 +719,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com","localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -406,6 +728,49 @@ public class ClientIdMetadataDocumentTest {
 
         // 200 OK but malformed client metadata
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_FETCH_FAILED);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorIgnoresUnknownProperties() throws Exception {
+        // register profiles
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // public client whose client metadata document contains additional, non-registered properties.
+        // The CIMD specification (Section 4.1) allows a client metadata document to define additional properties,
+        // and RFC 7591 (Section 2) requires ignoring any client metadata the authorization server does not understand.
+        // "code_challenge_methods_used" is a non-registered property served by real-world MCP clients.
+        setCimdPublicClient();
+        cimd.setAdditionalProperties(Map.of(
+                "code_challenge_methods_used", List.of("S256"),
+                "x_unknown_property", "arbitrary-value"));
+
+        // send an authorization request - success
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        Assertions.assertEquals(CLIENT_ID, accessToken.getIssuedFor());
+
+        // the unknown properties are ignored: the recognized metadata is registered as usual
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorParseClientMetadataFailed() throws Exception {
+        // register profiles
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // 200 OK but the response body is not a valid JSON document
+        cimd.setRawMetadata("{\"client_id\": \"" + CLIENT_ID + "\", \"redirect_uris\": \"not-json");
+
+        // send an authorization request - fail
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_PARSE_FAILED);
     }
 
     private void testClientIdMetadataDocumentExecutorCacheControl(String cacheControlHeaderValue, int expectedExpiry) {
@@ -486,7 +851,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com","localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -532,7 +897,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com","localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com","localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -553,7 +918,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("localhost"));
         updatePolicy(conditionConfig, executorConfig);
@@ -566,7 +931,7 @@ public class ClientIdMetadataDocumentTest {
     @Test
     public void testClientIdMetadataDocumentExecutorVerifyClientId() throws Exception {
         // register profiles
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost", "127.0.0.1",
                 "10.0.0.0", "example.co.jp", "10.255.255.255", "172.16.0.0", "[::1]", "[0:0:0:0:0:0:0:1]",
                 "172.31.255.255", "192.168.0.0", "192.168.255.255", "[fe12:3456:789a:1::]"));
@@ -612,7 +977,7 @@ public class ClientIdMetadataDocumentTest {
     @Test
     public void testClientIdMetadataDocumentExecutorVerifyClientId2() throws Exception {
         // update profiles
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setTrustedDomains(List.of("*.example.com"));
         updatePolicy(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation(),
                 ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig);
@@ -659,6 +1024,78 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientIdMetadataDocumentExecutorVerifyClientId3() throws Exception {
+        // the domains below are trusted, but resolve to an address that must not be fetched from
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setTrustedDomains(List.of("localhost", "127.0.0.1", "[::1]", "10.0.0.1", "169.254.0.1",
+                "192.168.0.1", "224.0.0.1"));
+        updatePolicy(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation(),
+                ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig);
+
+        // loopback addresses
+        assertLoginAndError("https://localhost:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://127.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://[::1]:8443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // private address
+        assertLoginAndError("https://10.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+        assertLoginAndError("https://192.168.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // link-local address
+        assertLoginAndError("https://169.254.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // multicast address
+        assertLoginAndError("https://224.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_ADDRESS);
+
+        // the check can be switched off for development
+        executorConfig.setAllowPrivateUseAddresses(true);
+        updatePolicy(AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation(),
+                ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig);
+        assertLoginAndError("https://127.0.0.1:443/mcp", AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_FETCH_FAILED);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorNotManagedClient() throws Exception {
+        // register profiles
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        // a client whose clientId is a URL matching the policy, but not registered by CIMD
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId(CLIENT_ID);
+        clientRep.setRedirectUris(List.of(REDIRECT_URI));
+        clientRep.setPublicClient(true);
+        try (Response response = realm.admin().clients().create(clientRep)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        String cid = findByClientIdByAdmin().getId();
+
+        // a fetch of the metadata would fail the authorization request
+        cimd.setStatus(Response.Status.NOT_FOUND);
+
+        try {
+            // the executor must leave the client untouched
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.loginForm().codeChallenge(null).open();
+            oauth.fillLoginForm(user.getUsername(), user.getPassword());
+            String code = oauth.parseLoginResponse().getCode();
+            Assertions.assertNotNull(code);
+
+            AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+            Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+            // the client is still the one created by the administrator
+            ClientRepresentation persisted = findByClientIdByAdmin();
+            Assertions.assertTrue(persisted.isPublicClient());
+            Assertions.assertNull(persisted.getAttributes().get(AbstractPersistentClientIdMetadataDocumentProvider.CIMD_CACHE_EXPIRY_TIME_IN_SEC));
+
+            logout(tokenResponse.getIdToken());
+        } finally {
+            deleteClientByAdmin(cid);
+        }
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorVerifyClientMetadata() throws Exception {
         // register profiles
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
@@ -666,7 +1103,7 @@ public class ClientIdMetadataDocumentTest {
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost",
                 "mcpclient.example.org", "www.example.org",
                 "[::1]", "client.example.com"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost",
                 "mcpclient.example.org", "www.example.org",
@@ -747,6 +1184,48 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setPolicyUri("https://localhost:8443/policy");
         cimd.getRepresentation().setJwksUri("https://10.255.255.1:443/mcp");
         assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+        // sector_identifier_uri : not allowed domain
+        cimd.getRepresentation().setJwksUri(JWKS_URI);
+        cimd.getRepresentation().setSectorIdentifierUri("https://sector.example.org/sector");
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+        // request_uris : not allowed domain
+        cimd.getRepresentation().setSectorIdentifierUri(null);
+        cimd.getRepresentation().setRequestUris(List.of("https://request.example.org/request"));
+        assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        cimd.getRepresentation().setRequestUris(null);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorTrustedSectorIdentifierUri() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost", "127.0.0.1"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata
+        setCimdPublicClient();
+        sectorIdentifierRedirectUrisProvider.setSectorIdentifierRedirectUris(List.of(REDIRECT_URI));
+        cimd.getRepresentation().setSubjectType("pairwise");
+        cimd.getRepresentation().setSectorIdentifierUri(sectorIdentifierRedirectUrisProvider.getUri());
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted pairwise mapper
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        List<ProtocolMapperRepresentation> pairwiseMappers = clientRepresentation.getProtocolMappers().stream()
+                .filter(m -> PairwiseSubMapperHelper.getSectorIdentifierUri(m) != null)
+                .toList();
+        Assertions.assertEquals(1, pairwiseMappers.size());
+        Assertions.assertEquals(sectorIdentifierRedirectUrisProvider.getUri(), PairwiseSubMapperHelper.getSectorIdentifierUri(pairwiseMappers.get(0)));
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
     @Test
@@ -755,7 +1234,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setOnlyAllowConfidentialClient(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
@@ -773,6 +1252,149 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTokenEndpointAuthMethod(OIDCLoginProtocol.PRIVATE_KEY_JWT);
         cimd.getRepresentation().setJwksUri(null);
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+
+        // Client Metadata Validation:
+        // either jwks or jwks_uri is required. (both jwks and jwks_uri are set)
+        cimd.getRepresentation().setJwksUri(JWKS_URI);
+        cimd.getRepresentation().setJwks(new JSONWebKeySet());
+        assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_CONFIDENTIAL_CLIENT_JWKS);
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAcceptPublicClientWithConfidentialOnlyGrantTypes() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a public client with confidential-only grant types
+        setCimdPublicClient();
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.CLIENT_CREDENTIALS,
+                OAuth2Constants.CIBA_GRANT_TYPE,
+                OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // send an authorization request
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+
+        // Verify confidential-only grant types were removed
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertFalse(clientRepresentation.isServiceAccountsEnabled());
+        Assertions.assertNotEquals(Boolean.TRUE, clientRepresentation.getAuthorizationServicesEnabled());
+        Assertions.assertNotEquals("true", attrs.get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED));
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // Verify public grant types were kept
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled()); // authorization_code kept
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN)); // refresh_token kept
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorRejectPublicClientWithConfidentialOnlyGrantTypesByDefault() throws Exception {
+        // register profiles without setting acceptPublicClientWithConfidentialClientOnlyGrant (default: false)
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        // acceptPublicClientWithConfidentialClientOnlyGrant is not set, so default value (false) is applied
+        updatePolicy(conditionConfig, executorConfig);
+
+        // set Client Metadata for a public client with tokenEndpointAuthMethod = "none"
+        // and grant types including jwt authorization grant
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setJwksUri(null);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // registration should fail because a public client cannot have
+        // confidential-only grant types when acceptPublicClientWithConfidentialClientOnlyGrant is false
+        assertLoginAndError("invalid request");
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorAcceptPublicClientWithConfidentialOnlyGrantTypesOnRegisterAndRefetch() throws Exception {
+        // register profiles
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
+        executorConfig.setAllowHttpScheme(true);
+        executorConfig.setAcceptPublicClientWithConfidentialClientOnlyGrant(true);
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        updatePolicy(conditionConfig, executorConfig);
+
+        cimd.getRepresentation().setTokenEndpointAuthMethod("none");
+        cimd.getRepresentation().setJwksUri(null);
+        cimd.getRepresentation().setGrantTypes(List.of(
+                OAuth2Constants.AUTHORIZATION_CODE,
+                OAuth2Constants.REFRESH_TOKEN,
+                OAuth2Constants.JWT_AUTHORIZATION_GRANT
+        ));
+
+        // send an authorization request (first registration)
+        String code = loginUserAndGetCode(true);
+
+        // get an access token
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings after first registration
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Map<String, String> attrs = clientRepresentation.getAttributes();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        // Verify JWT Authorization Grant was removed
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // logout
+        logout(tokenResponse.getIdToken());
+
+        // move the time ahead so that the client metadata cache expires
+        timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+
+        // do authorization code flow again, forcing a re-fetch of CIMD
+        code = loginUserAndGetCode(false);
+        tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+        Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+        // check the persisted client settings after re-fetch
+        clientRepresentation = findByClientIdByAdmin();
+        attrs = clientRepresentation.getAttributes();
+        Assertions.assertTrue(clientRepresentation.isPublicClient());
+        Assertions.assertTrue(clientRepresentation.isStandardFlowEnabled());
+        Assertions.assertEquals("true", attrs.get(OIDCConfigAttributes.USE_REFRESH_TOKEN));
+        // Verify JWT Authorization Grant is still removed after re-fetch
+        Assertions.assertNotEquals("true", attrs.get(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED));
+
+        // delete the persisted client
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
     }
 
     @Test
@@ -780,7 +1402,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setOnlyAllowConfidentialClient(false);
         executorConfig.setTrustedDomains(List.of("*.example.com", "localhost", "www.example.co.jp"));
@@ -812,7 +1434,7 @@ public class ClientIdMetadataDocumentTest {
         ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
         conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
         conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
-        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
         executorConfig.setAllowHttpScheme(true);
         executorConfig.setTrustedDomains(List.of("*.example.com", "[::1]", "localhost", "127.0.0.1"));
         executorConfig.setRequiredProperties(List.of("client_uri", "logo_uri"));
@@ -823,10 +1445,21 @@ public class ClientIdMetadataDocumentTest {
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_REQUIRED_PROPERTIES);
     }
 
+    @Test
+    public void testWellKnownNoneInTokenEndpointAuthMethods() {
+        OIDCConfigurationRepresentation oidcConfig = oauth.doWellKnownRequest();
+        Assertions.assertTrue(oidcConfig.getClientIdMetadataDocumentSupported());
+        Assertions.assertTrue(oidcConfig.getTokenEndpointAuthMethodsSupported().contains("none"));
+    }
+
     private String loginUserAndGetCode(boolean isGrantRequred) {
+        return loginUserAndGetCode(isGrantRequred, null);
+    }
+
+    private String loginUserAndGetCode(boolean isGrantRequred, String resource) {
         oauth.client(CLIENT_ID);
         oauth.redirectUri(REDIRECT_URI);
-        oauth.loginForm().codeChallenge(null).open();
+        oauth.loginForm().codeChallenge(null).resource(resource).open();
         oauth.fillLoginForm(user.getUsername(), user.getPassword());
 
         if (isGrantRequred) {
@@ -864,6 +1497,65 @@ public class ClientIdMetadataDocumentTest {
         oauth.openLoginForm();
         errorPage.assertCurrent();
         Assertions.assertEquals(errorMessage, errorPage.getError());
+    }
+
+    private ClientIdUriSchemeCondition.Configuration createDefaultConditionConfig() {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        return conditionConfig;
+    }
+
+    private ClientIdMetadataDocumentExecutor.Configuration createDefaultExecutorConfig() {
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        return executorConfig;
+    }
+
+    private void setCimdPublicClient() {
+        cimd.getRepresentation().setTokenEndpointAuthMethod(null);
+        cimd.getRepresentation().setJwksUri(null);
+    }
+
+    private void updateCimdAndSecureRedirectUrisPolicy(
+            ClientIdUriSchemeCondition.Configuration conditionConfig,
+            ClientIdMetadataDocumentExecutor.Configuration executorConfig,
+            SecureRedirectUrisEnforcerExecutor.Configuration redirectUrisConfig) {
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("cimd-profile")
+                    .description("CIMD executor profile")
+                    .executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig)
+                    .build())
+                    .clientProfile(ClientProfileBuilder.create()
+                    .name("redirect-uris-profile")
+                    .description("SecureRedirectUris profile")
+                    .executor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID, redirectUrisConfig)
+                    .build());
+            r.resetClientPolicies()
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("cimd-policy")
+                    .description("CIMD policy")
+                    .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, conditionConfig)
+                    .profile("cimd-profile")
+                    .build())
+                    .clientPolicy(ClientPolicyBuilder.create()
+                    .name("redirect-uris-policy")
+                    .description("SecureRedirectUris policy for all clients")
+                    .condition(AnyClientConditionFactory.PROVIDER_ID, null)
+                    .profile("redirect-uris-profile")
+                    .build());
+            return r;
+        });
+    }
+
+    // the metadata and the jwks are served from localhost, so the address check has to be switched off
+    private static ClientIdMetadataDocumentExecutor.Configuration newExecutorConfig() {
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = new ClientIdMetadataDocumentExecutor.Configuration();
+        executorConfig.setAllowPrivateUseAddresses(true);
+        return executorConfig;
     }
 
     private void updatePolicy(ClientIdUriSchemeCondition.Configuration conditionConfig,
@@ -913,6 +1605,12 @@ public class ClientIdMetadataDocumentTest {
         return clients.iterator().next();
     }
 
+    private boolean hasResourceIndicatorAudienceMapper(String clientId, String resource) {
+        return realm.admin().clients().get(clientId).getProtocolMappers().getMappers().stream()
+                .filter(m -> AudienceProtocolMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
+                .anyMatch(m -> resource.equals(m.getConfig().get(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE)));
+    }
+
     private void deleteClientByAdmin(String id) {
         realm.admin().clients().get(id).remove();
     }
@@ -929,7 +1627,18 @@ public class ClientIdMetadataDocumentTest {
     public static class CimdServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CIMD);
+            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS);
+        }
+    }
+
+    public static class StoredUriClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("https://client.example.com/metadata")
+                    .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
+                    .publicClient(true)
+                    .redirectUris("http://client.example.com/callback", "https://client.example.com/callback");
         }
     }
 

@@ -1,12 +1,11 @@
 package org.keycloak.ssf.transmitter.subject;
 
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.ssf.event.risc.RiscAccountPurged;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -218,18 +217,11 @@ public class SubjectSubscriptionFilter {
         if (userTombstone != null && now - userTombstone < graceSeconds) {
             return true;
         }
-        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            if (orgProvider != null) {
-                return orgProvider.getByMember(user)
-                        .anyMatch(org -> {
-                            Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
-                            return orgTombstone != null
-                                    && now - orgTombstone < graceSeconds;
-                        });
-            }
-        }
-        return false;
+        return PurgedUserSnapshot.anyOrganizationMatches(session, user, org -> {
+            Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
+            return orgTombstone != null
+                    && now - orgTombstone < graceSeconds;
+        });
     }
 
     /**
@@ -261,19 +253,62 @@ public class SubjectSubscriptionFilter {
             return null;
         }
 
+        boolean purged = isAccountPurgedEvent(eventToken);
+
         if (subjectId instanceof ComplexSubjectId complex) {
             SubjectId userSubject = complex.getUser();
             if (userSubject == null) {
                 return null;
             }
-            return lookupUserBySubject(session, realm, userSubject);
+            return lookupUserBySubject(session, realm, userSubject, purged);
         }
 
-        return lookupUserBySubject(session, realm, subjectId);
+        return lookupUserBySubject(session, realm, subjectId, purged);
+    }
+
+    /**
+     * Returns {@code true} when the token carries a RISC {@code account-purged}
+     * event — the one case where the subject names a user that no longer exists, so
+     * a live lookup must not be preferred over this request's snapshot.
+     */
+    protected boolean isAccountPurgedEvent(SsfSecurityEventToken eventToken) {
+        var events = eventToken.getEvents();
+        return events != null && events.containsKey(RiscAccountPurged.TYPE);
     }
 
     protected UserModel lookupUserBySubject(KeycloakSession session, RealmModel realm, SubjectId userSubject) {
-        return SubjectUserLookup.lookupUser(session, realm, userSubject);
+        return lookupUserBySubject(session, realm, userSubject, false);
+    }
+
+    protected UserModel lookupUserBySubject(KeycloakSession session, RealmModel realm, SubjectId userSubject,
+                                            boolean preferSnapshot) {
+        // For a purge the subject names a user that was just deleted, so the snapshot
+        // is authoritative and is consulted first. Live-first would be wrong here:
+        // in a realm that allows duplicate emails, getUserByEmail returns the first
+        // surviving match, so an `email` subject could resolve to a *different*
+        // account and the gate would evaluate that user's notification state instead
+        // of the purged user's — silently dropping the purge under the default
+        // default_subjects=NONE.
+        if (preferSnapshot) {
+            PurgedUserSnapshot snapshot = PurgedUserSnapshot.lookupBySubject(session, realm, userSubject);
+            if (snapshot != null) {
+                return snapshot;
+            }
+        }
+
+        UserModel user = SubjectUserLookup.lookupUser(session, realm, userSubject);
+        if (user != null) {
+            return user;
+        }
+        if (preferSnapshot) {
+            // Already asked above, and nothing between the two calls captures a
+            // snapshot, so the answer cannot have changed.
+            return null;
+        }
+        // Non-purge events still fall back to a snapshot: the subject may name a user
+        // deleted earlier in this same request, and evaluating it as unresolvable
+        // would drop the event under default_subjects=NONE.
+        return PurgedUserSnapshot.lookupBySubject(session, realm, userSubject);
     }
 
     /**
@@ -285,15 +320,8 @@ public class SubjectSubscriptionFilter {
      * "is the user excluded *via* one of their orgs" question.
      */
     protected boolean isOrganizationExcluded(UserModel user, String receiverClientId, KeycloakSession session) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            return false;
-        }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return false;
-        }
-        return orgProvider.getByMember(user)
-                .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
+        return PurgedUserSnapshot.anyOrganizationMatches(session, user,
+                org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
     }
 
     /**
@@ -301,14 +329,7 @@ public class SubjectSubscriptionFilter {
      * per the {@link #subjectInclusionResolver}.
      */
     protected boolean isOrganizationNotified(UserModel user, String receiverClientId, KeycloakSession session) {
-        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
-            return false;
-        }
-        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-        if (orgProvider == null) {
-            return false;
-        }
-        return orgProvider.getByMember(user)
-                .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
+        return PurgedUserSnapshot.anyOrganizationMatches(session, user,
+                org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 }

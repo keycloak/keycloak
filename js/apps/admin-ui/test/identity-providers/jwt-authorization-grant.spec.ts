@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { v4 as uuid } from "uuid";
 import {
   createJwtAuthorizationGrantProvider,
   createJwtAuthorizationGrantProviderKey,
@@ -14,13 +15,18 @@ import { selectItem } from "../utils/form.ts";
 import { chooseFileByLocator } from "../utils/file-chooser.ts";
 
 test.describe.serial("JWT Authorization Grant identity provider test", () => {
+  const realmName = `idp-jwt-grant-${uuid()}`;
+
+  test.beforeAll(() => adminClient.createRealm(realmName));
+
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToIdentityProviders(page);
+    await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
   });
 
   test.afterEach(() =>
-    adminClient.deleteIdentityProvider("jwt-authorization-grant"),
+    adminClient.deleteIdentityProvider("jwt-authorization-grant", realmName),
   );
 
   test("should create a JWT Authorization Grant provider with JWKS url", async ({
@@ -130,7 +136,7 @@ test.describe.serial("JWT Authorization Grant identity provider test", () => {
 
     await expect(
       page.getByTestId("config.publicKeySignatureVerifier"),
-    ).toHaveValue(/{ "keys" : /);
+    ).toHaveValue(/{\s*"keys"\s*:\s*/);
 
     await clickSaveButton(page);
     await assertNotificationMessage(page, "Provider successfully updated");

@@ -49,6 +49,8 @@ public class SysLogServerSupplier implements Supplier<SysLogServer, InjectSysLog
                 .syslogEndpoint(instanceContext.getValue().getEndpoint())
                 .handlerLevel(KeycloakServerConfigBuilder.LogHandlers.SYSLOG, "INFO");
 
+        serverConfig.option("log-syslog-counting-framing", "false");
+
         serverConfig.option("spi-events-listener-jboss-logging-success-level", "INFO")
                 .log().categoryLevel("org.keycloak.events", "INFO");
 

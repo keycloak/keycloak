@@ -3,6 +3,8 @@ package org.keycloak.tests.admin.partialimport;
 import java.util.Collections;
 import java.util.List;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
@@ -100,5 +102,37 @@ public class PartialImportRolesTest extends AbstractPartialImportTest {
         piRep.setRoles(roles);
 
         Assertions.assertEquals(1, doImport().getOverwritten(), "default role should have been overwritten");
+    }
+
+    @Test
+    public void testAddRoleWithOversizedAttributeValueFails() {
+        setFail();
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("oversized-attr-val-role");
+        role.singleAttribute("key", "a".repeat(256));
+
+        RolesRepresentation roles = new RolesRepresentation();
+        roles.setRealm(List.of(role));
+        piRep.setRoles(roles);
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testAddRoleWithOversizedAttributeNameFails() {
+        setFail();
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName("oversized-attr-name-role");
+        role.singleAttribute("a".repeat(256), "val");
+
+        RolesRepresentation roles = new RolesRepresentation();
+        roles.setRealm(List.of(role));
+        piRep.setRoles(roles);
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
     }
 }

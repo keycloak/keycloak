@@ -30,6 +30,7 @@ import jakarta.persistence.Query;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -147,7 +148,23 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         return this.equals(role) || KeycloakModelUtils.searchFor(role, this, new HashSet<>());
     }
 
+    private void checkAttribute(String name, String value) {
+        if (name == null) {
+            throw new ModelValidationException("Attribute name must not be null");
+        }
+        if (name.length() > RoleAttributeEntity.NAME_MAX_LENGTH) {
+            throw new ModelValidationException("Attribute name must not exceed " + RoleAttributeEntity.NAME_MAX_LENGTH + " characters");
+        }
+        if (value == null) {
+            throw new ModelValidationException("Attribute value must not be null");
+        }
+        if (value.length() > RoleAttributeEntity.VALUE_MAX_LENGTH) {
+            throw new ModelValidationException("Attribute value must not exceed " + RoleAttributeEntity.VALUE_MAX_LENGTH + " characters");
+        }
+    }
+
     private void persistAttributeValue(String name, String value) {
+        checkAttribute(name, value);
         RoleAttributeEntity attr = new RoleAttributeEntity();
         attr.setId(KeycloakModelUtils.generateId());
         attr.setName(name);
@@ -159,6 +176,7 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void setSingleAttribute(String name, String value) {
+        checkAttribute(name, value);
         boolean found = false;
         List<RoleAttributeEntity> toRemove = new ArrayList<>();
         for (RoleAttributeEntity attr : role.getAttributes()) {
@@ -184,15 +202,31 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        if (name == null) {
+            throw new ModelValidationException("Attribute name must not be null");
+        }
+        if (name.length() > RoleAttributeEntity.NAME_MAX_LENGTH) {
+            throw new ModelValidationException("Attribute name must not exceed " + RoleAttributeEntity.NAME_MAX_LENGTH + " characters");
+        }
+
         List<String> current = getAttributes().getOrDefault(name, List.of());
 
         if (collectionEquals(current, ofNullable(values).orElse(List.of()))) {
             return;
         }
+
+        if (values != null && !values.isEmpty()) {
+            for (String value : values) {
+                checkAttribute(name, value);
+            }
+        }
+
         removeAttribute(name);
 
-        for (String value : values) {
-            persistAttributeValue(name, value);
+        if (values != null) {
+            for (String value : values) {
+                persistAttributeValue(name, value);
+            }
         }
     }
 

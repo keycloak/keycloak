@@ -179,6 +179,11 @@ public class ClientBuilder extends Builder<ClientRepresentation> {
         return this;
     }
 
+    public ClientBuilder implicitFlowEnabled(Boolean enabled) {
+        rep.setImplicitFlowEnabled(enabled);
+        return this;
+    }
+
     public ClientBuilder webOrigins(String... webOrigins) {
         rep.setWebOrigins(combine(rep.getWebOrigins(), webOrigins));
         return this;
@@ -186,6 +191,11 @@ public class ClientBuilder extends Builder<ClientRepresentation> {
 
     public ClientBuilder alwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
         rep.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
+        return this;
+    }
+
+    public ClientBuilder registrationAccessToken(String registrationAccessToken) {
+        rep.setRegistrationAccessToken(registrationAccessToken);
         return this;
     }
 

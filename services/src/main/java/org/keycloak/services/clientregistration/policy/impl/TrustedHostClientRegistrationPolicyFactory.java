@@ -57,7 +57,7 @@ public class TrustedHostClientRegistrationPolicyFactory extends AbstractClientRe
 
     @Override
     public String getHelpText() {
-        return "Allows to specify from which hosts is user able to register and which redirect URIs can client use in it's configuration";
+        return "Restricts registration requests and all configured client URI fields to trusted hosts or domains.";
     }
 
     @Override

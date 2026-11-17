@@ -181,7 +181,8 @@ export const ResourcesPolicySelect = ({
         ),
       );
     },
-    (result: any[]) => setSelected(result.map((r) => convert(r))),
+    (result: any[]) =>
+      setSelected(result.filter((r) => r !== null).map((r) => convert(r))),
     [value],
   );
 
@@ -233,7 +234,9 @@ export const ResourcesPolicySelect = ({
                 onClick={(event) => {
                   if (isDirty) {
                     event.preventDefault();
-                    setOnUnsavedChangesConfirm(() => () => navigate(to(item)));
+                    setOnUnsavedChangesConfirm(
+                      () => () => void navigate(to(item)),
+                    );
                     toggleUnsavedChangesDialog();
                   }
                 }}
@@ -256,7 +259,7 @@ export const ResourcesPolicySelect = ({
         <NewPolicyDialog
           policyProviders={policyProviders}
           onSelect={(p) => {
-            navigate(
+            void navigate(
               toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
             );
           }}

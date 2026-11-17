@@ -178,7 +178,9 @@ export const AttributesGroupTab = ({
             message={t("emptyStateMessage")}
             instructions={t("emptyStateInstructions")}
             primaryActionText={t("createGroupText")}
-            onPrimaryAction={() => navigate(toNewAttributesGroup({ realm }))}
+            onPrimaryAction={() =>
+              void navigate(toNewAttributesGroup({ realm }))
+            }
           />
         }
       />

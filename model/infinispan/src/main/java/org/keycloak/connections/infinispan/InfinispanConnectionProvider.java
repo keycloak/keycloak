@@ -30,6 +30,7 @@ import org.keycloak.provider.Provider;
 
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.marshall.Marshaller;
 import org.infinispan.util.concurrent.BlockingManager;
 
 /**
@@ -235,4 +236,6 @@ public interface InfinispanConnectionProvider extends Provider {
                 .filter(Predicate.isEqual(CLIENT_SESSION_CACHE_NAME).negate())
                 .filter(Predicate.isEqual(OFFLINE_CLIENT_SESSION_CACHE_NAME).negate());
     }
+
+    Marshaller getMarshaller();
 }

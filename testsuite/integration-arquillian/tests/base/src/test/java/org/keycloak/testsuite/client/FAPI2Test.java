@@ -145,6 +145,7 @@ public class FAPI2Test extends AbstractFAPI2Test {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
@@ -161,15 +162,15 @@ public class FAPI2Test extends AbstractFAPI2Test {
 
         // without PAR request - should fail
         oauth.openLoginForm();
-        assertBrowserWithError("request_uri not included.");
+        assertBrowserWithError("PAR request_uri not included.");
 
         pkceGenerator = PkceGenerator.s256();
 
         // requiring hybrid request - should fail
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         ParResponse pResp = oauth.pushedAuthorizationRequest().nonce("123456").codeChallenge(pkceGenerator).send();
-        assertEquals(401, pResp.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, pResp.getError());
+        assertEquals(400, pResp.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, pResp.getError());
 
         // authorization request does not match PAR request - should fail
         oauth.responseType(OIDCResponseType.CODE);
@@ -189,11 +190,11 @@ public class FAPI2Test extends AbstractFAPI2Test {
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
         oauth.loginForm().requestUri(requestUri).state("testFAPI2SecurityProfileLoginWithMTLS").open();
-        assertBrowserWithError("PAR request did not include necessary parameters");
+        assertBrowserWithError("PAR request did not include query parameter");
 
         // duplicated usage of a PAR request - should fail
         oauth.loginForm().requestUri(requestUri).state("testFAPI2SecurityProfileLoginWithMTLS").codeChallenge(pkceGenerator).open();
-        assertBrowserWithError("PAR not found. not issued or used multiple times.");
+        assertBrowserWithError("PAR not found, not issued or used multiple times.");
 
         // send a pushed authorization request
         pResp = oauth.pushedAuthorizationRequest().nonce("123456").codeChallenge(pkceGenerator).send();
@@ -244,6 +245,7 @@ public class FAPI2Test extends AbstractFAPI2Test {
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
             clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setTlsClientAuthCASubjectDn(MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             clientConfig.setRequestObjectRequired("request or request_uri");
             clientConfig.setAuthorizationSignedResponseAlg(Algorithm.PS256);
@@ -450,7 +452,11 @@ public class FAPI2Test extends AbstractFAPI2Test {
         Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
-        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
+        clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> {
+            clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_SUBJECT_DN, "CN=localhost");
+            clientRep.getAttributes().put(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, "CN=ca");
+        });
         client = getClientByAdmin(clientUUID);
         Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 

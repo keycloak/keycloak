@@ -29,9 +29,12 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 
 import org.jboss.logging.Logger;
+
+import static org.keycloak.services.clientpolicy.ClientPolicyEvent.PRE_AUTHORIZATION_REQUEST;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -69,38 +72,17 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
-        switch (context.getEvent()) {
-            case PRE_AUTHORIZATION_REQUEST:
-                PreAuthorizationRequestContext paContext = (PreAuthorizationRequestContext) context;
-                ClientModel client = session.getContext().getRealm().getClientByClientId(paContext.getClientId());
-                if (isRolesMatched(client)) return ClientPolicyVote.YES;
-                return ClientPolicyVote.NO;
-            case AUTHORIZATION_REQUEST:
-            case TOKEN_REQUEST:
-            case TOKEN_RESPONSE:
-            case SERVICE_ACCOUNT_TOKEN_REQUEST:
-            case SERVICE_ACCOUNT_TOKEN_RESPONSE:
-            case TOKEN_REFRESH:
-            case TOKEN_REFRESH_RESPONSE:
-            case TOKEN_REVOKE:
-            case TOKEN_INTROSPECT:
-            case USERINFO_REQUEST:
-            case LOGOUT_REQUEST:
-            case BACKCHANNEL_AUTHENTICATION_REQUEST:
-            case BACKCHANNEL_TOKEN_REQUEST:
-            case BACKCHANNEL_TOKEN_RESPONSE:
-            case PUSHED_AUTHORIZATION_REQUEST:
-            case REGISTERED:
-            case UPDATE:
-            case UPDATED:
-            case TOKEN_EXCHANGE_REQUEST:
-            case JWT_AUTHORIZATION_GRANT:
-            case SAML_AUTHN_REQUEST:
-            case SAML_LOGOUT_REQUEST:
-                if (isRolesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;
-                return ClientPolicyVote.NO;
-            default:
-                return ClientPolicyVote.ABSTAIN;
+        if (context.getEvent() == PRE_AUTHORIZATION_REQUEST) {
+            PreAuthorizationRequestContext paContext = (PreAuthorizationRequestContext) context;
+            ClientModel client = session.getContext().getRealm().getClientByClientId(paContext.getClientId());
+            if (isRolesMatched(client)) return ClientPolicyVote.YES;
+            return ClientPolicyVote.NO;
+        } else if (context instanceof ClientModelContext) {
+            ClientModel client = ((ClientModelContext) context).getClient();
+            if (isRolesMatched(client)) return ClientPolicyVote.YES;
+            return ClientPolicyVote.NO;
+        } else {
+            return ClientPolicyVote.ABSTAIN;
         }
     }
 

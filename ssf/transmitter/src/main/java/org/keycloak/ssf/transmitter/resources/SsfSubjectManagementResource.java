@@ -67,6 +67,7 @@ public class SsfSubjectManagementResource {
             @APIResponse(responseCode = "200", description = "OK"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "403", description = "Receiver not permitted to add the subject (verbose mode only)"),
             @APIResponse(responseCode = "404", description = "Stream or subject not found (verbose mode only)")
     })
     public Response addSubject(AddSubjectRequest request) {
@@ -108,6 +109,10 @@ public class SsfSubjectManagementResource {
                     .build();
             case FORMAT_UNSUPPORTED -> Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("invalid_request", "unsupported subject format"))
+                    .build();
+            case SUBJECT_NOT_PERMITTED -> Response.status(Response.Status.FORBIDDEN)
+                    .entity(new SsfErrorRepresentation("access_denied",
+                            "receiver is not permitted to add this subject"))
                     .build();
             case SUBJECT_READ_ONLY -> Response.status(Response.Status.CONFLICT)
                     .entity(new SsfErrorRepresentation("subject_read_only",

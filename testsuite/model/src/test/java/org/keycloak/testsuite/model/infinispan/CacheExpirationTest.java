@@ -22,7 +22,6 @@ import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,7 +30,7 @@ import java.util.regex.Pattern;
 
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
+import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -60,27 +59,27 @@ public class CacheExpirationTest extends KeycloakModelTest {
     public void testCacheExpiration() throws Exception {
         assumeFalse("Embedded caches not available for testing.", InfinispanUtils.isRemoteInfinispan());
 
-        log.debugf("Number of previous instances of the class on the heap: %d", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class));
+        log.debugf("Number of previous instances of the class on the heap: %d", getNumberOfInstancesOfClass(RealmRemovedSessionEvent.class));
 
         log.debug("Put two events to the main cache");
         inComittedTransaction(session -> {
             InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
             Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
             cache.entrySet().stream()
-              .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
+              .filter(me -> me.getValue() instanceof RealmRemovedSessionEvent)
               .forEach((c, me) -> c.remove(me.getKey()));
 
-            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
-            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2", new RealmRemovedSessionEvent(), 30, TimeUnit.SECONDS);
+            cache.put("1-2-3", new RealmRemovedSessionEvent(), 30, TimeUnit.SECONDS);
         });
         Instant expiryInstant = Instant.now().plusSeconds(30);
 
-        assumeThat("jmap output format unsupported", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class), notNullValue());
+        assumeThat("jmap output format unsupported", getNumberOfInstancesOfClass(RealmRemovedSessionEvent.class), notNullValue());
 
         // Ensure that instance counting works as expected, there should be at least two instances in memory now.
         // Infinispan server is decoding the client request before processing the request at the cache level,
-        // therefore there are sometimes three instances of AuthenticationSessionAuthNoteUpdateEvent class in the memory
-        Integer instancesAfterInsertion = getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class);
+        // therefore there are sometimes three instances of RealmRemovedSessionEvent class in the memory
+        Integer instancesAfterInsertion = getNumberOfInstancesOfClass(RealmRemovedSessionEvent.class);
         assertThat(instancesAfterInsertion, greaterThanOrEqualTo(2));
 
         // A third instance created when inserting the instances is never collected from GC for a yet unknown reason.
@@ -110,7 +109,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
                     sleep(1000);
                     assumeFalse("Items have expired already", expiryInstant.isBefore(Instant.now()));
                 } while (cache.entrySet().stream()
-                        .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
+                        .filter(me -> me.getValue() instanceof RealmRemovedSessionEvent)
                         .count() != 2);
 
                 // access the items in the local cache in the different site (site-2) in order to fetch them from the remote cache
@@ -128,7 +127,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
         do {
             assertFalse("Items should have been garbage-collected", gcInstant.isBefore(Instant.now()));
             sleep(1000);
-        } while (getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class) > previousInstancesOfClass);
+        } while (getNumberOfInstancesOfClass(RealmRemovedSessionEvent.class) > previousInstancesOfClass);
 
         log.debug("Test completed");
     }

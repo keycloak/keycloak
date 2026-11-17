@@ -36,6 +36,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class SAMLClientRepresentation extends BaseClientRepresentation {
     public static final String PROTOCOL = "saml";
 
+    public SAMLClientRepresentation() {
+        this.protocol = PROTOCOL;
+    }
+
     public enum NameIdFormat {
         USERNAME, EMAIL, PERSISTENT, TRANSIENT;
 
@@ -96,11 +100,6 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
 
     @JsonPropertyDescription("Allow ECP (Enhanced Client or Proxy) flow")
     private Boolean allowEcpFlow;
-
-    @Override
-    public String getProtocol() {
-        return PROTOCOL;
-    }
 
     public NameIdFormat getNameIdFormat() {
         return nameIdFormat;

@@ -160,7 +160,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
         oauth.client(clientId, secret).doLogin(user.getUsername(), password);
         consentPage.assertCurrent();
         consentPage.confirm();
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
         AccessTokenResponse response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(response.getAccessToken(), AccessToken.class);
@@ -583,7 +583,8 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
     @Test
     @UncaughtServerErrorExpected
     public void testExchangeUsingServiceAccount() throws Exception {
-        final UserRepresentation user = AdminApiUtil.findClientResourceByClientId(adminClient.realm(TEST), "subject-client").getServiceAccountUser();
+        final String saUserId = AdminApiUtil.findClientResourceByClientId(adminClient.realm(TEST), "subject-client").toRepresentation().getServiceAccountUserId();
+        final UserRepresentation user = adminClient.realm(TEST).users().get(saUserId).toRepresentation();
         oauth.realm(TEST);
         oauth.client("subject-client", "secret");
 
@@ -797,7 +798,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
 
             oauth.client("requester-client", "secret");
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            AccessToken exchangedToken = assertAudiencesAndScopes(response, List.of("requester-client", "target-client1"), List.of("default-scope1", "optional-scope2"));
+            AccessToken exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             EventAssertion.assertSuccess(events.poll()).type(EventType.REFRESH_TOKEN)
                     .details(Details.TOKEN_ID, exchangedToken.getId())
                     .hasTokenId(Details.REFRESH_TOKEN_ID)
@@ -807,7 +808,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
 
             oauth.client("requester-client", "secret");
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            exchangedToken = assertAudiencesAndScopes(response, List.of("requester-client", "target-client1"), List.of("default-scope1", "optional-scope2"));
+            exchangedToken = assertAudiencesAndScopes(response, List.of("target-client1"), List.of("default-scope1", "optional-scope2"));
             EventAssertion.assertSuccess(events.poll()).type(EventType.REFRESH_TOKEN)
                     .details(Details.TOKEN_ID, exchangedToken.getId())
                     .hasTokenId(Details.REFRESH_TOKEN_ID)
@@ -819,10 +820,10 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
 
     @Test
     @UncaughtServerErrorExpected
-    public void testExchangeWithDynamicScopesEnabled() throws Exception {
-        testingClient.enableFeature(Profile.Feature.DYNAMIC_SCOPES);
+    public void testExchangeWithParameterizedScopesEnabled() throws Exception {
+        testingClient.enableFeature(Profile.Feature.PARAMETERIZED_SCOPES);
         testExchange();
-        testingClient.disableFeature(Profile.Feature.DYNAMIC_SCOPES);
+        testingClient.disableFeature(Profile.Feature.PARAMETERIZED_SCOPES);
     }
 
     @Test
@@ -1007,7 +1008,7 @@ public abstract class StandardTokenExchangeV2Test extends AbstractClientPolicies
 
             // SSO login to "requester-client". Will create client session for "requester-client"
             oauth.client("requester-client", "secret").openLoginForm();
-            assertNotNull(oauth.parseLoginResponse().getCode());
+            assertTrue(oauth.parseLoginResponse().isSuccess());
             response = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
             String requesterClientToken = response.getAccessToken();

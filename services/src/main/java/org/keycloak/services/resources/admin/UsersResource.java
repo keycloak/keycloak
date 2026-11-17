@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,6 +59,7 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
@@ -71,6 +70,7 @@ import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.services.util.DateUtil;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -169,8 +169,16 @@ public class UsersResource {
 
             UserResource.updateUserFromRep(profile, user, rep, session, false);
             RepresentationToModel.createFederatedIdentities(rep, session, realm, user);
-            RepresentationToModel.createGroups(session, rep, realm, user);
+            RepresentationToModel.createGroups(session, rep, realm, user, (g) -> {
+                auth.groups().requireManageMembership(g);
+                GroupUtils.checkAdminGroupRoles(g, auth);
+                user.joinGroup(g);
+            });
 
+            if (rep.getCredentials() != null && rep.getCredentials().stream()
+                    .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
+                auth.users().requireResetPassword(user);
+            }
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
             RepresentationToModel.createVerifiableCredentials(rep, session, user);
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
@@ -180,8 +188,7 @@ public class UsersResource {
             throw ErrorResponse.exists("User exists with same username or email");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Response.Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -212,6 +219,7 @@ public class UsersResource {
         for (GroupModel group : groups) {
             auth.groups().requireManageMembers(group);
             auth.groups().requireManageMembership(group);
+            GroupUtils.checkAdminGroupRoles(group, auth);
         }
 
         return true;
@@ -564,7 +572,7 @@ public class UsersResource {
             }
         }
 
-        return toRepresentation(realm, usersEvaluator, briefRepresentation, session.users().searchForUserStream(realm, attributes, firstResult, maxResults));
+        return session.runAsReadOnly(() -> toRepresentation(realm, usersEvaluator, briefRepresentation, session.users().searchForUserStream(realm, attributes, firstResult, maxResults)));
     }
 
     private Stream<UserRepresentation> toRepresentation(RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Stream<UserModel> userModels) {

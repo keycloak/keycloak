@@ -284,7 +284,7 @@ public class LightweightUserAdapter extends AbstractInMemoryUserAdapter {
         LightweightConsentEntity userConsentEntity = getConsentEntityByClient(clientId);
 
         for (ClientScopeModel clientScope : consent.getGrantedClientScopes()) {
-            if (ClientScopeModel.isDynamicScope(clientScope)) {
+            if (ClientScopeModel.isParameterizedScope(clientScope)) {
                 userConsentEntity.addGrantedClientScopesId(clientScope.getId(), consent.getParameters(clientScope));
             } else {
                 userConsentEntity.addGrantedClientScopesId(clientScope.getId());

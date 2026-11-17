@@ -60,11 +60,11 @@ public class SseCaepEventConverter {
      * Builds the SSE 1.0 {@code subject} object that replaces the SSF 1.0
      * top-level {@code sub_id}.
      *
-     * <p>Per SSE 1.0 §3.2 a complex subject carries each facet ({@code user},
+     * <p>Per SSE 1.0 §3.2 a complex subject carries each subject member ({@code user},
      * {@code session}, {@code device}, {@code application}, {@code tenant},
      * {@code org_unit}, {@code group}) as a sibling key under
      * {@code subject}. A simple (non-complex) subject is wrapped as the
-     * {@code user} facet — that's the right call for events like
+     * {@code user} subject member — that's the right call for events like
      * {@code CaepCredentialChange} that only carry a user identity.
      */
     protected static Map<String, Object> buildSseCaepSubject(SubjectId subjectId) {
@@ -73,7 +73,7 @@ public class SseCaepEventConverter {
             return subjectMap;
         }
         if (subjectId instanceof ComplexSubjectId complex) {
-            // Flatten each non-null facet into siblings of subject — this
+            // Flatten each non-null subject member into siblings of subject — this
             // is the shape SSE 1.0 receivers expect for complex subjects.
             if (complex.getUser() != null) subjectMap.put("user", complex.getUser());
             if (complex.getSession() != null) subjectMap.put("session", complex.getSession());

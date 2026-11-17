@@ -207,7 +207,7 @@ public class DefaultCors implements Cors {
         }
 
         String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
-        if (origin.equals(requestOrigin)) {
+        if (UriUtils.originEquals(origin, requestOrigin)) {
             return;
         }
 
@@ -216,8 +216,18 @@ public class DefaultCors implements Cors {
     }
 
     private boolean isOriginAllowed(String origin) {
-        return allowedOrigins != null
-                && (allowedOrigins.contains(origin) || allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD));
+        if (allowedOrigins == null) {
+            return false;
+        }
+        if (allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)) {
+            return true;
+        }
+        for (String allowedOrigin : allowedOrigins) {
+            if (UriUtils.originEquals(origin, allowedOrigin)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void logInvalidOrigin(String origin) {
@@ -228,7 +238,7 @@ public class DefaultCors implements Cors {
     }
 
     private void logInvalidOrigin(String origin, String requestOrigin) {
-        if (logger.isDebugEnabled() && !origin.equals(requestOrigin)) {
+        if (logger.isDebugEnabled() && !UriUtils.originEquals(origin, requestOrigin)) {
             logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
         }
     }

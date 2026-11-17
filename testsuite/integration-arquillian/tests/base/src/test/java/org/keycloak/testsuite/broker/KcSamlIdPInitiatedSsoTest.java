@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -61,6 +62,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
+import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_SIGNING_CERTIFICATE;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -136,7 +140,17 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.SUBJECT.name());
+        rep.getConfig().put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "true");
+        rep.getConfig().remove(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY);
         rep.setEnabled(true);
+        idp.update(rep);
+    }
+
+    private void trustResponseSigningKey() {
+        IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
+        IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.getConfig().put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "false");
+        rep.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, REALM_SIGNING_CERTIFICATE);
         idp.update(rep);
     }
 
@@ -169,7 +183,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("update account information", false);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 
@@ -203,7 +217,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("update account information", false);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 
@@ -217,6 +231,69 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
         errorPage.assertCurrent();
         assertThat(errorPage.getError(), is("Page not found"));
+    }
+
+    /**
+     * Tests that a SAML IdP configured as link-only rejects IdP-initiated login attempts.
+     *
+     * The normal broker login path checks linkOnly and rejects login, but the IdP-initiated path
+     * (POST /broker/{alias}/endpoint/clients/{client_id}) bypasses that check. This test verifies
+     * that a signed SAML response posted to the IdP-initiated endpoint is rejected when the broker
+     * is configured as link-only.
+     */
+    @Test
+    public void testLinkOnlyBrokerIdpInitiated() throws Exception {
+        // first, do a successful IdP-initiated login to create a consumer user with a federated identity link.
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+
+        waitForPage("sign in to", true);
+
+        assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
+
+        waitForPage("update account information", false);
+
+        updateAccountInformationPage.assertCurrent();
+        assertThat("We must be on consumer realm right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");
+
+        // now set the broker to link-only - the provider should only be usable for account linking, not login.
+        IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
+        IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.setLinkOnly(true);
+        idp.update(rep);
+        getCleanup(REALM_CONS_NAME).addCleanup(() -> {
+            IdentityProviderRepresentation cleanup = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf").toRepresentation();
+            cleanup.setLinkOnly(false);
+            adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf").update(cleanup);
+        });
+
+        // logout the consumer user so that the next login attempt goes through the full broker flow.
+        UsersResource users = adminClient.realm(REALM_CONS_NAME).users();
+        String userId = users.search(CONSUMER_CHOSEN_USERNAME).get(0).getId();
+        users.get(userId).logout();
+
+        // verify that the normal broker login path rejects link-only providers (via kc_idp_hint).
+        String normalLoginUrl = urlRealmConsumer + "/protocol/openid-connect/auth"
+                + "?client_id=account"
+                + "&response_type=code"
+                + "&redirect_uri=" + URLEncoder.encode(urlRealmConsumer + "/account", StandardCharsets.UTF_8)
+                + "&kc_idp_hint=saml-leaf";
+        driver.navigate().to(normalLoginUrl);
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Could not send authentication request to identity provider."));
+
+        // verify that the IdP-initiated path also rejects link-only providers - the provider SSO session
+        // is still active, so the provider sends a signed SAML response to the consumer's broker endpoint.
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Could not send authentication request to identity provider."));
     }
 
     private String getSamlIdpInitiatedUrl(String realmName, String samlIdpInitiatedSsoUrlName) {
@@ -388,6 +465,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
     // KEYCLOAK-7969
     @Test
     public void testProviderIdpInitiatedLoginWithPrincipalAttribute() throws Exception {
+        trustResponseSigningKey();
         IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.ATTRIBUTE.name());
@@ -401,6 +479,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
           // Send the response to the consumer realm
           .processSamlResponse(Binding.POST)
+          .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
           .transformObject(ob -> {
               assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
               ResponseType resp = (ResponseType) ob;
@@ -443,6 +522,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
     @Test
     public void testProviderTransientIdpInitiatedLogin() throws Exception {
+        trustResponseSigningKey();
         IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get());
@@ -457,6 +537,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
           // Send the response to the consumer realm
           .processSamlResponse(Binding.POST)
+            .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
             .transformObject(ob -> {
                 assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
                 ResponseType resp = (ResponseType) ob;
@@ -491,6 +572,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
           .login().sso(true).build()
 
           .processSamlResponse(Binding.POST)
+          .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
           .transformObject(ob -> {
               assertThat(ob, Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
               ResponseType resp = (ResponseType) ob;
@@ -578,7 +660,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("update account information", false);
 
-        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        updateAccountInformationPage.assertCurrent();
         assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 

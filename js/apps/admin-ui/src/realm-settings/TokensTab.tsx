@@ -7,6 +7,7 @@ import {
   useAlerts,
   SelectControl,
   NumberControl,
+  TextAreaControl,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -19,7 +20,6 @@ import {
   Switch,
   Text,
   TextInput,
-  TextArea,
   TextVariants,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -38,6 +38,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { beerify, sortProviders } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { DEFLATE_COMPRESSION } from "./constants";
 
 import "./realm-settings-section.css";
 
@@ -71,7 +72,7 @@ export const RealmSettingsTokensTab = ({
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
   const credentialOfferLifespanDefaultValue =
-    realm.attributes?.["credentialOfferLifespanS"] ?? 30;
+    realm.attributes?.["credentialOfferLifespanS"] ?? 300;
 
   // Show a global error notification if validation fails
   const onError = () => {
@@ -677,6 +678,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("oid4vciNonceLifetime")}
             labelIcon={t("oid4vciNonceLifetimeHelp")}
+            className="c-nonce-lifetime"
             controller={{
               defaultValue: 60,
               rules: { min: 30 },
@@ -690,6 +692,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("credentialOfferLifespan")}
             labelIcon={t("credentialOfferLifespanHelp")}
+            className="credential-offer-lifespan"
             controller={{
               defaultValue: credentialOfferLifespanDefaultValue,
               rules: { min: 30 },
@@ -703,6 +706,7 @@ export const RealmSettingsTokensTab = ({
             )}
             label={t("signedMetadataLifespan")}
             labelIcon={t("signedMetadataLifespanHelp")}
+            className="signed-metadata-lifespan"
             controller={{
               defaultValue: 60,
             }}
@@ -743,15 +747,43 @@ export const RealmSettingsTokensTab = ({
             data-testid="require-response-encryption-switch"
           />
           {requestEncryptionRequired === "true" && (
-            <DefaultSwitchControl
-              name={convertAttributeNameToForm(
-                "attributes.oid4vci.request.zip.algorithms",
-              )}
+            <FormGroup
+              hasNoPaddingTop
               label={t("enableDeflateCompression")}
-              labelIcon={t("enableDeflateCompressionHelp")}
-              data-testid="deflate-compression-switch"
-              stringify
-            />
+              fieldId="kc-deflate-compression"
+              labelIcon={
+                <HelpItem
+                  helpText={t("enableDeflateCompressionHelp")}
+                  fieldLabelId="enableDeflateCompression"
+                />
+              }
+            >
+              <Controller
+                name={convertAttributeNameToForm(
+                  "attributes.oid4vci.request.zip.algorithms",
+                )}
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    id="kc-deflate-compression"
+                    data-testid="attributes.oid4vci.request.zip.algorithms"
+                    aria-label={t("enableDeflateCompression")}
+                    label={t("on")}
+                    labelOff={t("off")}
+                    isChecked={
+                      field.value === "true" ||
+                      String(field.value)
+                        .split(",")
+                        .map((alg) => alg.trim())
+                        .includes(DEFLATE_COMPRESSION)
+                    }
+                    onChange={(_event, checked) =>
+                      field.onChange(checked ? DEFLATE_COMPRESSION : "")
+                    }
+                  />
+                )}
+              />
+            </FormGroup>
           )}
           <NumberControl
             name={convertAttributeNameToForm(
@@ -766,62 +798,47 @@ export const RealmSettingsTokensTab = ({
             }}
             data-testid="batch-issuance-size"
           />
-
-          <Text
-            className="kc-override-action-tokens-subtitle"
-            component={TextVariants.h1}
-          >
-            {t("attestationTrust")}
-          </Text>
-          <FormGroup
-            label={t("trustedKeyIds")}
-            fieldId="trustedKeyIds"
-            labelIcon={
-              <HelpItem
-                helpText={t("trustedKeyIdsHelp")}
-                fieldLabelId="trustedKeyIds"
-              />
-            }
-          >
-            <TextInput
-              id="trustedKeyIds"
-              data-testid="trusted-key-ids"
-              {...register(
-                convertAttributeNameToForm(
-                  "attributes.oid4vc.attestation.trusted_key_ids",
-                ),
-              )}
-            />
-          </FormGroup>
-          <FormGroup
-            label={t("trustedKeys")}
-            fieldId="trustedKeys"
-            labelIcon={
-              <HelpItem
-                helpText={t("trustedKeysHelp")}
-                fieldLabelId="trustedKeys"
-              />
-            }
-          >
-            <Controller
-              name={convertAttributeNameToForm(
-                "attributes.oid4vc.attestation.trusted_keys",
-              )}
-              control={control}
-              defaultValue={
-                realm.attributes?.["oid4vc.attestation.trusted_keys"]
-              }
-              render={({ field }) => (
-                <TextArea
-                  id="trustedKeys"
-                  data-testid="trusted-keys"
-                  value={field.value}
-                  onChange={(_event, value) => field.onChange(value)}
-                  resizeOrientation="vertical"
-                />
-              )}
-            />
-          </FormGroup>
+          <TextAreaControl
+            name={convertAttributeNameToForm("attributes.oid4vci.issuer_info")}
+            label={t("issuerInfo")}
+            labelIcon={t("issuerInfoHelp")}
+            rules={{
+              validate: (value: string) => {
+                if (!value) {
+                  return true;
+                }
+                try {
+                  const parsed: unknown = JSON.parse(value);
+                  const isIssuerInfoElement = (element: unknown) => {
+                    if (
+                      typeof element !== "object" ||
+                      element === null ||
+                      Array.isArray(element)
+                    ) {
+                      return false;
+                    }
+                    if (!("format" in element) || !("data" in element)) {
+                      return false;
+                    }
+                    const { format, data } = element;
+                    return (
+                      typeof format === "string" &&
+                      format.trim().length > 0 &&
+                      data !== null
+                    );
+                  };
+                  return (
+                    (Array.isArray(parsed) &&
+                      parsed.every(isIssuerInfoElement)) ||
+                    t("issuerInfoInvalid")
+                  );
+                } catch {
+                  return t("issuerInfoInvalid");
+                }
+              },
+            }}
+            rows={6}
+          />
 
           <Text
             className="kc-override-action-tokens-subtitle"

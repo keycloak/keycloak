@@ -51,6 +51,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.opentest4j.AssertionFailedError;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -458,8 +459,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         // Totp is already configured, thus one-time password is needed, login page should be loaded
         String uri = driver.getCurrentUrl();
         String src = driver.getPageSource();
-        assertTrue(loginPage.isCurrent());
-        Assertions.assertFalse(totpPage.isCurrent());
+        loginTotpPage.assertCurrent();
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
@@ -568,7 +568,6 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        //RequestType reqType = appPage.getRequestType();
         assertKcActionStatus(SUCCESS);
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).getEvent();
 
@@ -656,13 +655,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             doAIA();
             totpPage.assertCurrent();
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
-            try {
-                // This should now fail
-                setupRecoveryAuthnCodesPage.assertCurrent();
-                Assertions.fail("Expected AssertionError was not thrown");
-            } catch (AssertionError e) {
-                Assertions.assertTrue(e.getMessage().startsWith("Expected SetupRecoveryAuthnCodesPage"));
-            }
+            // This should now fail
+            Assertions.assertThrows(AssertionFailedError.class, () -> setupRecoveryAuthnCodesPage.assertCurrent());
         } finally {
             // finally, reset totp action config
             configureTotpActionToEnforceRecoveryCodes(false);

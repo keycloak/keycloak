@@ -53,3 +53,4 @@ runs:
         name: flaky-tests-${{ github.job }}-${{ join(matrix.*, '-') }}
         path: ${{ steps.flaky-tests.outputs.flakes }}
         if-no-files-found: error
+        overwrite: true

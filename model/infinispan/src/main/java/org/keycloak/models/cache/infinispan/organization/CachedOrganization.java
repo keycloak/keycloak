@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.infinispan.DefaultLazyLoader;
@@ -48,10 +48,12 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
     private final boolean enabled;
     private final LazyLoader<OrganizationModel, MultivaluedHashMap<String, String>> attributes;
     private final Set<OrganizationDomainModel> domains;
+    private final Map<String, OrganizationDomainModel> domainsByName;
     private final Map<String, String> domainNames;
-    private final Set<IdentityProviderModel> idps;
+    private final Map<String, OrganizationIdentityProviderLinkModel> idpLinks;
 
-    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization, Consumer<String> invalidateDomain) {
+    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization,
+                              Map<String, OrganizationIdentityProviderLinkModel> idpLinks, Consumer<String> invalidateDomain) {
         super(revision, organization.getId());
         this.realm = realm.getId();
         this.name = organization.getName();
@@ -61,6 +63,8 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         this.enabled = organization.isEnabled();
         this.attributes = new DefaultLazyLoader<>(orgModel -> new MultivaluedHashMap<>(orgModel.getAttributes()), MultivaluedHashMap::new);
         this.domains = organization.getDomains().collect(Collectors.toSet());
+        this.domainsByName = this.domains.stream()
+                .collect(Collectors.toUnmodifiableMap(d -> d.getName().toLowerCase(), d -> d));
         this.domainNames = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry eldest) {
@@ -75,7 +79,7 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
             }
         });
         organization.getDomains().forEach(domain -> domainNames.put(domain.getName(), domain.getName()));
-        this.idps = organization.getIdentityProviders().collect(Collectors.toSet());
+        this.idpLinks = idpLinks != null ? Map.copyOf(idpLinks) : Map.of();
     }
 
     @Override
@@ -119,7 +123,15 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         domainNames.put(domainName, domainName);
     }
 
-    public Stream<IdentityProviderModel> getIdentityProviders() {
-        return idps.stream();
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(String idpInternalId) {
+        return idpLinks.get(idpInternalId);
+    }
+
+    public Map<String, OrganizationIdentityProviderLinkModel> getIdentityProviderLinks() {
+        return idpLinks;
+    }
+
+    public OrganizationDomainModel getDomainByName(String name) {
+        return name != null ? domainsByName.get(name.toLowerCase()) : null;
     }
 }

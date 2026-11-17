@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
@@ -13,6 +14,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.CredentialOfferStateUtils.CredentialOfferStateRecord;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -25,10 +27,12 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.PROMPT_VALUE_LOGIN;
+import static org.keycloak.tests.oid4vc.CredentialOfferStateUtils.getCredentialOfferStateRecord;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -65,6 +69,12 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
         assertNotNull(offerURI, "No CredentialOfferURI");
 
+        // Verify internal offer state target user and client
+        //
+        CredentialOfferStateRecord runtimeOfferState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
+        assertNull(runtimeOfferState.targetUsername(), "Expected null targetUsername");
+        assertNull(runtimeOfferState.targetClientId(), "Expected null targetClientId");
+
         // Fetch credential offer again
         // https://github.com/keycloak/keycloak/issues/48014
         credOffer = wallet.credentialsOfferRequest(ctx, offerURI).send().getCredentialsOffer();
@@ -79,7 +89,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
 
         // Attempt to fetch the credential offer again after it has been consumed
-
+        //
         CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
         assertEquals("invalid_credential_offer_request", res.getError());
         assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
@@ -178,6 +188,8 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test
     public void testAuthCodeOffer_Anonymous_expiredOffer() throws Exception {
+        // Bigger accessToken lifespan to avoid same timeout like credential-offer (to enforce that accessToken is still valid in the credential-request, when credential-offer would be invalid)
+        testRealm.updateWithCleanup(r -> r.accessTokenLifespan(600));
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
@@ -236,6 +248,15 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Verify internal target user and client
+        //
+        CredentialOfferStateRecord runtimeOfferState = getCredentialOfferStateRecord(runOnServer, offerURI.getNonce());
+        assertEquals("alice", runtimeOfferState.targetUsername());
+        assertNull(runtimeOfferState.targetClientId(), "targetClientId should be null");
+
         // Send AuthorizationRequest
         //
         AuthorizationEndpointResponse authResponse = wallet
@@ -263,6 +284,43 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+    }
+
+    @Test
+    public void testAuthCodeOffer_TargetedDifferentUser() {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+        });
+
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState, "No IssuerState");
+
+        var attacker = testRealm.admin().users().search(TEST_USER).stream().findFirst().orElseThrow();
+        int issuedCredentialsBefore = testRealm.admin().users().get(attacker.getId())
+                .verifiableCredentials().getIssuedCredentials().size();
+
+        AuthorizationEndpointResponse authResponse = wallet
+                .authorizationRequest()
+                .scope(ctx.getScope())
+                .issuerState(issuerState)
+                .send(TEST_USER, TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No authCode");
+
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        assertEquals("invalid_authorization_details", tokenResponse.getError());
+        assertEquals("Invalid authorization_details: Credential offer target user different from login user 'john'", tokenResponse.getErrorDescription());
+        assertNull(tokenResponse.getAccessToken(), "No access token should be issued");
+        assertNull(tokenResponse.getRefreshToken(), "No refresh token should be issued");
+
+        int issuedCredentialsAfter = testRealm.admin().users().get(attacker.getId())
+                .verifiableCredentials().getIssuedCredentials().size();
+        assertEquals(issuedCredentialsBefore, issuedCredentialsAfter,
+                "No issued credential should be created for a non-target user");
     }
 
     @Test
@@ -317,7 +375,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-        assertEquals(List.of(scope), credential.getType());
+        assertEquals(List.of(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }

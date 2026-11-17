@@ -21,15 +21,10 @@ public class LoadBalancerSupplier implements Supplier<LoadBalancer, InjectLoadBa
         KeycloakServer server = instanceContext.getDependency(KeycloakServer.class);
 
         if (server instanceof ClusteredKeycloakServer clusteredKeycloakServer) {
-            return new LoadBalancer(clusteredKeycloakServer);
+            return clusteredKeycloakServer.getLoadBalancer();
         }
 
         throw new IllegalStateException("Load balancer can only be used with ClusteredKeycloakServer");
-    }
-
-    @Override
-    public void close(InstanceContext<LoadBalancer, InjectLoadBalancer> instanceContext) {
-        instanceContext.getValue().close();
     }
 
     @Override

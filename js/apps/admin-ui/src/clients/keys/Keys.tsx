@@ -13,6 +13,7 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import { SyncAltIcon } from "@patternfly/react-icons";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
@@ -83,6 +84,7 @@ export const Keys = ({
 
   const generate = async (config: KeyStoreConfig) => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       const keyStore = await adminClient.clients.generateAndDownloadKey(
         {
           id: clientId,
@@ -191,6 +193,14 @@ export const Keys = ({
                 isDisabled={useJwksUrl === "true"}
               >
                 {t("import")}
+              </Button>
+              <Button
+                data-testid="reload"
+                variant="secondary"
+                onClick={refresh}
+                isDisabled={useJwksUrl === "true"}
+              >
+                <SyncAltIcon /> {t("refresh")}
               </Button>
             </ActionGroup>
           </FormAccess>

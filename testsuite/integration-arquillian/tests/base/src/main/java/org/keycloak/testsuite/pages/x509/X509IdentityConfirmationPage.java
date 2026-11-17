@@ -45,10 +45,10 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
     @FindBy(name = "cancel")
     private WebElement ignoreButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
-    @FindBy(className = "pf-v5-c-warning")
+    @FindBy(css = ".pf-v6-c-alert.pf-m-warning")
     private WebElement loginWarningMessage;
 
     @FindBy(className = "alert-success")
@@ -81,8 +81,9 @@ public class X509IdentityConfirmationPage extends LanguageComboboxAwarePage {
         return loginErrorMessage != null ? loginErrorMessage.getText() : null;
     }
 
-    public boolean isCurrent() {
-        return driver.getTitle().equals("Sign in to test") || driver.getTitle().equals("Anmeldung bei test");
+    @Override
+    public String getExpectedPageId() {
+        return "login-login-x509-info";
     }
 
 }

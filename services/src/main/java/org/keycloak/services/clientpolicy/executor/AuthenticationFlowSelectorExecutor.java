@@ -73,7 +73,7 @@ public class AuthenticationFlowSelectorExecutor implements ClientPolicyExecutorP
 
     @Override
     public String getProviderId() {
-        return PKCEEnforcerExecutorFactory.PROVIDER_ID;
+        return AuthenticationFlowSelectorExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -86,9 +86,14 @@ public class AuthenticationFlowSelectorExecutor implements ClientPolicyExecutorP
 
     private void executeOnAuthorizationRequest(AuthenticationSessionModel authSession) {
         if (configuration.getAuthFlowAlias() != null) {
+            // Save as a client note so the enforced flow survives a login restart or rebuild.
+            // Also save as an auth note so older servers can still read it during an upgrade.
+            // TODO: the auth-note write (and the auth-note fallback reads) exist only so old and new nodes agree during a rolling upgrade.
+            authSession.setClientNote(Constants.REQUESTED_AUTHENTICATION_FLOW, configuration.getAuthFlowAlias());
             authSession.setAuthNote(Constants.REQUESTED_AUTHENTICATION_FLOW, configuration.getAuthFlowAlias());
             // auth flow selected via acr condition
             if (configuration.getAuthFlowLoa() != null) {
+                authSession.setClientNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION, String.valueOf(configuration.getAuthFlowLoa()));
                 authSession.setAuthNote(Constants.AUTHENTICATION_FLOW_LEVEL_OF_AUTHENTICATION, String.valueOf(configuration.getAuthFlowLoa()));
             }
         }

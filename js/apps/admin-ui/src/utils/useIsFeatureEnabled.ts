@@ -7,7 +7,7 @@ export enum Feature {
   AdminFineGrainedAuthzV2 = "ADMIN_FINE_GRAINED_AUTHZ_V2",
   ClientPolicies = "CLIENT_POLICIES",
   Kerberos = "KERBEROS",
-  DynamicScopes = "DYNAMIC_SCOPES",
+  ParameterizedScopes = "PARAMETERIZED_SCOPES",
   DPoP = "DPOP",
   DeviceFlow = "DEVICE_FLOW",
   TransientUsers = "TRANSIENT_USERS",
@@ -15,6 +15,7 @@ export enum Feature {
   DeclarativeUI = "DECLARATIVE_UI",
   Organizations = "ORGANIZATION",
   OpenId4VCI = "OID4VC_VCI",
+  OpenId4VCIMdoc = "OID4VC_MDOC",
   QuickTheme = "QUICK_THEME",
   StandardTokenExchangeV2 = "TOKEN_EXCHANGE_STANDARD_V2",
   JWTAuthorizationGrant = "JWT_AUTHORIZATION_GRANT",
@@ -24,7 +25,9 @@ export enum Feature {
   StepUpAuthenticationSaml = "STEP_UP_AUTHENTICATION_SAML",
   Ssf = "SSF",
   ScimApi = "SCIM_API",
+  IdentityBrokeringAPIV1 = "IDENTITY_BROKERING_API_V1",
   IdentityBrokeringAPIV2 = "IDENTITY_BROKERING_API_V2",
+  ResourceIndicators = "RESOURCE_INDICATORS",
 }
 
 export const unversionedName = (name: string) => name.replace(/_V\d+$/, "");

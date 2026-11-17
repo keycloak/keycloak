@@ -30,6 +30,7 @@ import com.webauthn4j.data.AttestationConveyancePreference;
 import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
 import com.webauthn4j.data.attestation.statement.PackedAttestationStatement;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.Credential;
 
@@ -55,7 +56,7 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
         assertThat(realmData.getAttestationConveyancePreference(), is(DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED));
 
         registerDefaultUser();
-        displayErrorMessageIfPresent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         final String credentialType = getCredentialType();
 
@@ -123,8 +124,8 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
             webAuthnRegisterPage.registerWebAuthnCredential("new webauth credential");
 
             // should fail because none is not allowed
-            webAuthnErrorPage.isCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("AttestationVerifier is not configured to handle the supplied AttestationStatement format 'none'."));
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), containsString("Failed to register your Passkey."));
         } finally {
             testingClient.testing().reenableTruststoreSpi();
         }
@@ -144,10 +145,7 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
             assertThat(realmData.getAttestationConveyancePreference(), is(attestation.getValue()));
 
             registerDefaultUser(shouldSuccess);
-            displayErrorMessageIfPresent();
-
-            final boolean isErrorCurrent = webAuthnErrorPage.isCurrent();
-            assertThat(isErrorCurrent, is(!shouldSuccess));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             final String credentialType = getCredentialType();
             final String attestationValue = attestation.getValue();

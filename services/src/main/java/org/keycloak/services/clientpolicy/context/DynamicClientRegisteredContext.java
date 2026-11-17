@@ -23,7 +23,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
 
-public class DynamicClientRegisteredContext extends AbstractDynamicClientCRUDContext {
+public class DynamicClientRegisteredContext extends AbstractDynamicClientCRUDContext implements ClientCRUDClientAvailableContext {
 
     private final ClientModel registeredClient;
 

@@ -30,6 +30,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -40,6 +41,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
@@ -94,16 +96,17 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        // Get organization ID from client session or resolve from scopes
-        String orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
+        if (!Organizations.isEnabled(session)) {
+            return;
+        }
+        KeycloakContext context = session.getContext();
+        OrganizationModel organization = context.getOrganization();
         Stream<OrganizationModel> organizations;
 
-        if (orgId == null) {
-            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx);
+        if (organization != null) {
+            organizations = Stream.of(organization);
         } else {
-            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
-            OrganizationModel org = orgProvider.getById(orgId);
-            organizations = org != null ? Stream.of(org) : Stream.empty();
+            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx);
         }
 
         UserModel user = userSession.getUser();

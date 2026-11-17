@@ -9,19 +9,24 @@ import java.nio.file.Path;
 public class ResourceLoader {
 
     public static InputStream getResourceAsStream(String root, String resource) throws IOException {
-        if (root == null || resource == null) {
+        URL url = getResource(classLoader(), root, resource);
+        return url != null ? url.openStream() : null;
+    }
+
+    public static URL getResource(ClassLoader classLoader, String root, String resource) {
+        if (classLoader == null || root == null || resource == null) {
             return null;
         }
         Path rootPath = Path.of("/", root).normalize().toAbsolutePath();
         Path resourcePath = rootPath.resolve(resource).normalize().toAbsolutePath();
         if (resourcePath.startsWith(rootPath)) {
+            String contained;
             if (File.separatorChar == '/') {
-                resource = resourcePath.toString().substring(1);
+                contained = resourcePath.toString().substring(1);
             } else {
-                resource = resourcePath.toString().substring(2).replace('\\', '/');
+                contained = resourcePath.toString().substring(2).replace('\\', '/');
             }
-            URL url = classLoader().getResource(resource);
-            return url != null ? url.openStream() : null;
+            return classLoader.getResource(contained);
         } else {
             return null;
         }

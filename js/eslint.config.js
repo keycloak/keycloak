@@ -21,6 +21,8 @@ export default tseslint.config(
       "**/dist/",
       "**/lib/",
       "**/target/",
+      "**/.wireit/",
+      "**/src/generated/doc-examples/",
       "./apps/keycloak-server/server/",
     ],
   },
@@ -144,6 +146,7 @@ export default tseslint.config(
     files: ["libs/keycloak-admin-client/test/**"],
     rules: {
       "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-deprecated": "off",
     },
   },
   {

@@ -20,6 +20,7 @@ package org.keycloak.models;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
@@ -27,6 +28,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.vault.VaultTranscriber;
+
+import org.checkerframework.checker.mustcall.qual.NotOwning;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -49,6 +52,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @param <T>
      * @return
      */
+    @NotOwning
     <T extends Provider> T getProvider(Class<T> clazz);
 
     /**
@@ -61,6 +65,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @param <T>
      * @return
      */
+    @NotOwning
     <T extends Provider> T getProvider(Class<T> clazz, String id);
 
     /**
@@ -72,6 +77,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @throws IllegalArgumentException If the realm is not set in the context.
      * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
+    @NotOwning
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId);
 
     /**
@@ -84,6 +90,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @throws IllegalArgumentException If the realm is not set in the context.
      * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
+    @NotOwning
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter);
 
     /**
@@ -95,6 +102,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @deprecated Deprecated in favor of {@link #getComponentProvider)
      */
     @Deprecated
+    @NotOwning
     <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
 
     /**
@@ -106,6 +114,7 @@ public interface KeycloakSession extends AutoCloseable {
      */
     <T extends Provider> Set<String> listProviderIds(Class<T> clazz);
 
+    @NotOwning
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
     Class<? extends Provider> getProviderClass(String providerClassName);
@@ -126,6 +135,18 @@ public interface KeycloakSession extends AutoCloseable {
     void setAttribute(String name, Object value);
 
     Map<String, Object> getAttributes();
+
+    /**
+     * Returns whether this session is currently in read-only mode.
+     */
+    boolean isReadOnly();
+
+    /**
+     * Executes the given supplier in read-only mode. The read-only flag is set before invoking the
+     * supplier and restored after the supplier returns. If the supplier returns a Stream, the flag
+     * remains active until the stream is closed, making it safe for lazily consumed streams.
+     */
+    <T> T runAsReadOnly(Supplier<T> supplier);
 
     /**
      * Invalidates intermediate states of the given objects, both immediately and at the end of this session.
@@ -203,6 +224,8 @@ public interface KeycloakSession extends AutoCloseable {
     AuthenticationSessionProvider authenticationSessions();
 
     SingleUseObjectProvider singleUseObjects();
+
+    RevokedTokenProvider revokedTokens();
 
     /**
      * Returns the default IDP provider .

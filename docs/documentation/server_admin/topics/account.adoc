@@ -125,6 +125,21 @@ The *Applications* menu item shows users which applications you can access. In t
 
 image:images/account-console-applications.png[Applications]
 
+==== Ending an application session
+
+You can end your active sessions with a specific application directly from the *Applications* page. Applications that have an active session are marked as *In use* and display an *End application session* button. The Account Console itself does not display this button.
+
+.Procedure
+
+. Click *Applications* in the menu.
+. Find the application whose session you want to end.
+. Click *End application session* next to the application.
+. Click *Confirm* in the confirmation dialog.
+
+Your sessions with the application are ended, including any offline sessions. If the application supports it, {project_name} also notifies the application. Because this does not sign you out from {project_name}, the application can sign you in again without asking for your credentials when you access it again. To fully sign out from all applications, use the *Sign out* action on the *Device activity* page instead.
+
+Ending an application session does not revoke the access you granted to the application, so it can obtain new sessions the next time you use it. To revoke the granted access, use the *Remove access* action for the application.
+
 === Viewing group memberships
 
 You can view the groups you are associated with by clicking the *Groups* menu.

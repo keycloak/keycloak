@@ -24,6 +24,8 @@ import java.util.List;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
@@ -185,6 +187,53 @@ public abstract class SdJwtVPVerificationTest {
                 "Key binding JWT invalid",
                 "VerificationException: Invalid jws signature"
         );
+    }
+
+    @Test
+    public void testShouldFail_IfKeyBindingHeaderAlgorithmDiffersFromVerifierAlgorithm() {
+        SignatureSignerContext signer = TestSettings.signerWithReportedAlgorithm(
+                testSettings.holderSigContext, Algorithm.ES384);
+        SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(exampleKbPayload(), signer);
+
+        assertEquals(Algorithm.ES384,
+                sdJwtVP.getKeyBindingJWT().orElseThrow(AssertionError::new).getJwsHeader().getRawAlgorithm());
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwtVP.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().build(),
+                        defaultKeyBindingJwtVerificationOpts().build())
+        );
+
+        assertEquals("Key binding JWT invalid", exception.getMessage());
+        assertEquals("JWS header algorithm 'ES384' does not match verifier algorithm 'ES256'",
+                exception.getCause().getMessage());
+    }
+
+    @Test
+    public void testShouldFail_IfKeyBindingHeaderAlgorithmIsMissing() {
+        KeyBindingJWT keyBindingJWT = KeyBindingJWT.builder()
+                .withPayload(exampleKbPayload())
+                .withSignerContext(testSettings.holderSigContext)
+                .build();
+        String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");
+        String sdJwtWithoutKb = sdJwtVPString.substring(
+                0, sdJwtVPString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER) + 1);
+        SdJwtVP sdJwtVP = SdJwtVP.of(sdJwtWithoutKb
+                + TestUtils.removeAlgorithmFromJwsHeader(keyBindingJWT.getJws()));
+
+        VerificationException exception = assertThrows(
+                VerificationException.class,
+                () -> sdJwtVP.verify(
+                        defaultIssuerVerifyingKeys(),
+                        defaultIssuerSignedJwtVerificationOpts().build(),
+                        defaultKeyBindingJwtVerificationOpts().build())
+        );
+
+        assertEquals("Key binding JWT invalid", exception.getMessage());
+        assertEquals("JWS header algorithm 'null' does not match verifier algorithm 'ES256'",
+                exception.getCause().getMessage());
     }
 
     @Test
@@ -512,9 +561,14 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     private SdJwtVP exampleSdJwtWithCustomKbPayload(ObjectNode kbPayloadSubstitute) {
+        return exampleSdJwtWithCustomKbPayload(kbPayloadSubstitute, testSettings.holderSigContext);
+    }
+
+    private SdJwtVP exampleSdJwtWithCustomKbPayload(ObjectNode kbPayloadSubstitute,
+                                                     SignatureSignerContext signerContext) {
         KeyBindingJWT keyBindingJWT = KeyBindingJWT.builder()
                 .withPayload(kbPayloadSubstitute)
-                .withSignerContext(testSettings.holderSigContext)
+                .withSignerContext(signerContext)
                 .build();
 
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");

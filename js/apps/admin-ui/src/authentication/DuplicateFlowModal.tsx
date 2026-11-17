@@ -63,7 +63,7 @@ export const DuplicateFlowModal = ({
         );
       }
       addAlert(t("copyFlowSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toFlow({
           realm,
           id: newFlow.id!,

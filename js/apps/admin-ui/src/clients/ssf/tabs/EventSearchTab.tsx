@@ -14,15 +14,12 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
 import { useAdminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { useRealm } from "../../../context/realm-context/RealmContext";
-import { addTrailingSlash } from "../../../util";
-import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import useFormatDate from "../../../utils/useFormatDate";
 
 type SsfPendingEvent = {
@@ -56,7 +53,6 @@ export type EventSearchTabProps = {
 export const EventSearchTab = ({ client }: EventSearchTabProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
-  const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -76,57 +72,59 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
    * 404 is rendered as a "not found" message rather than an alert; any
    * other failure surfaces both inline and via addError.
    */
-  const handlePendingLookup = async (jti?: string) => {
-    const lookupJti = (jti ?? pendingLookupJti).trim();
-    if (!client.id || !lookupJti) {
-      return;
-    }
-    // Don't wipe the previous result/error here — that causes the
-    // result block to unmount during the request, which collapses the
-    // container height and makes the layout jump on repeated clicks.
-    // We update them in place once the new fetch resolves.
-    setPendingActionLoading(true);
-    try {
-      const response = await fetch(
-        `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${realm}/ssf/clients/${client.clientId}/pending-events/${encodeURIComponent(lookupJti)}`,
-        {
-          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-        },
-      );
-      if (response.status === 404) {
-        setPendingLookupError(t("ssfPendingLookupNotFound"));
-        setPendingLookupResult(null);
+  const handlePendingLookup = useCallback(
+    async (jti: string) => {
+      const lookupJti = jti.trim();
+      if (!client.id || !lookupJti) {
         return;
       }
-      if (!response.ok) {
-        const text = await response.text();
-        setPendingLookupError(text || `HTTP ${response.status}`);
+      // Don't wipe the previous result/error here — that causes the
+      // result block to unmount during the request, which collapses the
+      // container height and makes the layout jump on repeated clicks.
+      // We update them in place once the new fetch resolves.
+      setPendingActionLoading(true);
+      try {
+        const result = await adminClient.ssf.findPendingEvent({
+          clientId: client.clientId!,
+          jti: lookupJti,
+        });
+        if (result === null) {
+          setPendingLookupError(t("ssfPendingLookupNotFound"));
+          setPendingLookupResult(null);
+          return;
+        }
+        setPendingLookupResult(result as SsfPendingEvent);
+        setPendingLookupError(null);
+      } catch (error) {
+        setPendingLookupError(String(error));
         setPendingLookupResult(null);
-        return;
+      } finally {
+        setPendingActionLoading(false);
       }
-      setPendingLookupResult((await response.json()) as SsfPendingEvent);
-      setPendingLookupError(null);
-    } catch (error) {
-      setPendingLookupError(String(error));
-      setPendingLookupResult(null);
-    } finally {
-      setPendingActionLoading(false);
-    }
-  };
+    },
+    [client.id, client.clientId, adminClient, t],
+  );
 
   // Auto-run the lookup once on mount when the URL carries ?jti=... —
   // the emit success panel uses this as a one-click handoff into the
-  // search tab. After consuming the param, drop it from the URL so a
-  // page refresh doesn't re-trigger the lookup with a now-stale value.
+  // search tab. Captured into a ref at first render so the strip
+  // below (which re-triggers this effect via searchParams) doesn't
+  // fire a second lookup.
+  const initialJtiRef = useRef(searchParams.get("jti"));
   useEffect(() => {
-    const jti = searchParams.get("jti");
+    const jti = initialJtiRef.current;
     if (!jti) return;
+    initialJtiRef.current = null;
     void handlePendingLookup(jti);
-    const next = new URLSearchParams(searchParams);
-    next.delete("jti");
-    setSearchParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("jti");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [handlePendingLookup, setSearchParams]);
 
   return (
     <Card isFlat className="pf-v5-u-mt-md">
@@ -145,7 +143,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
           isHorizontal
           onSubmit={(e) => {
             e.preventDefault();
-            void handlePendingLookup();
+            void handlePendingLookup(pendingLookupJti);
           }}
         >
           <FormGroup
@@ -175,7 +173,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
             <Button
               type="button"
               variant="primary"
-              onClick={() => handlePendingLookup()}
+              onClick={() => handlePendingLookup(pendingLookupJti)}
               isDisabled={pendingActionLoading || !pendingLookupJti.trim()}
               data-testid="ssfPendingLookup"
             >

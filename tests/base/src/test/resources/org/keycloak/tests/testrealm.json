@@ -210,7 +210,6 @@
       "clientId": "root-url-client",
       "enabled": true,
       "rootUrl": "http://localhost:8180/foo/bar",
-      "adminUrl": "http://localhost:8180/foo/bar",
       "baseUrl": "/baz",
       "redirectUris": [
         "http://localhost:8180/foo/bar/*",

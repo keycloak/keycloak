@@ -39,11 +39,17 @@ public interface VCFormat {
      */
     String SD_JWT_VC = "dc+sd-jwt";
 
+    /**
+     * ISO/IEC 18013-5 mdoc credentials.
+     */
+    String MSO_MDOC = "mso_mdoc";
+
     String[] SUPPORTED_FORMATS = new String[]{JWT_VC, SD_JWT_VC};
 
     static String getFromScope(String scope) {
         String format = SD_JWT_VC; // default format
         if (scope.toLowerCase().endsWith("_jwt")) format = JWT_VC;
+        else if (scope.toLowerCase().endsWith("_mdoc")) format = MSO_MDOC;
         return format;
     }
 
@@ -51,6 +57,7 @@ public interface VCFormat {
         String suffix = "";
         if (JWT_VC.equals(value)) suffix = "_jwt";
         else if (SD_JWT_VC.equals(value)) suffix = "_sd";
+        else if (MSO_MDOC.equals(value)) suffix = "_mdoc";
         return suffix;
     }
 }

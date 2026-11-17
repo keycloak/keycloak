@@ -23,6 +23,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -42,6 +43,9 @@ public abstract class AbstractLoginPage extends AbstractPage {
 
     @FindBy(id = "kc-attempted-username") // Username during re-authentication
     private WebElement attemptedUsernameLabel;
+
+    @FindBy(className = "pf-m-success")
+    private WebElement loginSuccessMessage;
 
     @FindBy(className = "pf-m-info")
     private WebElement loginInfoMessage;
@@ -84,6 +88,14 @@ public abstract class AbstractLoginPage extends AbstractPage {
         }
     }
 
+    public Optional<String> getSuccessMessage() {
+        try {
+            return Optional.of(loginSuccessMessage.getText());
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
+        }
+    }
+
     public Optional<String> getInfoMessage() {
         try {
             return Optional.of(loginInfoMessage.getText());
@@ -98,5 +110,15 @@ public abstract class AbstractLoginPage extends AbstractPage {
         } catch (NoSuchElementException e) {
             return Optional.empty();
         }
+    }
+
+    public void waitForUsernameInputError(String expected) {
+        driver.waiting().until(d -> {
+            try {
+                return expected.equals(d.findElement(By.id("input-error-username")).getText());
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
     }
 }

@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -29,7 +28,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 import static org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi.SPI_NAME;
 import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.CONFIG;
 import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.STACK;
 
 public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
@@ -62,10 +60,6 @@ public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetada
         meta.put("jgroupsVersion", majorMinorOf(org.jgroups.Version.printVersion()));
         meta.put(CONFIG, sha256Of(Paths.get(config.get(CONFIG))));
         return meta;
-    }
-    @Override
-    public Stream<String> configKeys() {
-        return Stream.of(STACK);
     }
 
     private void addInt(Map<String, String> meta, String configKey, int defaultValue) {

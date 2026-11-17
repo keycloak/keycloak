@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.authenticators.util.AcrNotFulfilledException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -36,6 +37,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.services.ErrorPageException;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
@@ -136,6 +138,11 @@ public abstract class AuthorizationEndpointBase {
                     return protocol.sendError(authSession, Error.PASSIVE_INTERACTION_REQUIRED, null);
                 }
 
+            } catch (AcrNotFulfilledException e) {
+                ServicesLogger.LOGGER.failedAuthentication(e);
+                event.detail(Details.AUTHENTICATION_ERROR_DETAIL, e.getEventDetails());
+                event.error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                return protocol.sendError(authSession, Error.LOA_INVALID, null);
             } catch (Exception e) {
                 return processor.handleBrowserException(e);
             }

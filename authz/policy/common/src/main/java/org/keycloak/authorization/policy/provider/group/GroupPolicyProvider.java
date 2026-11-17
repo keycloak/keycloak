@@ -16,7 +16,13 @@
  */
 package org.keycloak.authorization.policy.provider.group;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +48,12 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
+import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.DENY;
+import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.GRANT;
+import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.SKIP;
 import static org.keycloak.models.utils.ModelToRepresentation.buildGroupPath;
+import static org.keycloak.models.utils.RoleUtils.isDirectMember;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -50,6 +61,8 @@ import static org.keycloak.models.utils.ModelToRepresentation.buildGroupPath;
 public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPolicyProvider {
 
     private static final Logger logger = Logger.getLogger(GroupPolicyProvider.class);
+    private static final String SUBJECT_GROUP_PATHS_CACHE = "kc.authz.group.policy.subject.group.paths";
+    private static final String TOP_LEVEL_GROUP_BY_NAME_CACHE = "kc.authz.group.policy.top.level.group.by.name";
     private final BiFunction<Policy, AuthorizationProvider, GroupPolicyRepresentation> representationFunction;
 
     public GroupPolicyProvider(BiFunction<Policy, AuthorizationProvider, GroupPolicyRepresentation> representationFunction) {
@@ -68,14 +81,19 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
             groupsClaim = new Entry(policy.getGroupsClaim(), userGroups);
         }
 
-        if (isGranted(realm, policy, groupsClaim)) {
+        KeycloakSession session = authorizationProvider.getKeycloakSession();
+        Outcome outcome = isGranted(session, realm, null, policy, groupsClaim);
+
+        if (GRANT.equals(outcome)) {
             evaluation.grant();
         }
 
         logger.debugf("Groups policy %s evaluated to %s with identity groups %s", policy.getName(), evaluation.getEffect(), groupsClaim);
     }
 
-    private boolean isGranted(RealmModel realm, GroupPolicyRepresentation policy, Attributes.Entry groupsClaim) {
+    private Outcome isGranted(KeycloakSession session, RealmModel realm, UserModel subject, GroupPolicyRepresentation policy, Entry groupsClaim) {
+        boolean skipped = false;
+
         for (GroupPolicyRepresentation.GroupDefinition definition : policy.getGroups()) {
             GroupModel allowedGroup = realm.getGroupById(definition.getId());
 
@@ -83,24 +101,62 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
                 continue;
             }
 
-            for (int i = 0; i < groupsClaim.size(); i++) {
-                String group = groupsClaim.asString(i);
+            if (subject != null && !definition.isExtendChildren() && !isDirectMember(subject.getGroupsStream(), allowedGroup)) {
+                skipped = true;
+                continue;
+            }
 
-                if (group.indexOf('/') != -1) {
-                    String allowedGroupPath = buildGroupPath(allowedGroup);
-                    if (group.equals(allowedGroupPath) || (definition.isExtendChildren() && group.startsWith(allowedGroupPath))) {
-                        return true;
+            String allowedGroupPath = buildGroupPath(allowedGroup);
+
+            for (int i = 0; i < groupsClaim.size(); i++) {
+                String groupPath = groupsClaim.asString(i);
+                GroupModel group = resolveTopLevelGroupByName(session, realm, groupPath);
+
+                if (group != null) {
+                    // the claim matches the name of a top-level group, so it is compared by id and never as a path
+                    if (group.getId().equals(allowedGroup.getId())) {
+                        return GRANT;
                     }
+                    continue;
                 }
 
-                // in case the group from the claim does not represent a path, we just check an exact name match
-                if (group.equals(allowedGroup.getName())) {
-                    return true;
+                // no top-level group is named after the claim, so it is treated as a group path
+                if (groupPath.indexOf('/') != -1) {
+                    if (groupPath.equals(allowedGroupPath)) {
+                        return GRANT;
+                    }
+
+                    if (definition.isExtendChildren() && groupPath.startsWith(allowedGroupPath + "/")) {
+                        return GRANT;
+                    }
                 }
             }
         }
 
-        return false;
+        if (skipped) {
+            return SKIP;
+        }
+
+        return DENY;
+    }
+
+    /**
+     * Resolves the top-level group whose name matches {@code name}, caching the result (including misses) in the session.
+     * <p>
+     * The realm cache does not cache misses, so without this cache the same claim would be resolved against the database
+     * once per dependent policy during partial evaluation. Caching resolves each distinct claim only once per request.
+     */
+    private GroupModel resolveTopLevelGroupByName(KeycloakSession session, RealmModel realm, String name) {
+        @SuppressWarnings("unchecked")
+        Map<String, Optional<GroupModel>> cache = session.getAttribute(TOP_LEVEL_GROUP_BY_NAME_CACHE, Map.class);
+
+        if (cache == null) {
+            cache = new HashMap<>();
+            session.setAttribute(TOP_LEVEL_GROUP_BY_NAME_CACHE, cache);
+        }
+
+        return cache.computeIfAbsent(realm.getId() + '\n' + name, key -> Optional.ofNullable(
+                runWithoutAuthorization(session, () -> session.groups().getGroupByName(realm, null, name)))).orElse(null);
     }
 
     @Override
@@ -111,19 +167,46 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         StoreFactory storeFactory = provider.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<String> groupIds = user.getGroupsStream().map(GroupModel::getId).toList();
+        Set<String> visited = new HashSet<>();
+        List<String> groupIds = user.getGroupsStream()
+                .flatMap(group -> {
+                    List<String> ids = new ArrayList<>();
+                    GroupModel current = group;
+                    while (current != null && visited.add(current.getId())) {
+                        ids.add(current.getId());
+                        current = current.getParent();
+                    }
+                    return ids.stream();
+                })
+                .toList();
 
         return policyStore.findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), GroupPolicyProviderFactory.ID, "groups", groupIds);
     }
 
     @Override
     public boolean evaluate(KeycloakSession session, Policy policy, UserModel subject) {
+        return Outcome.GRANT.equals(evaluateOutcome(session, policy, subject));
+    }
+
+    @Override
+    public Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
         RealmModel realm = session.getContext().getRealm();
         AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
         GroupPolicyRepresentation groupPolicy = representationFunction.apply(policy, authorizationProvider);
-        List<String> userGroups = subject.getGroupsStream().map(ModelToRepresentation::buildGroupPath)
-                .collect(Collectors.toList());
-        return isGranted(realm, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups));
+        List<String> userGroups = resolveSubjectGroupPaths(session, subject);
+        return isGranted(session, realm, subject, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups));
+    }
+
+    private List<String> resolveSubjectGroupPaths(KeycloakSession session, UserModel subject) {
+        Map<String, List<String>> cache = session.getAttribute(SUBJECT_GROUP_PATHS_CACHE, Map.class);
+
+        if (cache == null) {
+            cache = new HashMap<>();
+            session.setAttribute(SUBJECT_GROUP_PATHS_CACHE, cache);
+        }
+
+        return cache.computeIfAbsent(subject.getId(),
+                id -> subject.getGroupsStream().map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList()));
     }
 
     @Override

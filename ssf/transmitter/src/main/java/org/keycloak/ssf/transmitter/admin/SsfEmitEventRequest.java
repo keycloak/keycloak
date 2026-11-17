@@ -74,7 +74,7 @@ public class SsfEmitEventRequest {
      *         buildSubjectForReceiver} so the shape honors the receiver's
      *         configured {@code ssf.userSubjectFormat}.</li>
      *     <li>{@code org-alias} → resolves to an organization; transmitter
-     *         emits a complex subject with a {@code tenant} facet only
+     *         emits a complex subject with a {@code tenant} subject member only
      *         (no user) so the receiver routes it as an org-scoped
      *         event.</li>
      * </ul>

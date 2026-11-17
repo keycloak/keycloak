@@ -25,23 +25,30 @@ import java.util.stream.Stream;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.infinispan.CachedCount;
+import org.keycloak.models.cache.infinispan.CachedExists;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.MembershipType;
 
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
+import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyIdpAlias;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
 
 public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static final String ORG_COUNT_KEY_SUFFIX = ".org.count";
+    private static final String ORG_EXISTS_KEY_SUFFIX = ".org.exists";
     private static final String ORG_MEMBERS_COUNT_KEY_SUFFIX = ".members.count";
 
     private final KeycloakSession session;
@@ -60,6 +67,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private static String cacheKeyOrgCount(RealmModel realm) {
         return realm.getId() + ORG_COUNT_KEY_SUFFIX;
+    }
+
+    private static String cacheKeyOrgExists(RealmModel realm) {
+        return realm.getId() + ORG_EXISTS_KEY_SUFFIX;
     }
 
     public static String cacheKeyOrgMemberCount(RealmModel realm, OrganizationModel organization) {
@@ -82,9 +93,15 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public boolean remove(OrganizationModel organization) {
+        // capture IdPs before deletion so we can invalidate their cache entries
+        java.util.List<IdentityProviderModel> idps = organization.getIdentityProviders().toList();
         registerOrganizationInvalidation(organization);
         registerCountInvalidation();
-        return getDelegate().remove(organization);
+        boolean removed = getDelegate().remove(organization);
+        if (removed) {
+            idps.forEach(this::registerIdentityProviderInvalidation);
+        }
+        return removed;
     }
 
     @Override
@@ -104,7 +121,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             OrganizationModel model = getDelegate().getById(id);
             if (model == null) return null;
             if (isRealmCacheKeyInvalid(id)) return model;
-            cached = new CachedOrganization(loaded, getRealm(), model, d -> realmCache.registerInvalidation(cacheKeyByDomain(d)));
+            Map<String, OrganizationIdentityProviderLinkModel> links = new HashMap<>();
+            model.getIdentityProviders().forEach(idp -> {
+                OrganizationIdentityProviderLinkModel link = getDelegate().getIdentityProviderLink(model, idp);
+                if (link != null) links.put(link.getIdentityProviderId(), link);
+            });
+            cached = new CachedOrganization(loaded, getRealm(), model, links, d -> realmCache.registerInvalidation(cacheKeyByDomain(d)));
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         } else if (isRealmCacheKeyInvalid(id)) {
             return getDelegate().getById(id);
@@ -117,7 +139,41 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public OrganizationModel getByAlias(String alias) {
+        if (alias == null) {
+            return null;
+        }
+
+        if (realmCache == null) {
+            return getDelegate().getByAlias(alias);
+        }
+
+        String cacheKey = cacheKeyByAlias(alias);
+        if (isRealmCacheKeyInvalid(cacheKey)) {
+            return getDelegate().getByAlias(alias);
+        }
+
+        CachedOrganizationIds cached = realmCache.getCache().get(cacheKey, CachedOrganizationIds.class);
+
+        if (cached == null) {
+            Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+            OrganizationModel model = getDelegate().getByAlias(alias);
+            if (model == null) {
+                return null;
+            }
+            cached = new CachedOrganizationIds(loaded, cacheKey, getRealm(), Stream.of(model));
+            realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+        }
+
+        return cached.getOrgIds().stream().map(this::getById).filter(Objects::nonNull).findAny().orElse(null);
+    }
+
+    @Override
     public OrganizationModel getByDomainName(String domainName) {
+        if (domainName == null) {
+            return null;
+        }
+
         if (realmCache == null) {
             return getDelegate().getByDomainName(domainName);
         }
@@ -169,6 +225,17 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public Stream<OrganizationModel> getByIdentityProvider(IdentityProviderModel identityProvider, String search, Boolean exact, Integer first, Integer max) {
+        // Return cache delegates to ensure cache invalidation during write operations
+        return getCacheDelegates(getDelegate().getByIdentityProvider(identityProvider, search, exact, first, max));
+    }
+
+    @Override
+    public long countByIdentityProvider(IdentityProviderModel identityProvider, String search, Boolean exact) {
+        return getDelegate().countByIdentityProvider(identityProvider, search, exact);
+    }
+
+    @Override
     public void removeAll() {
         //TODO: won't scale, requires a better mechanism for bulk deleting organizations within a realm
         //this way, all organizations in the realm will be invalidated ... or should it be invalidated whole realm instead?
@@ -191,6 +258,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     public boolean removeMember(OrganizationModel organization, UserModel member) {
         registerMemberInvalidation(organization, member);
         return getDelegate().removeMember(organization, member);
+    }
+
+    @Override
+    public boolean updateMembershipType(OrganizationModel organization, UserModel member, MembershipType membershipType) {
+        registerMemberInvalidation(organization, member);
+        return getDelegate().updateMembershipType(organization, member, membershipType);
     }
 
     @Override
@@ -376,17 +449,43 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
-        boolean added = getDelegate().addIdentityProvider(organization, identityProvider);
+    public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                       boolean autoMembership, MembershipType membershipType) {
+        boolean added = getDelegate().addIdentityProvider(organization, identityProvider, autoMembership, membershipType);
         if (added) {
             registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
         }
         return added;
     }
 
     @Override
+    public OrganizationIdentityProviderLinkModel getIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider) {
+        if (realmCache == null) {
+            return getDelegate().getIdentityProviderLink(organization, identityProvider);
+        }
+        OrganizationModel org = getById(organization.getId());
+        if (org instanceof OrganizationAdapter adapter) {
+            return adapter.getIdentityProviderLink(identityProvider);
+        }
+        return getDelegate().getIdentityProviderLink(organization, identityProvider);
+    }
+
+    @Override
+    public void updateIdentityProviderLink(OrganizationModel organization, IdentityProviderModel identityProvider,
+                                           boolean autoMembership, MembershipType membershipType) {
+        getDelegate().updateIdentityProviderLink(organization, identityProvider, autoMembership, membershipType);
+        registerOrganizationInvalidation(organization);
+        registerIdentityProviderInvalidation(identityProvider);
+    }
+
+    @Override
     public Stream<IdentityProviderModel> getIdentityProviders(OrganizationModel organization) {
-        return getDelegate().getIdentityProviders(organization);
+        if (realmCache == null) {
+            return getDelegate().getIdentityProviders(organization);
+        }
+        OrganizationModel org = getById(organization.getId());
+        return org != null ? org.getIdentityProviders() : Stream.empty();
     }
 
     @Override
@@ -394,6 +493,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         boolean removed = getDelegate().removeIdentityProvider(organization, identityProvider);
         if (removed) {
             registerOrganizationInvalidation(organization);
+            registerIdentityProviderInvalidation(identityProvider);
         }
         return removed;
     }
@@ -449,7 +549,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
                 cachedOrg.getDomainNames().stream()
                         .map(this::cacheKeyByDomain)
                         .forEach(realmCache::registerInvalidation);
+                registerAliasInvalidation(cachedOrg.getAlias());
             }
+
+            // the model still holds the alias as it was before the update is applied, so this also covers a rename.
+            // there is no negative caching, so the new alias can not have a stale entry
+            registerAliasInvalidation(organization.getAlias());
         }
 
         OrganizationAdapter adapter = managedOrganizations.get(id);
@@ -459,9 +564,26 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         }
     }
 
+    private void registerAliasInvalidation(String alias) {
+        if (alias != null) {
+            realmCache.registerInvalidation(cacheKeyByAlias(alias));
+        }
+    }
+
+    private void registerIdentityProviderInvalidation(IdentityProviderModel idp) {
+        if (realmCache != null) {
+            realmCache.registerInvalidation(idp.getInternalId());
+            realmCache.registerInvalidation(cacheKeyIdpAlias(getRealm(), idp.getAlias()));
+            for (FetchMode mode : FetchMode.values()) {
+                realmCache.registerInvalidation(cacheKeyForLogin(getRealm(), mode));
+            }
+        }
+    }
+
     private void registerCountInvalidation() {
         if (realmCache != null) {
             realmCache.registerInvalidation(cacheKeyOrgCount(getRealm()));
+            realmCache.registerInvalidation(cacheKeyOrgExists(getRealm()));
         }
     }
 
@@ -489,6 +611,17 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         return cacheKeyByDomain(getRealm(), domainName);
     }
 
+    public static String cacheKeyByAlias(RealmModel realm, String alias) {
+        if (alias == null) {
+            throw new IllegalArgumentException("alias must not be null");
+        }
+        return realm.getId() + ".org.alias." + alias;
+    }
+
+    private String cacheKeyByAlias(String alias) {
+        return cacheKeyByAlias(getRealm(), alias);
+    }
+
     private String cacheKeyByMember(UserModel user) {
         return getRealm().getId() + ".org.member." + user.getId() + ".orgs";
     }
@@ -513,7 +646,9 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     void registerOrgGroupsMembershipInvalidation(OrganizationModel organization, UserModel member) {
-        userCache.registerInvalidation(cacheKeyOrgGroupsByMember(organization, member));
+        if (userCache != null) {
+            userCache.registerInvalidation(cacheKeyOrgGroupsByMember(organization, member));
+        }
     }
 
     private boolean isRealmCacheKeyInvalid(String cacheKey) {
@@ -522,5 +657,26 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     private boolean isUserCacheKeyInvalid(String cacheKey) {
         return userCache.isInvalid(cacheKey);
+    }
+
+    @Override
+    public boolean hasOrganizations() {
+        if (realmCache == null) {
+            return getDelegate().hasOrganizations();
+        }
+
+        String cacheKey = cacheKeyOrgExists(getRealm());
+        CachedExists cached = realmCache.getCache().get(cacheKey, CachedExists.class);
+
+        // cached and not invalidated
+        if (cached != null && !isRealmCacheKeyInvalid(cacheKey)) {
+            return cached.isExists();
+        }
+
+        Long loaded = realmCache.getCache().getCurrentRevision(cacheKey);
+        boolean hasOrganizations = getDelegate().hasOrganizations();
+        cached = new CachedExists(loaded, getRealm(), cacheKey, hasOrganizations);
+        realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
+        return hasOrganizations;
     }
 }

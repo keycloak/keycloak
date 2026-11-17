@@ -94,6 +94,7 @@ public final class OIDCConfigAttributes {
     
     public static final String STANDARD_TOKEN_EXCHANGE_ENABLED = "standard.token.exchange.enabled";
     public static final String STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED = "standard.token.exchange.enableRefreshRequestedTokenType";
+    public static final String STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT = "standard.token.exchange.allowTokenExpirationAfterSubjectTokenExpiration";
 
     public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "oauth2.jwt.authorization.grant.enabled";
     public static final String JWT_AUTHORIZATION_GRANT_IDP = "oauth2.jwt.authorization.grant.idp";
@@ -110,6 +111,8 @@ public final class OIDCConfigAttributes {
     public static final String ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow.token.introspection.without.audience.check";
 
     public static final String ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow.userinfo.with.lightweight.access.token";
+
+    public static final String ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = "allow.oidc.params.in.redirect.uris";
 
     private OIDCConfigAttributes() {
     }

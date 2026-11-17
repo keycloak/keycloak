@@ -16,6 +16,7 @@
  */
 package org.keycloak.events.outbox;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -59,9 +60,12 @@ public class OutboxStore {
      * Hard cap on the {@code last_error} column width — matches the
      * VARCHAR(2048) defined in the changelog. Truncation is applied
      * here so callers can pass arbitrarily long exception messages
-     * without worrying about persistence-layer rejection.
+     * without worrying about persistence-layer rejection. The cap is in
+     * UTF-8 bytes, not characters, as some databases measure the column
+     * width in bytes (Oracle by default, SQL Server with a UTF-8
+     * collation).
      */
-    public static final int MAX_LAST_ERROR_LENGTH = 2048;
+    public static final int MAX_LAST_ERROR_BYTES = 2048;
 
     protected final KeycloakSession session;
 
@@ -731,14 +735,46 @@ public class OutboxStore {
      * Truncates an error message to the column width with an ellipsis
      * marker. Returns {@code null} unchanged so an explicit "no error"
      * value (used by {@code markDelivered}) survives.
+     *
+     * <p>Error messages can contain text from remote parties (e.g. a
+     * receiver's response body). Null characters, which PostgreSQL
+     * cannot store, are removed, and the length is limited in UTF-8
+     * bytes. Otherwise storing the error would fail and roll back the
+     * whole transaction, including the outcome of other rows.
      */
     protected String truncateError(String error) {
         if (error == null) {
             return null;
         }
-        if (error.length() <= MAX_LAST_ERROR_LENGTH) {
+        if (error.indexOf('\0') >= 0) {
+            error = error.replace("\0", "");
+        }
+        if (error.length() * 3 <= MAX_LAST_ERROR_BYTES
+                || error.getBytes(StandardCharsets.UTF_8).length <= MAX_LAST_ERROR_BYTES) {
             return error;
         }
-        return error.substring(0, MAX_LAST_ERROR_LENGTH - 3) + "...";
+        int limit = MAX_LAST_ERROR_BYTES - 3;
+        int bytes = 0;
+        int end = 0;
+        while (end < error.length()) {
+            int codePoint = error.codePointAt(end);
+            bytes += utf8Length(codePoint);
+            if (bytes > limit) {
+                break;
+            }
+            end += Character.charCount(codePoint);
+        }
+        return error.substring(0, end) + "...";
+    }
+
+    private static int utf8Length(int codePoint) {
+        if (codePoint < 0x80) {
+            return 1;
+        } else if (codePoint < 0x800) {
+            return 2;
+        } else if (codePoint < 0x10000) {
+            return 3;
+        }
+        return 4;
     }
 }

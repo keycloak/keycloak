@@ -22,7 +22,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-public class AdminClientUpdatedContext extends AbstractAdminClientCRUDContext {
+public class AdminClientUpdatedContext extends AbstractAdminClientCRUDContext implements ClientCRUDClientAvailableContext {
 
     private final ClientRepresentation proposedClientRepresentation;
     private final ClientModel updatedClient;

@@ -130,6 +130,25 @@ class VerifyMessagePropertiesTest {
         MatcherAssert.assertThat(verify, Matchers.hasItem(Matchers.containsString("ends with a blank")));
     }
 
+    @Test
+    void resolveEnglishReferenceFileMapsCommunityToResources() {
+        File translation = new File(
+                "resources-community" + File.separator + "theme" + File.separator + "keycloak.v3"
+                        + File.separator + "login" + File.separator + "messages"
+                        + File.separator + "messages_pt_BR.properties");
+
+        File resolved = VerifyMessageProperties.resolveEnglishReferenceFile(translation);
+        MatcherAssert.assertThat(
+                resolved.getName(),
+                Matchers.equalTo("messages_en.properties"));
+        MatcherAssert.assertThat(
+                resolved.getPath(),
+                Matchers.containsString("resources" + File.separator + "theme"));
+        MatcherAssert.assertThat(
+                resolved.getPath(),
+                Matchers.not(Matchers.containsString("resources-community")));
+    }
+
     private static VerifyMessageProperties getFile(String fixture) {
         URL resource = VerifyMessageProperties.class.getResource("/" + fixture);
         if (resource == null) {

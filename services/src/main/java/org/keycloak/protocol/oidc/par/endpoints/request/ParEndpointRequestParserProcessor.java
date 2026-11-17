@@ -70,7 +70,7 @@ public class ParEndpointRequestParserProcessor {
                 new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
             }
 
-            if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {
                 request.setAuthorizationRequestContext(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, request.getScope()));
             }
 

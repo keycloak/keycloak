@@ -18,18 +18,16 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import org.keycloak.Config;
-import org.keycloak.component.ComponentFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
+import org.keycloak.provider.ProviderFactory;
 
 /**
  * Provider Factory to create {@link  CredentialBuilder}'s
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
-public interface CredentialBuilderFactory extends
-        ComponentFactory<CredentialBuilder, CredentialBuilder>,
-        OID4VCEnvironmentProviderFactory {
+public interface CredentialBuilderFactory extends ProviderFactory<CredentialBuilder>, OID4VCEnvironmentProviderFactory {
 
     /**
      * Returns the credential format supported by the credential builder.

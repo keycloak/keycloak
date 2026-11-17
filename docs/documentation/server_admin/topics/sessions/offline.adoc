@@ -10,6 +10,8 @@ The client application is responsible for persisting the offline token in storag
 
 The difference between a refresh token and an offline token is that an offline token never expires and is not subject to the `SSO Session Idle` timeout and `SSO Session Max` lifespan. The offline token is valid after a user logout. You must use the offline token for a refresh token action at least once per thirty days or for the value of the <<_offline-session-idle, Offline Session Idle>>.
 
+Online refresh tokens cannot be used once logout begins for the user session or the associated client session, even if a front-channel logout flow has not finished. Offline tokens are unaffected by this restriction.
+
 If you enable <<_offline-session-max-limited, Offline Session Max Limited>>, offline tokens expire after 60 days even if you use the offline token for a refresh token action. You can change this value, <<_offline-session-max, Offline Session Max>>, in the Admin Console.
 
 When using offline access, client idle and max timeouts can be overridden at the <<_client_advanced_settings_oidc,client level>>. The options *Client Offline Session Idle* and *Client Offline Session Max*, in the client *Advanced Settings* tab, allow you to have a shorter offline timeouts for a specific application. Note that client session values also control the refresh token expiration but they never affect the global offline user SSO session. The option *Client Offline Session Max* is only evaluated in the client if <<_offline-session-max-limited, Offline Session Max Limited>> is *Enabled* at the realm level.

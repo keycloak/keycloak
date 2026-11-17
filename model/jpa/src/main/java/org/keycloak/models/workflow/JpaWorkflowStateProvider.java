@@ -28,12 +28,14 @@ import jakarta.persistence.criteria.CriteriaDelete;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.ComponentEntity;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
@@ -207,12 +209,22 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     public void removeAll() {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaDelete<WorkflowStateEntity> delete = cb.createCriteriaDelete(WorkflowStateEntity.class);
+        Root<WorkflowStateEntity> root = delete.from(WorkflowStateEntity.class);
+
+        // this method is called after the realm entity has been removed and its component records
+        // (including workflows) have been cascade-deleted. Use a NOT IN subquery to delete workflow
+        // state entries whose workflow no longer exists.
+        Subquery<String> existingWorkflowIds = delete.subquery(String.class);
+        Root<ComponentEntity> component = existingWorkflowIds.from(ComponentEntity.class);
+        existingWorkflowIds.select(component.get("id"))
+                .where(cb.equal(component.get("providerType"), WorkflowProvider.class.getName()));
+
+        delete.where(cb.not(root.get("workflowId").in(existingWorkflowIds)));
         int deletedCount = em.createQuery(delete).executeUpdate();
 
         if (LOGGER.isTraceEnabled()) {
             if (deletedCount > 0) {
-                RealmModel realm = session.getContext().getRealm();
-                LOGGER.tracev("Deleted {0} state records for realm {1}", deletedCount, realm.getId());
+                LOGGER.tracev("Deleted {0} orphaned workflow state records", deletedCount);
             }
         }
     }
@@ -220,17 +232,15 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     @Override
     public boolean hasScheduledSteps(String workflowId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Long> criteriaQuery = cb.createQuery(Long.class);
+        CriteriaQuery<WorkflowStateEntity> criteriaQuery = cb.createQuery(WorkflowStateEntity.class);
         Root<WorkflowStateEntity> stateRoot = criteriaQuery.from(WorkflowStateEntity.class);
 
-        criteriaQuery.select(cb.count(stateRoot));
         criteriaQuery.where(cb.equal(stateRoot.get("workflowId"), workflowId));
 
-        TypedQuery<Long> query = em.createQuery(criteriaQuery);
+        TypedQuery<WorkflowStateEntity> query = em.createQuery(criteriaQuery);
         query.setMaxResults(1);
 
-        Long count = query.getSingleResult();
-        return count > 0;
+        return query.getSingleResultOrNull() != null;
     }
 
     @Override

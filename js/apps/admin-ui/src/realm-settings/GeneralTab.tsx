@@ -8,6 +8,7 @@ import {
   HelpItem,
   KeycloakSpinner,
   SelectControl,
+  SelectVariant,
   TextControl,
   useAlerts,
   useEnvironment,
@@ -24,6 +25,7 @@ import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
@@ -110,6 +112,7 @@ function RealmSettingsGeneralTabForm({
   const { realm: realmName } = useRealm();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const serverInfo = useServerInfo();
   const form = useForm<FormFields>();
   const {
     control,
@@ -160,12 +163,39 @@ function RealmSettingsGeneralTabForm({
       },
     });
 
+  const ALLOWED_MAPPER_TYPES_ATTR =
+    "allowedProtocolMapperTypesForClientAdministrators";
+
+  const protocolMapperOptions = Object.values(
+    serverInfo.protocolMapperTypes ?? {},
+  )
+    .flat()
+    .map(({ id }) => ({ key: id, value: id }))
+    .filter(
+      (option, index, self) =>
+        self.findIndex((o) => o.key === option.key) === index,
+    )
+    .sort((a, b) => a.key.localeCompare(b.key));
+
   const setupForm = () => {
     convertToFormValues(realm, setValue);
     setValue(
       "unmanagedAttributePolicy",
       userProfileConfig.unmanagedAttributePolicy ||
         UNMANAGED_ATTRIBUTE_POLICIES[0],
+    );
+    const allowedMapperTypesRaw: string | undefined =
+      realm.attributes?.[ALLOWED_MAPPER_TYPES_ATTR];
+    setValue(
+      convertAttributeNameToForm(
+        `attributes.${ALLOWED_MAPPER_TYPES_ATTR}`,
+      ) as any,
+      allowedMapperTypesRaw
+        ? allowedMapperTypesRaw
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [],
     );
     if (realm.attributes?.["acr.loa.map"]) {
       const acrLoaMap = Object.entries(
@@ -188,6 +218,15 @@ function RealmSettingsGeneralTabForm({
 
   const onSubmit = handleSubmit(
     async ({ unmanagedAttributePolicy, ...data }) => {
+      // Convert multi-select array back to comma-delimited string for the server.
+      const allowedMapperArray: string[] | undefined = (data as any)
+        .attributes?.[ALLOWED_MAPPER_TYPES_ATTR];
+      if (data.attributes) {
+        (data as any).attributes[ALLOWED_MAPPER_TYPES_ATTR] =
+          Array.isArray(allowedMapperArray) && allowedMapperArray.length > 0
+            ? allowedMapperArray.join(",")
+            : undefined;
+      }
       const upConfig = { ...userProfileConfig };
 
       if (unmanagedAttributePolicy === UnmanagedAttributePolicy.Disabled) {
@@ -214,7 +253,7 @@ function RealmSettingsGeneralTabForm({
         // a toast but doesn't block the disable — outbox-pending-max-age
         // backstops any leftover PENDING rows.
         try {
-          await deleteRealmSsfQueuedEvents(adminClient, realmName);
+          await deleteRealmSsfQueuedEvents(adminClient);
           addAlert(t("ssfTransmitterDisableEventsCleared"));
         } catch (error) {
           addError("ssfTransmitterDisableEventsClearFailed", error);
@@ -381,6 +420,22 @@ function RealmSettingsGeneralTabForm({
               ...SIGNATURE_ALGORITHMS.map((v) => ({ key: v, value: v })),
             ]}
           />
+          <SelectControl
+            name={
+              convertAttributeNameToForm(
+                `attributes.${ALLOWED_MAPPER_TYPES_ATTR}`,
+              ) as any
+            }
+            label={t("allowedProtocolMapperTypesForClientAdministrators")}
+            labelIcon={t(
+              "allowedProtocolMapperTypesForClientAdministratorsHelp",
+            )}
+            variant={SelectVariant.typeaheadMulti}
+            controller={{
+              defaultValue: [],
+            }}
+            options={protocolMapperOptions}
+          />
           <FormGroup
             label={t("endpoints")}
             labelIcon={
@@ -415,16 +470,6 @@ function RealmSettingsGeneralTabForm({
                       serverBaseUrl,
                     )}.well-known/openid-credential-issuer/realms/${realmName}`}
                     title={t("oid4vcIssuerMetadata")}
-                  />
-                </StackItem>
-              )}
-              {isScimApiEnabled && realm.scimApiEnabled && (
-                <StackItem>
-                  <FormattedLink
-                    href={`${addTrailingSlash(
-                      serverBaseUrl,
-                    )}realms/${realmName}/scim/v2`}
-                    title={t("SCIM Endpoint")}
                   />
                 </StackItem>
               )}

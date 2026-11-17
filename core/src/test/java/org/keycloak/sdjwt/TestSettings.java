@@ -34,6 +34,7 @@ import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.ECDSASignatureVerifierContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureException;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 
@@ -77,6 +78,31 @@ public class TestSettings {
 
     public SignatureVerifierContext getHolderVerifierContext() {
         return holderVerifierContext;
+    }
+
+    public static SignatureSignerContext signerWithReportedAlgorithm(SignatureSignerContext delegate,
+                                                                      String reportedAlgorithm) {
+        return new SignatureSignerContext() {
+            @Override
+            public String getKid() {
+                return delegate.getKid();
+            }
+
+            @Override
+            public String getAlgorithm() {
+                return reportedAlgorithm;
+            }
+
+            @Override
+            public String getHashAlgorithm() {
+                return delegate.getHashAlgorithm();
+            }
+
+            @Override
+            public byte[] sign(byte[] data) throws SignatureException {
+                return delegate.sign(data);
+            }
+        };
     }
 
     // private constructor

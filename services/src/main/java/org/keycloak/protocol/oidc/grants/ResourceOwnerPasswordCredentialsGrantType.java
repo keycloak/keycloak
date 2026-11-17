@@ -36,6 +36,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.AccessTokenResponse;
@@ -124,8 +125,13 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         processor.evaluateRequiredActionTriggers();
         UserModel user = authSession.getAuthenticatedUser();
         if (user.getRequiredActionsStream().count() > 0 || authSession.getRequiredActions().size() > 0) {
-            // Remove authentication session as "Resource Owner Password Credentials Grant" is single-request scoped authentication
-            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, false);
+            // Auth session removal must persist even when the error response rolls back the main tx.
+            KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                RootAuthenticationSessionModel root = ctx.findRootAuthSession(authSession);
+                if (root != null) {
+                    ctx.session().authenticationSessions().removeRootAuthenticationSession(ctx.realm(), root);
+                }
+            });
             String errorMessage = "Account is not fully set up";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.RESOLVE_REQUIRED_ACTIONS);
@@ -147,8 +153,8 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
             if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(responseBuilder.getRefreshToken().getType())) {
-                // for direct access grants the online session can be removed
-                session.sessions().removeUserSession(realm, userSession);
+                // for direct access grants the online user session and its paired root auth session can be removed
+                AuthenticationManager.removeUserSessionAndRootAuthSession(session, realm, userSession);
             }
         }
 

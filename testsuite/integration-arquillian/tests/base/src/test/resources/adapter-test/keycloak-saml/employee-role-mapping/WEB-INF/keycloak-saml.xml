@@ -31,7 +31,7 @@
         <RoleMappingsProvider id="properties-based-role-mapper">
             <Property name="properties.resource.location" value="/WEB-INF/role-mappings.properties"/>
         </RoleMappingsProvider>
-        <IDP entityID="idp">
+        <IDP entityID="http://localhost:8080/auth/realms/demo">
             <SingleSignOnService requestBinding="POST"
                                  bindingUrl="http://localhost:8080/auth/realms/demo/protocol/saml"
                     />

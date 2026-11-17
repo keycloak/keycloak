@@ -1,59 +1,30 @@
 <#import "template.ftl" as layout>
+<#import "field.ftl" as field>
+<#import "buttons.ftl" as buttons>
+<#import "otp-credential.ftl" as otpCredentialCard>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('totp'); section>
+<!-- template: login-otp.ftl -->
+
     <#if section="header">
-        ${msg("doLogIn")}
+        ${msg("loginOtpTitle")}
     <#elseif section="form">
-        <form id="kc-otp-login-form" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
-            method="post">
+        <form id="kc-otp-login-form" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
             <#if otpLogin.userOtpCredentials?size gt 1>
-                <div class="${properties.kcFormGroupClass!}">
-                    <div class="${properties.kcInputWrapperClass!}">
-                        <#list otpLogin.userOtpCredentials as otpCredential>
-                            <input id="kc-otp-credential-${otpCredential?index}" class="${properties.kcLoginOTPListInputClass!}" type="radio" name="selectedCredentialId" value="${otpCredential.id}" <#if otpCredential.id == otpLogin.selectedCredentialId>checked="checked"</#if>>
-                            <label for="kc-otp-credential-${otpCredential?index}" class="${properties.kcLoginOTPListClass!}" tabindex="${otpCredential?index}">
-                                <span class="${properties.kcLoginOTPListItemHeaderClass!}">
-                                    <span class="${properties.kcLoginOTPListItemIconBodyClass!}">
-                                      <i class="${properties.kcLoginOTPListItemIconClass!}" aria-hidden="true"></i>
-                                    </span>
-                                    <span class="${properties.kcLoginOTPListItemTitleClass!}">${otpCredential.userLabel}</span>
-                                </span>
-                            </label>
-                        </#list>
+                <div class="${properties.kcFormGroupClass!}" role="radiogroup" aria-labelledby="kc-otp-credential-selection-label">
+                    <div class="${properties.kcFormGroupLabelClass!}">
+                        <span id="kc-otp-credential-selection-label" class="${properties.kcFormLabelClass!}">${msg("loginOtpSelectAuthenticator")}</span>
+                    </div>
+                    <div class="${properties.kcInputWrapperClass!} ${properties.kcOtpCredentialListClass!}">
+                        <@otpCredentialCard.cards credentials=otpLogin.userOtpCredentials selectedId=otpLogin.selectedCredentialId!'' />
                     </div>
                 </div>
+            <#else>
+                <input id="selectedCredentialId" type="hidden" name="selectedCredentialId" value="${otpLogin.selectedCredentialId!''}">
             </#if>
 
-            <div class="${properties.kcFormGroupClass!}">
-                <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="otp" class="${properties.kcLabelClass!}">${msg("loginOtpOneTime")}</label>
-                </div>
+            <@field.input name="otp" label=msg("loginOtpOneTime") autocomplete="one-time-code" inputmode="numeric" fieldName="totp" autofocus=true />
 
-            <div class="${properties.kcInputWrapperClass!}">
-                <input id="otp" name="otp" autocomplete="one-time-code" type="text" class="${properties.kcInputClass!}"
-                       autofocus aria-invalid="<#if messagesPerField.existsError('totp')>true</#if>"
-                       dir="ltr" />
-
-                <#if messagesPerField.existsError('totp')>
-                    <span id="input-error-otp-code" class="${properties.kcInputErrorMessageClass!}"
-                          aria-live="polite">
-                        ${kcSanitize(messagesPerField.get('totp'))?no_esc}
-                    </span>
-                </#if>
-            </div>
-        </div>
-
-            <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                    <div class="${properties.kcFormOptionsWrapperClass!}">
-                    </div>
-                </div>
-
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input
-                        class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                        name="login" id="kc-login" type="submit" value="${msg("doLogIn")}" />
-                </div>
-            </div>
+            <@buttons.loginButton />
         </form>
     </#if>
 </@layout.registrationLayout>

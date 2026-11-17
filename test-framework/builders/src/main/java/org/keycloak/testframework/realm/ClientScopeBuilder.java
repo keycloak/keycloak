@@ -16,9 +16,12 @@
  */
 package org.keycloak.testframework.realm;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -55,6 +58,14 @@ public class ClientScopeBuilder extends Builder<ClientScopeRepresentation> {
     public ClientScopeBuilder attribute(String key, String value) {
         rep.setAttributes(Builder.createIfNull(rep.getAttributes(), HashMap::new));
         rep.getAttributes().put(key, value);
+        return this;
+    }
+
+    public ClientScopeBuilder mappers(ProtocolMapperRepresentation... mappers) {
+        if (mappers != null) {
+            rep.setProtocolMappers(Builder.createIfNull(rep.getProtocolMappers(), LinkedList::new));
+            rep.getProtocolMappers().addAll(Arrays.asList(mappers));
+        }
         return this;
     }
 }

@@ -19,22 +19,25 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class LogoutRequestContext implements ClientPolicyContext {
+public class LogoutRequestContext implements ClientPolicyContext, ClientModelContext {
 
+    private final ClientModel client;
     private final MultivaluedMap<String, String> params;
 
-    public LogoutRequestContext(MultivaluedMap<String, String> params) {
+    public LogoutRequestContext(ClientModel client, MultivaluedMap<String, String> params) {
+        this.client = client;
         this.params = params;
     }
 
-    public LogoutRequestContext() {
-        this(null);
+    public LogoutRequestContext(ClientModel client) {
+        this(client, null);
     }
 
     @Override
@@ -44,5 +47,10 @@ public class LogoutRequestContext implements ClientPolicyContext {
 
     public MultivaluedMap<String, String> getParams() {
         return params;
+    }
+
+    @Override
+    public ClientModel getClient() {
+        return client;
     }
 }

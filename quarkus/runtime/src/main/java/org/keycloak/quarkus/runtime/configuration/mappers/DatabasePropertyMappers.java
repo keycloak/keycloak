@@ -9,12 +9,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.DurationConverter;
-import org.keycloak.config.CachingOptions;
-import org.keycloak.config.CachingOptions.Stack;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
@@ -22,6 +25,7 @@ import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.config.database.Database;
 import org.keycloak.config.database.Database.Vendor;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -45,27 +49,33 @@ import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_TYPE;
 import static org.keycloak.config.DatabaseOptions.DB_URL;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import static org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
 
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
+    private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION_NO_DEFAULT =
+            DB.toBuilder().synthetic().buildTime(false).defaultValue(Optional.empty()).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String PG_LOG_SERVER_ERROR_DETAIL = "quarkus.datasource.jdbc.additional-jdbc-properties.logServerErrorDetail";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
+    public static final String ORACLEDB_CONNECTION_PROPERTIES = "quarkus.datasource.jdbc.additional-jdbc-properties.ConnectionProperties";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
+    private static final String ORACLE_NET_CONNECT_TIMEOUT = "oracle.net.CONNECT_TIMEOUT";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
+
+    static final String AWS_JDBC_WRAPPER_DRIVER = "software.amazon.jdbc.Driver";
 
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     /**
-     * Minimum {@code db-pool-max-size} required for {@link Stack#jdbc_ping} and {@link Stack#jdbc_ping_udp}.
+     * Minimum {@code db-pool-max-size} required for {@link Stack#jdbc_ping}.
      * Determined experimentally — lower values cause startup failures due to connection pool exhaustion.
      * Verified by {@code KeycloakDeploymentTest#testDocumentedMinimalPoolMaxSizeWorks}.
      */
@@ -101,8 +111,12 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.POSTGRES, Database.Vendor.TIDB), "connectTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECTION_PROPERTIES)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(true))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.ORACLE), "oracle.net.CONNECT_TIMEOUT"))
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getOracleConnectTimeout(false))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
@@ -112,6 +126,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                    directly after the login. Once the connection is later acquired for a transaction, the UpdateSocketTimeoutOnConnectionAcquireInterceptor
                    will then later overwrite the socket timeout.
                    See https://github.com/keycloak/keycloak/issues/47174 for the discussion.
+                   PostgreSQL is intentionally excluded here: its socket timeout is set by
+                   UpdateSocketTimeoutOnConnectionAcquireInterceptor on every connection acquisition,
+                   including connections through the AWS JDBC Wrapper.
                  */
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(SOCKET_TIMEOUT)
@@ -256,6 +273,9 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
                         .build(),
+                fromOption(DatabaseOptions.DB_HEALTH_EXCLUDE)
+                        .to("quarkus.datasource.\"<datasource>\".health-exclude")
+                        .build(),
                 fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
                         .to("quarkus.datasource.jdbc.max-lifetime")
                         .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
@@ -275,9 +295,57 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "read-committed")
+                        .to("quarkus.datasource.jdbc.transaction-isolation-level")
+                        .isEnabled(DatabasePropertyMappers::isReadCommittedIsolationRequired)
                         .build()
         ));
+
+        result.addAll(List.of(
+                fromOption(DatabaseOptions.DB_DIALECT)
+                        .mapFrom(DatabaseOptions.DB_DIALECT)
+                        .to("quarkus.hibernate-orm.dialect")
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION_NO_DEFAULT)
+                        .mapFrom(DatabaseOptions.DB_SQL_JPA_DEBUG,
+                                (name, value, context) -> Boolean.parseBoolean(value) ? Boolean.TRUE.toString() : null)
+                        .to("quarkus.hibernate-orm.unsupported-properties.\"hibernate.use_sql_comments\"")
+                        .build(),
+                fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
+                        .mapFrom(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
+                        .to("quarkus.hibernate-orm.log.queries-slower-than-ms")
+                        .build()
+        ));
+
+        result.addAll(namedQueryMappers());
+
         return result;
+    }
+
+    private static List<PropertyMapper<?>> namedQueryMappers() {
+        Set<String> queryKeys = new TreeSet<>();
+
+        var kindToNamedQueries = Database.getDatabaseAliases().stream()
+                .map(Database::getDatabaseKind)
+                .flatMap(Optional::stream)
+                .distinct()
+                .collect(Collectors.toMap(Function.identity(), JpaUtils::loadSpecificNamedQueries));
+
+        kindToNamedQueries.values().forEach((namedQueries) -> queryKeys.addAll(namedQueries.stringPropertyNames()));
+
+        List<PropertyMapper<?>> mappers = new ArrayList<>();
+        for (String queryKey : queryKeys) {
+            mappers.add(fromOption(SYNTHETIC_RUNTIME_DB_OPTION_NO_DEFAULT)
+                    .mapFrom(DB, (name, db, context) -> db == null ? null
+                            : Database.getDatabaseKind(db)
+                                    .map(kindToNamedQueries::get)
+                                    .map(named -> named.getProperty(queryKey))
+                                    .orElse(null))
+                    .to("quarkus.hibernate-orm.unsupported-properties.\"" + QUERY_PROPERTY_PREFIX + queryKey + "\"")
+                    .build());
+        }
+        return mappers;
     }
 
     @Override
@@ -292,11 +360,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     }
 
     private static boolean isJdbcPingStack() {
-        if (!CachingPropertyMappers.cacheSetToInfinispan()) {
-            return false;
-        }
-        String stack = getOptionalKcValue(CachingOptions.CACHE_STACK).orElse(Stack.jdbc_ping.toString());
-        return Stack.jdbc_ping.toString().equals(stack) || Stack.jdbc_ping_udp.toString().equals(stack);
+        // jdbc-ping is now the only supported stack, so just check if ispn cache is enabled
+        return CachingPropertyMappers.cacheSetToInfinispan();
     }
 
     public static boolean isPostgresqlTargetServerTypeEnabled() {
@@ -322,6 +387,15 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         String db = Configuration.getConfigValue(DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElse(null);
         if (vendor != Database.Vendor.POSTGRES) {
+            return false;
+        }
+
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        // The AWS JDBC Wrapper passes this property through to the underlying PostgreSQL driver
+        boolean awsJdbcWrapper = AWS_JDBC_WRAPPER_DRIVER.equals(dbDriver);
+        // Any other custom driver is unknown, so do not add properties it might not support
+        boolean unknownCustomDriver = isCustomDriver(db, dbDriver) && !awsJdbcWrapper;
+        if (unknownCustomDriver) {
             return false;
         }
 
@@ -353,6 +427,22 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 !dbUrlProperties.contains("sendStringParametersAsUnicode");
     }
 
+    /**
+     * MySQL and MariaDB default to REPEATABLE READ transaction isolation, which acquires gap locks on
+     * {@code INSERT ... ON DUPLICATE KEY UPDATE} statements. When the stateless feature is enabled,
+     * concurrent login requests execute such upserts on authentication session and login failure tables,
+     * causing deadlocks under load. Switching to READ COMMITTED eliminates gap locks and resolves
+     * these deadlocks. This matches the isolation level PostgreSQL, Oracle, and SQL Server use by default.
+     */
+    public static boolean isReadCommittedIsolationRequired() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.MYSQL && vendor != Database.Vendor.MARIADB && vendor != Database.Vendor.TIDB) {
+            return false;
+        }
+        return Profile.isFeatureEnabled(Profile.Feature.STATELESS);
+    }
+
     private static ValueMapper getConnectTimeout(Collection<Database.Vendor> validForVendors, String timeoutProperty) {
         return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
             String db = getDatasourceOptionValue(DB, datasource).orElse(null);
@@ -365,12 +455,46 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             if (vendor == Vendor.MSSQL || vendor == Vendor.POSTGRES) {
                 return durationToSeconds(value);
             }
-            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.ORACLE || vendor == Vendor.TIDB) {
+            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.TIDB) {
                 return durationToMillis(value);
             }
 
             // We don't know if it is seconds or milliseconds for other databases.
             throw new IllegalArgumentException("Vendor " + vendor + " not supported for socket timeout calculation");
+        };
+    }
+
+    private static ValueMapper getOracleConnectTimeout(boolean forXa) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
+
+            if (checkSettingsAndVendor(EnumSet.of(Database.Vendor.ORACLE), ORACLE_NET_CONNECT_TIMEOUT, datasource, vendor, db)) {
+                return null;
+            }
+
+            var key = StringUtil.isNotBlank(datasource) ? TransactionOptions.getNamedTxXADatasource(datasource) : TransactionOptions.TRANSACTION_XA_ENABLED.getKey();
+            boolean isXaEnabled = Configuration.isKcPropertyTrue(key);
+
+            if (forXa != isXaEnabled) {
+                return null;
+            }
+
+            if (forXa) {
+                String connectionPropertiesKey = StringUtil.isNotBlank(datasource)
+                        ? "quarkus.datasource.\"" + datasource + "\".jdbc.additional-jdbc-properties.ConnectionProperties"
+                        : ORACLEDB_CONNECTION_PROPERTIES;
+                ConfigValue existing = context.proceed(connectionPropertiesKey);
+                if (existing != null && existing.getValue() != null) {
+                    if (!existing.getValue().contains(ORACLE_NET_CONNECT_TIMEOUT)) {
+                        log.warnf("Custom ConnectionProperties does not contain '%s'; the socket connect timeout will not be set.",
+                                ORACLE_NET_CONNECT_TIMEOUT);
+                    }
+                    return null;
+                }
+                return ORACLE_NET_CONNECT_TIMEOUT + "=" + durationToMillis(value);
+            }
+            return durationToMillis(value);
         };
     }
 
@@ -392,6 +516,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         };
     }
 
+    private static boolean isCustomDriver(String db, String dbDriver) {
+        return !Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver);
+    }
+
     private static boolean checkSettingsAndVendor(Collection<Vendor> validForVendors, String timeoutProperty, String datasource, Vendor vendor, String db) {
         if (!validForVendors.contains(vendor)) {
             // this jdbc property is not for this vendor
@@ -399,9 +528,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
 
         String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
-        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+        // The AWS JDBC Wrapper passes connection properties through to the underlying PostgreSQL driver
+        boolean awsJdbcWrapperOnPostgresql = vendor == Vendor.POSTGRES && AWS_JDBC_WRAPPER_DRIVER.equals(dbDriver);
+        // Any other custom driver is unknown, so do not add properties it might not support
+        boolean unknownCustomDriver = isCustomDriver(db, dbDriver) && !awsJdbcWrapperOnPostgresql;
+        if (unknownCustomDriver) {
             return true;
         }
 
@@ -423,7 +554,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return String.valueOf(DurationConverter.parseDuration(value).toSeconds());
     }
 
-    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {        
+    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
         return Database.getDefaultUrl(option -> getDatasourceOptionValue(option, name).orElse(null), name, value).orElse(null);
     }
 

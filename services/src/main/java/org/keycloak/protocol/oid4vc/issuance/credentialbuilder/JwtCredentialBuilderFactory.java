@@ -17,21 +17,15 @@
 
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import org.keycloak.VCFormat;
-import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
-import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
 public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
-
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     @Override
     public String getSupportedFormat() {
@@ -39,17 +33,7 @@ public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
     }
 
     @Override
-    public String getHelpText() {
-        return "Builds verifiable credentials on the JWT-VC format (https://identity.foundation/jwt-vc-presentation-profile).";
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return configProperties;
-    }
-
-    @Override
-    public CredentialBuilder create(KeycloakSession session, ComponentModel model) {
+    public CredentialBuilder create(KeycloakSession session) {
         return new JwtCredentialBuilder(new OffsetTimeProvider(), session);
     }
 }

@@ -1,5 +1,9 @@
 package org.keycloak.scim.resource;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.Permissions;
+
 public final class Scim {
 
     // Core Schemas
@@ -27,5 +31,12 @@ public final class Scim {
             case SCHEMA_RESOURCE_TYPE -> SCHEMA_CORE_SCHEMA;
             default -> throw new IllegalArgumentException("Unknown resource type " + resourceType);
         };
+    }
+
+    public static boolean hasDiscoveryEndpointPermission(KeycloakSession session) {
+        Permissions permissions = session.getContext().getPermissions();
+
+        return permissions.hasPermission(AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.QUERY)
+                || permissions.hasPermission(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.QUERY);
     }
 }

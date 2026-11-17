@@ -17,7 +17,14 @@
 
 package org.keycloak.tests.transactions;
 
+import java.util.Map;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.RealmModel;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -25,30 +32,74 @@ import org.keycloak.tests.suites.DatabaseTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @KeycloakIntegrationTest
-@DatabaseTest
 public class TransactionsTest {
+
+    private static final String ATTRIBUTE = "transactionsTest";
+
+    @InjectRealm
+    ManagedRealm realm;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
     @Test
-    public void testTransactionActive() {
-        runOnServer.run(
-                session -> {
-                    Assertions.assertTrue(session.getTransactionManager().isActive());
-                    session.getTransactionManager().commit();
-                    Assertions.assertFalse(session.getTransactionManager().isActive());
-                });
+    @DatabaseTest
+    public void testCommitPersistsChanges() {
+        String realmName = realm.getName();
+        realm.cleanup().add(TransactionsTest::removeTestAttribute);
+
         runOnServer.run(session -> {
-                    Assertions.assertTrue(session.getTransactionManager().isActive());
-                    session.getTransactionManager().rollback();
-                    Assertions.assertFalse(session.getTransactionManager().isActive());
-                }
-        );
+            Assertions.assertTrue(session.getTransactionManager().isActive());
+
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realmModel);
+            realmModel.setAttribute(ATTRIBUTE, "test");
+
+            session.getTransactionManager().commit();
+            Assertions.assertFalse(session.getTransactionManager().isActive());
+        });
+
+        assertThat(getTestAttribute(), is("test"));
+    }
+
+    @Test
+    @DatabaseTest
+    public void testRollbackDiscardsChanges() {
+        String realmName = realm.getName();
+        realm.cleanup().add(TransactionsTest::removeTestAttribute);
+
+        runOnServer.run(session -> {
+            Assertions.assertTrue(session.getTransactionManager().isActive());
+
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realmModel);
+            realmModel.setAttribute(ATTRIBUTE, "test-rollback");
+
+            session.getTransactionManager().rollback();
+            Assertions.assertFalse(session.getTransactionManager().isActive());
+        });
+
+        assertThat(getTestAttribute(), nullValue());
+    }
+
+    private String getTestAttribute() {
+        Map<String, String> attributes = realm.admin().toRepresentation().getAttributes();
+        return attributes != null ? attributes.get(ATTRIBUTE) : null;
+    }
+
+    private static void removeTestAttribute(RealmResource realmResource) {
+        RealmRepresentation rep = realmResource.toRepresentation();
+        if (rep.getAttributes() != null && rep.getAttributes().remove(ATTRIBUTE) != null) {
+            realmResource.update(rep);
+        }
     }
 
 }

@@ -17,18 +17,14 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.Locale;
 
 import org.keycloak.OAuthErrorException;
-import org.keycloak.models.CibaConfig;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -40,6 +36,7 @@ import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
+import org.keycloak.validation.ClientUriField;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
@@ -93,7 +90,7 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    confirmSecureUris(((ClientCRUDContext)context).getProposedClientRepresentation());
+                    confirmSecureUris(((ClientCRUDContext) context).getProposedClientRepresentation());
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
@@ -106,70 +103,21 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
     }
 
     private void confirmSecureUris(ClientRepresentation clientRep) throws ClientPolicyException {
-        // rootUrl
-        String rootUrl = clientRep.getRootUrl();
-        if (rootUrl != null) confirmSecureUris(List.of(rootUrl), "rootUrl");
-
-        // adminUrl
-        String adminUrl = clientRep.getAdminUrl();
-        if (adminUrl != null) confirmSecureUris(List.of(adminUrl), "adminUrl");
-
-        // baseUrl
-        String baseUrl = clientRep.getBaseUrl();
-        if (baseUrl != null) confirmSecureUris(List.of(baseUrl), "baseUrl");
-
-        // backchannel logout URL
-        String logoutUrl = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
-        if (logoutUrl != null) confirmSecureUris(List.of(logoutUrl), "logoutUrl");
-
-        // OAuth2 : redirectUris
-        List<String> redirectUris = clientRep.getRedirectUris();
-        if (redirectUris != null) confirmSecureUris(redirectUris, "redirectUris");
-
-        // web origins
-        List<String> webOrigins = clientRep.getWebOrigins();
-        if (webOrigins != null) {
-            List<String> resolvedWebOriginUrls = resolveUrlWithRedirects(webOrigins, redirectUris, rootUrl, true);
-            confirmSecureUris(resolvedWebOriginUrls, "webOrigins");
-        }
-
-        // OAuth2 : jwks_uri
-        String jwksUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.JWKS_URL);
-        if (jwksUri != null) confirmSecureUris(List.of(jwksUri), "jwksUri");
-
-        // OIDD : requestUris
-        List<String> requestUris = getAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS);
-        if (requestUris != null) confirmSecureUris(requestUris, "requestUris");
-
-        // CIBA : client notification endpoint
-        String clientNotificationEndpoint = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
-        if (clientNotificationEndpoint != null) confirmSecureUris(List.of(clientNotificationEndpoint), "cibaClientNotificationEndpoint");
-
-        // OIDC: Post Logout URL
-        List<String> postLogoutRedirectUris = getAttributeMultivalued(clientRep, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
-        if (postLogoutRedirectUris != null && !postLogoutRedirectUris.isEmpty()) {
-            List<String> validRedirects = clientRep.getRedirectUris() != null ? clientRep.getRedirectUris() : Collections.emptyList();
-            List<String> resolvedPostLogoutUrls = resolveUrlWithRedirects(postLogoutRedirectUris, validRedirects, clientRep.getRootUrl(), false);
-            confirmSecureUris(resolvedPostLogoutUrls, "postLogoutUris");
-        }
-
-        // logoUri
-        String logoUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.LOGO_URI);
-        if (logoUri != null) confirmSecureUris(List.of(logoUri), "logoUri");
-
-        // termsOfServiceUri
-        String termsOfServiceUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.TOS_URI);
-        if (termsOfServiceUri != null) confirmSecureUris(List.of(termsOfServiceUri), "tosUri");
-
-        // policyUri
-        String policyUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.POLICY_URI);
-        if (policyUri != null) confirmSecureUris(List.of(policyUri), "policyUri");
-    }
-
-    private List<String> getAttributeMultivalued(ClientRepresentation clientRep, String attrKey) {
-        String attrValue = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(attrKey);
-        if (attrValue == null) return Collections.emptyList();
-        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
+        ClientUriField.validate(clientRep, (field, values) -> {
+            if (field == ClientUriField.WEB_ORIGINS || field == ClientUriField.POST_LOGOUT_REDIRECT_URIS) {
+                if (field == ClientUriField.POST_LOGOUT_REDIRECT_URIS) {
+                    values = values.stream().filter(value -> !"-".equals(value)).toList();
+                }
+                values = List.copyOf(RedirectUtils.resolveUrlsWithRedirects(session, values, clientRep.getRootUrl(),
+                        clientRep.getRedirectUris(), field == ClientUriField.WEB_ORIGINS));
+            }
+            String errorName = switch (field) {
+                case BACKCHANNEL_LOGOUT_URL -> "logoutUrl";
+                case POST_LOGOUT_REDIRECT_URIS -> "postLogoutUris";
+                default -> field.getName();
+            };
+            confirmSecureUris(values, errorName);
+        });
     }
 
     private void confirmSecureUris(List<String> uris, String uriType) throws ClientPolicyException {
@@ -197,20 +145,26 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
         }
         if (!redirectUri.startsWith("https://")) {
-            boolean isRedirectToLocalhost = redirectUri.startsWith("http://localhost") || redirectUri.startsWith("http://127.0.0.1");
-            if (!configuration.allowHttpOnLocalhost || !isRedirectToLocalhost) {
+            if (!configuration.allowHttpOnLocalhost || !isHttpLoopbackUri(redirectUri)) {
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
             }
         }
     }
 
-    private List<String> resolveUrlWithRedirects(List<String> originalUrls, List<String> redirectUris,
-                                                 String rootUrl, boolean returnAsOrigins) {
-        if (originalUrls == null || originalUrls.isEmpty()) {
-            return Collections.emptyList();
+    private static boolean isHttpLoopbackUri(String redirectUri) {
+        URI uri;
+        try {
+            uri = new URI(redirectUri);
+        } catch (URISyntaxException e) {
+            logger.debugv("Invalid redirect_uri syntax: {0}", redirectUri);
+            return false;
         }
-        Set<String> resolvedUrls = RedirectUtils.resolveUrlsWithRedirects(session, originalUrls, rootUrl, redirectUris, returnAsOrigins);
-        return new ArrayList<>(resolvedUrls);
+
+        if (!"http".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null) {
+            return false;
+        }
+
+        return RedirectUtils.LOOPBACK_INTERFACES.contains(uri.getHost().toLowerCase(Locale.ROOT));
     }
 
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {

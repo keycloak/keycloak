@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.organization.authz.fgap;
 
+import java.util.List;
 import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -38,6 +39,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -47,6 +49,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.ORGANIZATIONS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -244,6 +247,40 @@ public class OrganizationResourceTypeEvaluationTest {
         try (Response response = realmAdminClient.realm(realm.getName()).organizations().get(orgAId).update(orgARep)) {
             assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
         }
+    }
+
+    @Test
+    public void testMemberOrganizationsFilteredByFgapViewPermission() {
+        UserPolicyRepresentation policy = createAdminPolicy();
+        // grant view on orgA only
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        // grant view on all users so auth.users().requireView(member) passes
+        PermissionTestUtils.createAllPermission(clientResource, USERS_RESOURCE_TYPE, policy, Set.of(VIEW));
+
+        // create a user who is a member of both orgs
+        UserRepresentation userRep = UserBuilder.create()
+                .username("multi-org-user")
+                .email("multi-org-user@orga.org")
+                .build();
+        String userId;
+        try (Response response = realm.admin().users().create(userRep)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            userId = ApiUtil.getCreatedId(response);
+        }
+        try (Response response = realm.admin().organizations().get(orgAId).members().addMember(userId)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        try (Response response = realm.admin().organizations().get(orgBId).members().addMember(userId)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        // myadmin has FGAP view on orgA only — should see only orgA in the member's organizations
+        List<OrganizationRepresentation> orgs = realmAdminClient.realm(realm.getName())
+                .organizations().get(orgAId).members().member(userId).getOrganizations();
+
+        Set<String> orgNames = orgs.stream().map(OrganizationRepresentation::getName).collect(java.util.stream.Collectors.toSet());
+        assertThat(orgNames.contains("orgA"), equalTo(true));
+        assertThat(orgNames.contains("orgB"), equalTo(false));
     }
 
     // -- helpers --

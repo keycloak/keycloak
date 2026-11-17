@@ -37,8 +37,7 @@ export async function fillLdapForm(page: Page, ldap: ComponentRepresentation) {
 }
 
 export async function selectEvictionPolicy(page: Page, policy: string) {
-  await page.locator("#kc-cache-policy").click();
-  await page.getByRole("option", { name: policy }).click();
+  await selectItem(page, "#kc-cache-policy", policy);
 }
 
 export async function fillEviction(page: Page, evict: [string, string]) {

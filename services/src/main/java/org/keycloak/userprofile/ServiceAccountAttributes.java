@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 
 /**
  * <p>A specific {@link Attributes} implementation to handle service accounts.
@@ -21,8 +22,9 @@ import org.keycloak.models.UserModel;
 public class ServiceAccountAttributes extends DefaultAttributes {
 
     public ServiceAccountAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
-                                    UserProfileMetadata profileMetadata, KeycloakSession session) {
-        super(context, attributes, user, profileMetadata, session);
+                                    UserProfileMetadata profileMetadata, KeycloakSession session,
+                                    UnmanagedAttributePolicy unmanagedAttributePolicy) {
+        super(context, attributes, user, profileMetadata, session, unmanagedAttributePolicy);
     }
 
     @Override

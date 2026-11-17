@@ -8,16 +8,8 @@ import jakarta.ws.rs.core.Response;
 public class ServiceException extends RuntimeException {
     private Response.Status suggestedHttpResponseStatus;
 
-    public ServiceException(String message) {
-        super(message);
-    }
-
-    public ServiceException(String message, Throwable throwable) {
-        super(message, throwable);
-    }
-
     public ServiceException(String message, Response.Status suggestedStatus) {
-        this(message);
+        super(message);
         this.suggestedHttpResponseStatus = suggestedStatus;
     }
 
@@ -31,7 +23,7 @@ public class ServiceException extends RuntimeException {
     }
 
     public WebApplicationException toWebApplicationException() {
-        return toWebApplicationException(Response.Status.BAD_REQUEST);
+        return toWebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
     }
 
     public WebApplicationException toWebApplicationException(Response.Status orReturnStatus) {

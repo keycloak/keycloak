@@ -64,6 +64,8 @@ public class CachedClient extends AbstractCachedClientScope<ClientModel> {
     protected boolean serviceAccountsEnabled;
     protected int nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
+    protected Long createdTimestamp;
+    protected Long lastModifiedTimestamp;
 
     public CachedClient(long revision, RealmModel realm, ClientModel model) {
         super(revision, model);
@@ -99,6 +101,8 @@ public class CachedClient extends AbstractCachedClientScope<ClientModel> {
 
         nodeReRegistrationTimeout = model.getNodeReRegistrationTimeout();
         registeredNodes = new TreeMap<>(model.getRegisteredNodes());
+        createdTimestamp = model.getCreatedTimestamp();
+        lastModifiedTimestamp = model.getLastModifiedTimestamp();
     }
 
     public String getClientId() {
@@ -223,5 +227,13 @@ public class CachedClient extends AbstractCachedClientScope<ClientModel> {
 
     public Map<String, String> getAuthFlowBindings() {
         return authFlowBindings;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
     }
 }

@@ -45,6 +45,9 @@ public class GroupsPartialImport extends AbstractPartialImport<GroupRepresentati
     }
 
     private GroupModel findGroupModel(KeycloakSession session, RealmModel realm, GroupRepresentation groupRep) {
+        if (groupRep.getPath() == null) {
+            return session.groups().getGroupByName(realm, null, groupRep.getName());
+        }
         return KeycloakModelUtils.findGroupByPath(session, realm, groupRep.getPath());
     }
 
@@ -60,7 +63,8 @@ public class GroupsPartialImport extends AbstractPartialImport<GroupRepresentati
 
     @Override
     public String existsMessage(RealmModel realm, GroupRepresentation groupRep) {
-        return "Group '" + groupRep.getPath() + "' already exists";
+        String identifier = groupRep.getPath() == null ? groupRep.getName() : groupRep.getPath();
+        return "Group '" + identifier + "' already exists";
     }
 
     @Override

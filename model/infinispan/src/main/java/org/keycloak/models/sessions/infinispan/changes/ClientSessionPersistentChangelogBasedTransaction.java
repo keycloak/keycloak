@@ -41,13 +41,16 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
 
     private static final Logger LOG = Logger.getLogger(ClientSessionPersistentChangelogBasedTransaction.class);
     private final UserSessionPersistentChangelogBasedTransaction userSessionTx;
+    private final boolean pessimisticLockingAuthenticationSession;
 
     public ClientSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> cacheHolder,
                                                             CacheHolder<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineCacheHolder,
-                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx) {
+                                                            UserSessionPersistentChangelogBasedTransaction userSessionTx,
+                                                            boolean pessimisticLockingAuthenticationSession) {
         super(session, CLIENT_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
         this.userSessionTx = userSessionTx;
+        this.pessimisticLockingAuthenticationSession = pessimisticLockingAuthenticationSession;
     }
 
     public void setUserSessionId(Collection<EmbeddedClientSessionKey> keys, String userSessionId, boolean offline) {
@@ -120,10 +123,9 @@ public class ClientSessionPersistentChangelogBasedTransaction extends Persistent
     protected boolean lockDatabaseEntity(RealmModel realm, EmbeddedClientSessionKey clientSessionKey, boolean offline, SessionUpdateTask.CacheOperation operation) {
         if (operation == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT) {
             // There might be concurrent inserts for the same key, which can lead to conflicts.
-            // In the future, we could lock the user session optimistically,
-            // but then the alternative path of a separate transaction would always need to lock that entity as well all the time (not only opportunistically).
+            // If the authentication session was locked pessimistically, we can still perform the insert safely.
             // See UserSessionConcurrencyTest#testConcurrentNotesChange for a test.
-            return false;
+            return pessimisticLockingAuthenticationSession;
         } else {
             return kcSession.getProvider(UserSessionPersisterProvider.class).lockClientSession(realm, clientSessionKey.userSessionId(), clientSessionKey.clientId(), offline, operation == SessionUpdateTask.CacheOperation.REMOVE);
         }

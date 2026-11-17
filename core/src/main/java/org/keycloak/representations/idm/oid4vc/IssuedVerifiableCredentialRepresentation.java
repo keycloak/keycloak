@@ -11,6 +11,25 @@ public class IssuedVerifiableCredentialRepresentation {
     private Long expiresAt;
     // This represents UUID of the client, which acts as OID4VCI wallet
     private String clientId;
+    private String clientName;
+    private String clientBaseUrl;
+
+    public String getClientName() {
+        return clientName;
+    }
+
+    public void setClientName(String clientName) {
+        this.clientName = clientName;
+    }
+
+    public String getClientBaseUrl() {
+        return clientBaseUrl;
+    }
+
+    public void setClientBaseUrl(String clientBaseUrl) {
+        this.clientBaseUrl = clientBaseUrl;
+    }
+
     private String revision;
 
     public String getId() {
@@ -71,14 +90,19 @@ public class IssuedVerifiableCredentialRepresentation {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         IssuedVerifiableCredentialRepresentation that = (IssuedVerifiableCredentialRepresentation) o;
-        return Objects.equals(id, that.id);
+        return Objects.equals(id, that.id) &&
+                Objects.equals(userId, that.userId) &&
+                Objects.equals(credentialType, that.credentialType) &&
+                Objects.equals(issuedAt, that.issuedAt) &&
+                Objects.equals(expiresAt, that.expiresAt) &&
+                Objects.equals(clientId, that.clientId) &&
+                Objects.equals(revision, that.revision);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(id, userId, credentialType, issuedAt, expiresAt, clientId, revision);
     }
 }

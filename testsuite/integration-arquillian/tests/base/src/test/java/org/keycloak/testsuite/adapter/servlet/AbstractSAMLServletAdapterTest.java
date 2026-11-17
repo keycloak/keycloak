@@ -13,7 +13,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
-import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.page.AbstractPage;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -28,7 +27,6 @@ import org.apache.http.util.EntityUtils;
 
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractSAMLServletAdapterTest extends AbstractServletsAdapterTest {
@@ -39,8 +37,6 @@ public abstract class AbstractSAMLServletAdapterTest extends AbstractServletsAda
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(SAMLSERVLETDEMO);
-        testRealmSAMLRedirectLoginPage.setAuthRealm(SAMLSERVLETDEMO);
-        testRealmSAMLPostLoginPage.setAuthRealm(SAMLSERVLETDEMO);
     }
 
     @Override
@@ -93,9 +89,9 @@ public abstract class AbstractSAMLServletAdapterTest extends AbstractServletsAda
         }
     }
 
-    protected void checkLoggedOut(AbstractPage page, Login loginPage) {
+    protected void checkLoggedOut(AbstractPage page) {
         page.navigateTo();
         waitForPageToLoad();
-        assertCurrentUrlStartsWith(loginPage);
+        loginPage.assertCurrent();
     }
 }

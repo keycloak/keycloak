@@ -139,7 +139,7 @@ public abstract class AbstractPermissionTest {
         policy.setName(name);
         policy.addGroup(groupIds);
         policy.setLogic(logic);
-        try (Response response = adminPermissionsClient.authorization().policies().group().create(policy)) {
+        try (Response response = client.authorization().policies().group().create(policy)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             realm.cleanup().add(r -> {
                 String policyId = r.clients().get(client.toRepresentation().getId()).authorization().policies().group().findByName(name).getId();
@@ -154,7 +154,7 @@ public abstract class AbstractPermissionTest {
         policy.setName(name);
         policy.addRole(roleId);
         policy.setLogic(logic);
-        try (Response response = adminPermissionsClient.authorization().policies().role().create(policy)) {
+        try (Response response = client.authorization().policies().role().create(policy)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             realm.cleanup().add(r -> {
                 String policyId = r.clients().get(client.toRepresentation().getId()).authorization().policies().group().findByName(name).getId();
@@ -171,7 +171,7 @@ public abstract class AbstractPermissionTest {
             policy.addClient(clientId);
         }
         policy.setLogic(Logic.POSITIVE);
-        try (Response response = adminPermissionsClient.authorization().policies().client().create(policy)) {
+        try (Response response = client.authorization().policies().client().create(policy)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             realm.cleanup().add(r -> {
                 ClientPolicyRepresentation clientPolicy = r.clients().get(client.toRepresentation().getId()).authorization().policies().client().findByName(name);

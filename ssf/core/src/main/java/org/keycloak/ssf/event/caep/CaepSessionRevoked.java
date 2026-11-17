@@ -8,14 +8,9 @@ public class CaepSessionRevoked extends CaepEvent {
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-session-revoked
      */
-    public static final String TYPE = "https://schemas.openid.net/secevent/caep/event-type/session-revoked";
+    public static final String TYPE = CaepEvent.EVENT_TYPE_BASE_URI + "session-revoked";
 
     public CaepSessionRevoked() {
         super(TYPE);
-    }
-
-    @Override
-    public String toString() {
-        return "SessionRevoked{}";
     }
 }

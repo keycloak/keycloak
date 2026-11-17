@@ -17,10 +17,11 @@
 
 package org.keycloak.sessions;
 
-import java.util.Map;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
 /**
@@ -56,8 +57,26 @@ public interface AuthenticationSessionProvider extends Provider {
      * Removes provided root authentication session.
      * @param realm {@code RealmModel} Associated realm to the given root authentication session.
      * @param authenticationSession {@code RootAuthenticationSessionModel} Can't be {@code null}.
+     * @throws NullPointerException if {@code realm} or {@code authenticationSession} is {@code null}.
+     * @throws ModelException if the authentication session does not belong to the given realm.
      */
     void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
+
+    /**
+     * Removes the root authentication session specified by the provided realm and id if it exists.
+     * Does nothing if {@code authenticationSessionId} is {@code null} or no such session exists.
+     * @param realm {@code RealmModel} Can't be {@code null}.
+     * @param authenticationSessionId String id of root authentication session. May be {@code null}.
+     */
+    default void removeRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
+        if (authenticationSessionId == null) {
+            return;
+        }
+        RootAuthenticationSessionModel rootAuthSession = getRootAuthenticationSession(realm, authenticationSessionId);
+        if (rootAuthSession != null) {
+            removeRootAuthenticationSession(realm, rootAuthSession);
+        }
+    }
 
     /**
      * Remove expired authentication sessions in all the realms
@@ -80,6 +99,17 @@ public interface AuthenticationSessionProvider extends Provider {
     default void removeExpired(RealmModel realm) {}
 
     /**
+     * Removes all root authentication sessions of the given realm that hold an in-progress authentication session
+     * for the given authenticated user, except for the provided root authentication session id.
+     *
+     * @param realm {@code RealmModel} Can't be {@code null}.
+     * @param user {@code UserModel} Can't be {@code null}.
+     * @param rootAuthenticationSessionIdToKeep optional id of a root authentication session to keep.
+     */
+    default void removeRootAuthenticationSessionsByAuthenticatedUser(RealmModel realm, UserModel user, String rootAuthenticationSessionIdToKeep) {
+    }
+
+    /**
      * Removes all associated root authentication sessions to the given realm which was removed.
      * @param realm {@code RealmModel} Can't be {@code null}.
      */
@@ -92,19 +122,7 @@ public interface AuthenticationSessionProvider extends Provider {
      * @deprecated to remove, all implementations are empty.
      */
     @Deprecated(since = "26.5", forRemoval = true)
-    void onClientRemoved(RealmModel realm, ClientModel client);
-
-    /**
-     * Requests update of authNotes of a root authentication session that is not owned
-     * by this instance but might exist somewhere in the cluster.
-     * 
-     * @param compoundId {@code AuthenticationSessionCompoundId} The method has no effect if {@code null}.
-     * @param authNotesFragment {@code Map<String, String>} Map with authNote values.
-     * Auth note is removed if the corresponding value in the map is {@code null}. Map itself can't be {@code null}.
-     * @deprecated For removal in Keycloak 27
-     */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {}
+    default void onClientRemoved(RealmModel realm, ClientModel client) {}
 
     default void migrate(String modelVersion) {
     }

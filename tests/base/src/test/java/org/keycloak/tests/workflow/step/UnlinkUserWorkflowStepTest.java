@@ -31,6 +31,7 @@ import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactor
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -143,8 +144,7 @@ public class UnlinkUserWorkflowStepTest extends AbstractWorkflowTest {
         loginPage.fillLogin(username, password);
         loginPage.submit();
 
-        assertTrue(driver.page().getPageSource().contains("Happy days"),
-                "Test user should be successfully logged in.");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private void addFederatedIdentity(String userId, String username, String idpAlias) {

@@ -31,7 +31,7 @@ public class ClientScopeAuthorizationRequestParserProviderFactory implements Aut
 
     @Override
     public AuthorizationRequestParserProvider create(KeycloakSession session) {
-        return new ClientScopeAuthorizationRequestParser();
+        return new ClientScopeAuthorizationRequestParser(session);
     }
 
     @Override

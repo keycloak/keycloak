@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -55,6 +56,52 @@ public class TrustMaterialResolver {
 
     public Optional<JWK> resolveKey(KeycloakSession session, String aliases, TrustMaterialRequest request) {
         return resolveKeys(session, aliases, request).findFirst();
+    }
+
+    public Stream<X509TrustMaterial> resolveX509Trust(KeycloakSession session, String aliases,
+                                                      TrustMaterialRequest request) {
+        if (Strings.isEmpty(aliases)) {
+            return Stream.empty();
+        }
+
+        return splitAliases(aliases).stream()
+                .map(alias -> resolveProvider(session, alias))
+                .flatMap(Optional::stream)
+                .flatMap(provider -> provider.resolveX509Trust(request));
+    }
+
+    /**
+     * Validates the x5c certificate chain against the X.509 trust material of the given providers.
+     * The providers are tried in order and the first successful validation wins.
+     *
+     * @return the leaf key of the validated chain, or null when none of the providers exposes X.509
+     *         trust material
+     */
+    public JWK validateX509Chain(KeycloakSession session, String aliases, TrustMaterialRequest request,
+                                 List<String> x5c, String algorithm) throws VerificationException {
+        if (Strings.isEmpty(aliases)) {
+            return null;
+        }
+
+        VerificationException lastFailure = null;
+        for (String alias : splitAliases(aliases)) {
+            Optional<TrustMaterialIdentityProvider<?>> provider = resolveProvider(session, alias);
+            if (provider.isEmpty()) {
+                continue;
+            }
+            try {
+                JWK leafKey = provider.get().validateX509Chain(request, x5c, algorithm);
+                if (leafKey != null) {
+                    return leafKey;
+                }
+            } catch (VerificationException e) {
+                lastFailure = e;
+            }
+        }
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
+        return null;
     }
 
     private Optional<TrustMaterialIdentityProvider<?>> resolveProvider(KeycloakSession session, String alias) {

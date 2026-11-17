@@ -25,9 +25,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.keycloak.TokenVerifier;
-import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyWrapper;
@@ -44,13 +42,11 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,124 +54,68 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
-public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
+public class JwtCredentialSignerTest extends OID4VCTest {
 
     @InjectRunOnServer
-    RunOnServerClient runOnServer;
-
-    @BeforeEach
-    public void setup() {
-        CryptoIntegration.init(this.getClass().getClassLoader());
-    }
-
-    @TestSetup
-    public void configureTestRealm() {
-        super.configureTestRealm();
-        ComponentsResource components = testRealm.admin().components();
-        components.add(getRsaKeyProvider(getRsaKey_Default())).close();
-    }
-
+    private RunOnServerClient runOnServer;
 
     @Test
     public void testUnsupportedCredentialBody() throws Throwable {
-        runOnServer.run(session -> {
-                    assertThrows(
-                            CredentialSignerException.class,
-                            () -> {
-                                new JwtCredentialSigner(session).signCredential(
-                                        new LDCredentialBody(getTestCredential(Map.of())),
-                                        new CredentialBuildConfig()
-                                );
-                            }
-                    );
-                }
-        );
+        runOnServer.run(session -> assertThrows(
+                CredentialSignerException.class,
+                () -> new JwtCredentialSigner(session).signCredential(
+                        new LDCredentialBody(getTestCredential(Map.of())),
+                        new CredentialBuildConfig())));
     }
 
-    // If an unsupported algorithm is provided, signing should reliably fail.
     @Test
     public void testUnsupportedAlgorithm() throws Throwable {
-        runOnServer.run(session -> {
-                    assertThrows(
-                            CredentialSignerException.class,
-                            () -> {
-                                testSignJwtCredential(
-                                        session,
-                                        getKeyIdFromSession(session),
-                                        "unsupported-algorithm",
-                                        Map.of()
-                                );
-                            }
-                    );
-                }
-        );
+        runOnServer.run(session -> assertThrows(
+                CredentialSignerException.class,
+                () -> testSignJwtCredential(session, getKeyIdFromSession(session), "unsupported-algorithm", Map.of())));
     }
 
-    // If an unknown key is provided, signing should reliably fail.
     @Test
     public void testFailIfNoKey() throws Throwable {
-        runOnServer.run(session -> {
-                    assertThrows(
-                            CredentialSignerException.class,
-                            () -> {
-                                testSignJwtCredential(
-                                        session,
-                                        "no-such-key",
-                                        Algorithm.RS256,
-                                        Map.of()
-                                );
-                            }
-                    );
-                }
-        );
+        runOnServer.run(session -> assertThrows(
+                CredentialSignerException.class,
+                () -> testSignJwtCredential(session, "no-such-key", Algorithm.RS256, Map.of())));
     }
 
-    // The provided credentials should be successfully signed as a JWT-VC.
     @Test
-    public void testRsaSignedCredentialWithOutIssuanceDate() throws Exception {
-        runOnServer.run(session -> {
-                    testSignJwtCredential(
-                            session,
-                            getKeyIdFromSession(session),
-                            Algorithm.RS256,
-                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                    "test", "test",
-                                    "arrayClaim", List.of("a", "b", "c"))
-                    );
-
-                }
-        );
+    public void testRsaSignedCredentialWithOutIssuanceDate() {
+        runOnServer.run(session ->
+                testSignJwtCredential(
+                        session,
+                        getKeyIdFromSession(session),
+                        Algorithm.RS256,
+                        Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                "test", "test",
+                                "arrayClaim", List.of("a", "b", "c"))));
     }
 
     @Test
     public void testRsaSignedCredentialWithIssuanceDate() {
-        runOnServer.run(session -> {
-                    testSignJwtCredential(
-                            session,
-                            getKeyIdFromSession(session),
-                            Algorithm.RS256,
-                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                    "test", "test",
-                                    "arrayClaim", List.of("a", "b", "c"),
-                                    "issuanceDate", Instant.ofEpochSecond(10))
-                    );
-                }
-        );
+        runOnServer.run(session ->
+                testSignJwtCredential(
+                        session,
+                        getKeyIdFromSession(session),
+                        Algorithm.RS256,
+                        Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                "test", "test",
+                                "arrayClaim", List.of("a", "b", "c"),
+                                "issuanceDate", Instant.ofEpochSecond(10))));
     }
 
     @Test
     public void testRsaSignedCredentialWithoutAdditionalClaims() {
-        runOnServer.run(session -> {
-                    testSignJwtCredential(
-                            session,
-                            getKeyIdFromSession(session),
-                            Algorithm.RS256,
-                            Map.of()
-                    );
-                }
-        );
+        runOnServer.run(session ->
+                testSignJwtCredential(
+                        session,
+                        getKeyIdFromSession(session),
+                        Algorithm.RS256,
+                        Map.of()));
     }
 
     public static void testSignJwtCredential(
@@ -190,19 +130,15 @@ public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
 
         VerifiableCredential testCredential = getTestCredential(claims);
         JwtCredentialBuilder builder = new JwtCredentialBuilder(
-                new StaticTimeProvider(1000),
+                new OID4VCIssuerTestBase.StaticTimeProvider(1000),
                 session
         );
 
-        CredentialBody credentialBody = builder.buildCredentialBody(
-                testCredential,
-                credentialBuildConfig
-        );
-
+        CredentialBody credentialBody = builder.buildCredentialBody(testCredential, credentialBuildConfig);
         String jwtCredential = jwtCredentialSigner.signCredential(credentialBody, credentialBuildConfig);
 
         KeyWrapper keyWrapper = getKeyFromSession(session);
-        SignatureVerifierContext verifierContext = null;
+        SignatureVerifierContext verifierContext;
         switch (algorithm) {
             case Algorithm.ES256: {
                 verifierContext = new ServerECDSASignatureVerifierContext(keyWrapper);
@@ -212,9 +148,8 @@ public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
                 verifierContext = new AsymmetricSignatureVerifierContext(keyWrapper);
                 break;
             }
-            default: {
-                fail("Algorithm not supported.");
-            }
+            default:
+                throw new AssertionError("Algorithm not supported.");
         }
 
         TokenVerifier<JsonWebToken> verifier = TokenVerifier
@@ -230,16 +165,20 @@ public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
         try {
             JsonWebToken theToken = verifier.getToken();
 
-            assertEquals(TEST_EXPIRATION_DATE.getEpochSecond(), theToken.getExp().longValue(), "JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC");
+            assertEquals(TEST_EXPIRATION_DATE.getEpochSecond(), theToken.getExp().longValue(),
+                    "JWT claim in JWT encoded VC or VP MUST be used to set the value of the expirationDate of the VC");
             if (claims.containsKey("issuanceDate")) {
-                assertEquals(((Instant) claims.get("issuanceDate")).getEpochSecond(), theToken.getNbf().longValue(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
+                assertEquals(((Instant) claims.get("issuanceDate")).getEpochSecond(), theToken.getNbf().longValue(),
+                        "VC Data Model v1.1 specifies that issuanceDate property MUST be represented as nbf JWT claim, and not iat JWT claim.");
             } else {
-                // if not specific date is set, check against "currentTime"
-                assertEquals(TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
+                assertEquals(TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue(),
+                        "VC Data Model v1.1 specifies that issuanceDate property MUST be represented as nbf JWT claim, and not iat JWT claim.");
             }
             assertEquals(TEST_ISSUER_DID, theToken.getIssuer(), "The issuer should be set in the token.");
             assertEquals(testCredential.getId().toString(), theToken.getId(), "The credential ID should be set as the token ID.");
-            Optional.ofNullable(testCredential.getCredentialSubject().getClaims().get("id")).ifPresent(id -> assertEquals(id.toString(), theToken.getSubject(), "If the credentials subject id is set, it should be set as the token subject."));
+            Optional.ofNullable(testCredential.getCredentialSubject().getClaims().get("id"))
+                    .ifPresent(id -> assertEquals(id.toString(), theToken.getSubject(),
+                            "If the credentials subject id is set, it should be set as the token subject."));
 
             assertNotNull(theToken.getOtherClaims().get("vc"), "The credentials should be included at the vc-claim.");
             VerifiableCredential credential = JsonSerialization.mapper.convertValue(theToken.getOtherClaims().get("vc"), VerifiableCredential.class);
@@ -253,10 +192,10 @@ public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
             CredentialSubject subject = credential.getCredentialSubject();
             claims.entrySet().stream()
                     .filter(e -> !e.getKey().equals("issuanceDate"))
-                    .forEach(e -> assertEquals(e.getValue(), subject.getClaims().get(e.getKey()), String.format("All additional claims should be set - %s is incorrect", e.getKey())));
+                    .forEach(e -> assertEquals(e.getValue(), subject.getClaims().get(e.getKey()),
+                            String.format("All additional claims should be set - %s is incorrect", e.getKey())));
         } catch (VerificationException e) {
             fail("Was not able to get the token from the verifier.");
         }
     }
-
 }

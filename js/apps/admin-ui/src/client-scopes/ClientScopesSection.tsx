@@ -25,13 +25,14 @@ import {
   ClientScope,
   ClientScopeDefaultOptionalType,
   changeScope,
-  DynamicScopeLabel,
-  isDynamicScope,
+  ParameterizedScopeLabel,
+  isParameterizedScope,
   removeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { emptyFormatter } from "../util";
@@ -58,12 +59,14 @@ const TypeSelector = (scope: TypeSelectorProps) => {
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
+  const { hasAccess } = useAccess();
 
   return (
     <CellDropdown
       clientScope={scope}
       type={scope.type}
       all
+      isDisabled={!hasAccess("manage-realm")}
       onSelect={async (value) => {
         try {
           await changeScope(adminClient, scope, value as AllClientScopeType);
@@ -87,7 +90,7 @@ const ClientScopeDetailLink = (scope: ClientScopeDefaultOptionalType) => {
       >
         {scope.name}
       </Link>{" "}
-      {isDynamicScope(scope) && <DynamicScopeLabel />}
+      {isParameterizedScope(scope) && <ParameterizedScopeLabel />}
     </>
   );
 };

@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -89,6 +91,20 @@ class KeycloakControllerTest {
         agg = new KeycloakStatusAggregator(null, 1L);
         controller.updateStatus(kc, null, agg, mockContext);
         CRAssert.assertKeycloakStatusCondition(agg.build(), "HasErrors", false, "The serviceAccountName cannot be set in a multi-namespace install mode");
+    }
+
+    @Test
+    void testPause() {
+        KeycloakController controller = new KeycloakController();
+        Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc = new KeycloakBuilder(kc).editMetadata().addToAnnotations(Constants.KEYCLOAK_PAUSE_ANNOTATION, "true").addToAnnotations(Constants.KEYCLOAK_PAUSED_ANNOTATION, "true").endMetadata().build();
+
+        Context<Keycloak> mockContext = Mockito.mock(Context.class, Mockito.RETURNS_DEEP_STUBS);
+
+        Mockito.when(mockContext.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(true);
+
+        var update = controller.reconcile(kc, mockContext);
+        assertFalse(update.isPatchResource());
     }
 
 }

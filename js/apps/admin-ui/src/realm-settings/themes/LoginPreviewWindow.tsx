@@ -1,219 +1,161 @@
-import { loginThemeProperties as properties } from "./LoginThemeProperties";
 import { usePreviewLogo } from "./LogoContext";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { Environment } from "../../environment-types";
+import { joinPath } from "../../utils/joinPath";
 import { usePreviewBackground } from "./BackgroundContext";
+import { pf5VarsToPf6Css } from "./pf5ToPf6Tokens";
 
 type LoginPreviewWindowProps = {
   cssVars: Record<string, string>;
 };
 
+/**
+ * Renders a static PatternFly 6 login preview that mirrors the keycloak.v3
+ * FreeMarker markup. Admin UI itself remains on PatternFly React 5, so this
+ * loads the theme CSS instead of using @patternfly/react-core LoginPage.
+ */
 export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
   const { environment } = useEnvironment<Environment>();
   const contextLogo = usePreviewLogo();
   const contextBackground = usePreviewBackground();
 
-  // Resources
-  const resourceUrlRoot = `/resources/${environment.resourceVersion}`;
-  const loginResourceUrl = `${resourceUrlRoot}/login/keycloak.v2`;
+  const resourceUrlRoot = joinPath(
+    environment.adminBaseUrl,
+    "resources",
+    environment.resourceVersion,
+  );
+  const loginResourceUrl = `${resourceUrlRoot}/login/keycloak.v3`;
+  const commonResourceUrl = `${resourceUrlRoot}/common/keycloak`;
 
-  // Default login theme resources from local files
   const defaultBgImage = `${loginResourceUrl}/img/keycloak-bg-darken.svg`;
   const defaultLogo = `${loginResourceUrl}/img/keycloak-logo-text.svg`;
 
-  // Use uploaded images or fall back to local defaults
-  // Both logo and background come from context for immediate reactivity
   const logoUrl = contextLogo?.logo || defaultLogo;
   const bgUrl = contextBackground?.background || defaultBgImage;
 
+  // Logo dimensions are theme CSS custom properties, not PatternFly tokens.
   const logoWidth = cssVars["logoWidth"];
   const logoHeight = cssVars["logoHeight"];
-
-  // CSS files
-  const pf5CssRootPath = `${resourceUrlRoot}/common/keycloak/vendor/patternfly-v5`;
-  const pf5Css = `${pf5CssRootPath}/patternfly.min.css`;
-  const pf5AddonsCss = `${pf5CssRootPath}/patternfly-addons.css`;
-
-  const stylesThemeCssUrl = `${loginResourceUrl}/css/styles.css`;
+  const themeCssVars = Object.fromEntries(
+    Object.entries(cssVars).filter(
+      ([key]) => key !== "logoWidth" && key !== "logoHeight",
+    ),
+  );
 
   return (
     <>
-      <link rel="stylesheet" href={pf5Css} />
-      <link rel="stylesheet" href={pf5AddonsCss} />
-      <link rel="stylesheet" href={stylesThemeCssUrl} />
-
+      <link
+        rel="stylesheet"
+        href={`${commonResourceUrl}/vendor/patternfly-v6/patternfly.min.css`}
+      />
+      <link
+        rel="stylesheet"
+        href={`${commonResourceUrl}/vendor/patternfly-v6/patternfly-addons.css`}
+      />
+      <link rel="stylesheet" href={`${loginResourceUrl}/css/styles.css`} />
       <style>{`
         .login-preview {
-            ${Object.entries(cssVars)
-              .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
-              .join("\n")}
+          ${pf5VarsToPf6Css(themeCssVars)}
 
-          /* Keycloak login theme variables - override with local/uploaded images */
           --keycloak-logo-url: url('${logoUrl}');
           --keycloak-bg-logo-url: url('${bgUrl}');
           ${logoHeight ? `--keycloak-logo-height: ${logoHeight};` : ""}
           ${logoWidth ? `--keycloak-logo-width: ${logoWidth};` : ""}
-        }
 
-        /* Apply background to #keycloak-bg */
-        .login-preview.${properties.kcHtmlClass} {
+          /* Theme CSS targets "login-pf body"; preview is not a document body. */
           background: var(--keycloak-bg-logo-url) no-repeat center center;
           background-size: cover;
-        }
-
-        /* Ensure login container is properly sized */
-        .login-preview .${properties.kcLogin} {
-            min-height:70vh;
-        }
-
-        /* Force single column layout */
-        .login-preview .${properties.kcLoginContainer} {
-          grid-template-columns: 34rem !important;
-          grid-template-areas: "header"
-                               "main" !important;
+          min-height: 40rem;
+          padding: 2rem 1rem;
         }
       `}</style>
-
-      <div className="login-preview-wrapper">
-        <div className={`login-preview ${properties.kcHtmlClass}`}>
-          <div id="keycloak-bg" data-page-id="login-preview">
-            <div className={properties.kcLogin}>
-              <div className={properties.kcLoginContainer}>
-                <header id="kc-header" className="pf-v5-c-login__header">
-                  <div id="kc-header-wrapper" className="pf-v5-c-brand">
-                    <div className="kc-logo-text">
-                      <span>Keycloak</span>
-                    </div>
-                  </div>
-                </header>
-                <main className={properties.kcLoginMain}>
-                  <div className={properties.kcLoginMainHeader}>
-                    <h1
-                      className={properties.kcLoginMainTitle}
-                      id="kc-page-title"
+      <div className="login-preview login-pf" data-testid="login-page-preview">
+        <div className="pf-v6-c-login">
+          <div className="pf-v6-c-login__container">
+            <header id="kc-header" className="pf-v6-c-login__header">
+              <div id="kc-header-wrapper" className="pf-v6-c-brand">
+                <div className="kc-logo-text">
+                  <span>Keycloak</span>
+                </div>
+              </div>
+            </header>
+            <main className="pf-v6-c-login__main">
+              <div className="pf-v6-c-login__main-header">
+                <h1 className="pf-v6-c-title pf-m-3xl" id="kc-page-title">
+                  Sign in to your account
+                </h1>
+              </div>
+              <div className="pf-v6-c-login__main-body">
+                <div id="kc-form">
+                  <div id="kc-form-wrapper">
+                    <form
+                      id="kc-form-login"
+                      className="pf-v6-c-form pf-v6-u-w-100"
+                      onSubmit={(event) => event.preventDefault()}
                     >
-                      Sign in to your account
-                    </h1>
-                  </div>
-                  <div className={properties.kcLoginMainBody}>
-                    <div id="kc-form">
-                      <div id="kc-form-wrapper">
-                        <form
-                          id="kc-form-login"
-                          className={properties.kcFormClass}
-                          onSubmit={(e) => e.preventDefault()}
-                          noValidate
-                        >
-                          {/* Username field */}
-                          <div className={properties.kcFormGroupClass}>
-                            <div className={properties.kcFormGroupLabelClass}>
-                              <label
-                                htmlFor="username"
-                                className={properties.kcFormLabelClass}
-                              >
-                                <span
-                                  className={properties.kcFormLabelTextClass}
-                                >
-                                  Username or email
-                                </span>
-                              </label>
-                            </div>
-                            <span className={properties.kcInputClass}>
+                      <div className="pf-v6-c-form__group">
+                        <div className="pf-v6-c-form__group-label pf-v6-u-pb-xs">
+                          <label
+                            htmlFor="username"
+                            className="pf-v6-c-form__label"
+                          >
+                            <span className="pf-v6-c-form__label-text">
+                              Username or email
+                            </span>
+                          </label>
+                        </div>
+                        <span className="pf-v6-c-form-control">
+                          <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            autoComplete="username"
+                            readOnly
+                          />
+                        </span>
+                      </div>
+                      <div className="pf-v6-c-form__group">
+                        <div className="pf-v6-c-form__group-label pf-v6-u-pb-xs">
+                          <label
+                            htmlFor="password"
+                            className="pf-v6-c-form__label"
+                          >
+                            <span className="pf-v6-c-form__label-text">
+                              Password
+                            </span>
+                          </label>
+                        </div>
+                        <div className="pf-v6-c-input-group">
+                          <div className="pf-v6-c-input-group__item pf-m-fill">
+                            <span className="pf-v6-c-form-control">
                               <input
-                                id="username"
-                                name="username"
-                                value=""
-                                type="text"
-                                autoComplete="username"
+                                id="password"
+                                name="password"
+                                type="password"
+                                autoComplete="current-password"
                                 readOnly
                               />
                             </span>
-                            <div id="input-error-container-username"></div>
                           </div>
-
-                          {/* Password field */}
-                          <div className={properties.kcFormGroupClass}>
-                            <div className={properties.kcFormGroupLabelClass}>
-                              <label
-                                htmlFor="password"
-                                className={properties.kcFormLabelClass}
-                              >
-                                <span
-                                  className={properties.kcFormLabelTextClass}
-                                >
-                                  Password
-                                </span>
-                              </label>
-                            </div>
-                            <div className={properties.kcInputGroup}>
-                              <div
-                                className={`${properties.kcInputGroupItemClass} ${properties.kcFill}`}
-                              >
-                                <span className={properties.kcInputClass}>
-                                  <input
-                                    id="password"
-                                    name="password"
-                                    value=""
-                                    type={"password"}
-                                    autoComplete="current-password"
-                                    readOnly
-                                  />
-                                </span>
-                              </div>
-                              <div className={properties.kcInputGroupItemClass}>
-                                <button
-                                  className={
-                                    properties.kcFormPasswordVisibilityButtonClass
-                                  }
-                                  type="button"
-                                  aria-label={"Show password"}
-                                >
-                                  <i
-                                    className={
-                                      properties.kcFormPasswordVisibilityIconShow
-                                    }
-                                    aria-hidden="true"
-                                  ></i>
-                                </button>
-                              </div>
-                            </div>
-                            <div
-                              className={properties.kcFormHelperTextClass}
-                              aria-live="polite"
-                            >
-                              <div
-                                className={properties.kcInputHelperTextClass}
-                              ></div>
-                            </div>
-                            <div id="input-error-container-password"></div>
-                          </div>
-
-                          {/* Submit button */}
-                          <div className={properties.kcFormGroupClass}>
-                            <div className={properties.kcFormActionGroupClass}>
-                              <button
-                                className={`${properties.kcButtonPrimaryClass} ${properties.kcButtonBlockClass}`}
-                                name="login"
-                                id="kc-login"
-                                type="submit"
-                              >
-                                Sign In
-                              </button>
-                            </div>
-                          </div>
-                        </form>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className={properties.kcLoginMainFooter}>
-                      {/* Social providers or additional info would go here */}
-                    </div>
+                      <div className="pf-v6-c-form__group">
+                        <div className="pf-v6-c-form__actions pf-v6-u-pt-xs pf-v6-u-flex-wrap">
+                          <button
+                            className="pf-v6-c-button pf-m-primary pf-m-block"
+                            id="kc-login"
+                            name="login"
+                            type="submit"
+                          >
+                            Sign In
+                          </button>
+                        </div>
+                      </div>
+                    </form>
                   </div>
-
-                  <div className={properties.kcLoginMainFooter}></div>
-                </main>
+                </div>
               </div>
-            </div>
+            </main>
           </div>
         </div>
       </div>

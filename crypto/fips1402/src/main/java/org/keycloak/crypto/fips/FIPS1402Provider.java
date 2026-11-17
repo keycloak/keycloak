@@ -56,6 +56,7 @@ import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jwe.alg.RSAWrapperAlgorithmProvider;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -91,9 +92,9 @@ public class FIPS1402Provider implements CryptoProvider {
         this.bcFipsProvider = existingBcFipsProvider == null ? new BouncyCastleFipsProvider() : existingBcFipsProvider;
 
         providers.put(CryptoConstants.A128KW, new FIPSAesKeyWrapAlgorithmProvider());
-        providers.put(CryptoConstants.RSA1_5, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_PKCS1v1_5));
-        providers.put(CryptoConstants.RSA_OAEP, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP));
-        providers.put(CryptoConstants.RSA_OAEP_256, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP.withDigest(FipsSHS.Algorithm.SHA256)));
+        providers.put(CryptoConstants.RSA1_5, new RSAWrapperAlgorithmProvider(new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_PKCS1v1_5)));
+        providers.put(CryptoConstants.RSA_OAEP, new RSAWrapperAlgorithmProvider(new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP)));
+        providers.put(CryptoConstants.RSA_OAEP_256, new RSAWrapperAlgorithmProvider(new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP.withDigest(FipsSHS.Algorithm.SHA256))));
         providers.put(CryptoConstants.ECDH_ES, new BCFIPSEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A128KW, new BCFIPSEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A192KW, new BCFIPSEcdhEsAlgorithmProvider());
@@ -246,6 +247,10 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     @Override
+    // Socket ownership is returned directly or through AbstractDelegatingSSLSocket, but the anonymous
+    // factory's inherited contracts do not model these transfers. Revisit when socket-factory ownership
+    // and alias contracts are modeled.
+    @SuppressWarnings({"override.return", "required.method.not.called", "reset.not.owning"})
     public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
         // See https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.9.pdf - Section 3.5.2 (Endpoint identification)
         return new CustomSSLSocketFactory(delegate) {

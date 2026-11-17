@@ -22,13 +22,20 @@ import java.util.Objects;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
 /**
  * A JPA entity to store the key-value configuration.
  */
-@SuppressWarnings("unused")
+@NamedQueries({
+        @NamedQuery(
+                name = "findServerConfigKeys",
+                query = "SELECT c.key FROM ServerConfigEntity c"
+        ),
+})
 @Table(name = "SERVER_CONFIG")
 @Entity
 public class ServerConfigEntity {

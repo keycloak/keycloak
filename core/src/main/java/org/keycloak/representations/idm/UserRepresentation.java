@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.representations.idm.oid4vc.IssuedVerifiableCredentialRepresentation;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 
 /**
@@ -46,6 +47,7 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected Integer notBefore;
 
     protected List<UserVerifiableCredentialRepresentation> verifiableCredentials;
+    protected List<IssuedVerifiableCredentialRepresentation> issuedVerifiableCredentials;
 
     @Deprecated
     protected Map<String, List<String>> applicationRoles;
@@ -84,6 +86,7 @@ public class UserRepresentation extends AbstractUserRepresentation{
         this.clientConsents = rep.getClientConsents();
         this.notBefore = rep.getNotBefore();
         this.verifiableCredentials = rep.getVerifiableCredentials();
+        this.issuedVerifiableCredentials = rep.getIssuedVerifiableCredentials();
 
         this.applicationRoles = rep.getApplicationRoles();
         this.socialLinks = rep.getSocialLinks();
@@ -188,6 +191,14 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setVerifiableCredentials(List<UserVerifiableCredentialRepresentation> verifiableCredentials) {
         this.verifiableCredentials = verifiableCredentials;
+    }
+
+    public List<IssuedVerifiableCredentialRepresentation> getIssuedVerifiableCredentials() {
+        return issuedVerifiableCredentials;
+    }
+
+    public void setIssuedVerifiableCredentials(List<IssuedVerifiableCredentialRepresentation> issuedVerifiableCredentials) {
+        this.issuedVerifiableCredentials = issuedVerifiableCredentials;
     }
 
     @Deprecated

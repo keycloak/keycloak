@@ -37,14 +37,17 @@ export const Role = () => {
           values.map((r) => adminClient.roles.findOneById({ id: r.id })),
         );
         return Promise.all(
-          roles.map(async (role) => ({
-            role: role!,
-            client: role!.clientRole
-              ? await adminClient.clients.findOne({
-                  id: role?.containerId!,
-                })
-              : undefined,
-          })),
+          roles
+            // A role deleted since it was selected comes back as null.
+            .filter((role) => role !== null)
+            .map(async (role) => ({
+              role,
+              client: role.clientRole
+                ? ((await adminClient.clients.findOne({
+                    id: role.containerId!,
+                  })) ?? undefined)
+                : undefined,
+            })),
         );
       }
       return Promise.resolve([]);

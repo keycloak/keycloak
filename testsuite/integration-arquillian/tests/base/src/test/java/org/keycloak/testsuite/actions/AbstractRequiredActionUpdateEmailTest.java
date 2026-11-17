@@ -31,7 +31,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -62,9 +61,6 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
     @Page
     protected LoginUpdateProfilePage updateProfilePage;
-
-    @Page
-	protected AppPage appPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -164,7 +160,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		// assert that form holds submitted values during validation error
 		Assertions.assertEquals("test-user@localhost", updateEmailPage.getEmail());
 
-		Assertions.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("This email is already associated with an existing account.", updateEmailPage.getEmailInputError());
 
 		Assertions.assertNull(events.poll());
 	}

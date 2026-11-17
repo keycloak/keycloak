@@ -1,11 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { generatePath } from "react-router-dom";
 import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
-import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
 import { login } from "../utils/login.js";
-import { selectItem } from "../utils/form.ts";
+import { assertNotificationMessage } from "../utils/masthead.ts";
+import { changeTimeUnit, selectItem } from "../utils/form.ts";
 
 test("OID4VCI section is hidden in Tokens tab when verifiable credentials are disabled", async ({
   page,
@@ -69,23 +68,23 @@ test("should render fields and save values with correct attribute keys", async (
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
 
   await expect(nonceField).toBeVisible();
-  await expect(preAuthField).toBeVisible();
+  await expect(credentialOfferLifespanField).toBeVisible();
 
   await nonceField.fill("60");
-  await preAuthField.fill("120");
+  await credentialOfferLifespanField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData).toBeDefined();
   // TimeSelector converts values based on selected unit (60 minutes = 3600 seconds, 120 seconds = 120 seconds)
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
-  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("120");
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("7200");
 });
 
 test("should persist values after page refresh", async ({ page }) => {
@@ -103,25 +102,20 @@ test("should persist values after page refresh", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
 
   await nonceField.fill("60");
-  await preAuthField.fill("120");
+  await credentialOfferLifespanField.fill("120");
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
-  // Refresh the page
   await page.reload();
 
-  // Navigate back to realm settings using the same pattern as login
-  const url = new URL(
-    generatePath(ROOT_PATH, { realm: testBed.realm }),
-    SERVER_URL,
-  );
-  url.hash = toRealmSettings({ realm: testBed.realm }).pathname!;
-  await page.goto(url.toString());
+  // TimeSelector shows the saved values in the largest fitting unit (3600s = 1 hour, 7200s = 2 hours)
+  await expect(nonceField).toHaveValue("1");
+  await expect(credentialOfferLifespanField).toHaveValue("2");
 
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
   const realmData = await adminClient.getRealm(testBed.realm);
@@ -132,12 +126,12 @@ test("should persist values after page refresh", async ({ page }) => {
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
-  const preAuthValue = parseInt(
+  const credentialOfferLifespanValue = parseInt(
     realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
-  expect(preAuthValue).toBeGreaterThan(0);
+  expect(credentialOfferLifespanValue).toBeGreaterThan(0);
 });
 
 test("should validate form fields and save valid values", async ({ page }) => {
@@ -155,29 +149,29 @@ test("should validate form fields and save valid values", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Test that fields are visible and can be filled
   await expect(nonceField).toBeVisible();
-  await expect(preAuthField).toBeVisible();
+  await expect(credentialOfferLifespanField).toBeVisible();
   await expect(saveButton).toBeVisible();
 
   // Test with valid values - this should work
   await nonceField.clear();
-  await preAuthField.clear();
+  await credentialOfferLifespanField.clear();
 
   // Fill with smaller, more reasonable values for testing
   await nonceField.fill("60");
-  await preAuthField.fill("120");
+  await credentialOfferLifespanField.fill("120");
 
   // Save button should be enabled when form has values
   await expect(saveButton).toBeEnabled();
 
   await saveButton.click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   // Verify the values were saved correctly
   const realmData = await adminClient.getRealm(testBed.realm);
@@ -188,12 +182,12 @@ test("should validate form fields and save valid values", async ({ page }) => {
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
-  const preAuthValue = parseInt(
+  const credentialOfferLifespanValue = parseInt(
     realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
-  expect(preAuthValue).toBeGreaterThan(0);
+  expect(credentialOfferLifespanValue).toBeGreaterThan(0);
 });
 
 test("should show validation error for values below minimum threshold", async ({
@@ -213,12 +207,19 @@ test("should show validation error for values below minimum threshold", async ({
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
+  const credentialOfferLifespanField = page.getByTestId(
+    "attributes.credentialOfferLifespanS",
+  );
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Fill with values below the minimum threshold (29 seconds)
   await nonceField.fill("29");
-  await preAuthField.fill("29");
+  await credentialOfferLifespanField.fill("29");
+  await changeTimeUnit(
+    page,
+    "Seconds",
+    "#credential-offer-lifespan-select-menu",
+  );
 
   await saveButton.click();
 
@@ -276,9 +277,7 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   await batchIssuanceInput.fill("5");
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(
@@ -325,9 +324,7 @@ test("should save time-based correlation mitigation settings", async ({
   await randomizationWindowInput.fill("3600");
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   await selectItem(page, strategyField, "Round");
 
@@ -337,9 +334,7 @@ test("should save time-based correlation mitigation settings", async ({
   await selectItem(page, roundingUnitField, "Minutes");
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["oid4vci.time.claims.strategy"]).toBe("round");
@@ -366,36 +361,122 @@ test("should save Deflate Compression setting", async ({ page }) => {
   );
   await requestEncryptionSwitch.click({ force: true });
 
+  await page.getByTestId("tokens-tab-save").click();
+  await assertNotificationMessage(page, "Realm successfully updated");
+
+  let realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+
   const deflateSwitch = page.getByTestId(
     "attributes.oid4vci.request.zip.algorithms",
   );
   await deflateSwitch.click({ force: true });
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
-  let realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
-    "true",
-  );
+  realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe("DEF");
 
   await deflateSwitch.click({ force: true });
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
-    "false",
-  );
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
 });
 
-test("should save Attestation Trust settings (Trusted Keys and IDs)", async ({
+test("should disable saved Deflate Compression value", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+    attributes: {
+      "oid4vci.request.encryption.required": "true",
+      "oid4vci.request.zip.algorithms": "DEF",
+    },
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  await page.getByTestId("rs-tokens-tab").click();
+  await page.getByTestId("jump-link-oid4vci-attributes").click();
+
+  const deflateSwitch = page.getByTestId(
+    "attributes.oid4vci.request.zip.algorithms",
+  );
+  await expect(deflateSwitch).toBeChecked();
+
+  await deflateSwitch.click({ force: true });
+  await expect(deflateSwitch).not.toBeChecked();
+
+  await page.getByTestId("tokens-tab-save").click();
+  await assertNotificationMessage(page, "Realm successfully updated");
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+});
+
+test("should normalize legacy enabled Deflate Compression value on save", async ({
   page,
 }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+    attributes: {
+      "oid4vci.request.encryption.required": "true",
+      "oid4vci.request.zip.algorithms": "true",
+    },
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  await page.getByTestId("rs-tokens-tab").click();
+  await page.getByTestId("jump-link-oid4vci-attributes").click();
+
+  await expect(
+    page.getByTestId("attributes.oid4vci.request.zip.algorithms"),
+  ).toBeChecked();
+
+  await page.getByTestId("attributes.credentialOfferLifespanS").fill("120");
+  await page.getByTestId("tokens-tab-save").click();
+  await assertNotificationMessage(page, "Realm successfully updated");
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe("DEF");
+});
+
+test("should remove legacy disabled Deflate Compression value on save", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+    attributes: {
+      "oid4vci.request.encryption.required": "true",
+      "oid4vci.request.zip.algorithms": "false",
+    },
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  await page.getByTestId("rs-tokens-tab").click();
+  await page.getByTestId("jump-link-oid4vci-attributes").click();
+
+  await expect(
+    page.getByTestId("attributes.oid4vci.request.zip.algorithms"),
+  ).not.toBeChecked();
+
+  await page.getByTestId("attributes.credentialOfferLifespanS").fill("120");
+  await page.getByTestId("tokens-tab-save").click();
+  await assertNotificationMessage(page, "Realm successfully updated");
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(
+    realmData?.attributes?.["oid4vci.request.zip.algorithms"],
+  ).toBeUndefined();
+});
+
+test("should save issuer info setting", async ({ page }) => {
   await using testBed = await createTestBed({
     verifiableCredentialsEnabled: true,
   });
@@ -407,29 +488,70 @@ test("should save Attestation Trust settings (Trusted Keys and IDs)", async ({
   const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
   await oid4vciJumpLink.click();
 
-  const trustedKeyIdsInput = page.getByTestId("trusted-key-ids");
-  const trustedKeysInput = page.getByTestId("trusted-keys");
+  const issuerInfoField = page.getByTestId("attributes.oid4vci🍺issuer_info");
+  await expect(issuerInfoField).toBeVisible();
 
-  const testKeyIds = "kid-1, kid-2, kid-3";
-  const testTrustedKeysJson =
-    '[{"kty":"RSA","kid":"external-key","n":"...","e":"AQAB"}]';
-
-  await expect(trustedKeyIdsInput).toBeVisible();
-  await expect(trustedKeysInput).toBeVisible();
-
-  await trustedKeyIdsInput.fill(testKeyIds);
-  await trustedKeysInput.fill(testTrustedKeysJson);
+  const issuerInfoJson =
+    '[{"format":"registration_cert","data":"eyJhbGciOiJFUzI1NiJ9.eyJzdWIiOiJEQSJ9.sig"}]';
+  await issuerInfoField.fill(issuerInfoJson);
 
   await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
+  await assertNotificationMessage(page, "Realm successfully updated");
 
   const realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vc.attestation.trusted_key_ids"]).toBe(
-    testKeyIds,
-  );
-  expect(realmData?.attributes?.["oid4vc.attestation.trusted_keys"]).toBe(
-    testTrustedKeysJson,
-  );
+  expect(realmData?.attributes?.["oid4vci.issuer_info"]).toBe(issuerInfoJson);
+});
+
+test("should reject invalid issuer info JSON", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const issuerInfoField = page.getByTestId("attributes.oid4vci🍺issuer_info");
+  await issuerInfoField.fill("not-valid-json");
+
+  await page.getByTestId("tokens-tab-save").click();
+
+  await expect(
+    page
+      .getByText("Must be a valid JSON array of issuer_info elements.")
+      .first(),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId("global-alerts").getByText("Realm successfully updated"),
+  ).toHaveCount(0);
+});
+
+test("should reject issuer info with malformed elements", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const issuerInfoField = page.getByTestId("attributes.oid4vci🍺issuer_info");
+  await issuerInfoField.fill('[{"format":null,"data":null}]');
+
+  await page.getByTestId("tokens-tab-save").click();
+
+  await expect(
+    page
+      .getByText("Must be a valid JSON array of issuer_info elements.")
+      .first(),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId("global-alerts").getByText("Realm successfully updated"),
+  ).toHaveCount(0);
 });

@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.admin.OperationType;
@@ -44,7 +45,6 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.user.SynchronizationResult;
 
@@ -249,29 +249,30 @@ public class UserStorageProviderResource {
         ComponentModel mapperModel = realm.getComponent(mapperId);
         if (mapperModel == null) throw new NotFoundException("Mapper model not found");
 
-        LDAPStorageProvider ldapProvider = (LDAPStorageProvider) session.getProvider(UserStorageProvider.class, parentModel);
+        session.getProvider(UserStorageProvider.class, parentModel);
         LDAPStorageMapper mapper = session.getProvider(LDAPStorageMapper.class, mapperModel);
 
         ServicesLogger.LOGGER.syncingDataForMapper(mapperModel.getName(), mapperModel.getProviderId(), direction);
 
-        SynchronizationResult syncResult;
-        if ("fedToKeycloak".equals(direction)) {
-            try {
-                syncResult = mapper.syncDataFromFederationProviderToKeycloak(realm);
-            } catch(Exception e) {
-                String errorMsg = getErrorCode(e);
-                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+        SynchronizationResult syncResult = AdminPermissionsSchema.runWithoutAuthorization(session, () -> {
+            if ("fedToKeycloak".equals(direction)) {
+                try {
+                    return mapper.syncDataFromFederationProviderToKeycloak(realm);
+                } catch(Exception e) {
+                    String errorMsg = getErrorCode(e);
+                    throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+                }
+            } else if ("keycloakToFed".equals(direction)) {
+                try {
+                    return mapper.syncDataFromKeycloakToFederationProvider(realm);
+                } catch(Exception e) {
+                    String errorMsg = getErrorCode(e);
+                    throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
+                }
+            } else {
+                throw new BadRequestException("Unknown direction: " + direction);
             }
-        } else if ("keycloakToFed".equals(direction)) {
-            try {
-                syncResult = mapper.syncDataFromKeycloakToFederationProvider(realm);
-            } catch(Exception e) {
-                String errorMsg = getErrorCode(e);
-                throw ErrorResponse.error(errorMsg, Response.Status.BAD_REQUEST);
-            }
-        } else {
-            throw new BadRequestException("Unknown direction: " + direction);
-        }
+        });
 
         Map<String, Object> eventRep = new HashMap<>();
         eventRep.put("action", direction);

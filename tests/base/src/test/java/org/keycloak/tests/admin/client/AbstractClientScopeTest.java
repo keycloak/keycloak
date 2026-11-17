@@ -12,7 +12,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -22,8 +21,7 @@ import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
 
-@KeycloakIntegrationTest
-public class AbstractClientScopeTest {
+public abstract class AbstractClientScopeTest {
 
     @InjectRealm
     ManagedRealm managedRealm;

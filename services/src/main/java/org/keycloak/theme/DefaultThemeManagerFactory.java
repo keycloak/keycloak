@@ -20,9 +20,13 @@ package org.keycloak.theme;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.Config;
+import org.keycloak.encoding.ResourceEncodingProvider;
+import org.keycloak.encoding.ResourceEncodingProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ThemeManager;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.theme.freemarker.FreeMarkerProviderFactory;
 
 import org.jboss.logging.Logger;
 
@@ -34,6 +38,8 @@ public class DefaultThemeManagerFactory implements ThemeManagerFactory {
     private static final Logger log = Logger.getLogger(DefaultThemeManagerFactory.class);
 
     private ConcurrentHashMap<ThemeKey, Theme> themeCache;
+
+    private KeycloakSessionFactory sessionFactory;
 
     public DefaultThemeManagerFactory() {
         if(Config.scope("theme").getBoolean("cacheThemes", true)) {
@@ -52,6 +58,7 @@ public class DefaultThemeManagerFactory implements ThemeManagerFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        this.sessionFactory = factory;
     }
 
     @Override
@@ -98,6 +105,16 @@ public class DefaultThemeManagerFactory implements ThemeManagerFactory {
         if (themeCache != null) {
             themeCache.clear();
             log.info("Cleared theme cache");
+        }
+
+        if (sessionFactory != null) {
+            FreeMarkerProviderFactory freeMarkerProviderFactory = (FreeMarkerProviderFactory) sessionFactory.getProviderFactory(FreeMarkerProvider.class);
+            if (freeMarkerProviderFactory != null) {
+                freeMarkerProviderFactory.clearCache();
+            }
+
+            sessionFactory.getProviderFactoriesStream(ResourceEncodingProvider.class)
+                    .forEach(f -> ((ResourceEncodingProviderFactory) f).clearCache());
         }
     }
 

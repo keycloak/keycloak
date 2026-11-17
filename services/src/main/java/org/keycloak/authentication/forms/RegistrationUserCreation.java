@@ -32,8 +32,6 @@ import org.keycloak.authentication.FormContext;
 import org.keycloak.authentication.ValidationContext;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.authentication.requiredactions.TermsAndConditions;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -294,7 +292,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private boolean validateOrganizationInvitation(ValidationContext context, MultivaluedMap<String, String> formData, String email) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(context.getSession())) {
             Consumer<List<FormMessage>> error = messages -> {
                 context.error(Errors.INVALID_TOKEN);
                 context.validationError(formData, messages);
@@ -355,11 +353,17 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     }
 
     private void addOrganizationMember(FormContext context, UserModel user) {
-        if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
+        if (Organizations.isEnabled(context.getSession())) {
             InviteOrgActionToken token = (InviteOrgActionToken) context.getSession().getAttribute(InviteOrgActionToken.class.getName());
 
             if (token != null) {
                 KeycloakSession session = context.getSession();
+
+                if (!Organizations.useInvitationToken(session, token)) {
+                    throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR,
+                            Errors.INVALID_TOKEN, Messages.STALE_INVITE_ORG_LINK);
+                }
+
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                 OrganizationModel orgModel = provider.getById(token.getOrgId());
                 provider.addManagedMember(orgModel, user);

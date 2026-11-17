@@ -38,7 +38,7 @@ public final class Workflows {
         F providerFactory = (F) sessionFactory.getProviderFactory(providerClass, providerId);
 
         if (providerFactory == null) {
-            throw new WorkflowInvalidStateException("Could not find provider factory with id: " + providerId);
+            throw new WorkflowInvalidStateException("workflowProviderFactoryNotFound", providerId);
         }
         return providerFactory;
     }

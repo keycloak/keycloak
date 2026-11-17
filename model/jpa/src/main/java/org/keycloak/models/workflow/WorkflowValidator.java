@@ -14,6 +14,7 @@ import org.keycloak.models.workflow.expression.ConditionNameCollector;
 import org.keycloak.models.workflow.expression.ConditionTypeCollector;
 import org.keycloak.models.workflow.expression.EvaluatorUtils;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.utils.StringUtil;
 
@@ -40,6 +41,8 @@ public class WorkflowValidator {
             validateConditionExpression(session, rep.getRestartInProgress(), "restart-in-progress");
         }
 
+        validateSchedule(rep.getSchedule());
+
         // if a workflow has a restart step, at least one of the previous steps must be scheduled to prevent an infinite loop of immediate executions
         List<WorkflowStepRepresentation> steps = ofNullable(rep.getSteps()).orElse(List.of());
         if (steps.isEmpty()) {
@@ -53,22 +56,22 @@ public class WorkflowValidator {
 
         if (!restartSteps.isEmpty()) {
             if (restartSteps.size() > 1) {
-                throw new WorkflowInvalidStateException("Workflow can have only one restart step.");
+                throw new WorkflowInvalidStateException("workflowSingleRestartStepOnly");
             }
             WorkflowStepRepresentation restartStep = restartSteps.get(0);
             if (steps.indexOf(restartStep) != steps.size() - 1) {
-                throw new WorkflowInvalidStateException("Workflow restart step must be the last step.");
+                throw new WorkflowInvalidStateException("workflowRestartStepMustBeLast");
             }
             MultivaluedHashMap<String, String> config = restartStep.getConfig();
-            int position = config == null ? 0 : Integer.parseInt(config.getFirstOrDefault("position", "0"));
+            int position = config == null ? 0 : parseRestartPosition(config.getFirstOrDefault(RestartWorkflowStepProviderFactory.CONFIG_POSITION, "0"));
             if (position < 0 || position >= steps.size()) {
-                throw new WorkflowInvalidStateException("Workflow restart step has invalid position: " + position);
+                throw new WorkflowInvalidStateException("workflowRestartStepInvalidPosition", position);
             }
             boolean hasScheduledStep = steps.stream()
                     .skip(position)
                     .anyMatch(step -> DurationConverter.isPositiveDuration(step.getAfter()));
             if (!hasScheduledStep) {
-                throw new WorkflowInvalidStateException("No scheduled step found if restarting at position " + position);
+                throw new WorkflowInvalidStateException("workflowNoScheduledStepAtPosition", position);
             }
         }
 
@@ -78,7 +81,7 @@ public class WorkflowValidator {
                 ResourceType type = ResourceType.valueOf(rep.getSupports());
                 validateWorkflowConditionType(session, rep.getConditions(), type);
             } catch (IllegalArgumentException e) {
-                throw new WorkflowInvalidStateException("Invalid workflow type: " + rep.getSupports());
+                throw new WorkflowInvalidStateException("workflowInvalidType", rep.getSupports());
             }
         }
     }
@@ -96,7 +99,43 @@ public class WorkflowValidator {
         Set<ResourceType> supportedTypes = typeCollector.getConditionTypes();
         if (!supportedTypes.contains(workflowType)) {
             String formatted = supportedTypes.stream().map(Enum::name).collect(Collectors.joining(", "));
-            throw new WorkflowInvalidStateException("Provided condition types (%s) are not compatible with workflow type (%s).".formatted(formatted, workflowType));
+            throw new WorkflowInvalidStateException("workflowConditionTypesIncompatible", formatted, workflowType);
+        }
+    }
+
+    private static void validateSchedule(WorkflowScheduleRepresentation schedule) throws WorkflowInvalidStateException {
+        if (schedule == null) {
+            return;
+        }
+
+        String after = schedule.getAfter();
+        if (after != null) {
+            Duration interval;
+            try {
+                interval = DurationConverter.parseDuration(after);
+            } catch (IllegalArgumentException e) {
+                throw new WorkflowInvalidStateException("workflowScheduleAfterInvalid", after);
+            }
+            if (interval == null || interval.toSeconds() < 1) {
+                throw new WorkflowInvalidStateException("workflowScheduleAfterTooShort");
+            }
+            // the schedule interval is handled in seconds as an int
+            if (interval.toSeconds() > Integer.MAX_VALUE) {
+                throw new WorkflowInvalidStateException("workflowScheduleAfterInvalid", after);
+            }
+        }
+
+        Integer batchSize = schedule.getBatchSize();
+        if (batchSize != null && batchSize < 1) {
+            throw new WorkflowInvalidStateException("workflowScheduleBatchSizeNotPositive");
+        }
+    }
+
+    private static int parseRestartPosition(String position) throws WorkflowInvalidStateException {
+        try {
+            return Integer.parseInt(position);
+        } catch (NumberFormatException e) {
+            throw new WorkflowInvalidStateException("workflowRestartStepInvalidPosition", position);
         }
     }
 
@@ -104,17 +143,17 @@ public class WorkflowValidator {
 
         // validate the step rep has 'uses' defined
         if (StringUtil.isBlank(step.getUses())) {
-            throw new WorkflowInvalidStateException("Step 'uses' cannot be null or empty.");
+            throw new WorkflowInvalidStateException("workflowStepUsesRequired");
         }
 
         // validate the after time, if present
         try {
             Duration duration = DurationConverter.parseDuration(step.getAfter());
             if (duration != null && duration.isNegative()) { // duration can only be null if the config is not set
-                throw new WorkflowInvalidStateException("Step 'after' configuration cannot be negative.");
+                throw new WorkflowInvalidStateException("workflowStepAfterNegative");
             }
         } catch (IllegalArgumentException e) {
-            throw new WorkflowInvalidStateException("Step 'after' configuration is not valid: " + step.getAfter());
+            throw new WorkflowInvalidStateException("workflowStepAfterInvalid", step.getAfter());
         }
 
         // verify the step does have valid provider
@@ -122,7 +161,7 @@ public class WorkflowValidator {
                 .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getUses());
 
         if (factory == null) {
-            throw new WorkflowInvalidStateException("Could not find step provider: " + step.getUses());
+            throw new WorkflowInvalidStateException("workflowStepProviderNotFound", step.getUses());
         }
     }
 
@@ -147,12 +186,12 @@ public class WorkflowValidator {
     private static void validateWorkflowName(WorkflowProvider provider, WorkflowRepresentation representation) throws WorkflowInvalidStateException {
         String name = representation.getName();
         if (StringUtil.isBlank(name)) {
-            throw new WorkflowInvalidStateException("Workflow name cannot be null or empty.");
+            throw new WorkflowInvalidStateException("workflowNameEmpty");
         }
 
         // validate name uniqueness
         if (provider.getWorkflows().anyMatch(wf -> wf.getName().equals(name) && !wf.getId().equals(representation.getId()))) {
-            throw new WorkflowInvalidStateException("Workflow name must be unique. A workflow with name '" + name + "' already exists.");
+            throw new WorkflowInvalidStateException("workflowNameDuplicate", name);
         }
     }
 }

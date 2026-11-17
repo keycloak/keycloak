@@ -45,13 +45,13 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
     @FindBy(name = "department")
     private WebElement departmentInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginAlertErrorMessage;
 
     private final UpdateProfileErrors errorsPage;
@@ -119,8 +119,28 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         });
     }
 
+    private void fillField(WebElement field, String value) {
+        driver.waiting().until(d -> {
+            try {
+                field.clear();
+                field.sendKeys(value);
+                return value.equals(field.getAttribute("value"));
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
+    }
+
     public boolean isDepartmentEnabled() {
         return departmentInput.isEnabled();
+    }
+
+    public boolean isUsernameEnabled() {
+        try {
+            return usernameInput.isEnabled();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
     }
 
     public UpdateProfileErrors getInputErrors() {
@@ -256,26 +276,21 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
 
         public void submit() {
             if (username != null) {
-                page.usernameInput.clear();
-                page.usernameInput.sendKeys(username);
+                page.fillField(page.usernameInput, username);
             }
             if (firstName != null) {
-                page.firstNameInput.clear();
-                page.firstNameInput.sendKeys(firstName);
+                page.fillField(page.firstNameInput, firstName);
             }
             if (lastName != null) {
-                page.lastNameInput.clear();
-                page.lastNameInput.sendKeys(lastName);
+                page.fillField(page.lastNameInput, lastName);
             }
 
             if (department != null) {
-                page.departmentInput.clear();
-                page.departmentInput.sendKeys(department);
+                page.fillField(page.departmentInput, department);
             }
 
             if (email != null) {
-                page.emailInput.clear();
-                page.emailInput.sendKeys(email);
+                page.fillField(page.emailInput, email);
             }
 
             for (Map.Entry<String, String> entry : other.entrySet()) {
@@ -300,15 +315,23 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         }
 
         private String getTextById(String id) {
-            try {
-                return driver.findElement(By.id(id)).getText();
-            } catch (NoSuchElementException e) {
-                return null;
-            }
+            String error = FieldErrorText.read(driver, id);
+            return error.isBlank() ? null : error;
+        }
+
+        private String getTextByIdNow(String id) {
+            String error = FieldErrorText.readNow(driver, id);
+            return error.isBlank() ? null : error;
         }
 
         public String getFirstNameError() {
-            String text = getTextById("input-error-firstname");
+            // Prefer non-blocking probes so a missing legacy lowercase id does not
+            // burn the full wait timeout before trying the camel-case id.
+            String text = getTextByIdNow("input-error-firstname");
+            if (text != null) {
+                return text;
+            }
+            text = getTextByIdNow("input-error-firstName");
             if (text != null) {
                 return text;
             }
@@ -316,7 +339,11 @@ public class LoginUpdateProfilePage extends AbstractLoginPage {
         }
 
         public String getLastNameError() {
-            String text = getTextById("input-error-lastname");
+            String text = getTextByIdNow("input-error-lastname");
+            if (text != null) {
+                return text;
+            }
+            text = getTextByIdNow("input-error-lastName");
             if (text != null) {
                 return text;
             }

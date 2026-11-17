@@ -50,6 +50,7 @@ import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
+import org.keycloak.jose.jwe.alg.RSAWrapperAlgorithmProvider;
 
 public class WildFlyElytronProvider implements CryptoProvider {
 
@@ -57,9 +58,9 @@ public class WildFlyElytronProvider implements CryptoProvider {
 
     public WildFlyElytronProvider() {
         providers.put(CryptoConstants.A128KW, new AesKeyWrapAlgorithmProvider());
-        providers.put(CryptoConstants.RSA1_5, new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding"));
-        providers.put(CryptoConstants.RSA_OAEP, new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
-        providers.put(CryptoConstants.RSA_OAEP_256, new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
+        providers.put(CryptoConstants.RSA1_5, new RSAWrapperAlgorithmProvider(new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/PKCS1Padding")));
+        providers.put(CryptoConstants.RSA_OAEP, new RSAWrapperAlgorithmProvider(new ElytronRsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding")));
+        providers.put(CryptoConstants.RSA_OAEP_256, new RSAWrapperAlgorithmProvider(new ElytronRsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding")));
         providers.put(CryptoConstants.ECDH_ES, new ElytronEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A128KW, new ElytronEcdhEsAlgorithmProvider());
         providers.put(CryptoConstants.ECDH_ES_A192KW, new ElytronEcdhEsAlgorithmProvider());

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -704,16 +705,28 @@ public class KeycloakUriBuilder {
 
     private static final Pattern PARAM_REPLACEMENT = Pattern.compile("_resteasy_uri_parameter");
 
-
-    public KeycloakUriBuilder queryParam(String name, Object... values) throws IllegalArgumentException {
+    public static String queryParamAsString(String name, Object... values) throws IllegalArgumentException {
         if (name == null) throw new IllegalArgumentException("name parameter is null");
+        if (name.isEmpty()) throw new IllegalArgumentException("name parameter is empty");
         if (values == null) throw new IllegalArgumentException("values parameter is null");
+        StringBuilder qry = new StringBuilder();
         for (Object value : values) {
             if (value == null) throw new IllegalArgumentException("A passed in value was null");
-            if (query == null) query = "";
-            else query += "&";
-            query += Encode.encodeQueryParamAsIs(name) + "=" + Encode.encodeQueryParamAsIs(value.toString());
+            if (qry.length() != 0)
+                qry.append("&");
+            qry.append(Encode.encodeQueryParamAsIs(name)).append("=").append(Encode.encodeQueryParamAsIs(value.toString()));
         }
+        return qry.toString();
+    }
+
+    public KeycloakUriBuilder queryParam(String name, Object... values) throws IllegalArgumentException {
+        String queryParameter = queryParamAsString(name, values);
+        if (queryParameter == null || queryParameter.isEmpty())
+            return this;
+        if (query == null || query.isEmpty())
+            query = queryParameter;
+        else
+            query += "&" + queryParameter;
         return this;
     }
 
@@ -724,24 +737,9 @@ public class KeycloakUriBuilder {
             return this;
         }
 
-        String[] params = query.split("&");
-        query = null;
-
         String replacedName = Encode.encodeQueryParam(name);
-
-
-        for (String param : params) {
-            int pos = param.indexOf('=');
-            if (pos >= 0) {
-                String paramName = param.substring(0, pos);
-                if (paramName.equals(replacedName)) continue;
-            } else {
-                if (param.equals(replacedName)) continue;
-            }
-            if (query == null) query = "";
-            else query += "&";
-            query += param;
-        }
+        // check encoded and decoded variants of query param name
+        query = removeParams(query, rawName -> rawName.equals(replacedName) || Encode.decode(rawName).equals(Encode.decode(replacedName)));
         // don't set values if values is null
         if (values == null) return this;
         return queryParam(name, values);
@@ -836,6 +834,60 @@ public class KeycloakUriBuilder {
         if (templateValues == null) throw new IllegalArgumentException("templateValues param null");
         String str = buildString(templateValues, false, true, true);
         return fromTemplate(str);
+    }
+
+    /**
+     * Removes all query parameters whose name, after percent-decoding, equals the given {@code name}.
+     * This catches encoded variants such as {@code st%61te} matching {@code state}.
+     *
+     * <pre>
+     * KeycloakUriBuilder.fromUri("http://example.com/path?st%61te=evil&amp;other=keep", false)
+     *     .removeQueryParamByDecodedName("state")
+     *     // result: http://example.com/path?other=keep
+     * </pre>
+     *
+     * @param name the decoded parameter name to match against
+     * @return this builder
+     */
+    public KeycloakUriBuilder removeQueryParamByDecodedName(String name) {
+        if (name == null) throw new IllegalArgumentException("name parameter is null");
+        if (query == null || query.isEmpty()) return this;
+        query = removeParams(query, rawName -> name.equals(Encode.decode(rawName)));
+        return this;
+    }
+
+    /**
+     * Removes all fragment parameters whose name, after percent-decoding, equals the given {@code name}.
+     * Fragment is treated as query-string-style key=value pairs separated by {@code &}.
+     *
+     * <pre>
+     * KeycloakUriBuilder.fromUri("http://example.com/path#st%61te=evil&amp;other=keep", false)
+     *     .removeFragmentParamByDecodedName("state")
+     *     // result: http://example.com/path#other=keep
+     * </pre>
+     *
+     * @param name the decoded parameter name to match against
+     * @return this builder
+     */
+    public KeycloakUriBuilder removeFragmentParamByDecodedName(String name) {
+        if (name == null) throw new IllegalArgumentException("name parameter is null");
+        if (fragment == null || fragment.isEmpty()) return this;
+        fragment = removeParams(fragment, rawName -> name.equals(Encode.decode(rawName)));
+        return this;
+    }
+
+    private static String removeParams(String paramString, Predicate<String> nameMatches) {
+        StringBuilder result = null;
+        for (String param : paramString.split("&")) {
+            if (param.isEmpty()) continue;
+            int pos = param.indexOf('=');
+            String rawName = pos >= 0 ? param.substring(0, pos) : param;
+            if (nameMatches.test(rawName)) continue;
+            if (result == null) result = new StringBuilder();
+            else result.append('&');
+            result.append(param);
+        }
+        return result == null ? null : result.toString();
     }
 
     public KeycloakUriBuilder resolveTemplate(String name, Object value, boolean encodeSlashInPath) throws IllegalArgumentException {

@@ -36,6 +36,7 @@ public class OAuthErrorException extends Exception {
     // OpenID Connect 1
     public static final String INTERACTION_REQUIRED = "interaction_required";
     public static final String LOGIN_REQUIRED = "login_required";
+    public static final String UNMET_AUTHENTICATION_REQUIREMENTS = "unmet_authentication_requirements";
     public static final String REQUEST_NOT_SUPPORTED = "request_not_supported";
     public static final String REQUEST_URI_NOT_SUPPORTED = "request_uri_not_supported";
 

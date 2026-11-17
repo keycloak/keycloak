@@ -41,17 +41,20 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Encode;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
@@ -62,6 +65,9 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -165,77 +171,82 @@ public class RoleContainerResource extends RoleResource {
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response createRole(final RoleRepresentation rep) {
-        auth.roles().requireManage(roleContainer);
-
-        if (rep.getName() == null) {
-            throw new BadRequestException("role has no name");
-        }
-
         try {
-            RoleModel role = roleContainer.addRole(rep.getName());
-            role.setDescription(rep.getDescription());
-
-            Map<String, List<String>> attributes = rep.getAttributes();
-            if (attributes != null) {
-                for (Map.Entry<String, List<String>> attr : attributes.entrySet()) {
-                    role.setAttribute(attr.getKey(), attr.getValue());
-                }
-            }
-
-            rep.setId(role.getId());
-
-            if (role.isClientRole()) {
-                adminEvent.resource(ResourceType.CLIENT_ROLE);
-            } else {
-                adminEvent.resource(ResourceType.REALM_ROLE);
-            }
-
-            // Handling of nested composite roles for KEYCLOAK-12754
-            if (rep.isComposite() && rep.getComposites() != null) {
-                RoleRepresentation.Composites composites = rep.getComposites();
-
-                Set<String> compositeRealmRoles = composites.getRealm();
-                if (compositeRealmRoles != null && !compositeRealmRoles.isEmpty()) {
-                    Set<RoleModel> realmRoles = new LinkedHashSet<>();
-                    for (String roleName : compositeRealmRoles) {
-                        RoleModel realmRole = realm.getRole(roleName);
-                        if (realmRole == null) {
-                            throw ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
-                        }
-                        realmRoles.add(realmRole);
-                    }
-                    realmRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
-                }
-
-                Map<String, List<String>> compositeClientRoles = composites.getClient();
-                if (compositeClientRoles != null && !compositeClientRoles.isEmpty()) {
-                    Set<Map.Entry<String, List<String>>> entries = compositeClientRoles.entrySet();
-                    for (Map.Entry<String, List<String>> clientIdWithClientRoleNames : entries) {
-                        String clientId = clientIdWithClientRoleNames.getKey();
-                        List<String> clientRoleNames = clientIdWithClientRoleNames.getValue();
-                        ClientModel client = realm.getClientByClientId(clientId);
-                        if (client == null) {
-                            continue;
-                        }
-                        Set<RoleModel> clientRoles = new LinkedHashSet<>();
-                        for (String roleName : clientRoleNames) {
-                            RoleModel clientRole = client.getRole(roleName);
-                            if (clientRole == null) {
-                                throw ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
-                            }
-                            clientRoles.add(clientRole);
-                        }
-                        clientRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
-                    }
-                }
-            }
-
-            adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
+            RoleModel role = doCreateRole(rep);
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(Encode.encodePathSegmentAsIs(role.getName())).build()).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
+    }
+
+    public RoleModel doCreateRole(final RoleRepresentation rep) {
+        auth.roles().requireManage(roleContainer);
+
+        if (rep.getName() == null) {
+            throw new BadRequestException("role has no name");
+        }
+        
+        RoleModel role = roleContainer.addRole(rep.getName());
+        role.setDescription(rep.getDescription());
+
+        Map<String, List<String>> attributes = rep.getAttributes();
+        if (attributes != null) {
+            for (Map.Entry<String, List<String>> attr : attributes.entrySet()) {
+                role.setAttribute(attr.getKey(), attr.getValue());
+            }
+        }
+
+        rep.setId(role.getId());
+
+        if (role.isClientRole()) {
+            adminEvent.resource(ResourceType.CLIENT_ROLE);
+        } else {
+            adminEvent.resource(ResourceType.REALM_ROLE);
+        }
+
+        // Handling of nested composite roles for KEYCLOAK-12754
+        if (rep.isComposite() && rep.getComposites() != null) {
+            RoleRepresentation.Composites composites = rep.getComposites();
+
+            Set<String> compositeRealmRoles = composites.getRealm();
+            if (compositeRealmRoles != null && !compositeRealmRoles.isEmpty()) {
+                Set<RoleModel> realmRoles = new LinkedHashSet<>();
+                for (String roleName : compositeRealmRoles) {
+                    RoleModel realmRole = realm.getRole(roleName);
+                    if (realmRole == null) {
+                        throw ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                    }
+                    realmRoles.add(realmRole);
+                }
+                realmRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
+            }
+
+            Map<String, List<String>> compositeClientRoles = composites.getClient();
+            if (compositeClientRoles != null && !compositeClientRoles.isEmpty()) {
+                Set<Map.Entry<String, List<String>>> entries = compositeClientRoles.entrySet();
+                for (Map.Entry<String, List<String>> clientIdWithClientRoleNames : entries) {
+                    String clientId = clientIdWithClientRoleNames.getKey();
+                    List<String> clientRoleNames = clientIdWithClientRoleNames.getValue();
+                    ClientModel client = realm.getClientByClientId(clientId);
+                    if (client == null) {
+                        continue;
+                    }
+                    Set<RoleModel> clientRoles = new LinkedHashSet<>();
+                    for (String roleName : clientRoleNames) {
+                        RoleModel clientRole = client.getRole(roleName);
+                        if (clientRole == null) {
+                            throw ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                        }
+                        clientRoles.add(clientRole);
+                    }
+                    clientRoles.stream().peek(auth.roles()::requireMapComposite).forEach(role::addCompositeRole);
+                }
+            }
+        }
+
+        adminEvent.operation(OperationType.CREATE).resourcePath(uriInfo, role.getName()).representation(rep).success();
+        return role;
     }
 
     /**
@@ -291,6 +302,7 @@ public class RoleContainerResource extends RoleResource {
             throw ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.",
                     Response.Status.BAD_REQUEST);
         }
+        auth.roles().requireManage(role);
         RoleRepresentation roleRepresentation = new RoleRepresentation();
         roleRepresentation.setId(role.getId());
         roleRepresentation.setName(role.getName());
@@ -332,6 +344,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
+        auth.roles().requireManage(role);
         try {
             updateRole(rep, role, realm, session);
 
@@ -371,6 +384,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
+        auth.roles().requireManage(role);
         addComposites(auth, adminEvent, uriInfo, roles, role);
     }
 
@@ -397,7 +411,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        return role.getCompositesStream().map(ModelToRepresentation::toBriefRepresentation);
+        return role.getCompositesStream().filter(r -> auth.roles().canView(r)).map(ModelToRepresentation::toBriefRepresentation);
     }
 
     /**
@@ -423,7 +437,7 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        return getRealmRoleComposites(role);
+        return getRealmRoleComposites(auth, role);
     }
 
     /**
@@ -456,7 +470,7 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find client");
 
         }
-        return getClientRoleComposites(clientModel, role);
+        return getClientRoleComposites(auth, clientModel, role);
     }
 
 
@@ -479,13 +493,14 @@ public class RoleContainerResource extends RoleResource {
     public void deleteComposites(
                                    final @Parameter(description = "role's name (not id!)") @PathParam("role-name") String roleName,
                                    @Parameter(description = "roles to remove") List<RoleRepresentation> roles) {
-
+        // realm/client roles by name
         auth.roles().requireManage(roleContainer);
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
-        deleteComposites(adminEvent, uriInfo, roles, role);
+        auth.roles().requireManage(role);
+        deleteComposites(auth, adminEvent, uriInfo, roles, role);
     }
 
     /**
@@ -595,9 +610,19 @@ public class RoleContainerResource extends RoleResource {
         }
 
         boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
+        UserPermissionEvaluator usersEvaluator = auth.users();
 
-        return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
-                .map((u) -> ModelToRepresentation.toRepresentation(session, u, briefRep));
+        Stream<UserModel> members = session.users().getRoleMembersStream(realm, role, firstResult, maxResults);
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            members = members.filter(usersEvaluator::canView);
+        }
+
+        return members.map(user -> {
+            UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
+            userRep.setAccess(usersEvaluator.getAccessForListing(user));
+            return userRep;
+        });
     }
 
     /**
@@ -617,16 +642,18 @@ public class RoleContainerResource extends RoleResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ROLES)
     @Operation(summary = "Returns a stream of groups that have the specified role name")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = UserRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Stream<GroupRepresentation> getGroupsInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
                                                     @Parameter(description = "First result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
-                                                    @Parameter(description = "Maximum number of results to return. Unbounded if negative.") @QueryParam(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults,
+                                                    @Parameter(description = "Maximum number of results to return. Unbounded if negative.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults,
                                                     @Parameter(description = "If false, return a full representation of the {@code GroupRepresentation} objects.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
 
         auth.roles().requireView(roleContainer);
+        auth.groups().requireList();
+
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
@@ -635,7 +662,17 @@ public class RoleContainerResource extends RoleResource {
             throw new NotFoundException("Could not find role");
         }
 
-        return session.groups().getGroupsByRoleStream(realm, role, firstResult, maxResults)
-                .map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        Stream<GroupModel> groups = session.groups().getGroupsByRoleStream(realm, role, firstResult, maxResults);
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            groups = groups.filter(groupsEvaluator::canView);
+        }
+
+        return groups.map(g -> {
+            GroupRepresentation rep = ModelToRepresentation.toRepresentation(g, !briefRepresentation);
+            GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+            return rep;
+        });
     }
 }

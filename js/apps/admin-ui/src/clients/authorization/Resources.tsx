@@ -341,7 +341,7 @@ export const AuthorizationResources = ({
           isDisabled={isDisabled}
           primaryActionText={t("createResource")}
           onPrimaryAction={() =>
-            navigate(toCreateResource({ realm, id: clientId }))
+            void navigate(toCreateResource({ realm, id: clientId }))
           }
         />
       )}

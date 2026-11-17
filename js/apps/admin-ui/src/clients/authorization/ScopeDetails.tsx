@@ -71,7 +71,9 @@ export default function ScopeDetails() {
             iconUri: scope.iconUri,
           },
         );
-        navigate(toAuthorizationTab({ realm, clientId: id, tab: "scopes" }));
+        void navigate(
+          toAuthorizationTab({ realm, clientId: id, tab: "scopes" }),
+        );
       }
       addAlert(
         t((scopeId ? "update" : "create") + "ScopeSuccess"),
@@ -90,7 +92,9 @@ export default function ScopeDetails() {
         toggleDialog={toggleDeleteDialog}
         selectedScope={scope}
         refresh={() =>
-          navigate(toAuthorizationTab({ realm, clientId: id, tab: "scopes" }))
+          void navigate(
+            toAuthorizationTab({ realm, clientId: id, tab: "scopes" }),
+          )
         }
       />
       <ViewHeader
@@ -142,24 +146,7 @@ export default function ScopeDetails() {
                   {t("save")}
                 </Button>
 
-                {!scope ? (
-                  <Button
-                    variant="link"
-                    data-testid="cancel"
-                    component={(props) => (
-                      <Link
-                        {...props}
-                        to={toAuthorizationTab({
-                          realm,
-                          clientId: id,
-                          tab: "scopes",
-                        })}
-                      ></Link>
-                    )}
-                  >
-                    {t("cancel")}
-                  </Button>
-                ) : (
+                {scope && (
                   <Button
                     variant="link"
                     data-testid="revert"
@@ -168,6 +155,22 @@ export default function ScopeDetails() {
                     {t("revert")}
                   </Button>
                 )}
+                <Button
+                  variant="link"
+                  data-testid="cancel"
+                  component={(props) => (
+                    <Link
+                      {...props}
+                      to={toAuthorizationTab({
+                        realm,
+                        clientId: id,
+                        tab: "scopes",
+                      })}
+                    ></Link>
+                  )}
+                >
+                  {t("cancel")}
+                </Button>
               </div>
             </ActionGroup>
           </FormAccess>

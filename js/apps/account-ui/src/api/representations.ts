@@ -213,3 +213,4 @@ export interface Group {
 }
 
 export type { default as UserVerifiableCredentialRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/userVerifiableCredentialRepresentation";
+export type { default as IssuedUserVerifiableCredentialRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/issuedUserVerifiableCredentialRepresentation";

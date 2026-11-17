@@ -25,14 +25,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
+import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
@@ -46,12 +46,12 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.actions.RequiredActionEmailVerificationTest.getEmailLink;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -76,9 +76,6 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
     public MailServer mail = new MailServer();
 
     @Page
-    protected AppPage appPage;
-
-    @Page
     protected LoginPage loginPage;
     @Page
     protected LoginPasswordResetPage resetPasswordPage;
@@ -97,6 +94,12 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginConfigTotpPage totpPage;
+
+    @Page
+    protected InfoPage infoPage;
+
+    @Page
+    protected LoginConfigTotpPage configureTotpRequiredActionPage;
 
     private String testUserId;
 
@@ -156,8 +159,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -205,8 +207,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -230,7 +231,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Login with kc_action=UPDATE_PROFILE
         oauth.loginForm().kcAction(RequiredAction.UPDATE_PROFILE.name()).open();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        loginPage.assertCurrent();
         loginPage.login(USERNAME, PASSWORD);
 
         // First, change password
@@ -255,8 +256,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.UPDATED_EMAIL, NEW_EMAIL);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -282,7 +282,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Get a password reset link
         oauth.openLoginForm();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        loginPage.assertCurrent();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -291,6 +291,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
+        Assertions.assertTrue(mail.waitForIncomingEmail(1));
         assertEquals(1, mail.getReceivedMessages().length);
         final var message = mail.getLastReceivedMessage();
         final var resetUrl = getEmailLink(message);
@@ -318,10 +319,10 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION)
                 .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
-        // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        EventAssertion.expectLoginSuccess(events.poll());
+        // Re-authentication is forced after a credential reset by default, so the info page is
+        // displayed instead of the user being automatically logged in to the application.
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     @Test
@@ -348,7 +349,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Get a password reset link
         oauth.openLoginForm();
-        loginPage.assertCurrent(TEST_REALM_NAME);
+        loginPage.assertCurrent();
         loginPage.login(USERNAME, PASSWORD);
 
         // Second, complete the profile
@@ -370,8 +371,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
-        appPage.assertCurrent();
-        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -411,8 +411,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
 
         // Logged in
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.expectLoginSuccess(events.poll());
 
     }
@@ -447,13 +446,34 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
         EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
 
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL);
     }
 
+    @Test
+    public void setupTotpAfterUpdateUserLocale() throws Exception {
+        // change order to have update user locale before otp and assign them to the customer
+        final List<String> requiredActionsCustomOrdered = List.of(
+                DefaultRequiredActions.Action.UPDATE_USER_LOCALE.getAlias(),
+                DefaultRequiredActions.Action.CONFIGURE_TOTP.getAlias()
+        );
+        AdminApiUtil.updateRequiredActionsOrderByAlias(managedRealm.admin(), requiredActionsCustomOrdered);
+
+        enableRequiredActionForUser(DefaultRequiredActions.Action.UPDATE_USER_LOCALE.getAlias());
+        enableRequiredActionForUser(DefaultRequiredActions.Action.CONFIGURE_TOTP.getAlias());
+
+        // Login and check OTP is shown to be configured
+        oauth.openLoginForm();
+        loginPage.login(USERNAME, PASSWORD);
+        configureTotpRequiredActionPage.assertCurrent();
+    }
+
     private void enableRequiredActionForUser(final RequiredAction requiredAction) {
-        setRequiredActionEnabled(TEST_REALM_NAME, testUserId, requiredAction.name(), true);
+        enableRequiredActionForUser(requiredAction.name());
+    }
+
+    private void enableRequiredActionForUser(final String requiredAction) {
+        setRequiredActionEnabled(TEST_REALM_NAME, testUserId, requiredAction, true);
     }
 
 }

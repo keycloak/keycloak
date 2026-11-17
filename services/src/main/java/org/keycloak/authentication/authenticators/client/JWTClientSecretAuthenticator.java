@@ -30,8 +30,10 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
+import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -73,7 +75,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 }
             }
 
-            JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
+            JWTClientSecretValidator validator = new JWTClientSecretValidator(context, this::verifySignature, getId());
             if (!validator.validate()) return;
 
             context.success();
@@ -121,6 +123,9 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(),
                         wrapper.toRotatedClientModel(context.getSession()), JsonWebToken.class);
                 signatureValid = jwt != null;
+                if (signatureValid) {
+                    context.getEvent().detail(Details.CLIENT_AUTH_DETAIL, ClientSecretConstants.CLIENT_ROTATED_EVENT_DETAIL);
+                }
             }
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
@@ -154,7 +159,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         // }
         Map<String, Object> props = new HashMap<>();
         String secret = client.getSecret();
-        props.put("secret", session.vault().getStringSecret(secret).get().orElse(secret));
+        props.put("secret", secret);
         String algorithm = client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
         if (algorithm != null) {
             props.put("algorithm", algorithm);
@@ -163,6 +168,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         Map<String, Object> config = new HashMap<>();
         config.put("secret-jwt", props);
         return config;
+    }
+
+    @Override
+    public Set<String> getAdapterConfigurationSecretKeys() {
+        return Set.of("/secret-jwt/secret");
     }
 
     @Override
@@ -178,6 +188,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public boolean supportsSecret() {
+        return true;
+    }
+
+    @Override
+    public boolean supportsClientAssertion() {
         return true;
     }
 

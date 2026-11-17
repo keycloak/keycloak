@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.keycloak.Config;
+import org.keycloak.common.util.Environment;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.timer.TimerProvider;
@@ -49,7 +50,10 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
     @Override
     public void init(Config.Scope config) {
         transactionTimeout = config.getInt(TRANSACTION_TIMEOUT, 0);
-        timer = new Timer(true);
+        // skip timer creation in non-server mode (export, import) as scheduled tasks are not needed
+        if (!Environment.isNonServerMode()) {
+            timer = new Timer(true);
+        }
     }
 
     @Override

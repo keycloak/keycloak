@@ -60,6 +60,10 @@ export const CapabilityConfig = ({
   const showSsfReceiverToggle =
     isFeatureEnabled(Feature.Ssf) &&
     realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
+  // V2 rejects public clients, but V1 accepts bearer tokens issued to any client
+  const showExternalTokenSettings =
+    isFeatureEnabled(Feature.IdentityBrokeringAPIV1) ||
+    (isFeatureEnabled(Feature.IdentityBrokeringAPIV2) && !clientAuthentication);
   return (
     <FormAccess
       isHorizontal
@@ -472,7 +476,6 @@ export const CapabilityConfig = ({
                   IdentityProviderType.JWT_AUTHORIZATION_GRANT
                 }
                 isDisabled={clientAuthentication}
-                realmOnly
                 stringify
               />
             )}
@@ -486,33 +489,32 @@ export const CapabilityConfig = ({
               stringify
             />
           )}
-          {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) &&
-            !clientAuthentication && (
-              <>
-                <DefaultSwitchControl
-                  name={convertAttributeNameToForm<FormFields>(
-                    "attributes.external.token.enabled",
-                  )}
-                  label={t("externalTokenEnabled")}
-                  labelIcon={t("externalTokenEnabledHelp")}
-                  stringify
-                />
-                {showIdentityProviders &&
-                  externalTokenEnabled?.toString() === "true" && (
-                    <IdentityProviderSelect
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.external.token.idp",
-                      )}
-                      label={t("externalTokenIdp")}
-                      helpText={t("externalTokenIdpHelp")}
-                      convertToName={convertAttributeNameToForm}
-                      identityProviderType={IdentityProviderType.ANY}
-                      realmOnly
-                      stringify
-                    />
-                  )}
-              </>
-            )}
+          {showExternalTokenSettings && (
+            <>
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.external.token.enabled",
+                )}
+                label={t("externalTokenEnabled")}
+                labelIcon={t("externalTokenEnabledHelp")}
+                stringify
+              />
+              {showIdentityProviders &&
+                externalTokenEnabled?.toString() === "true" && (
+                  <IdentityProviderSelect
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.external.token.idp",
+                    )}
+                    label={t("externalTokenIdp")}
+                    helpText={t("externalTokenIdpHelp")}
+                    convertToName={convertAttributeNameToForm}
+                    identityProviderType={IdentityProviderType.ANY}
+                    realmOnly
+                    stringify
+                  />
+                )}
+            </>
+          )}
           {!clientAuthentication && showSsfReceiverToggle && (
             <DefaultSwitchControl
               name={convertAttributeNameToForm<FormFields>(

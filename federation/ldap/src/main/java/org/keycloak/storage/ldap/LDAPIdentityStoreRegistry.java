@@ -27,6 +27,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
 import org.keycloak.storage.ldap.mappers.LDAPConfigDecorator;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Timer;
 import org.jboss.logging.Logger;
 
 /**
@@ -38,7 +40,7 @@ public class LDAPIdentityStoreRegistry {
 
     private final Map<String, LDAPConfig> ldapStores = new ConcurrentHashMap<>();
 
-    public LDAPIdentityStore getLdapStore(KeycloakSession session, ComponentModel ldapModel, Map<ComponentModel, LDAPConfigDecorator> configDecorators) {
+    public LDAPIdentityStore getLdapStore(KeycloakSession session, ComponentModel ldapModel, Map<ComponentModel, LDAPConfigDecorator> configDecorators, Meter.MeterProvider<Timer> requestTimer) {
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         MultivaluedHashMap<String, String> configModel = ldapModel.getConfig();
         LDAPConfig ldapConfig = new LDAPConfig(configModel);
@@ -55,7 +57,7 @@ public class LDAPIdentityStoreRegistry {
             ldapStores.put(ldapModel.getId(), ldapConfig);
         }
 
-        return new LDAPIdentityStore(session, ldapConfig);
+        return new LDAPIdentityStore(session, ldapConfig, requestTimer);
     }
 
     // Don't log LDAP password

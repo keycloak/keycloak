@@ -33,12 +33,12 @@ public class IdpConfirmLinkPage extends LanguageComboboxAwarePage {
     @FindBy(id = "linkAccount")
     private WebElement linkAccountButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Account already exists");
+    public String getExpectedPageId() {
+        return "login-login-idp-link-confirm";
     }
 
     public String getMessage() {

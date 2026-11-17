@@ -78,6 +78,16 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
+    public Long getCreatedTimestamp() {
+        return entity.getCreatedTimestamp();
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return entity.getLastModifiedTimestamp();
+    }
+
+    @Override
     public String getName() {
         return entity.getName();
     }
@@ -459,7 +469,6 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
             entity.getConfig().clear();
             entity.getConfig().putAll(mapping.getConfig());
         }
-        em.flush();
 
     }
 
@@ -687,14 +696,12 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     public void registerNode(String nodeHost, int registrationTime) {
         Map<String, Integer> currentNodes = getRegisteredNodes();
         currentNodes.put(nodeHost, registrationTime);
-        em.flush();
     }
 
     @Override
     public void unregisterNode(String nodeHost) {
         Map<String, Integer> currentNodes = getRegisteredNodes();
         currentNodes.remove(nodeHost);
-        em.flush();
     }
 
     @Override

@@ -73,15 +73,28 @@ public class Proofs {
      * Create proofs based on the proof type.
      * Sets the appropriate field (JWT or Attestation) depending on the proof type.
      *
-     * @param proofType the proof type (ProofType.JWT or ProofType.ATTESTATION)
-     * @param proof     the proof value to set
+     * @param proofType   the proof type (ProofType.JWT or ProofType.ATTESTATION)
+     * @param proofValues the proof values to set
      */
-    public static Proofs create(String proofType, String proof) {
+    public static Proofs create(String proofType, String... proofValues) {
+        if (proofType == null) {
+            throw new IllegalArgumentException("proofType cannot be null");
+        }
+        if (proofValues == null || proofValues.length == 0) {
+            throw new IllegalArgumentException("proofValues cannot be null or empty");
+        }
+        for (String proof : proofValues) {
+            if (proof == null || proof.isBlank()) {
+                throw new IllegalArgumentException("Null or blank proof value");
+            }
+        }
         Proofs proofs = new Proofs();
-        if (ProofType.JWT.equals(proofType)) {
-            proofs.setJwt(List.of(proof));
-        } else if (ProofType.ATTESTATION.equals(proofType)) {
-            proofs.setAttestation(List.of(proof));
+        switch (proofType) {
+            case ProofType.JWT ->
+                    proofs.setJwt(List.of(proofValues));
+            case ProofType.ATTESTATION ->
+                    proofs.setAttestation(List.of(proofValues));
+            default -> throw new IllegalArgumentException("Unknown proof type: " + proofType);
         }
         return proofs;
     }

@@ -35,11 +35,14 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 public class UserSessionPersistentChangelogBasedTransaction extends PersistentSessionsChangelogBasedTransaction<String, UserSessionEntity> {
 
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
+    private final boolean pessimisticLockingAuthenticationSession;
 
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                           CacheHolder<String, UserSessionEntity> cacheHolder,
-                                                          CacheHolder<String, UserSessionEntity> offlineCacheHolder) {
+                                                          CacheHolder<String, UserSessionEntity> offlineCacheHolder,
+                                                          boolean pessimisticLockingAuthenticationSession) {
         super(session, USER_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
+        this.pessimisticLockingAuthenticationSession = pessimisticLockingAuthenticationSession;
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
@@ -49,6 +52,11 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
             Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
             if (cache != null) {
                 wrappedEntity = cache.get(key);
+                if (wrappedEntity != null && wrappedEntity.isTombstoneMarker()) {
+                    // A tombstone marker is a short-lived leftover of a concurrent removal (see
+                    // SessionResurrectionGuardListener); it must never be treated as real session data.
+                    wrappedEntity = null;
+                }
             }
 
             if (wrappedEntity == null) {
@@ -159,8 +167,8 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
     protected boolean lockDatabaseEntity(RealmModel realm, String userSessionId, boolean offline, SessionUpdateTask.CacheOperation operation) {
         if (operation == SessionUpdateTask.CacheOperation.ADD_IF_ABSENT) {
             // There might be concurrent inserts for the same key, which can lead to conflicts. One could lock the user instead, but that could lead to other problems.
-            // Then the alternative path of a separate transaction would always need to lock that entity as well all the time (not only opportunistically).
-            return false;
+            // If the authentication session was locked pessimistically, we can still perform the insert safely.
+            return pessimisticLockingAuthenticationSession;
         }
         return kcSession.getProvider(UserSessionPersisterProvider.class).lockUserSession(realm, userSessionId, offline, operation == SessionUpdateTask.CacheOperation.REMOVE);
     }

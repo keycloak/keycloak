@@ -19,6 +19,7 @@ import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
+import { useAccess } from "../../context/access/Access";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
@@ -108,7 +109,9 @@ export const AdvancedSettings = ({
   isSAML,
   isOAuth2,
 }: AdvancedSettingsProps) => {
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation();
+  const { hasAccess } = useAccess();
   const {
     control,
     register,
@@ -127,6 +130,9 @@ export const AdvancedSettings = ({
     Feature.ClientAuthFederated,
   );
   const jwtAuthorizationGrant = isFeatureEnabled(Feature.JWTAuthorizationGrant);
+  const isIdentityBrokeringAPIV1Enabled = isFeatureEnabled(
+    Feature.IdentityBrokeringAPIV1,
+  );
   const transientUsers = useWatch({
     control,
     name: "config.doNotStoreUsers",
@@ -141,6 +147,37 @@ export const AdvancedSettings = ({
     control,
     name: "config.supportsClientAssertions",
   });
+
+  const [hasBrokerReadTokenRole, setHasBrokerReadTokenRole] = useState(false);
+  const storedTokensReadableSupported =
+    (isOIDC || isSAML || isOAuth2) && isIdentityBrokeringAPIV1Enabled;
+
+  useFetch(
+    async () => {
+      if (!storedTokensReadableSupported) {
+        return false;
+      }
+      if (!hasAccess("view-clients")) {
+        return true;
+      }
+      const brokerClient = (
+        await adminClient.clients.find({ clientId: "broker" })
+      ).find((client) => client.clientId === "broker");
+      if (!brokerClient?.id) {
+        return false;
+      }
+      const role = await adminClient.clients.findRole({
+        id: brokerClient.id,
+        roleName: "read-token",
+      });
+      return !!role;
+    },
+    (hasRole) => {
+      setHasBrokerReadTokenRole(hasRole);
+    },
+    [storedTokensReadableSupported],
+  );
+
   return (
     <>
       {!isOIDC && !isSAML && !isOAuth2 && (
@@ -155,7 +192,7 @@ export const AdvancedSettings = ({
         />
       )}
       <SwitchField field="storeToken" label="storeTokens" fieldType="boolean" />
-      {(isSAML || isOIDC || isOAuth2) && (
+      {storedTokensReadableSupported && hasBrokerReadTokenRole && (
         <SwitchField
           field="addReadTokenRoleOnCreate"
           label="storedTokensReadable"
@@ -334,6 +371,12 @@ export const AdvancedSettings = ({
         field="config.caseSensitiveOriginalUsername"
         label="caseSensitiveOriginalUsername"
       />
+      {hasAccess("manage-realm") && (
+        <SwitchField
+          field="config.allowAdminRoleMapping"
+          label="allowAdminRoleMapping"
+        />
+      )}
       {isClientAuthFederatedEnabled && isOIDC && (
         <SwitchField
           field="config.supportsClientAssertions"
@@ -380,6 +423,24 @@ export const AdvancedSettings = ({
             />
           </FormGroupField>
         )}
+      {isSAML && (
+        <FormGroupField label="oneTimeUseMaxAgeSeconds">
+          <Controller
+            name="config.oneTimeUseMaxAgeSeconds"
+            defaultValue=""
+            control={control}
+            render={({ field }) => (
+              <TimeSelector
+                className="kc-one-time-use-max-age-seconds"
+                data-testid="one-time-use-max-age-seconds-input"
+                value={field.value!}
+                onChange={field.onChange}
+                units={["second", "minute", "hour"]}
+              />
+            )}
+          />
+        </FormGroupField>
+      )}
     </>
   );
 };

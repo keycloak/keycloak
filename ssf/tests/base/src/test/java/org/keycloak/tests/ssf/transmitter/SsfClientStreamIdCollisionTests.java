@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for the {@code ssf.streamId} duplicate-detection
+ * Integration tests for the {@code ssf.stream.id} duplicate-detection
  * hook wired into
  * {@link org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory#validateImportedStreamId}.
  *
@@ -56,7 +56,7 @@ public class SsfClientStreamIdCollisionTests {
                 ClientModel first = r.addClient(firstClientId);
                 first.setAttribute(ClientStreamStore.SSF_STREAM_ID_KEY, streamId);
                 // ClientUpdatedEvent — the validator queries the realm for
-                // other clients holding the same ssf.streamId; it's alone
+                // other clients holding the same ssf.stream.id; it's alone
                 // so no exception should be thrown.
                 first.updateClient();
             });
@@ -69,7 +69,7 @@ public class SsfClientStreamIdCollisionTests {
                 ModelDuplicateException thrown = Assertions.assertThrows(
                         ModelDuplicateException.class,
                         second::updateClient,
-                        "updateClient should reject a duplicate ssf.streamId in the same realm");
+                        "updateClient should reject a duplicate ssf.stream.id in the same realm");
                 Assertions.assertTrue(thrown.getMessage().contains(streamId),
                         "exception message must name the duplicated streamId — got: "
                                 + thrown.getMessage());
@@ -130,7 +130,7 @@ public class SsfClientStreamIdCollisionTests {
 
     @Test
     public void clientWithoutStreamIdIsAlwaysAllowed() {
-        // Ensures the validator short-circuits when ssf.streamId isn't
+        // Ensures the validator short-circuits when ssf.stream.id isn't
         // set — regression guard against a future refactor that would
         // mistakenly run the collision query for every client update.
         final String realmName = realm.getName();
@@ -142,7 +142,7 @@ public class SsfClientStreamIdCollisionTests {
                 ClientModel c = r.addClient(clientId);
                 c.setAttribute("some.unrelated.attribute", "value");
                 Assertions.assertDoesNotThrow(c::updateClient,
-                        "clients without ssf.streamId must pass validation");
+                        "clients without ssf.stream.id must pass validation");
             });
         } finally {
             runOnServer.run(session -> {

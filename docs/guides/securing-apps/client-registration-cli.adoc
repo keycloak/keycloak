@@ -14,6 +14,11 @@ You can configure application clients from a command line with the Client Regist
 
 To allow a particular user to use `Client Registration CLI`, the {project_name} administrator typically uses the Admin Console to configure a new user with proper roles or to configure a new client and client secret to grant access to the Client Registration REST API.
 
+[WARNING]
+====
+The `kcreg` CLI tool primarily uses the `default` client registration provider, which is deprecated since {project_name} 26.8 and will be removed in a future major release.
+For new integrations, register and manage clients using the Admin REST API or the standards-compliant OpenID Connect dynamic client registration endpoint (`/realms/<realm>/clients-registrations/openid-connect`).
+====
 
 [[_configuring_a_user_for_client_registration_cli]]
 == Configuring a new regular user for use with Client Registration CLI
@@ -274,6 +279,12 @@ $ kcreg.sh get myclient
 C:\> kcreg get myclient
 ----
 
+[WARNING]
+====
+The `-e install` flag retrieves adapter configuration via the deprecated `install` client registration provider.
+Use the Admin REST API (`GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`) instead.
+====
+
 You can also retrieve the client configuration as an adapter configuration file, which you can package with your web application.
 
 For example, on:
@@ -332,7 +343,7 @@ C:\> kcreg update myclient -s enabled=false -d redirectUris
 
 You can also use a file that contains only changes to be applied so you do not have to specify too many values as arguments. In this case, specify [command]`--merge` to tell the Client Registration CLI that rather than treating the JSON file as a full, new configuration, it should treat it as a set of attributes to be applied over the existing configuration.
 
-For example, on: 
+For example, on:
 
 * Linux:
 [options="nowrap"]

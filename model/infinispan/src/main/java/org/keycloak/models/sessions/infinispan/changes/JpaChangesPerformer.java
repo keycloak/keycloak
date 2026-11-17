@@ -20,7 +20,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -140,19 +139,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
             AuthenticatedClientSessionEntity authenticatedClientSessionEntity = new AuthenticatedClientSessionEntity() {
                 @Override
                 public Map<String, String> getNotes() {
-                    return new HashMap<>() {
-                        @Override
-                        public String get(Object key) {
-                            return clientSessionModel.getNotes().get(key);
-                        }
-
-                        @Override
-                        public String put(String key, String value) {
-                            String oldValue = clientSessionModel.getNotes().get(key);
-                            clientSessionModel.setNote(key, value);
-                            return oldValue;
-                        }
-                    };
+                    return clientSessionModel.getNotes();
                 }
 
                 @Override
@@ -221,9 +208,9 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                 }
 
                 @Override
-                public void setNotes(Map<String, String> notes) {
-                    clientSessionModel.getNotes().keySet().forEach(clientSessionModel::removeNote);
-                    notes.forEach(clientSessionModel::setNote);
+                public void setNotes(Map<String, String> newNotes) {
+                    clientSessionModel.getNotes().clear();
+                    clientSessionModel.getNotes().putAll(newNotes);
                 }
 
                 @Override
@@ -399,7 +386,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                     }
                     mergeUserSession(session, entry, userSessionModel, realm, sessionUpdates, userSessionPersister, entity);
                 } else {
-                    createUserSession(userSessionPersister, entity);
+                    createUserSession(userSessionPersister, entity, realm);
                 }
             }
             case REPLACE -> {
@@ -413,7 +400,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
         }
     }
 
-    private static void createUserSession(UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity) {
+    private static void createUserSession(UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity, RealmModel realm) {
         userSessionPersister.createUserSession(new UserSessionModel() {
             @Override
             public String getId() {
@@ -422,7 +409,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
 
             @Override
             public RealmModel getRealm() {
-                return new RealmModelDelegate(null) {
+                return new RealmModelDelegate(realm) {
                     @Override
                     public String getId() {
                         return entity.getRealmId();
@@ -542,32 +529,7 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
         UserSessionEntity userSessionEntity = new UserSessionEntity(userSessionModel.getId()) {
             @Override
             public Map<String, String> getNotes() {
-                return new HashMap<>() {
-
-                    @Override
-                    public String get(Object key) {
-                        return userSessionModel.getNotes().get(key);
-                    }
-
-                    @Override
-                    public String put(String key, String value) {
-                        String oldValue = userSessionModel.getNotes().get(key);
-                        userSessionModel.setNote(key, value);
-                        return oldValue;
-                    }
-
-                    @Override
-                    public String remove(Object key) {
-                        String oldValue = userSessionModel.getNotes().get(key);
-                        userSessionModel.removeNote(key.toString());
-                        return oldValue;
-                    }
-
-                    @Override
-                    public void clear() {
-                        userSessionModel.getNotes().clear();
-                    }
-                };
+                return userSessionModel.getNotes();
             }
 
             @Override
@@ -656,9 +618,9 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
             }
 
             @Override
-            public void setNotes(Map<String, String> notes) {
-                userSessionModel.getNotes().keySet().forEach(userSessionModel::removeNote);
-                notes.forEach(userSessionModel::setNote);
+            public void setNotes(Map<String, String> newNotes) {
+                userSessionModel.getNotes().clear();
+                userSessionModel.getNotes().putAll(newNotes);
             }
 
             @Override
@@ -699,4 +661,5 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
         });
         userSessionModel.getUpdatedModel();
     }
+
 }

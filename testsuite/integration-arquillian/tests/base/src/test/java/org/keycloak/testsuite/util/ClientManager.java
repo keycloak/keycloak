@@ -204,7 +204,8 @@ public class ClientManager {
         }
 
         public UserRepresentation getServiceAccountUser() {
-            return clientResource.getServiceAccountUser();
+            String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
+            return realm.users().get(saUserId).toRepresentation();
         }
     }
 }

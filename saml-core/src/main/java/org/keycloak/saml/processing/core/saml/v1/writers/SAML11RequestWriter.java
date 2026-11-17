@@ -56,7 +56,6 @@ public class SAML11RequestWriter extends BaseSAML11Writer {
         StaxUtil.writeStartElement(writer, PROTOCOL_PREFIX, SAML11Constants.REQUEST, namespace);
         StaxUtil.writeNameSpace(writer, PROTOCOL_PREFIX, namespace);
         StaxUtil.writeNameSpace(writer, ASSERTION_PREFIX, SAML11Constants.ASSERTION_11_NSURI);
-        StaxUtil.writeDefaultNameSpace(writer, namespace);
 
         // Attributes
         StaxUtil.writeAttribute(writer, SAML11Constants.REQUEST_ID, request.getID());

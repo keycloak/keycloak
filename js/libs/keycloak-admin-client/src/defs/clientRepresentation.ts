@@ -40,6 +40,7 @@ export default interface ClientRepresentation {
   rootUrl?: string;
   secret?: string;
   serviceAccountsEnabled?: boolean;
+  serviceAccountUserId?: string;
   standardFlowEnabled?: boolean;
   surrogateAuthRequired?: boolean;
   webOrigins?: string[];

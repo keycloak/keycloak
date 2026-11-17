@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
@@ -17,23 +19,29 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.jpa.entities.OutboxEntryStatus;
+import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
+import org.keycloak.ssf.transmitter.admin.SsfAdminStreamUpdateRequest;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
+import org.keycloak.ssf.transmitter.stream.ManagedBy;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
+import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -52,6 +60,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -306,6 +315,155 @@ public class SsfTransmitterStreamManagementTests {
             Assertions.assertTrue(updated.getEventsDelivered().contains(CaepSessionRevoked.TYPE));
             Assertions.assertFalse(updated.getEventsDelivered().contains(CaepCredentialChange.TYPE),
                     "events_delivered should no longer include the dropped event");
+        }
+    }
+
+    @Test
+    public void testAdminPatchNarrowsDeliveredEventsPersistsToReceiver() throws IOException {
+
+        // Regression: the admin stream-update endpoint
+        // (PATCH /admin/realms/{realm}/ssf/clients/{clientId}/stream) must
+        // persist to the receiver client, not the admin-console client that
+        // happens to be in the session context during an admin REST call.
+        // updateStreamAsAdmin previously called streamStore.saveStream(draft)
+        // without swapping the context client (unlike createStreamAsAdmin /
+        // updateStreamStatusAsAdmin), so the merged stream was written to the
+        // wrong client: the PATCH returned 200 but the receiver's
+        // events_delivered stayed wide on read-back.
+        String adminToken = adminClient.tokenManager().getAccessTokenString();
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER_RW + "/stream";
+
+        // Admin-create => KEYCLOAK-managed, both CAEP events requested + delivered.
+        StreamConfigUpdateRepresentation createBody = buildPushStreamRequest(Set.of(
+                CaepCredentialChange.TYPE,
+                CaepSessionRevoked.TYPE));
+
+        String streamId;
+        try (SimpleHttpResponse response = http.doPost(adminStreamUrl)
+                .json(createBody)
+                .auth(adminToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(201, response.getStatus(), "admin stream create should succeed");
+            SsfClientStreamRepresentation created = response.asJson(SsfClientStreamRepresentation.class);
+            streamId = created.getStreamId();
+            Assertions.assertNotNull(streamId, "stream_id should be assigned");
+            Assertions.assertEquals(ManagedBy.KEYCLOAK, created.getManagedBy(),
+                    "an admin-created stream must be KEYCLOAK-managed");
+            Assertions.assertEquals(2, created.getEventsDelivered().size(),
+                    "both events should be delivered right after create");
+        }
+
+        // Narrow events_delivered to a single event; do NOT touch events_requested.
+        SsfAdminStreamUpdateRequest patch = new SsfAdminStreamUpdateRequest();
+        patch.setEventsDelivered(Set.of(CaepSessionRevoked.TYPE));
+
+        try (SimpleHttpResponse response = http.doPatch(adminStreamUrl)
+                .json(patch)
+                .auth(adminToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(), "admin PATCH should succeed");
+            SsfClientStreamRepresentation updated = response.asJson(SsfClientStreamRepresentation.class);
+            Assertions.assertEquals(1, updated.getEventsDelivered().size(),
+                    "the PATCH response must already reflect the narrowed events_delivered");
+        }
+
+        // Read back through the receiver-facing endpoint (canonical URIs),
+        // which reads the receiver client directly. This is what regressed:
+        // before the fix the narrow never landed on the receiver client.
+        String receiverToken = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        try (SimpleHttpResponse response = http.doGet(streamsEndpoint())
+                .param("stream_id", streamId)
+                .auth(receiverToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            StreamConfig fetched = response.asJson(StreamConfig.class);
+            Assertions.assertTrue(fetched.getEventsDelivered().contains(CaepSessionRevoked.TYPE),
+                    "events_delivered must keep the retained event");
+            Assertions.assertFalse(fetched.getEventsDelivered().contains(CaepCredentialChange.TYPE),
+                    "events_delivered must drop the removed event after the admin PATCH");
+            // events_requested was untouched by the PATCH and must stay wide.
+            Assertions.assertTrue(fetched.getEventsRequested().contains(CaepCredentialChange.TYPE),
+                    "events_requested must remain unchanged when only events_delivered is narrowed");
+            Assertions.assertTrue(fetched.getEventsRequested().contains(CaepSessionRevoked.TYPE));
+        }
+    }
+
+    @Test
+    public void testAdminStreamResponseRedactsPushAuthorizationHeader() throws IOException {
+
+        // Security regression (issue #50074): the push delivery
+        // authorization_header is a live credential for the receiver's
+        // delivery endpoint and must never be echoed back in an admin
+        // response — it is write-only (accepted on create/update, redacted
+        // on read), mirroring how client secrets are handled. We assert it
+        // is stripped from both the create (POST) response and the admin GET,
+        // while the non-secret delivery fields (method, endpoint_url) survive.
+        String adminToken = adminClient.tokenManager().getAccessTokenString();
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER_RW + "/stream";
+
+        // buildPushStreamRequest sets delivery.authorization_header = DUMMY_PUSH_AUTH_HEADER.
+        StreamConfigUpdateRepresentation createBody = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = http.doPost(adminStreamUrl)
+                .json(createBody)
+                .auth(adminToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(201, response.getStatus(), "admin stream create should succeed");
+            SsfClientStreamRepresentation created = response.asJson(SsfClientStreamRepresentation.class);
+            Assertions.assertNotNull(created.getDelivery());
+            Assertions.assertNull(created.getDelivery().getAuthorizationHeader(),
+                    "create response must not echo the push authorization_header");
+            Assertions.assertEquals(DUMMY_PUSH_ENDPOINT, created.getDelivery().getEndpointUrl(),
+                    "non-secret delivery fields must still be returned");
+        }
+
+        // Same on the read path — this is the endpoint the issue flagged.
+        SsfClientStreamRepresentation fetched = fetchAdminStreamRepresentation(RECEIVER_RW);
+        Assertions.assertNotNull(fetched.getDelivery());
+        Assertions.assertNull(fetched.getDelivery().getAuthorizationHeader(),
+                "admin GET must not return the push authorization_header");
+        Assertions.assertEquals(DUMMY_PUSH_ENDPOINT, fetched.getDelivery().getEndpointUrl(),
+                "non-secret delivery fields must still be returned on read");
+    }
+
+    @Test
+    public void testAdminCreateStreamValidationErrorReturnsReadable400() throws IOException {
+
+        // Regression: a validation failure on the admin create endpoint must
+        // surface as a readable 400 carrying an SsfErrorRepresentation, not an
+        // opaque 500. The thrown WebApplicationException response previously
+        // omitted the Content-Type, so DefaultSecurityHeadersProvider rejected
+        // it ("MediaType not set ...") and masked the 400 as a 500.
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "");
+
+        String adminToken = adminClient.tokenManager().getAccessTokenString();
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER_RW + "/stream";
+
+        // PUSH delivery with no ssf.validPushUrls declared is rejected by the
+        // SSRF gate (SsfException -> 400).
+        StreamConfigUpdateRepresentation body = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = http.doPost(adminStreamUrl)
+                .json(body)
+                .auth(adminToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "admin create validation failure must be a clean 400, not a security-header-masked 500");
+            SsfErrorRepresentation error = response.asJson(SsfErrorRepresentation.class);
+            Assertions.assertEquals("stream_error", error.getError());
+            Assertions.assertTrue(
+                    error.getErrorDescription() != null
+                            && error.getErrorDescription().contains("validPushUrls"),
+                    "error body should carry the readable validation message, got: "
+                            + error.getErrorDescription());
         }
     }
 
@@ -1109,7 +1267,7 @@ public class SsfTransmitterStreamManagementTests {
         Assertions.assertEquals("true", rwClient.getAttributes().get(ClientStreamStore.SSF_ENABLED_KEY),
                 "deleting the stream must not clear the ssf.enabled flag");
         Assertions.assertNull(rwClient.getAttributes().get(ClientStreamStore.SSF_STREAM_ID_KEY),
-                "ssf.streamId attribute should be removed on delete");
+                "ssf.stream.id attribute should be removed on delete");
         Assertions.assertNull(rwClient.getAttributes().get(ClientStreamStore.SSF_STREAM_CONFIG_KEY),
                 "ssf.streamConfig attribute should be removed on delete");
     }
@@ -1220,6 +1378,58 @@ public class SsfTransmitterStreamManagementTests {
         try (SimpleHttpResponse response = postStream(userToken, request)) {
             Assertions.assertEquals(201, response.getStatus(),
                     "with ssf.requireServiceAccount=false, a regular-user bearer must pass the gate");
+        }
+    }
+
+    @Test
+    public void testRequiredRoleGateIgnoresRoleInjectedByHardcodedRoleMapper() throws IOException {
+
+        // Regression guard for keycloak/keycloak#54070: ssf.requiredRole
+        // must be checked against the caller's actual role grant. A
+        // Hardcoded Role mapper puts the role into realm_access without
+        // granting it, so the token claim alone must not pass the gate.
+        String roleName = "ssf-stream-manager";
+        RoleRepresentation roleRep = new RoleRepresentation();
+        roleRep.setName(roleName);
+        realm.admin().roles().create(roleRep);
+
+        ClientResource receiver = realm.admin().clients().get(findClientByClientId(RECEIVER_RW).getId());
+        ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
+        mapper.setName("hardcoded-" + roleName);
+        mapper.setProtocol("openid-connect");
+        mapper.setProtocolMapper(HardcodedRole.PROVIDER_ID);
+        mapper.setConfig(Map.of(HardcodedRole.ROLE_CONFIG, roleName));
+        String mapperId;
+        try (Response response = receiver.getProtocolMappers().createMapper(mapper)) {
+            Assertions.assertEquals(201, response.getStatus(), "hardcoded role mapper should be created");
+            mapperId = ApiUtil.getCreatedId(response);
+        }
+
+        try {
+            setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_REQUIRED_ROLE_KEY, roleName);
+
+            String injectedToken = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+            StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+            try (SimpleHttpResponse response = postStream(injectedToken, request)) {
+                Assertions.assertEquals(401, response.getStatus(),
+                        "a mapper-injected role claim without a role grant must not pass ssf.requiredRole");
+            }
+
+            // Positive control: once the role is actually granted, the
+            // same receiver passes the gate.
+            String saUserId = receiver.toRepresentation().getServiceAccountUserId();
+            realm.admin().users().get(saUserId).roles().realmLevel()
+                    .add(List.of(realm.admin().roles().get(roleName).toRepresentation()));
+
+            String grantedToken = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+            try (SimpleHttpResponse response = postStream(grantedToken, request)) {
+                Assertions.assertEquals(201, response.getStatus(),
+                        "a receiver whose service account holds the required role must pass the gate");
+            }
+        } finally {
+            setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_REQUIRED_ROLE_KEY, "");
+            receiver.getProtocolMappers().delete(mapperId);
+            realm.admin().roles().deleteRole(roleName);
         }
     }
 

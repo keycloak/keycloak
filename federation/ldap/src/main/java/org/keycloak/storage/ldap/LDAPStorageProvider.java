@@ -73,6 +73,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.StorageUnavailableException;
 import org.keycloak.storage.StoreManagers;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
@@ -330,23 +331,32 @@ public class LDAPStorageProvider implements UserStorageProvider,
             user = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), username).getId());
             user.setUsername(username);
         }
+        List<Runnable> onCreatedActions = new ArrayList<>();
+
         LDAPObject ldapUser = LDAPUtils.addUserToLDAP(this, realm, user, ldapObject -> {
             LDAPUtils.checkUuid(ldapObject, ldapIdentityStore.getConfig());
             user.setSingleAttribute(LDAPConstants.LDAP_ID, ldapObject.getUuid());
             user.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapObject.getDn().toString());
+            onCreatedActions.forEach(Runnable::run);
         });
 
-        // Add the user to the default groups and add default required actions
         UserModel proxy = proxy(realm, user, ldapUser, true);
-        proxy.grantRole(realm.getDefaultRole());
 
-        realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+        Runnable assignDefaults = () -> {
+            proxy.grantRole(realm.getDefaultRole());
+            realm.getDefaultGroupsStream().forEach(proxy::joinGroup);
+            realm.getRequiredActionProvidersStream()
+                    .filter(RequiredActionProviderModel::isEnabled)
+                    .filter(RequiredActionProviderModel::isDefaultAction)
+                    .map(RequiredActionProviderModel::getAlias)
+                    .forEachOrdered(proxy::addRequiredAction);
+        };
 
-        realm.getRequiredActionProvidersStream()
-                .filter(RequiredActionProviderModel::isEnabled)
-                .filter(RequiredActionProviderModel::isDefaultAction)
-                .map(RequiredActionProviderModel::getAlias)
-                .forEachOrdered(proxy::addRequiredAction);
+        if (ldapUser.isWaitingForExecutionOnMandatoryAttributesComplete()) {
+            onCreatedActions.add(assignDefaults);
+        } else {
+            assignDefaults.run();
+        }
 
         return proxy;
     }
@@ -550,6 +560,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     Condition usernameCondition = conditionsBuilder.equal(uuidLDAPAttributeName, entry.getValue());
                     ldapQuery.addWhereCondition(usernameCondition);
                 } else if (LDAPConstants.LDAP_ENTRY_DN.equals(attrName)) {
+                    LDAPDn entryDn = LDAPDn.fromString(entry.getValue());
+                    LDAPDn usersDn = LDAPDn.fromString(ldapIdentityStore.getConfig().getUsersDn());
+                    if (!entryDn.isDescendantOf(usersDn)) {
+                        logger.debugf("LDAP_ENTRY_DN [%s] is not within configured usersDn [%s], returning empty stream", entry.getValue(), ldapIdentityStore.getConfig().getUsersDn());
+                        return Stream.empty();
+                    }
                     ldapQuery.setSearchDn(entry.getValue());
                     ldapQuery.setSearchScope(SearchControls.OBJECT_SCOPE);
                 } else if (managedAttrs.contains(attrName)) {
@@ -972,6 +988,11 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         credential.setNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT, spnegoAuthenticator);
                         return CredentialValidationOutput.fallback();
                     } else {
+                        String responseToken = spnegoAuthenticator.getResponseToken();
+                        if (responseToken != null) {
+                            state.put(KerberosConstants.RESPONSE_TOKEN, responseToken);
+                        }
+
                         String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                         if (delegationCredential != null) {
                             state.put(KerberosConstants.GSS_DELEGATION_CREDENTIAL, delegationCredential);
@@ -1171,6 +1192,15 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
                         try {
                             ldapObjects = query.getResultList();
+                        } catch (StorageUnavailableException sue) {
+                            logger.errorf(sue, "Failed to query LDAP %s", query);
+                            /*
+                             * This ensures that PaginationContext#hasNextPage() will return false if we don't get ResponseControls back
+                             * from the LDAP query response. This helps to avoid an infinite loop in org.keycloak.storage.ldap.LDAPUtils.loadAllLDAPObjects
+                             * See KEYCLOAK-19036
+                             */
+                            query.getPaginationContext().setCookie(null);
+                            return Stream.empty();
                         } catch (ModelException mde) {
                             if (mde.isCausedBy(NameNotFoundException.class, CommunicationException.class)) {
                                 logger.errorf(mde, "Failed to query LDAP %s", query);

@@ -474,4 +474,8 @@ public interface ServicesLogger extends BasicLogger {
     @Message(id=111, value="Created initial admin user with username %s")
     void createdInitialAdminUser(String userName);
 
+    @LogMessage(level = WARN)
+    @Message(id =112, value = "Client registration provider '%s' is deprecated and will be removed in a future release. " +
+            "Migrate to the Admin REST API.")
+    void deprecatedClientRegistrationProvider(String providerId);
 }

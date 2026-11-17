@@ -159,7 +159,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
 
-        Assertions.assertFalse(loginPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
@@ -468,6 +468,34 @@ public class LogoutTest extends AbstractKeycloakTest {
         } finally {
             rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
             clientResource.update(rep);
+        }
+    }
+
+    /**
+     * Test for CVE-2026-4874: Verify that malicious client_session_host values
+     * are rejected during token refresh and don't cause SSRF during admin logout.
+     */
+    @Test
+    public void adminLogoutDoesNotUseMaliciousClientSessionHost() throws Exception {
+        try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setAttribute(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://${application.session.host}/testing/test-app/admin/backchannelLogout")
+                .update()) {
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                    .param(AdapterConstants.CLIENT_SESSION_STATE, "client_session")
+                    .param(AdapterConstants.CLIENT_SESSION_HOST, "evil.com:8180")
+                    .send();
+
+            List<UserRepresentation> users = adminClient.realm("test")
+                    .users()
+                    .search("test-user@localhost");
+            adminClient.realm("test").users().get(users.get(0).getId()).logout();
+
+            assertNull(testingClient.testApp().getBackChannelRawLogoutToken(),
+                    "There should be no Backchannel logout token for an untrusted client session host");
         }
     }
 

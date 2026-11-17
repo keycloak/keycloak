@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -72,8 +73,10 @@ import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
-public class AdminPermissionsSchema extends AuthorizationSchema {
+import org.jboss.logging.Logger;
 
+public class AdminPermissionsSchema extends AuthorizationSchema {
+    private static final Logger LOGGER = Logger.getLogger(AdminPermissionsSchema.class);
     public static final String REALMS_RESOURCE_TYPE = "Realms";
 
     public static final String CLIENTS_RESOURCE_TYPE = "Clients";
@@ -85,7 +88,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     // common scopes
     public static final String MANAGE = "manage";
     public static final String VIEW = "view";
-    public static String QUERY = "query";
+    public static final String QUERY = "query";
 
     // client specific scopes
     public static final String MAP_ROLES = "map-roles";
@@ -106,15 +109,20 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
 
     // user specific scopes
     public static final String IMPERSONATE = "impersonate";
+    public static final String DELEGATE = "delegate";
     public static final String RESET_PASSWORD = "reset-password";
 
     public static final String MANAGE_GROUP_MEMBERSHIP = "manage-group-membership";
 
+    // group specific scope for delegation
+    public static final String DELEGATE_MEMBERS = "delegate-members";
+
     public static final ResourceType CLIENTS = new ResourceType(CLIENTS_RESOURCE_TYPE, Set.of(MANAGE, MAP_ROLES, MAP_ROLES_CLIENT_SCOPE, MAP_ROLES_COMPOSITE, VIEW));
-    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERSHIP_OF_MEMBERS, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS));
+    public static final ResourceType GROUPS = new ResourceType(GROUPS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERSHIP_OF_MEMBERS, MANAGE_MEMBERS, VIEW_MEMBERS, IMPERSONATE_MEMBERS, DELEGATE_MEMBERS));
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
-    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP, RESET_PASSWORD), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS), IMPERSONATE, Set.of(IMPERSONATE_MEMBERS), MANAGE_GROUP_MEMBERSHIP, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS)), GROUPS.getType());
+    public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, DELEGATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP, RESET_PASSWORD), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS), IMPERSONATE, Set.of(IMPERSONATE_MEMBERS), DELEGATE, Set.of(DELEGATE_MEMBERS), MANAGE_GROUP_MEMBERSHIP, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS)), GROUPS.getType());
     public static final ResourceType ORGANIZATIONS = new ResourceType(ORGANIZATIONS_RESOURCE_TYPE, Set.of(MANAGE, VIEW));
+    private static final String AUTHORIZATION_USER = "kc.authz.fgap.user";
     private static final String SKIP_EVALUATION = "kc.authz.fgap.skip";
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
@@ -257,7 +265,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     private Optional<OrganizationModel> resolveOrganization(KeycloakSession session, String id) {
-        return Optional.ofNullable(session.getProvider(OrganizationProvider.class).getById(id));
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return Optional.empty();
+        }
+        OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
+        if (provider == null || !provider.isEnabled()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(provider.getById(id));
     }
 
     private Optional<ClientModel> resolveClient(KeycloakSession session, String id) {
@@ -524,7 +539,11 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider evaluator, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
-        return partialEvaluator.getPredicates(session, resourceType, evaluator, realm, builder, queryBuilder, path);
+        return partialEvaluator.getPredicates(session, getAdminUser(session), resourceType, evaluator, realm, builder, queryBuilder, path);
+    }
+
+    public boolean isPartialEvaluationActive(KeycloakSession session, ResourceType resourceType) {
+        return partialEvaluator.isActive(session, getAdminUser(session), resourceType);
     }
 
     public PolicyEvaluator getPolicyEvaluator(KeycloakSession session, ResourceServer resourceServer) {
@@ -557,14 +576,26 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         return aliases;
     }
 
+    public static FGAPAdminUserModel setAdminUser(KeycloakSession session, UserModel user) {
+        Objects.requireNonNull(session.getContext().getRealm(), "A realm is required for authorization filtering");
+        Objects.requireNonNull(user, "An admin user is required for authorization filtering");
+        FGAPAdminUserModel admin = UnfilteredUserModelInvocationHandler.wrap(session, user);
+        session.setAttribute(AUTHORIZATION_USER, admin);
+        return admin;
+    }
+
+    private static UserModel getAdminUser(KeycloakSession session) {
+        return session == null ? null : session.getAttribute(AUTHORIZATION_USER, UserModel.class);
+    }
+
     /**
-     * <p>Disables authorization and evaluation of permissions for realm resource types when executing the given {@code runnable}
+     * <p>Disables automatic FGAP query filtering when executing the given {@code runnable}
      * in the context of the given {@code session}.
      *
-     * <p>This method should be used whenever a code block should be executed without any evaluation or filtering based on
-     * the permissions set to a realm. For instance, when caching realm resources where access enforcement does not apply.
+     * <p>Use this for internal model lookups, for instance when caching realm resources. Explicit permission checks
+     * are unaffected. Streams and other lazy results must be consumed within the runnable.
      *
-     * @param session the session. If {@code null}, authorization is enabled when executing the code block
+     * @param session the session. If {@code null}, the runnable is executed directly
      * @param runnable the runnable to execute
      */
     public static void runWithoutAuthorization(KeycloakSession session, Runnable runnable) {
@@ -582,11 +613,34 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     /**
-     * Returns if authorization is disabled in the context of the given {@code session} at the moment that this method is called.
+     * <p>Disables automatic FGAP query filtering when executing the given {@code supplier}
+     * in the context of the given {@code session}, returning the supplier's result.
+     *
+     * @param session the session. If {@code null}, the supplier is executed directly without modifying authorization state
+     * @param supplier the supplier to execute
+     * @param <T> the return type
+     * @return the result of the supplier
+     * @see AdminPermissionsSchema#runWithoutAuthorization(KeycloakSession, Runnable)
+     */
+    public static <T> T runWithoutAuthorization(KeycloakSession session, Supplier<T> supplier) {
+        if (isSkipEvaluation(session)) {
+            return supplier.get();
+        }
+
+        try {
+            session.setAttribute(SKIP_EVALUATION, Boolean.TRUE.toString());
+            return supplier.get();
+        } finally {
+            session.removeAttribute(SKIP_EVALUATION);
+        }
+    }
+
+    /**
+     * Returns whether FGAP v2 partial evaluation is disabled by the realm configuration or temporarily suppressed.
+     * Filtering also requires an admin bound to the session by {@link #setAdminUser(KeycloakSession, UserModel)}.
      *
      * @param session the session
-     * @return {@code true} if authorization is disabled. Otherwise, returns {@code false}.
-     * Otherwise, {@code false}.
+     * @return {@code true} if partial evaluation must be skipped
      * @see AdminPermissionsSchema#runWithoutAuthorization(KeycloakSession, Runnable)
      */
     public static boolean isSkipEvaluation(KeycloakSession session) {
@@ -622,6 +676,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             return;
         }
 
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
+
+        if (resourceTypeResource == null) {
+            LOGGER.warnf("Scope creation skipped, because resource type '%s' not found!", resourceType);
+            return;
+        }
+
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Scope newScope = scopeStore.findByName(resourceServer, scopeName);
 
@@ -629,8 +691,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             newScope = scopeStore.create(resourceServer, scopeName);
         }
 
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
         Set<Scope> newScopes = new HashSet<>(resourceTypeResource.getScopes());
 
         newScopes.add(newScope);

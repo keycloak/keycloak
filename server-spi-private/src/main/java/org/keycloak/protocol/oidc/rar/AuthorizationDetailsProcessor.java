@@ -93,6 +93,30 @@ public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsJ
                                           AuthorizationDetailsJSONRepresentation storedAuthDetailsMember) throws InvalidAuthorizationDetailsException;
 
     /**
+     * Hook method called after authorization_details are processed and before the token response is created.
+     * This allows authorization details processors to perform post-processing actions (e.g., creating state objects).
+     *
+     * @param userSession      the user session
+     * @param clientSessionCtx the client session context
+     * @param authorizationDetailsResponse The response object of the proper type, which is supposed to be processed by this processor.
+     */
+    void afterAuthorizationDetailsProcessed(UserSessionModel userSession,
+                                            ClientSessionContext clientSessionCtx,
+                                            ADR authorizationDetailsResponse);
+
+
+    /**
+     * Sanitize authorization details before they are sent as part of the Token Response
+     * https://github.com/keycloak/keycloak/issues/50079
+     *
+     * @param authzDetail The typed authorization detail
+     * @return A sanitized clone of the authorization detail
+     */
+    default ADR sanitizeBeforeSendingTokenResponse(ADR authzDetail) {
+        return authzDetail;
+    }
+
+    /**
      * @param authzDetailsResponse all the authorizationDetails. May contain also authorizationDetails entries, with different "type" than the type understandable by this processor
      * @return sublist of the list provided by "authDetailsResponse" parameter, which will contain just the authorizationDetails of the corresponding type of this processor.
      */
@@ -105,5 +129,4 @@ public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsJ
                 .map(authDetailsResponse -> authDetailsResponse.asSubtype(getSupportedResponseJavaType()))
                 .toList();
     }
-
 }

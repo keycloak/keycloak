@@ -61,6 +61,7 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void testGetSearchedGroupsForUserFullRepresentation() {
         String userName = "averagejoe";
         String groupName1 = "group1WithAttribute";
@@ -147,7 +148,6 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void createUserWithGroups() {
         String username = "user-with-groups";
         String groupToBeAdded = "test-group";

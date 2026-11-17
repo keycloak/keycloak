@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
@@ -15,6 +16,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -22,6 +24,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -42,6 +46,9 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void testMapperTypes() {
@@ -252,6 +259,151 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
         IdentityProviderResource newProvider = managedRealm.admin().identityProviders().get("google3");
 
         assertThat(newProvider.getMappers(), empty());
+    }
+
+    // Alias subversion: addMapper must reject a representation whose alias points at a different IDP than the path.
+    @Test
+    public void testAddMapperRejectsDifferentIdentityProviderAlias() {
+        create(createRep("idp-a", "google"));
+        create(createRep("idp-b", "google"));
+
+        IdentityProviderResource providerA = managedRealm.admin().identityProviders().get("idp-a");
+        IdentityProviderResource providerB = managedRealm.admin().identityProviders().get("idp-b");
+
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        // Attempt to subvert the alias by pointing the representation at a different IDP than the path.
+        mapper.setIdentityProviderAlias("idp-b");
+        mapper.setName("subversion_mapper");
+        mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put("role", "offline_access");
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
+        mapper.setConfig(config);
+
+        try (Response response = providerA.addMapper(mapper)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // Neither identity provider must have received the mapper.
+        assertThat(providerA.getMappers(), empty());
+        assertThat(providerB.getMappers(), empty());
+    }
+
+    // Alias subversion: update must reject a representation whose id/alias retargets a different mapper or IDP than the path.
+    @Test
+    public void testUpdateMapperRejectsRetargetingViaRepresentation() {
+        create(createRep("idp-a", "google"));
+        create(createRep("idp-b", "google"));
+
+        IdentityProviderResource providerA = managedRealm.admin().identityProviders().get("idp-a");
+        IdentityProviderResource providerB = managedRealm.admin().identityProviders().get("idp-b");
+
+        String idA = addHardcodedRoleMapper(providerA, "idp-a", "mapper_a", "offline_access");
+        String idB = addHardcodedRoleMapper(providerB, "idp-b", "mapper_b", "offline_access");
+
+        // Update idp-a's mapper through its own path, but carry idp-b's id and alias in the representation.
+        IdentityProviderMapperRepresentation subverted = providerA.getMapperById(idA);
+        subverted.getConfig().put("role", "master-realm.manage-realm");
+        subverted.setId(idB);
+        subverted.setIdentityProviderAlias("idp-b");
+
+        Assertions.assertThrows(BadRequestException.class, () -> providerA.update(idA, subverted));
+
+        // Both mappers must be untouched.
+        assertEquals("offline_access", providerA.getMapperById(idA).getConfig().get("role"));
+        assertEquals("offline_access", providerB.getMapperById(idB).getConfig().get("role"));
+    }
+
+    // Alias subversion: update by id must reject a mapper that belongs to a different identity provider than the path.
+    @Test
+    public void testUpdateMapperByIdRejectsForeignIdentityProvider() {
+        create(createRep("idp-a", "google"));
+        create(createRep("idp-b", "google"));
+
+        IdentityProviderResource providerA = managedRealm.admin().identityProviders().get("idp-a");
+        IdentityProviderResource providerB = managedRealm.admin().identityProviders().get("idp-b");
+
+        String idB = addHardcodedRoleMapper(providerB, "idp-b", "mapper_b", "offline_access");
+
+        IdentityProviderMapperRepresentation rep = providerB.getMapperById(idB);
+        rep.getConfig().put("role", "master-realm.manage-realm");
+
+        try {
+            // idB belongs to idp-b, but we address it through idp-a's path.
+            providerA.update(idB, rep);
+            Assertions.fail("Should not allow updating a mapper that belongs to a different identity provider");
+        } catch (NotFoundException e) {
+            // expected
+        }
+
+        // The foreign mapper must remain unchanged.
+        assertEquals("offline_access", providerB.getMapperById(idB).getConfig().get("role"));
+    }
+
+    @Test
+    public void testIdpMapperCacheDelimiterCollision() {
+        String realmName = managedRealm.getName();
+
+        // Tuple A: alias="corp.idp.alias.part", name="mapper"
+        // Tuple B: alias="corp", name="part.idp.alias.mapper"
+        // Unescaped format: realmId + "." + alias + ".idp.alias." + name
+        // Without escaping, both tuples yield: realmId + ".corp.idp.alias.part.idp.alias.mapper"
+        create(createRep("corp.idp.alias.part", "google"));
+        create(createRep("corp", "google"));
+
+        IdentityProviderResource providerA = managedRealm.admin().identityProviders().get("corp.idp.alias.part");
+        IdentityProviderResource providerB = managedRealm.admin().identityProviders().get("corp");
+
+        addHardcodedRoleMapper(providerA, "corp.idp.alias.part", "mapper", "offline_access");
+
+        // Prime cache with Tuple A via getMapperByName in its own transaction
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            IdentityProviderMapperModel mapper = session.identityProviders().getMapperByName("corp.idp.alias.part", "mapper");
+            Assertions.assertNotNull(mapper);
+            assertEquals("offline_access", mapper.getConfig().get("role"));
+        });
+
+        // Lookup Tuple B via getMapperByName must NOT return Tuple A from cache
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            IdentityProviderMapperModel mapper = session.identityProviders().getMapperByName("corp", "part.idp.alias.mapper");
+            Assertions.assertNull(mapper, "Lookup for (corp, part.idp.alias.mapper) should not collide with (corp.idp.alias.part, mapper)");
+        });
+
+        // Now create Tuple B and verify both resolve independently from cache
+        addHardcodedRoleMapper(providerB, "corp", "part.idp.alias.mapper", "master-realm.manage-realm");
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            IdentityProviderMapperModel mapperA = session.identityProviders().getMapperByName("corp.idp.alias.part", "mapper");
+            IdentityProviderMapperModel mapperB = session.identityProviders().getMapperByName("corp", "part.idp.alias.mapper");
+
+            Assertions.assertNotNull(mapperA);
+            Assertions.assertNotNull(mapperB);
+            assertEquals("offline_access", mapperA.getConfig().get("role"));
+            assertEquals("master-realm.manage-realm", mapperB.getConfig().get("role"));
+        });
+    }
+
+    private String addHardcodedRoleMapper(IdentityProviderResource provider, String alias, String name, String role) {
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias(alias);
+        mapper.setName(name);
+        mapper.setIdentityProviderMapper("oidc-hardcoded-role-idp-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put("role", role);
+        config.put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.toString());
+        mapper.setConfig(config);
+        try (Response response = provider.addMapper(mapper)) {
+            return ApiUtil.getCreatedId(response);
+        }
     }
 
     private void assertMapperTypes(Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes, String ... mapperIds) {

@@ -23,11 +23,22 @@ import org.keycloak.common.util.Time;
  */
 public interface OrganizationInvitationModel {
 
+    /**
+     * Filters for querying organization invitations.
+     *
+     * <p>{@link #EMAIL}, {@link #FIRST_NAME}, and {@link #LAST_NAME} perform case-insensitive exact matching.
+     * Use {@link #SEARCH} for case-insensitive substring matching across email, firstName, and lastName fields.
+     */
     enum Filter {
+        /** Exact match on invitation status (e.g. PENDING, EXPIRED). */
         STATUS,
+        /** Case-insensitive exact match on first name. */
         FIRST_NAME,
+        /** Case-insensitive exact match on last name. */
         LAST_NAME,
+        /** Case-insensitive exact match on email. */
         EMAIL,
+        /** Case-insensitive substring match across email, firstName, and lastName. */
         SEARCH
     }
 

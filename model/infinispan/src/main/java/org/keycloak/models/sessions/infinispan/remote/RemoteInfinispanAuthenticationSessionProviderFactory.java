@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.Marshalling;
@@ -65,7 +66,7 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return InfinispanUtils.isRemoteInfinispan();
+        return !Profile.isFeatureEnabled(Profile.Feature.STATELESS) && InfinispanUtils.isRemoteInfinispan();
     }
 
     @Override
@@ -97,7 +98,6 @@ public class RemoteInfinispanAuthenticationSessionProviderFactory implements Aut
 
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
-
         ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
         InfinispanUtils.configureMaxRetries(builder);
         InfinispanUtils.configureRetryBaseTime(builder);

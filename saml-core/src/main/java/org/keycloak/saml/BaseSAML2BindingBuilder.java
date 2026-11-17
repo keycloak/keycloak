@@ -441,27 +441,36 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     }
 
 
+    /**
+     * Generate redirect URI for SAML redirect binding.
+     *
+     * @param samlParameterName SAML parameter name in unencoded form
+     * @param redirectUri URI to redirect to
+     * @param document Unencoded DOM document to be passed to the redirect URI
+     * @return redirect URI
+     * @throws ConfigurationException
+     * @throws ProcessingException
+     * @throws IOException
+     */
     public URI generateRedirectUri(String samlParameterName, String redirectUri, Document document) throws ConfigurationException, ProcessingException, IOException {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(redirectUri);
-        int pos = builder.getQuery() == null? 0 : builder.getQuery().length();
-        builder.queryParam(samlParameterName, base64Encoded(document));
+        String documentBase64Encoded = base64Encoded(document);
+        builder.replaceQueryParam(samlParameterName, documentBase64Encoded);
+        // SAML defines strict order for signed query params in redirect binding (toSign StringBuilder follows the order)
+        StringBuilder toSign = new StringBuilder(KeycloakUriBuilder.queryParamAsString(samlParameterName, documentBase64Encoded));
         if (relayState != null) {
-            builder.queryParam(GeneralConstants.RELAY_STATE, relayState);
+            builder.replaceQueryParam(GeneralConstants.RELAY_STATE, relayState);
+            toSign.append("&").append(KeycloakUriBuilder.queryParamAsString(GeneralConstants.RELAY_STATE, relayState));
         }
 
         if (sign) {
             builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod());
-            URI uri = builder.build();
-            String rawQuery = uri.getRawQuery();
-            if (pos > 0) {
-                // just set in the signature the added SAML parameters
-                rawQuery = rawQuery.substring(pos + 1);
-            }
+            toSign.append("&").append(KeycloakUriBuilder.queryParamAsString(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod()));
             Signature signature = signatureAlgorithm.createSignature();
             byte[] sig = null;
             try {
                 signature.initSign(signingKeyPair.getPrivate());
-                signature.update(rawQuery.getBytes(GeneralConstants.SAML_CHARSET));
+                signature.update(toSign.toString().getBytes(GeneralConstants.SAML_CHARSET));
                 sig = signature.sign();
             } catch (InvalidKeyException | SignatureException e) {
                 throw new ProcessingException(e);

@@ -1,7 +1,5 @@
 package org.keycloak.models.workflow;
 
-import jakarta.ws.rs.BadRequestException;
-
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.DurationConverter;
@@ -44,11 +42,9 @@ public class ScheduledWorkflowRunner implements ScheduledTask {
 
         session.getContext().setRealm(realm);
         WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
-        Workflow workflow;
+        Workflow workflow = provider.getWorkflow(workflowId);
 
-        try {
-            workflow = provider.getWorkflow(workflowId);
-        } catch (BadRequestException e) {
+        if (workflow == null) {
             log.warnf("Scheduled workflow %s in realm %s not found, cancelling task", workflowId, realmId);
             cancelTask(session);
             return;

@@ -43,8 +43,9 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
     @Override
     public void init(Config.Scope config) {
         var lockWaitTimeout = config.get("lockWaitTimeout", TransactionOptions.MIGRATION_TRANSACTION_TIMEOUT);
-        this.lockWaitTimeoutMillis = DurationConverter.parseDuration(lockWaitTimeout).toSeconds();
-        logger.debugf("Liquibase lock provider configured with lockWaitTime: %d seconds", lockWaitTimeout);
+        var lockWaitTimeoutDuration = DurationConverter.parseDuration(lockWaitTimeout);
+        this.lockWaitTimeoutMillis = lockWaitTimeoutDuration.toMillis();
+        logger.debugf("Liquibase lock provider configured with lockWaitTimeout: %d seconds", lockWaitTimeoutDuration.toSeconds());
     }
 
     @Override

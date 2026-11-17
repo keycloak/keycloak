@@ -36,17 +36,20 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.IdpLinkActionPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.utils.BrokerUtil;
 
 import org.hamcrest.MatcherAssert;
@@ -99,24 +102,42 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         getCleanup(bc.consumerRealmName()).addUserId(consumerUserID1);
     }
 
-    // Test deprecated mechanism for client-initiated account linking
+    // Test that the legacy client-initiated account linking endpoint is disabled by default
     @Test
-    public void testAccountLinkingSuccess_legacyClientInitiatedAccountLinking() throws Exception {
+    public void testLegacyClientInitiatedAccountLinking_disabledByDefault() throws Exception {
         String userSessionId = loginToConsumer();
 
-        // Redirect to link account on behalf of "broker-app" and login to the IDP
         URI clientInitiatedAccountLinkUri = BrokerUtil.createClientInitiatedLinkURI("broker-app", oauth.getRedirectUri(), bc.getIDPAlias(), bc.consumerRealmName(), userSessionId, new URI(OAuthClient.AUTH_SERVER_ROOT)).getAccountLinkUri();
         driver.navigate().to(clientInitiatedAccountLinkUri.toString());
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        grantPage.assertCurrent();
-        grantPage.accept();
+        // The endpoint should return an error page since the option is disabled by default
+        Assertions.assertTrue(driver.getPageSource().contains("error") || driver.getCurrentUrl().contains("error"), "Legacy client-initiated account linking should be disabled by default");
+        assertUserLinkedToIDP(false);
+    }
 
-        appPage.assertCurrent();
-        assertKcActionParams(null, null);
+    // Test deprecated mechanism for client-initiated account linking when explicitly enabled
+    @Test
+    public void testAccountLinkingSuccess_legacyClientInitiatedAccountLinking() throws Exception {
+        allowClientInitiatedAccountLinking(true);
+        try {
+            String userSessionId = loginToConsumer();
 
-        // Check that user is linked to the IDP
-        assertUserLinkedToIDP(true);
+            // Redirect to link account on behalf of "broker-app" and login to the IDP
+            URI clientInitiatedAccountLinkUri = BrokerUtil.createClientInitiatedLinkURI("broker-app", oauth.getRedirectUri(), bc.getIDPAlias(), bc.consumerRealmName(), userSessionId, new URI(OAuthClient.AUTH_SERVER_ROOT)).getAccountLinkUri();
+            driver.navigate().to(clientInitiatedAccountLinkUri.toString());
+            loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+            grantPage.assertCurrent();
+            grantPage.accept();
+
+            Assertions.assertEquals(oauth.getRedirectUri(), driver.getCurrentUrl());
+            assertKcActionParams(null, null);
+
+            // Check that user is linked to the IDP
+            assertUserLinkedToIDP(true);
+        } finally {
+            allowClientInitiatedAccountLinking(false);
+        }
     }
 
     @Test
@@ -135,7 +156,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.assertCurrent();
         grantPage.accept();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
 
         // Check that user is linked to the IDP
@@ -167,7 +188,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.assertCurrent();
         grantPage.accept();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
 
         // Check that user is linked to the IDP
@@ -192,7 +213,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         idpLinkActionPage.assertIdpInMessage(bc.getIDPAlias());
         idpLinkActionPage.cancel();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.CANCELLED.name().toLowerCase());
 
         // Check that user is not linked to the IDP
@@ -231,7 +252,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.assertCurrent();
         grantPage.cancel();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.CANCELLED.name().toLowerCase());
 
         // Check that user is not linked to the IDP
@@ -282,10 +303,43 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
             assertProviderEventsSuccess(providerUserId);
-            assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, false);
+            assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Errors.FEDERATED_IDENTITY_EXISTS, false);
 
             Assertions.assertNull(events.poll());
         });
+    }
+
+    @Test
+    public void testAccountLinkingIdpReturnsError() throws Exception {
+        loginToConsumer();
+
+        // Configure IDP to use prompt=none so the provider returns login_required
+        // immediately (user has no session at the provider)
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        IdentityProviderRepresentation idp = consumerRealm.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put("prompt", "none");
+        consumerRealm.identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        try {
+            String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+            oauth.loginForm().kcAction(kcAction).open();
+
+            events.clear();
+            confirmIdpLinking();
+
+            // Provider returns login_required since user has no provider session and prompt=none.
+            // This triggers IdentityBrokerService.error() during the linking flow.
+            errorPage.assertCurrent();
+
+            assertUserLinkedToIDP(false);
+
+            assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
+                assertConsumerFailedLinkEvents(consumerUserId, consumerUsername, Errors.IDENTITY_PROVIDER_LOGIN_FAILURE, false);
+            });
+        } finally {
+            idp.getConfig().put("prompt", "login");
+            consumerRealm.identityProviders().get(bc.getIDPAlias()).update(idp);
+        }
     }
 
 
@@ -307,7 +361,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         oauth.loginForm().kcAction(kcAction).open();
 
         // Should be redirected to the application even before being redirected to IDP for authentication
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Check that user is not linked to the IDP
         assertUserLinkedToIDP(false);
@@ -347,7 +401,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.assertCurrent();
         grantPage.accept();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
 
         // Check that user is linked to the IDP
@@ -386,7 +440,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.assertCurrent();
         grantPage.accept();
 
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
 
         // Check that user is linked to the IDP
@@ -410,7 +464,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         // Enforce re-authentication on "consumer" realm. Try to do re-authentication with the use of IDP, but reject consent screen on IDP side
         oauth.loginForm().maxAge(1).open();
-        loginPage.assertCurrent(bc.consumerRealmName());
+        loginPage.assertCurrent();
         loginPage.clickSocial(bc.getIDPAlias());
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
@@ -419,7 +473,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.cancel();
 
         // Should be redirected back to "consumer" login
-        loginPage.assertCurrent(bc.consumerRealmName());
+        loginPage.assertCurrent();
         Assertions.assertEquals("Access denied when authenticating with kc-oidc-idp", loginPage.getError());
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
@@ -438,9 +492,10 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
     private String loginToConsumer() {
         // Login to "consumer" realm with password
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         loginPage.login("user1", "password");
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String userSessionId = oauth.parseLoginResponse().getSessionState();
 
         // Check that user is not linked to the IDP
@@ -544,5 +599,9 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         Assertions.assertNull(events.poll());
     }
 
+    private void allowClientInitiatedAccountLinking(boolean allow) {
+        runOnServerMaster.run(RunHelpers.setSystemPropertyOnServer("oidc.allow-client-initiated-account-linking", String.valueOf(allow)));
+        runOnServerMaster.run(RunHelpers.reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc."));
+    }
 
 }

@@ -24,6 +24,7 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -229,7 +230,7 @@ public class WorkflowConcurrencyTest extends AbstractWorkflowTest {
             oauth.openLoginForm();
             loginPage.fillLogin(username, userAlice.getPassword());
             loginPage.submit();
-            assertTrue(driver.page().getPageSource() != null && driver.page().getPageSource().contains("Happy days"));
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         }
 
         // store the first step id for later comparison

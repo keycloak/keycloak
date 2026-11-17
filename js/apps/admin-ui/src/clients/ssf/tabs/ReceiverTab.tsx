@@ -395,6 +395,30 @@ export const ReceiverTab = ({
                       labelIcon={t("ssfAutoNotifyOnLoginHelp")}
                       stringify
                     />
+                    <SelectControl
+                      name={convertAttributeNameToForm<FormFields>(
+                        "attributes.ssf.receiverSubjectAddPolicy",
+                      )}
+                      label={t("ssfReceiverSubjectAddPolicy")}
+                      labelIcon={t("ssfReceiverSubjectAddPolicyHelp")}
+                      controller={{
+                        defaultValue: "AUTHENTICATED",
+                      }}
+                      options={[
+                        {
+                          key: "NONE",
+                          value: t("ssfReceiverSubjectAddPolicy.NONE"),
+                        },
+                        {
+                          key: "AUTHENTICATED",
+                          value: t("ssfReceiverSubjectAddPolicy.AUTHENTICATED"),
+                        },
+                        {
+                          key: "ANY",
+                          value: t("ssfReceiverSubjectAddPolicy.ANY"),
+                        },
+                      ]}
+                    />
                     <FormGroup
                       label={t("ssfSubjectRemovalGrace")}
                       fieldId="ssfSubjectRemovalGrace"

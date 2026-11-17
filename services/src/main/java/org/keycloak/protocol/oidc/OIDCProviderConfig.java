@@ -3,6 +3,7 @@ package org.keycloak.protocol.oidc;
 import java.util.Map;
 
 import org.keycloak.Config;
+import org.keycloak.cache.LocalCache;
 
 /**
  * @author <a href="mailto:patrick.weiner@prime-sign.com">Patrick Weiner</a>
@@ -10,6 +11,18 @@ import org.keycloak.Config;
 public class OIDCProviderConfig {
 
     private final Config.Scope config;
+
+    // Populated by the constructor, either with the bounded LocalCaches created by
+    // OIDCLoginProtocolFactory#postInit() (once a KeycloakSession is available to look up the LocalCacheProvider),
+    // or - for the single-argument constructor used by unit tests constructing this class directly, bypassing the
+    // factory lifecycle - with a no-op cache that never caches, so getMaxLengthForTheParameter() always resolves
+    // the value directly.
+    //
+    // Kept as two separate caches (rather than one cache keyed by a "paramName + isTokenParam" composite key) so
+    // that a lookup can use paramName directly as the cache key, without allocating a new String on every call,
+    // including cache hits.
+    private final LocalCache<String, Integer> reqParamMaxLengthCache;
+    private final LocalCache<String, Integer> tokenParamMaxLengthCache;
 
     /**
      * Maximum default length of the standard OIDC parameter sent to the OIDC authentication or token request.
@@ -110,8 +123,43 @@ public class OIDCProviderConfig {
 
     private final boolean allowUserinfoWithLightweightAccessToken;
 
+    public static final boolean DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING = false;
+
+    private final boolean allowClientInitiatedAccountLinking;
+
+    // Default - false, change to true for backward compatibility, to be removed in KC 27
+    public static final boolean DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS = false;
+
+    private final boolean allowOidcParamsInRedirectUris;
+
+    public static final boolean DEFAULT_ALLOW_INITIATING_IDP_LOGOUT_PARAM = false;
+
+    private final boolean allowInitiatingIdpLogoutParam;
+
+    /**
+     * Constructs an instance without result caching for {@link #getMaxLengthForTheParameter(String, boolean)},
+     * which is then resolved directly, uncached, on every call. Intended for unit tests constructing this class
+     * directly, bypassing the {@code OIDCLoginProtocolFactory} lifecycle.
+     *
+     * @deprecated Use {@link #OIDCProviderConfig(Config.Scope, LocalCache, LocalCache)}
+     * instead, passing the two {@link LocalCache}s created by {@code OIDCLoginProtocolFactory#postInit()} (or, for
+     * tests not exercising caching behavior, no-op {@link LocalCache} implementations).
+     */
+    @Deprecated(forRemoval = true, since = "26.8")
     public OIDCProviderConfig(Config.Scope config) {
+        this(config, NoopLocalCache.getInstance(), NoopLocalCache.getInstance());
+    }
+
+    /**
+     * @param reqParamMaxLengthCache Bounded {@link LocalCache} used to memoize {@link #getMaxLengthForTheParameter(String, boolean)}
+     *                               lookups for non-token parameters
+     * @param tokenParamMaxLengthCache Bounded {@link LocalCache} used to memoize {@link #getMaxLengthForTheParameter(String, boolean)}
+     *                                 lookups for token parameters
+     */
+    public OIDCProviderConfig(Config.Scope config, LocalCache<String, Integer> reqParamMaxLengthCache, LocalCache<String, Integer> tokenParamMaxLengthCache) {
         this.config = config;
+        this.reqParamMaxLengthCache = reqParamMaxLengthCache;
+        this.tokenParamMaxLengthCache = tokenParamMaxLengthCache;
 
         this.reqParamsDefaultMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_DEFAULT_MAX_SIZE, DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE);
         this.reqTokenParamsDefaultMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE, DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE);
@@ -124,6 +172,9 @@ public class OIDCProviderConfig {
         this.allowMultipleAudiencesForJwtClientAuthentication = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, DEFAULT_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION);
         this.allowTokenIntrospectionWithoutAudienceCheck = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
         this.allowUserinfoWithLightweightAccessToken = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
+        this.allowClientInitiatedAccountLinking = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING, DEFAULT_ALLOW_CLIENT_INITIATED_ACCOUNT_LINKING);
+        this.allowOidcParamsInRedirectUris = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS, DEFAULT_ALLOW_OIDC_PARAMS_IN_REDIRECT_URIS);
+        this.allowInitiatingIdpLogoutParam = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM, DEFAULT_ALLOW_INITIATING_IDP_LOGOUT_PARAM);
     }
 
     public int getAdditionalReqParamsMaxNumber() {
@@ -150,8 +201,20 @@ public class OIDCProviderConfig {
         return allowTokenIntrospectionWithoutAudienceCheck;
     }
 
+    public boolean isAllowOidcParamsInRedirectUris() {
+        return allowOidcParamsInRedirectUris;
+    }
+
     public boolean isAllowUserinfoWithLightweightAccessToken() {
         return allowUserinfoWithLightweightAccessToken;
+    }
+
+    public boolean isAllowClientInitiatedAccountLinking() {
+        return allowClientInitiatedAccountLinking;
+    }
+
+    public boolean isAllowInitiatingIdpLogoutParam() {
+        return allowInitiatingIdpLogoutParam;
     }
 
     /**
@@ -161,6 +224,20 @@ public class OIDCProviderConfig {
      * @return maximum length for the specified OIDC parameter
      */
     public int getMaxLengthForTheParameter(String paramName, boolean isTokenParam) {
+        LocalCache<String, Integer> cache = isTokenParam ? tokenParamMaxLengthCache : reqParamMaxLengthCache;
+
+        // The resolved value can only change following a server restart, so it is safe to cache for the
+        // lifetime of this (singleton) instance, avoiding the underlying configuration resolution on every call.
+        Integer paramMaxSize = cache.get(paramName);
+        if (paramMaxSize == null) {
+            paramMaxSize = computeMaxLengthForTheParameter(paramName, isTokenParam);
+            cache.put(paramName, paramMaxSize);
+        }
+
+        return paramMaxSize;
+    }
+
+    private int computeMaxLengthForTheParameter(String paramName, boolean isTokenParam) {
         // Configured value for the particular OIDC parameter
         Integer paramMaxSize = config.getInt(OIDCLoginProtocolFactory.CONFIG_OIDC_REQ_PARAMS_MAX_SIZE_PREFIX + "--" + paramName);
 
@@ -175,5 +252,40 @@ public class OIDCProviderConfig {
         }
 
         return paramMaxSize;
+    }
+
+    /**
+     * A {@link LocalCache} that never caches anything, used by the single-argument constructor so that
+     * {@link #getMaxLengthForTheParameter(String, boolean)} always resolves the value directly, without needing a
+     * null-check for a cache that was never wired in.
+     */
+    private static final class NoopLocalCache<K, V> implements LocalCache<K, V> {
+
+        private static final NoopLocalCache<?, ?> INSTANCE = new NoopLocalCache<>();
+
+        @SuppressWarnings("unchecked")
+        static <K, V> LocalCache<K, V> getInstance() {
+            return (LocalCache<K, V>) INSTANCE;
+        }
+
+        @Override
+        public V get(K key) {
+            return null;
+        }
+
+        @Override
+        public void put(K key, V value) {
+            // no-op
+        }
+
+        @Override
+        public void invalidate(K key) {
+            // no-op
+        }
+
+        @Override
+        public void close() {
+            // no-op
+        }
     }
 }

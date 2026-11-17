@@ -27,7 +27,6 @@ import jakarta.ws.rs.NotFoundException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -52,7 +51,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
@@ -84,7 +82,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -92,7 +89,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest {
 
     @Page
@@ -662,7 +658,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.realm(REALM_NAME);
         oauth.client(clientId);
         oauth.openLoginForm();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("Exception thrown intentionally", errorPage.getError());
     }
 

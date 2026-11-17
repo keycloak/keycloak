@@ -24,6 +24,7 @@ import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -34,7 +35,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -43,6 +43,7 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -169,28 +170,53 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
         }
     }
 
-    private void configureBrowserFlowWithAlternativeCredentials() {
-        configureBrowserFlowWithAlternativeCredentials(testingClient);
-    }
-
-    static void configureBrowserFlowWithAlternativeCredentials(KeycloakTestingClient testingClient) {
-        final String newFlowAlias = "browser - alternative";
+    // Issue https://github.com/keycloak/keycloak/issues/41394
+    @Test
+    public void testRefreshAndLocaleChangeKeepSelectedAlternativeSubflow() {
+        final String newFlowAlias = "browser - alternative subflows";
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
                 .selectFlow(newFlowAlias)
                 .inForms(forms -> forms
                         .clear()
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
-                        .addSubFlowExecution(AuthenticationExecutionModel.Requirement.REQUIRED, altSubFlow -> altSubFlow
-                                // Add 2 basic authenticator executions
-                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, PasswordFormFactory.PROVIDER_ID)
-                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, OTPFormAuthenticatorFactory.PROVIDER_ID)
+                        .addSubFlowExecution("username and password flow", AuthenticationFlow.BASIC_FLOW,
+                                AuthenticationExecutionModel.Requirement.ALTERNATIVE, subFlow -> subFlow
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED,
+                                                UsernamePasswordFormFactory.PROVIDER_ID)
+                        )
+                        .addSubFlowExecution("username flow", AuthenticationFlow.BASIC_FLOW,
+                                AuthenticationExecutionModel.Requirement.ALTERNATIVE, subFlow -> subFlow
+                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED,
+                                                UsernameFormFactory.PROVIDER_ID)
                         )
                 )
                 .defineAsBrowserFlow()
         );
+
+        try {
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.clickTryAnotherWayLink();
+
+            selectAuthenticatorPage.assertCurrent();
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.USERNAMEPASSWORD, SelectAuthenticatorPage.USERNAME),
+                    selectAuthenticatorPage.getAvailableLoginMethods());
+            selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.USERNAME);
+            loginUsernameOnlyPage.assertCurrent();
+
+            driver.navigate().refresh();
+            loginUsernameOnlyPage.assertCurrent();
+
+            loginUsernameOnlyPage.openLanguage("Deutsch");
+            loginUsernameOnlyPage.assertCurrent();
+        } finally {
+            BrowserFlowTest.revertFlows(managedRealm.admin(), newFlowAlias);
+        }
     }
 
+    private void configureBrowserFlowWithAlternativeCredentials() {
+        testingClient.server("test").run(RunHelpers.configureBrowserFlowWithAlternativeCredentials());
+    }
 
     @Test
     public void testAlternativeMechanismsInDifferentSubflows() {
@@ -237,8 +263,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             passwordPage.assertCurrent();
             passwordPage.login(getPassword("user-with-one-configured-otp"));
 
-            Assertions.assertFalse(passwordPage.isCurrent());
-            Assertions.assertFalse(loginPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {
@@ -284,7 +309,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // Successfully login with OTP
             loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
-            Assertions.assertFalse(loginTotpPage.isCurrent());
+            Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
             EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {

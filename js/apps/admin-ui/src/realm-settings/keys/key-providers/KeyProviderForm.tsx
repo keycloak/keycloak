@@ -144,7 +144,7 @@ export default function KeyProviderFormPage() {
         <KeyProviderForm
           {...params}
           onClose={() =>
-            navigate(toKeysTab({ realm: params.realm, tab: "providers" }))
+            void navigate(toKeysTab({ realm: params.realm, tab: "providers" }))
           }
         />
       </PageSection>

@@ -34,7 +34,7 @@ import jakarta.ws.rs.ext.Provider;
 import org.keycloak.models.KeycloakSession;
 
 /**
- * Closing the session at the end of the request.
+ * Closing the session at the end of the request. Not guaranteed to run if the connection is already closed.
  * <p>
  * This ensures the tranaction is committed and data is written to the database and the caches before the response is closed.
  * Without this filter a request that runs shortly after the first request completed might return still stale data.

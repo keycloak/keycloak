@@ -44,13 +44,6 @@ public class UserCacheManager extends CacheManager {
         return logger;
     }
 
-    @Override
-    public void clear() {
-        cache.clear();
-        revisions.clear();
-    }
-
-
     public void userUpdatedInvalidations(String userId, String username, String email, String realmId, Set<String> invalidations) {
         invalidations.add(userId);
         if (email != null) invalidations.add(UserCacheSession.getUserByEmailCacheKey(realmId, email));
@@ -74,6 +67,9 @@ public class UserCacheManager extends CacheManager {
 
         // Consents
         invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+
+        // Verifiable credentials
+        invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
     public void federatedIdentityLinkUpdatedInvalidation(String userId, Set<String> invalidations) {
@@ -89,6 +85,10 @@ public class UserCacheManager extends CacheManager {
 
     public void consentInvalidation(String userId, Set<String> invalidations) {
         invalidations.add(UserCacheSession.getConsentCacheKey(userId));
+    }
+
+    public void verifiableCredentialsInvalidation(String userId, Set<String> invalidations) {
+        invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
 

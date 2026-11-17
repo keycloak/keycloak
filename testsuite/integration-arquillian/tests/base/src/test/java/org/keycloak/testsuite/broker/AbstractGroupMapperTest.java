@@ -18,6 +18,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -57,8 +58,9 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         GroupRepresentation mapperTestGroup = new GroupRepresentation();
         mapperTestGroup.setName(MAPPER_TEST_GROUP_NAME);
 
-        Response response = adminClient.realm(bc.consumerRealmName()).groups().add(mapperTestGroup);
-        mapperGroupId = CreatedResponseUtil.getCreatedId(response);
+        try (Response response = adminClient.realm(bc.consumerRealmName()).groups().add(mapperTestGroup)) {
+            mapperGroupId = CreatedResponseUtil.getCreatedId(response);
+        }
     }
 
     protected UserRepresentation loginAsUserTwiceWithMapper(
@@ -87,7 +89,7 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         updateUser();
 
         logInAsUserInIDP();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
         return user;

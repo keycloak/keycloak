@@ -5,7 +5,7 @@ import { switchOff, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal.ts";
-import { goToClients } from "../utils/sidebar.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
@@ -37,20 +37,24 @@ import {
 } from "./saml.ts";
 
 test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
+  const realmName = `saml-advanced-tab-${uuid()}`;
   const clientName = `saml-advanced-tab-${uuid()}`;
 
-  test.beforeAll(() =>
-    adminClient.createClient({
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    await adminClient.createClient({
       protocol: "saml",
       clientId: clientName,
       publicClient: false,
-    }),
-  );
+      realm: realmName,
+    });
+  });
 
-  test.afterAll(() => adminClient.deleteClient(clientName));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await goToRealm(page, realmName);
     await goToClients(page);
     await clickTableRowItem(page, clientName);
     await goToAdvancedTab(page);
@@ -85,23 +89,40 @@ test.describe.serial("Fine Grain SAML Endpoint Configuration", () => {
 });
 
 test.describe.serial("Clients SAML tests", () => {
-  const clientId = "saml";
+  const realmName = `saml-settings-${uuid()}`;
+  let clientId: string | undefined;
 
-  const clientName = `saml-settings-${uuid()}`;
+  const getClientId = () => {
+    if (!clientId) {
+      throw new Error("SAML client for test was not initialized");
+    }
+    return clientId;
+  };
 
-  test.beforeAll(() =>
-    adminClient.createClient({
-      protocol: "saml",
-      clientId: clientName,
-    }),
-  );
+  test.beforeAll(() => adminClient.createRealm(realmName));
 
-  test.afterAll(() => adminClient.deleteClient(clientName));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
+    clientId = `saml-settings-${uuid()}`;
+    await adminClient.createClient({
+      protocol: "saml",
+      clientId,
+      realm: realmName,
+    });
+
     await login(page);
+    await goToRealm(page, realmName);
     await goToClients(page);
-    await clickTableRowItem(page, clientId);
+    await clickTableRowItem(page, getClientId());
+  });
+
+  test.afterEach(async () => {
+    const currentClientId = clientId;
+    clientId = undefined;
+    if (currentClientId) {
+      await adminClient.deleteClient(currentClientId, realmName);
+    }
   });
 
   test("should display the saml sections on details screen", async ({
@@ -210,8 +231,11 @@ test.describe.serial("Clients SAML tests", () => {
   });
 
   test("should check access settings", async ({ page }) => {
+    const currentClientId = getClientId();
     const validUrl =
-      "http://localhost:8180/realms/master/protocol/" + clientId + "/clients/";
+      "http://localhost:8180/realms/master/protocol/" +
+      currentClientId +
+      "/clients/";
     const invalidUrlErrorRoot =
       "Client could not be updated: invalid_inputRoot URL is not a valid URL";
     const invalidUrlErrorBase =

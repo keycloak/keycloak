@@ -258,6 +258,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
 
     @Test
+    @DatabaseTest
     public void concurrentCodeReuseShouldFail() throws Throwable {
         LOGGER.info("*********************************************");
         long start = System.currentTimeMillis();
@@ -379,7 +380,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         Pattern pattern = Pattern.compile("action=\"([^\"]*)\"");
         Matcher matcher = pattern.matcher(html);
         matcher.find();
-        String action = matcher.group(1);
+        // '&' separators are HTML-escaped as '&amp;' in the rendered form action; decode them so the POST
+        // carries the real query parameters instead of relying on ';' also being a query delimiter.
+        String action = matcher.group(1).replace("&amp;", "&");
         return action;
     }
 
@@ -494,14 +497,6 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             if (userSessionId.get() == null) {
                 userSessionId.set(token.getSessionState());
             }
-        }
-
-        public int getRetryDelayMs() {
-            return retryDelayMs;
-        }
-
-        public int getRetryCount() {
-            return retryCount;
         }
 
         public Map<Integer, Integer> getHistogram() {
