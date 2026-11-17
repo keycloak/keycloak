@@ -28,7 +28,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
@@ -64,15 +64,15 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         reg.auth(Auth.token(response));
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
 
         timeOffSet.set(10);
 
-        ClientRepresentation created = reg.create(rep);
+        OIDCClientRepresentation created = reg.oidc().create(rep);
         Assertions.assertNotNull(created);
 
         try {
-            reg.create(rep);
+            reg.oidc().create(rep);
             Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -91,8 +91,8 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
         JWSHeader header = new JWSInput(token).getHeader();
         assertEquals(Constants.INTERNAL_SIGNATURE_ALGORITHM, header.getAlgorithm().name());
 
-        ClientRepresentation rep = new ClientRepresentation();
-        ClientRepresentation created = reg.create(rep);
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        OIDCClientRepresentation created = reg.oidc().create(rep);
         Assertions.assertNotNull(created);
     }
 
@@ -102,16 +102,16 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         reg.auth(Auth.token(response));
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
 
-        ClientRepresentation created = reg.create(rep);
+        OIDCClientRepresentation created = reg.oidc().create(rep);
         Assertions.assertNotNull(created);
 
-        created = reg.create(rep);
+        created = reg.oidc().create(rep);
         Assertions.assertNotNull(created);
 
         try {
-            reg.create(rep);
+            reg.oidc().create(rep);
             Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -124,12 +124,12 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         reg.auth(Auth.token(response));
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
 
         timeOffSet.set(10);
 
         try {
-            reg.create(rep);
+            reg.oidc().create(rep);
             Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -144,10 +144,10 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         resource.delete(response.getId());
 
-        ClientRepresentation rep = new ClientRepresentation();
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
 
         try {
-            reg.create(rep);
+            reg.oidc().create(rep);
             Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());

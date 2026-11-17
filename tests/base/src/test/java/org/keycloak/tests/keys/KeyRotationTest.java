@@ -20,6 +20,7 @@ package org.keycloak.tests.keys;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PublicKey;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
@@ -40,15 +41,14 @@ import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.InjectCryptoHelper;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.crypto.CryptoHelper;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -136,7 +136,10 @@ public class KeyRotationTest {
 
         ClientRegistration reg = oauth.clientRegistration();
         reg.auth(Auth.token(initialAccessToken));
-        ClientRepresentation clientRep = reg.create(ClientBuilder.create().clientId("test").build());
+        OIDCClientRepresentation newClient = new OIDCClientRepresentation();
+        newClient.setRedirectUris(List.of("http://localhost:8080/test"));
+        OIDCClientRepresentation clientRep = reg.oidc().create(newClient);
+        String registeredClientId = clientRep.getClientId();
 
         // Userinfo with keys #1
         assertUserInfo(response.getAccessToken(), 200);
@@ -145,7 +148,7 @@ public class KeyRotationTest {
         assertTokenIntrospection(response.getAccessToken(), true);
 
         // Get client with keys #1 - registration access token should not have changed
-        ClientRepresentation clientRep2 = reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).get("test");
+        OIDCClientRepresentation clientRep2 = reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).oidc().get(registeredClientId);
         assertEquals(clientRep.getRegistrationAccessToken(), clientRep2.getRegistrationAccessToken());
 
         // Create keys #2
@@ -167,7 +170,7 @@ public class KeyRotationTest {
         assertTokenIntrospection(response.getAccessToken(), true);
 
         // Get client with keys #2 - registration access token should be changed
-        ClientRepresentation clientRep3 = reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).get("test");
+        OIDCClientRepresentation clientRep3 = reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).oidc().get(registeredClientId);
         assertNotEquals(clientRep.getRegistrationAccessToken(), clientRep3.getRegistrationAccessToken());
 
         // Drop key #1
@@ -187,13 +190,13 @@ public class KeyRotationTest {
 
         // Get client with keys #1 - should fail
         try {
-            reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).get("test");
+            reg.auth(Auth.token(clientRep.getRegistrationAccessToken())).oidc().get(registeredClientId);
             fail("Expected to fail");
         } catch (ClientRegistrationException e) {
         }
 
         // Get client with keys #2 - should succeed
-        ClientRepresentation clientRep4 = reg.auth(Auth.token(clientRep3.getRegistrationAccessToken())).get("test");
+        OIDCClientRepresentation clientRep4 = reg.auth(Auth.token(clientRep3.getRegistrationAccessToken())).oidc().get(registeredClientId);
         assertNotEquals(clientRep2.getRegistrationAccessToken(), clientRep4.getRegistrationAccessToken());
 
         // Drop key #2

@@ -25,7 +25,6 @@ import java.io.StringWriter;
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.client.registration.cli.EndpointType;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -68,7 +67,7 @@ public class GetCmd extends AbstractAuthOptionsCmd {
             throw new IllegalArgumentException("CLIENT not specified");
         }
 
-        EndpointType regType = endpoint != null ? EndpointType.of(endpoint) : EndpointType.DEFAULT;
+        EndpointType regType = endpoint != null ? EndpointType.of(endpoint) : EndpointType.OIDC;
 
 
         if (clientId.startsWith("-")) {
@@ -108,15 +107,6 @@ public class GetCmd extends AbstractAuthOptionsCmd {
             Object result = null;
 
             switch (regType) {
-                case DEFAULT: {
-                    ClientRepresentation client = JsonSerialization.readValue(json, ClientRepresentation.class);
-                    result = client;
-
-                    saveMergeConfig(cfg -> {
-                        setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
-                    });
-                    break;
-                }
                 case OIDC: {
                     OIDCClientRepresentation client = JsonSerialization.readValue(json, OIDCClientRepresentation.class);
                     result = client;
@@ -161,15 +151,12 @@ public class GetCmd extends AbstractAuthOptionsCmd {
         out.println("    CLIENT                ClientId of the client to display");
         out.println("    -t, --token TOKEN     Use the specified Registration Access Token for authorization");
         out.println("    -c, --compressed      Don't pretty print the output");
-        out.println("    -e, --endpoint TYPE   Endpoint type to use - one of: 'default', 'oidc'");
+        out.println("    -e, --endpoint TYPE   Endpoint type to use - one of: 'oidc'");
         out.println();
         out.println("Examples:");
         out.println();
-        out.println("Get configuration in default format:");
-        out.println("  " + PROMPT + " " + CMD + " get my_client");
-        out.println();
         out.println("Get configuration in OIDC format:");
-        out.println("  " + PROMPT + " " + CMD + " get my_client -e oidc");
+        out.println("  " + PROMPT + " " + CMD + " get my_client");
         out.println();
         out.println();
         out.println("Use '" + CMD + " help' for general information and a list of commands");

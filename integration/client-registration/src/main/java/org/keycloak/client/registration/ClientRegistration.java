@@ -45,7 +45,6 @@ public class ClientRegistration {
 
     private final String JSON = "application/json";
 
-    private final String DEFAULT = "default";
     private final String OIDC = "openid-connect";
 
     private HttpUtil httpUtil;
@@ -68,31 +67,6 @@ public class ClientRegistration {
     public ClientRegistration auth(Auth auth) {
         httpUtil.setAuth(auth);
         return this;
-    }
-
-    public ClientRepresentation create(ClientRepresentation client) throws ClientRegistrationException {
-        String content = serialize(client);
-        InputStream resultStream = httpUtil.doPost(content, JSON, UTF_8, JSON, DEFAULT);
-        return deserialize(resultStream, ClientRepresentation.class);
-    }
-
-    public ClientRepresentation get(String clientId) throws ClientRegistrationException {
-        InputStream resultStream = httpUtil.doGet(JSON, DEFAULT, clientId);
-        return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
-    }
-
-    public ClientRepresentation update(ClientRepresentation client) throws ClientRegistrationException {
-        String content = serialize(client);
-        InputStream resultStream = httpUtil.doPut(content, JSON, UTF_8, JSON, DEFAULT, client.getClientId());
-        return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
-    }
-
-    public void delete(ClientRepresentation client) throws ClientRegistrationException {
-        delete(client.getClientId());
-    }
-
-    public void delete(String clientId) throws ClientRegistrationException {
-        httpUtil.doDelete(DEFAULT, clientId);
     }
 
     public OIDCClientRegistration oidc() {

@@ -107,6 +107,8 @@ public class DefaultClientRegistrationPolicies {
     }
 
     private static void addGenericPolicies(RealmModel realm, String policyTypeKey) {
+        // Retain this provider for existing realm components and custom registration providers.
+        // OIDC metadata does not expose defaultRoles; removing the factory would break existing policy lookup.
         ComponentModel defaultRolesModel = createModelInstance("Default Roles Disabled", realm, DefaultRolesClientRegistrationPolicyFactory.PROVIDER_ID, policyTypeKey);
         realm.addComponentModel(defaultRolesModel);
 

@@ -27,7 +27,6 @@ import org.keycloak.client.cli.util.HttpUtil;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public enum EndpointType {
-    DEFAULT("default", "default"),
     OIDC("openid-connect", "oidc", "oidc");
 
     private String endpoint;
@@ -41,9 +40,7 @@ public enum EndpointType {
     }
 
     public static EndpointType of(String name) {
-        if (DEFAULT.endpoint.equals(name) || DEFAULT.alternativeNames.contains(name)) {
-            return DEFAULT;
-        } else if (OIDC.endpoint.equals(name) || OIDC.alternativeNames.contains(name)) {
+        if (OIDC.endpoint.equals(name) || OIDC.alternativeNames.contains(name)) {
             return OIDC;
         }
         throw new IllegalArgumentException("Endpoint not supported: " + name);
@@ -59,7 +56,6 @@ public enum EndpointType {
 
     public static String getExpectedContentType(EndpointType type) {
         switch (type) {
-            case DEFAULT:
             case OIDC:
                 return HttpUtil.APPLICATION_JSON;
             default:
