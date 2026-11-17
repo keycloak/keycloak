@@ -137,6 +137,7 @@ on the registration screen. After registering their profile, the user is require
 (or optionally other credentials like OTP or Passkey) as a subsequent step. It is possible to disable this and keep the old behavior by
 enabling the switch *Always set password on register form* in the realm registration flow, on the *Password validation* authenticator. Note
 that this option is deprecated and exists mostly for backward compatibility. It may be removed in the future.
+Even with this switch enabled, when the user verifies the email in a different browser than the one used for registration, the registration does not continue in the original browser, and the user needs to log in.
 
 For the details, see the link:{adminguide_link}[{adminguide_name}].
 

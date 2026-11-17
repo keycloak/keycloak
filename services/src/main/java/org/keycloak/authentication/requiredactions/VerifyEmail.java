@@ -36,6 +36,8 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.util.Time;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -50,6 +52,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.policy.MaxAuthAgePasswordPolicyProviderFactory;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
@@ -133,6 +136,14 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         loginFormsProvider.setAuthenticationSession(context.getAuthenticationSession());
         Response challenge;
         authSession.setClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW, null);
+        if ("true".equals(authSession.getAuthNote(NEW_USER_REGISTERED))) {
+            // When the email is verified in another browser, this authentication session is removed (see VerifyEmailActionTokenHandler).
+            // Make the restart go to the login page, with the registered username as login_hint (client note set during registration).
+            RestartLoginCookie restart = new RestartLoginCookie(authSession);
+            restart.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
+            context.getSession().getProvider(CookieProvider.class)
+                    .set(CookieType.AUTH_RESTART, RestartLoginCookie.encodeAndEncrypt(context.getSession(), restart));
+        }
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
