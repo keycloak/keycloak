@@ -40,6 +40,16 @@ public class InfinispanTimeUtil implements Serializable {
         origTimeService = setTimeServiceToKeycloakTime(cacheManager);
     }
 
+    /**
+     * Disables the testing time service if it has been enabled, and does nothing otherwise.
+     * This allows resetting the time offset without knowing if it has been applied to the caches before.
+     */
+    public static void disableTestingTimeServiceIfEnabled(KeycloakSession session) {
+        if (origTimeService != null) {
+            disableTestingTimeService(session);
+        }
+    }
+
     public static void disableTestingTimeService(KeycloakSession session) {
         if (origTimeService == null) {
             throw new IllegalStateException("Calling revertTimeService when testing TimeService was not set");

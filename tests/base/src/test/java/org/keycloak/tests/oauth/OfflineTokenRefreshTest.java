@@ -102,9 +102,6 @@ public class OfflineTokenRefreshTest {
 
     @BeforeEach
     public void clientConfiguration() {
-
-        timeOffSet.set(0);
-
         // Reset OAuth client config to defaults
         oauth.realm("test");
         oauth.client("test-app");  // Reset to default client

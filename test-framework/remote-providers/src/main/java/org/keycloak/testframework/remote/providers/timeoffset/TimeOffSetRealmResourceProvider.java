@@ -60,7 +60,7 @@ public class TimeOffSetRealmResourceProvider implements RealmResourceProvider {
             if (timeOffset > 0) {
                 InfinispanTimeUtil.enableTestingTimeService(session);
             } else {
-                InfinispanTimeUtil.disableTestingTimeService(session);
+                InfinispanTimeUtil.disableTestingTimeServiceIfEnabled(session);
             }
         }
 
