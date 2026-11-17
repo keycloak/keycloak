@@ -4,6 +4,18 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Allow UTF-8 email setting requires SMTPUTF8 server support
+// https://github.com/keycloak/keycloak/issues/55267
+
+When *Allow UTF-8* is enabled in a realm's email settings, {project_name} now checks whether the connected SMTP server advertises the `SMTPUTF8` extension before sending an email with an internationalized sender, recipient, reply-to, or envelope sender address.
+This enforces https://www.rfc-editor.org/rfc/rfc6531.html#section-3.2[RFC 6531 section 3.2], which requires SMTP clients to avoid transmitting internationalized email addresses or headers to servers that do not offer `SMTPUTF8`.
+If the server does not advertise `SMTPUTF8`, the send fails before the SMTP envelope is transmitted.
+Messages with ASCII-only addresses can still be sent without this extension.
+The *Test connection* action checks `SMTPUTF8` whenever *Allow UTF-8* is enabled, even if the test message uses only ASCII addresses, to validate that the configured server supports this mode.
+
+Configure an SMTP server or relay that advertises `SMTPUTF8` if you need to send email with internationalized addresses.
+If all email addresses are ASCII-only, you can disable *Allow UTF-8* instead.
+
 === Client scope policy checks legacy client templates
 // https://github.com/keycloak/keycloak/issues/54456
 
