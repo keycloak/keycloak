@@ -731,6 +731,16 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== Hibernate second-level cache disabled
+// https://github.com/keycloak/keycloak/issues/55297
+
+{project_name} no longer enables the Hibernate second-level cache and query cache, which Quarkus enables by default.
+{project_name} does not use either cache, as it caches data in Infinispan.
+With the caches enabled, Hibernate's `SimpleTimestamper` kept every thread that opened a database session at 100% CPU after the system clock was moved backwards, until the clock caught up with the previously issued timestamp.
+
+This change has no effect on the data stored or cached by {project_name}.
+If you use a custom extension that relies on Hibernate's second-level or query cache, set `quarkus.hibernate-orm.second-level-caching-enabled=true` in `conf/quarkus.properties` and run `kc.sh build`.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
