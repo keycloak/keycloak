@@ -66,8 +66,12 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractChangeImpor
     protected abstract String getAiaAction();
     
     protected void doAIA() {
+        doAIA(getAiaAction());
+    }
+
+    protected void doAIA(String action) {
         UriBuilder builder = OIDCLoginProtocolService.authUrl(authServerPage.createUriBuilder());
-        String uri = builder.queryParam(KC_ACTION, getAiaAction())
+        String uri = builder.queryParam(KC_ACTION, action)
                             .queryParam(RESPONSE_TYPE, "code")
                             .queryParam(CLIENT_ID, "test-app")
                             .queryParam(SCOPE, "openid")
