@@ -31,10 +31,6 @@
     <packaging>jar</packaging>
     <description>Email server extension for Keycloak Test Framework</description>
 
-    <properties>
-        <greenmail.version>2.1.3</greenmail.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>

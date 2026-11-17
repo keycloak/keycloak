@@ -17,24 +17,19 @@
 
 package org.keycloak.models.sessions.infinispan.remote;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.infinispan.events.AuthenticationSessionAuthNoteUpdateEvent;
-import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 import org.keycloak.models.sessions.infinispan.query.AuthenticationSessionQueries;
 import org.keycloak.models.sessions.infinispan.query.QueryHelper;
 import org.keycloak.models.sessions.infinispan.remote.transaction.AuthenticationSessionChangeLogTransaction;
-import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -105,17 +100,4 @@ public class RemoteInfinispanAuthenticationSessionProvider implements Authentica
         transaction.removeByRealmId(realm.getId());
     }
 
-    @Override
-    public void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {
-        if (compoundId == null) {
-            return;
-        }
-
-        session.getProvider(ClusterProvider.class).notify(
-                InfinispanAuthenticationSessionProviderFactory.AUTHENTICATION_SESSION_EVENTS,
-                AuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(), authNotesFragment),
-                true,
-                ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
-        );
-    }
 }
