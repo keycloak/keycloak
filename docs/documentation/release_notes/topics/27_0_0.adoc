@@ -36,7 +36,7 @@ The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry th
 
 The automatically generated certificate that secures the communication between {project_name} nodes now uses a 3072-bit RSA key and is signed using RSASSA-PSS, aligning with recommendations such as BSI TR-02102-2.
 Using the new provider options `key-size`, `algorithm` and `curve` of the `jgroups-mtls` SPI, administrators can choose a different RSA key size or switch to ECDSA.
-When the stored certificate no longer matches the configuration, a node regenerates it on startup.
+When the stored certificate no longer matches the configuration, a node regenerates it after it has joined the cluster.
 See the upgrading guide and the caching guide for details.
 
 = Themes

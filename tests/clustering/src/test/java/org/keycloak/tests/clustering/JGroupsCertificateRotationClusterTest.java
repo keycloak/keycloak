@@ -100,17 +100,44 @@ public class JGroupsCertificateRotationClusterTest {
 
     @ParameterizedTest
     @CsvSource({"RSA:2048, RSA:3072", "RSA:3072, RSA:2048", "RSA:2048, ECDSA:secp256r1"})
-    public void testStartupReplacesCertificateWithDifferentKey(String storedSpec, String configuredSpec) {
+    public void testMigrationReplacesCertificateWithDifferentKeyAfterStart(String storedSpec, String configuredSpec) {
         assertStartupMigration(storedSpec, configuredSpec, true);
     }
 
     @Test
-    public void testStartupKeepsCertificateWithUnchangedKey() {
+    public void testMigrationKeepsCertificateWithUnchangedKey() {
         assertStartupMigration("RSA:2048", "RSA:2048", false);
     }
 
     @Test
-    public void testConcurrentStartupConvergesOnCommittedCertificate() {
+    public void testStartupReplacesExpiredCertificateImmediately() {
+        loadBalancer.node(0);
+        try {
+            var result = runOnServer.fetch(session -> {
+                var factory = session.getKeycloakSessionFactory();
+                var configured = keySpec("RSA:3072");
+                var seeded = seedCertificate(factory, keySpec("RSA:2048"), Duration.ofSeconds(1)).getAlias();
+                try {
+                    Thread.sleep(2500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                var provider = DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(30), configured);
+                var committed = storedCertificate(factory);
+                // a node cannot join with an expired certificate, so it is replaced at startup
+                return !seeded.equals(provider.getCurrentCertificate().getAlias())
+                        && committed.getAlias().equals(provider.getCurrentCertificate().getAlias())
+                        && configured.matches(committed.getCertificate().getPublicKey())
+                        && !provider.migrateCertificate();
+            }, Boolean.class);
+            assertTrue(result);
+        } finally {
+            restoreCertificate();
+        }
+    }
+
+    @Test
+    public void testConcurrentMigrationConvergesOnCommittedCertificate() {
         loadBalancer.node(0);
         try {
             var converged = runOnServer.fetch(session -> {
@@ -126,8 +153,10 @@ public class JGroupsCertificateRotationClusterTest {
                     for (int i = 0; i < starts; i++) {
                         futures.add(executor.submit(() -> {
                             go.await();
-                            return DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(30), spec)
-                                    .getCurrentCertificate().getAlias();
+                            var provider = DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(30), spec);
+                            provider.migrateCertificate();
+                            provider.reloadCertificate();
+                            return provider.getCurrentCertificate().getAlias();
                         }));
                     }
                     go.countDown();
@@ -158,11 +187,15 @@ public class JGroupsCertificateRotationClusterTest {
                 var configured = keySpec(configuredSpec);
                 var seeded = seedCertificate(factory, keySpec(storedSpec)).getAlias();
                 var provider = DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(30), configured);
+                // the node starts with the stored certificate to be able to join, and replaces it afterwards
+                boolean startedWithSeeded = seeded.equals(provider.getCurrentCertificate().getAlias());
+                boolean replaced = provider.migrateCertificate();
+                provider.reloadCertificate();
                 var committed = storedCertificate(factory);
                 boolean keyMatches = configured.matches(committed.getCertificate().getPublicKey());
                 boolean aliasChanged = !seeded.equals(committed.getAlias());
                 boolean providerUsesCommitted = committed.getAlias().equals(provider.getCurrentCertificate().getAlias());
-                return keyMatches && providerUsesCommitted && aliasChanged == expectReplacement;
+                return startedWithSeeded && replaced == expectReplacement && keyMatches && providerUsesCommitted && aliasChanged == expectReplacement;
             }, Boolean.class);
             assertTrue(result);
         } finally {
@@ -234,7 +267,11 @@ public class JGroupsCertificateRotationClusterTest {
     }
 
     private static JGroupsCertificate seedCertificate(KeycloakSessionFactory factory, KeySpec spec) {
-        var certificate = Utils.generateSelfSignedCertificate(Duration.ofDays(60), spec);
+        return seedCertificate(factory, spec, Duration.ofDays(60));
+    }
+
+    private static JGroupsCertificate seedCertificate(KeycloakSessionFactory factory, KeySpec spec, Duration validity) {
+        var certificate = Utils.generateSelfSignedCertificate(validity, spec);
         KeycloakModelUtils.runJobInTransaction(factory, s -> s.getProvider(ServerConfigStorageProvider.class)
                 .replace(DatabaseJGroupsCertificateProvider.CERTIFICATE_ID, json -> true, () -> JGroupsCertificate.toJson(certificate)));
         return certificate;

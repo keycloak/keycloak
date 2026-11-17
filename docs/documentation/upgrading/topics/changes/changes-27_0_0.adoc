@@ -434,9 +434,9 @@ The automatically generated certificate that secures the communication between {
 It is signed using RSASSA-PSS instead of RSASSA-PKCS1-v1_5.
 This aligns with recommendations such as BSI TR-02102-2, which asks for RSA keys of at least 3000 bits.
 
-When a node starts and the certificate stored in the database was generated with a different key, the node generates a new certificate and stores it.
-Running nodes reload it when they reject the connection of the restarted node.
-During a rolling upgrade, this can cause short-lived connection retries.
+When a node starts and the certificate stored in the database was generated with a different key, the node first joins the cluster with the stored certificate.
+After it has joined, it generates a new certificate, stores it, and notifies the other nodes to reload it.
+If the stored certificate is expired or unusable, the node generates a new certificate on startup instead.
 
 To keep the previous key size, set the SPI option `+spi-jgroups-mtls--default--key-size=2048+`.
 To use an ECDSA key instead, set `+spi-jgroups-mtls--default--algorithm=ECDSA+`, and optionally `+spi-jgroups-mtls--default--curve+`.

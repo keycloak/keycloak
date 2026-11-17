@@ -77,6 +77,8 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     private volatile Duration rotationPeriod;
     private final KeySpec keySpec;
     private volatile JGroupsCertificate currentCertificate;
+    // the stored certificate does not match the configured key, and is replaced once this node has joined the cluster
+    private volatile boolean migrationPending;
 
     private DatabaseJGroupsCertificateProvider(KeycloakSessionFactory sessionFactory, Duration rotationPeriod, KeySpec keySpec) {
         this.keySpec = Objects.requireNonNull(keySpec);
@@ -104,6 +106,19 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     @Override
     public void rotateCertificate() {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, this::replaceCertificateFromDatabase);
+    }
+
+    @Override
+    public boolean migrateCertificate() {
+        if (!migrationPending) {
+            return false;
+        }
+        // Replace only if still mismatching, so concurrently starting nodes with the same configuration replace it once.
+        var replaced = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session ->
+                session.getProvider(ServerConfigStorageProvider.class)
+                        .replace(CERTIFICATE_ID, json -> !matchesKeySpec(fromJson(json)), this::generateSelfSignedCertificate)), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
+        migrationPending = false;
+        return replaced;
     }
 
     @Override
@@ -235,16 +250,34 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     }
 
     private JGroupsCertificate loadOrCreateCertificate(KeycloakSession session) {
+        migrationPending = false;
         var storage = session.getProvider(ServerConfigStorageProvider.class);
         var stored = fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
         if (matchesKeySpec(stored)) {
             return stored;
         }
+        if (isUsable(stored)) {
+            // The running nodes trust only the stored certificate, so join with it and replace it afterwards in migrateCertificate().
+            logger.infof("Stored JGroups certificate does not match the configured key (%s). Replacing it once this node has joined the cluster.", keySpec.description());
+            migrationPending = true;
+            return stored;
+        }
         // Replace only if still mismatching, so concurrently starting nodes with the same configuration regenerate it once.
         // Running nodes reload the new certificate when the trust manager rejects the connection of this node.
-        logger.infof("Stored JGroups certificate does not match the configured key (%s). Regenerating it.", keySpec.description());
+        logger.infof("Stored JGroups certificate does not match the configured key (%s) and is unusable. Regenerating it.", keySpec.description());
         storage.replace(CERTIFICATE_ID, json -> !matchesKeySpec(fromJson(json)), this::generateSelfSignedCertificate);
         return fromJson(storage.find(CERTIFICATE_ID).orElseThrow());
+    }
+
+    private static boolean isUsable(JGroupsCertificate certificate) {
+        try {
+            certificate.getCertificate().checkValidity();
+            Utils.createKeyManager(certificate);
+            Utils.createTrustManager(certificate);
+            return true;
+        } catch (GeneralSecurityException | IOException | RuntimeException e) {
+            return false;
+        }
     }
 
     private boolean matchesKeySpec(JGroupsCertificate certificate) {

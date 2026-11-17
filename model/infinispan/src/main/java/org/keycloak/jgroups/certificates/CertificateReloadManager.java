@@ -134,6 +134,23 @@ public class CertificateReloadManager implements Lifecycle {
     }
 
     /**
+     * Replaces a stored certificate that does not match the configuration, and notifies the nodes to reload it.
+     * The provider ensures that it happens only once after the start of this node.
+     */
+    private void migrateCertificate() {
+        lock.lock();
+        try (lock) {
+            if (KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, CertificateReloadManager::migrateCertificateInTransaction)) {
+                logger.info("Replaced the JGroups certificate to match the configured key");
+                sendReloadNotification();
+            }
+        } catch (RuntimeException e) {
+            // the migration stays pending and is retried on the next view
+            logger.warn("Failed to replace the JGroups certificate", e);
+        }
+    }
+
+    /**
      * Reloads the certificate from storage.
      */
     public void reloadCertificate() {
@@ -158,7 +175,10 @@ public class CertificateReloadManager implements Lifecycle {
     public void onViewChanged(ViewChangedEvent event) {
         logger.debug("On view changed");
         // probably a waste to reload, but if we have a partition, we reload the most recent certificate stored.
-        runBlocking(this::reloadCertificate, "on-view-changed");
+        runBlocking(() -> {
+            migrateCertificate();
+            reloadCertificate();
+        }, "on-view-changed");
     }
 
     // testing purpose
@@ -213,6 +233,10 @@ public class CertificateReloadManager implements Lifecycle {
 
     private static void replaceCertificateInTransaction(KeycloakSession session) {
         session.getProvider(JGroupsCertificateProvider.class).rotateCertificate();
+    }
+
+    private static boolean migrateCertificateInTransaction(KeycloakSession session) {
+        return session.getProvider(JGroupsCertificateProvider.class).migrateCertificate();
     }
 
     private static void loadCertificateInTransaction(KeycloakSession session) {

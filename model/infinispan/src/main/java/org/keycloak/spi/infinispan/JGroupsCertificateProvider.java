@@ -52,6 +52,20 @@ public interface JGroupsCertificateProvider extends Provider {
     }
 
     /**
+     * Replaces a stored certificate that does not match the configuration of this node, after this node has joined the cluster.
+     * <p>
+     * The node starts with the stored certificate that the running nodes trust, so it can join them.
+     * The replacement is used only after {@link #reloadCertificate()} is invoked.
+     * <p>
+     * This method is optional and invoked on each view change; implementations must act only once.
+     *
+     * @return {@code true} if the certificate was replaced, and the other nodes must reload it.
+     */
+    default boolean migrateCertificate() {
+        return false;
+    }
+
+    /**
      * Reloads the most recent certificate and apply it to the {@link KeyManager} and {@link TrustManager}.
      * <p>
      * This method must be implemented when {@link #supportRotateAndReload()} returns {@code true}.
