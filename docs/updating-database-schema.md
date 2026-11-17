@@ -30,6 +30,7 @@ Supporting automatic and manual migration
 
 An automatic migration applies each generated SQL statement to the connected database before Liquibase evaluates the next changeset.
 With `migration-strategy=manual`, Liquibase writes the statements to a script instead.
+An empty database is still initialized automatically unless `--spi-connections-jpa--quarkus--initialize-empty=false` is also set, so use both options to generate a script for the empty-database case.
 The database used to generate the script is not changed by those statements, so a precondition or custom change cannot observe a table, column, index, or data update emitted earlier in the same script.
 
 Review every changeset as both a live update and a script-generation step.
