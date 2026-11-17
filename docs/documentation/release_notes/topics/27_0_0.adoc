@@ -40,6 +40,10 @@ The built-in welcome theme also uses PatternFly 6.
 
 Realms that explicitly used `keycloak.v2` are migrated to `keycloak.v3` during upgrade. If you maintain a custom login theme based on `keycloak.v2`, or a custom welcome theme based on PatternFly 5, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
 
+== Login theme chrome macros
+
+Custom login themes can override `header.ftl`, `aside.ftl`, `footer.ftl`, `alert.ftl`, and `language-selector.ftl` to customize brand content, a side panel for marketing or help text, the login-card footer, alerts, and the locale selector without replacing the full page layout.
+
 == OID4VP verifier infers the DCQL query from mappers (experimental)
 
 The OID4VP identity provider no longer requires a hand-written DCQL query.
