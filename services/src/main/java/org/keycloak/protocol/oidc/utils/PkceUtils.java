@@ -15,6 +15,8 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
@@ -64,6 +66,17 @@ public class PkceUtils {
             }
         } catch(Exception ex) {
             return false;
+        }
+    }
+
+    public static String checkPKCEParams(ClientModel client, String codeChallengeMethod, String codeChallenge) {
+        String pkceCodeChallengeMethod = OIDCAdvancedConfigWrapper.fromClientModel(client).getPkceCodeChallengeMethod();
+
+        if (pkceCodeChallengeMethod != null && !pkceCodeChallengeMethod.isEmpty()) {
+            return checkParamsForPkceEnforcedClient(codeChallengeMethod, pkceCodeChallengeMethod, codeChallenge);
+        } else {
+            // if PKCE Activation is OFF, execute the codes implemented in KEYCLOAK-2604
+            return checkParamsForPkceNotEnforcedClient(codeChallengeMethod, pkceCodeChallengeMethod, codeChallenge);
         }
     }
 
@@ -150,5 +163,71 @@ public class PkceUtils {
         }
         Matcher m = VALID_CODE_VERIFIER_PATTERN.matcher(codeVerifier);
         return m.matches();
+    }
+
+    // https://tools.ietf.org/html/rfc7636#section-4
+    private static boolean isValidPkceCodeChallenge(String codeChallenge) {
+        if (codeChallenge.length() < OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MIN_LENGTH) {
+            logger.debugf("PKCE codeChallenge length under lower limit , codeChallenge = %s", codeChallenge);
+            return false;
+        }
+        if (codeChallenge.length() > OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MAX_LENGTH) {
+            logger.debugf("PKCE codeChallenge length over upper limit , codeChallenge = %s", codeChallenge);
+            return false;
+        }
+        Matcher m = VALID_CODE_VERIFIER_PATTERN.matcher(codeChallenge);
+        return m.matches();
+    }
+
+    private static String checkParamsForPkceEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) {
+        // check whether code challenge method is specified
+        if (codeChallengeMethod == null) {
+            logger.info("PKCE enforced Client without code challenge method.");
+            return "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM;
+        }
+        // check whether specified code challenge method is configured one in advance
+        if (!codeChallengeMethod.equals(pkceCodeChallengeMethod)) {
+            logger.info("PKCE enforced Client code challenge method is not matching the configured one.");
+            return "Invalid parameter: code challenge method is not matching the configured one";
+        }
+        // check whether code challenge is specified
+        if (codeChallenge == null) {
+            logger.info("PKCE supporting Client without code challenge");
+            return "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+        }
+        // check whether code challenge is formatted along with the PKCE specification
+        if (!isValidPkceCodeChallenge(codeChallenge)) {
+            logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
+            return "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+        }
+        return null;
+    }
+
+    private static String checkParamsForPkceNotEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) {
+        if (codeChallenge == null && codeChallengeMethod != null) {
+            logger.info("PKCE supporting Client without code challenge");
+            return "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+        }
+
+        // based on code_challenge value decide whether this client(RP) supports PKCE
+        if (codeChallenge == null) {
+            logger.debug("PKCE non-supporting Client");
+            return null;
+        }
+
+        if (codeChallengeMethod != null) {
+            // https://tools.ietf.org/html/rfc7636#section-4.2
+            // plain or S256
+            if (!codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_S256) && !codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_PLAIN)) {
+                logger.infof("PKCE supporting Client with invalid code challenge method not specified in PKCE, codeChallengeMethod = %s", codeChallengeMethod);
+                return "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM;
+            }
+        }
+
+        if (!isValidPkceCodeChallenge(codeChallenge)) {
+            logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
+            return "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
+        }
+        return null;
     }
 }
