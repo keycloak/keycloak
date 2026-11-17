@@ -133,7 +133,9 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         Map<String, Object> attributes = new HashMap<>(this.attributes);
 
         EmailTemplate email = processTemplate("emailTestSubject", Collections.emptyList(), "email-test.ftl", attributes);
-        send(config, email.getSubject(), email.getTextBody(), email.getHtmlBody());
+        Map<String, String> testConfig = new HashMap<>(config);
+        testConfig.put(EmailSenderProvider.CONFIG_REQUIRE_SMTPUTF8_FOR_TEST, "true");
+        send(testConfig, email.getSubject(), email.getTextBody(), email.getHtmlBody());
     }
 
     @Override
