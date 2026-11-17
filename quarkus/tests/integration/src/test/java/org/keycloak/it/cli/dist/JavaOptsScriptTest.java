@@ -49,6 +49,7 @@ public class JavaOptsScriptTest {
         String output = result.getOutput();
         assertThat(output, matchesPattern("(?s).*Using JAVA_OPTS: " + DEFAULT_OPTS + ".*"));
         assertThat(output, containsString("-Xms64m -Xmx512m"));
+        assertThat(output, containsString("-XX:-UseBASE64Intrinsics"));
     }
 
     @Test
