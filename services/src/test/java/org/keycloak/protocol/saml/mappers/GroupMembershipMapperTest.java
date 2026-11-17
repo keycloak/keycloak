@@ -190,8 +190,12 @@ public class GroupMembershipMapperTest {
         new GroupMembershipMapper().transformAttributeStatement(attributeStatement, mappingModel, null, userSession, null);
 
         // one attribute per group, in order from the top-level group down
+        MatcherAssert.assertThat(attributeStatement.getAttributes(), Matchers.hasSize(2));
         List<Object> values = new ArrayList<>();
-        attributeStatement.getAttributes().forEach(choice -> values.addAll(choice.getAttribute().getAttributeValue()));
+        attributeStatement.getAttributes().forEach(choice -> {
+            MatcherAssert.assertThat(choice.getAttribute().getAttributeValue(), Matchers.hasSize(1));
+            values.addAll(choice.getAttribute().getAttributeValue());
+        });
         MatcherAssert.assertThat(values, Matchers.equalTo(Arrays.asList("top", "level1")));
     }
 }
