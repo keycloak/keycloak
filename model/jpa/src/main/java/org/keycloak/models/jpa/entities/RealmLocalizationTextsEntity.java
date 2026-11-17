@@ -127,12 +127,11 @@ public class RealmLocalizationTextsEntity {
         if (o == null || getClass() != o.getClass()) return false;
         RealmLocalizationTextsEntity that = (RealmLocalizationTextsEntity) o;
         return Objects.equals(realm, that.realm) &&
-                Objects.equals(locale, that.locale) &&
-                Objects.equals(texts, that.texts);
+                Objects.equals(locale, that.locale);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(realm, locale, texts);
+        return Objects.hash(realm, locale);
     }
 }
