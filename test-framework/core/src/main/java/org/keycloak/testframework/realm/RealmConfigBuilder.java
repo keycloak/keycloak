@@ -277,6 +277,16 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder accessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        rep.setAccessCodeLifespanUserAction(accessCodeLifespanUserAction);
+        return this;
+    }
+
+    public RealmConfigBuilder accessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        rep.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        return this;
+    }
+
     public RealmConfigBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
         rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
         return this;

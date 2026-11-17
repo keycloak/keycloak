@@ -29,6 +29,8 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -37,6 +39,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -68,6 +71,9 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 	@Page
 	protected ErrorPage errorPage;
 
+	@Page
+	protected LoginPasswordUpdatePage changePasswordPage;
+
 	@Override
 	public void configureTestRealm(RealmRepresentation testRealm) {
 		testRealm.setVerifyEmail(true);
@@ -80,8 +86,14 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 
 	@Override
 	protected void changeEmailUsingAIA(String newEmail) throws Exception {
+		changeEmailUsingAIA(newEmail, true);
+	}
+
+	protected void changeEmailUsingAIA(String newEmail, boolean login) throws Exception {
 		doAIA();
-		loginPage.login("test-user@localhost", "password");
+		if (login) {
+			loginPage.login("test-user@localhost", "password");
+		}
 
 		emailUpdatePage.assertCurrent();
 		assertTrue(emailUpdatePage.isCancelDisplayed());
@@ -105,6 +117,33 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 				.detail(Details.UPDATED_EMAIL, "new@localhost");
 
 		Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+	}
+
+	@Test
+	public void updateEmailAlreadyLoggedIn() throws Exception {
+		oauth.doLogin("test-user@localhost", "password");
+		events.expectLogin().assertEvent();
+
+		changeEmailUsingAIA("new@localhost", false);
+
+		events.expect(EventType.UPDATE_EMAIL)
+				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.detail(Details.UPDATED_EMAIL, "new@localhost")
+				.assertEvent();
+
+		Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+
+		doAIA(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+		changePasswordPage.assertCurrent();
+		assertTrue(changePasswordPage.isCancelDisplayed());
+
+		changePasswordPage.changePassword("password", "password");
+		Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+		assertKcActionStatus(SUCCESS);
+
+		events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+		events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+		events.expectLogin().assertEvent();
 	}
 
 	@Test
