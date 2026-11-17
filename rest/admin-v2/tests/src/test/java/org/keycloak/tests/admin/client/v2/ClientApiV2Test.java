@@ -49,7 +49,8 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.client.ClientSortField;
-import org.keycloak.services.error.ViolationExceptionResponse;
+import org.keycloak.services.error.ProblemDetail;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -577,11 +578,15 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @Test
     public void invalidFieldProjection() {
         BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(Set.of("unknown!"))));
-        assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
-        
+        ProblemDetail problem = e.getResponse().readEntity(ProblemDetail.class);
+        assertEquals(ProblemType.VALIDATION_FAILED.getType(), problem.type());
+        assertEquals(List.of(new ProblemDetail.Violation("fields", "unknown! is an unknown field")), problem.violations());
+
         // ensure that multiple fields are interpreted correctly
         e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(new ListOptions().fields(new LinkedHashSet<>(List.of("clientId","unknown!")))));
-        assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
+        problem = e.getResponse().readEntity(ProblemDetail.class);
+        assertEquals(ProblemType.VALIDATION_FAILED.getType(), problem.type());
+        assertEquals(List.of(new ProblemDetail.Violation("fields", "unknown! is an unknown field")), problem.violations());
     }
 
     @Test
@@ -760,11 +765,12 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(response, notNullValue());
             assertThat(response.getStatus(), is(400));
 
-            var body = response.readEntity(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = response.readEntity(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations, hasItem("clientId: must not be blank"));
-            assertThat(violations, hasItem("appUrl: must be a valid URL"));
+            assertThat(violations, hasItem(new ProblemDetail.Violation("clientId", "must not be blank")));
+            assertThat(violations, hasItem(new ProblemDetail.Violation("appUrl", "must be a valid URL")));
         }
 
         oidcRep = new OIDCClientRepresentation();
@@ -778,11 +784,12 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = getClientsApi().createClient(oidcRep)) {
             assertThat(response, notNullValue());
             assertThat(response.getStatus(), is(400));
-            var body = response.readEntity(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Provided data is invalid"));
+            var body = response.readEntity(ProblemDetail.class);
+            assertThat(body.type(), is(ProblemType.VALIDATION_FAILED.getType()));
+            assertThat(body.detail(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations, hasItem("appUrl: must be a valid URL"));
-            assertThat(violations, hasItem(containsString("valid client authenticator type is required")));
+            assertThat(violations, hasItem(new ProblemDetail.Violation("appUrl", "must be a valid URL")));
+            assertThat(violations.stream().anyMatch(v -> v.field().equals("auth.method") && v.message().contains("valid client authenticator type is required")), is(true));
         }
     }
 
@@ -1021,7 +1028,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+        assertClientCreationFailsWithError(rep, "Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set");
     }
 
     @Test
@@ -1031,7 +1038,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-root-url");
         rep.setAppUrl("http://localhost:3000#fragment");
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+        assertClientCreationFailsWithError(rep, "Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set");
     }
 
     @Test
@@ -1040,7 +1047,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"A redirect URI must not contain an URL fragment\"}");
+        assertClientCreationFailsWithError(rep, "A redirect URI must not contain an URL fragment");
     }
 
     @Test
@@ -1049,7 +1056,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+        assertClientCreationFailsWithError(rep, "Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set");
     }
 
     @Test
@@ -1077,7 +1084,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+        assertClientCreationFailsWithError(rep, "Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set");
     }
 
     @Test
@@ -1096,7 +1103,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"A redirect URI must not contain an URL fragment\"}");
+        assertClientCreationFailsWithError(rep, "A redirect URI must not contain an URL fragment");
     }
 
     @Test
@@ -1105,7 +1112,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
+        assertClientCreationFailsWithError(rep, "Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set");
     }
 
     @Test

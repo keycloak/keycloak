@@ -75,7 +75,7 @@ public final class OIDCClientModelSchema extends BaseClientModelSchema<OIDCClien
         return switch (name) {
             case "loginFlows"          -> getLoginFlowNames(model);
             case "auth"                -> getAuth(model);
-            case "webOrigins"          -> new LinkedHashSet<>(model.getWebOrigins());
+            case "webOrigins"          -> model.getWebOrigins() != null ? new LinkedHashSet<>(model.getWebOrigins()) : null;
             case "serviceAccountRoles" -> getServiceAccountRoles(model);
             default                    -> super.getAttributeValue(model, name);
         };

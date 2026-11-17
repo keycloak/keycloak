@@ -18,7 +18,6 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
 import jakarta.validation.groups.Default;
-import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
@@ -71,6 +70,8 @@ import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdatedContext;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
+import org.keycloak.services.error.ProblemDetail;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -176,16 +177,16 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
         boolean create = model == null;
         validateUnknownFields(client);
         if (isBlank(client.getProtocol())) {
-            throw new ServiceException("protocol is required", Response.Status.BAD_REQUEST);
+            throw ServiceException.invalid("protocol", "protocol is required");
         }
         BaseClientModelSchema schema = getSchema(client.getProtocol());
         if (create && context == PutClient.class && client.getUuid() != null && realm.getClientById(client.getUuid()) != null) {
-            throw new ServiceException("uuid already exists, but with a different clientId", Response.Status.BAD_REQUEST);
+            throw new ServiceException(ProblemType.CONFLICT, "uuid already exists, but with a different clientId");
         }
         if (!create && !Objects.equals(model.getProtocol(), client.getProtocol())) {
             // TODO: duplicates the validation logic, but needs to be done here because the class type is expected to match the protocol
             // an alternative would be to make the FieldResolver use the class, rather than the protocol to get the schema
-            throw new ServiceException("protocol cannot be changed for an existing client", Response.Status.BAD_REQUEST);
+            throw ServiceException.invalid("protocol", "protocol cannot be changed for an existing client");
         }
         validator.validate(client, context, Default.class);
         var proposedRepresentation = getProposedOldRepresentation(realm, client, schema);
@@ -215,7 +216,9 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             // Validate the fully populated model
             ValidationUtil.validateClient(session, model, create, r -> {
                 session.getTransactionManager().setRollbackOnly();
-                throw new ServiceException(r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
+                throw ServiceException.invalid(r.getErrors().stream()
+                        .map(e -> new ProblemDetail.Violation(e.getFieldId(), e.getMessage()))
+                        .toList());
             });
             
             model.updateClient(); // this is fired for both create and update in RepresentationToModel
@@ -246,7 +249,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             fireAdminEvent(create ? OperationType.CREATE : OperationType.UPDATE, schema.fromModel(model));
             return schema.fromModel(model);
         } catch (ClientPolicyException e) {
-            throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
+            throw new ServiceException(ProblemType.POLICY_VIOLATION, e.getErrorDetail());
         }
     }
     
@@ -271,16 +274,16 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
         } catch (ClientPolicyException e) {
-            throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
+            throw new ServiceException(ProblemType.POLICY_VIOLATION, e.getErrorDetail());
         }
 
-        var clientRepresentation = Optional.ofNullable(getSchemaMap().get(client.getProtocol())).map(s -> s.fromModel(client))
-                .orElseThrow(() -> new ServiceException("Cannot map client model", Response.Status.BAD_REQUEST));
+        var clientRepresentation = Optional.ofNullable(fromModel(client))
+                .orElseThrow(() -> ServiceException.invalid("protocol", "Cannot map client model"));
 
         if (new ClientManager(new RealmManager(session)).removeClient(realm, client)) {
             fireAdminEvent(OperationType.DELETE, clientRepresentation);
         } else {
-            throw new ServiceException("Could not delete client", Response.Status.BAD_REQUEST);
+            throw new ServiceException(ProblemType.CONFLICT, "Could not delete client");
         }
         
         return true; // TODO: v2 throws a ServiceException rather than returning false - that provides a proper message
@@ -313,11 +316,18 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
         }
         
         // TODO: this validation could be pulled up to the rest layer and/or combinded with scim
-        validateFields(searchOptions.getAttributes().stream(), ClientResourceTypeProvider::isKnownField, "%s is an unknown field");
+        validateFields(searchOptions.getAttributes().stream(), ClientResourceTypeProvider::isKnownField,
+                "fields", "%s is an unknown field");
         validateFields(searchOptions.getSort().stream().map(SortField::fieldName),
-                field -> ClientSortField.fromApiName(field).isPresent(), "%s is not a sortable field");
+                field -> ClientSortField.fromApiName(field).isPresent(), "sort", "%s is not a sortable field");
 
         try {
+            try {
+                searchOptions.getFilterContext();
+            } catch (ScimFilterException e) {
+                // the parser message is not meant for clients, and describes tokens rather than the expression
+                throw ServiceException.invalid("q", "The 'q' filter expression is not valid");
+            }
             if (searchOptions.getFilterContext() != null) {
                 QueryParseUtils.validate(searchOptions.getFilterContext());
             }
@@ -359,18 +369,16 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
                     // Resolve through the provider to preserve adapter augmentation behavior.
                     .map(clientEntity -> session.clients().getClientById(realm, clientEntity.getId()))
                     .filter(Objects::nonNull)); // TODO: none of the clients should be null, this is more indicative of a potential problem
-        } catch (ClientQueryException | ScimFilterException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
-        } catch (ModelException e) {
-            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
+        } catch (ClientQueryException | ScimFilterException | ModelException e) {
+            throw ServiceException.invalid("q", e.getMessage());
         }
     }
     
     // TODO: still need to have well defined handling for polymorphic fields
-    private void validateFields(Stream<String> fields, Predicate<String> fieldValidator, String message) {
+    private void validateFields(Stream<String> fields, Predicate<String> fieldValidator, String parameter, String message) {
         fields.forEach(field -> {
             if (!fieldValidator.test(field)) {
-                throw new ServiceException(message.formatted(field), Response.Status.BAD_REQUEST);
+                throw ServiceException.invalid(parameter, message.formatted(field));
             }
         });
     }
@@ -510,7 +518,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
         }
 
         UserModel serviceAccountUser = new ClientManager(new RealmManager(session)).getServiceAccountUser(model)
-                .orElseThrow(() -> new ServiceException("Cannot find service account user", Response.Status.BAD_REQUEST));
+                .orElseThrow(() -> new ServiceException(ProblemType.INTERNAL_ERROR, "Cannot find service account user"));
 
         RealmModel realm = model.getRealm();
         Set<String> desiredRoleNames = Optional.ofNullable(rep.getServiceAccountRoles()).orElse(Collections.emptySet());
@@ -526,7 +534,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             RoleModel clientRole = model.getRole(roleName);
             RoleModel resolved = clientRole != null ? clientRole : realm.getRole(roleName);
             if (resolved == null) {
-                throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
+                throw ServiceException.invalid("serviceAccountRoles", "Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist");
             }
             rolesToAdd.add(resolved);
         }
@@ -555,16 +563,17 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
 
     protected void validateUnknownFields(BaseClientRepresentation rep) {
         if (!rep.getAdditionalFields().isEmpty()) {
-            throw new ServiceException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
+            throw ServiceException.invalid(rep.getAdditionalFields().keySet().stream()
+                    .map(field -> new ProblemDetail.Violation(field, "unknown field"))
+                    .toList());
         }
     }
     
     @SuppressWarnings("unchecked")
     public <R extends BaseClientRepresentation> BaseClientModelSchema<R> getSchema(String protocol) {
-        BaseClientModelSchema<?> schema = getSchemaMap().get(protocol);
+        BaseClientModelSchema<?> schema = protocol != null ? getSchemaMap().get(protocol) : null;
         if (schema == null) {
-            throw new ServiceException("Schema not found, unsupported client protocol: " + protocol,
-                    Response.Status.BAD_REQUEST);
+            throw ServiceException.invalid("protocol", "unsupported client protocol: " + protocol);
         }
         return (BaseClientModelSchema<R>) schema;
     }

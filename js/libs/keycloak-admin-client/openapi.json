@@ -225,6 +225,47 @@
       "SignatureAlgorithm" : {
         "type" : "string",
         "enum" : [ "RSA_SHA1", "RSA_SHA256", "RSA_SHA256_MGF1", "RSA_SHA512", "RSA_SHA512_MGF1", "DSA_SHA1" ]
+      },
+      "ProblemDetail" : {
+        "type" : "object",
+        "description" : "Problem details object as defined by RFC 9457, returned with the media type application/problem+json for every error",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "description" : "Identifies the problem, prefixed with urn:keycloak:admin-api:v2:problem:"
+          },
+          "title" : {
+            "type" : "string",
+            "description" : "Short summary, fixed per problem type"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "The HTTP status code"
+          },
+          "detail" : {
+            "type" : "string",
+            "description" : "Explanation specific to this occurrence"
+          },
+          "violations" : {
+            "type" : "array",
+            "description" : "Constraint violations, only present for validation-failed problems",
+            "items" : {
+              "type" : "object",
+              "properties" : {
+                "field" : {
+                  "type" : "string",
+                  "description" : "The path of the invalid field in the request body, or the name of the invalid query parameter"
+                },
+                "message" : {
+                  "type" : "string",
+                  "description" : "Why the value is invalid"
+                }
+              }
+            }
+          }
+        },
+        "required" : [ "type", "title", "status" ]
       }
     },
     "securitySchemes" : {
@@ -305,7 +346,24 @@
             }
           },
           "400" : {
-            "description" : "Invalid sort parameter"
+            "description" : "Invalid sort parameter",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default" : {
+            "description" : "Error response, see ProblemDetail",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       },
@@ -331,6 +389,16 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BaseClientRepresentation"
+                }
+              }
+            }
+          },
+          "default" : {
+            "description" : "Error response, see ProblemDetail",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -364,7 +432,24 @@
             }
           },
           "404" : {
-            "description" : "Not Found"
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default" : {
+            "description" : "Error response, see ProblemDetail",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       },
@@ -403,6 +488,16 @@
                 }
               }
             }
+          },
+          "default" : {
+            "description" : "Error response, see ProblemDetail",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       },
@@ -433,7 +528,24 @@
             }
           },
           "404" : {
-            "description" : "Not Found"
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default" : {
+            "description" : "Error response, see ProblemDetail",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       },
@@ -447,7 +559,24 @@
             "description" : "Client successfully deleted"
           },
           "404" : {
-            "description" : "Not Found"
+            "description" : "Not Found",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "default" : {
+            "description" : "Error response, see ProblemDetail",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       },

@@ -13,6 +13,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.keycloak.services.client.ClientSortField;
+import org.keycloak.services.error.ProblemDetail;
+import org.keycloak.services.error.ProblemType;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -20,10 +22,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.eclipse.microprofile.openapi.models.Operation;
 import org.eclipse.microprofile.openapi.models.PathItem;
+import org.eclipse.microprofile.openapi.models.media.Content;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
+import org.eclipse.microprofile.openapi.models.responses.APIResponse;
+import org.eclipse.microprofile.openapi.models.responses.APIResponses;
 import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
 import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 import org.jboss.jandex.AnnotationInstance;
@@ -39,6 +45,8 @@ import static org.keycloak.utils.StringUtil.isNullOrEmpty;
 public class OASModelFilter implements OASFilter {
 
     private static final String SORT_PARAMETER_NAME = "sort";
+    private static final String PROBLEM_DETAIL_SCHEMA_NAME = "ProblemDetail";
+    private static final String PROBLEM_DETAIL_DEFAULT_DESCRIPTION = "Error response, see ProblemDetail";
     private static final String ALLOWED_FIELDS_MARKER = "Allowed fields: ";
     private static final String CLIENTS_LIST_PATH_SUFFIX = "/clients/v2";
     private static final Map<String, Supplier<String>> SORT_ALLOWED_FIELDS_BY_PATH_SUFFIX = Map.of(
@@ -99,6 +107,7 @@ public class OASModelFilter implements OASFilter {
 
         addJavaExampleExtensions(openAPI);
         enhanceSortParameterDescriptions(openAPI);
+        addProblemDetailResponses(openAPI);
     }
 
     /**
@@ -254,6 +263,85 @@ public class OASModelFilter implements OASFilter {
         SecurityRequirement securityRequirement = OASFactory.createSecurityRequirement()
                 .addScheme(schemeName);
         openAPI.setSecurity(List.of(securityRequirement));
+    }
+
+    /**
+     * Documents the RFC 9457 problem details returned for every error of the Admin API v2. The {@code ProblemDetail}
+     * component is registered once, error responses without content are given it, and operations without a
+     * {@code default} response get one so that errors not declared explicitly, such as 401 or 403, are covered.
+     */
+    private void addProblemDetailResponses(OpenAPI openAPI) {
+        if (openAPI.getComponents() == null) {
+            openAPI.setComponents(OASFactory.createComponents());
+        }
+        openAPI.getComponents().addSchema(PROBLEM_DETAIL_SCHEMA_NAME, createProblemDetailSchema());
+
+        if (openAPI.getPaths() == null) {
+            return;
+        }
+        openAPI.getPaths().getPathItems().values().forEach(pathItem ->
+                pathItem.getOperations().values().forEach(this::addProblemDetailResponses));
+    }
+
+    private void addProblemDetailResponses(Operation operation) {
+        APIResponses responses = operation.getResponses();
+        if (responses == null) {
+            responses = OASFactory.createAPIResponses();
+            operation.setResponses(responses);
+        }
+
+        Map<String, APIResponse> declared = responses.getAPIResponses();
+        if (declared != null) {
+            declared.forEach((statusCode, response) -> {
+                if (isErrorStatus(statusCode) && response.getContent() == null) {
+                    response.setContent(createProblemDetailContent());
+                }
+            });
+        }
+
+        if (responses.getAPIResponse("default") == null) {
+            responses.addAPIResponse("default", OASFactory.createAPIResponse()
+                    .description(PROBLEM_DETAIL_DEFAULT_DESCRIPTION)
+                    .content(createProblemDetailContent()));
+        }
+    }
+
+    private static Content createProblemDetailContent() {
+        return OASFactory.createContent()
+                .addMediaType(ProblemDetail.MEDIA_TYPE, OASFactory.createMediaType()
+                        .schema(OASFactory.createSchema().ref(REF_PREFIX + PROBLEM_DETAIL_SCHEMA_NAME)));
+    }
+
+    private static Schema createProblemDetailSchema() {
+        Schema violation = OASFactory.createSchema()
+                .addType(Schema.SchemaType.OBJECT)
+                .addProperty("field", OASFactory.createSchema().addType(Schema.SchemaType.STRING)
+                        .description("The path of the invalid field in the request body, or the name of the invalid query parameter"))
+                .addProperty("message", OASFactory.createSchema().addType(Schema.SchemaType.STRING)
+                        .description("Why the value is invalid"));
+
+        return OASFactory.createSchema()
+                .addType(Schema.SchemaType.OBJECT)
+                .description("Problem details object as defined by RFC 9457, returned with the media type "
+                        + ProblemDetail.MEDIA_TYPE + " for every error")
+                .addProperty("type", OASFactory.createSchema().addType(Schema.SchemaType.STRING)
+                        .description("Identifies the problem, prefixed with " + ProblemType.TYPE_PREFIX))
+                .addProperty("title", OASFactory.createSchema().addType(Schema.SchemaType.STRING)
+                        .description("Short summary, fixed per problem type"))
+                .addProperty("status", OASFactory.createSchema().addType(Schema.SchemaType.INTEGER).format("int32")
+                        .description("The HTTP status code"))
+                .addProperty("detail", OASFactory.createSchema().addType(Schema.SchemaType.STRING)
+                        .description("Explanation specific to this occurrence"))
+                .addProperty("violations", OASFactory.createSchema().addType(Schema.SchemaType.ARRAY)
+                        .description("Constraint violations, only present for validation-failed problems")
+                        .items(violation))
+                .addRequired("type")
+                .addRequired("title")
+                .addRequired("status");
+    }
+
+    private static boolean isErrorStatus(String statusCode) {
+        return statusCode.matches("[45]\\d\\d");
     }
 
     private PathItem sortOperationsByMethod(PathItem pathItem) {

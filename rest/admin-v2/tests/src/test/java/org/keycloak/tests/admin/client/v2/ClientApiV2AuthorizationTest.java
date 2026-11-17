@@ -8,6 +8,7 @@ import java.util.Set;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -21,6 +22,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.services.error.ProblemDetail;
+import org.keycloak.services.error.ProblemType;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -37,13 +40,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Authorization tests for Client API V2.
@@ -132,7 +133,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
             () -> getClientsApi(noAccessAdminClient).getClients()
         );
 
-        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
+        assertForbiddenProblem(ex);
     }
 
     /**
@@ -188,14 +189,14 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
             ForbiddenException.class,
             () -> getClientsApi(queryClientsAdminClient).client(testClientId).getClient()
         );
-        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
+        assertForbiddenProblem(ex);
 
         // no-access: should get 403 (lacks requireView)
         ex = assertThrows(
             ForbiddenException.class,
             () -> getClientsApi(noAccessAdminClient).client(testClientId).getClient()
         );
-        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
+        assertForbiddenProblem(ex);
     }
 
     /**
@@ -272,7 +273,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         // no-access: should get 403 (lacks canList, prevents ID phishing)
         ForbiddenException ex = assertThrows(ForbiddenException.class,
             () -> getClientsApi(noAccessAdminClient).client(nonExistentClientId).getClient());
-        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
+        assertForbiddenProblem(ex);
     }
 
     /**
@@ -473,7 +474,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         // BEFORE permission: fgap-user cannot update fgap-update-test (403)
         try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-update-test").createOrUpdateClient(updateRep)) {
             assertEquals(403, response.getStatus(), "Expected 403 Forbidden before permission is granted");
-            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
+            assertForbiddenProblem(response);
         }
 
         // Create FGAP permission for fgap-update-test
@@ -488,7 +489,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         BaseClientRepresentation deniedRep = createClientRep("fgap-denied-client", "updated-role");
         try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-denied-client").createOrUpdateClient(deniedRep)) {
             assertEquals(403, response.getStatus(), "Expected 403 Forbidden for denied client");
-            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
+            assertForbiddenProblem(response);
         }
     }
 
@@ -521,7 +522,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         // BEFORE permission: fgap-user cannot delete fgap-delete-test (403)
         try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-delete-test").deleteClient()) {
             assertEquals(403, response.getStatus(), "Expected 403 Forbidden before permission is granted");
-            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
+            assertForbiddenProblem(response);
         }
 
         // Create FGAP permission for fgap-delete-test
@@ -535,8 +536,18 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         // fgap-user CANNOT delete fgap-denied-client (no permission granted) (403)
         try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-denied-client").deleteClient()) {
             assertEquals(403, response.getStatus(), "Expected 403 Forbidden for denied client");
-            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
+            assertForbiddenProblem(response);
         }
+    }
+
+    private static void assertForbiddenProblem(ForbiddenException exception) {
+        assertForbiddenProblem(exception.getResponse());
+    }
+
+    private static void assertForbiddenProblem(Response response) {
+        ProblemDetail problem = response.readEntity(ProblemDetail.class);
+        assertEquals(ProblemType.FORBIDDEN.getType(), problem.type());
+        assertEquals(403, problem.status());
     }
 
     private OIDCClientRepresentation createClientRep(String clientId, String... roles) {
