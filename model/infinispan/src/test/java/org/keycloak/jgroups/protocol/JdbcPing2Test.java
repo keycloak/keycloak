@@ -249,39 +249,47 @@ public class JdbcPing2Test {
     }
 
     @Test
-    public void testLeftCoordinatorRemovedOnViewChange() throws Exception {
+    public void testLeftCoordinatorIgnoredUntilItWritesAgain() throws Exception {
         JChannel channel = createChannel("0");
         try (channel) {
             channel.connect("ISPN");
             KEYCLOAK_JDBC_PING2_FOR_TESTING jdbcPing = (KEYCLOAK_JDBC_PING2_FOR_TESTING) channel.getProtocolStack().getProtocols().stream().filter(protocol -> protocol instanceof KEYCLOAK_JDBC_PING2).findFirst().orElseThrow(() -> new RuntimeException("Didn't find JDBC_PING"));
+            jdbcPing.writeAll();
+            UUID left = UUID.randomUUID();
+            List<UUID> members = List.of(left, UUID.randomUUID(), UUID.randomUUID());
             try (Connection con = jdbcPing.getConnection()) {
-                // A previous coordinator that is coordinated by itself, and a node that never was in our view
-                UUID left = UUID.randomUUID();
-                UUID other = UUID.randomUUID();
-                for (UUID address : List.of(left, other)) {
+                // A coordinator of a larger partition, that would win the split-brain decision against this node
+                for (UUID address : members) {
                     try (PreparedStatement ps = con.prepareStatement(jdbcPing.getInsertSingleSql())) {
-                        String addr = Util.addressToString(address);
-                        ps.setString(1, addr);
+                        ps.setString(1, Util.addressToString(address));
                         ps.setString(2, "x");
                         ps.setString(3, jdbcPing.getClusterName());
                         ps.setString(4, "127.0.0.1:9999");
-                        ps.setBoolean(5, true);
+                        ps.setBoolean(5, address.equals(left));
                         ps.setLong(6, Time.currentTime());
-                        ps.setString(7, addr);
+                        ps.setString(7, Util.addressToString(left));
                         ps.executeUpdate();
                     }
                 }
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, jdbcPing.healthStatus());
 
-                View newView = channel.view();
-                View oldView = View.create(left, 1, left, channel.getAddress());
-                jdbcPing.handleView(newView, oldView, true);
+                // The coordinator leaves the view, and is ignored
+                jdbcPing.handleView(channel.view(), View.create(left, 1, left, channel.getAddress()), true);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, jdbcPing.healthStatus());
 
-                List<PingData> remaining = jdbcPing.readFromDB(jdbcPing.getClusterName());
-                assertFalse(remaining.stream().anyMatch(p -> p.getAddress().equals(left)));
-                assertTrue(remaining.stream().anyMatch(p -> p.getAddress().equals(other)));
-                try (PreparedStatement ps = con.prepareStatement("DELETE FROM jgroups WHERE address = ?")) {
-                    ps.setString(1, Util.addressToString(other));
+                // It writes its row again, so it is alive and counted again
+                try (PreparedStatement ps = con.prepareStatement("UPDATE jgroups SET last_update = ? WHERE address = ?")) {
+                    ps.setLong(1, Time.currentTime() + 1);
+                    ps.setString(2, Util.addressToString(left));
                     ps.executeUpdate();
+                }
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, jdbcPing.healthStatus());
+            } finally {
+                try (Connection con = jdbcPing.getConnection(); PreparedStatement ps = con.prepareStatement("DELETE FROM jgroups WHERE address = ?")) {
+                    for (UUID address : members) {
+                        ps.setString(1, Util.addressToString(address));
+                        ps.executeUpdate();
+                    }
                 }
             }
         }
