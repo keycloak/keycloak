@@ -380,7 +380,21 @@ The removed endpoint accepted client credentials or a registration access token,
 The Admin REST API endpoint requires an access token with permission to view the client.
 Applications that loaded their `keycloak.json` anonymously from the removed endpoint, such as JavaScript applications, must bundle the configuration with the application or fetch it with an authenticated call.
 
-The `default` and `saml2-entity-descriptor` client registration providers remain deprecated and are not affected by this change.
+The `default` client registration provider remains deprecated and is not affected by this change.
+
+=== SAML Entity Descriptor client registration endpoint removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The deprecated client registration provider `saml2-entity-descriptor` has been removed.
+Requests to `/realms/<realm>/clients-registrations/saml2-entity-descriptor` now return an HTTP 404 status.
+
+The following related APIs have also been removed:
+
+* The `ClientRegistration.saml()` method and the `ClientRegistration.SAMLClientRegistration` class in the Java client registration API.
+* The `saml2` endpoint type of the `kcreg` command-line tool. `kcreg create -e saml2` is no longer accepted, and `kcreg create` no longer treats an XML input document as a SAML entity descriptor. Use JSON input, or the `default` and `oidc` endpoint types.
+
+To create a client from a SAML entity descriptor, convert the descriptor with the Admin REST API (`POST /admin/realms/<realm>/client-description-converter`), then create the returned client representation (`POST /admin/realms/<realm>/clients`).
+The conversion endpoint itself is not affected by this change.
 
 === Kerberos password authentication accepts only allowed realms
 // https://github.com/keycloak/keycloak/issues/54271
