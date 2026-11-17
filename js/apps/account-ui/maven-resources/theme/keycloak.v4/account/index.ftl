@@ -46,6 +46,11 @@
         }
       }
 
+      .pf-v6-theme-dark .keycloak__loading-container {
+        color: #e0e0e0;
+        background-color: #1b1d21;
+      }
+
       #loading-text {
         z-index: 1000;
         font-size: 20px;
@@ -64,21 +69,17 @@
     </script>
     <#if darkMode>
       <script type="module" async blocking="render">
-          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          <#outputformat "JavaScript">
+          const DARK_MODE_CLASS = ${(properties.kcDarkModeClass!"pf-v6-theme-dark")?c};
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
           updateDarkMode(mediaQuery.matches);
           mediaQuery.addEventListener("change", (event) => updateDarkMode(event.matches));
 
           function updateDarkMode(isEnabled) {
-            const { classList } = document.documentElement;
-
-            if (isEnabled) {
-              classList.add(DARK_MODE_CLASS);
-            } else {
-              classList.remove(DARK_MODE_CLASS);
-            }
+            document.documentElement.classList.toggle(DARK_MODE_CLASS, isEnabled);
           }
+          </#outputformat>
       </script>
     </#if>
     <#if !isSecureContext>

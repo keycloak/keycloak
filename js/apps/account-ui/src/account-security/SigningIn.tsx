@@ -313,22 +313,18 @@ export const SigningIn = () => {
                     </span>
                   </SplitItem>
                   {container.createAction && (
-                    <SplitItem isFilled>
-                      <div className="pf-v6-u-float-right">
-                        <MobileLink
-                          onClick={() =>
-                            login({
-                              action: container.createAction,
-                            })
-                          }
-                          title={t("setUpNew", {
-                            name: t(
-                              `${container.type}-display-name` as TFuncKey,
-                            ),
-                          })}
-                          testid={`${container.type}/create`}
-                        />
-                      </div>
+                    <SplitItem isFilled className="pf-v6-u-text-align-end">
+                      <MobileLink
+                        onClick={() =>
+                          login({
+                            action: container.createAction,
+                          })
+                        }
+                        title={t("setUpNew", {
+                          name: t(`${container.type}-display-name` as TFuncKey),
+                        })}
+                        testid={`${container.type}/create`}
+                      />
                     </SplitItem>
                   )}
                 </Split>

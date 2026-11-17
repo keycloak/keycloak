@@ -7,6 +7,7 @@ import {
   MastheadContent,
   MastheadLogo,
   MastheadLogoProps,
+  MastheadMain,
   MastheadMainProps,
   MastheadToggle,
   PageToggleButton,
@@ -99,21 +100,23 @@ const KeycloakMasthead = ({
   const picture = keycloak.idTokenParsed?.picture;
   return (
     <Masthead {...rest}>
-      <MastheadToggle>
-        <PageToggleButton
-          isHamburgerButton
-          data-testid="nav-toggle"
-          variant="plain"
-          aria-label={t("navigation")}
-        >
-          <BarsIcon />
-        </PageToggleButton>
-      </MastheadToggle>
-      <MastheadBrand>
-        <MastheadLogo {...brandProps}>
-          <img src={src} alt={alt} className={className} />
-        </MastheadLogo>
-      </MastheadBrand>
+      <MastheadMain>
+        <MastheadToggle>
+          <PageToggleButton
+            isHamburgerButton
+            data-testid="nav-toggle"
+            variant="plain"
+            aria-label={t("navigation")}
+          >
+            <BarsIcon />
+          </PageToggleButton>
+        </MastheadToggle>
+        <MastheadBrand>
+          <MastheadLogo {...brandProps}>
+            <img src={src} alt={alt} className={className} />
+          </MastheadLogo>
+        </MastheadBrand>
+      </MastheadMain>
       <MastheadContent>
         {toolbar}
         <Toolbar>
