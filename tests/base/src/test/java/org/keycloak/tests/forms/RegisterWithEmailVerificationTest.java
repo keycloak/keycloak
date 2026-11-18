@@ -8,7 +8,10 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
+import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.forms.RegistrationPassword;
+import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -21,6 +24,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -48,12 +52,15 @@ import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.LoginUsernamePage;
+import org.keycloak.testframework.ui.page.PasswordPage;
 import org.keycloak.testframework.ui.page.ProceedPage;
 import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.testframework.ui.page.VerifyEmailPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.MailUtils;
+import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
@@ -65,12 +72,14 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.keycloak.authentication.forms.RegistrationPassword.ALWAYS_SET_PASSWORD_ON_REGISTER_FORM;
+import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.tests.admin.authentication.AbstractAuthenticationTest.findExecutionByProvider;
 import static org.keycloak.tests.utils.PasswordGenerateUtil.generatePassword;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -106,6 +115,12 @@ public class RegisterWithEmailVerificationTest {
 
     @InjectPage(ref = "verifyEmailPage", webDriverRef = "driver")
     VerifyEmailPage verifyEmailPage;
+
+    @InjectPage(ref = "loginUsernamePage", webDriverRef = "driver")
+    LoginUsernamePage loginUsernamePage;
+
+    @InjectPage(ref = "passwordPage", webDriverRef = "driver")
+    PasswordPage passwordPage;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
@@ -481,20 +496,33 @@ public class RegisterWithEmailVerificationTest {
 
     // Issue 55287 - Email verified in another browser than the one used for registration.
     // The original browser can't continue the deleted authentication session, but restarts to the login page within the
-    // client's original authorization request, with the registered username pre-filled.
+    // client's original authorization request, with the registered username pre-filled. With the VerifyEmail
+    // "continue as registered user" option, the login restarts with the registered user already chosen.
     @ParameterizedTest
     @CsvSource({
-            "REGISTRATIONS_ENDPOINT, false",
-            "REGISTRATIONS_ENDPOINT, true",
-            "PROMPT_CREATE, false",
-            "PROMPT_CREATE, true",
-            "LOGIN_PAGE_REGISTER_LINK, false",
-            "LOGIN_PAGE_REGISTER_LINK, true"
+            "REGISTRATIONS_ENDPOINT, false, COMBINED, false",
+            "REGISTRATIONS_ENDPOINT, true, COMBINED, false",
+            "PROMPT_CREATE, false, COMBINED, false",
+            "PROMPT_CREATE, true, COMBINED, false",
+            "LOGIN_PAGE_REGISTER_LINK, false, COMBINED, false",
+            "LOGIN_PAGE_REGISTER_LINK, true, COMBINED, false",
+            "REGISTRATIONS_ENDPOINT, false, COMBINED, true",
+            "REGISTRATIONS_ENDPOINT, true, COMBINED, true",
+            "LOGIN_PAGE_REGISTER_LINK, false, COMBINED, true",
+            "REGISTRATIONS_ENDPOINT, false, IDENTITY_FIRST, false",
+            "REGISTRATIONS_ENDPOINT, false, IDENTITY_FIRST, true",
+            "PROMPT_CREATE, true, IDENTITY_FIRST, true"
     })
-    public void registerFromClientAndVerifyEmailInOtherBrowser(RegistrationEntryPoint entryPoint, boolean alwaysSetPasswordOnRegisterForm) throws Exception {
+    public void registerFromClientAndVerifyEmailInOtherBrowser(RegistrationEntryPoint entryPoint, boolean alwaysSetPasswordOnRegisterForm,
+                                                               LoginFlow loginFlow, boolean continueAsRegisteredUser) throws Exception {
         String authConfigId = alwaysSetPasswordOnRegisterForm ? enableAlwaysSetPasswordOnRegisterForm() : null;
         realm.updateWithCleanup((realmm) -> realmm.verifyEmail(true));
-        String username = "crossbrowser-" + entryPoint.name().toLowerCase() + "-" + alwaysSetPasswordOnRegisterForm;
+        loginFlow.configure(runOnServer, realm);
+        if (continueAsRegisteredUser) {
+            setVerifyEmailConfig(Map.of(VerifyEmail.CONTINUE_AS_REGISTERED_USER, "true"));
+        }
+        String username = "crossbrowser-" + entryPoint.name().toLowerCase() + "-" + alwaysSetPasswordOnRegisterForm
+                + "-" + loginFlow.name().toLowerCase() + "-" + continueAsRegisteredUser;
         String email = username + "@email.cz";
         String password = generatePassword();
         PkceGenerator pkce = PkceGenerator.s256();
@@ -536,14 +564,8 @@ public class RegisterWithEmailVerificationTest {
             // Browser 1 - refresh. Authentication session was removed, so the login restarts from the beginning,
             // telling the user that their email is verified rather than that the login timed out
             driver.navigate().refresh();
-            loginPage.assertCurrent();
-            assertThat(loginPage.getSuccessMessage().orElse(null), is("Your email address has been verified."));
-            assertTrue(loginPage.getErrorMessage().isEmpty());
-            assertThat(loginPage.getUsername(), is(username));
-
             events.clear();
-            loginPage.fillLogin(username, password);
-            loginPage.submit();
+            loginAfterRegistrationRestart(loginFlow, continueAsRegisteredUser, username, password);
             String code = oauth.parseLoginResponse().getCode();
             assertNotNull(code);
             EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).userId(userId);
@@ -552,6 +574,9 @@ public class RegisterWithEmailVerificationTest {
             assertTrue(tokenResponse.isSuccess());
             assertThat(oauth.parseToken(tokenResponse.getAccessToken(), AccessToken.class).getSubject(), is(userId));
         } finally {
+            if (continueAsRegisteredUser) {
+                realm.admin().flows().removeRequiredActionConfig(UserModel.RequiredAction.VERIFY_EMAIL.name());
+            }
             if (authConfigId != null) {
                 disableAlwaysSetPasswordOnRegisterForm(authConfigId);
             }
@@ -559,6 +584,74 @@ public class RegisterWithEmailVerificationTest {
                 realm.admin().users().delete(userId).close();
             }
         }
+    }
+
+    enum LoginFlow {
+        // Default browser flow: username and password on one form
+        COMBINED {
+            @Override
+            void configure(RunOnServerClient runOnServer, ManagedRealm realm) {
+            }
+        },
+        // Username, then password, on separate forms
+        IDENTITY_FIRST {
+            @Override
+            void configure(RunOnServerClient runOnServer, ManagedRealm realm) {
+                realm.dirty();
+                runOnServer.run(session -> FlowUtil.inCurrentRealm(session)
+                        .copyBrowserFlow("identity-first-browser")
+                        .inForms(forms -> forms
+                                .clear()
+                                .addAuthenticatorExecution(REQUIRED, UsernameFormFactory.PROVIDER_ID)
+                                .addAuthenticatorExecution(REQUIRED, PasswordFormFactory.PROVIDER_ID))
+                        .defineAsBrowserFlow());
+            }
+        };
+
+        abstract void configure(RunOnServerClient runOnServer, ManagedRealm realm);
+    }
+
+    /**
+     * Browser 1 after the registration restarted following email verification in browser 2: shows that the email is
+     * verified, then logs in as the registered user. With continueAsRegisteredUser the user is already chosen, so just
+     * the password is asked for. Otherwise the username is asked for first, pre-filled.
+     */
+    private void loginAfterRegistrationRestart(LoginFlow loginFlow, boolean continueAsRegisteredUser, String username, String password) {
+        String emailVerified = "Your email address has been verified.";
+        if (loginFlow == LoginFlow.COMBINED) {
+            loginPage.assertCurrent();
+            assertThat(loginPage.getSuccessMessage().orElse(null), is(emailVerified));
+            assertTrue(loginPage.getErrorMessage().isEmpty());
+            if (continueAsRegisteredUser) {
+                assertFalse(loginPage.isUsernameInputPresent());
+                assertThat(loginPage.getAttemptedUsername(), is(username));
+                loginPage.fillPassword(password);
+            } else {
+                assertThat(loginPage.getUsername(), is(username));
+                loginPage.fillLogin(username, password);
+            }
+            loginPage.submit();
+        } else {
+            if (continueAsRegisteredUser) {
+                passwordPage.assertCurrent();
+                assertThat(passwordPage.getSuccessMessage().orElse(null), is(emailVerified));
+            } else {
+                loginUsernamePage.assertCurrent();
+                assertThat(loginUsernamePage.getSuccessMessage().orElse(null), is(emailVerified));
+                assertThat(loginUsernamePage.getUsername(), is(username));
+                loginUsernamePage.submit();
+                passwordPage.assertCurrent();
+            }
+            assertThat(passwordPage.getAttemptedUsername(), is(username));
+            passwordPage.fillPassword(password);
+            passwordPage.submit();
+        }
+    }
+
+    private void setVerifyEmailConfig(Map<String, String> config) {
+        RequiredActionConfigRepresentation rep = new RequiredActionConfigRepresentation();
+        rep.setConfig(config);
+        realm.admin().flows().updateRequiredActionConfig(UserModel.RequiredAction.VERIFY_EMAIL.name(), rep);
     }
 
     // Issue 55287 - Registration started by the client, and authentication session expired before the form was submitted.

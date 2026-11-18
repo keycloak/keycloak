@@ -37,6 +37,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.ClientData;
@@ -440,8 +441,13 @@ public class SessionCodeChecks {
 
         if (authSession != null) {
 
-            if (VerifyEmail.getUserVerifiedAfterRegistrationRestart(session, realm, authSession) != null) {
+            UserModel verifiedUser = VerifyEmail.getUserVerifiedAfterRegistrationRestart(session, realm, authSession);
+            if (verifiedUser != null) {
                 // Email verified in another browser, which removed the authentication session of the registration. Not a timeout.
+                if (VerifyEmail.isContinueAsRegisteredUser(realm)) {
+                    // Don't ask for the username again. The user still authenticates as the browser flow requires.
+                    authSession.setAuthenticatedUser(verifiedUser);
+                }
                 new AuthenticationProcessor().setAuthenticationSession(authSession)
                         .setForwardedSuccessMessage(new FormMessage(null, Messages.EMAIL_VERIFIED));
             } else {
