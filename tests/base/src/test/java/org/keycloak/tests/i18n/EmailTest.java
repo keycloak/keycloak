@@ -31,6 +31,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.UserModel;
@@ -47,6 +49,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -67,6 +71,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
@@ -120,6 +125,16 @@ public class EmailTest {
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    // the user is shared, so a reset email requested by the test before would stop the next one
+    @BeforeEach
+    public void clearEmailCooldown() {
+        String cooldownKey = EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, user.getId());
+        runOnServer.run(session -> session.singleUseObjects().remove(cooldownKey));
+    }
 
     private void changeUserLocale(String locale) {
         UserRepresentation userRep = user.admin().toRepresentation();
@@ -247,6 +262,8 @@ public class EmailTest {
 
 
     private void sendResetPasswordEmail() {
+        // some tests request several emails in a row
+        clearEmailCooldown();
         oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.assertCurrent();

@@ -5,6 +5,8 @@ import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -20,10 +22,13 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -51,6 +56,17 @@ public class ResetPasswordUserEnumerationTest {
 
     @InjectEvents
     Events events;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
+
+    // the username and the email are the same user, so the second request would not send an email
+    @BeforeEach
+    public void clearEmailCooldown() {
+        String userId = realm.admin().users().searchByUsername("existing-user", true).get(0).getId();
+        String cooldownKey = EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, userId);
+        runOnServer.run(session -> session.singleUseObjects().remove(cooldownKey));
+    }
 
     @ParameterizedTest(name = "username={0}")
     @CsvSource({
