@@ -191,6 +191,10 @@
             <artifactId>quarkus-micrometer-deployment</artifactId>
             <exclusions>
                 <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-micrometer-dev</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.jboss.metadata</groupId>
                     <artifactId>jboss-metadata-web</artifactId>
                 </exclusion>
@@ -207,6 +211,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-opentelemetry-deployment</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.quarkus</groupId>
+                    <artifactId>quarkus-opentelemetry-dev</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
