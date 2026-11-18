@@ -95,7 +95,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 "Allow private-use addresses",
                 "If OFF, then the executor rejects a URL that the server fetches itself, namely the Client ID URL and the " +
                         "jwks_uri, sector_identifier_uri and request_uris properties of Client Metadata, whose host resolves to a " +
-                        "loopback, private, link-local, unique local or multicast address. Such URLs are rejected even if their host " +
+                        "loopback, private, link-local, unique local, multicast or other special-use address. Such URLs are rejected even if their host " +
                         "matches one of the trusted domains, which prevents Server-Side Request Forgery (SSRF) against hosts only " +
                         "reachable from the server. It can be ON only for development environment. It must be OFF in production environment.",
                 ProviderConfigProperty.BOOLEAN_TYPE,
