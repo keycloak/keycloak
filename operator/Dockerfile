@@ -18,7 +18,7 @@ USER 1000
 
 WORKDIR /opt/keycloak
 
-ENTRYPOINT [ "java", "-Djava.util.logging.manager=org.jboss.logmanager.LogManager", "-jar", "quarkus-run.jar" ]
+ENTRYPOINT [ "java", "-XX:-UseBASE64Intrinsics", "-Djava.util.logging.manager=org.jboss.logmanager.LogManager", "-jar", "quarkus-run.jar" ]
 
 # common labels
 ARG KEYCLOAK_VERSION
