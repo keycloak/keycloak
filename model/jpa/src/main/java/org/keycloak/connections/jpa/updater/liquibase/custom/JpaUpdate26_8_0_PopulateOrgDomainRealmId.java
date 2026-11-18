@@ -16,37 +16,25 @@
  */
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.UpdateStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 import liquibase.structure.core.Table;
 
 public class JpaUpdate26_8_0_PopulateOrgDomainRealmId extends CustomKeycloakTask {
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
-        String orgDomainTable = database.correctObjectName("ORG_DOMAIN", Table.class);
-        String orgTable = database.correctObjectName("ORG", Table.class);
+        String orgDomainTable = getTableName(database.correctObjectName("ORG_DOMAIN", Table.class));
+        String orgTable = getTableName(database.correctObjectName("ORG", Table.class));
 
-        try (PreparedStatement ps = connection.prepareStatement(
-                "SELECT d.ID, o.REALM_ID FROM " + getTableName(orgDomainTable) +
-                        " d JOIN " + getTableName(orgTable) + " o ON d.ORG_ID = o.ID WHERE d.REALM_ID IS NULL");
-             ResultSet rs = ps.executeQuery()) {
-
-            int count = 0;
-            while (rs.next()) {
-                statements.add(new UpdateStatement(null, null, orgDomainTable)
-                        .addNewColumnValue("REALM_ID", rs.getString(2))
-                        .setWhereClause("ID=?")
-                        .addWhereParameter(rs.getString(1)));
-                count++;
-            }
-            confirmationMessage.append("Populated REALM_ID for ").append(count).append(" ORG_DOMAIN rows.");
-        } catch (Exception e) {
-            throw new CustomChangeException(getTaskId() + ": Exception when populating ORG_DOMAIN.REALM_ID", e);
-        }
+        // A single set-based UPDATE works both in update mode and in script mode:
+        // script mode emits this as one SQL statement that is safe to apply at any time
+        statements.add(new RawParameterizedSqlStatement(
+                "UPDATE " + orgDomainTable + " SET REALM_ID = " +
+                "(SELECT o.REALM_ID FROM " + orgTable + " o WHERE o.ID = " + orgDomainTable + ".ORG_ID) " +
+                "WHERE " + orgDomainTable + ".REALM_ID IS NULL"
+        ));
+        confirmationMessage.append("Populated REALM_ID for ORG_DOMAIN rows from ORG.");
     }
 
     @Override

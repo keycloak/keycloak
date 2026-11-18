@@ -17,11 +17,14 @@
 
 package org.keycloak.it.storage.database.dist;
 
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.function.Consumer;
 
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.storage.database.PostgreSQLTest;
 import org.keycloak.it.utils.RawDistRootPath;
@@ -59,5 +62,19 @@ public class PostgreSQLDistTest extends PostgreSQLTest {
     @Launch({"start", AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG, "--spi-connections-jpa-quarkus-migration-strategy=manual", "--spi-connections-jpa-quarkus-initialize-empty=false", "--http-enabled=true", "--hostname-strict=false",})
     public void testKeycloakDbUpdateScript(CLIResult cliResult, RawDistRootPath rawDistRootPath) {
         assertManualDbInitialization(cliResult, rawDistRootPath);
+    }
+
+    @Tag(DistributionTest.STORAGE)
+    @Test
+    public void testManualScriptProducesTheSchemaOfTheAutomaticMigration(KeycloakRunner runner, RawDistRootPath rawDistRootPath) throws Exception {
+        assertManualScriptMatchesAutomaticMigration(runner, rawDistRootPath);
+    }
+
+    @Override
+    protected void resetDatabase(Connection connection) throws Exception {
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("DROP SCHEMA public CASCADE");
+            statement.execute("CREATE SCHEMA public");
+        }
     }
 }

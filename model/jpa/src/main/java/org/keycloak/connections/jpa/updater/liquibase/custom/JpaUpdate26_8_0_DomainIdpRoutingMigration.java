@@ -66,6 +66,7 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
         String ipcTable = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
         String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
         String orgDomainTable = database.correctObjectName("ORG_DOMAIN", Table.class);
+        String orgTable = database.correctObjectName("ORG", Table.class);
 
         try (PreparedStatement ps = connection.prepareStatement(
                 "SELECT c.IDENTITY_PROVIDER_ID, c.VALUE FROM " + getTableName(ipcTable) +
@@ -79,11 +80,15 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                 boolean autoRedirect = isEmailMatchEnabled(idpInternalId);
 
                 if (!"ANY".equals(domainValue)) {
-                    // Case A: specific domain name — look up ORG_DOMAIN.ID scoped by IdP's realm
+                    // Case A: specific domain name — look up ORG_DOMAIN.ID scoped by IdP's realm.
+                    // Join through ORG instead of ORG_DOMAIN.REALM_ID: during manual migration script generation
+                    // (migration-strategy=manual), this query runs against the pre-upgrade database where
+                    // ORG_DOMAIN.REALM_ID does not exist yet, which would fail with "column does not exist".
                     try (PreparedStatement domLookup = connection.prepareStatement(
                             "SELECT dom.ID FROM " + getTableName(orgDomainTable) + " dom" +
-                                    " JOIN " + getTableName(idpTable) + " ip ON dom.REALM_ID = ip.REALM_ID" +
-                                    " AND dom.ORG_ID = ip.ORGANIZATION_ID" +
+                                    " JOIN " + getTableName(orgTable) + " o ON o.ID = dom.ORG_ID" +
+                                    " JOIN " + getTableName(idpTable) + " ip ON ip.ORGANIZATION_ID = o.ID" +
+                                    " AND ip.REALM_ID = o.REALM_ID" +
                                     " WHERE dom.NAME = ? AND ip.INTERNAL_ID = ?")) {
                         domLookup.setString(1, domainValue);
                         domLookup.setString(2, idpInternalId);
@@ -169,10 +174,14 @@ public class JpaUpdate26_8_0_DomainIdpRoutingMigration extends CustomKeycloakTas
                     Set<String> existingDomainNames = new HashSet<>();
                     Set<String> insertedDomains = new HashSet<>();
 
-                    // Get all domains for this org (ORG_ID is directly on ORG_DOMAIN)
+                    // Get all domains for this org (ORG_ID is directly on ORG_DOMAIN).
+                    // Do not filter on ORG_DOMAIN.IDP_ID: that column is added by an earlier changeset of the same
+                    // release, so it is absent on the pre-upgrade database that a manual migration script
+                    // (migration-strategy=manual) is generated against. The updates are only queued here, so the
+                    // column holds no routing yet when this task runs during an automatic migration either.
                     try (PreparedStatement domPs = connection.prepareStatement(
                             "SELECT d.ID, d.NAME FROM " + getTableName(orgDomainTable) +
-                                    " d WHERE d.ORG_ID = ? AND d.IDP_ID IS NULL")) {
+                                    " d WHERE d.ORG_ID = ?")) {
                         domPs.setString(1, orgId);
                         try (ResultSet domRs = domPs.executeQuery()) {
                             while (domRs.next()) {
