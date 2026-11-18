@@ -114,9 +114,10 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
             return false;
         }
         // Replace only if still mismatching, so concurrently starting nodes with the same configuration replace it once.
-        var replaced = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session ->
+        // A failure keeps the migration pending, so the caller can retry it.
+        var replaced = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session ->
                 session.getProvider(ServerConfigStorageProvider.class)
-                        .replace(CERTIFICATE_ID, json -> !matchesKeySpec(fromJson(json)), this::generateSelfSignedCertificate)), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
+                        .replace(CERTIFICATE_ID, json -> needsReplacement(json), this::generateSelfSignedCertificate));
         migrationPending = false;
         return replaced;
     }
@@ -252,31 +253,38 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     private JGroupsCertificate loadOrCreateCertificate(KeycloakSession session) {
         migrationPending = false;
         var storage = session.getProvider(ServerConfigStorageProvider.class);
-        var stored = fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
-        if (matchesKeySpec(stored)) {
-            return stored;
+        var json = storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate);
+        var stored = usableCertificate(json);
+        if (stored.isEmpty()) {
+            // A node cannot join with an expired or unreadable certificate, so replace it now.
+            // Replace only if it is still unusable, so concurrently starting nodes with the same configuration regenerate it once.
+            logger.infof("Stored JGroups certificate is unusable. Regenerating it with the configured key (%s).", keySpec.description());
+            storage.replace(CERTIFICATE_ID, current -> usableCertificate(current).isEmpty(), this::generateSelfSignedCertificate);
+            stored = usableCertificate(storage.find(CERTIFICATE_ID).orElseThrow());
         }
-        if (isUsable(stored)) {
+        var certificate = stored.orElseThrow(() -> new IllegalStateException("The stored JGroups certificate is unusable."));
+        if (!matchesKeySpec(certificate)) {
             // The running nodes trust only the stored certificate, so join with it and replace it afterwards in migrateCertificate().
             logger.infof("Stored JGroups certificate does not match the configured key (%s). Replacing it once this node has joined the cluster.", keySpec.description());
             migrationPending = true;
-            return stored;
         }
-        // Replace only if still mismatching, so concurrently starting nodes with the same configuration regenerate it once.
-        // Running nodes reload the new certificate when the trust manager rejects the connection of this node.
-        logger.infof("Stored JGroups certificate does not match the configured key (%s) and is unusable. Regenerating it.", keySpec.description());
-        storage.replace(CERTIFICATE_ID, json -> !matchesKeySpec(fromJson(json)), this::generateSelfSignedCertificate);
-        return fromJson(storage.find(CERTIFICATE_ID).orElseThrow());
+        return certificate;
     }
 
-    private static boolean isUsable(JGroupsCertificate certificate) {
+    private boolean needsReplacement(String json) {
+        return usableCertificate(json).map(certificate -> !matchesKeySpec(certificate)).orElse(true);
+    }
+
+    // empty if the certificate is malformed, expired or its key material cannot be loaded
+    private static Optional<JGroupsCertificate> usableCertificate(String json) {
         try {
+            var certificate = fromJson(json);
             certificate.getCertificate().checkValidity();
             Utils.createKeyManager(certificate);
             Utils.createTrustManager(certificate);
-            return true;
+            return Optional.of(certificate);
         } catch (GeneralSecurityException | IOException | RuntimeException e) {
-            return false;
+            return Optional.empty();
         }
     }
 

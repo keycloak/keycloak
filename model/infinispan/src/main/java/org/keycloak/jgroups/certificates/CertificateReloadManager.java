@@ -140,13 +140,26 @@ public class CertificateReloadManager implements Lifecycle {
     private void migrateCertificate() {
         lock.lock();
         try (lock) {
-            if (KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, CertificateReloadManager::migrateCertificateInTransaction)) {
-                logger.info("Replaced the JGroups certificate to match the configured key");
-                sendReloadNotification();
+            if (!KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, CertificateReloadManager::migrateCertificateInTransaction)) {
+                return;
             }
+            logger.info("Replaced the JGroups certificate to match the configured key");
         } catch (RuntimeException e) {
-            // the migration stays pending and is retried on the next view
+            // the migration stays pending, so retry until it succeeds
             logger.warn("Failed to replace the JGroups certificate", e);
+            retry(this::migrateCertificate, "retry-migrate");
+            return;
+        }
+        notifyAfterMigration();
+    }
+
+    // the replacement is committed at this point, so retry only the notification
+    private void notifyAfterMigration() {
+        try {
+            sendReloadNotification();
+        } catch (RuntimeException e) {
+            logger.warn("Failed to notify the nodes about the replaced JGroups certificate", e);
+            retry(this::notifyAfterMigration, "retry-migrate-notification");
         }
     }
 

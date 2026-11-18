@@ -109,14 +109,15 @@ public class JGroupsCertificateRotationClusterTest {
         assertStartupMigration("RSA:2048", "RSA:2048", false);
     }
 
-    @Test
-    public void testStartupReplacesExpiredCertificateImmediately() {
+    @ParameterizedTest
+    @CsvSource({"RSA:2048", "RSA:3072"})
+    public void testStartupReplacesExpiredCertificateImmediately(String storedSpec) {
         loadBalancer.node(0);
         try {
             var result = runOnServer.fetch(session -> {
                 var factory = session.getKeycloakSessionFactory();
                 var configured = keySpec("RSA:3072");
-                var seeded = seedCertificate(factory, keySpec("RSA:2048"), Duration.ofSeconds(1)).getAlias();
+                var seeded = seedCertificate(factory, keySpec(storedSpec), Duration.ofSeconds(1)).getAlias();
                 try {
                     Thread.sleep(2500);
                 } catch (InterruptedException e) {
@@ -129,6 +130,26 @@ public class JGroupsCertificateRotationClusterTest {
                         && committed.getAlias().equals(provider.getCurrentCertificate().getAlias())
                         && configured.matches(committed.getCertificate().getPublicKey())
                         && !provider.migrateCertificate();
+            }, Boolean.class);
+            assertTrue(result);
+        } finally {
+            restoreCertificate();
+        }
+    }
+
+    @Test
+    public void testStartupReplacesMalformedCertificate() {
+        loadBalancer.node(0);
+        try {
+            var result = runOnServer.fetch(session -> {
+                var factory = session.getKeycloakSessionFactory();
+                var configured = keySpec("RSA:3072");
+                KeycloakModelUtils.runJobInTransaction(factory, s -> s.getProvider(ServerConfigStorageProvider.class)
+                        .replace(DatabaseJGroupsCertificateProvider.CERTIFICATE_ID, json -> true, () -> "{\"alias\":\"broken\"}"));
+                var provider = DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(30), configured);
+                var committed = storedCertificate(factory);
+                return committed.getAlias().equals(provider.getCurrentCertificate().getAlias())
+                        && configured.matches(committed.getCertificate().getPublicKey());
             }, Boolean.class);
             assertTrue(result);
         } finally {
@@ -154,7 +175,17 @@ public class JGroupsCertificateRotationClusterTest {
                         futures.add(executor.submit(() -> {
                             go.await();
                             var provider = DatabaseJGroupsCertificateProvider.create(factory, Duration.ofDays(30), spec);
-                            provider.migrateCertificate();
+                            // concurrent replacements can conflict in the database; the reload manager retries them
+                            for (int attempt = 0; ; attempt++) {
+                                try {
+                                    provider.migrateCertificate();
+                                    break;
+                                } catch (RuntimeException e) {
+                                    if (attempt == 5) {
+                                        throw e;
+                                    }
+                                }
+                            }
                             provider.reloadCertificate();
                             return provider.getCurrentCertificate().getAlias();
                         }));
