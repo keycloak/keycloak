@@ -211,10 +211,14 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
             cellRenderer: (group) =>
               groups.isOrgGroups() || group.access?.view ? ( // The org UI does not use access
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
-                  {group.name}
+                  <span className="keycloak-admin--groups__name">
+                    {group.name}
+                  </span>
                 </Link>
               ) : (
-                <span>{group.name}</span>
+                <span className="keycloak-admin--groups__name">
+                  {group.name}
+                </span>
               ),
           },
         ]}
