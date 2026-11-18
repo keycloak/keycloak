@@ -279,9 +279,13 @@ public class SAMLEndpoint {
         protected KeyLocator getIDPKeyLocator() {
             if (StringUtil.isNotBlank(config.getMetadataDescriptorUrl()) && config.isUseMetadataDescriptorUrl()) {
                 String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), config.getInternalId());
-                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl());
+                String metadataUrl = config.getMetadataDescriptorUrl();
+                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, metadataUrl);
                 PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-                return new SamlMetadataKeyLocator(modelKey, keyLoader, KeyUse.SIG, keyStorage);
+                // The key is requested by a message that is not verified yet. If the key is not in the cached ones
+                // the metadata is reloaded in the background, the request does not wait for the metadata endpoint.
+                return new SamlMetadataKeyLocator(modelKey, keyLoader, backgroundSession -> new SamlMetadataPublicKeyLoader(backgroundSession, metadataUrl),
+                        KeyUse.SIG, keyStorage);
             }
 
             List<Key> keys = new LinkedList<>();

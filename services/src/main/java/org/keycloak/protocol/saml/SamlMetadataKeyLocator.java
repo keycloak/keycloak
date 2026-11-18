@@ -21,13 +21,21 @@ import java.security.KeyManagementException;
 import java.security.MessageDigest;
 import java.security.cert.CertificateException;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.rotation.KeyLocator;
+import org.keycloak.utils.StringUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * <p>KeyLocator that caches the keys into a PublicKeyStorageProvider.</p>
@@ -36,14 +44,37 @@ import org.keycloak.rotation.KeyLocator;
  */
 public class SamlMetadataKeyLocator implements KeyLocator {
 
+    private static final Logger logger = Logger.getLogger(SamlMetadataKeyLocator.class);
+
+    // the key names are sent by the other party, limit what is written to the log
+    private static final int MAX_LOGGED_KEY_NAME_LENGTH = 128;
+
     private final String modelKey;
     private final PublicKeyLoader loader;
+    private final Function<KeycloakSession, PublicKeyLoader> backgroundLoader;
     private final PublicKeyStorageProvider keyStorage;
     private final KeyUse use;
 
     public SamlMetadataKeyLocator(String modelKey, PublicKeyLoader loader, KeyUse use, PublicKeyStorageProvider keyStorage) {
+        this(modelKey, loader, null, use, keyStorage);
+    }
+
+    /**
+     * Creates a locator that does not wait for the metadata if valid keys are cached. If a key that is not
+     * in the cache is requested, the key is not found and the keys are reloaded in the background.
+     *
+     * @param modelKey The model key
+     * @param loader The loader used when there are no valid keys in the cache
+     * @param backgroundLoader Creates the loader used to reload the keys in the background, null to always
+     * reload the keys in the thread that requests them
+     * @param use The use of the keys
+     * @param keyStorage The storage that caches the keys
+     */
+    public SamlMetadataKeyLocator(String modelKey, PublicKeyLoader loader, Function<KeycloakSession, PublicKeyLoader> backgroundLoader,
+            KeyUse use, PublicKeyStorageProvider keyStorage) {
         this.modelKey = modelKey;
         this.loader = loader;
+        this.backgroundLoader = backgroundLoader;
         this.keyStorage = keyStorage;
         this.use = use;
     }
@@ -52,6 +83,9 @@ public class SamlMetadataKeyLocator implements KeyLocator {
     public Key getKey(String kid) throws KeyManagementException {
         if (kid == null) {
             return null;
+        }
+        if (backgroundLoader != null) {
+            return getKeyReloadingInBackground(sameKidPredicate(kid), () -> "with name '" + sanitizeKeyName(kid) + "'");
         }
         // search the key by kid and reload if expired or null
         KeyWrapper keyWrapper = keyStorage.getFirstPublicKey(modelKey, sameKidPredicate(kid), loader);
@@ -62,6 +96,9 @@ public class SamlMetadataKeyLocator implements KeyLocator {
     public Key getKey(Key key) throws KeyManagementException {
         if (key == null) {
             return null;
+        }
+        if (backgroundLoader != null) {
+            return getKeyReloadingInBackground(sameKeyPredicate(key), () -> "with SHA-256 thumbprint '" + thumbprint(key) + "'");
         }
         // search the key and reload if expired or null
         KeyWrapper keyWrapper = keyStorage.getFirstPublicKey(modelKey, sameKeyPredicate(key), loader);
@@ -76,11 +113,42 @@ public class SamlMetadataKeyLocator implements KeyLocator {
     @Override
     public Iterator<Key> iterator() {
         // force a refresh if a certificate is expired?
-        return keyStorage.getKeys(modelKey, loader)
+        return getKeys()
                 .stream()
                 .filter(k -> isSameUse(k) && isValidCertificate(k))
                 .map(KeyWrapper::getPublicKey)
                 .iterator();
+    }
+
+    private List<KeyWrapper> getKeys() {
+        return backgroundLoader != null
+                ? keyStorage.getKeys(modelKey, loader, backgroundLoader)
+                : keyStorage.getKeys(modelKey, loader);
+    }
+
+    private Key getKeyReloadingInBackground(Predicate<KeyWrapper> predicate, Supplier<String> requestedKey) {
+        // search the key without waiting for a reload if there are valid keys
+        Key key = getKeys().stream().filter(predicate).map(KeyWrapper::getPublicKey).findFirst().orElse(null);
+        if (key == null) {
+            // the key can be a new one, the reload does not block as the requested key is not trusted
+            if (keyStorage.reloadKeysInBackground(modelKey, backgroundLoader)) {
+                logger.warnf("The key %s was requested but it is not in the keys for model key '%s'. Reloading the keys from the metadata in the background.",
+                        requestedKey.get(), modelKey);
+            } else if (logger.isDebugEnabled()) {
+                logger.debugf("The key %s was requested but it is not in the keys for model key '%s'.", requestedKey.get(), modelKey);
+            }
+        }
+        return key;
+    }
+
+    static String sanitizeKeyName(String kid) {
+        return kid.length() > MAX_LOGGED_KEY_NAME_LENGTH
+                ? StringUtil.removeControlCharacters(kid.substring(0, MAX_LOGGED_KEY_NAME_LENGTH)) + "..."
+                : StringUtil.removeControlCharacters(kid);
+    }
+
+    private static String thumbprint(Key key) {
+        return key.getEncoded() != null ? KeyUtils.createKeyId(key) : null;
     }
 
     private Predicate<KeyWrapper> sameKidPredicate(String kid) {

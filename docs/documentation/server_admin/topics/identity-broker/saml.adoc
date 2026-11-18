@@ -96,6 +96,8 @@ itself.
 |Use metadata descriptor URL
 |When *ON*, the certificates to validate signatures are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. The SAML provider can validate signatures in two different ways. If a specific certificate is requested (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) the refresh is only done after a max cache time. This maximum time can be specified in the descriptor itself, `cacheDuration` or `validUntil` attributes, or the cache provider defines one. See https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works. The default cache TTL for SAML metadata is 24 hours (86,400 seconds).
 
+A message from the identity provider does not wait for the `Metadata descriptor URL` when valid certificates are in the cache. The certificates are refreshed in the background and the signature is validated with the cached ones, so a message signed with a certificate that is not in the cache is rejected until the refresh finishes. A refresh caused by a certificate that is not in the cache is logged as a warning with the requested key. To change the signing certificate without rejected logins, publish the new certificate in the metadata at least the max cache time before it is used, or click the `Reload keys` action after the change.
+
 When the option is *OFF*, the certificates in `Validating X509 Certificates` are used to validate signatures.
 
 |Validating X509 Certificates
