@@ -21,7 +21,12 @@ Issue titles:
 * For bug reports, name the problem, not the solution.
 * For enhancement requests, describe the proposed change.
 
-Issues for flaky tests get the `flaky-test` label and issues for flaky CI jobs get the `flaky-job` label. Add the `backport/<version>` labels for all supported versions the fix should be applied to.
+Issues for flaky tests get the `flaky-test` label and issues for flaky CI jobs get the `flaky-job` label.
+A flaky test or flaky CI job issue references a CI failure on specific versions, so the versions to fix are known when it is created: also add the `backport/<version>` labels for all supported versions the fix should be applied to.
+Do not add `backport/<version>` labels to any other kind of issue, as they can only be added once the scope of the fix and its regression risk are understood.
+
+The issue template sets the issue type through its `type` field, but that is not applied when creating an issue via the GitHub CLI or API.
+Set the type explicitly to the `type` value of the chosen template, for example `gh issue create --type bug`.
 
 When writing issue and pull request descriptions, put each paragraph on a single line, as GitHub renders single newlines in descriptions as line breaks. In Markdown files in the repository, put each sentence on its own line.
 
