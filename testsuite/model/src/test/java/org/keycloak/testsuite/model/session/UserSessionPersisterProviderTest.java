@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.model.session;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 
