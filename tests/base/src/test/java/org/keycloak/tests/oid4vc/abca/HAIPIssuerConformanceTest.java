@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
@@ -167,14 +168,25 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
 
         // Send Nonce Request
         //
-        String nonce = wallet.nonceRequest().send().getNonce();
-        Proofs jwtProofs = wallet.generateJwtProofs(ctx, nonce, ecKey);
+        var nonce = wallet.nonceRequest().send();
+        Proofs jwtProofs = wallet.generateJwtProofs(ctx, nonce.getNonce(), ecKey);
 
         // Send Credential Request
         // Note, we use the same EC key for DPoP and Holder identity
         //
         String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
-        dpopProof = wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken);
+        String invalidNonceProof = wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken, "invalid-nonce");
+        var denied = wallet.credentialRequest(ctx, tokenType, accessToken)
+                .credentialIdentifier(credentialIdentifier)
+                .dpopProof(invalidNonceProof)
+                .proofs(jwtProofs)
+                .send();
+        assertEquals(400, denied.getStatusCode());
+        assertEquals("invalid_token", denied.getError());
+
+        String dpopNonce = nonce.getHeader(OAuth2Constants.DPOP_NONCE_HEADER);
+        assertNotNull(dpopNonce);
+        dpopProof = wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken, dpopNonce);
 
         CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
                 .credentialIdentifier(credentialIdentifier)

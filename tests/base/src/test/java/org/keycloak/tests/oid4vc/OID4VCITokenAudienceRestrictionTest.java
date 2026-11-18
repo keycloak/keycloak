@@ -117,6 +117,19 @@ public class OID4VCITokenAudienceRestrictionTest extends OID4VCIssuerTestBase {
         assertEquals(OAuthErrorException.INVALID_TOKEN, userInfoResponse.getError());
     }
 
+    @Test
+    public void testUmaClientCredentialsChecksCredentialScope() throws IOException {
+        try (SimpleHttpResponse response = simpleHttp.doPost(oauth.getEndpoints().getToken())
+                .authBasic(managedClient.getClientId(), managedClient.getSecret())
+                .param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE)
+                .param(OAuth2Constants.SCOPE, ctx.getScope())
+                .param(OAuth2Constants.AUDIENCE, managedClient.getClientId()).asResponse()) {
+            assertEquals(400, response.getStatus());
+            assertEquals(OAuthErrorException.INVALID_GRANT, response.asJson().get("error").asText());
+            assertEquals("Invalid client credentials access token", response.asJson().get("error_description").asText());
+        }
+    }
+
     // ------------------------------------------------------------------
     // Token introspection endpoint
     // ------------------------------------------------------------------

@@ -67,6 +67,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.StringUtil;
 
@@ -155,12 +156,18 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
-        if (!grantType.equals(UMA_GRANT_TYPE)) {
+        boolean umaGrant = UMA_GRANT_TYPE.equals(grantType);
+        if (!umaGrant) {
             checkClient();
             checkParameterDuplicated();
         }
 
         checkParameters();
+
+        // UMA can authenticate with an access token instead of client credentials.
+        if (umaGrant && AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers) == null) {
+            checkClient();
+        }
 
         /*
          * To request an access token that is bound to a public key using DPoP, the client MUST provide a valid DPoP

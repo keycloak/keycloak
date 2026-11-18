@@ -62,7 +62,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -199,22 +198,12 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     }
 
     protected void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
-        // KEYCLOAK-6771 Certificate Bound Token
-        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
-        if (clientConfig.isUseMtlsHokToken()) {
-            AccessToken.Confirmation confirmation = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
-            if (confirmation != null) {
-                responseBuilder.getAccessToken().setConfirmation(confirmation);
-                if (useRefreshToken) {
-                    responseBuilder.getRefreshToken().setConfirmation(confirmation);
-                }
-            } else {
-                String errorMessage = "Client Certification missing for MTLS HoK Token Binding";
-                event.detail(Details.REASON, errorMessage);
-                event.error(Errors.INVALID_REQUEST);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                        errorMessage, Response.Status.BAD_REQUEST);
-            }
+        try {
+            responseBuilder.bindForClient(useRefreshToken);
+        } catch (IllegalArgumentException ex) {
+            event.detail(Details.REASON, ex.getMessage());
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, ex.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 

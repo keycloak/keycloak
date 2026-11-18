@@ -32,6 +32,7 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.representations.IDToken;
 import org.keycloak.representations.dpop.DPoP;
 
 import static org.keycloak.OAuth2Constants.DPOP_DEFAULT_ALGORITHM;
@@ -64,7 +65,14 @@ public class DPoPGenerator {
     }
 
     public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, KeyWrapper keyWrapper, String accessToken) {
+        return generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, keyWrapper, accessToken, null);
+    }
+
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, KeyWrapper keyWrapper, String accessToken, String nonce) {
         DPoP dpop = generateDPoP(jti, htm, htu, iat, accessToken);
+        if (nonce != null) {
+            dpop.setOtherClaims(IDToken.NONCE, nonce);
+        }
         return sign(jwsHeader, dpop, keyWrapper);
     }
 

@@ -86,6 +86,7 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LogoutSessionCodeChecks;
 import org.keycloak.services.resources.SessionCodeChecks;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -559,6 +560,7 @@ public class LogoutEndpoint {
         RefreshToken token = null;
         try {
             // KEYCLOAK-6771 Certificate Bound Token
+            DPoPUtil.handleDPoPHeader(session, event, cors, null);
             token = tokenManager.verifyRefreshToken(session, realm, client, request, refreshToken, false);
 
             boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType());

@@ -26,11 +26,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
@@ -54,12 +52,10 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.crypto.HashUtils;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.ProtocolMapper;
@@ -81,8 +77,6 @@ import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.util.JWKSUtils;
-import org.keycloak.util.TokenUtil;
-import org.keycloak.utils.StringUtil;
 
 import org.apache.commons.codec.binary.Hex;
 
@@ -247,44 +241,6 @@ public class DPoPUtil {
             throw new VerificationException("DPoP verification failure: " + ex.getMessage(), ex);
         }
 
-    }
-
-    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
-
-    public static TokenVerifier<AccessToken> withDPoPVerifier(TokenVerifier<AccessToken> verifier, RealmModel realm, DPoPUtil.Validator validator) {
-        if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            verifier = verifier.tokenType(List.of(TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_DPOP))
-                    .withChecks(token -> {
-                        boolean isSchemeDPoP = false;
-                        if (StringUtil.isNotBlank(validator.authHeader)) {
-                            String[] split = WHITESPACES.split(validator.authHeader);
-                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(split[0]);
-                        }
-
-                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
-                            throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
-                        }
-                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
-                            throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
-                        }
-                        ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
-                        if (clientModel == null) {
-                            throw new VerificationException("Client not found");
-                        }
-                        if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() && !isSchemeDPoP) {
-                            throw new VerificationException("This client requires DPoP, but no DPoP Authorization header is present");
-                        }
-                        if (isSchemeDPoP) {
-                            if (validator.accessToken == null) {
-                                throw new VerificationException("Access Token not set for validator");
-                            }
-                            DPoP dPoP = validator.validate();
-                            DPoPUtil.validateBinding(token, dPoP);
-                        }
-                        return true;
-                    });
-        }
-        return verifier;
     }
 
     public static void validateBinding(AccessToken token, DPoP dPoP) throws VerificationException {
@@ -512,15 +468,15 @@ public class DPoPUtil {
 
     }
 
+    private record ValidatedProof(String encodedProof, URI uri, String method, DPoP proof) {
+    }
+
     public static class Validator {
 
         private URI uri;
         private String method;
         private String dPoP;
         private String accessToken;
-        private String authHeader;
-        private int clockSkew = DEFAULT_ALLOWED_CLOCK_SKEW;
-        private int lifetime = DEFAULT_PROOF_LIFETIME;
 
         private final KeycloakSession session;
 
@@ -532,7 +488,6 @@ public class DPoPUtil {
             this.uri = request.getUri().getAbsolutePath();
             this.method = request.getHttpMethod();
             this.dPoP = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
-            this.authHeader = request.getHttpHeaders().getHeaderString(HttpHeaders.AUTHORIZATION);
             return this;
         }
 
@@ -562,7 +517,18 @@ public class DPoPUtil {
         }
 
         public DPoP validate() throws VerificationException {
-            return validateDPoP(session, uri, method, dPoP, accessToken, lifetime, clockSkew);
+            ValidatedProof validated = session.getAttribute(ValidatedProof.class.getName(), ValidatedProof.class);
+            if (validated != null && validated.encodedProof().equals(dPoP) && validated.uri().equals(uri) && validated.method().equals(method)) {
+                if (accessToken != null) {
+                    new DPoPAccessTokenHashCheck(accessToken).test(validated.proof());
+                }
+                return validated.proof();
+            }
+
+            DPoP proof = validateDPoP(session, uri, method, dPoP, accessToken, DEFAULT_PROOF_LIFETIME, DEFAULT_ALLOWED_CLOCK_SKEW);
+            // A request can verify multiple tokens, but its proof must only enter the replay cache once.
+            session.setAttribute(ValidatedProof.class.getName(), new ValidatedProof(dPoP, uri, method, proof));
+            return proof;
         }
 
     }

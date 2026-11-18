@@ -417,6 +417,10 @@ public class OID4VCBasicWallet {
     }
 
     public String generateSignedDPoPProof(String htu, KeyWrapper ecKey, String accessToken) {
+        return generateSignedDPoPProof(htu, ecKey, accessToken, null);
+    }
+
+    public String generateSignedDPoPProof(String htu, KeyWrapper ecKey, String accessToken, String nonce) {
         JWK jwkEc = getECJwk(ecKey);
         JWSHeader jwsEcHeader = new JWSHeader(Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
         return DPoPGenerator.generateSignedDPoPProof(
@@ -424,7 +428,7 @@ public class OID4VCBasicWallet {
                 HttpMethod.POST,
                 htu,
                 Time.currentTimeSeconds(),
-                jwsEcHeader, ecKey, accessToken);
+                jwsEcHeader, ecKey, accessToken, nonce);
     }
 
     public AuthorizationEndpointRequest authorizationRequest() {

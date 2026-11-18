@@ -28,7 +28,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.ClientPolicyCRUDContext;
 import org.keycloak.services.clientregistration.ClientRegistrationTokenUtils;
-import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
@@ -108,7 +107,7 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
             authMethod = ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN;
         } else if (isRegistrationAccessToken(context.getToken())) {
             authMethod = ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN;
-        } else if (isBearerToken(context.getToken())) {
+        } else if (ClientRegistrationTokenUtils.isAccessToken(context.getToken())) {
             if (context.getAuthenticatedUser() != null || context.getAuthenticatedClient() != null) {
                 authMethod = ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER;
             } else {
@@ -125,10 +124,6 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
 
     private boolean isRegistrationAccessToken(JsonWebToken jwt) {
         return jwt != null && ClientRegistrationTokenUtils.TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType());
-    }
-
-    private boolean isBearerToken(JsonWebToken jwt) {
-        return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
     }
 
 }

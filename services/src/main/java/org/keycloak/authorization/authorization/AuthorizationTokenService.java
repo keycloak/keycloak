@@ -28,11 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.HttpMethod;
@@ -44,7 +42,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
 import org.keycloak.authorization.common.KeycloakIdentity;
-import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -57,7 +54,6 @@ import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
-import org.keycloak.authorization.util.Tokens;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
@@ -99,6 +95,7 @@ import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 
@@ -114,75 +111,6 @@ public class AuthorizationTokenService {
     private static final String RESPONSE_MODE_DECISION = "decision";
     private static final String RESPONSE_MODE_PERMISSIONS = "permissions";
     private static final String RESPONSE_MODE_DECISION_RESULT = "result";
-    private static Map<String, BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, Identity>> CLAIM_TOKEN_FORMAT_HANDLERS;
-
-    static {
-        CLAIM_TOKEN_FORMAT_HANDLERS = new HashMap<>();
-        CLAIM_TOKEN_FORMAT_HANDLERS.put(CLAIM_TOKEN_FORMAT_JWT, (request, authorization) -> {
-            Map<String, List<String>> claims = new HashMap<>();
-            String claimToken = request.getClaimToken();
-
-            if (claimToken != null) {
-                try {
-                    Map<String, List<String>> claimTokenClaims = JsonSerialization.readValue(Base64Url.decode(request.getClaimToken()), Map.class);
-                    claims.putAll(claimTokenClaims);
-                } catch (Exception cause) {
-                    throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Invalid claims",
-                            Status.BAD_REQUEST);
-                }
-            }
-
-            claims.putAll(Optional.ofNullable(request.getClaims()).orElse(Map.of()));
-            request.setClaims(claims);
-
-            try {
-                return new KeycloakIdentity(authorization.getKeycloakSession(),
-                        Tokens.getAccessToken(request.getSubjectToken(), authorization.getKeycloakSession()));
-            } catch (Exception cause) {
-                fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
-                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
-            }
-        });
-        CLAIM_TOKEN_FORMAT_HANDLERS.put(CLAIM_TOKEN_FORMAT_ID_TOKEN, (request, authorization) -> {
-            KeycloakSession keycloakSession = authorization.getKeycloakSession();
-            String subjectToken = request.getSubjectToken();
-
-            if (subjectToken == null) {
-                throw new CorsErrorResponseException(request.getCors(), "invalid_request", "Subject token can not be null and must be a valid ID or Access Token",
-                        Status.BAD_REQUEST);
-            }
-
-            IDToken idToken;
-
-            try {
-                idToken = new TokenManager().verifyIDTokenSignature(keycloakSession, subjectToken);
-            } catch (Exception cause) {
-                fireErrorEvent(request.getEvent(), Errors.INVALID_SIGNATURE, cause);
-                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid signature", Status.BAD_REQUEST);
-            }
-
-            String clientId = keycloakSession.getContext().getClient().getClientId();
-
-            if (!clientId.equals(idToken.getIssuedFor())) {
-                CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), "invalid_claim_token", "Token issued to a different client", Status.BAD_REQUEST);
-                fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, exception);
-                throw exception;
-            }
-
-            if (idToken.isExpired()) {
-                CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), "invalid_claim_token", "Expired token", Status.BAD_REQUEST);
-                fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, exception);
-                throw exception;
-            }
-
-            try {
-                return new KeycloakIdentity(keycloakSession, idToken);
-            } catch (Exception cause) {
-                fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
-                throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid identity", Status.BAD_REQUEST);
-            }
-        });
-    }
 
     private static final AuthorizationTokenService INSTANCE = new AuthorizationTokenService();
 
@@ -205,6 +133,11 @@ public class AuthorizationTokenService {
     }
 
     public Response authorize(KeycloakAuthorizationRequest request) {
+        return authorize(request, null);
+    }
+
+    /** The grant may have already authenticated or issued the subject access token for this request. */
+    public Response authorize(KeycloakAuthorizationRequest request, AccessToken verifiedAccessToken) {
         EventBuilder event = request.getEvent();
 
         // it is not secure to allow public clients to push arbitrary claims because message can be tampered
@@ -219,13 +152,15 @@ public class AuthorizationTokenService {
 
             request.setClaims(ticket.getClaims());
 
-            EvaluationContext evaluationContext = createEvaluationContext(request);
-            KeycloakIdentity identity = KeycloakIdentity.class.cast(evaluationContext.getIdentity());
-
-            if (identity != null) {
-                event.user(identity.getId());
-                request.getKeycloakSession().getContext().setBearerToken(identity.getAccessToken());
+            KeycloakIdentity identity = resolveIdentity(request, verifiedAccessToken);
+            Map<String, List<String>> claims = request.getClaims();
+            if (claims != null) {
+                claims.keySet().removeIf(key -> key.startsWith("kc."));
             }
+            EvaluationContext evaluationContext = new DefaultEvaluationContext(identity, claims, request.getKeycloakSession());
+
+            event.user(identity.getId());
+            request.getKeycloakSession().getContext().setBearerToken(identity.getAccessToken());
 
             ResourceServer resourceServer = getResourceServer(ticket, request);
 
@@ -376,7 +311,7 @@ public class AuthorizationTokenService {
         TokenManager tokenManager = request.getTokenManager();
         EventBuilder event = request.getEvent();
         AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, keycloakSession, userSessionModel, clientSessionCtx)
-                .generateAccessToken();
+                .generateAccessToken().bindForClient(false);
 
         AccessToken rpt = responseBuilder.getAccessToken();
         Authorization authorization = new Authorization();
@@ -478,30 +413,90 @@ public class AuthorizationTokenService {
         return resourceServer;
     }
 
-    private EvaluationContext createEvaluationContext(KeycloakAuthorizationRequest request) {
-        String claimTokenFormat = request.getClaimTokenFormat();
-
-        if (claimTokenFormat == null) {
-            claimTokenFormat = CLAIM_TOKEN_FORMAT_JWT;
+    private KeycloakIdentity resolveIdentity(KeycloakAuthorizationRequest request, AccessToken verifiedAccessToken) {
+        String format = request.getClaimTokenFormat();
+        IDToken token = verifiedAccessToken;
+        if (CLAIM_TOKEN_FORMAT_ID_TOKEN.equals(format)) {
+            token = verifyOidcClaimToken(request, verifiedAccessToken);
+        } else if (format == null || CLAIM_TOKEN_FORMAT_JWT.equals(format)) {
+            mergeClaimToken(request);
+        } else {
+            CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST,
+                    "Claim token format [" + format + "] not supported", Status.BAD_REQUEST);
+            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, exception);
+            throw exception;
         }
 
-        BiFunction<KeycloakAuthorizationRequest, AuthorizationProvider, Identity> claimTokenFormatHandler = CLAIM_TOKEN_FORMAT_HANDLERS.get(claimTokenFormat);
+        try {
+            return new KeycloakIdentity(request.getKeycloakSession(), token != null ? token : verifySubjectAccessToken(request));
+        } catch (Exception cause) {
+            fireErrorEvent(request.getEvent(), Errors.INVALID_TOKEN, cause);
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.UNAUTHORIZED_CLIENT, "Invalid identity", Status.BAD_REQUEST);
+        }
+    }
 
-        if (claimTokenFormatHandler == null) {
-            CorsErrorResponseException unsupportedClaimTokenFormatException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Claim token format [" + claimTokenFormat + "] not supported", Status.BAD_REQUEST);
-            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, unsupportedClaimTokenFormatException);
-            throw unsupportedClaimTokenFormatException;
+    private IDToken verifyOidcClaimToken(KeycloakAuthorizationRequest request, AccessToken verifiedAccessToken) {
+        String subjectToken = request.getSubjectToken();
+        if (subjectToken == null) {
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST,
+                    "Subject token can not be null and must be a valid ID or Access Token", Status.BAD_REQUEST);
         }
 
-        Identity identity = claimTokenFormatHandler.apply(request, request.getAuthorization());
-
-        Map<String, List<String>> claims = request.getClaims();
-
-        if (claims != null) {
-            claims.keySet().removeIf(key -> key.startsWith("kc."));
+        KeycloakSession session = request.getKeycloakSession();
+        IDToken token;
+        try {
+            token = request.getTokenManager().verifyIDTokenSignature(session, subjectToken);
+        } catch (Exception cause) {
+            fireErrorEvent(request.getEvent(), Errors.INVALID_SIGNATURE, cause);
+            throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.UNAUTHORIZED_CLIENT, "Invalid signature", Status.BAD_REQUEST);
         }
 
-        return new DefaultEvaluationContext(identity, claims, request.getKeycloakSession());
+        if (!session.getContext().getClient().getClientId().equals(token.getIssuedFor())) {
+            throw invalidClaimToken(request, Errors.INVALID_REQUEST, "Token issued to a different client");
+        }
+        if (token.isExpired()) {
+            throw invalidClaimToken(request, Errors.INVALID_REQUEST, "Expired token");
+        }
+        if (TokenUtil.TOKEN_TYPE_ID.equals(token.getType())) {
+            return token;
+        }
+
+        // The OIDC claim token format accepts access tokens as well as ID tokens.
+        AccessToken accessToken = verifiedAccessToken != null ? verifiedAccessToken : verifySubjectAccessToken(request);
+        if (accessToken == null) {
+            throw invalidClaimToken(request, Errors.INVALID_TOKEN, "Invalid access token");
+        }
+        // A session-backed OIDC identity resolves current roles from the client session.
+        // Stateless service accounts need the verified access token to resolve their identity.
+        return token.getSessionState() != null ? token : accessToken;
+    }
+
+    private AccessToken verifySubjectAccessToken(KeycloakAuthorizationRequest request) {
+        AuthenticationManager.AuthResult result = AuthenticationManager.verifyAccessTokenParameter(
+                request.getKeycloakSession(), request.getSubjectToken());
+        return result == null ? null : result.token();
+    }
+
+    private CorsErrorResponseException invalidClaimToken(KeycloakAuthorizationRequest request, String eventError, String message) {
+        CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), "invalid_claim_token", message, Status.BAD_REQUEST);
+        fireErrorEvent(request.getEvent(), eventError, exception);
+        return exception;
+    }
+
+    private void mergeClaimToken(KeycloakAuthorizationRequest request) {
+        Map<String, List<String>> claims = new HashMap<>();
+        if (request.getClaimToken() != null) {
+            try {
+                Map<String, List<String>> claimTokenClaims = JsonSerialization.readValue(Base64Url.decode(request.getClaimToken()), Map.class);
+                claims.putAll(claimTokenClaims);
+            } catch (Exception cause) {
+                throw new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Invalid claims", Status.BAD_REQUEST);
+            }
+        }
+        if (request.getClaims() != null) {
+            claims.putAll(request.getClaims());
+        }
+        request.setClaims(claims);
     }
 
     private Collection<ResourcePermission> createPermissions(PermissionTicketToken ticket, KeycloakAuthorizationRequest request, ResourceServer resourceServer, AuthorizationProvider authorization, EvaluationContext context) {
