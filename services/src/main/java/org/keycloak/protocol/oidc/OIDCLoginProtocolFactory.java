@@ -63,6 +63,9 @@ import org.keycloak.protocol.oidc.mappers.UserRealmRoleMappingMapper;
 import org.keycloak.protocol.oidc.mappers.UserSessionNoteMapper;
 import org.keycloak.protocol.oidc.scope.ClientDelegationScopeType;
 import org.keycloak.protocol.oidc.scope.DelegationScopeType;
+import org.keycloak.protocol.oidc.verifier.DPoPTokenVerifierProviderFactory;
+import org.keycloak.protocol.oidc.verifier.MtlsTokenVerifierProviderFactory;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -230,6 +233,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         super.postInit(factory);
+        for (String id : List.of(DPoPTokenVerifierProviderFactory.ID, MtlsTokenVerifierProviderFactory.ID)) {
+            if (factory.getProviderFactory(TokenVerifierProvider.class, id) == null) {
+                throw new IllegalStateException("OIDC requires the " + id + " token verifier provider");
+            }
+        }
         int maxLengthCacheSize = resolveMaxLengthCacheSize(config);
         try (KeycloakSession session = factory.create()) {
             LocalCacheProvider cacheProvider = session.getProvider(LocalCacheProvider.class);

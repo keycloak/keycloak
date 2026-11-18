@@ -1,9 +1,14 @@
 package org.keycloak.tests.broker;
 
 
+import java.security.KeyPair;
 import java.util.List;
 
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -29,6 +34,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.Assertions;
@@ -108,6 +114,36 @@ public class IdentityProviderStoreTokenV2Test implements InterfaceIdentityProvid
         UserInfoResponse userInfoResponse = getOauthClientExternal().userInfoRequest(externalTokens.getAccessToken()).send();
         Assertions.assertEquals(200, userInfoResponse.getStatusCode());
         Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
+    }
+
+    @Test
+    public void testDPoPBoundToken() throws Exception {
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        KeyPair key = KeyUtils.generateRsaKeyPair(2048);
+        AccessTokenResponse tokens = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode())
+                .dpopProof(DPoPGenerator.generateRsaSignedDPoPProof(key, "POST", oauth.getEndpoints().getToken(), null)).send();
+        Assertions.assertEquals(200, tokens.getStatusCode(), tokens.getErrorDescription());
+        String token = tokens.getAccessToken();
+        String endpoint = realm.getBaseUrl() + "/broker/" + IDP_ALIAS + "/token";
+
+        Assertions.assertEquals(400, oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, token).getStatusCode());
+        Assertions.assertEquals(400, fetchWithDPoP(token, DPoPGenerator.generateRsaSignedDPoPProof(key, "POST", endpoint, null)).asStatus());
+        Assertions.assertEquals(400, fetchWithDPoP(token, DPoPGenerator.generateRsaSignedDPoPProof(key, "POST", endpoint, "another-token")).asStatus());
+        Assertions.assertEquals(400, fetchWithDPoP(token, DPoPGenerator.generateRsaSignedDPoPProof(KeyUtils.generateRsaKeyPair(2048), "POST", endpoint, token)).asStatus());
+
+        String proof = DPoPGenerator.generateRsaSignedDPoPProof(key, "POST", endpoint, token);
+        try (SimpleHttpResponse response = fetchWithDPoP(token, proof).asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(), response.asString());
+            Assertions.assertNotNull(response.asJson(org.keycloak.representations.AccessTokenResponse.class).getToken());
+        }
+        Assertions.assertEquals(400, fetchWithDPoP(token, proof).asStatus());
+    }
+
+    private SimpleHttpRequest fetchWithDPoP(String token, String proof) {
+        return SimpleHttp.create(oauth.httpClient().get()).doPost(realm.getBaseUrl() + "/broker/" + IDP_ALIAS + "/token")
+                .authBasic("test-app", "test-secret").param("token", token).header("DPoP", proof);
     }
 
     @Test

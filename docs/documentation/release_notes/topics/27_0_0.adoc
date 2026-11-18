@@ -27,6 +27,11 @@ This protects brokered logins against assertion replay, in particular in IdP-ini
 How long a consumed assertion is remembered is bounded by the new *OneTimeUse maximum age* setting of the SAML identity provider, which defaults to 1 hour.
 See the upgrading guide for details.
 
+== Consistent validation of DPoP and certificate-bound access tokens
+
+{project_name} now consistently validates DPoP and certificate-bound access tokens across its REST endpoints, including client registration and Authorization Services.
+See the upgrading guide for client requirements.
+
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.

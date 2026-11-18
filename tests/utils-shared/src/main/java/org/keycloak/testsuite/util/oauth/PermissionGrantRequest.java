@@ -32,6 +32,11 @@ public class PermissionGrantRequest extends AbstractHttpPostRequest<JWTAuthoriza
         return new AccessTokenResponse(response);
     }
 
+    public PermissionGrantRequest previousRpt(String rpt) {
+        parameter("rpt", rpt);
+        return this;
+    }
+
     public PermissionGrantRequest claimToken(String idToken) {
         if (StringUtil.isBlank(idToken)) {
             throw new IllegalArgumentException("idToken cannot be blank");

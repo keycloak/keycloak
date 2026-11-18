@@ -1129,6 +1129,19 @@ public class DPoPTest {
     }
 
     @Test
+    public void testLogoutWithDPoPBoundRefreshToken() throws Exception {
+        oauth.client(TEST_PUBLIC_CLIENT_ID, null);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        String proof = DPoPGenerator.generateRsaSignedDPoPProof(rsaKeyPair, HttpMethod.POST, oauth.getEndpoints().getToken(), null);
+        AccessTokenResponse response = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).dpopProof(proof).send();
+        assertEquals(200, response.getStatusCode());
+        assertEquals(400, oauth.logoutRequest().refreshToken(response.getRefreshToken()).send().getStatusCode());
+
+        String logoutProof = DPoPGenerator.generateRsaSignedDPoPProof(rsaKeyPair, HttpMethod.POST, oauth.getEndpoints().getLogout(), null);
+        assertEquals(204, oauth.logoutRequest().refreshToken(response.getRefreshToken()).header(DPOP_HTTP_HEADER, logoutProof).send().getStatusCode());
+    }
+
+    @Test
     public void testDPoPAccountRequestSuccess() throws Exception {
         KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
         AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
@@ -1193,7 +1206,7 @@ public class DPoPTest {
         AccessTokenResponse tokenResponse = getDPoPBindAccessToken(rsaKeyPair);
         String exchangeDpopProof = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST,
                 oauth.getEndpoints().getToken(), Time.currentTimeSeconds(), Algorithm.PS256, jwsRsaHeader,
-                rsaKeyPair.getPrivate(), tokenResponse.getAccessToken());
+                rsaKeyPair.getPrivate(), null);
 
         AccessTokenResponse exchangeResponse = oauth.tokenExchangeRequest(tokenResponse.getAccessToken())
                 .client(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET)
@@ -1510,7 +1523,8 @@ public class DPoPTest {
     }
 
     private void deleteAllCookiesForRealm() {
-        driver.driver().navigate().to(realm.getBaseUrl());
+        // Realm cookies are scoped to /realms/{realm}/, including the trailing slash.
+        driver.driver().navigate().to(realm.getBaseUrl() + "/");
         driver.cookies().deleteAll();
     }
 

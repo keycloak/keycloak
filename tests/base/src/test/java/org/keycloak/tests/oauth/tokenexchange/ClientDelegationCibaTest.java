@@ -55,6 +55,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.OAuth2Constants.ACCESS_TOKEN_TYPE;
 import static org.keycloak.tests.oauth.tokenexchange.ClientDelegationTest.AGENT_CLIENT_ID;
@@ -96,6 +98,17 @@ public class ClientDelegationCibaTest {
     @AfterEach
     public void afterEach() {
         AccountHelper.logout(realm.admin(), USERNAME);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, OIDCConfigAttributes.USE_MTLS_HOK_TOKEN})
+    public void authenticationChannelCallbackForBoundTokenClient(String attribute) throws Exception {
+        realm.updateClientWithCleanup(TEST_CLIENT_ID, client -> client.attribute(attribute, "true"));
+        AuthenticationRequestAcknowledgement response = sendBackchannelAuthRequest(AGENT_DELEGATION_SCOPE, "bound-client-callback");
+        CibaProvider.CibaAuthenticationChannelRequest request = ciba.getAuthChannel("bound-client-callback");
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(),
+                oauth.ciba().doAuthenticationChannelCallback(request.getBearerToken(), AuthenticationChannelResponse.Status.SUCCEED));
+        Assertions.assertEquals(response.getAuthReqId(), ciba.getPushedCibaClientNotification("client-notification-token").getAuthReqId());
     }
 
     @Test
@@ -332,6 +345,8 @@ public class ClientDelegationCibaTest {
         public ClientBuilder configure(ClientBuilder client) {
             return super.configure(client)
                     .consentRequired(true)
+                    .attribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, Boolean.FALSE.toString())
+                    .attribute(OIDCConfigAttributes.USE_MTLS_HOK_TOKEN, Boolean.FALSE.toString())
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
                     .attribute(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, "ping")
                     .attribute(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "http://localhost:8500/ciba/push-ciba-client-notification")

@@ -31,6 +31,8 @@ indicates that the `claim_token` parameter references an access token. The `http
 +
 This parameter is *optional*. A previously issued RPT whose permissions should also be evaluated and added in a new one. This parameter
 allows clients in possession of an RPT to perform incremental authorization where permissions are added on demand.
+For a DPoP-bound RPT, the request proof must include the hash of that RPT in the `ath` claim.
+For a certificate-bound RPT, present its matching client certificate.
 +
 * **permission**
 +
