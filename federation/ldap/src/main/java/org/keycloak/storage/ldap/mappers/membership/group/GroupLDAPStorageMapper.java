@@ -259,7 +259,10 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
 
         // Just add flat structure of groups with all groups at groups path
         LDAPConfig ldapConfig = ldapProvider.getLdapIdentityStore().getConfig();
-        final int groupsPerTransaction = ldapConfig.getBatchSizeForSync();
+        // A batch size of 0 or less means no batching, as when loading the groups from LDAP (LDAPUtils.loadAllLDAPObjects).
+        // Without this, the loop below would never advance the iterator.
+        final int batchSize = ldapConfig.getBatchSizeForSync();
+        final int groupsPerTransaction = batchSize > 0 ? batchSize : Integer.MAX_VALUE;
         Set<Map.Entry<String, LDAPObject>> entries = ldapGroupsMap.entrySet();
         for (Iterator<Map.Entry<String, LDAPObject>> it = entries.iterator(); it.hasNext(); ) {
 
