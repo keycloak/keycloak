@@ -122,7 +122,11 @@ const KeycloakMasthead = ({
         <Toolbar>
           <ToolbarContent>
             {toolbarItems?.map((item, index) => (
-              <ToolbarItem key={index} align={{ default: "alignEnd" }}>
+              <ToolbarItem
+                key={index}
+                align={{ default: "alignEnd" }}
+                alignSelf="center"
+              >
                 {item}
               </ToolbarItem>
             ))}
