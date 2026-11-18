@@ -15,11 +15,11 @@ side may need to be still done manually or through some other third-party soluti
 
 === FAPI client profiles
 
-To make sure that your clients are FAPI compliant, you can configure Client Policies in your realm as described in the link:{adminguide_link}#_client_policies[{adminguide_name}]
+To make sure that your clients are FAPI compliant, you can configure Client Policies in your realm as described in the link:{adminguide_link}#client_policies[{adminguide_name}]
 and link them to the global client profiles for FAPI support, which are automatically available in each realm. You can use either `fapi-1-baseline` or `fapi-1-advanced` profile based on which FAPI
 profile you need your clients to conform with. You can use also profiles `fapi-2-security-profile`, `fapi-2-dpop-security-profile`, `fapi-2-message-signing` and `fapi-2-dpop-message-signing` for the compliance with FAPI 2.0 specifications.
 
-In case you want to use link:{adminguide_link}#_oidc_clients[Pushed Authorization Request (PAR)], it is recommended that your client use
+In case you want to use link:{adminguide_link}#oidc_clients[Pushed Authorization Request (PAR)], it is recommended that your client use
 both the `fapi-1-baseline` profile and `fapi-1-advanced` for PAR requests. Specifically, the `fapi-1-baseline` profile contains `pkce-enforcer` executor, which makes sure
 that client use PKCE with secured S256 algorithm. This is not required for FAPI Advanced clients unless they use PAR requests.
 
@@ -30,11 +30,11 @@ When enforcing the requirements of the FAPI CIBA specification, there is a need 
 === Open Finance Brasil Financial-grade API Security Profile
 
 {project_name} is compliant with the https://openfinancebrasil.atlassian.net/wiki/spaces/OF/pages/245760001/EN+Open+Finance+Brasil+Financial-grade+API+Security+Profile+1.0+Implementers+Draft+3[Open Finance Brasil Financial-grade API Security Profile 1.0 Implementers Draft 3].
-This one is stricter in some requirements than the <<_fapi-support,FAPI 1 Advanced>> specification and hence it may be needed to configure link:{adminguide_link}#_client_policies[Client Policies]
+This one is stricter in some requirements than the <<_fapi-support,FAPI 1 Advanced>> specification and hence it may be needed to configure link:{adminguide_link}#client_policies[Client Policies]
 in the more strict way to enforce some of the requirements. Especially:
 
 * If your client does not use PAR, make sure that it uses encrypted OIDC request objects. This can be achieved by using a client profile with the `secure-request-object` executor configured with `Encryption Required` enabled.
-* Make sure that for JWS, the client uses the `PS256` algorithm. For JWE, the client should use the `RSA-OAEP` with `A256GCM`. This may need to be set in all the link:{adminguide_link}#_oidc_clients[Client Settings] where these algorithms are applicable.
+* Make sure that for JWS, the client uses the `PS256` algorithm. For JWE, the client should use the `RSA-OAEP` with `A256GCM`. This may need to be set in all the link:{adminguide_link}#oidc_clients[Client Settings] where these algorithms are applicable.
 
 === Australia Consumer Data Right (CDR) Security Profile
 

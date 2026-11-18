@@ -6,7 +6,7 @@ const keycloakHomepageURL = "https://www.keycloak.org";
 export default {
   documentationUrl: adminGuide,
   clientsUrl: `${adminGuide}#assembly-managing-clients_server_administration_guide`,
-  clientScopesUrl: `${adminGuide}#_client_scopes`,
+  clientScopesUrl: `${adminGuide}#client_scopes`,
   realmRolesUrl: `${adminGuide}#assigning-permissions-using-roles-and-groups`,
   usersUrl: `${adminGuide}#assembly-managing-users_server_administration_guide`,
   groupsUrl: `${adminGuide}#proc-managing-groups_server_administration_guide`,
@@ -15,11 +15,11 @@ export default {
   eventsUrl: `${adminGuide}#configuring-auditing-to-track-events`,
   realmSettingsUrl: `${adminGuide}#configuring-realms`,
   authenticationUrl: `${adminGuide}#configuring-authentication`,
-  identityProvidersUrl: `${adminGuide}#_identity_broker`,
-  userFederationUrl: `${adminGuide}#_user-storage-federation`,
+  identityProvidersUrl: `${adminGuide}#identity_broker`,
+  userFederationUrl: `${adminGuide}#user-storage-federation`,
   documentation: `${keycloakHomepageURL}/documentation`,
   guides: `${keycloakHomepageURL}/guides`,
   community: `${keycloakHomepageURL}/community`,
   blog: `${keycloakHomepageURL}/blog`,
-  workflowsUrl: `${adminGuide}#_managing_workflows`,
+  workflowsUrl: `${adminGuide}#managing_workflows`,
 };
