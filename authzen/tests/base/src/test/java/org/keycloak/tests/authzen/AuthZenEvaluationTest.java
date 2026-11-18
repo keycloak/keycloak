@@ -24,8 +24,11 @@ import java.util.Set;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
+import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
@@ -58,10 +61,12 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.authorization.authzen.AuthZen.SCOPE;
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.CLIENT;
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.USER;
 import static org.keycloak.authorization.authzen.AuthZenRequestIdFilter.X_REQUEST_ID;
 import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.accessEvaluationEndpoint;
+import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.audience;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -89,6 +94,9 @@ public class AuthZenEvaluationTest {
     @InjectClient(ref = "disableable-client", config = AuthzClientConfig.class)
     ManagedClient disableableClient;
 
+    @InjectClient(ref = "no-scope-client", config = AuthzClientConfig.class)
+    ManagedClient noScopeClient;
+
     @InjectOAuthClient
     OAuthClient oauth;
 
@@ -103,6 +111,12 @@ public class AuthZenEvaluationTest {
 
     @TestSetup
     public void setup() {
+        AuthZenScope.create(realm, client.getClientId(), noAuthzClient.getClientId(), subjectClient.getClientId(),
+              disableableClient.getClientId());
+        try (Response response = noScopeClient.admin().getProtocolMappers()
+              .createMapper(AuthZenScope.audienceMapper(audience(realm.getBaseUrl())))) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
         configureAuthorizationResources();
     }
 
@@ -429,6 +443,48 @@ public class AuthZenEvaluationTest {
               .doPasswordGrantRequest("admin-user", "password");
 
         EvaluationResult result = authZenClient.withAccessToken(tokenResponse.getAccessToken())
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(401, result.statusCode());
+    }
+
+    @Test
+    public void testTokenWithoutAuthZenScopeReturnsUnauthorized() throws IOException {
+        AccessTokenResponse tokenResponse = oauth
+              .client(noScopeClient.getClientId(), noScopeClient.getSecret())
+              .doClientCredentialsGrantAccessTokenRequest();
+
+        EvaluationResult result = authZenClient.withAccessToken(tokenResponse.getAccessToken())
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(401, result.statusCode());
+    }
+
+    @Test
+    public void testTokenWithoutAuthZenAudienceReturnsUnauthorized() throws IOException {
+        ClientScopeRepresentation scope = realm.admin().clientScopes().findAll().stream()
+              .filter(s -> SCOPE.equals(s.getName()))
+              .findFirst()
+              .orElseThrow();
+        ProtocolMappersResource mappers = realm.admin().clientScopes().get(scope.getId()).getProtocolMappers();
+        ProtocolMapperRepresentation original = mappers.getMappers().stream()
+              .filter(m -> AuthZenScope.AUDIENCE_MAPPER.equals(m.getName()))
+              .findFirst()
+              .orElseThrow();
+        ProtocolMapperRepresentation updated = AuthZenScope.audienceMapper("https://pdp.example.org");
+        updated.setId(original.getId());
+        mappers.update(original.getId(), updated);
+        realm.cleanup().add(r -> r.clientScopes().get(scope.getId()).getProtocolMappers().update(original.getId(), original));
+
+        EvaluationResult result = authzenClient()
               .evaluate(AuthZenClient.evaluationRequest()
                     .subject(USER, ADMIN_USER)
                     .action("read")

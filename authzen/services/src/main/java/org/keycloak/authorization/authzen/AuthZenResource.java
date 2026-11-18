@@ -57,6 +57,7 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager.AuthResult;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 public class AuthZenResource {
 
@@ -131,13 +132,18 @@ public class AuthZenResource {
     }
 
     private AccessToken authenticateClient() {
-        AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
+        AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+              .setAudience(AuthZenWellKnownProvider.audience(session))
+              .authenticate();
         if (authResult == null) {
             throw new NotAuthorizedException("Bearer");
         }
         // The evaluation of policies must only be called from a confidential client with its service account user.
         // Only with that, we ensure that reveal an authorization result to the appropriate caller.
         if (!authResult.client().getId().equals(authResult.user().getServiceAccountClientLink()) || !Objects.equals(authResult.session().getAuthMethod(), ServiceAccountConstants.CLIENT_AUTH)) {
+            throw new NotAuthorizedException("Bearer");
+        }
+        if (!TokenUtil.hasScope(authResult.token().getScope(), AuthZen.SCOPE)) {
             throw new NotAuthorizedException("Bearer");
         }
         return authResult.token();

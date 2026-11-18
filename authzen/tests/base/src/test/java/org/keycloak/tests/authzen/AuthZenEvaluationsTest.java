@@ -60,6 +60,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.USER;
 import static org.keycloak.authorization.authzen.AuthZenRequestIdFilter.X_REQUEST_ID;
 import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.accessEvaluationsEndpoint;
+import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.audience;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -81,6 +82,9 @@ public class AuthZenEvaluationsTest {
     @InjectClient(ref = "authzen-client", config = AuthzClientConfig.class)
     ManagedClient client;
 
+    @InjectClient(ref = "no-scope-client", config = AuthzClientConfig.class)
+    ManagedClient noScopeClient;
+
     @InjectOAuthClient
     OAuthClient oauth;
 
@@ -95,6 +99,12 @@ public class AuthZenEvaluationsTest {
 
     @TestSetup
     public void setup() {
+        AuthZenScope.create(realm, client.getClientId());
+        try (Response response = noScopeClient.admin().getProtocolMappers()
+              .createMapper(AuthZenScope.audienceMapper(audience(realm.getBaseUrl())))) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
         AuthorizationResource authz = client.admin().authorization();
         String adminRoleId = realm.admin().roles().get("admin").toRepresentation().getId();
 
@@ -193,6 +203,24 @@ public class AuthZenEvaluationsTest {
         AccessTokenResponse tokenResponse = oauth
               .client(client.getClientId(), client.getSecret())
               .doPasswordGrantRequest("admin-user", "password");
+
+        EvaluationsResult result = authZenClient.withAccessToken(tokenResponse.getAccessToken())
+              .evaluations(AuthZenClient.evaluationsRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .addEvaluation(AuthZenClient.evaluationItem()
+                          .resource("endpoint", "/admin")
+                          .build())
+                    .build());
+
+        assertEquals(401, result.statusCode());
+    }
+
+    @Test
+    public void testTokenWithoutAuthZenScopeReturnsUnauthorized() throws IOException {
+        AccessTokenResponse tokenResponse = oauth
+              .client(noScopeClient.getClientId(), noScopeClient.getSecret())
+              .doClientCredentialsGrantAccessTokenRequest();
 
         EvaluationsResult result = authZenClient.withAccessToken(tokenResponse.getAccessToken())
               .evaluations(AuthZenClient.evaluationsRequest()
