@@ -36,7 +36,7 @@ public record NodeInfo(String nodeName, String siteName) {
         var transportConfig = cacheManager.getCacheManagerConfiguration().transport();
         var nodeName = transportConfig.nodeName();
 
-        if (nodeName != null) {
+        if (nodeName != null && !nodeName.isBlank()) {
             // user configured a node name, use it.
             return new NodeInfo(nodeName, transportConfig.siteId());
         }
