@@ -94,7 +94,6 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SAMLDecryptionKeysLocator;
 import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
-import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlProtocolFactory;
@@ -279,7 +278,7 @@ public class SAMLEndpoint {
         protected KeyLocator getIDPKeyLocator() {
             if (StringUtil.isNotBlank(config.getMetadataDescriptorUrl()) && config.isUseMetadataDescriptorUrl()) {
                 String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), config.getInternalId());
-                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl());
+                PublicKeyLoader keyLoader = provider.createMetadataPublicKeyLoader();
                 PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
                 return new SamlMetadataKeyLocator(modelKey, keyLoader, KeyUse.SIG, keyStorage);
             }

@@ -16,10 +16,13 @@
  */
 package org.keycloak.protocol.saml;
 
+import java.security.Key;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.XMLStructure;
@@ -29,6 +32,7 @@ import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.datatype.Duration;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -39,6 +43,9 @@ import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.rotation.KeyLocator;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 
@@ -56,9 +63,25 @@ public abstract class SamlAbstractMetadataPublicKeyLoader implements PublicKeyLo
 
     private static final Logger logger = Logger.getLogger(SamlAbstractMetadataPublicKeyLoader.class);
     private final boolean forIdP;
+    private final boolean validateSignature;
+    private final String[] signingCertificates;
 
     public SamlAbstractMetadataPublicKeyLoader(boolean forIdP) {
         this.forIdP = forIdP;
+        this.validateSignature = false;
+        this.signingCertificates = new String[] { };
+    }
+
+    /**
+     * Creates a loader that only loads the keys if the metadata is signed with one of the certificates.
+     *
+     * @param forIdP true to load the keys of an IDP, false to load the keys of a SP
+     * @param signingCertificates The certificates that are trusted to sign the metadata
+     */
+    public SamlAbstractMetadataPublicKeyLoader(boolean forIdP, String[] signingCertificates) {
+        this.forIdP = forIdP;
+        this.validateSignature = true;
+        this.signingCertificates = Objects.requireNonNull(signingCertificates, "Signing certificates must not be null");
     }
 
     protected abstract String getKeys() throws Exception;
@@ -68,7 +91,9 @@ public abstract class SamlAbstractMetadataPublicKeyLoader implements PublicKeyLo
         String descriptor = getKeys();
 
         List<KeyDescriptorType> keyDescriptor = null;
-        EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(descriptor);
+        EntityDescriptorType entityType = validateSignature
+                ? SAMLMetadataUtil.parseEntityDescriptorType(descriptor, getSigningKeyLocator())
+                : SAMLMetadataUtil.parseEntityDescriptorType(descriptor);
         Long expirationTime = getExpirationTime(entityType::getValidUntil, entityType::getCacheDuration);
         if (forIdP) {
             IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);
@@ -134,6 +159,23 @@ public abstract class SamlAbstractMetadataPublicKeyLoader implements PublicKeyLo
         }
 
         return new PublicKeysWrapper(keys, expirationTime);
+    }
+
+    private KeyLocator getSigningKeyLocator() throws VerificationException {
+        List<Key> keys = new ArrayList<>();
+        for (String signingCertificate : signingCertificates) {
+            try {
+                X509Certificate cert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(signingCertificate.replaceAll("\\s", ""));
+                cert.checkValidity();
+                keys.add(cert.getPublicKey());
+            } catch (CertificateException | ProcessingException e) {
+                logger.debugf(e, "Ignoring invalid certificate configured to validate the signature of the metadata");
+            }
+        }
+        if (keys.isEmpty()) {
+            throw new VerificationException("No valid certificate is configured to validate the signature of the SAML metadata");
+        }
+        return new HardcodedKeyLocator(keys);
     }
 
     private Long getExpirationTime(Supplier<XMLGregorianCalendar> validUntil, Supplier<Duration> cacheDuration) {
