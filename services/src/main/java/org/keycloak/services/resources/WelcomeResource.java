@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -53,6 +54,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.config.ProxyOptions;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.forms.login.MessageType;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -61,6 +63,9 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeResourcesParser;
+import org.keycloak.theme.beans.MessageBean;
+import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
@@ -226,8 +231,15 @@ public class WelcomeResource {
             map.put("adminUrl", adminUrl);
             map.put("baseUrl", session.getContext().getUri(UrlType.FRONTEND).getBaseUri());
             map.put("productName", Version.NAME);
+            map.put("productNameHtml", Version.NAME_HTML);
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/" + commonPath);
+            map.put("url", Map.of("resourcesPath", map.get("resourcesPath"),
+                    "resourcesCommonPath", map.get("resourcesCommonPath")));
+            map.put("lang", Locale.ENGLISH.toLanguageTag());
+            map.put("msg", new MessageFormatterMethod(Locale.ENGLISH, theme.getMessages(Locale.ENGLISH)));
+            map.put("darkMode", Boolean.parseBoolean(themeProperties.getProperty("darkMode", "false")));
+            map.put("messagesPerField", new MessagesPerFieldBean());
 
             boolean isLocal = isLocal(session);
             map.put("localUser", isLocal);
@@ -245,12 +257,16 @@ public class WelcomeResource {
             }
             if (successMessage != null) {
                 map.put("successMessage", successMessage);
+                map.put("message", new MessageBean(successMessage, MessageType.SUCCESS));
             }
             if (errorMessage != null) {
                 map.put("errorMessage", errorMessage);
+                map.put("message", new MessageBean(errorMessage, MessageType.ERROR));
             }
             FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
-            String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
+            String template = theme.getType() == Theme.Type.WELCOME && theme.getTemplate("index.ftl") != null
+                    ? "index.ftl" : "welcome.ftl";
+            String result = freeMarkerUtil.processTemplate(map, template, theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)
                     .entity(result)

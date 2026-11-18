@@ -28,6 +28,7 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.WelcomePage;
 import org.keycloak.testframework.ui.webdriver.BrowserType;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.theme.Theme;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -88,6 +89,9 @@ public class WelcomePageTest {
         Assertions.assertTrue(pageSource.contains("form"));
         Assertions.assertTrue(pageSource.contains("const DARK_MODE_CLASS = \""),
                 "DARK_MODE_CLASS should be assigned a double-quoted string via ?c");
+        Assertions.assertTrue(pageSource.contains("/login/keycloak.v3/css/styles.css"));
+        Assertions.assertTrue(pageSource.contains("data-password-toggle"));
+        Assertions.assertFalse(pageSource.contains("startSessionPolling"));
     }
 
     @Test
@@ -153,6 +157,27 @@ public class WelcomePageTest {
         loginPage.submit();
 
         adminPage.assertCurrent();
+    }
+
+    @Test
+    @Order(7)
+    public void welcomeThemeLoadsLoginInheritanceWithoutRealm() {
+        runOnServer.run(session -> {
+            var realm = session.getContext().getRealm();
+            try {
+                session.getContext().setRealm(null);
+                Theme theme = session.theme().getTheme(Theme.Type.WELCOME);
+                Assertions.assertEquals("keycloak.v3", theme.getName());
+                Assertions.assertEquals(Theme.Type.LOGIN, theme.getType());
+                Assertions.assertNotNull(theme.getTemplate("welcome.ftl"));
+                Assertions.assertNotNull(theme.getTemplate("field.ftl"));
+                try (var resource = theme.getResourceAsStream("js/passwordVisibility.js")) {
+                    Assertions.assertNotNull(resource);
+                }
+            } finally {
+                session.getContext().setRealm(realm);
+            }
+        });
     }
 
     /**
