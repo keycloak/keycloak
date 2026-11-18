@@ -18,6 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Objects;
@@ -142,7 +143,10 @@ public class IdentityProvidersResource {
             throw new BadRequestException();
         }
         String providerId = formDataMap.getFirst("providerId").asString();
-        String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
+        String config;
+        try (InputStream is = formDataMap.getFirst("file").asInputStream()) {
+            config = StreamUtil.readString(is);
+        }
         IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
         return providerFactory.parseConfig(session, config);
     }

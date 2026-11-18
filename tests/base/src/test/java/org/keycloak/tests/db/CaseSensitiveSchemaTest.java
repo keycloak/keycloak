@@ -1,5 +1,9 @@
 package org.keycloak.tests.db;
 
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.storage.database.jpa.DatabaseIndexChecker;
 import org.keycloak.testframework.annotations.InjectTestDatabase;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.conditions.DisabledForDatabases;
@@ -8,9 +12,14 @@ import org.keycloak.testframework.database.DatabaseConfigBuilder;
 import org.keycloak.testframework.database.EnterpriseDbTestDatabase;
 import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
 
 @KeycloakIntegrationTest(config = CaseSensitiveSchemaTest.CaseSensitiveServerConfig.class)
 // Remotely running databases do not support running SQL init scripts.
@@ -22,6 +31,15 @@ public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
 
     @InjectTestDatabase(config = CaseSensitiveDatabaseConfig.class)
     TestDatabase db;
+
+    @TestOnServer
+    public void testIndexCheckerFindsIndexesWithDifferentCaseSchema(KeycloakSession session) {
+        var factory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var checker = new DatabaseIndexChecker(factory::getConnection, session.getKeycloakSessionFactory(), factory.getSchema(), false, 0);
+
+        assertThat(checker.getMissingIndexesName(), is(empty()));
+    }
 
     public static class CaseSensitiveServerConfig implements KeycloakServerConfig {
         @Override

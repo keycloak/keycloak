@@ -47,6 +47,8 @@ public interface Attributes {
     String PRIVATE_KEY_KEY = "privateKey";
     ProviderConfigProperty PRIVATE_KEY_PROPERTY = new ProviderConfigProperty(PRIVATE_KEY_KEY, "Private RSA Key", "Private RSA Key encoded in PEM format", FILE_TYPE, null, true);
 
+    String PUBLIC_KEY_KEY = "publicKey";
+
     String CERTIFICATE_KEY = "certificate";
     ProviderConfigProperty CERTIFICATE_PROPERTY = new ProviderConfigProperty(CERTIFICATE_KEY, "X509 Certificate", "X509 Certificate encoded in PEM format", FILE_TYPE, null);
 

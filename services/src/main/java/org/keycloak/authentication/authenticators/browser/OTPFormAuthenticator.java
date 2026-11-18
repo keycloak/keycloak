@@ -54,10 +54,6 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
     // Freemarker attribute where selected OTP credential will be stored
     public static final String SELECTED_OTP_CREDENTIAL_ID = "selectedOtpCredentialId";
 
-    // Label to be shown in the UI for the "unnamed" OTP credential, which doesn't have userLabel
-    public static final String UNNAMED = "unnamed";
-
-
     @Override
     public void action(AuthenticationFlowContext context) {
         validateOTP(context);

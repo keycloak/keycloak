@@ -22,6 +22,8 @@ env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25 -Daether.connector.http.retryHandler.count=5 -Daether.connector.http.retryHandler.serviceUnavailable=429,502,503,504"
   # Quarkus branch to build snapshots from. Update when quarkus-next should track a different release stream.
   QUARKUS_BRANCH: main
+  # QOSDK branch to build from. Must track a branch compatible with the Quarkus version above.
+  QOSDK_BRANCH: next
 
 jobs:
   build-quarkus-snapshot:
@@ -47,7 +49,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: quarkiverse/quarkus-operator-sdk
-          ref: main
+          ref: ${{ env.QOSDK_BRANCH }}
           path: quarkus-operator-sdk
 
       # Quarkus main requires JDK 21 or later to build its snapshots.
@@ -68,7 +70,7 @@ jobs:
           path: |
             ~/.m2/repository/io/quarkus
             ~/.m2/repository/io/quarkiverse/operatorsdk
-          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ steps.cache-key.outputs.date }}-qosdk-pom-version
+          key: quarkus-snapshot-${{ env.QUARKUS_BRANCH }}-${{ env.QOSDK_BRANCH }}-${{ steps.cache-key.outputs.date }}
           enableCrossOsArchive: true
 
       - name: Build Quarkus snapshot

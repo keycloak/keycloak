@@ -172,9 +172,9 @@ public class AccountConsole implements AccountResourceProvider {
         map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
                 && realm.getAttribute("darkMode", true));
         map.put("theme", (Function<String, String>) file -> {
-            try {
-                final InputStream resource = theme.getResourceAsStream(file);
-                return new Scanner(resource, StandardCharsets.UTF_8).useDelimiter("\\A").next();
+            try (InputStream resource = theme.getResourceAsStream(file);
+                 Scanner scanner = new Scanner(resource, StandardCharsets.UTF_8).useDelimiter("\\A")) {
+                return scanner.next();
             } catch (IOException e) {
                 throw new RuntimeException("could not load file", e);
             }
@@ -213,18 +213,18 @@ public class AccountConsole implements AccountResourceProvider {
             map.put("devServerUrl", devServerUrl);
         }
 
-        final var manifestFile = theme.getResourceAsStream(ViteManifest.MANIFEST_FILE_PATH);
+        try (final var manifestFile = theme.getResourceAsStream(ViteManifest.MANIFEST_FILE_PATH)) {
+            if (devServerUrl == null && manifestFile != null) {
+                final var manifest = ViteManifest.parseFromInputStream(manifestFile);
+                final var entryChunk = manifest.getEntryChunk();
+                final var entryStyles = entryChunk.css().orElse(new String[] {});
+                final var entryScript = entryChunk.file();
+                final var entryImports = entryChunk.imports().orElse(new String[] {});
 
-        if (devServerUrl == null && manifestFile != null) {
-            final var manifest = ViteManifest.parseFromInputStream(manifestFile);
-            final var entryChunk = manifest.getEntryChunk();
-            final var entryStyles = entryChunk.css().orElse(new String[] {});
-            final var entryScript = entryChunk.file();
-            final var entryImports = entryChunk.imports().orElse(new String[] {});
-
-            map.put("entryStyles", entryStyles);
-            map.put("entryScript", entryScript);
-            map.put("entryImports", entryImports);
+                map.put("entryStyles", entryStyles);
+                map.put("entryScript", entryScript);
+                map.put("entryImports", entryImports);
+            }
         }
 
         FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);

@@ -36,6 +36,7 @@ import jakarta.persistence.TypedQuery;
 
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +55,7 @@ import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.utils.StreamsUtil;
 
+import org.hibernate.jpa.AvailableHints;
 import org.hibernate.jpa.HibernateHints;
 import org.jboss.logging.Logger;
 
@@ -62,6 +64,7 @@ import static jakarta.persistence.PersistenceConfiguration.LOCK_TIMEOUT;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineFromString;
 import static org.keycloak.models.jpa.session.JpaSessionUtil.offlineToString;
+import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransactionWithResult;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 /**
@@ -272,9 +275,15 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         final int currentTime = Time.currentTime();
         final KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
 
-        UserSessionExpirationLogic.expireOfflineSessions(sessionFactory, realm, currentTime, expiration, expirationBatch);
+        if (!isRealmEmpty(sessionFactory, realm, true)) {
+            UserSessionExpirationLogic.expireOfflineSessions(sessionFactory, realm, currentTime, expiration, expirationBatch);
+        }
 
         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
+            return;
+        }
+
+        if (isRealmEmpty(sessionFactory, realm, false)) {
             return;
         }
 
@@ -287,6 +296,24 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         } else {
             UserSessionExpirationLogic.deleteInvalidSessions(sessionFactory, realm, expirationBatch);
         }
+    }
+
+    /**
+     * Checks with a single index lookup if the realm has no sessions of the given type, to skip the expensive
+     * per-bucket queries. Nothing is remembered between runs, so the result never depends on the clock.
+     */
+    private boolean isRealmEmpty(KeycloakSessionFactory sessionFactory, RealmModel realm, boolean offline) {
+        String realmId = realm.getId();
+        // Own transaction, so the outer transaction holds no read locks that the delete transactions could wait for.
+        return runJobInTransactionWithResult(sessionFactory, null, s ->
+                s.getProvider(JpaConnectionProvider.class).getEntityManager()
+                        .createNamedQuery("findAnyUserSessionIdByRealm", String.class)
+                        .setParameter("realmId", realmId)
+                        .setParameter("offline", offlineToString(offline))
+                        .setHint(AvailableHints.HINT_READ_ONLY, true)
+                        .setMaxResults(1)
+                        .getResultList()
+                        .isEmpty(), "session-expiration-task");
     }
 
     private static int calculateOldestSessionTime(RealmModel realm, boolean offline) {

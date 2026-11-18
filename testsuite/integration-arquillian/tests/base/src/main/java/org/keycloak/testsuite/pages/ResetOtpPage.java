@@ -20,7 +20,7 @@ public class ResetOtpPage extends AbstractPage {
     }
 
     public void selectOtp(int index) {
-        driver.findElement(By.id("kc-otp-credential-" + index)).click();
+        driver.findElement(By.cssSelector("label[for='kc-otp-credential-" + index + "']")).click();
     }
 
     public void submitOtpReset() {

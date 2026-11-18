@@ -4,6 +4,41 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Allow UTF-8 email setting requires SMTPUTF8 server support
+// https://github.com/keycloak/keycloak/issues/55267
+
+When *Allow UTF-8* is enabled in a realm's email settings, {project_name} now checks whether the connected SMTP server advertises the `SMTPUTF8` extension before sending an email with an internationalized sender, recipient, reply-to, or envelope sender address.
+This enforces https://www.rfc-editor.org/rfc/rfc6531.html#section-3.2[RFC 6531 section 3.2], which requires SMTP clients to avoid transmitting internationalized email addresses or headers to servers that do not offer `SMTPUTF8`.
+If the server does not advertise `SMTPUTF8`, the send fails before the SMTP envelope is transmitted.
+Messages with ASCII-only addresses can still be sent without this extension.
+The *Test connection* action checks `SMTPUTF8` whenever *Allow UTF-8* is enabled, even if the test message uses only ASCII addresses, to validate that the configured server supports this mode.
+
+Configure an SMTP server or relay that advertises `SMTPUTF8` if you need to send email with internationalized addresses.
+If all email addresses are ASCII-only, you can disable *Allow UTF-8* instead.
+
+=== Client scope policy checks legacy client templates
+// https://github.com/keycloak/keycloak/issues/54456
+
+The *Allowed Client Scopes* client registration policy now checks scopes requested through the deprecated `clientTemplate` field using the same allowlist as `defaultClientScopes` and `optionalClientScopes`.
+Legacy template names are checked after converting spaces to underscores, matching the scope name used during client creation.
+Requests for a disallowed scope are rejected with HTTP `403 Forbidden`.
+
+Existing client scope assignments are not removed by this change.
+Administrators should review dynamically registered clients for unintended scope assignments and remove them through the Admin Console or Admin REST API.
+All nodes handling client registration requests must be upgraded for the check to apply consistently.
+
+=== Redirect URI loopback exceptions require literal IP addresses
+// https://github.com/keycloak/keycloak/issues/54413
+
+The *Allow IPv4 loopback address* and *Allow IPv6 loopback address* options of the *Secure Redirect URIs Enforcer* client policy executor now apply only to literal IP addresses.
+Hostnames, including `localhost`, are evaluated using the ordinary scheme and permitted-domain rules, regardless of the addresses they resolve to.
+The executor continues to reject `localhost` when *OAuth 2.1 Compliant* is enabled.
+
+The executor also validates the effective redirect URI during authorization, so previously registered callbacks can now be rejected.
+When a redirect URI is rejected, {project_name} displays an error page instead of redirecting to that URI.
+Review affected client configurations and use literal loopback addresses where appropriate, or ensure that legitimate hostnames satisfy the configured scheme and permitted-domain rules.
+Existing registrations are not automatically rewritten or removed.
+
 === Client registration policies restrict default roles and full scope (CVE-2026-109081)
 // https://github.com/keycloak/keycloak/issues/54702
 
@@ -422,6 +457,21 @@ This prevents an attacker who controls a brokered account with an unverified ema
 
 If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.
 
+=== SAML identity provider signature validation defaults to enabled
+
+When signature settings are absent from a SAML identity provider's configuration, {project_name} now treats them as enabled.
+This applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`).
+Assertions are also verified when *Want Assertions Signed* is enabled and *Validate Signature* is explicitly disabled, which requires a trusted signing key.
+
+After upgrading, logins may fail for providers that send unsigned assertions, or whose signatures {project_name} cannot verify.
+Configure the provider to sign its assertions and configure the corresponding signing certificates in {project_name}, either in *Validating X509 Certificates* or through *Use metadata descriptor URL*.
+
+If unsigned responses are required for compatibility, explicitly disable the relevant setting.
+Disable *Want Assertions Signed* if the provider does not sign assertions; if signatures are not to be verified, also disable *Validate Signature*.
+Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remain respected.
+
+Disabling signature validation reduces protection against forged identity-provider responses.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -663,6 +713,24 @@ For example, if an administrator marked the user's email as not verified, a late
 Previously, the flag was left unchanged for existing users with an unchanged address in this situation.
 If this behavior is not desired, set *Trust Email* to *OFF* for that identity provider. {project_name} then leaves the flag unchanged for existing users whose email address has not changed, and sets it to `false` for new users until the email is verified locally.
 
+=== Custom truststore in `kcadm` and `kcreg` now rejects self-signed certificates not present in the truststore
+
+When `kcadm` or `kcreg` is configured with a custom truststore (via `--truststore` or `config truststore`), a self-signed server certificate is now only accepted if it has been explicitly imported into that truststore.
+Previously, any self-signed certificate was accepted regardless of the truststore contents.
+
+If you use a custom truststore and connect to a {project_name} server with a self-signed certificate, ensure that certificate is imported into your truststore:
+
+[source,bash]
+----
+keytool -exportcert -alias <server-alias> -keystore <server-keystore.p12> \
+  -storepass <password> -file server.crt -rfc
+
+keytool -importcert -alias <server-alias> -file server.crt \
+  -keystore <truststore.p12> -storepass <password> -noprompt
+----
+
+Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -717,3 +785,40 @@ These options were deprecated and were only relevant when using volatile user se
 With persistent user sessions enabled (the default since Keycloak 26), offline sessions are managed in the database and these lifespan override options have no effect.
 
 If you have these options in your configuration, remove them before upgrading to Keycloak 27.
+
+=== ClusterProvider cross-DC notification API removed
+// https://github.com/keycloak/keycloak/issues/39047
+
+The deprecated cross-datacenter notification API in `ClusterProvider` has been removed.
+These APIs were deprecated in Keycloak 26.3 when the `cache-embedded-remote-store` feature was removed.
+
+The following have been removed:
+
+* `ClusterProvider.DCNotify` enum
+* `ClusterProvider.notify(String, ClusterEvent, boolean, DCNotify)` method
+* `ClusterProvider.notify(String, Collection<? extends ClusterEvent>, boolean, DCNotify)` method
+* `AuthenticationSessionProvider.updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId, Map<String, String>)` method
+
+The remaining `notify()` methods in `ClusterProvider` are now abstract and notify all datacenters (`ALL_DCS` semantics).
+Third-party `ClusterProvider` implementations in `server-spi-private`, if any exist, must implement these methods directly instead of implementing the deprecated `DCNotify` variants.
+
+Multi-site deployments using external Infinispan are unaffected, as they never used the `DCNotify` parameter.
+All current callers already use the non-deprecated `notify()` methods which default to `ALL_DCS` semantics.
+
+The internal Infinispan classes that only supported this API have been removed as well.
+This includes the `AuthenticationSessionAuthNoteUpdateEvent` cluster event, the site-related fields of `WrapperClusterEvent`, and the `siteId` field of `SessionClusterEvent`.
+These classes are not part of the supported SPI.
+
+=== Deprecated single-token refresh-token methods removed from `AuthenticatedClientSessionModel`
+// https://github.com/keycloak/keycloak/issues/55096
+
+The deprecated single-token refresh-token methods have been removed from `AuthenticatedClientSessionModel`.
+These methods were deprecated in favor of keyed methods that support refresh token reuse detection:
+
+* `getCurrentRefreshToken()` - replaced by `getRefreshToken(String reuseId)`
+* `setCurrentRefreshToken(String)` - replaced by `setRefreshToken(String reuseId, String refreshTokenId)`
+* `getCurrentRefreshTokenUseCount()` - replaced by `getRefreshTokenUseCount(String reuseId)`
+* `setCurrentRefreshTokenUseCount(int)` - replaced by `setRefreshTokenUseCount(String reuseId, int refreshTokenUseCount)`
+
+The removed methods were default no-op implementations that returned `null` or `0` and had no production callers.
+Custom implementations of `AuthenticatedClientSessionModel` that override these methods must remove the overrides and use the keyed replacement methods instead.

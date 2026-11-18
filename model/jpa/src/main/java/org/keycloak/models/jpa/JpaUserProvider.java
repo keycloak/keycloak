@@ -1275,7 +1275,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         List<Predicate> predicates = new ArrayList<>();
         List<Predicate> attributePredicates = new ArrayList<>();
 
-        Join<Object, Object> federatedIdentitiesJoin = null;
+        Join<UserEntity, FederatedIdentityEntity> federatedIdentitiesJoin = null;
 
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
             String key = entry.getKey();

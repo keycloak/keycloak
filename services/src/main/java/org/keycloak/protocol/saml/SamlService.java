@@ -1210,7 +1210,13 @@ public class SamlService extends AuthorizationEndpointBase {
     @NoCache
     @Consumes({"application/soap+xml", MediaType.TEXT_XML})
     public Response artifactResolutionService(InputStream inputStream) {
-        Document soapBodyContents = Soap.extractSoapMessage(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize));
+        Document soapBodyContents;
+        try (InputStream limitedInputStream = SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize)) {
+            soapBodyContents = Soap.extractSoapMessage(limitedInputStream);
+        } catch (IOException e) {
+            logger.debug("Error while closing the SOAP request stream", e);
+            return Soap.createFault().reason("").detail("").build();
+        }
         ArtifactResolveType artifactResolveType = null;
         SAMLDocumentHolder samlDocumentHolder = null;
         try {
@@ -1262,7 +1268,7 @@ public class SamlService extends AuthorizationEndpointBase {
     public Response soapBinding(InputStream inputStream) {
         SamlEcpProfileService bindingService = new SamlEcpProfileService(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize, enableSaml11);
 
-        return bindingService.authenticate(SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize));
+        return bindingService.authenticate(inputStream);
     }
 
     private ClientModel getAndCheckClientModel(String clientSessionId, String clientId) throws ProcessingException {
@@ -1562,7 +1568,10 @@ public class SamlService extends AuthorizationEndpointBase {
                         throw new ProcessingException(String.format("Artifact resolution failed with status: %d", result.getStatusLine().getStatusCode()));
                     }
 
-                    Document soapBodyContents = Soap.extractSoapMessage(result.getEntity().getContent());
+                    Document soapBodyContents;
+                    try (InputStream entityContent = result.getEntity().getContent()) {
+                        soapBodyContents = Soap.extractSoapMessage(entityContent);
+                    }
                     SAMLDocumentHolder samlDoc = SAML2Request.getSAML2ObjectFromDocument(soapBodyContents);
                     if (!(samlDoc.getSamlObject() instanceof ArtifactResponseType)) {
                         throw new ProcessingException("Message received from ArtifactResolveService is not an ArtifactResponseMessage");
