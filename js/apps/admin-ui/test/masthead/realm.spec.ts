@@ -20,7 +20,7 @@ import {
   fillRealmName,
   goToRealmSection,
   getTextArea,
-  assertTextAreaContains,
+  assertTextAreaValue,
 } from "./realm.ts";
 
 const testRealmName = `Test-realm-${uuid()}`;
@@ -124,11 +124,11 @@ test.describe.serial("Realm tests", () => {
   test("should disable preview if json very long", async ({ page }) => {
     await page.getByTestId("create").click();
     await getTextArea(page).fill("{}");
-    await assertTextAreaContains(page, "{}");
+    await assertTextAreaValue(page, "{}");
 
     const s = '"attribute-name": "attribute-value",';
     await getTextArea(page).fill(`{${s.repeat(3000)}"final":"value"}`);
-    await assertTextAreaContains(
+    await assertTextAreaValue(
       page,
       "Preview disabled because content is too long.",
     );
