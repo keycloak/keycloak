@@ -53,7 +53,7 @@ To ensure code-style is consistent between various contributions [ESLint](https:
 
 For TypeScript code-style the recommendations of [`typescript-eslint`](https://typescript-eslint.io/) are adhered to as much as possible, specifically the [`strict-type-checked`](https://typescript-eslint.io/users/configs#strict-type-checked) and [`stylistic-type-checked`](https://typescript-eslint.io/users/configs#stylistic-type-checked) configurations.
 
-Deviations from, or additions to these rules should be documented by comments in the [ESLint configuration](.eslintrc.cjs).
+Deviations from, or additions to these rules should be documented by comments in the [ESLint configuration](eslint.config.js).
 
 ### Non-null assertion operator
 
