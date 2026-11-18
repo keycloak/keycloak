@@ -53,6 +53,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.policy.MaxAuthAgePasswordPolicyProviderFactory;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
@@ -74,6 +75,25 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
     // Auth note to set that verifyEmail is triggered during registration
     private static final String VERIFY_EMAIL_DURING_REGISTRATION = "VERIFY_EMAIL_DURING_REGISTRATION";
+    // Client note in the restart cookie set while a newly registered user waits for email verification
+    private static final String REGISTRATION_RESTART_NOTE = "verify_email_registration_restart";
+
+    /**
+     * For an authentication session just restarted from the restart cookie, returns the newly registered user when the
+     * restart is for a registration that was waiting for email verification, and the user has verified their email since
+     * (typically in another browser, which removes the authentication session). Otherwise returns null.
+     * Clears the marker from the authentication session, so it applies to this restart only.
+     */
+    public static UserModel getUserVerifiedAfterRegistrationRestart(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
+        String restartNote = authSession.getClientNote(REGISTRATION_RESTART_NOTE);
+        authSession.removeClientNote(REGISTRATION_RESTART_NOTE);
+        String username = authSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (!"true".equals(restartNote) || username == null) {
+            return null;
+        }
+        UserModel user = session.users().getUserByUsername(realm, username);
+        return user != null && user.isEnabled() && user.isEmailVerified() ? user : null;
+    }
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -141,6 +161,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
             // Make the restart go to the login page, with the registered username as login_hint (client note set during registration).
             RestartLoginCookie restart = new RestartLoginCookie(authSession);
             restart.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
+            restart.getNotes().put(REGISTRATION_RESTART_NOTE, "true");
             context.getSession().getProvider(CookieProvider.class)
                     .set(CookieType.AUTH_RESTART, RestartLoginCookie.encodeAndEncrypt(context.getSession(), restart));
         }

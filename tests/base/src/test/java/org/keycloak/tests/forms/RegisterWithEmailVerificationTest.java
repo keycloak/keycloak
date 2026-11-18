@@ -533,10 +533,12 @@ public class RegisterWithEmailVerificationTest {
                 assertThat(infoPage2.getInfo(), is("Your email address has been verified."));
             }
 
-            // Browser 1 - refresh. Authentication session was removed, so the login restarts from the beginning
+            // Browser 1 - refresh. Authentication session was removed, so the login restarts from the beginning,
+            // telling the user that their email is verified rather than that the login timed out
             driver.navigate().refresh();
             loginPage.assertCurrent();
-            assertThat(loginPage.getErrorMessage().orElse(null), is("Your login attempt timed out. Login will start from the beginning."));
+            assertThat(loginPage.getSuccessMessage().orElse(null), is("Your email address has been verified."));
+            assertTrue(loginPage.getErrorMessage().isEmpty());
             assertThat(loginPage.getUsername(), is(username));
 
             events.clear();
@@ -575,6 +577,33 @@ public class RegisterWithEmailVerificationTest {
         registerPage.assertCurrent();
         assertThat(registerPage.getErrorMessage().orElse(null), is("Your login attempt timed out. Login will start from the beginning."));
         assertTrue(realm.admin().users().searchByUsername(username, true).isEmpty());
+    }
+
+    // Issue 55287 - Authentication session of the registration lost (expired, or Keycloak restarted) before the email was
+    // verified. The restart is a plain timeout, as there is no verified email to report.
+    @ParameterizedTest
+    @EnumSource(RegistrationEntryPoint.class)
+    public void registerFromClientAndLoseAuthSessionBeforeVerifyingEmail(RegistrationEntryPoint entryPoint) {
+        realm.updateWithCleanup((realmm) -> realmm.verifyEmail(true));
+        String username = "unverified-" + entryPoint.name().toLowerCase();
+        try {
+            deleteRealmCookies(driver, oauth);
+            entryPoint.open(oauth, PkceGenerator.s256(), loginPage);
+            registerPage.assertCurrent();
+            registerPage.registerWithoutPassword("firstName", "lastName", username + "@email.cz", username);
+            verifyEmailPage.assertCurrent();
+
+            removeRootAuthenticationSession();
+
+            driver.navigate().refresh();
+            loginPage.assertCurrent();
+            assertThat(loginPage.getErrorMessage().orElse(null), is("Your login attempt timed out. Login will start from the beginning."));
+            assertTrue(loginPage.getSuccessMessage().isEmpty());
+            assertThat(loginPage.getUsername(), is(username));
+        } finally {
+            realm.admin().users().searchByUsername(username, true)
+                    .forEach(user -> realm.admin().users().delete(user.getId()).close());
+        }
     }
 
     /**
