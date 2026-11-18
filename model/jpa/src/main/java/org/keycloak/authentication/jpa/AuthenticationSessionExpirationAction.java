@@ -26,6 +26,7 @@ import org.keycloak.expiration.jpa.ExpirationAction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.SessionExpiration;
 
+import org.hibernate.jpa.AvailableHints;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.authentication.jpa.RootAuthenticationSessionEntity.SESSION_BUCKET_COUNT;
@@ -92,5 +93,20 @@ public enum AuthenticationSessionExpirationAction implements ExpirationAction {
         }
 
         return hasMore;
+    }
+
+    /**
+     * Checks with a single index lookup if the realm has any authentication sessions, to skip the per-bucket queries.
+     * Nothing is remembered between runs, so the result never depends on the clock or on the node running the task.
+     */
+    @Override
+    public boolean hasWork(KeycloakSession session, String realmId) {
+        return !session.getProvider(JpaConnectionProvider.class).getEntityManager()
+                .createNamedQuery("findAnyRootAuthSessionIdByRealm", String.class)
+                .setParameter("realmId", realmId)
+                .setHint(AvailableHints.HINT_READ_ONLY, true)
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
     }
 }
