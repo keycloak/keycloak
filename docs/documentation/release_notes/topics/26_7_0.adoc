@@ -25,7 +25,7 @@ The Identity Brokering API allows applications to retrieve tokens obtained from 
 
 V2 is now supported but disabled by default. V1 is deprecated but still enabled by default for backward compatibility. In a future release, V1 will be removed and V2 will become the default.
 
-For more information, see the link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
+For more information, see the link:{developerguide_link}#identity-brokering-apis[Identity Brokering APIs] chapter in the {developerguide_name}.
 
 == Progress on Verifiable Credentials (OID4VCI) (experimental)
 // https://github.com/keycloak/keycloak/issues/50035

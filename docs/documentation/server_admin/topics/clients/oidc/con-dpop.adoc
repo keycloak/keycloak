@@ -1,5 +1,5 @@
 [id="con-dpop_{context}"]
-[[_dpop-bound-tokens]]
+[[dpop-bound-tokens]]
 = DPoP
 [role="_abstract"]
 

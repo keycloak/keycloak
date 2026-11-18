@@ -323,7 +323,7 @@ link:{upgradingguide_link}[{upgradingguide_name}].
 To reduce memory requirements, we introduced a configuration option to shorten lifespan for offline sessions imported into the Infinispan caches. Currently, the offline session lifespan override is disabled by default.
 
 For more details, see the
-link:{adminguide_link}#_offline-access[{adminguide_name}].
+link:{adminguide_link}#offline-access[{adminguide_name}].
 
 = Infinispan metrics use labels for cache manager and cache names
 

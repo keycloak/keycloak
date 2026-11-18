@@ -1,5 +1,5 @@
 
-[[_oidc_clients]]
+[[oidc_clients]]
 = Managing OpenID Connect clients
 [role="_abstract"]
 xref:con-oidc_{context}[OpenID Connect] is the recommended protocol to secure applications.  It was designed from the ground up to be web friendly and it works best with HTML5/JavaScript applications.

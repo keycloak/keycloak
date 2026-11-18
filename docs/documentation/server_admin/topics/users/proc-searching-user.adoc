@@ -48,4 +48,4 @@ Searches performed in the *Users* page encompass both {project_name}'s database 
 ====
 
 .Additional Resources
-* For more information on user federation, see <<_user-storage-federation,User Federation>>.
+* For more information on user federation, see <<user-storage-federation,User Federation>>.

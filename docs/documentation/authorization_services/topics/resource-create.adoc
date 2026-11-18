@@ -1,4 +1,4 @@
-[[_resource_create]]
+[[resource_create]]
 = Creating resources
 
 Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
