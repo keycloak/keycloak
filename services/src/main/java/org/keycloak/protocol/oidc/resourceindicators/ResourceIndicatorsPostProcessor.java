@@ -31,7 +31,9 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
         if (OAuth2Constants.AUTHORIZATION_CODE.equals(grantType)) {
             originalResourceParam = context.code().getResource();
             originalResourceParamRequired = true;
-        } else if (OAuth2Constants.REFRESH_TOKEN.equals(grantType)) {
+        } else if (context.requestRefreshToken() != null) {
+            // not decided by the grant type attribute, which is lost with the client session context that is
+            // recreated when a refresh token with the offline_access scope is refreshed.
             originalResourceParam = (String) context.requestRefreshToken().getOtherClaims().get(OAuth2Constants.RESOURCE);
             originalResourceParamRequired = true;
         }

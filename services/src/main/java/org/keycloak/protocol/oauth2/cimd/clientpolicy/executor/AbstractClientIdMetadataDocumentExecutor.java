@@ -27,12 +27,9 @@ import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdResourceIndicatorContext;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -71,9 +68,9 @@ import org.jboss.logging.Logger;
  *     <li>Client Metadata Verification: if a client metadata satisfies the requirements of the specifications.</li>
  *     <li>Client Metadata Validation: if a client metadata is valid according to the policy.</li>
  *     <li>Client Metadata Augmentation in {@link OIDCClientRepresentation}: augment a fetched client metadata.</li>
- *     <li>Resource Indicators (RFC 8707) enforcement: validate the {@code resource} parameter against an allow list, and
- *     make the resolved resource available as the client's own audience by attaching an {@link AudienceProtocolMapper}
- *     with a custom audience equal to the resource, so {@code ResourceIndicatorsPostProcessor} can resolve it.</li>
+ *     <li>Resource Indicators (RFC 8707) enforcement: validate the {@code resource} parameter of an authorization request
+ *     against an allow list, and validate the resource that an access token is bound to against the same allow list
+ *     again whenever the token is issued, so that only a currently allowed resource is added to its audience.</li>
  * </ul>
  *
  * <p>Roles of the abstract class and its concrete class:
@@ -369,8 +366,26 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 PreAuthorizationRequestContext preAuthorizationRequestContext = (PreAuthorizationRequestContext)context;
                 process(preAuthorizationRequestContext);
                 break;
+            case CIMD_RESOURCE_INDICATOR:
+                process((CimdResourceIndicatorContext) context);
+                break;
             default:
         }
+    }
+
+    private void process(CimdResourceIndicatorContext resourceIndicatorContext) throws ClientPolicyException {
+        provider = session.getProvider(ClientIdMetadataDocumentProvider.class, providerConfig.getCimdProviderName());
+        provider.setConfiguration(getConfiguration());
+
+        // as on an authorization request, a client not managed by CIMD is left untouched.
+        String clientId = resourceIndicatorContext.getClient().getClientId();
+        if (provider.determineFetchOperation(clientId) == FetchOperation.CREATE) {
+            getLogger().debugv("client not managed by CIMD, left untouched: clientId = {0}", clientId);
+            return;
+        }
+
+        checkResourceIndicator(resourceIndicatorContext.getResource());
+        resourceIndicatorContext.approve();
     }
 
     private void process(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
@@ -401,7 +416,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         if (fetchOp == FetchOperation.NO_UPDATE) {
             // no update, but the resource parameter still needs to be enforced on every authorization request.
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            enforceResourceIndicator(preAuthorizationRequestContext);
             return;
         }
 
@@ -409,7 +424,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl = fetchClientMetadata(clientIdURI, fetchOp == FetchOperation.UPDATE, provider);
         if (clientOIDCWithCacheControl == null) {
             // fetched but no update
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            enforceResourceIndicator(preAuthorizationRequestContext);
             return;
         }
 
@@ -419,16 +434,15 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // Client Metadata validation
         validateClientMetadata(clientIdURI, redirectUriURI, clientOIDCWithCacheControl.getOidcClientRepresentation());
 
-        ClientModel clientModel;
         if (fetchOp == FetchOperation.CREATE) {
             // Create Client Metadata
-            clientModel = provider.createClientMetadata(clientOIDCWithCacheControl);
+            provider.createClientMetadata(clientOIDCWithCacheControl);
         } else {
             // Update Client Metadata
-            clientModel = provider.updateClientMetadata(clientOIDCWithCacheControl);
+            provider.updateClientMetadata(clientOIDCWithCacheControl);
         }
 
-        enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
+        enforceResourceIndicator(preAuthorizationRequestContext);
     }
 
     // Authorization Request Verification Errors
@@ -927,25 +941,20 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
     }
 
-    // unique name prefix for the protocol mappers added below; the resource value itself is matched via the
-    // mapper's custom audience config, not the name, so multiple resources can each get their own mapper.
-    private static final String RESOURCE_INDICATOR_AUDIENCE_MAPPER_PREFIX = "cimd-resource-indicator-";
-
     /**
      * Enforces the Resource Indicators (RFC 8707) allow list configured for the executor against the {@code resource}
-     * parameter of an authorization request, and keeps an {@link AudienceProtocolMapper} (with a custom audience equal
-     * to the resource) attached to the client synchronized with the allow list. {@code ResourceIndicatorsPostProcessor}
-     * resolves the {@code aud} claim by matching the requested resource directly against the token's audience, which
-     * this mapper populates.
+     * parameter of an authorization request.
+     *
+     * <p>The executor does not record the accepted resource on the client. The resource that an access token is bound
+     * to is checked against the allow list again on {@code CIMD_RESOURCE_INDICATOR} event, whenever the token is issued.
      *
      * <p>This is a no-op (permissive mode) if the Resource Indicators feature is disabled or the authorization
      * request does not include the {@code resource} parameter.
      *
      * @param preAuthorizationRequestContext an authorization request
-     * @param clientModel the client looked up, created, or updated by CIMD for this authorization request, not {@code null}
      * @throws ClientPolicyException when the {@code resource} parameter value is not allowed.
      */
-    protected void enforceResourceIndicator(PreAuthorizationRequestContext preAuthorizationRequestContext, ClientModel clientModel) throws ClientPolicyException {
+    protected void enforceResourceIndicator(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
         if (!Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
             return;
         }
@@ -956,49 +965,20 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             return;
         }
 
+        checkResourceIndicator(resource);
+    }
+
+    /**
+     * Checks a resource indicator against the allow list configured for the executor.
+     *
+     * @param resource a resource indicator, not {@code null}
+     * @throws ClientPolicyException when the resource indicator is not allowed.
+     */
+    protected void checkResourceIndicator(String resource) throws ClientPolicyException {
         List<String> allowList = convertContentFilledList(getConfiguration().getResourceIndicatorAllowList());
         if (!allowList.contains(resource)) {
-            // no longer (or never) allow-listed: remove its audience mapper to keep it synchronized, then reject.
-            // this is persisted in a separate transaction so the change survives the rollback that happens
-            // when the ClientPolicyException below is thrown.
-            String realmId = clientModel.getRealm().getId();
-            String clientId = clientModel.getId();
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), newSession -> {
-                RealmModel newRealm = newSession.realms().getRealm(realmId);
-                ClientModel newClientModel = newRealm == null ? null : newRealm.getClientById(clientId);
-                if (newClientModel != null) {
-                    removeResourceIndicatorAudienceMapper(newClientModel, resource);
-                }
-            });
             getLogger().warnv("resource parameter not allowed: resource = {0}", resource);
             throw invalidResourceIndicator();
-        }
-
-        // allow-listed: attach an audience mapper for the resource so ResourceIndicatorsPostProcessor can resolve it.
-        ensureResourceIndicatorAudienceMapper(clientModel, resource);
-    }
-
-    private ProtocolMapperModel findResourceIndicatorAudienceMapper(ClientModel clientModel, String resource) {
-        return clientModel.getProtocolMappersStream()
-                .filter(m -> m.getName().startsWith(RESOURCE_INDICATOR_AUDIENCE_MAPPER_PREFIX))
-                .filter(m -> AudienceProtocolMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
-                .filter(m -> resource.equals(m.getConfig().get(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE)))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private void ensureResourceIndicatorAudienceMapper(ClientModel clientModel, String resource) {
-        if (findResourceIndicatorAudienceMapper(clientModel, resource) != null) {
-            return;
-        }
-        String mapperName = RESOURCE_INDICATOR_AUDIENCE_MAPPER_PREFIX + KeycloakModelUtils.generateId();
-        clientModel.addProtocolMapper(AudienceProtocolMapper.createClaimMapper(mapperName, null, resource, true, false, true));
-    }
-
-    private void removeResourceIndicatorAudienceMapper(ClientModel clientModel, String resource) {
-        ProtocolMapperModel mapper = findResourceIndicatorAudienceMapper(clientModel, resource);
-        if (mapper != null) {
-            clientModel.removeProtocolMapper(mapper);
         }
     }
 

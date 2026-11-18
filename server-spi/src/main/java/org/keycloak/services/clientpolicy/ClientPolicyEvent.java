@@ -74,4 +74,13 @@ public enum ClientPolicyEvent {
      * validation should ignore it and perform their checks during the regular authorization event.
      */
     AUTHORIZATION_REQUEST_REDIRECT_URI,
+
+    /**
+     * Check the resource indicator (RFC 8707) that an access token is bound to, while the token is built.
+     * Raised when the {@code cimd} and {@code resource-indicators} features are enabled, whichever grant type
+     * the token is requested with, and not raised for a token that is not bound to a resource indicator.
+     * The Client ID Metadata Document executor rejects the resource or approves it for a client it manages.
+     * Executors unrelated to resource indicators should ignore this event.
+     */
+    CIMD_RESOURCE_INDICATOR,
 }

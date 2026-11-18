@@ -141,7 +141,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 "Only effective if Resource Indicators feature (RFC 8707) is enabled. " +
                         "If a resource parameter value of an authorization request is not included in this allow list, the executor rejects the request. " +
                         "If the request does not include a resource parameter, the executor does not enforce this allow list. " +
-                        "If the allow list is vacant, no resource parameter value is accepted.",
+                        "If the allow list is vacant, no resource parameter value is accepted. " +
+                        "The executor checks the resource that an access token is bound to against this allow list again whenever the token is issued.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
         configProperties.add(property);

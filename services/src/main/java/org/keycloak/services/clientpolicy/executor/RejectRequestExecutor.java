@@ -43,6 +43,10 @@ public class RejectRequestExecutor implements ClientPolicyExecutorProvider<Clien
         if (context.getEvent() == ClientPolicyEvent.AUTHORIZATION_REQUEST_REDIRECT_URI) {
             return;
         }
+        // Not a request: the token request that the resource indicator belongs to is rejected on its own event.
+        if (context.getEvent() == ClientPolicyEvent.CIMD_RESOURCE_INDICATOR) {
+            return;
+        }
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Request not allowed");
     }
 }
