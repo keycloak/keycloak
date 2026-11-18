@@ -128,7 +128,7 @@ public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertific
                 .property()
                     .name(KEY_SIZE)
                     .type("int")
-                    .helpText("The RSA key size in bits of the automatically generated certificate, at least 2048. Use the same value on all nodes. A stored certificate with a different key size is regenerated on startup. Ignored if the algorithm is not RSA.")
+                    .helpText("The RSA key size in bits of the automatically generated certificate, between 2048 and 16384. Use the same value on all nodes. A stored certificate with a different key size is regenerated on startup. Ignored if the algorithm is not RSA.")
                     .defaultValue(KeySpec.Rsa.DEFAULT_KEY_SIZE)
                     .add()
                 .property()

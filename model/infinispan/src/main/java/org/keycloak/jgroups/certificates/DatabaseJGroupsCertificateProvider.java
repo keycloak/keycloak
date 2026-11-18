@@ -266,6 +266,9 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         if (!matchesKeySpec(certificate)) {
             // The running nodes trust only the stored certificate, so join with it and replace it afterwards in migrateCertificate().
             logger.infof("Stored JGroups certificate does not match the configured key (%s). Replacing it once this node has joined the cluster.", keySpec.description());
+            // Fail the startup now if the key cannot be generated, as the replacement would otherwise fail on every retry.
+            // This is done only on a mismatch to keep the regular startup fast.
+            keySpec.generate();
             migrationPending = true;
         }
         return certificate;

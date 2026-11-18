@@ -47,10 +47,11 @@ public sealed interface KeySpec {
 
         public static final int DEFAULT_KEY_SIZE = 3072;
         private static final int MIN_KEY_SIZE = 2048;
+        private static final int MAX_KEY_SIZE = 16384;
 
         public Rsa {
-            if (keySize < MIN_KEY_SIZE) {
-                throw new IllegalArgumentException("RSA key size must be at least %d but was %d.".formatted(MIN_KEY_SIZE, keySize));
+            if (keySize < MIN_KEY_SIZE || keySize > MAX_KEY_SIZE) {
+                throw new IllegalArgumentException("RSA key size must be between %d and %d but was %d.".formatted(MIN_KEY_SIZE, MAX_KEY_SIZE, keySize));
             }
         }
 
