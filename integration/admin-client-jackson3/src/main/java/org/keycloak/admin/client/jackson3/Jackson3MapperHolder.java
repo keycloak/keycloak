@@ -5,7 +5,7 @@ import tools.jackson.databind.AnnotationIntrospector;
 import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
-final class Jackson3MapperHolder {
+public final class Jackson3MapperHolder {
 
     static final JsonMapper MAPPER;
 
@@ -22,5 +22,12 @@ final class Jackson3MapperHolder {
     }
 
     private Jackson3MapperHolder() {
+    }
+
+    /**
+     * Returns the JSON mapper configured for the Keycloak admin client
+     */
+    public static JsonMapper getMapper() {
+        return MAPPER;
     }
 }
