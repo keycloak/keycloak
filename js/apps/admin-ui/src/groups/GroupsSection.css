@@ -21,3 +21,7 @@
 .keycloak-admin--groups__section .pf-v5-c-breadcrumb__item {
   white-space: pre-wrap;
 }
+
+.keycloak_groups_treeview .keycloak-admin--groups__name {
+  white-space: pre;
+}
