@@ -1,4 +1,4 @@
-[[_permission_overview]]
+[[permission_overview]]
 = Managing permissions
 
 A permission associates the object being protected and the policies that must be evaluated to decide whether access should be granted.

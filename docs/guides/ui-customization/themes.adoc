@@ -500,7 +500,7 @@ To create a custom theme selector you need to implement `ThemeSelectorProviderFa
 When implementing custom providers there may often be a need to add additional templates, resources and messages bundles.
 
 ifeval::[{project_product}!=true]
-An example use-case would be a https://www.keycloak.org/docs/latest/server_development/index.html#_auth_spi[custom authenticator] that requires additional templates and resources.
+An example use-case would be a https://www.keycloak.org/docs/latest/server_development/index.html#auth_spi[custom authenticator] that requires additional templates and resources.
 endif::[]
 
 The easiest way to load additional theme resources is to create a JAR with templates in `theme-resources/templates`

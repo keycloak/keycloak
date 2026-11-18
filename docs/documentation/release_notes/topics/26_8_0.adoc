@@ -78,7 +78,7 @@ Parameterized scopes (formerly known as dynamic scopes) allow clients to pass a 
 
 Parameterized scopes have officially moved from experimental to preview status.
 
-For more details about the feature, see the link:{adminguide_link}#_parameterized_client_scopes[{adminguide_name}].
+For more details about the feature, see the link:{adminguide_link}#parameterized_client_scopes[{adminguide_name}].
 
 == Token exchange delegation with consent, FGAP authorization, and audit trail (preview)
 // https://github.com/keycloak/keycloak/issues/38279

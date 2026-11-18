@@ -6,7 +6,7 @@
 
 If these fields are not strictly validated, a malicious administrator, a compromised account or a Dynamic Client Registration could point them toward internal network resources or loopback interfaces (e.g., `http://localhost:8080/any`), allowing the attacker to probe or attack the internal infrastructure from the {project_name} server itself.
 
-To mitigate this threat, {project_name} provides a solution using <<_client_policies, Client Policies>> with some executors like *Secure Client Uris* to provide baseline protection for transport security and wildcards, but especially with the **Secure Client URIs Pattern** executor.
+To mitigate this threat, {project_name} provides a solution using <<client_policies, Client Policies>> with some executors like *Secure Client Uris* to provide baseline protection for transport security and wildcards, but especially with the **Secure Client URIs Pattern** executor.
 
 See also <<dns-rebinding>> for an attack vector that can bypass URI-based validation.
 

@@ -47,7 +47,7 @@ Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[Dmitry Telegin] for their contributions to the DPoP feature.
 endif::[]
 
-For more information, see the link:{adminguide_link}#_dpop-bound-tokens[DPoP section] in the documentation.
+For more information, see the link:{adminguide_link}#dpop-bound-tokens[DPoP section] in the documentation.
 
 == FIPS 140-2 mode now supports EdDSA
 
