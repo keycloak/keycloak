@@ -134,6 +134,9 @@ public final class StringPropertyReplacer
             private ByteArrayInputStream buffer;
             private boolean closed;
             private int curlyBraceDepth;
+            // a character read ahead after a '$' that did not start a placeholder, still to be processed
+            private boolean hasLookAhead;
+            private int lookAhead;
 
             @Override
             public int read() throws IOException {
@@ -149,7 +152,13 @@ public final class StringPropertyReplacer
                     buffer = null;
                 }
                 // if no buffer, scan for } or ${
-                int c = source.read();
+                int c;
+                if (hasLookAhead) {
+                    hasLookAhead = false;
+                    c = lookAhead;
+                } else {
+                    c = source.read();
+                }
                 if (readUntilCurlyBrace) {
                     if (c == '}') {
                         if (curlyBraceDepth-- == 0) {
@@ -164,8 +173,11 @@ public final class StringPropertyReplacer
                 }
                 int next = source.read();
                 if (next != '{') {
-                    buffer = new ByteArrayInputStream(new byte[] {(byte)c, (byte)next});
-                    return read();
+                    // not a placeholder: return the '$' and process the look-ahead character on the next read,
+                    // as it may be the end of the input, a closing '}' or the '$' of another placeholder
+                    lookAhead = next;
+                    hasLookAhead = true;
+                    return c;
                 }
                 // determine the key
                 int keyChar = -1;
