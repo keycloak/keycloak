@@ -1,15 +1,21 @@
 package org.keycloak.tests.forms;
 
 import java.io.IOException;
+import java.util.Map;
 
 import jakarta.mail.internet.MimeMessage;
 
+import org.keycloak.admin.client.resource.AuthenticationManagementResource;
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.validation.Validation;
@@ -30,6 +36,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -37,6 +45,7 @@ import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 
@@ -45,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @KeycloakIntegrationTest
 public class ResetPasswordTest {
@@ -90,6 +100,9 @@ public class ResetPasswordTest {
 
     @InjectEvents(realmRef = CONSUMER_REALM_NAME)
     protected Events events;
+
+    @InjectTimeOffSet(enableForCaches = true)
+    protected TimeOffSet timeOffSet;
 
     @Test
     public void shouldOfferAllOidcOptionOnLoginPageUserTriesToResetTheirPasswordAndGoesBack() {
@@ -243,6 +256,77 @@ public class ResetPasswordTest {
                 .sessionId(null)
                 .error(Errors.USER_NOT_FOUND)
                 .details(Details.USERNAME, "a".repeat(Validation.MAX_USERNAME_LENGTH));
+    }
+
+    @Test
+    public void resetPasswordSendsOneEmailDuringCooldown() {
+        String userId = consumerRealm.admin().users().search(USER_LOGIN).get(0).getId();
+
+        submitResetPasswordForm(USER_LOGIN);
+        EventAssertion.expectRequiredAction(events.poll())
+                .type(EventType.SEND_RESET_PASSWORD)
+                .userId(userId);
+        assertTrue(mailServer.waitForIncomingEmail(1));
+
+        // the username and the email are the same user, so they share the cooldown
+        submitResetPasswordForm(USER_EMAIL);
+        EventAssertion.assertError(events.poll())
+                .type(EventType.SEND_RESET_PASSWORD_ERROR)
+                .error(Errors.SLOW_DOWN)
+                .userId(userId)
+                .details(Details.USERNAME, USER_EMAIL);
+        assertFalse(mailServer.waitForIncomingEmail(1000, 2), "Unexpected email was received");
+
+        timeOffSet.set(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS + 1);
+
+        submitResetPasswordForm(USER_LOGIN);
+        EventAssertion.expectRequiredAction(events.poll())
+                .type(EventType.SEND_RESET_PASSWORD)
+                .userId(userId);
+        assertTrue(mailServer.waitForIncomingEmail(2));
+    }
+
+    @Test
+    public void resetPasswordSendsEveryEmailWhenCooldownIsDisabled() {
+        configureEmailCooldown("0");
+
+        submitResetPasswordForm(USER_LOGIN);
+        submitResetPasswordForm(USER_LOGIN);
+
+        assertTrue(mailServer.waitForIncomingEmail(2));
+    }
+
+    @Test
+    public void resetPasswordUsesDefaultCooldownWhenValueIsInvalid() {
+        configureEmailCooldown("30s");
+
+        submitResetPasswordForm(USER_LOGIN);
+        submitResetPasswordForm(USER_LOGIN);
+
+        assertTrue(mailServer.waitForIncomingEmail(1));
+        assertFalse(mailServer.waitForIncomingEmail(1000, 2), "Unexpected email was received");
+    }
+
+    private void submitResetPasswordForm(String username) {
+        oauth.openLoginForm();
+        loginPage.assertCurrent();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword(username);
+        loginPage.assertCurrent();
+        assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+    }
+
+    private void configureEmailCooldown(String seconds) {
+        AuthenticationManagementResource flows = consumerRealm.admin().flows();
+        String executionId = flows.getExecutions(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW).stream()
+                .filter(e -> ResetCredentialEmail.PROVIDER_ID.equals(e.getProviderId()))
+                .findAny().orElseThrow().getId();
+        AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
+        config.setAlias("reset-email-cooldown");
+        config.setConfig(Map.of(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_SECONDS, seconds));
+        String configId = ApiUtil.getCreatedId(flows.newExecutionConfig(executionId, config));
+        consumerRealm.cleanup().add(r -> r.flows().removeAuthenticatorConfig(configId));
     }
 
     static class ConsumerRealmConfig implements RealmConfig {

@@ -24,7 +24,9 @@ import jakarta.mail.internet.MimeMessage;
 
 import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -135,6 +137,9 @@ public class UserSessionLimitsTest {
              // Reset password
             UserModel user = session.users().getUserByUsername(realm, username);
             user.credentialManager().updateCredential(UserCredentialModel.password(password));
+
+            // a reset email requested by the test before would stop the next one
+            session.singleUseObjects().remove(EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, user.getId()));
         });
 
         events.clear();
