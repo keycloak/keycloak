@@ -219,7 +219,11 @@ final class CimdResourceIndicatorAllowLists {
         // executor provider ID -> the configuration class of its executors, or null if they are not CIMD executors.
         Map<String, Class<? extends Configuration>> configurationClasses = new HashMap<>();
         Map<String, List<List<String>>> allowListsByProfile = new HashMap<>();
+        Set<String> seenProfiles = new java.util.HashSet<>();
         Stream.concat(nullSafe(profiles.getProfiles()), nullSafe(profiles.getGlobalProfiles())).forEach(profile -> {
+            if (!seenProfiles.add(profile.getName())) {
+                return;
+            }
             List<List<String>> allowLists = new ArrayList<>();
             nullSafe(profile.getExecutors()).forEach(executor -> {
                 String providerId = executor.getExecutorProviderId();
