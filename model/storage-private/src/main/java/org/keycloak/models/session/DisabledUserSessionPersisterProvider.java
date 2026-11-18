@@ -125,11 +125,6 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
         return Stream.empty();
     }
 
-    @Override
-    public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
-                                                           String lastUserSessionId) {
-        return Stream.empty();
-    }
 
     @Override
     public AuthenticatedClientSessionModel loadClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline) {

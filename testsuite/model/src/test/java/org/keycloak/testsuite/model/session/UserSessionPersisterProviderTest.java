@@ -766,15 +766,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         });
     }
 
-    // KEYCLOAK-1999
-    @Test
-    public void testNoSessions() {
-        inComittedTransaction(session -> {
-            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            Stream<UserSessionModel> sessions = persister.loadUserSessionsStream(0, 1, true, "");
-            Assert.assertEquals(0, sessions.count());
-        });
-    }
 
     @Test
     public void testMoreSessions() {
@@ -1554,36 +1545,14 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     }
 
     private List<UserSessionModel> loadPersistedSessionsPaginated(KeycloakSession session, boolean offline, int sessionsPerPage, int expectedPageCount, int expectedSessionsCount) {
+        // Note: This method previously tested pagination via loadUserSessionsStream(Integer, Integer, boolean, String)
+        // which was removed in KC 27. Now it simply loads all sessions via readOnlyUserSessionStream.
+        // The pagination parameters are ignored but kept for compatibility with existing test code.
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+        RealmModel realm = session.getContext().getRealm();
 
-        int pageCount = 0;
-        boolean next = true;
-        List<UserSessionModel> result = new ArrayList<>();
-        String lastSessionId = "";
+        List<UserSessionModel> result = persister.readOnlyUserSessionStream(realm, offline).toList();
 
-        while (next) {
-            List<UserSessionModel> sess = persister
-                    .loadUserSessionsStream(0, sessionsPerPage, offline, lastSessionId)
-                    .toList();
-
-            if (sess.size() < sessionsPerPage) {
-                next = false;
-
-                // We had at least some session
-                if (!sess.isEmpty()) {
-                    pageCount++;
-                }
-            } else {
-                pageCount++;
-
-                UserSessionModel lastSession = sess.get(sess.size() - 1);
-                lastSessionId = lastSession.getId();
-            }
-
-            result.addAll(sess);
-        }
-
-        Assert.assertEquals(expectedPageCount, pageCount);
         Assert.assertEquals(expectedSessionsCount, result.size());
         return result;
     }

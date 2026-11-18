@@ -786,6 +786,14 @@ With persistent user sessions enabled (the default since Keycloak 26), offline s
 
 If you have these options in your configuration, remove them before upgrading to Keycloak 27.
 
+=== Upgrading from versions older than Keycloak 25 is not supported
+// https://github.com/keycloak/keycloak/issues/55097
+
+Direct upgrades from {project_name} versions older than 25.0.0 to {project_name} 27.0.0 are not supported.
+The session migration logic that allowed upgrading from pre-25 versions has been removed in this release.
+
+If you are running a version older than 25.0.0, upgrade to {project_name} 25.x or 26.x first, allow the session migration to complete, and then upgrade to 27.0.0.
+
 === ClusterProvider cross-DC notification API removed
 // https://github.com/keycloak/keycloak/issues/39047
 
