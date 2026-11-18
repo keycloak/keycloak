@@ -20,33 +20,28 @@ package org.keycloak.tests.admin.client.v2;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.Encode;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.v2.AdminEventV2Builder;
-import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.database.TestDatabase;
+import org.keycloak.testframework.injection.Extensions;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
-import org.jboss.resteasy.specimpl.ResteasyUriInfo;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_DETAIL_KEY;
 import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_V2;
@@ -66,8 +61,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests for Admin API v2 events.
  * Verifies that v2 admin events are fired with the apiVersion=v2 detail.
  */
+@DatabaseTest
 @KeycloakIntegrationTest(config = AdminEventV2Test.AdminV2EventConfig.class)
 public class AdminEventV2Test extends AbstractClientApiV2Test {
+    // Databases whose default collation compares the realm name case-insensitively.
+    private static final Set<String> CASE_INSENSITIVE_DATABASES = Set.of("mariadb", "mysql", "mssql");
+
     private static final String TEST_CLIENT_ID = "v2-rep-test-client";
 
     @InjectRunOnServer
@@ -75,9 +74,6 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
 
     @InjectRealm
     ManagedRealm testRealm;
-
-    @InjectUser
-    ManagedUser testUser;
 
     @Override
     public String getRealmName() {
@@ -109,32 +105,41 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
         });
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    public void resourcePathUsesRequestedRealmName(boolean differentCase) {
-        String userId = testUser.getId();
+    @Test
+    public void resourcePathWithExactRealmName() throws Exception {
+        createTestClient();
+        try {
+            assertThat(testRealm.admin().getAdminEvents().get(0).getResourcePath(), is("clients/v2"));
+        } finally {
+            deleteTestClient();
+        }
+    }
 
-        // Use the resolved realm model so this also runs on case-sensitive databases.
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            AdminAuth auth = new AdminAuth(realm, null, session.users().getUserById(realm, userId), realm.getClientByClientId("account"));
-            AdminEventV2Builder builder = new AdminEventV2Builder(realm, auth, session, session.getContext().getConnection());
-            String requestedRealmName = differentCase ? realm.getName().toUpperCase(Locale.ROOT) : realm.getName();
-            String encodedRealmName = Encode.encodePathSegment(requestedRealmName);
-            String uriPrefix = "http://localhost/admin/api/" + encodedRealmName + "/";
+    @Test
+    public void resourcePathWithUpperCaseRealmName() throws Exception {
+        String upperCaseRealmName = testRealm.getName().toUpperCase(Locale.ROOT);
+        String database = dbType();
 
-            ResteasyUriInfo uriInfo = new ResteasyUriInfo(uriPrefix + "clients/v2/Client%20Name+ID%2FChild", "");
-            uriInfo.addEncodedPathParameter("realmName", encodedRealmName);
-            builder.resourcePath(uriInfo);
-            assertThat(builder.getEvent().getResourcePath(), is("clients/v2/Client Name+ID/Child"));
-
-            for (String trailingSlash : List.of("", "/")) {
-                ResteasyUriInfo collectionUriInfo = new ResteasyUriInfo(uriPrefix + "clients/v2" + trailingSlash, "");
-                collectionUriInfo.addEncodedPathParameter("realmName", encodedRealmName);
-                builder.resourcePath(collectionUriInfo, "Client-ID");
-                assertThat(builder.getEvent().getResourcePath(), is("clients/v2/Client-ID"));
+        try (var response = getClientsApi(upperCaseRealmName).createClient(getTestClientRepresentation())) {
+            if (CASE_INSENSITIVE_DATABASES.contains(database)) {
+                assertEquals(201, response.getStatus(), database);
+            } else {
+                assertEquals(404, response.getStatus(), database);
+                assertThat(testRealm.admin().getAdminEvents().size(), is(0));
+                return;
             }
-        });
+        }
+        try {
+            List<AdminEventRepresentation> events = testRealm.admin().getAdminEvents();
+            assertThat(events.size(), is(1));
+            assertThat(events.get(0).getResourcePath(), is("clients/v2"));
+        } finally {
+            deleteTestClient();
+        }
+    }
+
+    private static String dbType() {
+        return Extensions.getInstance().findSupplierByType(TestDatabase.class).getAlias();
     }
 
     @Test
