@@ -39,6 +39,7 @@ import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 
@@ -63,12 +64,27 @@ public abstract class SamlAbstractMetadataPublicKeyLoader implements PublicKeyLo
 
     protected abstract String getKeys() throws Exception;
 
+    /**
+     * Returns the entity descriptor to load the keys from. By default it is the descriptor itself
+     * or, if the descriptor is an aggregate, its first entity.
+     *
+     * @param descriptor The metadata descriptor
+     * @return The entity descriptor or null if no keys should be loaded from the descriptor
+     * @throws ParsingException If the descriptor cannot be parsed
+     */
+    protected EntityDescriptorType getEntityDescriptor(String descriptor) throws ParsingException {
+        return SAMLMetadataUtil.parseEntityDescriptorType(descriptor);
+    }
+
     @Override
     public PublicKeysWrapper loadKeys() throws Exception {
         String descriptor = getKeys();
 
         List<KeyDescriptorType> keyDescriptor = null;
-        EntityDescriptorType entityType = SAMLMetadataUtil.parseEntityDescriptorType(descriptor);
+        EntityDescriptorType entityType = getEntityDescriptor(descriptor);
+        if (entityType == null) {
+            return PublicKeysWrapper.EMPTY;
+        }
         Long expirationTime = getExpirationTime(entityType::getValidUntil, entityType::getCacheDuration);
         if (forIdP) {
             IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);

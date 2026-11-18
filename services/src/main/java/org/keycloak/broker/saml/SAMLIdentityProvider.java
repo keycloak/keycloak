@@ -540,7 +540,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         if (getConfig().isEnabled() && getConfig().isUseMetadataDescriptorUrl()) {
             String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), getConfig().getInternalId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            return keyStorage.reloadKeys(modelKey, new SamlMetadataPublicKeyLoader(session, getConfig().getMetadataDescriptorUrl()));
+            return keyStorage.reloadKeys(modelKey, new SamlMetadataPublicKeyLoader(session, getConfig().getMetadataDescriptorUrl(), true, getConfig().getIdpEntityId()));
         }
         return false;
     }
