@@ -134,6 +134,9 @@ public final class StringPropertyReplacer
             private ByteArrayInputStream buffer;
             private boolean closed;
             private int curlyBraceDepth;
+            // a character read ahead after a '$' that did not start a placeholder, still to be processed
+            private boolean hasLookAhead;
+            private int lookAhead;
 
             @Override
             public int read() throws IOException {
@@ -149,7 +152,13 @@ public final class StringPropertyReplacer
                     buffer = null;
                 }
                 // if no buffer, scan for } or ${
-                int c = source.read();
+                int c;
+                if (hasLookAhead) {
+                    hasLookAhead = false;
+                    c = lookAhead;
+                } else {
+                    c = source.read();
+                }
                 if (readUntilCurlyBrace) {
                     if (c == '}') {
                         if (curlyBraceDepth-- == 0) {
@@ -164,6 +173,16 @@ public final class StringPropertyReplacer
                 }
                 int next = source.read();
                 if (next != '{') {
+                    if (next == -1) {
+                        // trailing '$': emit only the '$', as -1 must not be written as a byte
+                        return c;
+                    }
+                    if (next == '}') {
+                        // a closing brace must go through the brace tracking above
+                        lookAhead = next;
+                        hasLookAhead = true;
+                        return c;
+                    }
                     buffer = new ByteArrayInputStream(new byte[] {(byte)c, (byte)next});
                     return read();
                 }
