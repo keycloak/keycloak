@@ -794,8 +794,7 @@ The session migration logic that allowed upgrading from pre-25 versions has been
 
 If you are running a version older than 25.0.0, you must first upgrade to an intermediate version to migrate existing sessions:
 
-* Upgrade to {project_name} 26.x (recommended, as persistent user sessions are enabled by default), allow the session migration to complete, then upgrade to 27.0.0.
-* Alternatively, upgrade to {project_name} 25.x with the `persistent-user-sessions` feature explicitly enabled, allow the session migration to complete, then upgrade to 27.0.0.
+* Upgrade to {project_name} 25.x with the `persistent-user-sessions` feature explicitly enabled and allow the session migration to complete, then upgrade to 27.0.0, optionally through 26.x.
 
 NOTE: Persistent user sessions are disabled by default in {project_name} 25.x.
 Upgrading directly from pre-25 versions to 25.x without enabling `persistent-user-sessions`, and then to 27.x, will result in loss of online sessions that were eligible for migration.
