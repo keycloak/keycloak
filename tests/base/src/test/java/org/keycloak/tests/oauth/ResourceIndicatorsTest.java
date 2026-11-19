@@ -3,6 +3,7 @@ package org.keycloak.tests.oauth;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -225,6 +226,26 @@ public class ResourceIndicatorsTest {
     }
 
     @Test
+    public void testRefreshOfflineTokenWithCustomAudienceResource() {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm()
+                .scope(OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS).resource("https://custom-api-2").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+
+        AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).send();
+        assertValidResponse(accessTokenResponse, "https://custom-api-2");
+
+        // the resource stays bound to the offline token over consecutive refreshes
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(accessTokenResponse.getRefreshToken()).send();
+        assertValidResponse(refreshResponse, "https://custom-api-2");
+
+        refreshResponse = oauth.refreshRequest(refreshResponse.getRefreshToken()).send();
+        assertValidResponse(refreshResponse, "https://custom-api-2");
+
+        refreshResponse = oauth.refreshRequest(refreshResponse.getRefreshToken()).resource("https://custom-api").send();
+        assertErrorResponse(refreshResponse, INVALID_TARGET, ERROR_NOT_MATCHING);
+    }
+
+    @Test
     public void testRefreshWithCustomAudienceResourceExplicit() {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("https://custom-api").doLoginWithCookie();
         Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
@@ -272,6 +293,7 @@ public class ResourceIndicatorsTest {
             realm.clients(ClientBuilder.create("https://custom-api").secret("introspection-secret"));
 
             realm.users(UserBuilder.create("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
+                    .realmRoles(OAuth2Constants.OFFLINE_ACCESS)
                     .clientRoles("theservice", "myrole")
                     .clientRoles("otherservice", "myrole")
                     .clientRoles("serviceWithoutResource", "myrole"));

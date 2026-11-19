@@ -731,6 +731,32 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== Resource indicators of OAuth Client ID Metadata Document clients are checked when a token is issued
+// https://github.com/keycloak/keycloak/issues/55131
+
+When the experimental `cimd` and `resource-indicators` features are enabled, the `client-id-metadata-document` client policy executor no longer adds an `Audience` mapper to a client for each `resource` parameter value that it accepts.
+Such a mapper kept adding the value to the `aud` claim of every access token of the client after the value was removed from the *Resource indicator allow list* option, for example on a client credentials or refresh token request.
+
+Instead, whenever an access token bound to a `resource` parameter value is issued, the executors that apply to the client check the value against their allow lists again.
+The value is added to the `aud` claim only if they allow it, and the token request is rejected with the `invalid_target` error otherwise.
+Removing a value from an allow list therefore takes effect on the next token request, including a refresh token or client credentials request.
+
+As a consequence, an access token is issued for a resource only when the token request is bound to it, that is when the token request, the authorization request, or the refresh token carries the `resource` parameter value.
+An access token that is requested without any `resource` parameter value no longer includes the values accepted earlier.
+Because an access token returned directly from the authorization endpoint (implicit and hybrid flows) is not bound to a `resource` parameter value, it no longer includes these values either.
+
+The `Audience` mappers that the executor added before the upgrade have a name starting with `cimd-resource-indicator-`.
+While the `cimd` feature is enabled, {project_name} removes them from a client when it issues the next access token to that client.
+That token does not include their values, unless the token request is bound to an allowed one or another `Audience` or `Audience Resolve` mapper adds the same value.
+If you disable the `cimd` feature, remove these mappers from the clients yourself.
+
+=== Resource indicator of a refresh token with the `offline_access` scope is enforced
+// https://github.com/keycloak/keycloak/issues/55131
+
+When the experimental `resource-indicators` feature is enabled, refreshing a refresh token that has the `offline_access` scope and is bound to a `resource` parameter value now issues an access token whose `aud` claim includes only that value, and keeps the new refresh token bound to it.
+Previously, such a request was processed as if the refresh token was not bound to any resource.
+If the value can no longer be resolved for the client, the request is rejected with the `invalid_target` error, as for any other refresh token.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

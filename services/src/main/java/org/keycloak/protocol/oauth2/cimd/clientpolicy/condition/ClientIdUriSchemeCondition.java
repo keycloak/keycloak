@@ -8,6 +8,7 @@ import java.util.Objects;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.context.CimdResourceIndicatorContext;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -20,9 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 
 /**
- * The class is a condition of client policies. On {@code PRE_AUTHORIZATION_REQUEST} and
- * {@code AUTHORIZATION_REQUEST_REDIRECT_URI} events, it checks if the client ID is a URI and
- * the scheme part of the URI is the one defined in its configuration.
+ * The class is a condition of client policies. On {@code PRE_AUTHORIZATION_REQUEST},
+ * {@code AUTHORIZATION_REQUEST_REDIRECT_URI} and {@code CIMD_RESOURCE_INDICATOR} events, it checks if the
+ * client ID is a URI and the scheme part of the URI is the one defined in its configuration.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -78,6 +79,9 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
             case AUTHORIZATION_REQUEST_REDIRECT_URI:
                 clientId = ((AuthorizationRequestRedirectUriContext) context).getClient().getClientId();
                 break;
+            case CIMD_RESOURCE_INDICATOR:
+                clientId = ((CimdResourceIndicatorContext) context).getClient().getClientId();
+                break;
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
@@ -97,7 +101,7 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
     }
 
     private boolean isUriSchemeMatched(URI uri) {
-        return configuration.getClientIdUriSchemes().stream().anyMatch(i->i.equals(uri.getScheme()));
+        return convertContentFilledList(configuration.getClientIdUriSchemes()).stream().anyMatch(i->i.equals(uri.getScheme()));
     }
 
     private boolean isTrustedDomainMatched(URI uri) {
