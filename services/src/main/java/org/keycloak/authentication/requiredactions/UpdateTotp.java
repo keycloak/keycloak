@@ -167,7 +167,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         } catch (ModelDuplicateException e) {
             FormMessage formMessage = switch (e.getDuplicateFieldName()) {
                 case CredentialModel.USER_LABEL -> new FormMessage(Validation.FIELD_OTP_LABEL, Messages.DUPLICATE_TOTP_DEVICE_NAME);
-                default -> null;
+                default -> new FormMessage(null, e.getMessage());
             };
             Response challenge = context.form()
                     .setAttribute("mode", mode)
