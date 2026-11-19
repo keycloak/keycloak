@@ -203,7 +203,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             inComittedTransaction(session -> { // Assert online session
                 RealmModel realm = session.realms().getRealm(realmId);
                 session.getContext().setRealm(realm);
-                List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, false, 1, 1, 1);
+                List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, false, 1, 1, 1);
                 assertSession(loadedSessions.get(0), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
             });
         }
@@ -212,7 +212,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             // Assert offline sessions
             RealmModel realm = session.realms().getRealm(realmId);
             session.getContext().setRealm(realm);
-            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 2, 2, 3);
+            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 2, 2, 3);
             assertSessions(loadedSessions, new String[] { origSessions[0].getId(), origSessions[1].getId(), origSessions[2].getId() });
 
             assertSessionLoaded(loadedSessions, origSessions[0].getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
@@ -253,7 +253,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
             // Load offline session
-            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
+            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 10, 1, 1);
 
             UserSessionModel persistedSession = loadedSessions.get(0);
 
@@ -283,7 +283,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
             // Assert clientSession removed
-            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
+            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 10, 1, 1);
             UserSessionModel persistedSession = loadedSessions.get(0);
             assertSession(persistedSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, started, "test-app");
 
@@ -293,7 +293,8 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             // Assert nothing found
-            loadPersistedSessionsPaginated(session, true, 10, 0, 0);
+            RealmModel realm = session.realms().getRealm(realmId);
+            loadPersistedSessionsPaginated(session, realm, true, 10, 0, 0);
         });
     }
 
@@ -326,18 +327,19 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             // Assert session was persisted
-            loadPersistedSessionsPaginated(session, true, 10, 1, 1);
+            RealmModel fooRealm = session.realms().getRealmByName("foo");
+            loadPersistedSessionsPaginated(session, fooRealm, true, 10, 1, 1);
 
             // Remove realm
             RealmManager realmMgr = new RealmManager(session);
-            RealmModel fooRealm = realmMgr.getRealmByName("foo");
             session.getContext().setRealm(fooRealm);
             realmMgr.removeRealm(fooRealm);
         });
 
         inComittedTransaction(session -> {
-            // Assert nothing loaded
-            loadPersistedSessionsPaginated(session, true, 10, 0, 0);
+            // Assert nothing loaded - pass any realm since sessions are realm-specific and realm is now deleted
+            RealmModel testRealm = session.realms().getRealm(realmId);
+            loadPersistedSessionsPaginated(session, testRealm, true, 10, 0, 0);
         });
     }
 
@@ -378,7 +380,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             session.getContext().setRealm(fooRealm);
 
             // Assert session was persisted with both clientSessions
-            UserSessionModel persistedSession = loadPersistedSessionsPaginated(session, true, 10, 1, 1).get(0);
+            UserSessionModel persistedSession = loadPersistedSessionsPaginated(session, fooRealm, true, 10, 1, 1).get(0);
             assertSession(persistedSession, session.users().getUserByUsername(fooRealm, "user3"), "127.0.0.1", started, started, "foo-app", "bar-app");
 
             // Remove foo-app client
@@ -393,7 +395,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             session.getContext().setRealm(fooRealm);
 
             // Assert just one bar-app clientSession persisted now
-            UserSessionModel persistedSession = loadPersistedSessionsPaginated(session, true, 10, 1, 1).get(0);
+            UserSessionModel persistedSession = loadPersistedSessionsPaginated(session, fooRealm, true, 10, 1, 1).get(0);
             assertSession(persistedSession, session.users().getUserByUsername(fooRealm, "user3"), "127.0.0.1", started, started, "bar-app");
 
             // Remove bar-app client
@@ -403,11 +405,11 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             // Assert loading still works - last userSession is still there, but no clientSession on it
-            loadPersistedSessionsPaginated(session, true, 10, 1, 1);
+            RealmModel fooRealm = session.realms().getRealmByName("foo");
+            loadPersistedSessionsPaginated(session, fooRealm, true, 10, 1, 1);
 
             // Cleanup
             RealmManager realmMgr = new RealmManager(session);
-            RealmModel fooRealm = realmMgr.getRealmByName("foo");
             session.getContext().setRealm(fooRealm);
             realmMgr.removeRealm(fooRealm);
         });
@@ -520,7 +522,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             session.getContext().setRealm(realm);
 
             // Load offline sessions
-            loadPersistedSessionsPaginated(session, true, 10, 1, 2);
+            loadPersistedSessionsPaginated(session, realm, true, 10, 1, 2);
 
             // Properly delete user and assert his offlineSession removed
             UserModel user1 = session.users().getUserByUsername(realm, "user1");
@@ -537,7 +539,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 Assert.assertEquals(1, persister.getUserSessionsCount(true));
             }
 
-            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
+            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 10, 1, 1);
             UserSessionModel persistedSession = loadedSessions.get(0);
             assertSession(persistedSession, session.users().getUserByUsername(realm, "user2"), "127.0.0.3", started, started, "test-app");
 
@@ -546,7 +548,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             UserModel user2 = session.users().getUserByUsername(realm, "user2");
             session.users().removeUser(realm, user2);
 
-            loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
+            loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 10, 1, 1);
 
             // Cleanup
             UserSessionModel userSession = loadedSessions.get(0);
@@ -793,7 +795,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         withRealm(realmId, (session, realm) -> {
             final int sessionsPerPage = 3;
-            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, sessionsPerPage,
+            List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, sessionsPerPage,
               USER_SESSION_COUNT / sessionsPerPage + (USER_SESSION_COUNT / sessionsPerPage == 0 ? 0 : 1), USER_SESSION_COUNT);
             UserModel user = session.users().getUserByUsername(realm, "user1");
             ClientModel testApp = realm.getClientByClientId("test-app");
@@ -891,7 +893,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
 
                 // Test the updated session is still in persister. Not updated session is not there anymore
-                List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 10, 1, 1);
+                List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 10, 1, 1);
                 UserSessionModel persistedSession = loadedSessions.get(0);
                 assertSession(persistedSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.2", started, lastSessionRefresh, "test-app");
 
@@ -934,7 +936,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 // Assert offline session
                 RealmModel realm = session.realms().getRealm(realmId);
                 session.getContext().setRealm(realm);
-                List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, true, 1, 1, 1);
+                List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 1, 1, 1);
 
                 assertSessions(loadedSessions, new String[]{origSession.getId()});
                 assertSessionLoaded(loadedSessions, origSession.getId(), session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "external-storage-client");
@@ -1542,12 +1544,11 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         Assert.fail("Session with ID " + id + " not found in the list");
     }
 
-    private List<UserSessionModel> loadPersistedSessionsPaginated(KeycloakSession session, boolean offline, int sessionsPerPage, int expectedPageCount, int expectedSessionsCount) {
+    private List<UserSessionModel> loadPersistedSessionsPaginated(KeycloakSession session, RealmModel realm, boolean offline, int sessionsPerPage, int expectedPageCount, int expectedSessionsCount) {
         // Note: This method previously tested pagination via loadUserSessionsStream(Integer, Integer, boolean, String)
         // which was removed in KC 27. Now it simply loads all sessions via readOnlyUserSessionStream.
         // The pagination parameters are ignored but kept for compatibility with existing test code.
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-        RealmModel realm = session.getContext().getRealm();
 
         List<UserSessionModel> result = persister.readOnlyUserSessionStream(realm, offline).toList();
 
