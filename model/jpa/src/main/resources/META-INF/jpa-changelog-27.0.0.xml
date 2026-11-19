@@ -21,6 +21,10 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_LoginThemes"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="27.0.0-52344-account-themes">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_AccountThemes"/>
+    </changeSet>
+
     <changeSet author="keycloak" id="27.0.0-54458-oidc-single-issuer">
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_OidcIssuerMigration"/>
     </changeSet>
