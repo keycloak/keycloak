@@ -25,7 +25,7 @@ This file is derived guidance for code reviews. The canonical resources are `AGE
 * New test frameworks or mock frameworks
 * Unrelated changes, formatting or refactoring
 * Behavior changes without tests or docs
-* A PR without a linked issue (`Closes #NNNN`), commits without a `Signed-off-by` sign-off, or more than one commit
+* A PR missing a linked issue when required by `PR-CHECKLIST.md`, commits without a `Signed-off-by` sign-off, or more than one commit
 * Use of AI agents that is not disclosed in the PR description
 * Security vulnerabilities reported publicly instead of following `SECURITY.md`
 
