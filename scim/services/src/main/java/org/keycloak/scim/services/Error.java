@@ -47,7 +47,8 @@ class Error {
             return badRequest("tooMany", e.getMessage());
         } else if (e instanceof ForbiddenException) {
             logger.debug("SCIM request denied: caller does not have the required permissions");
-            return forbidden();
+            // a ForbiddenException without a message gives the same response as before
+            return errorResponse(Status.FORBIDDEN, e.getMessage());
         } else if (e instanceof jakarta.ws.rs.ForbiddenException fe) {
             throw fe;
         }
