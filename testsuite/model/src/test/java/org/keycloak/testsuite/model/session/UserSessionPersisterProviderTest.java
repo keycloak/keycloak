@@ -337,9 +337,9 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         });
 
         inComittedTransaction(session -> {
-            // Assert nothing loaded - pass any realm since sessions are realm-specific and realm is now deleted
-            RealmModel testRealm = session.realms().getRealm(realmId);
-            loadPersistedSessionsPaginated(session, testRealm, true, 10, 0, 0);
+            // Assert nothing loaded - check the actual persisted count since realm is deleted
+            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+            Assert.assertEquals(0, persister.getUserSessionsCount(true));
         });
     }
 
@@ -889,8 +889,12 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
             // Increase time offset - 40 days
             setTimeOffset(3456000);
             try {
+                UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
                 // Run expiration thread
-                session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
+                persister.removeExpired(realm);
+
+                // Verify the expired session was actually deleted from the database
+                Assert.assertEquals(1, persister.getUserSessionsCount(true));
 
                 // Test the updated session is still in persister. Not updated session is not there anymore
                 List<UserSessionModel> loadedSessions = loadPersistedSessionsPaginated(session, realm, true, 10, 1, 1);

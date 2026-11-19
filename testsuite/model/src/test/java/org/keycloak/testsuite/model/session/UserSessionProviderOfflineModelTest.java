@@ -327,8 +327,8 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
                 if (!MultiSiteUtils.isPersistentSessionsEnabled() && InfinispanUtils.isEmbeddedInfinispan()) {
                     // This does not work with persistent user sessions because we currently have two transactions and the one that creates the offline user sessions is not committing the changes
-                    // try to load user session from persister
-                    Assert.assertEquals(2, persister.readOnlyUserSessionStream(realm, true).count());
+                    // try to load user session from persister - count actual persisted rows regardless of expiration
+                    Assert.assertEquals(2, persister.getUserSessionsCount(true));
                 }
             });
 
@@ -336,7 +336,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 inComittedTransaction(session -> {
                     RealmModel realm = session.realms().getRealm(realmId);
                     persister = session.getProvider(UserSessionPersisterProvider.class);
-                    Assert.assertEquals(2, persister.readOnlyUserSessionStream(realm, true).count());
+                    Assert.assertEquals(2, persister.getUserSessionsCount(true));
                 });
             }
 
