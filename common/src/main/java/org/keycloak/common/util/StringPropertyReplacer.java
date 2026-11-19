@@ -173,11 +173,18 @@ public final class StringPropertyReplacer
                 }
                 int next = source.read();
                 if (next != '{') {
-                    // not a placeholder: return the '$' and process the look-ahead character on the next read,
-                    // as it may be the end of the input, a closing '}' or the '$' of another placeholder
-                    lookAhead = next;
-                    hasLookAhead = true;
-                    return c;
+                    if (next == -1) {
+                        // trailing '$': emit only the '$', as -1 must not be written as a byte
+                        return c;
+                    }
+                    if (next == '}') {
+                        // a closing brace must go through the brace tracking above
+                        lookAhead = next;
+                        hasLookAhead = true;
+                        return c;
+                    }
+                    buffer = new ByteArrayInputStream(new byte[] {(byte)c, (byte)next});
+                    return read();
                 }
                 // determine the key
                 int keyChar = -1;
