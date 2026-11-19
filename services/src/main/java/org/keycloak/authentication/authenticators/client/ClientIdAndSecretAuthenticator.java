@@ -204,8 +204,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     @Override
     public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         Map<String, Object> result = new HashMap<>();
-        String secret = client.getSecret();
-        result.put(CredentialRepresentation.SECRET, session.vault().getStringSecret(secret).get().orElse(secret));
+        result.put(CredentialRepresentation.SECRET, client.getSecret());
         return result;
     }
 

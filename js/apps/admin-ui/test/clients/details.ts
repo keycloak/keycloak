@@ -43,6 +43,24 @@ export async function getJwtAuthorizationGrantIdpOptions(
   return await options.allTextContents();
 }
 
+export async function goToDedicatedScope(page: Page, clientId: string) {
+  await page.getByTestId("clientScopesTab").click();
+  await page.getByRole("link", { name: `${clientId}-dedicated` }).click();
+}
+
+export async function assertDedicatedScopeMapper(
+  page: Page,
+  mapperName: string,
+) {
+  await page.getByTestId("mappersTab").click();
+  await expect(page.getByRole("link", { name: mapperName })).toBeVisible();
+}
+
+export async function toggleFullScopeAllowed(page: Page) {
+  await page.getByTestId("scopeTab").click();
+  await switchToggle(page, "#fullScopeAllowed");
+}
+
 export async function setResourceUrl(page: Page, value: string) {
   await page.getByTestId("attributes.resource_url").fill(value);
 }

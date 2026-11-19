@@ -89,8 +89,8 @@ public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyEx
             .property()
             .name(ALLOW_IPV4_LOOPBACK_ADDRESS)
             .label("Allow IPv4 loopback address")
-            .helpText("If ON, then the executor allows IPv4 loopback address as a valid redirect uri. " +
-                "For example, 'http://127.0.0.1:{port}/{path}' . ")
+            .helpText("If ON, then the executor allows a literal IPv4 loopback address as a valid redirect uri. " +
+                "For example, 'http://127.0.0.1:{port}/{path}'. Hostnames, including localhost, remain subject to permitted domains.")
             .type(ProviderConfigProperty.BOOLEAN_TYPE)
             .defaultValue(false)
             .add()
@@ -98,8 +98,8 @@ public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyEx
             .property()
             .name(ALLOW_IPV6_LOOPBACK_ADDRESS)
             .label("Allow IPv6 loopback address")
-            .helpText("If ON, then the executor allows IPv6 loopback address as a valid redirect uri. " +
-                "For example, 'http://[::1]:{port}/{path}' . ")
+            .helpText("If ON, then the executor allows a literal IPv6 loopback address as a valid redirect uri. " +
+                "For example, 'http://[::1]:{port}/{path}'. Hostnames, including localhost, remain subject to permitted domains.")
             .type(ProviderConfigProperty.BOOLEAN_TYPE)
             .defaultValue(false)
             .add()

@@ -79,7 +79,7 @@ The response in V2 is always a JSON access token response, in which the paramete
 [[_identity-brokering-apis-client-policies]]
 ==== Integration with client policies
 
-V2 also applies link:{adminguide_link}#_client_policies[clients policies] when calling the external token endpoint. This way, administrators can configure them to enforce extra security to the client and the Identity provider involved in the call.
+V2 also applies link:{adminguide_link}#client_policies[clients policies] when calling the external token endpoint. This way, administrators can configure them to enforce extra security to the client and the Identity provider involved in the call.
 
 Client policies can be configured to enforce some more complex requirements. For instance, we may have a requirement that returning external token of identity provider `my-idp` is
 allowed just in case when internal token calling endpoint has specific scope (For example scope `phone`).
@@ -107,5 +107,5 @@ image::images/idp-api-client-policy-2_scope-condition.png[Client scopes conditio
 image::images/idp-api-client-policy-3_policy.png[Client policy configuration]
 
 Client policies are powerful, but at the same time, they could be tricky to setup. So just a note that when configuring client policy with some more complex requirement
-like above, it is recommended to properly test it and enable logging for client policies to see what is going on. See the link:{adminguide_link}#_client_policies[clients policies]
+like above, it is recommended to properly test it and enable logging for client policies to see what is going on. See the link:{adminguide_link}#client_policies[clients policies]
 for more details.

@@ -69,8 +69,15 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
         return realm.getId() + "." + alias + IDP_ALIAS_KEY_SUFFIX;
     }
 
+    private static String escapeCacheKeyComponent(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace(".", "\\.");
+    }
+
     private static String cacheKeyIdpMapperAliasName(RealmModel realm, String alias, String name) {
-        return realm.getId() + "." + alias + IDP_ALIAS_KEY_SUFFIX + "." + name;
+        return realm.getId() + "." + escapeCacheKeyComponent(alias) + IDP_ALIAS_KEY_SUFFIX + "." + escapeCacheKeyComponent(name);
     }
 
     public static String cacheKeyOrgId(RealmModel realm, String orgId) {

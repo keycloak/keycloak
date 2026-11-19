@@ -430,7 +430,11 @@ public class UPConfigUtils {
     }
 
     public static UPConfig parseSystemDefaultConfig() {
-        return parseConfig(getSystemDefaultConfig());
+        try (InputStream is = getSystemDefaultConfig()) {
+            return parseConfig(is);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load default user profile config file", e);
+        }
     }
 
     public static UPConfig parseConfig(Path configPath) {

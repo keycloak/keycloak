@@ -19,12 +19,16 @@ package org.keycloak.protocol.saml;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -79,6 +83,8 @@ import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import static java.lang.Math.min;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -86,6 +92,10 @@ import org.w3c.dom.Element;
 public class SamlProtocolUtils {
 
     private static final Logger logger = Logger.getLogger(SamlProtocolUtils.class);
+
+    private static final List<String> REDIRECT_SIGNATURE_PARAMETERS = List.of(GeneralConstants.SAML_REQUEST_KEY,
+            GeneralConstants.SAML_RESPONSE_KEY, GeneralConstants.RELAY_STATE, GeneralConstants.SAML_SIG_ALG_REQUEST_KEY,
+            GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
 
     /**
      * Verifies a signature of the given SAML document using settings for the given client.
@@ -213,12 +223,30 @@ public class SamlProtocolUtils {
         return cert.getPublicKey();
     }
 
-    public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, UriInfo uriInformation, String paramKey) throws VerificationException {
+    /**
+     * Verifies the signature of an HTTP-Redirect binding message and checks that the signed message and relay state
+     * are the ones being processed.
+     *
+     * @param processedMessage the URL-decoded {@code SAMLRequest} or {@code SAMLResponse} value being processed
+     * @param processedRelayState the URL-decoded {@code RelayState} value being processed, or {@code null} if none
+     */
+    public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, UriInfo uriInformation, String paramKey,
+            String processedMessage, String processedRelayState) throws VerificationException {
         MultivaluedMap<String, String> encodedParams = uriInformation.getQueryParameters(false);
+        verifyRedirectSignature(documentHolder, locator, encodedParams, paramKey, processedMessage, processedRelayState);
+    }
+
+    public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, MultivaluedMap<String, String> encodedParams, String paramKey,
+            String processedMessage, String processedRelayState) throws VerificationException {
+        rejectRepeatedRedirectParameters(encodedParams);
+        verifySignedValueIsProcessed(encodedParams, paramKey, processedMessage);
+        verifySignedValueIsProcessed(encodedParams, GeneralConstants.RELAY_STATE, processedRelayState);
         verifyRedirectSignature(documentHolder, locator, encodedParams, paramKey);
     }
 
     public static void verifyRedirectSignature(SAMLDocumentHolder documentHolder, KeyLocator locator, MultivaluedMap<String, String> encodedParams, String paramKey) throws VerificationException {
+        rejectRepeatedRedirectParameters(encodedParams);
+
         String request = encodedParams.getFirst(paramKey);
         String algorithm = encodedParams.getFirst(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY);
         String signature = encodedParams.getFirst(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY);
@@ -251,6 +279,28 @@ public class SamlProtocolUtils {
             }
         } catch (Exception e) {
             throw new VerificationException(e);
+        }
+    }
+
+    public static void rejectRepeatedRedirectParameters(MultivaluedMap<String, String> encodedParams) throws VerificationException {
+        for (String name : REDIRECT_SIGNATURE_PARAMETERS) {
+            List<String> values = encodedParams.get(name);
+            if (values != null && values.size() > 1) {
+                throw new VerificationException("Query parameter " + name + " is present more than once");
+            }
+        }
+    }
+
+    private static void verifySignedValueIsProcessed(MultivaluedMap<String, String> encodedParams, String paramKey, String processedValue) throws VerificationException {
+        String signedValue = encodedParams.getFirst(paramKey);
+        String decodedSignedValue;
+        try {
+            decodedSignedValue = signedValue == null ? null : RedirectBindingUtil.urlDecode(signedValue);
+        } catch (IOException | IllegalArgumentException e) {
+            throw new VerificationException("Invalid encoding of query parameter " + paramKey, e);
+        }
+        if (!Objects.equals(decodedSignedValue, processedValue)) {
+            throw new VerificationException("Query parameter " + paramKey + " being processed is not the signed one");
         }
     }
 
@@ -429,4 +479,108 @@ public class SamlProtocolUtils {
                 .findFirst()
                 .orElse(null);
     }
+
+    /**
+     * Creates a size limited InputStream of specified is.
+     * It throws IOException when attempt to read beyond the limit is made.
+     *
+     * @param is InputStream to apply limit at
+     * @param limit the limit in bytes to apply in reading from given InputStream
+     * @return LimitedInputStream
+     */
+    public static InputStream limit(InputStream is, long limit) {
+        if (is instanceof LimitedInputStream) {
+            LimitedInputStream lis = (LimitedInputStream) is;
+            if (lis.limit <= limit) {
+                return lis;
+            }
+        }
+        return new LimitedInputStream(is, limit);
+    }
+
+    /**
+     * Modified Guava class to actually throw exception in attempt to read beyond the limit
+     *
+     */
+    private static final class LimitedInputStream extends FilterInputStream {
+
+        private long left;
+        private long mark = -1;
+        private final long limit;
+
+        LimitedInputStream(InputStream in, long limit) {
+            super(in);
+            left = limit;
+            this.limit = limit;
+        }
+
+        @Override
+        public int available() throws IOException {
+            return in.available();
+        }
+
+        // it's okay to mark even if mark isn't supported, as reset won't work
+        @Override
+        public synchronized void mark(int readLimit) {
+            in.mark(readLimit);
+            mark = left;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (left <= 0) {
+                throw new IOException("Limit reached (" + limit + ")");
+            }
+
+            int result = in.read();
+            if (result != -1) {
+                --left;
+                return result;
+            }
+            return result;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (left <= 0) {
+                throw new IOException("Limit reached (" + limit + ")");
+            }
+
+            int result = in.read(b, off, len);
+            if (result != -1) {
+                left -= result;
+                if (left < 0) {
+                    // reached beyond the limit
+                    throw new IOException("Limit reached (" + limit + ")");
+                }
+                return result;
+            }
+            return result;
+        }
+
+        @Override
+        public synchronized void reset() throws IOException {
+            if (!in.markSupported()) {
+                throw new IOException("Mark not supported");
+            }
+            if (mark == -1) {
+                throw new IOException("Mark not set");
+            }
+
+            in.reset();
+            left = mark;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            n = min(n, left);
+            long skipped = in.skip(n);
+            left -= skipped;
+            return skipped;
+        }
+
+    }
+
+
+
 }

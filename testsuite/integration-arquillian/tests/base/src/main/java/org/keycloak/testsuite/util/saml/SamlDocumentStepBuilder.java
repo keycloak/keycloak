@@ -94,6 +94,7 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
 
             final ByteArrayInputStream baos = new ByteArrayInputStream(originalTransformed.getBytes());
             final T saml2Object = (T) new SAML2Response().getSAML2ObjectFromStream(baos);
+            final String originalModel = saml2Object2String(saml2Object);
             final T transformed = tr.transform(saml2Object);
 
             if (transformed == null) {
@@ -102,7 +103,7 @@ public abstract class SamlDocumentStepBuilder<T extends SAML2Object, This extend
 
             String res = saml2Object2String(transformed);
             LOG.debugf("  ---> %s", res);
-            return res;
+            return res.equals(originalModel) ? originalTransformed : res;
         };
         return (This) this;
     }

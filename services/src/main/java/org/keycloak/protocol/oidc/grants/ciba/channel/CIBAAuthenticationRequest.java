@@ -34,7 +34,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
-import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.util.TokenUtil;
@@ -74,7 +73,6 @@ public class CIBAAuthenticationRequest extends JsonWebToken {
         return session.tokens().decode(jwe, CIBAAuthenticationRequest.class);
     }
 
-    public static final String SESSION_STATE = IDToken.SESSION_STATE;
     public static final String AUTH_RESULT_ID = "auth_result_id";
 
     @JsonProperty(OAuth2Constants.SCOPE)

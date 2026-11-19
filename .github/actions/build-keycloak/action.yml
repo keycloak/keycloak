@@ -33,7 +33,6 @@ runs:
       shell: bash
       run: |
         # Ensure this plugin is built first to avoid warnings in the build
-        ./mvnw install -Pdistribution -am -pl distribution/maven-plugins/licenses-processor
         ./mvnw install -V -e -DskipTests -DskipExamples -DcommitProtoLockChanges=true
 
     - id: compress-keycloak-maven-repository

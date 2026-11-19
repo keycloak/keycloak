@@ -33,6 +33,8 @@ import org.infinispan.protostream.SerializationContextInitializer;
  * WARNING! ID defined in this class must be unique. If one type is removed, its ID must not be reused. You have been
  * warned! The ID identifies the message, and it is stored and used to save space.
  * WARNING! The field IDs cannot be reused as well for the same reason.
+ * WARNING! When a type is removed, keep its ID constant in this class and mark it as removed, so the ID stays visible as taken.
+ * Reserve the IDs and names of removed fields with {@code @ProtoReserved} on the message class.
  * WARNING! Primitive types cannot be null in proto3 syntax (Integer, String). Take that in consideration.
  * <p>
  * Be Aware of the following default in Proto3 syntax!
@@ -82,6 +84,7 @@ public final class Marshalling {
     public static final int LOCK_ENTRY = 65541;
     public static final int LOCK_ENTRY_PREDICATE = 65542;
     public static final int WRAPPED_CLUSTER_EVENT = 65543;
+    // type removed in 27, do not reuse this ID
     public static final int WRAPPED_CLUSTER_EVENT_SITE_FILTER = 65544;
 
     // keys.infinispan package
@@ -98,6 +101,7 @@ public final class Marshalling {
     public static final int SCOPE_REMOVED_EVENT = 65553;
 
     // models.sessions.infinispan.initializer package
+    // type removed in 26.3, do not reuse this ID
     public static final int INITIALIZER_STATE = 65554;
 
     // models.sessions.infinispan.changes package
@@ -105,6 +109,7 @@ public final class Marshalling {
     public static final int REPLACE_FUNCTION = 65656;
 
     // models.sessions.infinispan.changes.sessions package
+    // type removed in 26.3, do not reuse this ID
     public static final int LAST_SESSION_REFRESH_EVENT = 65557;
     public static final int SESSION_DATA = 65558;
 
@@ -132,6 +137,7 @@ public final class Marshalling {
     public static final int IN_REALM_PREDICATE = 65573;
 
     // models.cache.infinispan.events package
+    // type removed in 27, do not reuse this ID
     public static final int AUTHENTICATION_SESSION_AUTH_NOTE_UPDATE_EVENT = 65574;
     public static final int CLIENT_ADDED_EVENT = 65575;
     public static final int CLIENT_UPDATED_EVENT = 65576;
@@ -195,6 +201,10 @@ public final class Marshalling {
 
 
     public static final int AUTHENTICATED_USER_AUTH_SESSION_PREDICATE = 65623;
+
+    // cluster.infinispan package - clock skew detection
+    /** see {@link org.keycloak.cluster.infinispan.ClockSkewTimestampSample} */
+    public static final int CLOCK_SKEW_TIMESTAMP_SAMPLE = 65624;
 
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);

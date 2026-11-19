@@ -152,9 +152,35 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     protected boolean checkAdminRoles(RoleModel role) {
-        if (AdminRoles.ALL_ROLES.contains(role.getName())) {
-            if (root.admin().hasRole(role)) return true;
+        return checkAdminRoles(role, new HashSet<>());
+    }
 
+    private boolean checkAdminRoles(RoleModel role, Set<String> visited) {
+        if (!visited.add(role.getId())) {
+            return true;
+        }
+
+        boolean adminRole = AdminRoles.ALL_ROLES.contains(role.getName());
+
+        // the admin holds the role and, therefore, everything beneath it. This also avoids traversing
+        // potentially large hierarchies such as the master 'admin' role
+        if ((adminRole || role.isComposite()) && root.admin().hasRole(role)) {
+            return true;
+        }
+
+        if (adminRole && !hasAdminPrivilege(role)) {
+            return false;
+        }
+
+        return !role.isComposite() || role.getCompositesStream().allMatch(child -> checkAdminRoles(child, visited));
+    }
+
+    /**
+     * Checks whether the admin, despite not holding the given admin role, holds an equivalent privilege
+     * that allows granting it.
+     */
+    private boolean hasAdminPrivilege(RoleModel role) {
+        if (AdminRoles.ALL_ROLES.contains(role.getName())) {
             ClientModel adminClient = root.getRealmManagementClient();
             // is this an admin role in 'realm-management' client of the realm we are managing?
             if (adminClient.equals(role.getContainer())) {
@@ -326,7 +352,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         }
 
         if (role.getContainer() instanceof ClientModel) {
-            if (root.clients().canMapRoles((ClientModel)role.getContainer())) return true;
+            if (root.clients().canMapRoles((ClientModel)role.getContainer())) return checkAdminRoles(role);
         }
         if (!isPermissionsEnabled(role)){
             return false;
@@ -416,7 +442,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
             return false;
         }
         if (role.getContainer() instanceof ClientModel) {
-            if (root.clients().canMapCompositeRoles((ClientModel)role.getContainer())) return true;
+            if (root.clients().canMapCompositeRoles((ClientModel)role.getContainer())) return checkAdminRoles(role);
         }
         if (!isPermissionsEnabled(role)){
             return false;

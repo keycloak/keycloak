@@ -1974,7 +1974,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             waitForPageToLoad();
             loginPage.assertCurrent(); // we are still in login
             Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.",
-                    UIUtils.getTextFromElement(driver.findElement(By.cssSelector("div[class^='pf-v5-c-alert'], div[class^='alert-error']"))));
+                    UIUtils.getTextFromElement(driver.findElement(By.cssSelector("div[class^='pf-v6-c-alert'], div[class^='alert-error']"))));
 
             // login successfully in tab2 after the error
             loginPage.login(bburkeUser.getUsername(), "password");

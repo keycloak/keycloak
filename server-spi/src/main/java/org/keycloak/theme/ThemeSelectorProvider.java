@@ -53,7 +53,7 @@ public interface ThemeSelectorProvider extends Provider {
         }
 
         if (type == Theme.Type.LOGIN) {
-            return DEFAULT_V2;
+            return DEFAULT_V3;
         }
 
         return DEFAULT;

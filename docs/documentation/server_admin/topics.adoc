@@ -126,6 +126,8 @@ include::topics/admin-console-permissions/per-realm.adoc[]
 
 include::topics/admin-console-permissions/fine-grain-v2.adoc[]
 
+include::topics/admin-console-permissions/admin-api-audience.adoc[]
+
 ifeval::[{project_community}==true]
 include::topics/admin-console-permissions/fine-grain.adoc[]
 endif::[]

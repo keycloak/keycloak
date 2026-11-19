@@ -65,6 +65,9 @@ import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeAdminApiClientScope;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -323,6 +326,88 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
         assertEquals(getSessionIdFromToken(accessToken), exchangedIdToken.getSessionId());
         assertEquals("requester-client", exchangedIdToken.getIssuedFor());
 
+    }
+
+    @Test
+    public void testExchangedTokenExpirationCappedBySubjectToken() {
+        realm.updateWithCleanup(r -> r.accessTokenLifespan(300));
+
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken subjectToken = verifyAccessToken(accessToken);
+
+        // exchange late in the subject token lifetime
+        timeOffSet.set(120);
+
+        oauth.openid(true);
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), verifyAccessToken(response.getAccessToken()).getExp());
+        assertEquals(subjectToken.getExp(), verifyIdToken(response.getIdToken()).getExp());
+        assertTrue(response.getExpiresIn() > 0 && response.getExpiresIn() <= 180, "Unexpected expires_in: " + response.getExpiresIn());
+
+        // ID token requested as the exchanged token, returned inside "access_token"
+        AccessTokenResponse idTokenResponse = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ID_TOKEN_TYPE);
+        assertEquals(OAuth2Constants.ID_TOKEN_TYPE, idTokenResponse.getIssuedTokenType());
+        assertEquals(subjectToken.getExp(), verifyIdToken(idTokenResponse.getAccessToken()).getExp());
+
+        // second exchange cannot extend the expiration either
+        response = tokenExchange(response.getAccessToken(), "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), verifyAccessToken(response.getAccessToken()).getExp());
+    }
+
+    @Test
+    public void testExchangedTokenExpirationAfterSubjectTokenAllowed() {
+        realm.updateWithCleanup(r -> r.accessTokenLifespan(300));
+        realm.cleanup().add(realm1 -> {
+            requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT, Boolean.FALSE.toString());
+            realm1.clients().get(requesterClient.getId()).update(requesterClient);
+        });
+
+        requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ALLOW_EXPIRATION_AFTER_SUBJECT, Boolean.TRUE.toString());
+        realm.admin().clients().get(requesterClient.getId()).update(requesterClient);
+
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken subjectToken = verifyAccessToken(accessToken);
+
+        timeOffSet.set(120);
+
+        oauth.openid(true);
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertTrue(verifyAccessToken(response.getAccessToken()).getExp() > subjectToken.getExp());
+        assertTrue(verifyIdToken(response.getIdToken()).getExp() > subjectToken.getExp());
+    }
+
+    @Test
+    public void testExchangedTokenExpirationCappedWithRefreshTokenAllowed() {
+        realm.updateWithCleanup(r -> r.accessTokenLifespan(300));
+        realm.cleanup().add(realm1 -> {
+            requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name());
+            realm1.clients().get(requesterClient.getId()).update(requesterClient);
+        });
+
+        requesterClient.getAttributes().put(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name());
+        realm.admin().clients().get(requesterClient.getId()).update(requesterClient);
+
+        String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken subjectToken = verifyAccessToken(accessToken);
+
+        timeOffSet.set(120);
+
+        // the two options are independent, so the access token is still capped
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.REFRESH_TOKEN_TYPE);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertEquals(subjectToken.getExp(), verifyAccessToken(response.getAccessToken()).getExp());
+        assertNotNull(response.getRefreshToken());
+
+        // the refresh token is not capped and can be refreshed for an access token with the regular lifespan
+        oauth.client("requester-client", "secret");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        assertTrue(verifyAccessToken(response.getAccessToken()).getExp() > subjectToken.getExp());
     }
 
     @Test
@@ -851,17 +936,29 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
                 .clientLevel(realmManagementClient.toRepresentation().getId())
                 .add(List.of(viewRealmRole));
 
-        // Assign role to john and add optional scope to requester-client
+        // Assign role to john and add optional scopes to requester-client. The exchanged token must carry the
+        // kc-admin-api scope (and its audience) to be accepted by the Admin REST API.
         realm.admin().users().get(john.getId()).roles().clientLevel(realmManagementClient.toRepresentation().getId())
                 .add(List.of(viewRealmRole));
         realm.admin().clients().get(requesterClient.getId()).addOptionalClientScope(clientScopeId);
+        addAdminApiClientScope(realm.admin(), realm.admin().clients().get(requesterClient.getId()), false);
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
 
-        // Token exchange with the realm-management-view optional scope
-        oauth.scope("realm-management-view-scope");
-        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), null);
-        assertAudiencesAndScopes(response, john, List.of(Constants.REALM_MANAGEMENT_CLIENT_ID), List.of("realm-management-view-scope"));
+        // Token exchange without an explicit audience restriction, requesting the realm-management-view and kc-admin-api
+        // optional scopes. A requested audience would restrict the token audience and strip the kc-admin-api audience,
+        // which the Admin REST API requires (see TokenManager.restrictRequestedAudience).
+        oauth.scope("realm-management-view-scope " + Constants.KEYCLOAK_ADMIN_API_SCOPE);
+        AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken exchangedToken = verifyAccessToken(response.getAccessToken());
+        assertTrue(TokenUtil.hasScope(exchangedToken.getScope(), "realm-management-view-scope"),
+                "Exchanged token must keep the realm-management-view-scope");
+        assertTrue(TokenUtil.hasScope(exchangedToken.getScope(), Constants.KEYCLOAK_ADMIN_API_SCOPE),
+                "Exchanged token must carry the kc-admin-api scope");
+        AccessToken.Access realmManagementAccess = exchangedToken.getResourceAccess(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        assertNotNull(realmManagementAccess, "Exchanged token must grant realm-management access");
+        assertTrue(realmManagementAccess.isUserInRole(AdminRoles.VIEW_REALM),
+                "Exchanged token must carry the view-realm role");
         assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.ONLINE_TRANSIENT_CLIENT,
                 AccessTokenContext.TokenType.REGULAR, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
 
@@ -877,7 +974,8 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
             realm.admin().deleteSession(exchangedToken.getSessionId(), false);
             assertThrows(NotAuthorizedException.class, () -> keycloak.realm(realm.getName()).toRepresentation().getRealm());
         }
-        // Cleanup: remove client scope
+        // Cleanup: remove optional scope and client scope
+        removeAdminApiClientScope(realm.admin(), realm.admin().clients().get(requesterClient.getId()), false);
         realm.admin().clientScopes().get(clientScopeId).remove();
     }
 
@@ -1019,7 +1117,7 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
         assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
         realm.admin().clients().get(subjectClient.getId()).getProtocolMappers().delete(newMapperId);
-        subjectClient.getAttributes().remove(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED);
+        subjectClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.FALSE.toString());
         realm.admin().clients().get(subjectClient.getId()).update(subjectClient);
     }
 

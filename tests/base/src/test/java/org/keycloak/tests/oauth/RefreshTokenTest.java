@@ -43,7 +43,9 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -60,6 +62,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -101,6 +104,8 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.openqa.selenium.Cookie;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
@@ -112,7 +117,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -183,6 +191,71 @@ public class RefreshTokenTest {
             enabledEventTypes.addAll(List.of(EventType.REFRESH_TOKEN.name(), EventType.REFRESH_TOKEN_ERROR.name()));
             realm.admin().updateRealmEventsConfig(realmEventsConfig);
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = UserSessionModel.State.class, names = "LOGGED_IN", mode = EnumSource.Mode.EXCLUDE)
+    public void rejectRefreshAfterUserLogoutBegins(UserSessionModel.State state) {
+        assertRefreshRejected(state, null, "Session not active");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = CommonClientSessionModel.Action.class, names = {"LOGGING_OUT", "LOGGED_OUT"})
+    public void rejectRefreshAfterClientLogoutBegins(CommonClientSessionModel.Action action) {
+        assertRefreshRejected(UserSessionModel.State.LOGGED_IN, action.name(), "Client session not active");
+    }
+
+    private void assertRefreshRejected(UserSessionModel.State state, String action, String errorDescription) {
+        AccessTokenResponse tokens = loginForRefreshToken();
+        String sessionId = oauth.parseRefreshToken(tokens.getRefreshToken()).getSessionId();
+        int[] timestamps = runOnServer.fetch(session -> {
+            UserSessionModel userSession = session.sessions().getUserSession(session.getContext().getRealm(), sessionId);
+            userSession.setState(state);
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().values().iterator().next();
+            clientSession.setAction(action);
+            return new int[] { userSession.getLastSessionRefresh(), clientSession.getTimestamp() };
+        }, int[].class);
+
+        timeOffSet.set(10);
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(tokens.getRefreshToken());
+        assertThat(response.getStatusCode(), is(400));
+        assertThat(response.getError(), is(OAuthErrorException.INVALID_GRANT));
+        assertThat(response.getErrorDescription(), is(errorDescription));
+        assertThat(response.getAccessToken(), nullValue());
+        assertThat(response.getRefreshToken(), nullValue());
+
+        // A rejected refresh must neither extend idle validity nor remove state needed to complete SLO.
+        runOnServer.run(session -> {
+            UserSessionModel userSession = session.sessions().getUserSession(session.getContext().getRealm(), sessionId);
+            assertThat(userSession, notNullValue());
+            assertThat(userSession.getState(), is(state));
+            assertThat(userSession.getLastSessionRefresh(), is(timestamps[0]));
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().values().iterator().next();
+            assertThat(clientSession.getAction(), is(action));
+            assertThat(clientSession.getTimestamp(), is(timestamps[1]));
+        });
+    }
+
+    @Test
+    public void offlineRefreshAfterLogout() {
+        try {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            AccessTokenResponse tokens = loginForRefreshToken();
+            user.admin().logout();
+
+            AccessTokenResponse response = oauth.doRefreshTokenRequest(tokens.getRefreshToken());
+            assertThat(response.getStatusCode(), is(200));
+            assertThat(response.getAccessToken(), notNullValue());
+            assertThat(response.getRefreshToken(), notNullValue());
+        } finally {
+            oauth.scope(null);
+        }
+    }
+
+    private AccessTokenResponse loginForRefreshToken() {
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(user.getUsername(), user.getPassword());
+        assertThat(response.getStatusCode(), is(200));
+        return response;
     }
 
     /**

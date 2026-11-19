@@ -1,7 +1,7 @@
-//[id="con-client-scopes_{context}"]//
 
-[[_client_scopes]]
-= Client scopes
+[[client_scopes]]
+// The underscore-prefixed anchor in the heading is deprecated and only kept for links from old versions of the Admin Console.
+= [[_client_scopes]]Client scopes
 
 [role="_abstract"]
 Use {project_name} to define a shared client configuration in an entity called a _client scope_. A _client scope_ configures <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for multiple clients.
@@ -21,7 +21,7 @@ Each realm has a set of pre-defined built-in client scopes in the menu.
 ** *roles*
 +
 This scope is not defined in the OpenID Connect specification and is not added automatically to the *scope* claim in the access token. This scope has mappers, which are used to add the roles of the user to the access token and
-add audiences for clients that have at least one client role. These mappers are described in more detail in the <<_oidc_token_role_mappings, Token Role mappings section>> and <<_audience_resolve, Audience section>>.
+add audiences for clients that have at least one client role. These mappers are described in more detail in the <<_oidc_token_role_mappings, Token Role mappings section>> and <<audience_resolve, Audience section>>.
 +
 ** *web-origins*
 +
@@ -33,7 +33,7 @@ This scope handles claims defined in the https://github.com/eclipse/microprofile
 +
 ** *offline_access*
 +
-This scope is used in cases when clients need to obtain offline tokens. More details on offline tokens is available in the  <<_offline-access, Offline Access section>> and in the https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification].
+This scope is used in cases when clients need to obtain offline tokens. More details on offline tokens is available in the  <<offline-access, Offline Access section>> and in the https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification].
 +
 ** *profile*
 ** *email*
@@ -115,7 +115,7 @@ The details about this switch are described in <<_role_scope_mappings, this sect
 NOTE: In the admin REST API and in the internal {project_name} storage, the dedicated client scope does not exist as its protocol mappers and role scope mappings are internally linked to the client itself. The.
 dedicated client scope is in fact just an abstraction for the admin console UI.
 
-[[_client_scopes_evaluate]]
+[[client_scopes_evaluate]]
 == Evaluating Client Scopes
 include::proc-evaluating-client-scopes.adoc[]
 
@@ -131,12 +131,12 @@ If a user is not permitted to use the client scope, no protocol mappers or role 
 == Realm default client scopes
 include::proc-updating-default-scopes.adoc[]
 
-[[_downscoping]]
+[[downscoping]]
 == Downscoping
 
 In OAuth/OIDC, *downscoping* is the process of exchanging an existing JWT access token for a new one with a more restricted set of permissions (scopes) and/or a narrower audience. In the OAuth 2.0 refresh token grant type, the https://datatracker.ietf.org/doc/html/rfc6749#section-6[RFC 6749] itself restricts the requested scope, saying that it must not include any scope not originally granted by the resource owner. So, this *downscoping* concept is very common and very recommended for security reasons.
 
-{project_name} provides a <<_client_policies,client policy>> executor that ensures this *downscoping* idea for other grant types. The client executor is called `downscope-assertion-grant-enforcer` and, for the moment, applies for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange]. When this client executor is enforced, the token exchange is only allowed for the scopes that are already present in the initial JWT (`subject_token` parameter). An error is returned if any other extra scope is requested, no matter if the client configuration permits this scope as optional or default. Default scopes that are configured as *include in token scope* set to *false* (for example `basic` or `acr` in the default configuration) are the only exception. Those scopes are invisible for the requester and are considered compulsory for any grant type. Once this executor is applied for the client, *downscoping* is the only option when exchanging an access token, no additional scopes will ever be granted.
+{project_name} provides a <<client_policies,client policy>> executor that ensures this *downscoping* idea for other grant types. The client executor is called `downscope-assertion-grant-enforcer` and, for the moment, applies for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange]. When this client executor is enforced, the token exchange is only allowed for the scopes that are already present in the initial JWT (`subject_token` parameter). An error is returned if any other extra scope is requested, no matter if the client configuration permits this scope as optional or default. Default scopes that are configured as *include in token scope* set to *false* (for example `basic` or `acr` in the default configuration) are the only exception. Those scopes are invisible for the requester and are considered compulsory for any grant type. Once this executor is applied for the client, *downscoping* is the only option when exchanging an access token, no additional scopes will ever be granted.
 
 include::con-parameterized-client-scopes.adoc[]
 

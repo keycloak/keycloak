@@ -174,6 +174,9 @@ public class ProfileTest {
         Assertions.assertEquals("account-v3", Profile.Feature.ACCOUNT_V3.getKey());
         Assertions.assertEquals("account", Profile.Feature.ACCOUNT_V3.getUnversionedKey());
         Assertions.assertEquals("account:v3", Profile.Feature.ACCOUNT_V3.getVersionedKey());
+        Assertions.assertEquals("login-v3", Profile.Feature.LOGIN_V3.getKey());
+        Assertions.assertEquals("login", Profile.Feature.LOGIN_V3.getUnversionedKey());
+        Assertions.assertEquals("login:v3", Profile.Feature.LOGIN_V3.getVersionedKey());
     }
 
     @Test

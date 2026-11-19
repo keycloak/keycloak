@@ -42,6 +42,7 @@ public class HardcodedKeyLocator implements KeyLocator, Iterable<Key> {
         this.byKey = Collections.singletonMap(new KeyHash(key), key);
     }
 
+    @SuppressWarnings("return") // Checker Framework false positive on wildcard capture
     public HardcodedKeyLocator(Collection<? extends Key> keys) {
         Objects.requireNonNull(keys, "Keys must not be null");
         this.byName = Collections.emptyMap();
@@ -49,6 +50,7 @@ public class HardcodedKeyLocator implements KeyLocator, Iterable<Key> {
                 Collectors.toMap(k -> new KeyHash(k), k -> k, (k1, k2) -> k1)));
     }
 
+    @SuppressWarnings("return") // Checker Framework false positive on wildcard capture
     public HardcodedKeyLocator(Map<String, ? extends Key> keys) {
         Objects.requireNonNull(keys, "Keys must not be null");
         this.byName = Collections.unmodifiableMap(keys);

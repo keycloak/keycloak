@@ -356,6 +356,28 @@ test.describe("Existing users", () => {
     await assertNotificationMessage(page, "Added group membership");
     await assertRowExists(page, "test-group");
   });
+
+  test("shows credentials of a disabled user", async ({ page }) => {
+    await using testBed = await createTestBed({
+      users: [
+        {
+          username: existingUserName,
+          enabled: false,
+          credentials: [{ type: "password", value: "test" }],
+        },
+      ],
+    });
+    const user = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+
+    await login(page, {
+      to: toUser({ realm: testBed.realm, id: user.id!, tab: "credentials" }),
+    });
+
+    await expect(page.getByTestId("credentialType")).toHaveText("Password");
+  });
 });
 
 test.describe("User attribute search", () => {

@@ -295,6 +295,20 @@ public class UriUtils {
     }
 
     public static MultivaluedHashMap<String, String> parseQueryParameters(String queryString, boolean decode) {
+        return parseQueryParameters(queryString, decode, decode);
+    }
+
+    /**
+     * Parses a query string, decoding parameter names and values independently. Names are decoded while parsing so that
+     * occurrences of the same decoded name (e.g. {@code %53AMLResponse} and {@code SAMLResponse}) keep their order
+     * of appearance in the query string.
+     *
+     * @param queryString raw query string
+     * @param decodeNames whether to URL-decode parameter names
+     * @param decodeValues whether to URL-decode parameter values
+     * @return the parsed parameters
+     */
+    public static MultivaluedHashMap<String, String> parseQueryParameters(String queryString, boolean decodeNames, boolean decodeValues) {
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<String, String>();
         if (queryString == null || queryString.equals("")) return map;
 
@@ -307,9 +321,9 @@ public class UriUtils {
                 String[] nv = param.split("=", 2);
                 try
                 {
-                    String name = decode ? URLDecoder.decode(nv[0], "UTF-8") : nv[0];
+                    String name = decodeNames ? URLDecoder.decode(nv[0], "UTF-8") : nv[0];
                     String val = nv.length > 1 ? nv[1] : "";
-                    map.add(name, decode ? URLDecoder.decode(val, "UTF-8") : val);
+                    map.add(name, decodeValues ? URLDecoder.decode(val, "UTF-8") : val);
                 }
                 catch (UnsupportedEncodingException e)
                 {
@@ -320,7 +334,7 @@ public class UriUtils {
             {
                 try
                 {
-                    String name = decode ? URLDecoder.decode(param, "UTF-8") : param;
+                    String name = decodeNames ? URLDecoder.decode(param, "UTF-8") : param;
                     map.add(name, "");
                 }
                 catch (UnsupportedEncodingException e)

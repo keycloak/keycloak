@@ -16,7 +16,7 @@ The JWT Authorization grant is specified by two different RFCs.
 
 In short, the JWT Authorization is an OAuth extension grant as defined by OAuth 2.0 link:https://datatracker.ietf.org/doc/html/rfc6749#section-4.5[RFC 6749] that is sent to the token endpoint. The **grant_type** request parameter must be `urn:ietf:params:oauth:grant-type:jwt-bearer`. The **assertion** must be a single JWT with some claims that will be validated by the server. The parameter **scope** is optional and maintains the same meaning described by Oauth 2.0 and managed by {project_name} for other grants. If the assertion token is valid for authorization, an access token is returned to the client without any interaction to the authorization endpoint.
 
-The trust relationship in {project_name} is defined by an link:{adminguide_link}#_identity_broker[Identity Provider]. Currently two Identity Provider types can manage JWT authorization grants:
+The trust relationship in {project_name} is defined by an link:{adminguide_link}#identity_broker[Identity Provider]. Currently two Identity Provider types can manage JWT authorization grants:
 
 . OpenID Connect v1.0 / Keycloak OpenID Connect
 . JWT Authorization Grant
@@ -131,7 +131,7 @@ The previous JSON example should be signed and the JWT header should specify the
 }
 ----
 
-NOTE: Following the spec recommendation, the JWT Authorization Grant never issues a refresh token and a link:{adminguide_link}#_transient-session[transient session] is always created. The access token can be used normally in {project_name} through the introspection, user-info or any other endpoint. It will be valid until expired or explicitly revoked by the revocation endpoint.
+NOTE: Following the spec recommendation, the JWT Authorization Grant never issues a refresh token and a link:{adminguide_link}#transient-session[transient session] is always created. The access token can be used normally in {project_name} through the introspection, user-info or any other endpoint. It will be valid until expired or explicitly revoked by the revocation endpoint.
 
 == How to get a valid token for JWT Authorization Grant
 
@@ -148,7 +148,7 @@ See <@links.securingapps id="oauth-identity-authorization-chaining-across-domain
 
 == Client policies and JWT Authorization Grant
 
-New conditions and executions related to JWT Authorization Grant have been added to link:{adminguide_link}#_client_policies[clients policies] in {project_name}.
+New conditions and executions related to JWT Authorization Grant have been added to link:{adminguide_link}#client_policies[clients policies] in {project_name}.
 
 * Condition **identity-provider-alias**. This condition allows to select requests that involve a specific identity provider alias. A list of aliases can be defined, and the condition evaluates to `true` if one of the Identity Provider in the list is present. For the moment the condition only manages the JWT Authorization Grant but can be extended for future operations that involve Identity Providers.
 * Executor **downscope-assertion-grant-enforcer**. The executor enforces requested scopes to not exceed the scopes included in the assertion token (claim `scope` in the JWT). If a scope is requested that is not already present in the assertion, an error is returned. This executor should be used to prevent getting more privileges (scopes or audiences) than the ones granted in the initial assertion JWT (only downscoping is permitted).

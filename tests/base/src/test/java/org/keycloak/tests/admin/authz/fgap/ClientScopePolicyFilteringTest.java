@@ -48,6 +48,8 @@ import org.keycloak.testframework.server.KeycloakUrls;
 
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -63,6 +65,7 @@ public class ClientScopePolicyFilteringTest {
     @Test
     public void testRemovingRequiredClientScopeDeniesPartialEvaluation() {
         RealmResource realm = managedRealm.admin();
+        addAdminApiClientScope(realm, "resource-server-test");
 
         var marta = realm.users().search("marta").get(0);
         var management = realm.clients().get(realm.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId());

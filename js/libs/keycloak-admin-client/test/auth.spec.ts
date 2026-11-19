@@ -46,6 +46,7 @@ describe("Authorization", () => {
       "openid",
       "email",
       "profile",
+      "kc-admin-api",
     ]);
   });
 });

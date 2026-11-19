@@ -253,21 +253,38 @@ public class LogoutEndpoint {
             if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.session().getId())) {
                 forcedConfirmation = true;
             }
-        } else {
-            // Skip confirmation in case that valid redirect URI was setup for given client_id and there is no session in the browser as well as no id_token_hint.
-            // We can do automatic redirect as there is no logout needed at all for this scenario (Session was probably already logged-out before)
-            if (encodedIdToken == null && client != null && validatedRedirectUri != null) {
+        } else if (idToken == null) {
+            // No browser session and no id_token_hint: skip confirmation if a valid redirect URI was configured for the client,
+            // since there is nothing to log out (session was probably already logged out before).
+            if (client != null && validatedRedirectUri != null) {
                 confirmationNeeded = false;
+            }
+        } else if (idToken.getSessionState() != null) {
+            userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
+            if (userSession != null) {
+                // Validate the id_token_hint early, before any logout (root auth) session or AUTH_SESSION_ID cookie is
+                // created: a stale token must be rejected without leaving state behind or showing a confirmation
+                // screen that is bound to fail once the user confirms.
+                try {
+                    checkTokenIssuedAt(idToken.getIat(), userSession);
+                } catch (OAuthErrorException e) {
+                    event.event(EventType.LOGOUT);
+                    event.detail(Details.REASON, e.getDescription());
+                    event.error(Errors.INVALID_TOKEN);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+                }
             }
         }
 
-        if (userSession == null && idToken != null && idToken.getSessionState() != null) {
-            userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
-        }
-
         AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm,
-                new AuthenticationSessionManager(session), userSession, true, true);
+                userSession, true, true);
         session.getContext().setAuthenticationSession(logoutSession);
+        // The logout session may be an existing one from an earlier logout request, don't let its values leak into this one
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM);
+        logoutSession.removeAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE);
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT);
         if (uiLocales != null) {
             logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
         }
@@ -437,28 +454,33 @@ public class LogoutEndpoint {
         String userSessionIdFromIdToken = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE);
         String idTokenIssuedAtStr = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT);
         if (userSessionIdFromIdToken != null && idTokenIssuedAtStr != null) {
+            boolean success = false;
             try {
                 userSession = session.sessions().getUserSession(realm, userSessionIdFromIdToken);
 
                 if (userSession == null) {
                     event.event(EventType.LOGOUT);
                     event.error(Errors.SESSION_EXPIRED);
-                    KeycloakContext context = session.getContext();
-                    AuthenticationSessionModel authSession = context.getAuthenticationSession();
-
-                    if (authSession != null) {
-                        // no valid session, make sure the current root auth session is also deleted and restart cookies
-                        new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
-                    }
                 } else {
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
                     checkTokenIssuedAt(idTokenIssuedAt, userSession);
+                    success = true;
                 }
             } catch (OAuthErrorException e) {
                 event.event(EventType.LOGOUT);
                 event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+            } finally {
+                if (!success) {
+                    KeycloakContext context = session.getContext();
+                    AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
+                    if (authSession != null) {
+                        // make sure the current tab, and root auth session is removed if possible
+                        new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(authSession.getRealm(), authSession);
+                    }
+                }
             }
         }
 
@@ -466,11 +488,11 @@ public class LogoutEndpoint {
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.session();
-            return initiateBrowserLogout(userSession);
+            return initiateBrowserLogout(userSession, logoutSession);
         } else if (userSession != null) {
             // identity cookie is missing but there's valid id_token_hint which matches session cookie => continue with browser logout
             if (AuthenticationManager.compareSessionIdWithSessionCookie(session, userSessionIdFromIdToken)) {
-                return initiateBrowserLogout(userSession);
+                return initiateBrowserLogout(userSession, logoutSession);
             }
             // check if the user session is not logging out or already logged out
             // this might happen when a backChannelLogout is already initiated from AuthenticationManager.authenticateIdentityCookie
@@ -758,11 +780,13 @@ public class LogoutEndpoint {
 
     private void checkTokenIssuedAt(long idTokenIssuedAt, UserSessionModel userSession) throws OAuthErrorException {
         if (idTokenIssuedAt + 1 < userSession.getStarted()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Toked issued before the user session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Token issued before the user session started");
         }
     }
 
-    private Response initiateBrowserLogout(UserSessionModel userSession) {
+    private Response initiateBrowserLogout(UserSessionModel userSession, AuthenticationSessionModel logoutSession) {
+        // the logout session may have been created without a user session (e.g. only an id_token_hint), bind it now so it is reused
+        logoutSession.setAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID, userSession.getId());
         userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
         logger.tracef("Calling initiateBrowserLogout for user session '%s'", userSession.getId());
         Response response =  AuthenticationManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);

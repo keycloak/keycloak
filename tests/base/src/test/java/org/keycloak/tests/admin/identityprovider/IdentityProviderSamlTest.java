@@ -37,6 +37,7 @@ import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -211,6 +212,46 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         assertImportConfigFails("/saml-protocol-document", "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\""
                 + " ID=\"_1\" Version=\"2.0\" IssueInstant=\"2026-01-01T00:00:00Z\"/>");
     }
+
+    @Test
+    public void testSamlMetadataImportDefaultsResponseSignatureValidationToEnabled() {
+        String metadata = "<EntityDescriptor xmlns=\"urn:oasis:names:tc:SAML:2.0:metadata\" entityID=\"https://idp.example\">"
+                + "<IDPSSODescriptor WantAuthnRequestsSigned=\"false\" protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">"
+                + "<SingleSignOnService Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect\" Location=\"https://idp.example/sso\"/>"
+                + "</IDPSSODescriptor></EntityDescriptor>";
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+        form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
+        form.addFormData("file", metadata, MediaType.APPLICATION_XML_TYPE, "metadata.xml");
+
+        Map<String, String> config = managedRealm.admin().identityProviders().importFrom(form);
+
+        Assertions.assertEquals("false", config.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
+        Assertions.assertEquals("true", config.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+        Assertions.assertFalse(config.containsKey(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED));
+    }
+
+    @Test
+    public void testCreateSamlProviderWithoutSignatureSettingsDefaultsToEnabled() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("saml-no-sig-settings", "saml");
+        newIdentityProvider.getConfig().remove(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE);
+        newIdentityProvider.getConfig().remove(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED);
+        newIdentityProvider.getConfig().put(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://idp.example/sso");
+
+        String id = create(newIdentityProvider);
+        managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
+
+        IdentityProviderRepresentation fetched = managedRealm.admin().identityProviders().get("saml-no-sig-settings").toRepresentation();
+        Assertions.assertNotNull(fetched);
+        Assertions.assertNull(fetched.getConfig().get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+        Assertions.assertNull(fetched.getConfig().get(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED));
+
+        IdentityProviderModel model = new IdentityProviderModel();
+        model.setConfig(fetched.getConfig());
+        SAMLIdentityProviderConfig samlConfig = new SAMLIdentityProviderConfig(model);
+        Assertions.assertTrue(samlConfig.isValidateSignature());
+        Assertions.assertTrue(samlConfig.isWantAssertionsSigned());
+    }
+
 
     private void assertImportConfigFails(String path, String body) {
         httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 200, null, body));
@@ -471,7 +512,13 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         if (hasHideOnLoginPage) {
             keys.add("hideOnLoginPage");
         }
-        assertThat(config.keySet(), containsInAnyOrder(keys.toArray()));
+
+        Set<String> actualKeys = new HashSet<>(config.keySet());
+        actualKeys.remove(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED);
+        assertThat(actualKeys, containsInAnyOrder(keys.toArray()));
+        String wantAssertionsSigned = config.get(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED);
+
+        Assertions.assertTrue(wantAssertionsSigned == null || Boolean.parseBoolean(wantAssertionsSigned), "wantAssertionsSigned must be absent or true by default");
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
         assertThat(config, hasEntry("artifactResolutionServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml/resolve"));
@@ -493,7 +540,8 @@ public class IdentityProviderSamlTest extends AbstractIdentityProviderTest {
         //firtsly check and remove enabledFromMetadata from config
         boolean enabledFromMetadata = Boolean.valueOf(config.get(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA));
         config.remove(SAMLIdentityProviderConfig.ENABLED_FROM_METADATA);
-        Assert.assertEquals(enabledFromMetadata,enabled);
+        Assert.assertEquals(enabledFromMetadata, enabled);
+        Assertions.assertFalse(config.containsKey(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED), "import-config should not materialize wantAssertionsSigned default");
         assertSamlConfig(config, postBindingResponse, true);
         assertThat(config, hasEntry("signingCertificate", expectedSigningCertificates));
     }

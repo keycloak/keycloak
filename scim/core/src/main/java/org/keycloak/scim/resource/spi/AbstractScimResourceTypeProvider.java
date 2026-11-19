@@ -63,6 +63,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         }
 
         applyPatch(existing, model, operations);
+        onUpdate(model, existing);
     }
 
     protected void applyPatch(R existing, M model, List<PatchOperation> operations) {

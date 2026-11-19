@@ -143,9 +143,14 @@ test.describe.serial("User Fed Kerberos tests", () => {
 
     test("Should save several allowed Kerberos realms", async ({ page }) => {
       await clickUserFederationCard(page, firstKerberosName);
-      await page
-        .getByTestId("config.allowedKerberosRealms0")
-        .fill(firstAllowedRealm);
+      // Wait for the provider to be loaded; a late form reset would otherwise clear the filled value
+      // and leave the add button disabled.
+      await expect(page.getByTestId("config.kerberosRealm.0")).toHaveValue(
+        firstKerberosRealm,
+      );
+      const allowedRealm0 = page.getByTestId("config.allowedKerberosRealms0");
+      await allowedRealm0.fill(firstAllowedRealm);
+      await expect(allowedRealm0).toHaveValue(firstAllowedRealm);
       await page.getByTestId("config.allowedKerberosRealms-addValue").click();
       await page
         .getByTestId("config.allowedKerberosRealms1")

@@ -1,7 +1,7 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
     <#if section = "form">
-        <form action="${url.loginAction}" class="form-vertical" method="post">
+        <form action="${url.loginAction}" class="${properties.kcFormClass!}" method="post">
             <div id="kc-user-organizations" class="${properties.kcFormGroupClass!}">
                 <h2>${msg("organization.select")}</h2>
 

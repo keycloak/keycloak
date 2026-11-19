@@ -174,7 +174,7 @@ export default function EditUser() {
       setBruteForced({ isBruteForceProtected, isLocked });
       setRealmHasOrganizations(organizations.length === 1);
 
-      form.reset(toUserFormFields(user));
+      form.reset(toUserFormFields(user, userProfileMetadata));
     },
     [refreshCount],
   );

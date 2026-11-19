@@ -137,7 +137,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         if (request.getInvalidRequestMessage() != null) {
             event.detail(Details.REASON, request.getInvalidRequestMessage());
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT,
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
                 request.getInvalidRequestMessage(), Response.Status.BAD_REQUEST);
         }
 

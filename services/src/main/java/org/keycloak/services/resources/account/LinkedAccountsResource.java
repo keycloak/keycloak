@@ -154,7 +154,7 @@ public class LinkedAccountsResource {
                 Map<String, String> searchOptions = Map.of(
                         IdentityProviderModel.ENABLED, "true",
                         IdentityProviderModel.ORGANIZATION_ID, "",
-                        IdentityProviderModel.SEARCH, search == null ? "" : search,
+                        IdentityProviderModel.SEARCH, resolveSearch(search),
                         IdentityProviderModel.ALIAS_NOT_IN, fedAliasesToExclude,
                         IdentityProviderModel.SHOW_IN_ACCOUNT_CONSOLE, IdentityProviderShowInAccountConsole.ALWAYS.name());
 
@@ -186,20 +186,33 @@ public class LinkedAccountsResource {
         return rep;
     }
 
+    private String resolveSearch(String search) {
+        if (search == null) {
+            return "";
+        }
+        // a lone '"' would otherwise be treated by JpaIdentityProviderStorageProvider#getAliasSearchPredicate
+        // as a quoted/exact search with an empty name and throw a StringIndexOutOfBoundsException; appending
+        // '*' keeps the same "starts with a literal quote" semantics while avoiding that crash
+        return "\"".equals(search) ? search + "*" : search;
+    }
+
     private boolean matchesLinkedProvider(final LinkedAccountRepresentation linkedAccount, final String search) {
         if (search == null) {
             return true;
-        }else if (search.startsWith("\"") && search.endsWith("\"")) {
+        } else if (search.length() > 1 && search.startsWith("\"") && search.endsWith("\"")) {
             final String name = search.substring(1, search.length() - 1);
             return linkedAccount.getProviderAlias().equals(name) || linkedAccount.getDisplayName().equals(name);
-        } else if (search.startsWith("*") && search.endsWith("*")) {
-            final String name = search.substring(1, search.length() - 1);
-            return linkedAccount.getProviderAlias().contains(name) || linkedAccount.getDisplayName().contains(name);
+        } else if (search.length() > 1 && search.startsWith("*") && search.endsWith("*")) {
+            // non-exact searches are case-insensitive, matching the LIKE lower(...) semantics used by
+            // JpaIdentityProviderStorageProvider#getAliasSearchPredicate for the "linked=false" branch
+            final String name = search.substring(1, search.length() - 1).toLowerCase(Locale.ROOT);
+            return linkedAccount.getProviderAlias().toLowerCase(Locale.ROOT).contains(name) || linkedAccount.getDisplayName().toLowerCase(Locale.ROOT).contains(name);
         } else if (search.endsWith("*")) {
-            final String name = search.substring(0, search.length() - 1);
-            return linkedAccount.getProviderAlias().startsWith(name) || linkedAccount.getDisplayName().startsWith(name);
+            final String name = search.substring(0, search.length() - 1).toLowerCase(Locale.ROOT);
+            return linkedAccount.getProviderAlias().toLowerCase(Locale.ROOT).startsWith(name) || linkedAccount.getDisplayName().toLowerCase(Locale.ROOT).startsWith(name);
         } else {
-            return linkedAccount.getProviderAlias().startsWith(search) || linkedAccount.getDisplayName().startsWith(search);
+            final String name = search.toLowerCase(Locale.ROOT);
+            return linkedAccount.getProviderAlias().toLowerCase(Locale.ROOT).startsWith(name) || linkedAccount.getDisplayName().toLowerCase(Locale.ROOT).startsWith(name);
         }
     }
 

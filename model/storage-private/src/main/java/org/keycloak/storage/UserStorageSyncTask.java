@@ -121,6 +121,8 @@ final class UserStorageSyncTask implements ScheduledTask {
         RealmModel realm = session.getContext().getRealm();
 
         if (realm == null) {
+            // The realm was removed, cancel the scheduled task to avoid running it again on the next period
+            cancel(session);
             throw new ModelIllegalStateException("Realm with id " + realmId + " not found");
         }
 

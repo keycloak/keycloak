@@ -45,6 +45,8 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebDriverException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -116,7 +118,7 @@ public class OrganizationInvitationTokenTest extends AbstractOrganizationTest {
         registerPage.assertCurrent();
         registerPage.register("Invited", "User", INVITEE_EMAIL, "invitee", "password");
 
-        assertEquals(1L, organization.members().count());
+        awaitMemberCount(organization, 1L);
         assertTrue(organization.invitations().list().isEmpty());
         assertInvitationConsumed(link);
     }
@@ -160,14 +162,33 @@ public class OrganizationInvitationTokenTest extends AbstractOrganizationTest {
         loginPage.fillLogin("broker-invitee", "password");
         loginPage.submit();
 
-        if (updateProfilePage.getExpectedPageId().equals(driver.page().getCurrentPageId())) {
+        // The browser may still be navigating, and the page id lookup fails while the document is replaced
+        driver.waiting().until(d -> organization.members().count() == 1 || isOnUpdateProfilePage());
+        if (isOnUpdateProfilePage()) {
             updateProfilePage.update("Invited", "User", INVITEE_EMAIL);
         }
 
-        assertEquals(1L, organization.members().count());
+        awaitMemberCount(organization, 1L);
         assertTrue(organization.invitations().list().isEmpty());
         assertEquals(MembershipType.UNMANAGED, organization.members().list(-1, -1).get(0).getMembershipType());
         assertInvitationConsumed(link);
+    }
+
+    private boolean isOnUpdateProfilePage() {
+        try {
+            return updateProfilePage.getExpectedPageId().equals(driver.page().getCurrentPageId());
+        } catch (WebDriverException e) {
+            return false;
+        }
+    }
+
+    // The submit returns before the server has processed the request, so wait for the membership instead of reading it once
+    private void awaitMemberCount(OrganizationResource organization, long expected) {
+        try {
+            driver.waiting().until(d -> organization.members().count() == expected);
+        } catch (TimeoutException e) {
+            assertEquals(expected, organization.members().count());
+        }
     }
 
     private void assertInvitationConsumed(String link) {

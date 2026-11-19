@@ -34,9 +34,14 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
     private final LoginFailureEntity entity;
     private boolean locked;
 
-    public UserLoginFailureAdapter(EntityManager em, LoginFailureEntity entity) {
+    UserLoginFailureAdapter(EntityManager em, LoginFailureEntity entity, boolean locked) {
         this.em = Objects.requireNonNull(em);
         this.entity = Objects.requireNonNull(entity);
+        // This is required for correctness, not only to avoid another lock operation. When Hibernate already
+        // records an exclusive lock for the entity, refresh(PESSIMISTIC_WRITE) reloads it using LockMode.READ.
+        // On MySQL/MariaDB under REPEATABLE READ, that could consult stale snapshot data after
+        // addUserLoginFailure() observed a concurrent insert with a locking current read.
+        this.locked = locked;
     }
 
     private void ensureLocked() {

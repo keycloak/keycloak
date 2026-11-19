@@ -51,6 +51,7 @@ import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.migration.migrators.MigrateTo8_0_0;
 import org.keycloak.migration.migrators.MigrationUtils;
+import org.keycloak.migration.migrators.OidcIssuerMigration;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -216,6 +217,10 @@ public class DefaultExportImportManager implements ExportImportManager {
         ModelVersion version = DefaultMigrationManager.getModelVersionFromRep(rep);
 
         convertDeprecatedSocialProviders(rep);
+        // Migrate before identity provider configurations are validated during import.
+        if (version == null || version.lessThan(OidcIssuerMigration.VERSION)) {
+            OidcIssuerMigration.migrateImport(session, rep);
+        }
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
 
@@ -650,7 +655,11 @@ public class DefaultExportImportManager implements ExportImportManager {
     private static void importIdentityProviders(RealmRepresentation rep, RealmModel newRealm, KeycloakSession session) {
         if (rep.getIdentityProviders() != null) {
             for (IdentityProviderRepresentation representation : rep.getIdentityProviders()) {
-                session.identityProviders().create(RepresentationToModel.toModel(newRealm, representation, session));
+                try {
+                    session.identityProviders().create(RepresentationToModel.toModel(newRealm, representation, session));
+                } catch (IllegalArgumentException e) {
+                    throw new ModelValidationException("Invalid configuration for identity provider '" + representation.getAlias() + "': " + e.getMessage());
+                }
             }
         }
     }

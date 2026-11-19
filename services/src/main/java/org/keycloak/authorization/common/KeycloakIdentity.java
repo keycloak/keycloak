@@ -175,6 +175,9 @@ public class KeycloakIdentity implements Identity {
         }
 
         UserModel user = getUserFromToken();
+        if (user == null) {
+            throw new IllegalArgumentException("User from token not found");
+        }
 
         addRolesAsAttributes(this.accessToken, realm, user, attributes);
 

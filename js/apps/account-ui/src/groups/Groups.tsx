@@ -125,6 +125,9 @@ export const Groups = () => {
                   >
                     <Checkbox
                       id={`${appIndex}-checkbox-directMembership`}
+                      aria-label={t("groupDirectMembership", {
+                        path: group.path,
+                      })}
                       isChecked={group.id != null}
                       isDisabled={true}
                     />

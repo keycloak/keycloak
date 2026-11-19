@@ -18,6 +18,7 @@
 package org.keycloak.services.util;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -253,7 +254,10 @@ public class CertificateInfoHelper {
         }
 
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
-            String pem = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
+            String pem;
+            try (InputStream is = inputParts.asInputStream()) {
+                pem = StreamUtil.readString(is, StandardCharsets.UTF_8);
+            }
             pem = PemUtils.removeBeginEnd(pem);
 
             // Validate format
@@ -261,14 +265,20 @@ public class CertificateInfoHelper {
             info.setCertificate(pem);
             return info;
         } else if (keystoreFormat.equals(PUBLIC_KEY_PEM)) {
-            String pem = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
+            String pem;
+            try (InputStream is = inputParts.asInputStream()) {
+                pem = StreamUtil.readString(is, StandardCharsets.UTF_8);
+            }
 
             // Validate format
             KeycloakModelUtils.getPublicKey(pem);
             info.setPublicKey(pem);
             return info;
         } else if (keystoreFormat.equals(JSON_WEB_KEY_SET)) {
-            String jwks = StreamUtil.readString(inputParts.asInputStream(), StandardCharsets.UTF_8);
+            String jwks;
+            try (InputStream is = inputParts.asInputStream()) {
+                jwks = StreamUtil.readString(is, StandardCharsets.UTF_8);
+            }
 
             info = CertificateInfoHelper.jwksStringToSigCertificateRepresentation(session.getKeycloakSessionFactory(), jwks);
             return info;
@@ -284,7 +294,9 @@ public class CertificateInfoHelper {
         X509Certificate certificate = null;
         try {
             KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreUtil.KeystoreFormat.valueOf(keystoreFormat));
-            keyStore.load(inputParts.asInputStream(), storePassword);
+            try (InputStream is = inputParts.asInputStream()) {
+                keyStore.load(is, storePassword);
+            }
             try {
                 privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword);
             } catch (Exception e) {

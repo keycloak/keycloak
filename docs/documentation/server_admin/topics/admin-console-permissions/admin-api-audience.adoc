@@ -1,0 +1,27 @@
+
+[[_admin_api_audience]]
+=== Accessing the Admin REST API with your own clients
+
+Having an admin role is not enough on its own to call the Admin REST API. In addition to the
+permission models described in the previous sections, the Admin REST API requires the
+access token to be issued specifically for it. This requirement is satisfied by the built-in
+`kc-admin-api` client scope, which adds the realm's Admin REST API base URL as an audience
+(`aud`) to the token and includes `kc-admin-api` in the token's `scope`.
+
+The built-in `admin-cli` and `security-admin-console` clients already have the `kc-admin-api`
+client scope assigned as a *Default* client scope, so tools such as the Admin CLI (`kcadm`)
+and the Admin Console work without any additional configuration.
+
+If you use your own client or service account to obtain tokens for the Admin REST API, assign
+the `kc-admin-api` client scope to that client.
+
+[NOTE]
+====
+The Admin REST API audience is derived from the configured frontend URL. Make sure the server
+runs with a stable frontend URL (hostname) configuration so that the audience is consistent
+across nodes and requests.
+====
+
+You can disable this audience check server-wide, but doing so removes an important layer of
+defense against token misuse and is strongly discouraged. See the
+link:{upgradingguide_link}[{upgradingguide_name}] for details.

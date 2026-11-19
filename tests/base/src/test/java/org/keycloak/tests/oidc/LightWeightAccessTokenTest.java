@@ -132,6 +132,7 @@ import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLU
 import static org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper.PAIRWISE_SUB_ALGORITHM_SALT;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.NEW_ROLE_NAME;
 import static org.keycloak.protocol.oidc.mappers.RoleNameMapper.ROLE_CONFIG;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -536,6 +537,7 @@ public class LightWeightAccessTokenTest {
     @Test
     public void testAdminConsoleClientWithLightweightAccessTokenTransientSessionParameterizedScopes() throws Exception {
         setClientAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
+        addAdminApiClientScope(managedRealm.admin(), TEST_CLIENT);
         oauth.client(TEST_CLIENT, TEST_CLIENT_SECRET);
         AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest();
         String accessToken = response.getAccessToken();
@@ -560,6 +562,7 @@ public class LightWeightAccessTokenTest {
                 .build();
         String transientClientUuid = ApiUtil.getCreatedId(realmResource.clients().create(transientClientRep));
         managedRealm.cleanup().add(r -> r.clients().get(transientClientUuid).remove());
+        addAdminApiClientScope(realmResource, transientClientRep.getClientId());
 
         String realmMgmtId = realmResource.clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0).getId();
         RoleRepresentation realmAdminRole = realmResource.clients().get(realmMgmtId).roles().get(AdminRoles.REALM_ADMIN).toRepresentation();

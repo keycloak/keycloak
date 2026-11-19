@@ -27,6 +27,17 @@ test.describe("Mobile nav", () => {
     await expect(page.getByTestId("password/credential-list")).toBeVisible();
   });
 
+  test("names the masthead options toggle", async ({ page }) => {
+    await using testBed = await createTestBed();
+
+    await page.setViewportSize(MOBILE_VIEWPORT);
+    await login(page, testBed.realm);
+
+    await expect(page.getByTestId("options-kebab-toggle")).toHaveAccessibleName(
+      "Options",
+    );
+  });
+
   test("leaves the persistent nav open on desktop viewports", async ({
     page,
   }) => {

@@ -65,31 +65,41 @@ public class SAMLParser extends AbstractParser {
     private interface ParserFactory {
         StaxParser create();
     }
-    private static final Map<QName, ParserFactory> PARSERS = new HashMap<>();
+    private static final Map<QName, ParserFactory> PARSERS_2_0 = new HashMap<>();
+    private static final Map<QName, ParserFactory> PARSERS_1_1 = new HashMap<>();
 
     static {
-        PARSERS.put(SAML_11_ASSERTION, new ParserFactory() { @Override public StaxParser create() { return new SAML11AssertionParser(); }});
-        PARSERS.put(SAML_11_ENCRYPTED_ASSERTION, new ParserFactory() { @Override public StaxParser create() { return new SAML11AssertionParser(); }});
-        PARSERS.put(SAML_11_RESPONSE, new ParserFactory() { @Override public StaxParser create() { return SAML_11_RESPONSE_PARSER; }});
-        PARSERS.put(SAML_11_REQUEST, new ParserFactory() { @Override public StaxParser create() { return SAML_11_REQUEST_PARSER; }});
+        setupSaml20Parsers();
+    }
 
-        PARSERS.put(SAMLProtocolQNames.AUTHN_REQUEST.getQName(),      new ParserFactory() { @Override public StaxParser create() { return SAMLAuthNRequestParser.getInstance(); }});
-        PARSERS.put(SAMLProtocolQNames.RESPONSE.getQName(),           new ParserFactory() { @Override public StaxParser create() { return SAMLResponseParser.getInstance(); }});
-        PARSERS.put(SAMLProtocolQNames.LOGOUT_REQUEST.getQName(),     new ParserFactory() { @Override public StaxParser create() { return SAMLSloRequestParser.getInstance(); }});
-        PARSERS.put(SAMLProtocolQNames.LOGOUT_RESPONSE.getQName(),    new ParserFactory() { @Override public StaxParser create() { return SAMLSloResponseParser.getInstance(); }});
+    private volatile boolean saml11ParsersEnabled = false;
 
-        PARSERS.put(SAMLProtocolQNames.ARTIFACT_RESOLVE.getQName(),   new ParserFactory() { @Override public StaxParser create() { return SAMLArtifactResolveParser.getInstance(); }});
-        PARSERS.put(SAMLProtocolQNames.ARTIFACT_RESPONSE.getQName(),  new ParserFactory() { @Override public StaxParser create() { return SAMLArtifactResponseParser.getInstance(); }});
 
-        PARSERS.put(SAMLProtocolQNames.ASSERTION.getQName(),          new ParserFactory() { @Override public StaxParser create() { return SAMLAssertionParser.getInstance(); }});
-        PARSERS.put(SAMLProtocolQNames.ENCRYPTED_ASSERTION.getQName(),new ParserFactory() { @Override public StaxParser create() { return SAMLEncryptedAssertionParser.getInstance(); }});
+    private static void setupSaml20Parsers() {
+        PARSERS_2_0.put(SAMLProtocolQNames.AUTHN_REQUEST.getQName(),      new ParserFactory() { @Override public StaxParser create() { return SAMLAuthNRequestParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLProtocolQNames.RESPONSE.getQName(),           new ParserFactory() { @Override public StaxParser create() { return SAMLResponseParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLProtocolQNames.LOGOUT_REQUEST.getQName(),     new ParserFactory() { @Override public StaxParser create() { return SAMLSloRequestParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLProtocolQNames.LOGOUT_RESPONSE.getQName(),    new ParserFactory() { @Override public StaxParser create() { return SAMLSloResponseParser.getInstance(); }});
 
-        PARSERS.put(SAMLAssertionQNames.AUTHN_STATEMENT.getQName(),   new ParserFactory() { @Override public StaxParser create() { return SAMLAuthnStatementParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLProtocolQNames.ARTIFACT_RESOLVE.getQName(),   new ParserFactory() { @Override public StaxParser create() { return SAMLArtifactResolveParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLProtocolQNames.ARTIFACT_RESPONSE.getQName(),  new ParserFactory() { @Override public StaxParser create() { return SAMLArtifactResponseParser.getInstance(); }});
 
-        PARSERS.put(SAMLMetadataQNames.ENTITY_DESCRIPTOR.getQName(),  new ParserFactory() { @Override public StaxParser create() { return SAMLEntityDescriptorParser.getInstance(); }});
-        PARSERS.put(SAMLMetadataQNames.ENTITIES_DESCRIPTOR.getQName(),new ParserFactory() { @Override public StaxParser create() { return SAMLEntitiesDescriptorParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLProtocolQNames.ASSERTION.getQName(),          new ParserFactory() { @Override public StaxParser create() { return SAMLAssertionParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLProtocolQNames.ENCRYPTED_ASSERTION.getQName(),new ParserFactory() { @Override public StaxParser create() { return SAMLEncryptedAssertionParser.getInstance(); }});
 
-        PARSERS.put(SAMLProtocolQNames.ATTRIBUTE_QUERY.getQName(),    new ParserFactory() { @Override public StaxParser create() { return SAMLAttributeQueryParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLAssertionQNames.AUTHN_STATEMENT.getQName(),   new ParserFactory() { @Override public StaxParser create() { return SAMLAuthnStatementParser.getInstance(); }});
+
+        PARSERS_2_0.put(SAMLMetadataQNames.ENTITY_DESCRIPTOR.getQName(),  new ParserFactory() { @Override public StaxParser create() { return SAMLEntityDescriptorParser.getInstance(); }});
+        PARSERS_2_0.put(SAMLMetadataQNames.ENTITIES_DESCRIPTOR.getQName(),new ParserFactory() { @Override public StaxParser create() { return SAMLEntitiesDescriptorParser.getInstance(); }});
+
+        PARSERS_2_0.put(SAMLProtocolQNames.ATTRIBUTE_QUERY.getQName(),    new ParserFactory() { @Override public StaxParser create() { return SAMLAttributeQueryParser.getInstance(); }});
+    }
+
+    private static void setupSaml11Parsers() {
+        PARSERS_1_1.put(SAML_11_ASSERTION, new ParserFactory() { @Override public StaxParser create() { return new SAML11AssertionParser(); }});
+        PARSERS_1_1.put(SAML_11_ENCRYPTED_ASSERTION, new ParserFactory() { @Override public StaxParser create() { return new SAML11AssertionParser(); }});
+        PARSERS_1_1.put(SAML_11_RESPONSE, new ParserFactory() { @Override public StaxParser create() { return SAML_11_RESPONSE_PARSER; }});
+        PARSERS_1_1.put(SAML_11_REQUEST, new ParserFactory() { @Override public StaxParser create() { return SAML_11_REQUEST_PARSER; }});
     }
 
     private static final SAMLParser INSTANCE = new SAMLParser();
@@ -99,6 +109,14 @@ public class SAMLParser extends AbstractParser {
     }
 
     protected SAMLParser() {
+    }
+
+    public void enableSaml11Parsers() {
+        if (!saml11ParsersEnabled) {
+            setupSaml11Parsers();
+            saml11ParsersEnabled = true;
+            logger.warn("SAML 11 parsers are enabled.");
+        }
     }
 
     /**
@@ -113,7 +131,10 @@ public class SAMLParser extends AbstractParser {
                 StartElement startElement = (StartElement) xmlEvent;
                 final QName name = startElement.getName();
 
-                ParserFactory pf = PARSERS.get(name);
+                ParserFactory pf = PARSERS_2_0.get(name);
+                if (pf == null && saml11ParsersEnabled) {
+                    pf = PARSERS_1_1.get(name);
+                }
                 if (pf == null) {
                     throw logger.parserException(new RuntimeException(ErrorCodes.UNKNOWN_START_ELEMENT + name + "::location="
                             + startElement.getLocation()));

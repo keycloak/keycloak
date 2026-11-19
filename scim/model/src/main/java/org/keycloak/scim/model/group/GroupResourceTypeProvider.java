@@ -13,7 +13,6 @@ package org.keycloak.scim.model.group;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
@@ -42,7 +41,6 @@ import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.resource.group.Group;
-import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.MembershipChange;
@@ -98,9 +96,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
     @Override
     public Group update(Group resource) {
-        List<Member> members = resource.getMembers();
-
-        if (!Optional.ofNullable(members).orElse(List.of()).isEmpty()) {
+        if (resource.getMembers() != null) {
             throw new ModelValidationException("Managing members on updates is not supported");
         }
 

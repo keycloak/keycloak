@@ -27,7 +27,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testframework.admin.AdminClientFactory;
@@ -54,6 +53,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -94,6 +95,7 @@ public class AdminSessionDeletionTest {
         var backend = realm.admin().clients().findByClientId(BACKEND).get(0);
         backend.getAttributes().put("client_credentials.use_refresh_token", Boolean.toString(useRefreshTokens));
         realm.admin().clients().get(backend.getId()).update(backend);
+        addAdminApiClientScope(realm.admin(), BACKEND);
 
         try (Keycloak admin = adminClientFactory.create()
                 .realm(realm.getName()).clientId(BACKEND).clientSecret(SECRET)
@@ -152,20 +154,20 @@ public class AdminSessionDeletionTest {
                     UserSessionModel.SessionPersistenceState.PERSISTENT);
             session.getContext().setClient(client);
             session.getContext().setAuthenticationSession(null);
-            AuthenticationSessionManager manager = new AuthenticationSessionManager(session);
 
             AuthenticationSessionModel firstLogout = AuthenticationManager.createOrJoinLogoutSession(
-                    session, currentRealm, manager, first, false, true);
-            assertEquals(first.getId(), firstLogout.getParentSession().getId());
+                    session, currentRealm, first, false, true);
+            // Since the CVE fix the logout root id is random and no longer equals the user session id.
+            assertNotEquals(first.getId(), firstLogout.getParentSession().getId());
 
             AuthenticationSessionModel secondLogout = AuthenticationManager.createOrJoinLogoutSession(
-                    session, currentRealm, manager, second, false, true);
+                    session, currentRealm, second, false, true);
             assertNotEquals(firstLogout.getParentSession().getId(), secondLogout.getParentSession().getId());
             assertNotEquals(second.getId(), secondLogout.getParentSession().getId());
             assertEquals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), secondLogout.getAction());
 
             session.authenticationSessions().removeRootAuthenticationSession(currentRealm, secondLogout.getParentSession());
-            assertNotNull(session.authenticationSessions().getRootAuthenticationSession(currentRealm, first.getId()));
+            assertNotNull(session.authenticationSessions().getRootAuthenticationSession(currentRealm, firstLogout.getParentSession().getId()));
             assertEquals(AuthenticationSessionModel.Action.LOGGING_OUT.name(), firstLogout.getAction());
         });
     }

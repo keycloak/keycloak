@@ -28,7 +28,7 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
 
     public InputStream getEncodedStream(StreamSupplier producer, String... path) {
         try {
-            File encodedFile = ResourceLoader.getFile(cacheDir, String.join("/", path) +  ".gz");
+            File encodedFile = getResourceFile(path);
             if (encodedFile == null) {
                 return null;
             }
@@ -44,28 +44,42 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
         }
     }
 
+    public File getResourceFile(String... path) {
+        try {
+            return ResourceLoader.getFile(cacheDir, String.join("/", path) + ".gz");
+        } catch (Exception e) {
+            logger.warn("Failed to get encoded resource file", e);
+            return null;
+        }
+    }
+
     public String getEncoding() {
         return "gzip";
     }
 
     private InputStream createEncodedStream(StreamSupplier producer, File target) throws IOException {
-        InputStream is = producer.getInputStream();
-        if (is == null) {
-            return null;
-        }
-
-        File parent = target.getParentFile();
-        if (!parent.isDirectory()) {
-            if (parent.mkdirs() && !parent.isDirectory()) {
-                logger.warnf("Fail to create cache directory %s", parent.toString());
+        File tmpEncodedFile = null;
+        try (InputStream is = producer.getInputStream()) {
+            if (is == null) {
+                return null;
             }
-        }
-        File tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
 
-        try (is; GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(tmpEncodedFile))) {
-            IOUtils.copy(is, gos);
+            File parent = target.getParentFile();
+            if (!parent.isDirectory()) {
+                if (parent.mkdirs() && !parent.isDirectory()) {
+                    logger.warnf("Fail to create cache directory %s", parent.toString());
+                }
+            }
+            tmpEncodedFile = File.createTempFile(target.getName(), "tmp", parent);
+
+            try (FileOutputStream fos = new FileOutputStream(tmpEncodedFile);
+                 GZIPOutputStream gos = new GZIPOutputStream(fos)) {
+                IOUtils.copy(is, gos);
+            }
         } catch (IOException e) {
-            Files.deleteIfExists(tmpEncodedFile.toPath());
+            if (tmpEncodedFile != null) {
+                Files.deleteIfExists(tmpEncodedFile.toPath());
+            }
             throw e;
         }
 

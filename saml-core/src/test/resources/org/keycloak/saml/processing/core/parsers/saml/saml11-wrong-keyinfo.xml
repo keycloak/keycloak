@@ -1,0 +1,31 @@
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:1.0:protocol"
+                xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"
+                xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                MajorVersion="1" MinorVersion="1" ResponseID="_r"
+                IssueInstant="2026-09-25T10:00:00Z" Recipient="http://localhost:8185/realms/master/broker/saml/endpoint">
+
+    <samlp:Status>
+        <samlp:StatusCode Value="samlp:Success"/>
+    </samlp:Status>
+    <saml:Assertion xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                    AssertionID="_a" Issuer="attacker"
+                    IssueInstant="2009-06-17T18:45:10.738Z" MajorVersion="1" MinorVersion="1">
+        <saml:AuthenticationStatement AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:password" AuthenticationInstant="2009-06-17T18:45:10.738Z">
+            <saml:Subject>
+                <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">
+                    saml01@salesforce.com
+                </saml:NameIdentifier>
+                <saml:SubjectConfirmation>
+                    <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:2.0:cm:holder-of-key
+                    </saml:ConfirmationMethod>
+                    <saml:SubjectConfirmationData NotOnOrAfter="2009-06-17T18:50:10.738Z"
+                                                  Recipient="https://login.salesforce.com">
+                        <ds:KeyInfo>
+                            <ds:KeyName>attacker</ds:KeyName>
+                        </ds:KeyInfo>
+                    </saml:SubjectConfirmationData>
+                </saml:SubjectConfirmation>
+            </saml:Subject>
+        </saml:AuthenticationStatement>
+    </saml:Assertion>
+</samlp:Response>

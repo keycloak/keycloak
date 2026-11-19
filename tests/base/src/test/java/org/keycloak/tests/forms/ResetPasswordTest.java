@@ -1,6 +1,10 @@
 package org.keycloak.tests.forms;
 
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.Objects;
 
 import jakarta.mail.internet.MimeMessage;
 
@@ -56,6 +60,7 @@ import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.REQUEST_URI_PREFIX;
@@ -64,6 +69,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest
 public class ResetPasswordTest {
@@ -159,6 +165,9 @@ public class ResetPasswordTest {
         );
         loginPage.assertCurrent();
         assertDoesNotThrow(() -> loginPage.findSocialButton(IDP_ALIAS));
+
+        // going back to the reset page runs the reset flow again, which sends a second email. Wait for both, so they don't land in the next test
+        assertTrue(mailServer.waitForIncomingEmail(2));
     }
 
     @Test
@@ -178,6 +187,10 @@ public class ResetPasswordTest {
         driver.driver().navigate().back();
 
         registerPage.assertCurrent();
+
+        // going back to the reset page runs the reset flow again, which sends a second email. Wait for both, so they
+        // don't land in the next test
+        assertTrue(mailServer.waitForIncomingEmail(2));
     }
 
     @Test
@@ -205,6 +218,7 @@ public class ResetPasswordTest {
             .details(Details.EMAIL, USER_EMAIL);
 
 
+        assertTrue(mailServer.waitForIncomingEmail(1));
         MimeMessage message = mailServer.getLastReceivedMessage();
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
@@ -214,6 +228,8 @@ public class ResetPasswordTest {
         String urlWhenWentBackFromResetPassword = driver.getCurrentUrl();
         assertEquals(urlWhenBackFromRegistrationPage, urlWhenWentBackFromResetPassword);
         loginPage.assertCurrent();
+        // going back to the reset page runs the reset flow again, which sends a second email
+        assertTrue(mailServer.waitForIncomingEmail(2));
 
         events.clear();
         driver.open(changePasswordUrl.trim());
@@ -338,6 +354,7 @@ public class ResetPasswordTest {
                 .details(Details.USERNAME, USER_LOGIN).details(Details.EMAIL, USER_EMAIL)
                 .details(Details.REDIRECT_URI, redirectUri).sessionId(null);
 
+        assertTrue(mailServer.waitForIncomingEmail(1));
         MimeMessage message = mailServer.getLastReceivedMessage();
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
         driver.open(changePasswordUrl.trim());
@@ -635,6 +652,7 @@ public class ResetPasswordTest {
                 .details(Details.USERNAME, USER_LOGIN)
                 .details(Details.EMAIL, USER_EMAIL);
 
+        assertTrue(mailServer.waitForIncomingEmail(1));
         assertEquals(1, mailServer.getReceivedMessages().length);
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
 
@@ -771,6 +789,7 @@ public class ResetPasswordTest {
     }
 
     private void initiateResetPasswordFromResetPasswordPage(String username) {
+        int receivedBefore = mailServer.getReceivedMessages().length;
         oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.resetPassword();
@@ -778,6 +797,8 @@ public class ResetPasswordTest {
         resetPasswordPage.changePassword(username);
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
+        // the email is sent in the background
+        assertTrue(mailServer.waitForIncomingEmail(receivedBefore + 1));
     }
 
     // Exchanges the authorization code for tokens and drains the resulting CODE_TO_TOKEN event.
@@ -800,6 +821,44 @@ public class ResetPasswordTest {
                 .sessionId(null)
                 .userId(consumerUser.getId())
                 .error(Errors.EXPIRED_CODE);
+    }
+
+    @Test
+    public void resetPasswordResponseDoesNotWaitForEmailDelivery() throws IOException {
+        // a mail server that accepts connections but never answers
+        try (ServerSocket unresponsiveMailServer = new ServerSocket(0)) {
+            // long timeout, so the email is still being sent when the response is checked
+            consumerRealm.updateWithCleanup(r -> {
+                r.smtp(MailServerConfiguration.HOST, unresponsiveMailServer.getLocalPort(), MailServerConfiguration.FROM);
+                r.build().getSmtpServer().put("timeout", "60000");
+                return r;
+            });
+
+            oauth.openLoginForm();
+            loginPage.resetPassword();
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword(USER_LOGIN);
+
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.SEND_RESET_PASSWORD)
+                    .details(Details.USERNAME, USER_LOGIN);
+
+            unresponsiveMailServer.setSoTimeout(10000);
+            try (Socket delivery = unresponsiveMailServer.accept()) {
+                delivery.setSoTimeout(1000);
+                assertThrows(SocketTimeoutException.class, () -> delivery.getInputStream().read(),
+                        "The response was sent only after the delivery of the email gave up");
+            }
+        }
+
+        // closing the mail server makes sending fail
+        EventRepresentation deliveryFailedEvent = Awaitility.await().until(events::poll, Objects::nonNull);
+        EventAssertion.assertError(deliveryFailedEvent)
+                .type(EventType.SEND_RESET_PASSWORD_ERROR)
+                .error(Errors.EMAIL_SEND_FAILED)
+                .details(Details.USERNAME, USER_LOGIN);
     }
 
     static class ConsumerRealmConfig implements RealmConfig {

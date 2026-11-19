@@ -51,7 +51,7 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
     public boolean policyCheck(PasswordPolicy policy, PasswordCredentialModel credential) {
         PasswordCredentialData data = credential.getPasswordCredentialData();
 
-        return iterations == data.getHashIterations() &&
+        return expectedIterations(policy != null ? policy.getHashIterations() : -1) == data.getHashIterations() &&
                 checkCredData(TYPE_KEY, type, data) &&
                 checkCredData(VERSION_KEY, version, data) &&
                 checkCredData(Argon2PasswordHashProviderFactory.HASH_LENGTH_KEY, hashLength, data) &&
@@ -60,19 +60,16 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
     }
 
     /**
-     * Password hashing iterations from password policy is intentionally ignored for now for two reasons. 1) default
-     * iterations are 210K, which is way too large for Argon2, and 2) it makes little sense to configure iterations only
-     * for Argon2, which should be combined with configuring memory, which is not currently configurable in password
-     * policy.
+     * Password hashing iterations from the password policy are only used if they are 100 or less, otherwise the
+     * provider's iterations are used. Larger values are most likely meant for PBKDF2 (default 210K), which is way too
+     * large for Argon2.
      */
     @Override
     public PasswordCredentialModel encodedCredential(String rawPassword, int iterations) {
-        if (iterations == -1) {
-            iterations = this.iterations;
-        } else if (iterations > 100) {
+        if (iterations > 100) {
             logger.warn("Iterations for Argon should be less than 100, using default");
-            iterations = this.iterations;
         }
+        iterations = expectedIterations(iterations);
 
         byte[] salt = Salt.generateSalt();
         String encoded = encode(rawPassword, salt, version, type, hashLength, parallelism, memory, iterations);
@@ -141,6 +138,15 @@ public class Argon2PasswordHashProvider implements PasswordHashProvider {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    /**
+     * The iterations that {@link #encodedCredential(String, int)} uses for the given password policy iterations.
+     * {@link #policyCheck(PasswordPolicy, PasswordCredentialModel)} must use the same, otherwise a freshly created hash
+     * is considered outdated and re-hashed after every successful login.
+     */
+    private int expectedIterations(int policyIterations) {
+        return policyIterations == -1 || policyIterations > 100 ? this.iterations : policyIterations;
     }
 
     private boolean checkCredData(String key, int expectedValue, PasswordCredentialData data) {

@@ -28,7 +28,9 @@ As demonstrated in the previous example, the scheme and port are not explicitly 
 
 Similarly, your reverse proxy might expose {project_name} at a different context path. It is possible to configure {project_name} to reflect that via the `hostname` and `hostname-admin` options. See the following example:
 
-<@kc.start parameters="--hostname https://my.keycloak.org:123/auth"/>
+<@kc.start parameters="--hostname https://my.keycloak.org:123/auth --proxy-headers xforwarded"/>
+
+NOTE: Including a path in the `hostname` option only changes the URLs that {project_name} generates. It does not change the path on which the server listens. This configuration assumes that the reverse proxy removes the context path (`/auth` in the example) from the request URI before forwarding it to {project_name}, and that `proxy-headers` is set, which is required when the path in `hostname` differs from `http-relative-path`. If your reverse proxy forwards the context path unchanged, you must instead set the `http-relative-path` option to the same value so that the server expects it. For more details, see the <@links.server id="reverseproxy" anchor="context-path-on-reverse-proxy"/> guide.
 
 == Utilizing an internal URL for communication among clients
 

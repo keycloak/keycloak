@@ -282,6 +282,7 @@ public class OrganizationGroupResource {
 
                 // Move the group if it's not already a child of this group
                 if (!Objects.equals(child.getParentId(), group.getId())) {
+                    GroupUtils.checkAdminGroupRoles(group, auth);
                     session.groups().moveGroup(realm, child, group);
                 }
                 adminEvent.operation(OperationType.UPDATE);

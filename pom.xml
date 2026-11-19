@@ -40,8 +40,8 @@
 
         <asciidoctor.plugin.version>3.2.0</asciidoctor.plugin.version>
 
-        <quarkus.version>3.40.1.1</quarkus.version>
-        <quarkus.build.version>3.40.1.1</quarkus.build.version>
+        <quarkus.version>3.40.1.2</quarkus.version>
+        <quarkus.build.version>3.40.1.2</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -184,7 +184,7 @@
         <nginx.container>registry.gitlab.com/openid/conformance-suite/nginx:${nginx.version}</nginx.container>
 
         <!-- Test -->
-        <greenmail.version>2.1.3</greenmail.version>
+        <greenmail.version>2.1.15</greenmail.version>
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
@@ -214,16 +214,18 @@
         <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
         <spotless-plugin.version>3.0.0</spotless-plugin.version>
-        <maven-assembly-plugin.version>3.1.1</maven-assembly-plugin.version>
+        <maven-assembly-plugin.version>3.8.0</maven-assembly-plugin.version>
         <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
         <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
         <maven-clean-plugin.version>3.2.0</maven-clean-plugin.version>
         <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <plugin.antrun.version>1.8</plugin.antrun.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+        <checkerframework.version>4.4.0</checkerframework.version>
+        <checkerframework.processors>org.checkerframework.checker.resourceleak.ResourceLeakChecker</checkerframework.processors>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
 
         <!-- Surefire Settings -->
@@ -1584,20 +1586,6 @@
                     <version>${exec-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
-                    <version>${project.version}</version>
-                    <executions>
-                        <execution>
-                            <id>process-licenses</id>
-                            <goals>
-                                <goal>process</goal>
-                            </goals>
-                            <phase>process-resources</phase>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.asciidoctor</groupId>
                     <artifactId>asciidoctor-maven-plugin</artifactId>
                     <version>${asciidoctor.plugin.version}</version>
@@ -1641,6 +1629,63 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>checkerframework</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                    <version>${checkerframework.version}</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <fork>true</fork>
+                            <annotationProcessorPaths combine.children="append">
+                                <path>
+                                    <groupId>org.checkerframework</groupId>
+                                    <artifactId>checker</artifactId>
+                                    <version>${checkerframework.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>org.checkerframework</groupId>
+                                    <artifactId>checker-qual</artifactId>
+                                    <version>${checkerframework.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                            <compilerArgs>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                                <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                                <arg>-Xlint:-removal</arg>
+                                <arg>-processor</arg>
+                                <!-- An explicit -processor list disables processor discovery; modules with other processors append them via this property. -->
+                                <arg>${checkerframework.processors}</arg>
+                                <!-- Exclude test sources and helpers by directory, regardless of their class names.
+                                     Backslashes are doubled for the forked javac argument file. -->
+                                <arg>-AskipFiles=(^|[/\\\\])src[/\\\\]test[/\\\\]</arg>
+                                <!-- Classes excluded due to outstanding ownership diagnostics; to be removed as part of keycloak/keycloak#54332.
+                                     Fully qualified names match nested/generic types; literal-dot character classes avoid backslash processing by forked javac's argument file. -->
+                                <arg>-AskipDefs=^(org[.]keycloak[.]adapters[.]cloned[.]SniSSLSocketFactory|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPContextManager|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPOperationManager|org[.]keycloak[.]storage[.]ldap[.]idm[.]store[.]ldap[.]LDAPStartTlsClose|org[.]keycloak[.]connections[.]jpa[.]MSSQLAsyncCommitIntegrator|org[.]keycloak[.]connections[.]jpa[.]PostgreSQLAsyncCommitIntegrator|org[.]keycloak[.]exportimport[.]AbstractFileBasedImportProvider|org[.]keycloak[.]connections[.]httpclient[.]DefaultHttpClientFactory|org[.]keycloak[.]exportimport[.]ExportImportManager|org[.]keycloak[.]protocol[.]oidc[.]endpoints[.]IframeUtil|org[.]keycloak[.]services[.]resources[.]ThemeResource|org[.]keycloak[.]services[.]resources[.]WelcomeResource|org[.]keycloak[.]truststore[.]SSLSocketFactory)([.&lt;]|$)</arg>
+                                <arg>-Astubs=${maven.multiModuleProjectDirectory}/.mvn/checkerframework/jdk.astub</arg>
+                                <!-- Without this, the Resource Leak Checker 4.4.0 prints only the diagnostic key instead of its message, see https://github.com/typetools/checker-framework/issues/8562 -->
+                                <arg>-Adetailedmsgtext</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>testsuite</id>
             <activation>
@@ -1768,6 +1813,16 @@
                 </property>
             </activation>
             <modules>
+                <module>operator</module>
+            </modules>
+        </profile>
+
+        <!-- Includes all modules that are not part of the default build, so that spotless:check / spotless:apply covers every Java source -->
+        <profile>
+            <id>spotless</id>
+            <modules>
+                <module>docs</module>
+                <module>distribution</module>
                 <module>operator</module>
             </modules>
         </profile>

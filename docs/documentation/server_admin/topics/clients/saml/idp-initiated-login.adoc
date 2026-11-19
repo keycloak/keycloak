@@ -19,7 +19,7 @@ If your client requires a special relay state, you can also configure this on th
 Alternatively, browsers can specify the relay state in a *RelayState* query parameter, i.e.
 `root{kc_realms_path}/{realm-name}/protocol/saml/clients/{url-name}?RelayState=thestate`.
 
-When using <<_identity_broker,identity brokering>>, it is possible to set up an IDP Initiated Login for a client from an
+When using <<identity_broker,identity brokering>>, it is possible to set up an IDP Initiated Login for a client from an
 external IDP. The actual client is set up for IDP Initiated Login at broker IDP as described above. The external IDP has
 to set up the client for application IDP Initiated Login that will point to a special URL pointing to the broker and
 representing IDP Initiated Login endpoint for a selected client at the brokering IDP. This means that in client settings

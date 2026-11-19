@@ -29,6 +29,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.vault.VaultTranscriber;
 
+import org.checkerframework.checker.mustcall.qual.NotOwning;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -50,6 +52,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @param <T>
      * @return
      */
+    @NotOwning
     <T extends Provider> T getProvider(Class<T> clazz);
 
     /**
@@ -62,6 +65,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @param <T>
      * @return
      */
+    @NotOwning
     <T extends Provider> T getProvider(Class<T> clazz, String id);
 
     /**
@@ -73,6 +77,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @throws IllegalArgumentException If the realm is not set in the context.
      * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
+    @NotOwning
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId);
 
     /**
@@ -85,6 +90,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @throws IllegalArgumentException If the realm is not set in the context.
      * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
+    @NotOwning
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter);
 
     /**
@@ -96,6 +102,7 @@ public interface KeycloakSession extends AutoCloseable {
      * @deprecated Deprecated in favor of {@link #getComponentProvider)
      */
     @Deprecated
+    @NotOwning
     <T extends Provider> T getProvider(Class<T> clazz, ComponentModel componentModel);
 
     /**
@@ -107,6 +114,7 @@ public interface KeycloakSession extends AutoCloseable {
      */
     <T extends Provider> Set<String> listProviderIds(Class<T> clazz);
 
+    @NotOwning
     <T extends Provider> Set<T> getAllProviders(Class<T> clazz);
 
     Class<? extends Provider> getProviderClass(String providerClassName);

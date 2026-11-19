@@ -16,6 +16,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -23,6 +24,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -43,6 +46,9 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void testMapperTypes() {
@@ -332,6 +338,58 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
 
         // The foreign mapper must remain unchanged.
         assertEquals("offline_access", providerB.getMapperById(idB).getConfig().get("role"));
+    }
+
+    @Test
+    public void testIdpMapperCacheDelimiterCollision() {
+        String realmName = managedRealm.getName();
+
+        // Tuple A: alias="corp.idp.alias.part", name="mapper"
+        // Tuple B: alias="corp", name="part.idp.alias.mapper"
+        // Unescaped format: realmId + "." + alias + ".idp.alias." + name
+        // Without escaping, both tuples yield: realmId + ".corp.idp.alias.part.idp.alias.mapper"
+        create(createRep("corp.idp.alias.part", "google"));
+        create(createRep("corp", "google"));
+
+        IdentityProviderResource providerA = managedRealm.admin().identityProviders().get("corp.idp.alias.part");
+        IdentityProviderResource providerB = managedRealm.admin().identityProviders().get("corp");
+
+        addHardcodedRoleMapper(providerA, "corp.idp.alias.part", "mapper", "offline_access");
+
+        // Prime cache with Tuple A via getMapperByName in its own transaction
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            IdentityProviderMapperModel mapper = session.identityProviders().getMapperByName("corp.idp.alias.part", "mapper");
+            Assertions.assertNotNull(mapper);
+            assertEquals("offline_access", mapper.getConfig().get("role"));
+        });
+
+        // Lookup Tuple B via getMapperByName must NOT return Tuple A from cache
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            IdentityProviderMapperModel mapper = session.identityProviders().getMapperByName("corp", "part.idp.alias.mapper");
+            Assertions.assertNull(mapper, "Lookup for (corp, part.idp.alias.mapper) should not collide with (corp.idp.alias.part, mapper)");
+        });
+
+        // Now create Tuple B and verify both resolve independently from cache
+        addHardcodedRoleMapper(providerB, "corp", "part.idp.alias.mapper", "master-realm.manage-realm");
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            session.getContext().setRealm(realm);
+
+            IdentityProviderMapperModel mapperA = session.identityProviders().getMapperByName("corp.idp.alias.part", "mapper");
+            IdentityProviderMapperModel mapperB = session.identityProviders().getMapperByName("corp", "part.idp.alias.mapper");
+
+            Assertions.assertNotNull(mapperA);
+            Assertions.assertNotNull(mapperB);
+            assertEquals("offline_access", mapperA.getConfig().get("role"));
+            assertEquals("master-realm.manage-realm", mapperB.getConfig().get("role"));
+        });
     }
 
     private String addHardcodedRoleMapper(IdentityProviderResource provider, String alias, String name, String role) {

@@ -206,7 +206,8 @@ public class ApplianceBootstrap {
         try {
             ClientModel adminClientModel = ClientManager.createClient(session, realm, adminClient);
 
-            new ClientManager(new RealmManager(session)).enableServiceAccount(adminClientModel);
+            RealmManager realmManager = new RealmManager(session);
+            new ClientManager(realmManager).enableServiceAccount(adminClientModel);
             UserModel serviceAccount = session.users().getServiceAccount(adminClientModel);
             RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
             serviceAccount.grantRole(adminRole);
@@ -214,6 +215,8 @@ public class ApplianceBootstrap {
             adminClientModel.setAttribute(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
             adminClientModel.setAttribute(IS_TEMP_ADMIN_ATTR_NAME, Boolean.TRUE.toString());
             // also set the expiration - could be relative to a creation timestamp, or computed
+
+            realmManager.setupAdminApiClientScope(realm, adminClientModel);
 
             ServicesLogger.LOGGER.createdTemporaryAdminService(clientId);
         } catch (ModelDuplicateException e) {

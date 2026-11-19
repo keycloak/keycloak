@@ -29,7 +29,7 @@ If you are using FGAP to delegate administration to users in a realm other than 
 make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege scalation.
 
 The documentation is also updated with additional information about the different types of realm administrators.
-For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
+For more information, see link:{adminguide_link}#fine_grained_permissions[Delegating realm administration using permissions].
 
 === Added database indexes on `OFFLINE_CLIENT_SESSION` table
 

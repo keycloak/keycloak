@@ -1,11 +1,12 @@
 <#import "template.ftl" as layout>
+<#import "buttons.ftl" as buttons>
 <@layout.registrationLayout; section>
     <#if section = "header">
         ${msg("saml.post-form.title")}
     <#elseif section = "form">
         <script>window.onload = function() {document.forms[0].submit()};</script>
         <p>${msg("saml.post-form.message")}</p>
-        <form name="saml-post-binding" method="post" action="${samlPost.url}">
+        <form name="saml-post-binding" class="${properties.kcFormClass!}" method="post" action="${samlPost.url}">
             <#if samlPost.SAMLRequest??>
                 <input type="hidden" name="SAMLRequest" value="${samlPost.SAMLRequest}"/>
             </#if>
@@ -17,8 +18,12 @@
             </#if>
 
             <noscript>
-                <p>${msg("saml.post-form.js-disabled")}</p>
-                <input type="submit" value="${msg("doContinue")}"/>
+                <div class="${properties.kcFormClass!}">
+                    <p>${msg("saml.post-form.js-disabled")}</p>
+                    <@buttons.actionGroup id="kc-form-buttons">
+                        <@buttons.button label="doContinue" class=["kcButtonLargeClass"] value=msg("doContinue") />
+                    </@buttons.actionGroup>
+                </div>
             </noscript>
         </form>
     </#if>

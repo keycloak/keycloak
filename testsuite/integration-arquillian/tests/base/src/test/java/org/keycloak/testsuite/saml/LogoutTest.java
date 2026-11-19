@@ -141,6 +141,7 @@ public class LogoutTest extends AbstractSamlTest {
           .login().idp(SAML_BROKER_ALIAS).build()
           .processSamlResponse(REDIRECT)
             .transformObject(this::createAuthnResponse)
+                .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY).signAssertions()
             .targetAttributeSamlResponse()
             .targetUri(getSamlBrokerUrl(REALM_NAME))
             .build()
@@ -714,6 +715,7 @@ public class LogoutTest extends AbstractSamlTest {
           .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
           .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
           .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
+          .attribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, REALM_SIGNING_CERTIFICATE)
           .build();
         return identityProvider;
     }
@@ -783,6 +785,7 @@ public class LogoutTest extends AbstractSamlTest {
               // Should redirect now to logout from IdP
               .processSamlResponse(REDIRECT)
                 .transformObject(this::createIdPLogoutResponse)
+                .signWith(REALM_PRIVATE_KEY, REALM_PUBLIC_KEY)
                 .targetAttributeSamlResponse()
                 .targetUri(getSamlBrokerUrl(REALM_NAME))
                 .build()

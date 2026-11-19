@@ -17,7 +17,6 @@
 
 package org.keycloak.sessions;
 
-import java.util.Map;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
@@ -64,6 +63,22 @@ public interface AuthenticationSessionProvider extends Provider {
     void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession);
 
     /**
+     * Removes the root authentication session specified by the provided realm and id if it exists.
+     * Does nothing if {@code authenticationSessionId} is {@code null} or no such session exists.
+     * @param realm {@code RealmModel} Can't be {@code null}.
+     * @param authenticationSessionId String id of root authentication session. May be {@code null}.
+     */
+    default void removeRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
+        if (authenticationSessionId == null) {
+            return;
+        }
+        RootAuthenticationSessionModel rootAuthSession = getRootAuthenticationSession(realm, authenticationSessionId);
+        if (rootAuthSession != null) {
+            removeRootAuthenticationSession(realm, rootAuthSession);
+        }
+    }
+
+    /**
      * Remove expired authentication sessions in all the realms
      *
      * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
@@ -108,18 +123,6 @@ public interface AuthenticationSessionProvider extends Provider {
      */
     @Deprecated(since = "26.5", forRemoval = true)
     default void onClientRemoved(RealmModel realm, ClientModel client) {}
-
-    /**
-     * Requests update of authNotes of a root authentication session that is not owned
-     * by this instance but might exist somewhere in the cluster.
-     * 
-     * @param compoundId {@code AuthenticationSessionCompoundId} The method has no effect if {@code null}.
-     * @param authNotesFragment {@code Map<String, String>} Map with authNote values.
-     * Auth note is removed if the corresponding value in the map is {@code null}. Map itself can't be {@code null}.
-     * @deprecated For removal in Keycloak 27
-     */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {}
 
     default void migrate(String modelVersion) {
     }
