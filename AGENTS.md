@@ -41,4 +41,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, testing,
 * Sign off every commit with `git commit --signoff`.
 * Create pull requests as drafts, and only when asked.
 * In pull request descriptions, state rationales, assumptions, and decisions. Do not repeat the issue or the code change. Put each paragraph on a single line.
+  Keep them short: a `Closes #NNNN` line, optionally one sentence of rationale if it is not obvious from the issue, and a short "Decisions and assumptions" list.
+  Do not add sections like Summary, Root Cause, Solution, Changes, Advantages, or Testing, and do not use emojis.
+  Disclose AI agent usage in a single short sentence, as required by [CONTRIBUTING.md](CONTRIBUTING.md#use-of-generative-ai), instead of a promotional footer.
+  Mention testing only if something is non-obvious.
 * Run `./mvnw -Pspotless spotless:apply` before committing (see [CONTRIBUTING.md](CONTRIBUTING.md#spotless)); CI fails on formatting violations.
