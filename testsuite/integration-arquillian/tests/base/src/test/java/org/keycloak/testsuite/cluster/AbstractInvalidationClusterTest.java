@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
@@ -28,6 +29,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * @param <TR> entity resource
  */
 public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClusterTest {
+
+    /**
+     * Maximum time to wait for cluster cache synchronization (ms).
+     */
+    private static final long CLUSTER_SYNC_TIMEOUT_MS = 10000;
+
+    /**
+     * Polling interval for checking cluster synchronization (ms).
+     */
+    private static final long CLUSTER_SYNC_POLL_INTERVAL_MS = 100;
 
     protected RealmRepresentation createTestRealmRepresentation() {
         RealmRepresentation testRealm = new RealmRepresentation();
@@ -132,6 +143,53 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
 
     protected abstract T testEntityUpdates(T testEntity, boolean backendFailover);
 
+    /**
+     * Waits for cluster cache synchronization by polling survivor nodes until all have
+     * consistent state or timeout is reached. This prevents flaky failures due to cache
+     * invalidation events not being fully propagated during split-brain recovery.
+     *
+     * @param testEntity the entity to verify across all nodes
+     * @throws AssertionError if cache consistency is not achieved within the timeout
+     */
+    protected void waitForClusterSync(T testEntity) {
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + CLUSTER_SYNC_TIMEOUT_MS;
+
+        log.info(String.format("Waiting for cluster cache synchronization (timeout: %dms, poll interval: %dms)",
+                CLUSTER_SYNC_TIMEOUT_MS, CLUSTER_SYNC_POLL_INTERVAL_MS));
+
+        while (System.currentTimeMillis() < endTime) {
+            boolean allNodesConsistent = true;
+
+            for (ContainerInfo survivorNode : getCurrentSurvivorNodes()) {
+                T testEntityOnSurvivorNode = readEntity(testEntity, survivorNode);
+
+                if (!EqualsBuilder.reflectionEquals(sortFields(testEntityOnSurvivorNode), sortFields(testEntity), excludedComparisonFields)) {
+                    allNodesConsistent = false;
+                    log.debug(String.format("Cache not yet synchronized on %s, retrying...", survivorNode));
+                    break;
+                }
+            }
+
+            if (allNodesConsistent) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                log.info(String.format("Cluster cache synchronized successfully after %dms", elapsed));
+                return;
+            }
+
+            try {
+                TimeUnit.MILLISECONDS.sleep(CLUSTER_SYNC_POLL_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while waiting for cluster synchronization", e);
+            }
+        }
+
+        // Timeout reached - perform final assertion that will show the differences
+        log.error(String.format("Cluster cache synchronization timeout after %dms", CLUSTER_SYNC_TIMEOUT_MS));
+        assertEntityOnSurvivorNodesEqualsTo(testEntity);
+    }
+
     protected void verifyEntityUpdateDuringFailover(T testEntity, boolean backendFailover) {
         if (backendFailover) {
             failure();
@@ -140,6 +198,8 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
         assertEntityOnSurvivorNodesEqualsTo(testEntity);
 
         failback();
+        // Wait for cluster rebalancing to complete after failback
+        waitForClusterSync(testEntity);
         iterateCurrentFailNode();
     }
 
