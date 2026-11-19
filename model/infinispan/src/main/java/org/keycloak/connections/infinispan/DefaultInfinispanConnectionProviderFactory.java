@@ -42,6 +42,7 @@ import org.keycloak.connections.infinispan.shutdown.ShutdownManager;
 import org.keycloak.connections.infinispan.shutdown.TopologyChangeCacheListener;
 import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.infinispan.util.InfinispanUtils;
+import org.keycloak.jgroups.protocol.KEYCLOAK_JDBC_PING2;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
 import org.keycloak.marshalling.KeycloakModelSchema;
 import org.keycloak.models.KeycloakSession;
@@ -476,6 +477,18 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public boolean isCoordinator() {
         return cacheManager.isCoordinator();
+    }
+
+    @Override
+    public boolean isDatabaseTaskCoordinator() {
+        var transport = GlobalComponentRegistry.componentOf(cacheManager, Transport.class);
+        if (transport instanceof JGroupsTransport jgroups) {
+            KEYCLOAK_JDBC_PING2 ping = jgroups.getChannel().getProtocolStack().findProtocol(KEYCLOAK_JDBC_PING2.class);
+            if (ping != null) {
+                return ping.isDatabaseTaskCoordinator();
+            }
+        }
+        return InfinispanConnectionProviderFactory.super.isDatabaseTaskCoordinator();
     }
 
     @Override

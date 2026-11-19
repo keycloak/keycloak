@@ -25,14 +25,19 @@ import java.sql.SQLException;
  * This overwrites the get connection method again to avoid the JPA style connection handling
  */
 public class KEYCLOAK_JDBC_PING2_FOR_TESTING extends KEYCLOAK_JDBC_PING2 {
+    private volatile boolean databaseAvailable = true;
+
+    void setDatabaseAvailable(boolean available) {
+        databaseAvailable = available;
+    }
+
     @Override
-    protected Connection getConnection() {
-        try {
-            return dataSource != null? dataSource.getConnection() :
-                    DriverManager.getConnection(connection_url, connection_username, connection_password);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    protected Connection getConnection() throws SQLException {
+        if (!databaseAvailable) {
+            throw new SQLException("Induced database outage");
         }
+        return dataSource != null? dataSource.getConnection() :
+                DriverManager.getConnection(connection_url, connection_username, connection_password);
     }
 
     /**
