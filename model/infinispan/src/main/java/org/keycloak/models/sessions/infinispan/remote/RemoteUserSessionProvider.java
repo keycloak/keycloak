@@ -268,11 +268,6 @@ public class RemoteUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public void migrate(String modelVersion) {
-
-    }
-
-    @Override
     public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
         return readOnlyStream(realm, true);
     }
