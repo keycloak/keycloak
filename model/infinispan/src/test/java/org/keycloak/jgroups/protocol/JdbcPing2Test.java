@@ -64,7 +64,8 @@ public class JdbcPing2Test {
     public static final String PROTOCOL_STACK = "jdbc-h2.xml";
 
     static {
-        ClassConfigurator.addProtocol((short) 1026, KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+        // must not clash with the IDs registered in JGroupsConfigurator (1025, 1026), as tests share a JVM
+        ClassConfigurator.addProtocol((short) 1099, KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
     }
 
     /**

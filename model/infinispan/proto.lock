@@ -719,6 +719,20 @@
           "optional" : true
         } ]
       }, {
+        "name" : "ClockSkewTimestampSample",
+        "type_id" : 65624,
+        "fields" : [ {
+          "id" : 1,
+          "name" : "nodeName",
+          "type" : "string",
+          "optional" : true
+        }, {
+          "id" : 2,
+          "name" : "timestampMillis",
+          "type" : "int64",
+          "optional" : true
+        } ]
+      }, {
         "name" : "InGroupPredicate",
         "type_id" : 65571,
         "fields" : [ {
