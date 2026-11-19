@@ -21,6 +21,7 @@ import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 
 /**
  * @author Pedro Igor
@@ -28,6 +29,7 @@ import org.keycloak.models.KeycloakSession;
 public class GitLabIdentityProviderFactory extends AbstractIdentityProviderFactory<GitLabIdentityProvider> implements SocialIdentityProviderFactory<GitLabIdentityProvider> {
 
     public static final String PROVIDER_ID = "gitlab";
+    private static final String DEFAULT_JWKS_URL = "https://gitlab.com/oauth/discovery/keys";
 
     @Override
     public String getName() {
@@ -37,19 +39,29 @@ public class GitLabIdentityProviderFactory extends AbstractIdentityProviderFacto
     @Override
     public GitLabIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
         OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(model);
-        if (config.getPublicKeySignatureVerifier() == null) {
-            config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
-            config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.JWKS_URL, "https://gitlab.com/oauth/discovery/keys");
-        }
+        applyDefaults(config);
         return new GitLabIdentityProvider(session, config);
     }
 
     @Override
     public OIDCIdentityProviderConfig createConfig() {
-        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig();
-        config.setUseJwksUrl(true);
-        config.setJwksUrl("https://gitlab.com/oauth/discovery/keys");
-        return config;
+        return new OIDCIdentityProviderConfig() {
+            @Override
+            public void validate(RealmModel realm) {
+                applyDefaults(this);
+                super.validate(realm);
+            }
+        };
+    }
+
+    private static void applyDefaults(OIDCIdentityProviderConfig config) {
+        config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
+        if (config.getPublicKeySignatureVerifier() == null) {
+            config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+            if (config.isUseJwksUrl()) {
+                config.getConfig().putIfAbsent(OIDCIdentityProviderConfig.JWKS_URL, DEFAULT_JWKS_URL);
+            }
+        }
     }
 
     @Override

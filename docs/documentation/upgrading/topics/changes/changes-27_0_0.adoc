@@ -452,7 +452,8 @@ This applies to SAML and OpenID Connect (OIDC) identity providers:
 
 * For SAML identity providers, this applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`).
 Assertions are also verified when *Want Assertions Signed* is enabled and *Validate Signature* is explicitly disabled, which requires a trusted signing key.
-* For OpenID Connect (OIDC) identity providers, this applies to *Validate Signatures* (`validateSignature`).
+* For OpenID Connect (OIDC), Keycloak OpenID Connect, and GitLab identity providers, this applies to *Validate Signatures* (`validateSignature`).
+GitLab uses its built-in JWKS URL by default when verification-key settings are absent.
 
 After upgrading, logins may fail for providers that send unsigned responses, or whose signatures {project_name} cannot verify:
 

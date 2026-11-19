@@ -2,6 +2,7 @@ import { type Page, expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { SERVER_URL } from "../utils/constants.ts";
+import { clickSwitch } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { goToIdentityProviders } from "../utils/sidebar.ts";
@@ -177,3 +178,60 @@ test.describe("OIDC provider with explicit signature config", () => {
     });
   });
 });
+
+for (const providerName of [oidcProviderName, "Keycloak OpenID Connect"]) {
+  test(`should preserve a static key for ${providerName} when the JWKS toggle is absent`, async ({
+    page,
+  }) => {
+    const alias = `oidc-static-key-${uuid()}`;
+    const staticKey =
+      "MEMwBQYDK2VxAzoAWOVoLNsZlgw5dvat/Xi83Rh7zQMOerq3XrTT1xVbqDX2naZPlza0gwyNnMV6H6vnUGbaCK/+mgCA";
+    const displayName = "Updated OIDC provider";
+
+    await adminClient.createIdentityProvider(providerName, alias, realmName, {
+      authorizationUrl: "https://idp.example/auth",
+      tokenUrl: "https://idp.example/token",
+      clientId: "broker-client",
+      clientSecret: "broker-secret",
+      publicKeySignatureVerifier: staticKey,
+    });
+    const provider = await adminClient.getIdentityProvider(alias, realmName);
+    expect(provider?.config?.useJwksUrl).toBeUndefined();
+
+    await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
+    await goToIdentityProviders(page);
+    await clickTableRowItem(page, providerName);
+
+    await expect(page.getByTestId("config.useJwksUrl")).not.toBeChecked();
+    await expect(page.getByTestId("config.jwksUrl")).toBeHidden();
+    await expect(
+      page.getByTestId("config.publicKeySignatureVerifier"),
+    ).toHaveValue(staticKey);
+    const save = page.getByTestId("idp-details-save");
+    await expect(save).toBeDisabled();
+    await page.getByTestId("displayName").fill(displayName);
+    await save.click();
+    await assertNotificationMessage(page, "Provider successfully updated");
+
+    const updated = await adminClient.getIdentityProvider(alias, realmName);
+    expect(updated?.displayName).toBe(displayName);
+    expect(updated?.config?.publicKeySignatureVerifier).toBe(staticKey);
+    expect(updated?.config?.useJwksUrl).toBe("false");
+
+    const useJwksUrl = page.getByTestId("config.useJwksUrl");
+    const jwksUrl = page.getByTestId("config.jwksUrl");
+    await clickSwitch(page, useJwksUrl);
+    await jwksUrl.fill("https://idp.example/jwks");
+    await save.click();
+    await assertNotificationMessage(page, "Provider successfully updated");
+
+    const jwksProvider = await adminClient.getIdentityProvider(
+      alias,
+      realmName,
+    );
+    expect(jwksProvider?.config?.publicKeySignatureVerifier).toBe(staticKey);
+    await page.reload();
+    await expect(useJwksUrl).toBeChecked();
+    await expect(jwksUrl).toHaveValue("https://idp.example/jwks");
+  });
+}

@@ -17,6 +17,7 @@ import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.partialimport.ResourceType;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.social.gitlab.GitLabIdentityProviderFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.suites.DatabaseTest;
 
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = AbstractPartialImportTest.PartialImportServerConfig.class)
@@ -94,6 +96,52 @@ public class PartialImportProvidersTest extends AbstractPartialImportTest {
         oidc.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
         PartialImportResults results = doImport();
         assertEquals(1, results.getAdded(), results.getErrorMessage());
+    }
+
+    @Test
+    public void testGitLabVerificationKeysOnImportAndUpdate() {
+        setFail();
+
+        String staticKey = "MEMwBQYDK2VxAzoAWOVoLNsZlgw5dvat/Xi83Rh7zQMOerq3XrTT1xVbqDX2naZPlza0gwyNnMV6H6vnUGbaCK/+mgCA";
+        IdentityProviderRepresentation pinned = new IdentityProviderRepresentation();
+        pinned.setAlias("gitlab-static-key");
+        pinned.setProviderId(GitLabIdentityProviderFactory.PROVIDER_ID);
+        pinned.setConfig(new HashMap<>(Map.of(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER, staticKey)));
+
+        IdentityProviderRepresentation automatic = new IdentityProviderRepresentation();
+        automatic.setAlias("gitlab-default-key");
+        automatic.setProviderId(GitLabIdentityProviderFactory.PROVIDER_ID);
+
+        piRep.setIdentityProviders(List.of(pinned, automatic));
+        PartialImportResults results = doImport();
+        assertEquals(2, results.getAdded(), results.getErrorMessage());
+
+        IdentityProviderResource pinnedResource = managedRealm.admin().identityProviders().get(pinned.getAlias());
+        IdentityProviderRepresentation existing = pinnedResource.toRepresentation();
+        assertEquals(staticKey, existing.getConfig().get(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER));
+        assertNull(existing.getConfig().get(OIDCIdentityProviderConfig.USE_JWKS_URL));
+        assertNull(existing.getConfig().get(OIDCIdentityProviderConfig.JWKS_URL));
+
+        existing.setDisplayName("Updated GitLab");
+        pinnedResource.update(existing);
+        IdentityProviderRepresentation updated = pinnedResource.toRepresentation();
+        assertEquals("Updated GitLab", updated.getDisplayName());
+        assertEquals(staticKey, updated.getConfig().get(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER));
+        assertNull(updated.getConfig().get(OIDCIdentityProviderConfig.USE_JWKS_URL));
+
+        IdentityProviderResource automaticResource = managedRealm.admin().identityProviders().get(automatic.getAlias());
+        IdentityProviderRepresentation automaticProvider = automaticResource.toRepresentation();
+        Map<String, String> defaults = automaticProvider.getConfig();
+        assertEquals("true", defaults.get(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE));
+        assertEquals("true", defaults.get(OIDCIdentityProviderConfig.USE_JWKS_URL));
+        assertEquals("https://gitlab.com/oauth/discovery/keys", defaults.get(OIDCIdentityProviderConfig.JWKS_URL));
+
+        defaults.put(OIDCIdentityProviderConfig.JWKS_URL, "https://gitlab.example/jwks");
+        defaults.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+        automaticResource.update(automaticProvider);
+        Map<String, String> explicitSettings = automaticResource.toRepresentation().getConfig();
+        assertEquals("https://gitlab.example/jwks", explicitSettings.get(OIDCIdentityProviderConfig.JWKS_URL));
+        assertEquals("false", explicitSettings.get(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE));
     }
 
     @Test
