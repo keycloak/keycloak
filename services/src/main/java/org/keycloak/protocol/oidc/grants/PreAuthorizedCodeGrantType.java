@@ -290,6 +290,12 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     }
 
     @Override
+    public Set<String> getSupportedMultivaluedRequestParameters() {
+        // the resource parameter is not processed by this grant type
+        return Collections.emptySet();
+    }
+
+    @Override
     public Set<String> getTokenParameterNames() {
         return Collections.emptySet();
     }

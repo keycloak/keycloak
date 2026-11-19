@@ -1,7 +1,10 @@
 package org.keycloak.testsuite.util.oauth;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
@@ -10,6 +13,8 @@ import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.ClaimsRepresentation;
 
 public class LoginUrlBuilder extends AbstractUrlBuilder {
+
+    private final List<String> resources = new ArrayList<>();
 
     public LoginUrlBuilder(AbstractOAuthClient<?> client) {
         super(client);
@@ -31,9 +36,21 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    /**
+     * Adds a value of the resource parameter. It can be called multiple times to send multiple resource parameters.
+     */
     public LoginUrlBuilder resource(String resource) {
-        parameter(OAuth2Constants.RESOURCE, resource);
+        if (resource != null) {
+            resources.add(resource);
+        }
         return this;
+    }
+
+    @Override
+    public String build() {
+        UriBuilder uriBuilder = UriBuilder.fromUri(super.build());
+        resources.forEach(resource -> uriBuilder.queryParam(OAuth2Constants.RESOURCE, resource));
+        return uriBuilder.build().toString();
     }
 
     public LoginUrlBuilder authorizationDetails(AuthorizationDetailsJSONRepresentation authDetail) {

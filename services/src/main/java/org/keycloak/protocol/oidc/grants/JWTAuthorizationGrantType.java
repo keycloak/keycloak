@@ -44,6 +44,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.token.TokenInterceptorException;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
@@ -199,7 +200,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 }
             }
             return createTokenResponse(responseBuilder, clientSessionCtx, true);
-        } catch (CorsErrorResponseException e) {
+        } catch (CorsErrorResponseException | TokenInterceptorException e) {
+            // the token endpoint creates the error response of a token post processor, for example invalid_target
             throw e;
         } catch (Exception e) {
             event.detail(Details.REASON, e.getMessage());

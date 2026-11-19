@@ -18,7 +18,6 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
@@ -34,11 +33,13 @@ import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvid
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestRedirectUriContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
@@ -369,6 +370,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 PreAuthorizationRequestContext preAuthorizationRequestContext = (PreAuthorizationRequestContext)context;
                 process(preAuthorizationRequestContext);
                 break;
+            case AUTHORIZATION_REQUEST_REDIRECT_URI:
+                // the resource parameter needs to be enforced on every authorization request. It is done after the
+                // request is parsed, so that the values sent by PAR or in a request object are enforced as well.
+                enforceResourceIndicator((AuthorizationRequestRedirectUriContext) context);
+                break;
             default:
         }
     }
@@ -400,8 +406,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         validateClientId(clientIdURI);
 
         if (fetchOp == FetchOperation.NO_UPDATE) {
-            // no update, but the resource parameter still needs to be enforced on every authorization request.
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            // no update
             return;
         }
 
@@ -409,7 +414,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl = fetchClientMetadata(clientIdURI, fetchOp == FetchOperation.UPDATE, provider);
         if (clientOIDCWithCacheControl == null) {
             // fetched but no update
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
             return;
         }
 
@@ -419,16 +423,13 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // Client Metadata validation
         validateClientMetadata(clientIdURI, redirectUriURI, clientOIDCWithCacheControl.getOidcClientRepresentation());
 
-        ClientModel clientModel;
         if (fetchOp == FetchOperation.CREATE) {
             // Create Client Metadata
-            clientModel = provider.createClientMetadata(clientOIDCWithCacheControl);
+            provider.createClientMetadata(clientOIDCWithCacheControl);
         } else {
             // Update Client Metadata
-            clientModel = provider.updateClientMetadata(clientOIDCWithCacheControl);
+            provider.updateClientMetadata(clientOIDCWithCacheControl);
         }
-
-        enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
     }
 
     // Authorization Request Verification Errors
@@ -938,27 +939,42 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
      * resolves the {@code aud} claim by matching the requested resource directly against the token's audience, which
      * this mapper populates.
      *
-     * <p>This is a no-op (permissive mode) if the Resource Indicators feature is disabled or the authorization
-     * request does not include the {@code resource} parameter.
+     * <p>The values of the parsed authorization request are enforced. Therefore, it does not matter whether they are
+     * sent as request parameters, by a pushed authorization request, or in a request object.
      *
-     * @param preAuthorizationRequestContext an authorization request
-     * @param clientModel the client looked up, created, or updated by CIMD for this authorization request, not {@code null}
-     * @throws ClientPolicyException when the {@code resource} parameter value is not allowed.
+     * <p>Only the audience mappers of the requested values that are not allow-listed are removed. The audience mappers
+     * of the other resources are left untouched, because an executor of another policy with a different allow list
+     * may have added them.
+     *
+     * <p>This is a no-op if the Resource Indicators feature is disabled or the client is not managed by CIMD. If the
+     * authorization request does not include the {@code resource} parameter, the executor does not require it
+     * (permissive mode).
+     *
+     * @param context a parsed authorization request and its client
+     * @throws ClientPolicyException when any of the {@code resource} parameter values is not allowed.
      */
-    protected void enforceResourceIndicator(PreAuthorizationRequestContext preAuthorizationRequestContext, ClientModel clientModel) throws ClientPolicyException {
+    protected void enforceResourceIndicator(AuthorizationRequestRedirectUriContext context) throws ClientPolicyException {
         if (!Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
             return;
         }
 
-        String resource = preAuthorizationRequestContext.getRequestParameters().getFirst(OAuth2Constants.RESOURCE);
-        if (resource == null) {
-            // permissive mode: the executor does not require the resource parameter.
+        ClientModel clientModel = context.getClient();
+        provider = session.getProvider(ClientIdMetadataDocumentProvider.class, providerConfig.getCimdProviderName());
+        provider.setConfiguration(getConfiguration());
+        if (provider.determineFetchOperation(clientModel.getClientId()) == FetchOperation.CREATE) {
+            // CREATE means the existing client was not registered by CIMD
+            getLogger().debugv("client not managed by CIMD, left untouched: clientId = {0}", clientModel.getClientId());
             return;
         }
 
+        // the resource parameter can be sent multiple times, so all its values are checked.
+        Set<String> parsedResources = ResourceIndicators.parse(context.getAuthorizationEndpointRequest().getResource());
+        Set<String> resources = parsedResources == null ? Collections.emptySet() : parsedResources;
+
         List<String> allowList = convertContentFilledList(getConfiguration().getResourceIndicatorAllowList());
-        if (!allowList.contains(resource)) {
-            // no longer (or never) allow-listed: remove its audience mapper to keep it synchronized, then reject.
+        List<String> notAllowedResources = resources.stream().filter(resource -> !allowList.contains(resource)).toList();
+        if (!notAllowedResources.isEmpty()) {
+            // no longer (or never) allow-listed: remove the audience mappers to keep them synchronized, then reject.
             // this is persisted in a separate transaction so the change survives the rollback that happens
             // when the ClientPolicyException below is thrown.
             String realmId = clientModel.getRealm().getId();
@@ -967,15 +983,15 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 RealmModel newRealm = newSession.realms().getRealm(realmId);
                 ClientModel newClientModel = newRealm == null ? null : newRealm.getClientById(clientId);
                 if (newClientModel != null) {
-                    removeResourceIndicatorAudienceMapper(newClientModel, resource);
+                    notAllowedResources.forEach(resource -> removeResourceIndicatorAudienceMapper(newClientModel, resource));
                 }
             });
-            getLogger().warnv("resource parameter not allowed: resource = {0}", resource);
+            getLogger().warnv("resource parameter not allowed: resource = {0}", notAllowedResources);
             throw invalidResourceIndicator();
         }
 
-        // allow-listed: attach an audience mapper for the resource so ResourceIndicatorsPostProcessor can resolve it.
-        ensureResourceIndicatorAudienceMapper(clientModel, resource);
+        // allow-listed: attach an audience mapper for each resource so ResourceIndicatorsPostProcessor can resolve it.
+        resources.forEach(resource -> ensureResourceIndicatorAudienceMapper(clientModel, resource));
     }
 
     private ProtocolMapperModel findResourceIndicatorAudienceMapper(ClientModel clientModel, String resource) {

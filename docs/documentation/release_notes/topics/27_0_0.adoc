@@ -31,6 +31,12 @@ See the upgrading guide for details.
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
 
+== Multiple resource indicators (experimental)
+
+With the experimental `resource-indicators` feature enabled, authorization requests, pushed authorization requests, and token requests can now include the `resource` parameter of Resource Indicators for OAuth 2.0 (RFC 8707) multiple times.
+The `aud` claim of the access token includes all the requested resources, and a token request can ask for a subset of the resources granted by the original authorization request.
+A request whose `resource` parameter exceeds the maximum length of a request parameter is now rejected instead of being processed without the parameter.
+
 = Themes
 
 == Login and welcome UI upgraded to PatternFly 6

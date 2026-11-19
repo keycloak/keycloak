@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.utils.StringUtil;
 
@@ -234,8 +235,10 @@ public abstract class AuthzEndpointRequestParser {
             paramValue = StringUtil.removeControlCharacters(paramValue);
             int maxLength = config.getMaxLengthForTheParameter(paramName, false);
             if (paramValue.length() > maxLength) {
-                logger.warnf("The size of OIDC parameter '%s' size is longer (%d) than allowed (%d). %s", paramName, paramValue.length(), maxLength, additionalReqParamsFailFast ? "Request not allowed." : "Ignoring the parameter.");
-                if (additionalReqParamsFailFast) {
+                // all the values of the resource parameter together are limited. It is not ignored when it is too long.
+                boolean failFast = additionalReqParamsFailFast || ResourceIndicators.isProcessedParameter(paramName);
+                logger.warnf("The size of OIDC parameter '%s' size is longer (%d) than allowed (%d). %s", paramName, paramValue.length(), maxLength, failFast ? "Request not allowed." : "Ignoring the parameter.");
+                if (failFast) {
                     throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "The size of OIDC parameter '" + paramName + "' is longer than allowed.", Response.Status.BAD_REQUEST);
                 } else {
                     return null;

@@ -17,9 +17,11 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -31,6 +33,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -51,6 +54,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.ClientHostUtils;
 import org.keycloak.representations.AccessToken;
@@ -99,6 +103,20 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         return false;
     }
 
+    @Override
+    public Set<String> getSupportedMultivaluedRequestParameters() {
+        // the resource parameter can be sent multiple times
+        return Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS) ? Set.of(OAuth2Constants.RESOURCE) : Collections.emptySet();
+    }
+
+    /**
+     * @return all the values of the resource parameter of the token request as a single string, {@code null} if the
+     * parameter is not present. See {@link ResourceIndicators}.
+     */
+    protected String getRequestedResources() {
+        return ResourceIndicators.join(formParams.get(OAuth2Constants.RESOURCE));
+    }
+
     protected void setContext(Context context) {
         this.context = context;
         this.session = context.session;
@@ -118,7 +136,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
     protected TokenManager.AccessTokenResponseBuilder createTokenResponseBuilder(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,  String scopeParam, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
-        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, getRequestedResources());
         AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager

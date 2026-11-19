@@ -29,9 +29,13 @@ import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.services.clientpolicy.condition.AcrCondition;
+import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
@@ -73,6 +77,8 @@ import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
+import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 import org.keycloak.util.JsonSerialization;
@@ -104,6 +110,7 @@ public class ClientIdMetadataDocumentTest {
     private static final String JWKS_URI = "http://localhost:8500/idp/jwks";
     private static final String LOGO_URI = "http://localhost:8500/logo.png";
     private static final String RESOURCE = "https://mcp.example.com/api";
+    private static final String RESOURCE_2 = "https://mcp.example.com/api-2";
     private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
 
     @InjectRealm
@@ -356,6 +363,187 @@ public class ClientIdMetadataDocumentTest {
         Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
 
         deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testResourceIndicatorOfPushedAuthorizationRequestRejectedWhenNotInAllowList() throws Exception {
+        // 1. allow list includes the resource -> client registers.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        logout(tokenResponse.getIdToken());
+
+        // 2. the resource that is not allow-listed is sent by a pushed authorization request -> invalid_target
+        ParResponse parResponse = oauth.client(CLIENT_ID).pushedAuthorizationRequest()
+                .signedJwt(createSignedRequestToken()).resource(RESOURCE).resource(RESOURCE_2).send();
+        Assertions.assertEquals(201, parResponse.getStatusCode());
+
+        oauth.loginForm().codeChallenge(null).requestUri(parResponse.getRequestUri()).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+
+        // 3. the authorization endpoint accepts the prefix of the request_uri in any case -> still invalid_target
+        oauth.loginForm().codeChallenge(null).requestUri(parResponse.getRequestUri().replace("urn:ietf:params:oauth:request_uri:", "URN:IETF:PARAMS:OAUTH:REQUEST_URI:")).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+
+        deleteClientByAdmin(findByClientIdByAdmin().getId());
+    }
+
+    @Test
+    public void testResourceIndicatorOfRequestObjectEnforced() throws Exception {
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        try {
+            // 1. the allow-listed resource is sent only in a request object -> client registers and gets the audience mapper assigned.
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.loginForm().codeChallenge(null).request(createSignedRequestObject(RESOURCE)).open();
+            oauth.fillLoginForm(user.getUsername(), user.getPassword());
+            grantPage.assertCurrent();
+            grantPage.accept();
+            String code = oauth.parseLoginResponse().getCode();
+            Assertions.assertNotNull(code);
+
+            AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(createSignedRequestToken()).send();
+            Assertions.assertTrue(tokenResponse.isSuccess());
+            AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+            MatcherAssert.assertThat(Arrays.asList(accessToken.getAudience()), Matchers.contains(RESOURCE));
+            Assertions.assertTrue(hasResourceIndicatorAudienceMapper(findByClientIdByAdmin().getId(), RESOURCE));
+            logout(tokenResponse.getIdToken());
+
+            // 2. the resource that is not allow-listed is sent only in a request object -> invalid_target
+            oauth.loginForm().codeChallenge(null).request(createSignedRequestObject(RESOURCE, RESOURCE_2)).open();
+            errorPage.assertCurrent();
+            Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+        } finally {
+            realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
+        }
+    }
+
+    @Test
+    public void testMultipleResourceIndicatorsAllowedAssignsAudienceMappers() throws Exception {
+        // allow list includes all the resources requested -> an audience mapper for each resource is attached to the client.
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE, RESOURCE_2));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE, RESOURCE_2);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).resource(RESOURCE_2).signedJwt(signedJwt).send();
+        AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+        MatcherAssert.assertThat(accessToken.getAudience(), Matchers.arrayContainingInAnyOrder(RESOURCE, RESOURCE_2));
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE_2));
+
+        logoutAndDelete(clientRepresentation.getId(), tokenResponse.getIdToken());
+    }
+
+    @Test
+    public void testMultipleResourceIndicatorsRejectedWhenOneNotInAllowList() throws Exception {
+        // allow list includes only one of the resources requested -> invalid_target
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).resource(RESOURCE_2).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+    }
+
+    @Test
+    public void testMultipleResourceIndicatorsOneRemovedFromClientWhenNoLongerAllowListed() throws Exception {
+        // 1. allow list includes all the resources -> client registers and gets the audience mappers assigned.
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE, RESOURCE_2));
+        updatePolicy(conditionConfig, executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE, RESOURCE_2);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        logout(tokenResponse.getIdToken());
+
+        // 2. remove one of the resources from the allow list -> the request including it is rejected.
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        updatePolicy(conditionConfig, executorConfig);
+
+        oauth.client(CLIENT_ID);
+        oauth.redirectUri(REDIRECT_URI);
+        oauth.loginForm().codeChallenge(null).resource(RESOURCE).resource(RESOURCE_2).open();
+        errorPage.assertCurrent();
+        Assertions.assertEquals(ResourceIndicatorConstants.ERROR_INVALID_RESOURCE, errorPage.getError());
+
+        // only the audience mapper of the resource that is no longer allow-listed got removed.
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        Assertions.assertTrue(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
+        Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE_2));
+
+        deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testResourceIndicatorAudienceMapperOfOtherPolicyKept() throws Exception {
+        // two policies, selected by the requested ACR, accept different resources for the same client.
+        ClientIdMetadataDocumentExecutor.Configuration silverExecutorConfig = createDefaultExecutorConfig();
+        silverExecutorConfig.setResourceIndicatorAllowList(List.of(RESOURCE));
+        ClientIdMetadataDocumentExecutor.Configuration goldExecutorConfig = createDefaultExecutorConfig();
+        goldExecutorConfig.setResourceIndicatorAllowList(List.of(RESOURCE_2));
+        realm.updateWithCleanup(r -> {
+            r.resetClientProfiles()
+                    .clientProfile(createCimdProfile("silver-executor", silverExecutorConfig))
+                    .clientProfile(createCimdProfile("gold-executor", goldExecutorConfig));
+            r.resetClientPolicies()
+                    .clientPolicy(createCimdPolicyOfAcr("silver-policy", "silver", "silver-executor"))
+                    .clientPolicy(createCimdPolicyOfAcr("gold-policy", "gold", "gold-executor"));
+            return r;
+        });
+        setCimdPublicClient();
+
+        AccessTokenResponse tokenResponse = null;
+        try {
+            // 1. the first policy accepts its resource -> client registers and gets the audience mapper assigned.
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.loginForm().codeChallenge(null).param(OAuth2Constants.ACR_VALUES, "silver").resource(RESOURCE).open();
+            oauth.fillLoginForm(user.getUsername(), user.getPassword());
+            grantPage.assertCurrent();
+            grantPage.accept();
+            String code = oauth.parseLoginResponse().getCode();
+            Assertions.assertNotNull(code);
+            tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+            Assertions.assertTrue(tokenResponse.isSuccess());
+
+            // 2. the second policy accepts its resource, but not the one of the first policy.
+            oauth.loginForm().codeChallenge(null).param(OAuth2Constants.ACR_VALUES, "gold").resource(RESOURCE_2).open();
+
+            // the audience mapper that the executor of the first policy assigned is kept.
+            String id = findByClientIdByAdmin().getId();
+            Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, RESOURCE_2));
+            Assertions.assertTrue(hasResourceIndicatorAudienceMapper(id, RESOURCE));
+
+            // therefore, the resource that was granted with the first policy can still be used.
+            AccessTokenResponse refreshResponse = oauth.client(CLIENT_ID).refreshRequest(tokenResponse.getRefreshToken()).send();
+            Assertions.assertTrue(refreshResponse.isSuccess());
+            MatcherAssert.assertThat(Arrays.asList(oauth.verifyToken(refreshResponse.getAccessToken()).getAudience()), Matchers.contains(RESOURCE));
+        } finally {
+            if (tokenResponse != null && tokenResponse.getIdToken() != null) {
+                logout(tokenResponse.getIdToken());
+            }
+            realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
+        }
     }
 
     @Test
@@ -1453,13 +1641,17 @@ public class ClientIdMetadataDocumentTest {
     }
 
     private String loginUserAndGetCode(boolean isGrantRequred) {
-        return loginUserAndGetCode(isGrantRequred, null);
+        return loginUserAndGetCode(isGrantRequred, new String[0]);
     }
 
-    private String loginUserAndGetCode(boolean isGrantRequred, String resource) {
+    private String loginUserAndGetCode(boolean isGrantRequred, String... resources) {
         oauth.client(CLIENT_ID);
         oauth.redirectUri(REDIRECT_URI);
-        oauth.loginForm().codeChallenge(null).resource(resource).open();
+        LoginUrlBuilder loginForm = oauth.loginForm().codeChallenge(null);
+        for (String resource : resources) {
+            loginForm.resource(resource);
+        }
+        loginForm.open();
         oauth.fillLoginForm(user.getUsername(), user.getPassword());
 
         if (isGrantRequred) {
@@ -1597,6 +1789,45 @@ public class ClientIdMetadataDocumentTest {
         reqToken.nbf((long) now);
 
         return identityProvider.encodeToken(reqToken);
+    }
+
+    private String createSignedRequestObject(String... resources) {
+        JsonWebToken requestObject = new JsonWebToken();
+        requestObject.issuer(CLIENT_ID);
+        requestObject.audience(oauth.getEndpoints().getIssuer());
+
+        int now = Time.currentTime();
+        requestObject.iat((long) now);
+        requestObject.exp((long) (now + 10));
+        requestObject.nbf((long) now);
+
+        requestObject.setOtherClaims(OIDCLoginProtocol.CLIENT_ID_PARAM, CLIENT_ID);
+        requestObject.setOtherClaims(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, OAuth2Constants.CODE);
+        requestObject.setOtherClaims(OIDCLoginProtocol.REDIRECT_URI_PARAM, REDIRECT_URI);
+        requestObject.setOtherClaims(OIDCLoginProtocol.SCOPE_PARAM, OAuth2Constants.SCOPE_OPENID);
+        requestObject.setOtherClaims(OAuth2Constants.RESOURCE, List.of(resources));
+
+        return identityProvider.encodeToken(requestObject);
+    }
+
+    private static ClientProfileRepresentation createCimdProfile(String name, ClientIdMetadataDocumentExecutor.Configuration executorConfig) {
+        return ClientProfileBuilder.create()
+                .name(name)
+                .description("CIMD executor profile")
+                .executor(ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID, executorConfig)
+                .build();
+    }
+
+    private ClientPolicyRepresentation createCimdPolicyOfAcr(String name, String acr, String profile) {
+        AcrCondition.Configuration acrConditionConfig = new AcrCondition.Configuration();
+        acrConditionConfig.setAcrProperty(acr);
+        return ClientPolicyBuilder.create()
+                .name(name)
+                .description("CIMD policy of an ACR")
+                .condition(ClientIdUriSchemeConditionFactory.PROVIDER_ID, createDefaultConditionConfig())
+                .condition(AcrConditionFactory.PROVIDER_ID, acrConditionConfig)
+                .profile(profile)
+                .build();
     }
 
     private ClientRepresentation findByClientIdByAdmin() {

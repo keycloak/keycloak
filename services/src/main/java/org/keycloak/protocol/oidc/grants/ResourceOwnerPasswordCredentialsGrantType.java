@@ -143,7 +143,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
 
         ClientSessionContext clientSessionCtx = processor.attachSession();
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
-        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, getRequestedResources());
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 

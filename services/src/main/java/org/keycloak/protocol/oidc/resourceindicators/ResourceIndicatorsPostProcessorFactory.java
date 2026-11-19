@@ -22,6 +22,14 @@ public class ResourceIndicatorsPostProcessorFactory implements TokenPostProcesso
     }
 
     @Override
+    public int order() {
+        // the processors with a higher order run first. This one runs after the ones with the default order, so that
+        // the resources are resolved against the audience that the other processors may have restricted (e.g. OID4VCI)
+        // and none of them replaces the audience afterwards.
+        return -1;
+    }
+
+    @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS);
     }
