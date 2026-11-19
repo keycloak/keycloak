@@ -1,5 +1,5 @@
 
-[[_client_policies]]
+[[client_policies]]
 = Client Policies
 
 To make it easy to secure client applications, it is beneficial to realize the following points in a unified way.
@@ -136,10 +136,10 @@ settings. After that, the executor validates this configuration in validation ph
 
 One of several purposes for this executor is to realize the security requirements of client conformance profiles like FAPI and OAuth 2.1. To do so, the following executors are needed:
 
-* Enforce secure <<_client-credentials,Client Authentication method>> is used for the client
+* Enforce secure <<client-credentials,Client Authentication method>> is used for the client
 * Enforce <<_mtls-client-certificate-bound-tokens,Holder-of-key tokens>> are used
 * Enforce <<_proof-key-for-code-exchange,Proof Key for Code Exchange (PKCE)>> is used
-* Enforce secure signature algorithm for <<_client-credentials,Signed JWT client authentication (private-key-jwt)>> is used
+* Enforce secure signature algorithm for <<client-credentials,Signed JWT client authentication (private-key-jwt)>> is used
 * Enforce HTTPS redirect URI and make sure that configured redirect URI does not contain wildcards
 * Enforce OIDC `request` object satisfying high security level
 * Enforce Response Type of OIDC Hybrid Flow including ID Token used as _detached signature_ as described in the FAPI 1 specification, which means that ID Token returned from Authorization response won't contain user profile data
@@ -151,8 +151,8 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce checking if a client is the one to which an intent was issued in a use case where an intent is issued before starting an authorization code flow to get an access token like UK OpenBanking
 * Enforce prohibiting implicit and hybrid flow
 * Enforce checking if a PAR request includes necessary parameters included by an authorization request
-* Enforce <<_dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
-* Enforce <<_using_lightweight_access_token, using lightweight access token>>
+* Enforce <<dpop-bound-tokens,DPoP-binding tokens>> is used (available when `dpop` feature is enabled)
+* Enforce <<using_lightweight_access_token, using lightweight access token>>
 * Enforce that <<_refresh_token_rotation,refresh token rotation>> is skipped and there is no refresh token returned from the refresh token response
 * Enforce a valid redirect URI that the OAuth 2.1 specification requires
 * Enforce SAML Redirect binding cannot be used or SAML requests and assertions are signed

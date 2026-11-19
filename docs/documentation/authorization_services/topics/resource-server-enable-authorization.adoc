@@ -1,4 +1,4 @@
-[[_resource_server_enable_authorization]]
+[[resource_server_enable_authorization]]
 = Enabling authorization services
 
 You can turn your OIDC client into a resource server and enable fine-grained authorization.
@@ -32,11 +32,11 @@ From this page, you can manage <<_resource_overview, scopes>>.
 
 * *Policies*
 +
-From this page, you can manage <<_policy_overview, authorization policies>> and define the conditions that must be met to grant a permission.
+From this page, you can manage <<policy_overview, authorization policies>> and define the conditions that must be met to grant a permission.
 
 * *Permissions*
 +
-From this page, you can manage the <<_permission_overview, permissions>> for your protected resources and scopes by linking them with the policies you created.
+From this page, you can manage the <<permission_overview, permissions>> for your protected resources and scopes by linking them with the policies you created.
 
 * *Evaluate*
 +

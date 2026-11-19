@@ -50,7 +50,7 @@ required to use the SCIM endpoints.
 
 If fine-grained admin permissions are enabled for the realm, access to SCIM resources can be further
 restricted on a per-resource basis. For example, a client could be granted permission to view only specific users
-or groups. For more details, see <<_fine_grained_permissions,Fine-grained admin permissions>>.
+or groups. For more details, see <<fine_grained_permissions,Fine-grained admin permissions>>.
 
 The following table summarizes the permissions required for each type of SCIM operation:
 
