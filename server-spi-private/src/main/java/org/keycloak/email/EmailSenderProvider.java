@@ -29,6 +29,9 @@ public interface EmailSenderProvider extends Provider {
 
     String CONFIG_ALLOW_UTF8 = "allowutf8";
 
+    /** Require SMTPUTF8 for an SMTP test even if its addresses are ASCII-only. */
+    String CONFIG_REQUIRE_SMTPUTF8_FOR_TEST = "_requireSmtpUtf8ForTest";
+
     default void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
         send(config, user.getEmail(), subject, textBody, htmlBody);
     }
