@@ -60,6 +60,17 @@ public class StartDevCommandDistTest {
         cliResult.assertStartedDevMode();
     }
 
+    // Stop before realm bootstrap if the expected validation failure does not occur.
+    @StopServer(Mode.BEFORE_BOOTSTRAP)
+    @Test
+    void testWelcomeThemeRequiresWelcomeTemplate(KeycloakRunner runner) {
+        CLIResult result = runner.run("start-dev", "--db=dev-mem",
+                "--spi-theme--folder--dir=" + Paths.get("src/test/resources/themes").toAbsolutePath().normalize(),
+                "--spi-theme--welcome-theme=missing-welcome");
+        result.assertExitCode(1);
+        result.assertMessage("Theme 'missing-welcome' does not provide or inherit 'welcome.ftl' required for the welcome page. Check --spi-theme--welcome-theme.");
+    }
+
     @Test
     @Launch({ "start-dev", "--debug", "--features=oid4vc-vci:v1" })
     void testStartDevShouldStartTwoJVMs(CLIResult cliResult) {

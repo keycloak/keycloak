@@ -52,10 +52,10 @@
 </#macro>
 
 <#-- Use <@field.input name="username" label=msg("username")/>; errors default to messagesPerField. -->
-<#macro input name label value="" required=false autocomplete="off" fieldName=name error=messagesPerField.get(fieldName) autofocus=false inputmode="" errorId="input-error-${name}">
+<#macro input name label value="" required=false autocomplete="off" fieldName=name error=messagesPerField.get(fieldName) autofocus=false inputmode="" errorId="input-error-${name}" type="text">
   <@group name=name label=label error=error required=required errorId=errorId>
     <span class="${properties.kcInputClass!} <#if error?has_content>${properties.kcError!}</#if>">
-        <input id="${name}" name="${name}" value="${value}" type="text" autocomplete="${autocomplete}" autocapitalize="none" spellcheck="false" <#if autofocus>autofocus</#if>
+        <input id="${name}" name="${name}" value="${value}" type="${type}" autocomplete="${autocomplete}" autocapitalize="none" spellcheck="false" <#if autofocus>autofocus</#if>
                 <#if required>aria-required="true"</#if>
                 <#if inputmode?has_content>inputmode="${inputmode}"</#if>
                 <#if error?has_content>aria-invalid="true" aria-describedby="${errorId}"</#if>/>

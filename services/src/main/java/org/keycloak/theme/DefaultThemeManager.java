@@ -103,6 +103,9 @@ public class DefaultThemeManager implements ThemeManager {
         Set<String> themes = new HashSet<String>();
         for (ThemeProvider p : getProviders()) {
             themes.addAll(p.nameSet(type));
+            if (type == Theme.Type.WELCOME) {
+                themes.addAll(p.nameSet(Theme.Type.LOGIN));
+            }
         }
         return themes;
     }
@@ -135,7 +138,7 @@ public class DefaultThemeManager implements ThemeManager {
         if (theme.getParentName() != null) {
             for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
                 String currentThemeName = theme.getName();
-                theme = findTheme(parentName, type);
+                theme = findTheme(parentName, theme.getType());
                 if (theme == null) {
                     log.warnf("Not found parent theme '%s' of theme '%s'. Unable to load %s theme '%s' due to this.", parentName, currentThemeName, type, name);
                     return null;
@@ -158,6 +161,10 @@ public class DefaultThemeManager implements ThemeManager {
                     log.errorv(e, p.getClass() + " failed to load theme, type={0}, name={1}", type, name);
                 }
             }
+        }
+        if (type == Theme.Type.WELCOME) {
+            log.debugf("Welcome theme '%s' not found, falling back to login theme lookup", name);
+            return findTheme(name, Theme.Type.LOGIN);
         }
         return null;
     }

@@ -28,8 +28,16 @@
 
 <#-- Use <@layout.registrationLayout; section> and render the requested header, form, info, or socialProviders section. -->
 <#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
+    <@pageLayout bodyClass=bodyClass displayInfo=displayInfo displayMessage=displayMessage displayRequiredFields=displayRequiredFields; section>
+        <#nested section>
+    </@pageLayout>
+</#macro>
+
+<#macro pageLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false
+    bodyPageId="login-${pageId}" brandName=(realm.displayNameHtml)!'' pageTitle=(title!'')
+    headerDescription="" displayMain=true>
 <!DOCTYPE html>
-<html class="${properties.kcHtmlClass!}" lang="${lang}"<#if realm.internationalizationEnabled> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
+<html class="${properties.kcHtmlClass!}" lang="${lang}"<#if (realm.internationalizationEnabled)!false> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
 
 <head>
     <meta charset="utf-8">
@@ -42,7 +50,7 @@
             <meta name="${meta?split('==')[0]}" content="${meta?split('==')[1]}"/>
         </#list>
     </#if>
-    <title>${title!}</title>
+    <title>${pageTitle}</title>
     <#if themeResources?? && themeResources.favicons?has_content>
         <@themeResourceTags.renderFavicons themeResources.favicons url.resourcesPath />
     <#else>
@@ -104,6 +112,7 @@
     </#if>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <#global passwordVisibilityScriptLoaded=true>
+    <#if url.ssoLoginInOtherTabsUrl??>
     <script type="module">
         <#outputformat "JavaScript">
         import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
@@ -113,6 +122,7 @@
         );
         </#outputformat>
     </script>
+    </#if>
     <script type="module">
         document.addEventListener("click", (event) => {
             const link = event.target.closest("a[data-once-link]");
@@ -153,17 +163,21 @@
     </script>
 </head>
 
-<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="login-${pageId}">
+<body id="keycloak-bg" class="${properties.kcBodyClass!}" data-page-id="${bodyPageId}">
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="${properties.kcLoginHeader!}">
       <div id="kc-header-wrapper"
-              class="${properties.kcLoginBrand!}">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
+              class="${properties.kcLoginBrand!}">${kcSanitize(msg("loginTitleHtml",brandName))?no_esc}</div>
     </header>
+    <#if displayMain>
     <main class="${properties.kcLoginMain!}">
       <div class="${properties.kcLoginMainHeader!}">
         <h1 class="${properties.kcLoginMainTitle!}" id="kc-page-title"><#nested "header"></h1>
-        <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
+        <#if headerDescription?has_content>
+            <p class="${properties.kcLoginMainHeaderDescription!}">${headerDescription}</p>
+        </#if>
+        <#if ((realm.internationalizationEnabled)!false) && locale.supported?size gt 1>
         <div class="${properties.kcLoginMainHeaderUtilities!}">
           <div class="${properties.kcInputClass!}">
             <select
@@ -287,6 +301,7 @@
             <@loginFooter.content/>
         </div>
     </main>
+    </#if>
   </div>
 </div>
 </body>
