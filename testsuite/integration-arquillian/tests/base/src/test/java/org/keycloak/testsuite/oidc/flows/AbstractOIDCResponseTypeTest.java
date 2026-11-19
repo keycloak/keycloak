@@ -54,6 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
