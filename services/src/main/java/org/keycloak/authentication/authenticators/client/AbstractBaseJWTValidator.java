@@ -82,7 +82,8 @@ public abstract class AbstractBaseJWTValidator {
             if (token.getIat() - allowedClockSkew > currentTime) {
                 return failure("Token was issued in the future");
             }
-            lifespan = Math.min(lifespan, maxExp);
+            // the token is accepted until iat + maxExp, which is later than now + maxExp when iat is ahead of the server clock
+            lifespan = Math.min(lifespan, Math.max(maxExp, token.getIat() + maxExp - currentTime));
             if (lifespan <= 0) {
                 return failure("Token is not active");
             }
@@ -96,7 +97,9 @@ public abstract class AbstractBaseJWTValidator {
                 return failure("Token jti claim is required");
             }
 
-            if (!validateTokenReuse(lifespan)) {
+            // both acceptance bounds (exp and iat + maxExp) are inclusive, while the single-use store treats an
+            // entry as expired once its expiration is reached, so the jti has to outlive the last accepted second
+            if (!validateTokenReuse(lifespan + 1)) {
                 return false;
             }
         }
