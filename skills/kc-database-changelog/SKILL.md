@@ -15,6 +15,7 @@ Upgrades need not be sequential, so never assume a starting version: any changes
    Only then create a new `jpa-changelog-<version>.xml` and include it in the master file.
    Read it, adjacent recent changelogs, and every custom Java change it invokes.
 2. Trace the database state before and after each changeset for both modes and for each starting point: an empty database, any earlier release, and a database that recorded an earlier changeset but lacks its object.
+   For a data migration, also trace the representation of the data: custom changes of earlier releases are only in the script, so the generation database holds the data in the older form.
 3. Check every precondition and set `onSqlOutput` explicitly, because the default is `IGNORE`; never use `FAIL`:
    - `TEST` only when the generation database has all state needed for the decision at every starting version.
      To tell persisted history from a changeset only emitted to the current script, use `ChangeSetPersistedPrecondition` with `TEST` instead of `changeSetExecuted`, as in `or(indexExists, not(ChangeSetPersistedPrecondition))`.
@@ -22,6 +23,7 @@ Upgrades need not be sequential, so never assume a starting version: any changes
 4. For a new index, use `createIndex` with a `not indexExists` guard when an operator may have created it, `dbms` and `modifySql` for database-specific variants, and an upgrade-guide entry for a table that can exceed the `index-creation-threshold` (default 300000 rows).
    For a deferred or replaced index, follow the patterns in `jpa-changelog-26.8.0.xml`.
 5. Make each `customChange` return SQL that is valid when applied later, without relying on direct mutations or on earlier script statements being visible to its Java logic.
+   Do not skip on a missing table or column unless that proves there is no data to migrate; it can mean the data is still in the older representation, which the task must then read.
 6. Preserve database-specific quoting and behavior.
    In a released changelog, never change a changeset's ID, author, file, changes, or `modifySql`, because they are part of its identity and checksum.
    Comments and preconditions are not checksummed and may be corrected, but test the changed behavior for databases that have not applied the changeset yet.
@@ -48,5 +50,6 @@ Upgrades need not be sequential, so never assume a starting version: any changes
 - For deferred-index changes, run `DatabaseIndexCheckerTest`, for example `KC_TEST_DATABASE=postgres ./mvnw -pl tests/base test -Dtest=DatabaseIndexCheckerTest` (see `test-framework/docs/RUNNING_TESTS.md`).
   No migration test sets the threshold and their tables are far below the default of 300000 rows, so to exercise deferral start a database from an earlier release with rows in the table and a low `--spi-connections-liquibase--quarkus--index-creation-threshold`.
   Check for the "Following index should be created" log line, the recorded changeset, and the missing index, then whether the index checker creates it or only logs the SQL on that database.
+- For a custom change that reads data, generate the script from the oldest release that can hold that data, with rows in the tables it reads, not only from an empty database or 19.0.3.
 - For an upgrade with existing data, run `MigrationTest` with `-Dmigration.mode=auto` and `-Dmigration.mode=manual` (see `testsuite/integration-arquillian/HOW-TO-RUN.md#db-migration-test`).
 - Confirm that both paths produce identical schema objects and persisted changelog entries.

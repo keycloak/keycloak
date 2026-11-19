@@ -50,6 +50,10 @@ Check each changeset for these starting points:
 * a database at any earlier release, where the changesets since that release are in the script
 * a database that recorded an earlier changeset but lacks its object, as with a deferred index
 
+For a data migration, also check the representation of the data at each starting point.
+A data change of an earlier release, such as a custom change that moves a value to a new column, is only part of the script and has not run on the generation database.
+That database still holds the data in the older form, so a changeset that reads data must read the form its starting version has.
+
 Choosing `onSqlOutput`
 ----------------------
 
@@ -110,7 +114,10 @@ A `customChange` generates `SqlStatement` objects in both modes, and its Java lo
 Generate SQL that is valid when the script is applied later, and do not mutate data from the generation logic.
 Do not make generation depend on schema or data produced by earlier statements in the same script, nor on tables or columns added by changesets after the starting version.
 For example, [`CustomKeycloakTask`](../model/jpa/src/main/java/org/keycloak/connections/jpa/updater/liquibase/custom/CustomKeycloakTask.java) emits nothing when the generation database has no `REALM` table or no realm rows, so such a task cannot migrate data for a script generated against an empty database.
-Prefer set-based, repeatable SQL and database-aware object quoting, as in [`JpaUpdate26_8_0_PopulateOrgDomainRealmId`](../model/jpa/src/main/java/org/keycloak/connections/jpa/updater/liquibase/custom/JpaUpdate26_8_0_PopulateOrgDomainRealmId.java).
+A missing table or column only justifies emitting nothing when no data can exist in any form.
+It can also mean that the data is still in the representation an earlier release replaced: a 25.x database has no `IDENTITY_PROVIDER.ORGANIZATION_ID`, but its organizations and their identity provider links are in the `kc.org` entries of `IDENTITY_PROVIDER_CONFIG`.
+Skipping on the missing column would drop that data from the script, so read the older representation as well; [`JpaUpdate26_0_0_IdentityProviderAttributesMigration`](../model/jpa/src/main/java/org/keycloak/connections/jpa/updater/liquibase/custom/JpaUpdate26_0_0_IdentityProviderAttributesMigration.java) is the change that moves it.
+Prefer set-based, repeatable SQL, which does not read data during generation, and database-aware object quoting, as in [`JpaUpdate26_8_0_PopulateOrgDomainRealmId`](../model/jpa/src/main/java/org/keycloak/connections/jpa/updater/liquibase/custom/JpaUpdate26_8_0_PopulateOrgDomainRealmId.java).
 
 Testing database migration
 --------------------------
@@ -118,6 +125,7 @@ Testing database migration
 Test automatic migration and the generation and execution of a manual script on an empty database and on an upgrade with existing data, for every affected database family.
 The tests below start from an empty database and from 19.0.3.
 For any other starting version, check by hand which objects of earlier changesets the generation database would lack.
+A custom change that reads data needs a test that generates the script from the oldest release that can hold that data, with rows in the tables it reads: 19.0.3 has no organizations, so it cannot show how organization data is migrated from 25.x.
 
 ### Empty database
 
