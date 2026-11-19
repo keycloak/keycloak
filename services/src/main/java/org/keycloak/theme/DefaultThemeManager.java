@@ -163,6 +163,7 @@ public class DefaultThemeManager implements ThemeManager {
             }
         }
         if (type == Theme.Type.WELCOME) {
+            log.debugf("Welcome theme '%s' not found, falling back to login theme lookup", name);
             return findTheme(name, Theme.Type.LOGIN);
         }
         return null;

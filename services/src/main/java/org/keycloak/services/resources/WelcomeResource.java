@@ -61,6 +61,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.theme.TemplatingUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.beans.MessageBean;
@@ -264,8 +265,7 @@ public class WelcomeResource {
                 map.put("message", new MessageBean(errorMessage, MessageType.ERROR));
             }
             FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
-            String template = theme.getType() == Theme.Type.WELCOME && theme.getTemplate("index.ftl") != null
-                    ? "index.ftl" : "welcome.ftl";
+            String template = TemplatingUtil.getWelcomeTemplateName(theme);
             String result = freeMarkerUtil.processTemplate(map, template, theme);
 
             ResponseBuilder rb = Response.status(errorMessage == null ? Status.OK : Status.BAD_REQUEST)

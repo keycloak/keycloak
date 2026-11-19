@@ -3,10 +3,15 @@ package org.keycloak.tests.welcomepage;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.NetworkInterface;
+import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.KeycloakUriBuilder;
@@ -28,7 +33,9 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.WelcomePage;
 import org.keycloak.testframework.ui.webdriver.BrowserType;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -46,7 +53,10 @@ public class WelcomePageTest {
     static class WelcomePageTestConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.option("http-host", "0.0.0.0");
+            URL themesDir = Objects.requireNonNull(WelcomePageTest.class.getResource("themes"));
+            return config.option("http-host", "0.0.0.0")
+                    .option("spi-theme--welcome-theme", "keycloak.v3")
+                    .spiOption("theme", "folder", "dir", Path.of(URI.create(themesDir.toString())).toString());
         }
     }
 
@@ -174,6 +184,25 @@ public class WelcomePageTest {
                 try (var resource = theme.getResourceAsStream("js/passwordVisibility.js")) {
                     Assertions.assertNotNull(resource);
                 }
+
+                // Use a custom theme
+                Theme customTheme = session.theme().getTheme("custom-welcome", Theme.Type.WELCOME);
+                Assertions.assertEquals("custom-welcome", customTheme.getName());
+                Assertions.assertEquals(Theme.Type.WELCOME, customTheme.getType());
+                var attributes = new HashMap<String, Object>();
+                attributes.put("properties", customTheme.getProperties());
+                String html = session.getProvider(FreeMarkerProvider.class).processTemplate(attributes, "welcome.ftl", customTheme);
+                Assertions.assertTrue(html.contains("<p id=\"custom-welcome-marker\">Custom welcome content</p>"));
+                Assertions.assertTrue(html.contains("class=\"custom-welcome-group\""));
+                try (var resource = customTheme.getResourceAsStream("js/passwordVisibility.js")) {
+                    Assertions.assertNotNull(resource);
+                }
+                try (var resource = customTheme.getResourceAsStream("css/styles.css")) {
+                    Assertions.assertNotNull(resource);
+                    Assertions.assertEquals("/* Custom welcome styles */", new String(resource.readAllBytes(), StandardCharsets.UTF_8).trim());
+                }
+            } catch (FreeMarkerException e) {
+                throw new RuntimeException(e);
             } finally {
                 session.getContext().setRealm(realm);
             }
