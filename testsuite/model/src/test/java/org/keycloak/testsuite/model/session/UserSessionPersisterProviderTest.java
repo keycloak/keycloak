@@ -61,12 +61,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.jpa.session.JpaUserSessionPersisterProvider;
 import org.keycloak.models.jpa.session.JpaUserSessionPersisterProviderFactory;
 import org.keycloak.models.jpa.session.PersistentUserSessionEntity;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
-import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
@@ -952,37 +950,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     }
 
     @Test
-    @Deprecated(since = "26.4", forRemoval = true)
-    public void testMigrateSession() {
-        Assume.assumeTrue(MultiSiteUtils.isPersistentSessionsEnabled());
-        Assume.assumeTrue(InfinispanUtils.isEmbeddedInfinispan());
-
-        UserSessionModel[] sessions = inComittedTransaction(session -> {
-            // Create some sessions in infinispan
-            return createSessions(session, realmId);
-        });
-
-        inComittedTransaction(session -> {
-            // clear the entries in the database to enable the migration
-            JpaUserSessionPersisterProvider sessionPersisterProvider = (JpaUserSessionPersisterProvider) session.getProvider(UserSessionPersisterProvider.class);
-            sessionPersisterProvider.removeUserSessions(session.realms().getRealm(realmId), false);
-
-            // verify that clearing was successful
-            Assert.assertEquals(0, countUserSessionsInRealm(session));
-        });
-
-        inComittedTransaction(session -> {
-            // trigger a migration with the entries that are still in the cache
-            PersistentUserSessionProvider userSessionProvider = (PersistentUserSessionProvider) session.getProvider(UserSessionProvider.class);
-            userSessionProvider.migrateNonPersistentSessionsToPersistentSessions();
-
-            // verify that import was complete
-            Assert.assertEquals(useCachesEnabled() ? sessions.length : 0, countUserSessionsInRealm(session));
-        });
-    }
-
-
-    @Test
     public void testUserRemoved() throws InterruptedException {
         final String userName = "to-remove";
         final int numberOfSessions = 5;
@@ -1466,14 +1433,6 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
     private static Optional<String> findReason(Event event) {
         return Optional.ofNullable(event.getDetails())
                 .map(map -> map.get(Details.REASON));
-    }
-
-    private long countUserSessionsInRealm(KeycloakSession session) {
-        JpaUserSessionPersisterProvider sessionPersisterProvider = (JpaUserSessionPersisterProvider) session.getProvider(UserSessionPersisterProvider.class);
-        RealmModel realm = session.realms().getRealm(realmId);
-        return sessionPersisterProvider.getUserSessionsCountsByClients(realm, false).keySet().stream()
-                .flatMap(s -> sessionPersisterProvider.loadUserSessionsStream(realm, session.clients().getClientById(realm, s), false, 0, -1))
-                .distinct().count();
     }
 
     private void setupClientStorageComponents(KeycloakSession s, RealmModel realm) {
