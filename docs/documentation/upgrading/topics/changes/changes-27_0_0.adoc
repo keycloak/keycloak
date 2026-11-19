@@ -731,6 +731,22 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== SAML identity providers refresh the metadata certificates in the background
+// https://github.com/keycloak/keycloak/issues/54971
+
+When a SAML identity provider has *Use metadata descriptor URL* enabled, a message from the identity provider no longer waits for the *Metadata descriptor URL* if valid certificates are in the cache.
+Previously, a message that requested a certificate that was not in the cache made {project_name} download the metadata while the message was processed.
+
+The certificates are now refreshed in the background and the signature is validated with the cached ones.
+As a consequence, a login signed with a certificate that is not in the cache yet is rejected with an invalid signature error, and the following logins succeed once the refresh has finished.
+Each of these refreshes is logged as a warning that includes the requested key, and they are limited by the minimum time between requests of the `public-key-storage` SPI as before.
+A refresh in the background that fails is not repeated before that time either, and the valid certificates remain in the cache.
+The refresh after the maximum cache time is also done in the background when the metadata defines neither `cacheDuration` nor `validUntil`, and it no longer depends on the SAML binding.
+
+To change the signing certificate of the identity provider without rejected logins, publish the new certificate in the metadata before it is used, at least the maximum cache time in advance.
+The *Reload keys* action of the identity provider refreshes the certificates immediately.
+SAML clients that use a metadata descriptor URL are not affected.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

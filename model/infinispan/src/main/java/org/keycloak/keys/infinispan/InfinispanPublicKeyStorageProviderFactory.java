@@ -56,13 +56,15 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
 
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
 
+    private final Map<String, Integer> backgroundReloads = new ConcurrentHashMap<>();
+
     private int minTimeBetweenRequests;
     private int maxCacheTime;
 
     @Override
     public PublicKeyStorageProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanPublicKeyStorageProvider(session, keysCache, tasksInProgress, minTimeBetweenRequests, maxCacheTime);
+        return new InfinispanPublicKeyStorageProvider(session, keysCache, tasksInProgress, backgroundReloads, minTimeBetweenRequests, maxCacheTime);
     }
 
     @Override

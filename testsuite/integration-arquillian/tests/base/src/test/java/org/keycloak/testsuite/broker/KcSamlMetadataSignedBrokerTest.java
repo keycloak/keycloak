@@ -24,6 +24,7 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.common.util.Retry;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
@@ -104,9 +105,9 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBroker
         rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
         doSamlPostLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider", this::identityDocument);
 
-        // ofsset to allow the refresh of the key
+        // ofsset to allow the refresh of the key, a login that requests the unknown key does not wait for it
         timeOffSet.set(35);
-        doSamlPostLogin(Status.OK.getStatusCode(), "Update Account Information", this::identityDocument);
+        retryUntilKeysAreRefreshed(() -> doSamlPostLogin(Status.OK.getStatusCode(), "Update Account Information", this::identityDocument));
     }
 
     @Test
@@ -118,9 +119,9 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBroker
         rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
         doSamlPostLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider", this::removeKeyNameFromSignature);
 
-        // ofsset to allow the refresh of the key
+        // ofsset to allow the refresh of the key, a login that requests the unknown key does not wait for it
         timeOffSet.set(35);
-        doSamlPostLogin(Status.OK.getStatusCode(), "Update Account Information", this::removeKeyNameFromSignature);
+        retryUntilKeysAreRefreshed(() -> doSamlPostLogin(Status.OK.getStatusCode(), "Update Account Information", this::removeKeyNameFromSignature));
     }
 
     @Test
@@ -143,9 +144,10 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBroker
             timeOffSet.set(35);
             doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider.");
 
-            // offset more than one day
+            // offset more than one day, the keys are refreshed in the background and the cached ones are still used
             timeOffSet.set(24*60*60 + 5);
-            doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
+            doSamlRedirectLogin(Status.BAD_REQUEST.getStatusCode(), "Invalid signature in response from identity provider.");
+            retryUntilKeysAreRefreshed(() -> doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information"));
 
             // rotate keys it should fail again
             rotateKeys(bc.providerRealmName(), Algorithm.RS256, "rsa-generated");
@@ -194,5 +196,20 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBroker
             Assertions.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
             doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
         }
+    }
+
+    private interface SamlLogin {
+        void login() throws Exception;
+    }
+
+    // Keys that are still valid are refreshed in the background, repeats the login until the refresh is finished
+    private void retryUntilKeysAreRefreshed(SamlLogin samlLogin) {
+        Retry.execute(() -> {
+            try {
+                samlLogin.login();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, 20, 500);
     }
 }

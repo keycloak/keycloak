@@ -23,11 +23,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
+import org.keycloak.models.KeycloakSession;
 
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
@@ -40,6 +42,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -49,6 +54,7 @@ public class InfinispanKeyStorageProviderTest {
 
     Cache<String, PublicKeysEntry> keys = getKeysCache();
     Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
+    Map<String, Integer> backgroundReloads = new ConcurrentHashMap<>();
     int minTimeBetweenRequests = 10;
     int maxCacheTime = 600;
 
@@ -60,6 +66,8 @@ public class InfinispanKeyStorageProviderTest {
     @After
     public void after() {
         Time.setOffset(0);
+        // every test creates its own cache manager and they use the same JMX domain
+        keys.getCacheManager().stop();
     }
 
     @Test
@@ -106,6 +114,24 @@ public class InfinispanKeyStorageProviderTest {
         threads.clear();
     }
 
+    @Test
+    public void testBackgroundReloadIsNotStartedForMissingOrRecentKeys() {
+        InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, backgroundReloads, minTimeBetweenRequests, maxCacheTime);
+        Function<KeycloakSession, PublicKeyLoader> backgroundLoader = session -> new SampleLoader("model3");
+
+        // No keys in the cache. They are not loaded in the background, the caller that needs them loads them
+        assertThat(provider.reloadKeysInBackground("model3", backgroundLoader), is(false));
+        provider.getKeys("model3", new SampleLoader("model3"), backgroundLoader);
+        assertThat(counters.get("model3").get(), is(1));
+
+        // Keys in the cache are returned without loading them, and a reload is not allowed due to lastRequestTime
+        Time.setOffset(minTimeBetweenRequests - 5);
+        provider.getKeys("model3", new SampleLoader("model3"), backgroundLoader);
+        assertThat(provider.reloadKeysInBackground("model3", backgroundLoader), is(false));
+        assertThat(counters.get("model3").get(), is(1));
+        assertThat(backgroundReloads.isEmpty(), is(true));
+    }
+
 
     private void startAndJoinAll(List<Thread> threads) throws Exception {
         for (Thread t : threads) {
@@ -128,7 +154,7 @@ public class InfinispanKeyStorageProviderTest {
 
         @Override
         public void run() {
-            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, minTimeBetweenRequests, maxCacheTime);
+            InfinispanPublicKeyStorageProvider provider = new InfinispanPublicKeyStorageProvider(null, keys, tasksInProgress, backgroundReloads, minTimeBetweenRequests, maxCacheTime);
             provider.getPublicKey(modelKey, "kid1", null, new SampleLoader(modelKey));
         }
 

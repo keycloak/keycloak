@@ -26,6 +26,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -33,10 +34,13 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
+import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransaction;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
@@ -49,11 +53,17 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
     private static final Logger log = Logger.getLogger(InfinispanPublicKeyStorageProvider.class);
 
+    private static final String BACKGROUND_RELOAD_EXECUTOR = "public-keys-reload";
+
     private final KeycloakSession session;
 
     private final Cache<String, PublicKeysEntry> keys;
 
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress;
+
+    // Model keys that cannot start a background reload before the time in the value, in seconds.
+    // The value is Integer.MAX_VALUE while a background reload is running.
+    private final Map<String, Integer> backgroundReloads;
 
     private final int minTimeBetweenRequests ;
     private final int maxCacheTime;
@@ -63,10 +73,11 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
     private boolean transactionEnlisted = false;
 
     public InfinispanPublicKeyStorageProvider(KeycloakSession session, Cache<String, PublicKeysEntry> keys, Map<String, FutureTask<PublicKeysEntry>> tasksInProgress,
-            int minTimeBetweenRequests, int maxCacheTime) {
+            Map<String, Integer> backgroundReloads, int minTimeBetweenRequests, int maxCacheTime) {
         this.session = session;
         this.keys = keys;
         this.tasksInProgress = tasksInProgress;
+        this.backgroundReloads = backgroundReloads;
         this.minTimeBetweenRequests = minTimeBetweenRequests;
         this.maxCacheTime = maxCacheTime;
     }
@@ -218,11 +229,47 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 : entry.getCurrentKeys().getKeys().stream().map(KeyWrapper::cloneKey).collect(Collectors.toList());
     }
 
+    /**
+     * return all keys under the model key like {@link #getKeys(String, PublicKeyLoader)},
+     * but the caller only waits for the loader if there are no valid keys in the cache.
+     * Valid keys are returned straight away, and they are reloaded in the background
+     * when maxCacheTime is reached.
+     * @param modelKey The model key
+     * @param loader The loader to load the keys if there are no valid keys in the cache
+     * @param backgroundLoader Creates the loader to reload valid keys in the background
+     * @return The keys in the model
+     */
+    @Override
+    public List<KeyWrapper> getKeys(String modelKey, PublicKeyLoader loader, Function<KeycloakSession, PublicKeyLoader> backgroundLoader) {
+        PublicKeysEntry entry = keys.get(modelKey);
+        int currentTime = Time.currentTime();
+
+        if (isExpired(entry, currentTime)) {
+            // no valid keys to return, the caller has to wait for them
+            return getKeys(modelKey, loader);
+        }
+
+        if (hasNoExpiration(entry) && currentTime > entry.getLastRequestTime() + maxCacheTime) {
+            // reload preemptively, the keys in the cache are used until the reload finishes
+            reloadKeysInBackground(modelKey, entry, currentTime, backgroundLoader);
+        }
+
+        return entry.getCurrentKeys().getKeys().stream().map(KeyWrapper::cloneKey).collect(Collectors.toList());
+    }
+
     @Override
     public boolean reloadKeys(String modelKey, PublicKeyLoader loader) {
         PublicKeysEntry entry = keys.get(modelKey);
         int currentTime = Time.currentTime();
         return reloadKeys(modelKey, entry, currentTime, loader) != null;
+    }
+
+    @Override
+    public boolean reloadKeysInBackground(String modelKey, Function<KeycloakSession, PublicKeyLoader> backgroundLoader) {
+        PublicKeysEntry entry = keys.get(modelKey);
+        int currentTime = Time.currentTime();
+        // keys that are missing or expired are loaded by the caller that needs them
+        return !isExpired(entry, currentTime) && reloadKeysInBackground(modelKey, entry, currentTime, backgroundLoader);
     }
 
     private boolean hasNoExpiration(PublicKeysEntry entry) {
@@ -273,9 +320,78 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         return null;
     }
 
+    private boolean reloadKeysInBackground(String modelKey, PublicKeysEntry entry, int currentTime, Function<KeycloakSession, PublicKeyLoader> backgroundLoader) {
+        // Check if we are allowed to send request
+        if (currentTime <= entry.getLastRequestTime() + minTimeBetweenRequests) {
+            log.debugf("Won't reload the keys for model '%s' in the background. Last request time was %d", modelKey, entry.getLastRequestTime());
+            return false;
+        }
+
+        // Only one background reload at a time, and a failed one is not repeated until minTimeBetweenRequests passes
+        backgroundReloads.values().removeIf(notBefore -> notBefore < currentTime);
+        if (backgroundReloads.putIfAbsent(modelKey, Integer.MAX_VALUE) != null) {
+            log.debugf("Won't reload the keys for model '%s' in the background. The previous reload is running or has failed recently", modelKey);
+            return false;
+        }
+
+        try {
+            log.debugf("Reloading keys for model key '%s' in the background.", modelKey);
+            session.getProvider(ExecutorsProvider.class).getExecutor(BACKGROUND_RELOAD_EXECUTOR).execute(new BackgroundReload(
+                    session.getKeycloakSessionFactory(), keys, backgroundReloads, minTimeBetweenRequests, modelKey, backgroundLoader));
+            return true;
+        } catch (RuntimeException e) {
+            backgroundReloads.put(modelKey, currentTime + minTimeBetweenRequests);
+            log.warnf(e, "Reload of the keys for model key '%s' in the background could not be started.", modelKey);
+            return false;
+        }
+    }
+
     @Override
     public void close() {
 
+    }
+
+    /**
+     * Reloads the keys of a model key using its own session, as the session that
+     * requested the reload does not wait for it.
+     */
+    private static class BackgroundReload implements Runnable {
+
+        private final KeycloakSessionFactory sessionFactory;
+        private final Cache<String, PublicKeysEntry> keys;
+        private final Map<String, Integer> backgroundReloads;
+        private final int minTimeBetweenRequests;
+        private final String modelKey;
+        private final Function<KeycloakSession, PublicKeyLoader> loader;
+
+        private BackgroundReload(KeycloakSessionFactory sessionFactory, Cache<String, PublicKeysEntry> keys, Map<String, Integer> backgroundReloads,
+                int minTimeBetweenRequests, String modelKey, Function<KeycloakSession, PublicKeyLoader> loader) {
+            this.sessionFactory = sessionFactory;
+            this.keys = keys;
+            this.backgroundReloads = backgroundReloads;
+            this.minTimeBetweenRequests = minTimeBetweenRequests;
+            this.modelKey = modelKey;
+            this.loader = loader;
+        }
+
+        @Override
+        public void run() {
+            try {
+                KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                    // The entry is removed when the model is updated or removed. The next caller loads the keys in that case.
+                    if (keys.containsKey(modelKey)) {
+                        session.getProvider(PublicKeyStorageProvider.class, InfinispanPublicKeyStorageProviderFactory.PROVIDER_ID)
+                                .reloadKeys(modelKey, loader.apply(session));
+                    }
+                });
+                backgroundReloads.remove(modelKey);
+            } catch (Throwable t) {
+                // The keys in the cache are not modified, they are used until a reload works
+                backgroundReloads.put(modelKey, Time.currentTime() + minTimeBetweenRequests);
+                log.warnf("Error reloading keys for model key '%s' in the background, the keys in the cache are kept. %s", modelKey, t.getMessage());
+                log.debug("Error reloading keys in the background", t);
+            }
+        }
     }
 
     private class WrapperCallable implements Callable<PublicKeysEntry> {

@@ -21,6 +21,7 @@ import java.security.KeyManagementException;
 import java.security.cert.X509Certificate;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -33,6 +34,7 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
@@ -119,6 +121,65 @@ public class SamlMetadataKeyLocatorTest {
         @Override
         public boolean reloadKeys(String modelKey, PublicKeyLoader loader) {
             return false;
+        }
+
+        @Override
+        public void close() {
+            // no-op
+        }
+    }
+
+    // test PublicKeyStorageProvider that has the keys in the cache and counts the reloads requested
+    private static class CachedPublicKeyStorageProvider implements PublicKeyStorageProvider {
+
+        private final PublicKeysWrapper keys;
+        private int reloads = 0;
+        private int backgroundReloads = 0;
+
+        public CachedPublicKeyStorageProvider(PublicKeysWrapper keys) {
+            this.keys = keys;
+        }
+
+        @Override
+        public KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public KeyWrapper getFirstPublicKey(String modelKey, String algorithm, PublicKeyLoader loader) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public KeyWrapper getFirstPublicKey(String modelKey, Predicate<KeyWrapper> predicate, PublicKeyLoader loader) {
+            KeyWrapper key = keys.getKeyByPredicate(predicate);
+            if (key == null) {
+                // the caller waits for the reload when the key is not found
+                reloads++;
+            }
+            return key;
+        }
+
+        @Override
+        public List<KeyWrapper> getKeys(String modelKey, PublicKeyLoader loader) {
+            return keys.getKeys();
+        }
+
+        @Override
+        public List<KeyWrapper> getKeys(String modelKey, PublicKeyLoader loader, Function<KeycloakSession, PublicKeyLoader> backgroundLoader) {
+            return keys.getKeys();
+        }
+
+        @Override
+        public boolean reloadKeys(String modelKey, PublicKeyLoader loader) {
+            reloads++;
+            return true;
+        }
+
+        @Override
+        public boolean reloadKeysInBackground(String modelKey, Function<KeycloakSession, PublicKeyLoader> backgroundLoader) {
+            backgroundReloads++;
+            return true;
         }
 
         @Override
@@ -225,6 +286,76 @@ public class SamlMetadataKeyLocatorTest {
 
         MatcherAssert.assertThat(StreamSupport.stream(keyLocator.spliterator(), false).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder(keycloak2));
+    }
+
+    @Test
+    public void testUnknownKeyIsReloadedInBackground() throws Exception {
+        PublicKeyLoader loader = new TestSamlMetadataPublicKeyLoader(DESCRIPTOR, true);
+        CachedPublicKeyStorageProvider keyStorage = new CachedPublicKeyStorageProvider(loader.loadKeys());
+        Key unknown = XMLSignatureUtil.getX509CertificateFromKeyInfoString(EXPIRED_CERT).getPublicKey();
+
+        KeyLocator keyLocator = new SamlMetadataKeyLocator("test", loader, session -> loader, KeyUse.SIG, keyStorage);
+
+        Key keycloak = keyLocator.getKey("keycloak");
+        MatcherAssert.assertThat(keycloak, Matchers.notNullValue());
+        MatcherAssert.assertThat(keyLocator.getKey(keycloak), Matchers.is(keycloak));
+        Key keycloak2 = keyLocator.getKey("keycloak2");
+        MatcherAssert.assertThat(keycloak2, Matchers.notNullValue());
+        MatcherAssert.assertThat(StreamSupport.stream(keyLocator.spliterator(), false).collect(Collectors.toList()),
+                Matchers.containsInAnyOrder(keycloak, keycloak2));
+        MatcherAssert.assertThat(keyStorage.backgroundReloads, Matchers.is(0));
+
+        // a key that is not in the cache is not found, the caller does not wait for the reload that is requested
+        MatcherAssert.assertThat(keyLocator.getKey("unknown"), Matchers.nullValue());
+        MatcherAssert.assertThat(keyStorage.backgroundReloads, Matchers.is(1));
+        MatcherAssert.assertThat(keyLocator.getKey(unknown), Matchers.nullValue());
+        MatcherAssert.assertThat(keyStorage.backgroundReloads, Matchers.is(2));
+        MatcherAssert.assertThat(keyStorage.reloads, Matchers.is(0));
+    }
+
+    @Test
+    public void testUnknownKeyIsReloadedByCallerWithoutBackgroundLoader() throws Exception {
+        PublicKeyLoader loader = new TestSamlMetadataPublicKeyLoader(DESCRIPTOR, true);
+        CachedPublicKeyStorageProvider keyStorage = new CachedPublicKeyStorageProvider(loader.loadKeys());
+        Key unknown = XMLSignatureUtil.getX509CertificateFromKeyInfoString(EXPIRED_CERT).getPublicKey();
+
+        KeyLocator keyLocator = new SamlMetadataKeyLocator("test", loader, KeyUse.SIG, keyStorage);
+
+        Key keycloak = keyLocator.getKey("keycloak");
+        MatcherAssert.assertThat(keycloak, Matchers.notNullValue());
+        MatcherAssert.assertThat(keyLocator.getKey(keycloak), Matchers.is(keycloak));
+        MatcherAssert.assertThat(keyStorage.reloads, Matchers.is(0));
+
+        MatcherAssert.assertThat(keyLocator.getKey("unknown"), Matchers.nullValue());
+        MatcherAssert.assertThat(keyStorage.reloads, Matchers.is(1));
+        MatcherAssert.assertThat(keyLocator.getKey(unknown), Matchers.nullValue());
+        MatcherAssert.assertThat(keyStorage.reloads, Matchers.is(2));
+        MatcherAssert.assertThat(keyStorage.backgroundReloads, Matchers.is(0));
+    }
+
+    @Test
+    public void testBackgroundLoaderWithStorageWithoutBackgroundReload() throws KeyManagementException {
+        // the storage does not implement the methods that reload in the background, their defaults are used
+        PublicKeyStorageProvider keyStorage = new TestPublicKeyStorageProvider();
+        PublicKeyLoader loader = new TestSamlMetadataPublicKeyLoader(DESCRIPTOR, true);
+
+        KeyLocator keyLocator = new SamlMetadataKeyLocator("test", loader, session -> loader, KeyUse.SIG, keyStorage);
+
+        Key keycloak = keyLocator.getKey("keycloak");
+        MatcherAssert.assertThat(keycloak, Matchers.notNullValue());
+        MatcherAssert.assertThat(keyLocator.getKey(keycloak), Matchers.is(keycloak));
+        Key keycloak2 = keyLocator.getKey("keycloak2");
+        MatcherAssert.assertThat(keycloak2, Matchers.notNullValue());
+        MatcherAssert.assertThat(keyLocator.getKey("unknown"), Matchers.nullValue());
+        MatcherAssert.assertThat(StreamSupport.stream(keyLocator.spliterator(), false).collect(Collectors.toList()),
+                Matchers.containsInAnyOrder(keycloak, keycloak2));
+    }
+
+    @Test
+    public void testRequestedKeyNameIsSanitizedForLog() {
+        MatcherAssert.assertThat(SamlMetadataKeyLocator.sanitizeKeyName("keycloak"), Matchers.is("keycloak"));
+        MatcherAssert.assertThat(SamlMetadataKeyLocator.sanitizeKeyName("key\r\n\u001B[31mname"), Matchers.is("keyname"));
+        MatcherAssert.assertThat(SamlMetadataKeyLocator.sanitizeKeyName("k".repeat(1000)), Matchers.is("k".repeat(128) + "..."));
     }
 
     @Test
