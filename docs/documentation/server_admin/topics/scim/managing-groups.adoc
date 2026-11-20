@@ -187,6 +187,32 @@ curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Groups/{groupId} \
   }'
 ----
 
+You can also list the members to remove in the operation's `value`, without a filter in the path.
+This is the form Microsoft Entra ID uses:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Groups/{groupId} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "members",
+        "value": [{"value": "{userId1}"}, {"value": "{userId2}"}]
+      }
+    ]
+  }'
+----
+
+Removing a user that is not a member of the group succeeds and changes nothing.
+If any listed user does not exist, the request is rejected with a `400 Bad Request` error and no member is removed.
+
+NOTE: A `remove` operation on `members` cannot have both a filter in the path and a `value`.
+Such a request is rejected with a `400 Bad Request` error.
+
 === Filtering limitations in PATCH operations
 
 Filtering in PATCH remove operations is supported only for multivalued attributes (such as `members`).

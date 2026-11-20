@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.common.util.TriConsumer;
 import org.keycloak.models.Model;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -105,21 +106,13 @@ public class AttributeMapper<M extends Model, R> {
                         if (v.isValueNode()) {
                             values.add(v.textValue());
                         } else {
-                            try {
-                                values.add(JsonSerialization.readValue(v.toString(), complexType));
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
+                            values.add(readComplexValue(v, complexType));
                         }
                     }
                 } else if (value.isTextual()) {
                     values.add(value.textValue());
                 } else if (!value.isNull()) {
-                    try {
-                        values.add(JsonSerialization.readValue(value.toString(), complexType));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+                    values.add(readComplexValue(value, complexType));
                 }
 
                 modelSetter.accept(model, name, values);
@@ -128,6 +121,15 @@ public class AttributeMapper<M extends Model, R> {
             modelSetter.accept(model, name, value.asText());
         } else {
             modelSetter.accept(model, name, null);
+        }
+    }
+
+    private Object readComplexValue(JsonNode value, Class<?> complexType) {
+        try {
+            return JsonSerialization.readValue(value.toString(), complexType);
+        } catch (IOException e) {
+            // e.g. "members" with [{"value": {}}], whose id cannot be read as a string
+            throw new ModelValidationException("Invalid value for " + attribute.getName());
         }
     }
 
