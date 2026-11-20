@@ -35,6 +35,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.WorkflowResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
@@ -676,6 +678,33 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         // verify the workflow is still intact through the proper API
         WorkflowRepresentation workflow = workflows.workflow(workflowId).toRepresentation();
         assertThat(workflow.getName(), is("test-workflow"));
+    }
+
+    @Test
+    public void testComponentRetypeToInternalForbiddenThroughComponentAPI() {
+        // create a component with an allowed providerType (KeyProvider)
+        ComponentRepresentation keyProvider = new ComponentRepresentation();
+        keyProvider.setName("test-retype");
+        keyProvider.setParentId(managedRealm.getId());
+        keyProvider.setProviderId(GeneratedRsaKeyProviderFactory.ID);
+        keyProvider.setProviderType(KeyProvider.class.getName());
+
+        String keyProviderId;
+        try (Response response = managedRealm.admin().components().add(keyProvider)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            keyProviderId = ApiUtil.getCreatedId(response);
+        }
+
+        // attempting to retype it into an internal WorkflowProvider via update should be forbidden
+        keyProvider.setProviderType(WorkflowProvider.class.getName());
+        keyProvider.setProviderId("default");
+        assertThrows(ForbiddenException.class,
+                () -> managedRealm.admin().components().component(keyProviderId).update(keyProvider));
+
+        // verify the component is still a KeyProvider
+        ComponentRepresentation stored = managedRealm.admin().components().component(keyProviderId).toRepresentation();
+        assertThat(stored.getProviderType(), is(KeyProvider.class.getName()));
+        assertThat(stored.getProviderId(), is(GeneratedRsaKeyProviderFactory.ID));
     }
 
     @Test
