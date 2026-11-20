@@ -9,6 +9,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.stream.Stream;
 
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.KeyStatus;
@@ -40,7 +41,7 @@ public class GeneratedMlDsaKeyProvider implements KeyProvider {
 
         try {
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(privateMlDsaKeyBase64Encoded));
-            KeyFactory kf = KeyFactory.getInstance(algorithm);
+            KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory(algorithm);
             PrivateKey decodedPrivateKey = kf.generatePrivate(privateKeySpec);
 
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicMlDsaKeyBase64Encoded));

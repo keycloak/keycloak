@@ -179,4 +179,8 @@ public interface CryptoProvider {
     default String[] getSupportedRsaKeySizes() {
         return new String[] {"1024", "2048", "3072", "4096"};
     }
+
+    default boolean isMlDsaSupported() {
+        return true;
+    }
 }

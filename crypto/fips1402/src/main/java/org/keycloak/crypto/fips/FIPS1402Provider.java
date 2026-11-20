@@ -339,6 +339,11 @@ public class FIPS1402Provider implements CryptoProvider {
         };
     }
 
+    @Override
+    public boolean isMlDsaSupported() {
+        return false;
+    }
+
     // BCFIPS require "SecureRandom.getInstanceStrong" to be available. But it may not be available on RHEL 8 on OpenJDK 17 due the https://bugzilla.redhat.com/show_bug.cgi?id=2155060
     private void checkSecureRandom(Runnable insertBcFipsProvider) {
         try {

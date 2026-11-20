@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -82,15 +83,14 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
     /**
      * Generates version 3 {@link X509Certificate}.
      *
-     * @param keyPair the key pair
+     * @param keyPair      the key pair
      * @param caPrivateKey the CA private key
-     * @param caCert the CA certificate
-     * @param subject the subject name
-     *
+     * @param caCert       the CA certificate
+     * @param subject      the subject name
      * @return the x509 certificate
      */
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
-            String subject) {
+                                                 String subject) {
         try {
             X500Name subjectDN = new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, subject).build();
 
@@ -134,14 +134,10 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
 
             // Content Signer
             ContentSigner sigGen;
-            switch (caCert.getPublicKey().getAlgorithm()){
-                case "EC":
-                    sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER)
-                                                                           .build(caPrivateKey);
-                    break;
-                default:
-                    sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER)
-                                                                                   .build(caPrivateKey);
+            if (caCert.getPublicKey().getAlgorithm().equals("EC")) {
+                sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
+            } else {
+                sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
             }
 
             // Certificate
@@ -155,10 +151,8 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
      * Generate version 1 self signed {@link X509Certificate}..
      *
      * @param caKeyPair the CA key pair
-     * @param subject the subject name
-     *
+     * @param subject   the subject name
      * @return the x509 certificate
-     *
      * @throws Exception the exception
      */
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) {
@@ -192,32 +186,33 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
      * Creates the content signer for generation of Version 1 {@link X509Certificate}.
      *
      * @param privateKey the private key
-     *
      * @return the content signer
      */
     private ContentSigner createSigner(PrivateKey privateKey) {
         try {
             JcaContentSignerBuilder signerBuilder;
-            switch (privateKey.getAlgorithm()) {
-                case "RSA": {
+            String keyAlgorithm = privateKey.getAlgorithm();
+            switch (keyAlgorithm) {
+                case "RSA":
                     signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
-                }
-                case "EC": {
+                case "EC":
                     signerBuilder = new JcaContentSignerBuilder("SHA256WithECDSA")
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
-                }
                 case JavaAlgorithm.Ed25519:
-                case JavaAlgorithm.Ed448: {
-                    signerBuilder = new JcaContentSignerBuilder(privateKey.getAlgorithm())
+                case JavaAlgorithm.Ed448:
+                    signerBuilder = new JcaContentSignerBuilder(keyAlgorithm)
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
-                }
-                default: {
-                    throw new RuntimeException(String.format("Keytype %s is not supported.", privateKey.getAlgorithm()));
-                }
+                case Algorithm.ML_DSA_44:
+                case Algorithm.ML_DSA_65:
+                case Algorithm.ML_DSA_87:
+                    signerBuilder = new JcaContentSignerBuilder(keyAlgorithm);
+                    break;
+                default:
+                    throw new RuntimeException(String.format("Keytype %s is not supported.", keyAlgorithm));
             }
             return signerBuilder.build(privateKey);
         } catch (Exception e) {
@@ -247,6 +242,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
     /**
      * Retrieves a list of CRL distribution points from CRLDP v3 certificate extension
      * See <a href="www.nakov.com/blog/2009/12/01/x509-certificate-validation-in-java-build-and-verify-cchain-and-verify-clr-with-bouncy-castle/">CRL validation</a>
+     *
      * @param cert
      * @return
      * @throws IOException
@@ -260,7 +256,7 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
         List<String> distributionPointUrls = new LinkedList<>();
         DEROctetString octetString;
         try (ASN1InputStream crldpExtensionInputStream = new ASN1InputStream(new ByteArrayInputStream(data))) {
-            octetString = (DEROctetString)crldpExtensionInputStream.readObject();
+            octetString = (DEROctetString) crldpExtensionInputStream.readObject();
         }
         byte[] octets = octetString.getOctets();
 
@@ -286,28 +282,26 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
     }
 
     public X509Certificate createServicesTestCertificate(String dn,
-                                             Date startDate,
-                                             Date expiryDate,
-                                             KeyPair keyPair,
-                                             String... certificatePolicyOid) {
+                                                         Date startDate,
+                                                         Date expiryDate,
+                                                         KeyPair keyPair,
+                                                         String... certificatePolicyOid) {
         // Cert data
         X500Name subjectDN = new X500Name(dn);
         X500Name issuerDN = new X500Name(dn);
 
         SubjectPublicKeyInfo subjPubKeyInfo = SubjectPublicKeyInfo.getInstance(
-            ASN1Sequence.getInstance(keyPair.getPublic().getEncoded()));
+                ASN1Sequence.getInstance(keyPair.getPublic().getEncoded()));
 
         BigInteger serialNumber = new BigInteger(130, new SecureRandom());
 
         // Build the certificate
         X509v3CertificateBuilder certGen = new X509v3CertificateBuilder(issuerDN, serialNumber, startDate, expiryDate,
-            subjectDN, subjPubKeyInfo);
+                subjectDN, subjPubKeyInfo);
 
-        if (certificatePolicyOid != null)
-        {
-            try
-            {
-                for (Extension certExtension: certPolicyExtensions(certificatePolicyOid))
+        if (certificatePolicyOid != null) {
+            try {
+                for (Extension certExtension : certPolicyExtensions(certificatePolicyOid))
                     certGen.addExtension(certExtension);
             } catch (CertIOException e) {
                 throw new IllegalStateException(e);
@@ -317,11 +311,11 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
         // Sign the cert with the private key
         try {
             ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256withRSA")
-                .setProvider(BouncyIntegration.PROVIDER)
-                .build(keyPair.getPrivate());
+                    .setProvider(BouncyIntegration.PROVIDER)
+                    .build(keyPair.getPrivate());
             X509Certificate x509Certificate = new JcaX509CertificateConverter()
-                .setProvider(BouncyIntegration.PROVIDER)
-                .getCertificate(certGen.build(contentSigner));
+                    .setProvider(BouncyIntegration.PROVIDER)
+                    .getCertificate(certGen.build(contentSigner));
 
             return x509Certificate;
         } catch (CertificateException | OperatorCreationException e) {
@@ -332,11 +326,9 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
     private List<Extension> certPolicyExtensions(String... certificatePolicyOid) {
         List<Extension> certificatePolicies = new LinkedList<>();
 
-        if (certificatePolicyOid != null && certificatePolicyOid.length > 0)
-        {
+        if (certificatePolicyOid != null && certificatePolicyOid.length > 0) {
             List<PolicyInformation> policyInfoList = new LinkedList<>();
-            for (String oid: certificatePolicyOid)
-            {
+            for (String oid : certificatePolicyOid) {
                 policyInfoList.add(new PolicyInformation(new ASN1ObjectIdentifier(oid)));
             }
 
