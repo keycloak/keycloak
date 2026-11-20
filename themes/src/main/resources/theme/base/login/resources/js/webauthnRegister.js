@@ -139,6 +139,9 @@ function returnSuccess(result, initLabel, initLabelPrompt) {
     }
 
     let labelResult = window.prompt(initLabelPrompt, initLabel);
+    while (labelResult !== null && labelResult.trim() === "") {
+        labelResult = window.prompt(initLabelPrompt, initLabel);
+    }
     if (labelResult === null) {
         labelResult = initLabel;
     }

@@ -114,10 +114,9 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
     }
 
 
-    // KEYCLOAK-12168 Verify the 'Device Name' label is optional for the first OTP credential created
-    // (either via Account page or by registering new user), but required for each next created OTP credential
+    // Verify the 'Device Name' label is required for every OTP credential, including the first
     @Test
-    public void deviceNameOptionalForFirstOTPCredentialButRequiredForEachNextOne() {
+    public void deviceNameRequiredForAllOTPCredentials() {
         // Enable 'Default Action' on 'Configure OTP' RA for the 'test' realm
         RequiredActionProviderRepresentation otpRequiredAction = managedRealm.admin().flows().getRequiredAction("CONFIGURE_TOTP");
         otpRequiredAction.setDefaultAction(true);
@@ -129,26 +128,28 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
             // Make a copy of the default Reset Credentials flow, but:
             // * Without 'Send Reset Email' authenticator,
             // * Without 'Reset Password' authenticator
-            final String newFlowAlias = "resetcred - KEYCLOAK-12168 - firstOTP - account - test";
+            final String newFlowAlias = "resetcred - firstOTP - account - test";
             configureResetCredentialsRemoveExecutionsAndBindTheFlow(
                     newFlowAlias,
                     Arrays.asList("reset-credential-email", "reset-password")
             );
 
-            /* Verify the 'Device Name' is optional when creating new OTP credential via the Account page */
+            /* Verify the 'Device Name' is required when creating a new OTP credential via the Account page */
 
             // Login & set up the initial OTP code for the user
             oauth.openLoginForm();
             loginPage.fillLogin(managedUser.getUsername(), managedUser.getPassword());
             loginPage.submit();
 
-            // Create OTP credential with empty label
-            final String emptyOtpLabel = "";
-
-            // Setup OTP
+            // Setup OTP with an empty label should fail
             doAIA();
             totpPage.assertCurrent();
-            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), emptyOtpLabel);
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
+            totpPage.assertCurrent();
+            Assertions.assertEquals("Please specify device name.", totpPage.getInputLabelError());
+
+            final String firstOtpLabel = "My first OTP device";
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), firstOtpLabel);
             assertKcActionStatus(SUCCESS);
 
             Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(), managedUser.getUsername()));
@@ -158,7 +159,7 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            /* Verify the 'Device Name' is optional when creating the first OTP credential via the login config TOTP page */
+            /* Verify the 'Device Name' is required when creating the first OTP credential via the login config TOTP page */
 
             // Register new user
             oauth.openLoginForm();
@@ -170,16 +171,21 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
             managedRealm.cleanup().add(r -> r.users().delete(bwilsonId).close());
             totpPage.assertCurrent();
 
-            // Create OTP credential with empty label
-
-            // Setup OTP
+            // Create OTP credential with empty label should fail
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
+            totpPage.assertCurrent();
+            Assertions.assertEquals("Please specify device name.", totpPage.getInputLabelError());
+            Assertions.assertFalse(AccountHelper.isTotpPresent(managedRealm.admin(), "bwilson"));
+
+            // Setup OTP with a valid Device Name
+            final String firstRegisteredOtpLabel = "My first OTP device";
+            totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), firstRegisteredOtpLabel);
 
             // Assert user authenticated
             Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
             Assertions.assertTrue(AccountHelper.isTotpPresent(managedRealm.admin(), "bwilson"));
-            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "bwilson", ""));
+            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "bwilson", firstRegisteredOtpLabel));
 
             // Logout
             oauth.openLogoutForm();
@@ -196,10 +202,10 @@ public class ResetCredentialsOTPFlowsTest extends AbstractResetCredentialsAltern
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword("bwilson@keycloak.org");
 
-            // Try to create another OTP credential with empty label again. This
-            // should fail with error since OTP label is required in this case already
+            // Try to create another OTP credential with empty label again. This should fail
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
             Assertions.assertTrue(AccountHelper.totpCountEquals(managedRealm.admin(), "bwilson", 1));
+            Assertions.assertEquals("Please specify device name.", totpPage.getInputLabelError());
             // Create 2nd OTP credential with valid (non-empty) Device Name label. This should pass
             final String secondOtpLabel = "My 2nd OTP device";
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), secondOtpLabel);

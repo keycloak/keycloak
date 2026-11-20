@@ -137,7 +137,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         // KEYCLOAK-11753 - Verify OTP label element present on "Configure OTP" required action form
         driver.findElement(By.id("userLabel"));
 
-        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "otp");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Revert TOTP

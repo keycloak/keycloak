@@ -431,7 +431,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         totpPage.assertCurrent();
         String totpSecret = totpPage.getTotpSecret();
-        totpPage.configure(totp.generateTOTP(totpSecret));
+        totpPage.configure(totp.generateTOTP(totpSecret), "otp");
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         assertNumFederatedIdentities(realm.users().search(bc.getUserLogin()).get(0).getId(), 1);
 

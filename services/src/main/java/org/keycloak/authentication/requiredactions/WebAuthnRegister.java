@@ -110,6 +110,7 @@ import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_ORIGIN;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_RPID;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_BAD_SIGNATURE;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_DUPLICATED_DEVICE;
+import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_MISSING_LABEL;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTER_VERIFICATION;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION;
 import static org.keycloak.services.messages.Messages.WEBAUTHN_ERROR_REGISTRATION_AAGUID_ATTESTATION_REQUIRED;
@@ -270,6 +271,10 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         String rpId = policy.getRpId();
         if (rpId == null || rpId.isEmpty()) rpId =  context.getUriInfo().getBaseUri().getHost();
         String label = params.getFirst(WebAuthnConstants.AUTHENTICATOR_LABEL);
+        if (StringUtil.isBlank(label)) {
+            setErrorResponse(context, WEBAUTHN_ERROR_MISSING_LABEL, "Credential label must not be empty", originalEventType);
+            return;
+        }
         byte[] clientDataJSON = Base64.getUrlDecoder().decode(params.getFirst(WebAuthnConstants.CLIENT_DATA_JSON));
         byte[] attestationObject = Base64.getUrlDecoder().decode(params.getFirst(WebAuthnConstants.ATTESTATION_OBJECT));
 
@@ -511,6 +516,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             context.challenge(errorResponse);
             break;
         case WEBAUTHN_ERROR_REGISTRATION:
+        case WEBAUTHN_ERROR_MISSING_LABEL:
         case WEBAUTHN_ERROR_REGISTRATION_NOT_ALLOWED_AAGUID:
         case WEBAUTHN_ERROR_REGISTRATION_AAGUID_ATTESTATION_REQUIRED:
         case WEBAUTHN_ERROR_REGISTRATION_ATTACHMENT_MISMATCH:

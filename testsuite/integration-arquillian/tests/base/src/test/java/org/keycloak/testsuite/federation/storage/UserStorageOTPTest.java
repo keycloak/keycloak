@@ -156,14 +156,14 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             loginConfigTotpPage.assertCurrent();
 
             // Dummy OTP code won't work when configure new OTP
-            loginConfigTotpPage.configure(DummyUserFederationProvider.HARDCODED_OTP);
+            loginConfigTotpPage.configure(DummyUserFederationProvider.HARDCODED_OTP, "otp");
             Assertions.assertEquals("Invalid authenticator code.", loginConfigTotpPage.getInputCodeError());
 
             // This will save the credential to the local DB
             String totpSecret = loginConfigTotpPage.getTotpSecret();
             log.infof("Totp Secret: %s", totpSecret);
             String totpCode = totp.generateTOTP(totpSecret);
-            loginConfigTotpPage.configure(totpCode);
+            loginConfigTotpPage.configure(totpCode, "otp");
 
             Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
