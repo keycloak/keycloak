@@ -527,7 +527,17 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             if (model == null) return null;
             userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) return managedUsers.get(userId).user();
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null) {
+                // the user was already loaded by another lookup in this session (for example by username/email),
+                // so the federated identity query for this key still needs to be cached
+                UserModel managedUser = managed.user();
+                if (realm.getId().equals(managed.realmId()) && managedUser instanceof UserAdapter) {
+                    query = new FederatedIdentityUserListQuery(loaded, cacheKey, realm, userId, socialLink.getIdentityProvider());
+                    cache.addRevisioned(query, startupRevision, getLifespan(realm, managedUser));
+                }
+                return managedUser;
+            }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
@@ -611,9 +621,18 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) {
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null) {
                 logger.tracev("return managed user");
-                return managedUsers.get(userId).user();
+                // the user was already loaded by another lookup in this session (for example by getUserById),
+                // so the service account username query for this key still needs to be cached
+                UserModel managedUser = managed.user();
+                if (realm.getId().equals(managed.realmId()) && managedUser instanceof UserAdapter
+                        && client.getId().equals(managedUser.getServiceAccountClientLink())) {
+                    query = new UserListQuery(loaded, cacheKey, realm, userId);
+                    cache.addRevisioned(query, startupRevision, getLifespan(realm, managedUser));
+                }
+                return managedUser;
             }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
