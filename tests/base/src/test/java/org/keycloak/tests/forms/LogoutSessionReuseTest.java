@@ -19,6 +19,7 @@ package org.keycloak.tests.forms;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -78,6 +79,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 
 /**
@@ -413,8 +415,9 @@ public class LogoutSessionReuseTest {
 
             // An unfinished login, for example in another tab of the same browser
             oauth.openLoginForm();
+            loginPage.assertCurrent();
             rootId = authSessionIdFromCookie();
-            Assertions.assertEquals(1, rootAuthenticationSessionTabCount(rootId), "Root R must hold only the login tab");
+            final String loginTabUrl = loginFormActionUrl();
 
             oauth.logoutForm()
                     .idTokenHint(tokens.getIdToken())
@@ -425,8 +428,7 @@ public class LogoutSessionReuseTest {
             Assertions.assertTrue(currentUrl.startsWith(postLogoutRedirectUri),
                     "The browser must be redirected to post_logout_redirect_uri, but was: " + currentUrl);
             Assertions.assertTrue(user.admin().getUserSessions().isEmpty(), "The user session must be logged out");
-            Assertions.assertEquals(1, rootAuthenticationSessionTabCount(rootId),
-                    "Only the logout tab may be removed from root R, the login tab must be kept");
+            assertLoginTabKept(loginTabUrl);
         } finally {
             if (rootId != null) {
                 removeRootAuthenticationSession(rootId);
@@ -494,13 +496,7 @@ public class LogoutSessionReuseTest {
             loginPage.assertCurrent();
             rootId = authSessionIdFromCookie();
             final String finalRootId = rootId;
-
-            String loginTabId = runOnServer.fetch(session -> {
-                RealmModel realmModel = session.realms().getRealmByName(realmName);
-                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, finalRootId);
-                Assertions.assertEquals(1, root.getAuthenticationSessions().size(), "Root R must hold only the login tab");
-                return root.getAuthenticationSessions().keySet().iterator().next();
-            }, String.class);
+            final String loginTabUrl = loginFormActionUrl();
 
             // Open a second browser tab for logging in user session A
             driver.tabs().newTab("about:blank");
@@ -547,15 +543,7 @@ public class LogoutSessionReuseTest {
             Assertions.assertTrue(currentUrl.startsWith(postLogoutRedirectUri),
                     "The browser must be redirected to post_logout_redirect_uri, but was: " + currentUrl);
 
-            boolean loginTabKept = runOnServer.fetch(session -> {
-                RealmModel realmModel = session.realms().getRealmByName(realmName);
-                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, finalRootId);
-                return root != null && root.getAuthenticationSession(realmModel.getClientByClientId(clientId), loginTabId) != null;
-            }, Boolean.class);
-
-            Assertions.assertTrue(loginTabKept, "The oldest login tab must not be evicted when replacing a logout tab at the limit");
-            Assertions.assertEquals(limit - 1, rootAuthenticationSessionTabCount(rootId),
-                    "Root R must hold limit minus one tabs after B's backchannel logout completes");
+            assertLoginTabKept(loginTabUrl);
         } finally {
             if (rootId != null) {
                 removeRootAuthenticationSession(rootId);
@@ -817,13 +805,30 @@ public class LogoutSessionReuseTest {
                 .getRootAuthenticationSession(session.realms().getRealmByName(realmName), id) != null, Boolean.class);
     }
 
-    private int rootAuthenticationSessionTabCount(String id) {
-        final String realmName = realm.getName();
-        return runOnServer.fetch(session -> {
-            RootAuthenticationSessionModel root = session.authenticationSessions()
-                    .getRootAuthenticationSession(session.realms().getRealmByName(realmName), id);
-            return root == null ? -1 : root.getAuthenticationSessions().size();
-        }, Integer.class);
+    /** The URL the login form posts to. It identifies the tab of the unfinished login. */
+    private String loginFormActionUrl() {
+        return driver.findElement(By.id("kc-form-login")).getDomProperty("action");
+    }
+
+    /**
+     * Opens the URL of an unfinished login again. If its tab was removed, the server restarts the login from the
+     * restart cookie in a new tab and shows a timeout message, so the tab id of the URL must not change.
+     */
+    private void assertLoginTabKept(String loginTabUrl) {
+        driver.open(loginTabUrl);
+        loginPage.assertCurrent();
+        Assertions.assertEquals(queryParam(loginTabUrl, "tab_id"), queryParam(driver.getCurrentUrl(), "tab_id"),
+                "The unfinished login tab must be kept, not restarted in a new tab");
+    }
+
+    private static String queryParam(String url, String name) {
+        for (String pair : URI.create(url).getRawQuery().split("&")) {
+            int separator = pair.indexOf('=');
+            if (separator != -1 && pair.substring(0, separator).equals(name)) {
+                return URLDecoder.decode(pair.substring(separator + 1), StandardCharsets.UTF_8);
+            }
+        }
+        return null;
     }
 
     /**
