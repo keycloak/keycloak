@@ -30,10 +30,12 @@ import { useAccess } from "../context/access/Access";
 
 type UserIdentityProviderLinksProps = {
   userId: string;
+  userCanManage?: boolean;
 };
 
 export const UserIdentityProviderLinks = ({
   userId,
+  userCanManage,
 }: UserIdentityProviderLinksProps) => {
   const { adminClient } = useAdminClient();
   const [key, setKey] = useState(0);
@@ -45,6 +47,8 @@ export const UserIdentityProviderLinks = ({
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
   const { hasAccess, hasSomeAccess } = useAccess();
+
+  const canManageUser = hasAccess("manage-users") || userCanManage;
 
   const canQueryIDPDetails = hasSomeAccess(
     "manage-identity-providers",
@@ -179,7 +183,7 @@ export const UserIdentityProviderLinks = ({
   };
 
   const unlinkRenderer = (fedIdentity: FederatedIdentityRepresentation) => {
-    if (!hasAccess("manage-users")) return <span />;
+    if (!canManageUser) return <span />;
 
     return (
       <Button
@@ -280,7 +284,7 @@ export const UserIdentityProviderLinks = ({
             }
           />
         </FormPanel>
-        {hasAccess("manage-users") && canQueryIDPDetails && (
+        {canManageUser && canQueryIDPDetails && (
           <FormPanel className="kc-available-idps" title={t("availableIdPs")}>
             <TextContent>
               <Text className="kc-available-idps-text">

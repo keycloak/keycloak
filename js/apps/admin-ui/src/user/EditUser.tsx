@@ -449,7 +449,10 @@ export default function EditUser() {
                 }
                 {...identityProviderLinksTab}
               >
-                <UserIdentityProviderLinks userId={user.id!} />
+                <UserIdentityProviderLinks
+                  userId={user.id!}
+                  userCanManage={user.access?.manage}
+                />
               </Tab>
               <Tab
                 data-testid="user-sessions-tab"
