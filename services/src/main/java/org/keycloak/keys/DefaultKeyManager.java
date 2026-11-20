@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.crypto.SecretKey;
 
+import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -60,6 +61,12 @@ public class DefaultKeyManager implements KeyManager {
         KeyWrapper activeKey = getActiveKey(getProviders(realm), realm, use, algorithm);
         if (activeKey != null) {
             return activeKey;
+        }
+
+        if (!Config.scope("keys").getBoolean("generateFallbackKeys", true)) {
+            logger.errorv("No active key found for realm and generating fallback keys is disabled: realm={0} algorithm={1} use={2}",
+                    realm.getName(), algorithm, use.name());
+            throw new RuntimeException("Failed to find key: realm=" + realm.getName() + " algorithm=" + algorithm + " use=" + use.name());
         }
 
         logger.debugv("Failed to find active key for realm, trying fallback: realm={0} algorithm={1} use={2}",

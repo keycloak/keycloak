@@ -20,6 +20,25 @@ A key pair can have the status `Active`, but still not be selected as the curren
 The selected active pair which is used for signatures is selected based on the first key provider sorted by priority
 that is able to provide an active key pair.
 
+==== Fallback keys
+
+If a realm needs a key for an algorithm and no key provider offers an active key for it, {project_name} generates a key for that algorithm.
+For example, this happens when a client uses a signature algorithm for which no key provider is configured.
+The generated key is stored as a key provider named `fallback-<algorithm>` with priority -100.
+
+If all keys must come from specific key providers, for example from a hardware security module, you can disable fallback keys for the whole server:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-keys--generate-fallback-keys=false
+----
+
+{project_name} then fails the request with an error instead of generating a key.
+
+This option only prevents new keys from being generated.
+Existing key providers are still used, including `fallback-<algorithm>` providers that were generated earlier and the generated key providers that are created with every new realm.
+Disable or remove the key providers that must not be used, and make sure that the remaining key providers offer an active key for every algorithm the realm needs.
+
 ==== Rotating keys
 
 We recommend that you regularly rotate keys. Start by creating new keys with a higher priority than the existing active keys. You can instead create new keys with the same priority and making the previous keys passive.
