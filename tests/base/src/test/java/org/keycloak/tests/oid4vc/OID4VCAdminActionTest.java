@@ -41,11 +41,15 @@ import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.JavascriptExecutor;
 
+import static org.keycloak.tests.oid4vc.OID4VCActionTest.clearMaxAuthAge;
 import static org.keycloak.tests.oid4vc.OID4VCActionTest.getNonceFromCredentialOfferUri;
+import static org.keycloak.tests.oid4vc.OID4VCActionTest.setMaxAuthAge;
 import static org.keycloak.tests.oid4vc.OID4VCActionTest.verifyVCActionCredentialResponse;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,6 +95,12 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
         ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
         user.admin().logout();
         adminEvents.clear();
+    }
+
+    @AfterEach
+    void afterEach() {
+        timeOffSet.set(0);
+        clearMaxAuthAge(testRealm);
     }
 
     @Test
@@ -249,6 +259,56 @@ public class OID4VCAdminActionTest extends OID4VCIssuerTestBase {
             credRep.setCredentialScopeName(minimalJwtTypeCredentialScopeName);
             user.admin().verifiableCredentials().createCredential(credRep);
         }
+    }
+
+    @Test
+    public void testAdminCredentialOfferNotSubjectToMaxAuthAge() throws Exception {
+        setMaxAuthAge(testRealm, 0);
+        // Configuring the required action emits an admin event that would precede the send-credential-offer event
+        adminEvents.clear();
+
+        String link = sendEmailAndGetLink(null, null, null, "This link will expire within 12 hours");
+
+        driver.open(link);
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+
+        credentialOfferPage.assertCurrent();
+        credentialOfferPage.clickContinueButton();
+
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+    }
+
+    // A POST without session_code and execution resolves the action from kc_action. The admin exemption must apply to it as well
+    @Test
+    public void testAdminCredentialOfferNotSubjectToMaxAuthAgeOnPostWithoutSessionCodeAndExecution() throws Exception {
+        setMaxAuthAge(testRealm, 30);
+        // Configuring the required action emits an admin event that would precede the send-credential-offer event
+        adminEvents.clear();
+
+        String link = sendEmailAndGetLink(null, null, null, "This link will expire within 12 hours");
+
+        driver.open(link);
+        proceedPage.assertCurrent();
+        proceedPage.clickProceedLink();
+
+        credentialOfferPage.assertCurrent();
+
+        timeOffSet.set(35);
+        // Strip both session_code and execution parameters to simulate a code-less, execution-less POST
+        ((JavascriptExecutor) driver.driver()).executeScript(
+                "var form = document.getElementById('kc-cred-offer-settings-form');"
+                        + "form.action = form.action.replace(/([?&])session_code=[^&]*&?/, '$1');"
+                        + "form.action = form.action.replace(/([?&])execution=[^&]*&?/, '$1');"
+                        + "form.submit();");
+
+        // The admin-initiated offer must not be canceled and sent to login
+        credentialOfferPage.assertCurrent();
+        credentialOfferPage.clickContinueButton();
+
+        infoPage.assertCurrent();
+        assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     private String sendEmailAndGetLink(String clientId, String redirectUri, Integer lifespan, String expectedLifespanMessage) throws IOException {
