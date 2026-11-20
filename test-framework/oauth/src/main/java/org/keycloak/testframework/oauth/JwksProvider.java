@@ -118,13 +118,25 @@ public class JwksProvider implements Closeable {
             if (keepExistingKeys != null && keepExistingKeys) {
                 keys.add(keyData);
             } else {
-                keys.clear();
-                keys.add(keyData);
+                replaceKeys(keyData);
             }
         } catch (Exception e) {
             throw new RuntimeException("Error generating signing keypair", e);
         }
         return getKeysAsPem();
+    }
+
+    void replaceKeys(KeyData keyData) {
+        synchronized (keys) {
+            keys.clear();
+            keys.add(keyData);
+        }
+    }
+
+    KeyData getFirstKey() {
+        synchronized (keys) {
+            return keys.isEmpty() ? null : keys.get(0);
+        }
     }
 
     public Map<String, String> getKeysAsPem() {
@@ -142,7 +154,7 @@ public class JwksProvider implements Closeable {
     }
 
     public JSONWebKeySet getJwks() {
-        JWK[] jwksArray = keys.stream()
+        JWK[] jwksArray = List.copyOf(keys).stream()
                 .map(keyData -> {
                     KeyPair keyPair = keyData.getKeyPair();
                     String keyAlgorithm = keyData.getKeyAlgorithm();
