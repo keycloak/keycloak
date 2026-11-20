@@ -39,6 +39,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation.RoleDefinition;
@@ -51,6 +52,7 @@ import org.keycloak.utils.StringUtil;
 public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePolicyRepresentation> {
 
     public static final String ID = "role";
+    private static final String UNRESOLVED_ROLES = "unresolvedRoles";
     private RolePolicyProvider provider = new RolePolicyProvider(this::toRepresentation);
 
     @Override
@@ -78,7 +80,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         RolePolicyRepresentation representation = new RolePolicyRepresentation();
         String roles = policy.getConfig().get("roles");
 
-        representation.setRoles(getRoles(roles, authorization.getRealm()));
+        representation.setRoles(getRoles(roles));
 
         String fetchRoles = policy.getConfig().get("fetchRoles");
 
@@ -104,9 +106,32 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         updateRoles(policy, representation, authorization);
     }
 
+    public void updateFromUma(Policy policy, Set<String> roles, AuthorizationProvider authorization) {
+        RealmModel realm = authorization.getRealm();
+        Set<String> remainingRoles = new HashSet<>(roles);
+        Set<RoleDefinition> unresolvedRoles = new HashSet<>();
+        for (RoleDefinition definition : getRoles(policy.getConfig().get("roles"))) {
+            String id = definition.getId();
+            if (roles.contains(id) && realm.getRoleById(id) == null) {
+                unresolvedRoles.add(definition);
+                remainingRoles.remove(id);
+            }
+        }
+        Set<RoleDefinition> updates = remainingRoles.stream().map(name -> new RoleDefinition(name, false)).collect(Collectors.toSet());
+        updateRoles(policy, authorization, updates, Set.of(), unresolvedRoles, true);
+    }
+
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateRoles(policy, authorization, getRoles(representation.getConfig().get("roles"), authorization.getRealm()));
+        onImport(policy, representation, authorization, Map.of());
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization, Map<String, String> previousConfig) {
+        Map<String, String> config = representation.getConfig();
+        updateRoles(policy, authorization, getRoles(config.get("roles")), getStoredRoleIds(previousConfig),
+                getRoles(config.get(UNRESOLVED_ROLES)), false);
+        policy.removeConfig(UNRESOLVED_ROLES);
         String fetchRoles = representation.getConfig().get("fetchRoles");
 
         if (StringUtil.isNotBlank(fetchRoles)) {
@@ -119,18 +144,28 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         Map<String, String> config = new HashMap<>();
         Set<RolePolicyRepresentation.RoleDefinition> roles = toRepresentation(policy, authorizationProvider).getRoles();
 
+        Set<RoleDefinition> resolved = new LinkedHashSet<>();
+        Set<RoleDefinition> unresolved = new LinkedHashSet<>();
         for (RolePolicyRepresentation.RoleDefinition roleDefinition : roles) {
             RoleModel role = authorizationProvider.getRealm().getRoleById(roleDefinition.getId());
 
+            if (role == null) {
+                unresolved.add(roleDefinition);
+                continue;
+            }
             if (role.isClientRole()) {
                 roleDefinition.setId(ClientModel.class.cast(role.getContainer()).getClientId() + "/" + role.getName());
             } else {
                 roleDefinition.setId(role.getName());
             }
+            resolved.add(roleDefinition);
         }
 
         try {
-            config.put("roles", JsonSerialization.writeValueAsString(roles));
+            config.put("roles", JsonSerialization.writeValueAsString(resolved));
+            if (!unresolved.isEmpty()) {
+                config.put(UNRESOLVED_ROLES, JsonSerialization.writeValueAsString(unresolved));
+            }
         } catch (IOException cause) {
             throw new RuntimeException("Failed to export role policy [" + policy.getName() + "]", cause);
         }
@@ -148,17 +183,26 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         if (representation.isFetchRoles() != null) {
             policy.putConfig("fetchRoles", String.valueOf(representation.isFetchRoles()));
         }
-        updateRoles(policy, authorization, representation.getRoles());
+        updateRoles(policy, authorization, representation.getRoles(), getStoredRoleIds(policy.getConfig()), Set.of(), false);
     }
 
-    private void updateRoles(Policy policy, AuthorizationProvider authorization, Set<RolePolicyRepresentation.RoleDefinition> roles) {
-        Set<RolePolicyRepresentation.RoleDefinition> updatedRoles = new HashSet<>();
+    private Set<String> getStoredRoleIds(Map<String, String> config) {
+        return getRoles(config.get("roles")).stream().map(RoleDefinition::getId).collect(Collectors.toSet());
+    }
+
+    private void updateRoles(Policy policy, AuthorizationProvider authorization, Set<RoleDefinition> roles,
+            Set<String> storedRoleIds, Set<RoleDefinition> unresolvedRoles, boolean preferNames) {
+        Set<RoleDefinition> updatedRoles = new HashSet<>(unresolvedRoles);
         Set<String> processedRoles = new HashSet<>();
         if (roles != null) {
             RealmModel realm = authorization.getRealm();
             for (RolePolicyRepresentation.RoleDefinition definition : roles) {
-                RoleModel role = getRole(definition, realm);
+                boolean storedId = storedRoleIds.contains(definition.getId());
+                RoleModel role = storedId ? realm.getRoleById(definition.getId()) : getRole(definition, realm, preferNames);
                 if (role == null) {
+                    if (storedId || Boolean.TRUE.equals(definition.isRequired()) || Logic.NEGATIVE.equals(policy.getLogic())) {
+                        updatedRoles.add(definition);
+                    }
                     continue;
                 }
 
@@ -197,11 +241,10 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         return ID;
     }
 
-    private Set<RoleDefinition> getRoles(String rawRoles, RealmModel realm) {
+    private Set<RoleDefinition> getRoles(String rawRoles) {
         if (rawRoles != null) {
             try {
                 return Arrays.stream(JsonSerialization.readValue(rawRoles, RoleDefinition[].class))
-                        .filter(definition -> getRole(definition, realm) != null)
                         .sorted()
                         .collect(Collectors.toCollection(LinkedHashSet::new));
             } catch (IOException e) {
@@ -214,7 +257,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
 
     public static final Pattern UUID_PATTERN = Pattern.compile("[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}");
 
-    private RoleModel getRole(RolePolicyRepresentation.RoleDefinition definition, RealmModel realm) {
+    private RoleModel getRole(RolePolicyRepresentation.RoleDefinition definition, RealmModel realm, boolean preferNames) {
         String roleName = definition.getId();
         String clientId = null;
         int clientIdSeparator = roleName.indexOf("/");
@@ -229,17 +272,17 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         if (clientId == null) {
             // if the role name looks like a UUID, it is likely that it is a role ID. Then do this look-up first to avoid hitting the database twice
             // TODO: In a future version of the auth feature, make this more strict to avoid the double lookup and any ambiguity
-            boolean looksLikeAUuid = UUID_PATTERN.matcher(roleName).matches();
-            role = looksLikeAUuid ? realm.getRoleById(roleName) : realm.getRole(roleName);
+            boolean tryIdFirst = !preferNames && UUID_PATTERN.matcher(roleName).matches();
+            role = tryIdFirst ? realm.getRoleById(roleName) : realm.getRole(roleName);
 
             if (role == null) {
-                role = !looksLikeAUuid ? realm.getRoleById(roleName) : realm.getRole(roleName);;
+                role = tryIdFirst ? realm.getRole(roleName) : realm.getRoleById(roleName);
             }
         } else {
             ClientModel client = realm.getClientByClientId(clientId);
 
             if (client == null) {
-                throw new RuntimeException("Client with id [" + clientId + "] not found.");
+                return null;
             }
 
             role = client.getRole(roleName);

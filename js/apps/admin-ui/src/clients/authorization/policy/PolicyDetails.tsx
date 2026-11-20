@@ -128,7 +128,7 @@ export default function PolicyDetails() {
   );
 
   const onSubmitPolicy = async (policy: Policy) => {
-    policy.groups = policy.groups?.filter((g) => g.id);
+    policy.groups = policy.groups?.filter((g) => g.id || g.path);
     policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
     policy.roles = policy.roles
       ?.filter((r) => r.id)
