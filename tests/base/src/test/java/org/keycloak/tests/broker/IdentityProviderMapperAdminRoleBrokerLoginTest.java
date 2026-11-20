@@ -169,6 +169,7 @@ public class IdentityProviderMapperAdminRoleBrokerLoginTest {
                     "authorizationUrl", providerBase + "/protocol/openid-connect/auth",
                     "tokenUrl", providerBase + "/protocol/openid-connect/token",
                     "userInfoUrl", providerBase + "/protocol/openid-connect/userinfo",
+                    "useJwksUrl", "true",
                     "jwksUrl", providerBase + "/protocol/openid-connect/certs",
                     "defaultScope", "openid email profile",
                     IdentityProviderModel.SYNC_MODE, "IMPORT"));

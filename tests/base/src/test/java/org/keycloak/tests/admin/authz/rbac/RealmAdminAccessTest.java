@@ -922,6 +922,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.setEnabled(true);
         idp.setConfig(new java.util.HashMap<>());
         idp.getConfig().put("clientId", "test-client");
+        idp.getConfig().put("validateSignature", "false");
         idp.getConfig().put("clientSecret", "test-secret");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
@@ -1032,6 +1033,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.setConfig(new java.util.HashMap<>());
         idp.getConfig().put("clientId", "test-client");
         idp.getConfig().put("clientSecret", "test-secret");
+        idp.getConfig().put("validateSignature", "false");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
 
@@ -1105,6 +1107,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.setConfig(new java.util.HashMap<>());
         idp.getConfig().put("clientId", "test-client");
         idp.getConfig().put("clientSecret", "test-secret");
+        idp.getConfig().put("validateSignature", "false");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
 
@@ -1178,6 +1181,7 @@ public class RealmAdminAccessTest extends AbstractAdminRBACTest {
         idp.setConfig(new java.util.HashMap<>());
         idp.getConfig().put("clientId", "test-client");
         idp.getConfig().put("clientSecret", "test-secret");
+        idp.getConfig().put("validateSignature", "false");
         idp.getConfig().put("authorizationUrl", "https://test.example.com/auth");
         idp.getConfig().put("tokenUrl", "https://test.example.com/token");
 

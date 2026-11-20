@@ -21,6 +21,7 @@ import java.lang.reflect.Proxy;
 
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.models.IdentityProviderModel;
@@ -32,6 +33,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.social.gitlab.GitLabIdentityProviderFactory;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
 
 import org.junit.Assert;
@@ -49,6 +51,39 @@ public class OIDCIdentityProviderTest {
     private static final String SESSION_STATE_FROM_TOKEN_RESPONSE = "session-state-from-token-response";
 
     private static final ResteasyKeycloakSessionFactory sessionFactory = new ResteasyKeycloakSessionFactory();
+
+    @Test
+    public void validateSignature_defaultsToTrueWhenAbsent() {
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(new IdentityProviderModel());
+        config.setProviderId(OIDCIdentityProviderFactory.PROVIDER_ID);
+
+        Assert.assertTrue(config.isValidateSignature());
+
+        config.setValidateSignature(false);
+        Assert.assertFalse(config.isValidateSignature());
+    }
+
+    @Test
+    public void gitLabAppliesVerificationDefaultsToStoredProvider() {
+        GitLabIdentityProviderFactory factory = new GitLabIdentityProviderFactory();
+        IdentityProviderModel stored = new IdentityProviderModel();
+        stored.setProviderId(GitLabIdentityProviderFactory.PROVIDER_ID);
+
+        OIDCIdentityProviderConfig automatic = factory.create(null, stored).getConfig();
+        Assert.assertTrue(automatic.isValidateSignature());
+        Assert.assertTrue(automatic.isUseJwksUrl());
+        Assert.assertEquals("https://gitlab.com/oauth/discovery/keys", automatic.getJwksUrl());
+        Assert.assertTrue(stored.getConfig().isEmpty());
+
+        String staticKey = "MEMwBQYDK2VxAzoAWOVoLNsZlgw5dvat/Xi83Rh7zQMOerq3XrTT1xVbqDX2naZPlza0gwyNnMV6H6vnUGbaCK/+mgCA";
+        stored.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER, staticKey);
+
+        OIDCIdentityProviderConfig pinned = factory.create(null, stored).getConfig();
+        Assert.assertTrue(pinned.isValidateSignature());
+        Assert.assertFalse(pinned.isUseJwksUrl());
+        Assert.assertNull(pinned.getJwksUrl());
+        Assert.assertEquals(staticKey, pinned.getPublicKeySignatureVerifier());
+    }
 
     @Test
     public void extractIdentity_sidInIdToken_noSessionState_usesSid() throws IOException {

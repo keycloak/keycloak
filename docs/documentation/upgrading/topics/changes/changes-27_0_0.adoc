@@ -461,17 +461,26 @@ This prevents an attacker who controls a brokered account with an unverified ema
 
 If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.
 
-=== SAML identity provider signature validation defaults to enabled
+=== Identity provider signature validation defaults to enabled
 
-When signature settings are absent from a SAML identity provider's configuration, {project_name} now treats them as enabled.
-This applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`).
+When signature settings are absent from an identity provider's configuration, {project_name} now treats them as enabled.
+This applies to SAML and OpenID Connect (OIDC) identity providers:
+
+* For SAML identity providers, this applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`).
 Assertions are also verified when *Want Assertions Signed* is enabled and *Validate Signature* is explicitly disabled, which requires a trusted signing key.
+* For OpenID Connect (OIDC), Keycloak OpenID Connect, and GitLab identity providers, this applies to *Validate Signatures* (`validateSignature`).
+GitLab uses its built-in JWKS URL by default when verification-key settings are absent.
 
-After upgrading, logins may fail for providers that send unsigned assertions, or whose signatures {project_name} cannot verify.
-Configure the provider to sign its assertions and configure the corresponding signing certificates in {project_name}, either in *Validating X509 Certificates* or through *Use metadata descriptor URL*.
+After upgrading, logins may fail for providers that send unsigned responses, or whose signatures {project_name} cannot verify:
 
-If unsigned responses are required for compatibility, explicitly disable the relevant setting.
-Disable *Want Assertions Signed* if the provider does not sign assertions; if signatures are not to be verified, also disable *Validate Signature*.
+* For SAML providers, configure the provider to sign its assertions and configure the corresponding signing certificates in {project_name}, either in *Validating X509 Certificates* or through *Use metadata descriptor URL*.
+* For OIDC providers, configure the provider with a trusted signing key, either by providing a *JWKS URL* or configuring a *Validating Public Key*.
+
+If unsigned responses are required for compatibility, explicitly disable the relevant setting:
+
+* For SAML providers, disable *Want Assertions Signed* if the provider does not sign assertions; if signatures are not to be verified, also disable *Validate Signature*.
+* For OIDC providers, disable *Validate Signatures*.
+
 Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remain respected.
 
 Disabling signature validation reduces protection against forged identity-provider responses.

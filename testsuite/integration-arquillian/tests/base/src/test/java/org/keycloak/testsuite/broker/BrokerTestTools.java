@@ -133,6 +133,8 @@ public class BrokerTestTools {
         config.put("logoutUrl", getProviderRoot() + "/auth/realms/" + idpRealm + "/protocol/openid-connect/logout");
         config.put("userInfoUrl", getProviderRoot() + "/auth/realms/" + idpRealm + "/protocol/openid-connect/userinfo");
         config.put("backchannelSupported", "true");
+        config.put("useJwksUrl", "true");
+        config.put("jwksUrl", getProviderRoot() + "/auth/realms/" + idpRealm + "/protocol/openid-connect/certs");
         adminClient.realm(childRealm).identityProviders().create(idp);
 
         ClientRepresentation client = new ClientRepresentation();

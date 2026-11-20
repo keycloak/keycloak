@@ -75,7 +75,12 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     }
 
     public boolean isValidateSignature() {
-        return Boolean.parseBoolean(getConfig().get("validateSignature"));
+        String value = getConfig().get(VALIDATE_SIGNATURE);
+        if (value != null) {
+            return Boolean.parseBoolean(value);
+        }
+        return OIDCIdentityProviderFactory.PROVIDER_ID.equals(getProviderId())
+                || KeycloakOIDCIdentityProviderFactory.PROVIDER_ID.equals(getProviderId());
     }
 
     public void setValidateSignature(boolean validateSignature) {
