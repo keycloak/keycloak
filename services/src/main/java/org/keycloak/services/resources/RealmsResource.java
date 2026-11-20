@@ -228,7 +228,6 @@ public class RealmsResource {
 
     @GET
     @Path("{realm}/.well-known/{alias}")
-    @Produces({MediaType.APPLICATION_JSON, APPLICATION_JWT})
     public Response getWellKnown(final @PathParam("realm") String realm,
                                  final @PathParam("alias") String alias) {
         return getWellKnownResponse(session, realm, alias, logger);
@@ -249,8 +248,12 @@ public class RealmsResource {
             Object config = wellKnown.getConfig();
             Response.ResponseBuilder responseBuilder;
 
-            // Check if the provider returned a JWT string or JSON object
-            responseBuilder = Response.ok(config).type(config instanceof String ? APPLICATION_JWT : MediaType.APPLICATION_JSON);
+            String mediaType = wellKnown.getMediaType();
+            if (mediaType == null) {
+                // Check if the provider returned a JWT string or JSON object
+                mediaType = config instanceof String ? APPLICATION_JWT : MediaType.APPLICATION_JSON;
+            }
+            responseBuilder = Response.ok(config).type(mediaType);
 
             return Cors.builder().allowAllOrigins().auth().add(responseBuilder.cacheControl(CacheControlUtil.noCache()));
         }

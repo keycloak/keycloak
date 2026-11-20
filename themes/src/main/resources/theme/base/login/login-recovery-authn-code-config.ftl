@@ -61,8 +61,8 @@
 
         <@buttons.actionGroup horizontal=isAppInitiatedAction?? id="kc-form-buttons">
             <#if isAppInitiatedAction??>
-                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" fullWidth=false class=["kcButtonLargeClass"] value=msg("recovery-codes-action-complete") disabled="disabled" />
-                <@buttons.button id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" label="recovery-codes-action-cancel" type="secondary" fullWidth=false class=["kcButtonLargeClass"] value="true" />
+                <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" class=["kcButtonLargeClass"] value=msg("recovery-codes-action-complete") disabled="disabled" />
+                <@buttons.button id="cancelRecoveryAuthnCodesBtn" name="cancel-aia" label="recovery-codes-action-cancel" type="secondary" class=["kcButtonLargeClass"] value="true" />
             <#else>
                 <@buttons.button id="saveRecoveryAuthnCodesBtn" label="recovery-codes-action-complete" class=["kcButtonLargeClass"] value=msg("recovery-codes-action-complete") disabled="disabled" />
             </#if>

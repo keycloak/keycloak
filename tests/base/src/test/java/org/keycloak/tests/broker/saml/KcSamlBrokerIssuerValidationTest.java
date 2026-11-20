@@ -129,6 +129,7 @@ public class KcSamlBrokerIssuerValidationTest extends AbstractKcSamlBrokerTest {
             response.onResponse(doc -> {
                 doc.setNameId(VICTIM);
                 mutation.accept(doc);
+                signSamlResponse(doc.getDocument());
             });
             int status = response.submit();
 

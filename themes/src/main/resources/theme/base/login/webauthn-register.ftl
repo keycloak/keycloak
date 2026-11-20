@@ -10,16 +10,14 @@
     <#elseif section = "form">
     <div class="${properties.kcFormClass!}">
         <form id="register" action="${url.loginAction}" method="post" >
-            <div class="${properties.kcFormGroupClass!}">
-                <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
-                <input type="hidden" id="attestationObject" name="attestationObject"/>
-                <input type="hidden" id="publicKeyCredentialId" name="publicKeyCredentialId"/>
-                <input type="hidden" id="authenticatorLabel" name="authenticatorLabel"/>
-                <input type="hidden" id="transports" name="transports"/>
-                <input type="hidden" id="authenticatorAttachment" name="authenticatorAttachment"/>
-                <input type="hidden" id="error" name="error"/>
-                <@passwordCommons.logoutOtherSessions/>
-            </div>
+            <input type="hidden" id="clientDataJSON" name="clientDataJSON"/>
+            <input type="hidden" id="attestationObject" name="attestationObject"/>
+            <input type="hidden" id="publicKeyCredentialId" name="publicKeyCredentialId"/>
+            <input type="hidden" id="authenticatorLabel" name="authenticatorLabel"/>
+            <input type="hidden" id="transports" name="transports"/>
+            <input type="hidden" id="authenticatorAttachment" name="authenticatorAttachment"/>
+            <input type="hidden" id="error" name="error"/>
+            <@passwordCommons.logoutOtherSessions/>
         </form>
 
         <script type="module">

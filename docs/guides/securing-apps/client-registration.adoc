@@ -68,7 +68,7 @@ When you create a client through the Client Registration Service the response wi
 The registration access token provides access to retrieve the client configuration later, but also to update or delete the client.
 The registration access token is included with the request in the same way as a bearer token or initial access token.
 
-By default, registration access token rotation is enabled. This means a registration access token is only valid once. When the token is used, the response will include a new token. Note that registration access token rotation can be disabled by using link:{adminguide_link}#_client_policies[Client Policies].
+By default, registration access token rotation is enabled. This means a registration access token is only valid once. When the token is used, the response will include a new token. Note that registration access token rotation can be disabled by using link:{adminguide_link}#client_policies[Client Policies].
 
 If a client was created outside of the Client Registration Service it won't have a registration access token associated with it.
 You can create one through the admin console. This can also be useful if you lose the token for a particular client.
@@ -220,7 +220,7 @@ String registrationAccessToken = client.getRegistrationAccessToken();
 
 WARNING: Client Registration Policies apply to requests made through the Client Registration Service. They are not executed for arbitrary Admin REST API requests.
 
-NOTE: The current plans are for the Client Registration Policies to be removed in favor of the Client Policies described in the link:{adminguide_link}#_client_policies[{adminguide_name}].
+NOTE: The current plans are for the Client Registration Policies to be removed in favor of the Client Policies described in the link:{adminguide_link}#client_policies[{adminguide_name}].
 Client Policies are more flexible and support more use case.
 For example the case of enforcing client URIs like the JWKS to link:{adminguide_link}#ssrf[prevent SSRF attacks] allowing only trusted patterns or domains.
 
@@ -274,6 +274,7 @@ This is intentional: allowing protocol mapper creation via DCR effectively grant
 
 * Client Scope Policy - Allows you to specify `Client Scopes` that can be used with newly registered or updated clients.
 There are no allowed scopes by default; only the client scopes defined as `Realm Default Client Scopes` are allowed by default.
+The policy also checks scopes requested through the deprecated `clientTemplate` field, after converting spaces in legacy names to underscores.
 +
 WARNING: Realm administrators should take care before adding `Allowed Client Scopes` to this client registration policy.
 Client scopes can contain role scope mappings and various protocol mappers, which can modify issued tokens or assertions.

@@ -484,6 +484,6 @@ Additional working examples on how to setup and use proofs can be seen from the 
 
 ==== Related Configuration
 
-- <<_oid4vci, OID4VCI Configuration>> - General OID4VCI setup
+- <<oid4vci, OID4VCI Configuration>> - General OID4VCI setup
 - <<proc-creating-a-realm_{context}, Creating a Realm>> - Realm creation
 - <<realm_keys, Managing Realm Keys>> - Key management

@@ -165,6 +165,8 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         // Configure identity provider
         IdentityProviderRepresentation idp = KcSamlBrokerConfiguration.INSTANCE.setUpIdentityProvider();
         idp.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
+        idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+        idp.getConfig().put(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false");
         idp.setFirstBrokerLoginFlowAlias(FLOW_AUTO_LINK);
         final Creator<IdentityProviderResource> idpCreator = Creator.create(managedRealm.admin(), idp);
         

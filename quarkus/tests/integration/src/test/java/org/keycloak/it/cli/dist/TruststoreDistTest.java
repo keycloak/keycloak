@@ -68,7 +68,9 @@ public class TruststoreDistTest {
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)
                 .keyStore(TruststoreDistTest.class.getResource("/self-signed.p12").getPath(), "password")
-                .get("https://mykeycloak.org:8443").then().body(Matchers.containsString("https://mykeycloak.org"));
+                .get("https://mykeycloak.org:8443").then()
+                .statusCode(200)
+                .body(Matchers.containsString("Welcome to Keycloak"));
         
         // ensure that the provider factories init with the correct truststore
         // this is from the startup, so no additional waiting is necessary
@@ -94,7 +96,9 @@ public class TruststoreDistTest {
 
         given().trustStore(TruststoreDistTest.class.getResource("/self-signed-truststore.p12").getPath(), TruststoreBuilder.DUMMY_PASSWORD)
                 .keyStore(TruststoreDistTest.class.getResource("/self-signed.p12").getPath(), "password")
-                .get("https://mykeycloak.org:8443").then().body(Matchers.containsString("https://mykeycloak.org"));
+                .get("https://mykeycloak.org:8443").then()
+                .statusCode(200)
+                .body(Matchers.containsString("Welcome to Keycloak"));
     }
 
 }

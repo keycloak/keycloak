@@ -27,5 +27,5 @@ Update Profile::
 
 NOTE: Some actions do not makes sense to be added to the user account directly. For example, the `Update User Locale` is a helper action to handle some localization related parameters. Another
 example is the `Delete Credential` action, which is supposed to be triggered as a <<con-aia-parameterized_{context}, Parameterized AIA>>.  Regarding this one, if the administrator wants to delete the credential of some
-user, that administrator can do it directly in the Admin Console. The `Delete Credential` action is dedicated to be used for example by the <<_account-service,{project_name} Account Console>>.
+user, that administrator can do it directly in the Admin Console. The `Delete Credential` action is dedicated to be used for example by the <<account-service,{project_name} Account Console>>.
 

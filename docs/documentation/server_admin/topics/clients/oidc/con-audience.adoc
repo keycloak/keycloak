@@ -39,7 +39,7 @@ To prevent `service1` from the example above to misuse the token, the secure var
 . {project_name} authenticates a user.
 
 . {project_name} issues a token to the `frontend-client` application. The `frontend-client` knows that it will need to invoke `service1` so it places `scope=service1-scope` in the authentication request sent to {project_name}.
-The scope `service1-scope` is a <<_client_scopes,Client scope>>, which may need to be created by administrator. In the <<_audience_setup,sections below>> there are some options how to setup such a client scope.
+The scope `service1-scope` is a <<client_scopes,Client scope>>, which may need to be created by administrator. In the <<_audience_setup,sections below>> there are some options how to setup such a client scope.
 The token claim will look like:
 +
 [source,json]
@@ -87,11 +87,11 @@ When setting up audience checking:
 +
 Audiences can be added to the token by two ways:
 +
-** Using the client roles as described in the <<_audience_resolve, Audience resolve section>>.
+** Using the client roles as described in the <<audience_resolve, Audience resolve section>>.
 +
 ** Hardcoded audience as described in the <<_audience_hardcoded, Hardcoded audience section>>.
 
-[[_audience_resolve]]
+[[audience_resolve]]
 == Automatically add audience based on client roles
 
 An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each such client is then added as an audience, which is useful
@@ -111,7 +111,7 @@ as it is a service client, which may never directly authenticate by itself. The 
 . Create user `john` in the same realm and assign him the client role `service1-role` of client `service1` created in the previous step.
 <<proc-assigning-role-mappings_{context},This section>> contains some details on how to do it.
 
-. Create client scope named `service1-scope`. It can be marked with *Include in token scope* as *ON*. See <<_client_scopes,this section>> for the details on how to create and set new client scope.
+. Create client scope named `service1-scope`. It can be marked with *Include in token scope* as *ON*. See <<client_scopes,this section>> for the details on how to create and set new client scope.
 
 . Go to the tab *Scope* of the `service1-scope` and add the role `service1-role` of the client `service1` to the <<_role_scope_mappings,Role scope mappings>> of this client scope
 
@@ -121,7 +121,7 @@ as it is a service client, which may never directly authenticate by itself. The 
 
 . Go back to the tab *Client scopes* of this client and click *Add client scope* and link the `service1-scope` as *Optional*. See <<_client_scopes_linking, Client Scopes Linking section>> for more details.
 
-. Click the sub-tab *Evaluate* in the *Client scopes* as described in <<_client_scopes_evaluate,this section>>. When filling user `john` and the subtab *Generated access token*, it can be seen that
+. Click the sub-tab *Evaluate* in the *Client scopes* as described in <<client_scopes_evaluate,this section>>. When filling user `john` and the subtab *Generated access token*, it can be seen that
 there is not any `aud` claim as there are not any client roles in the generated example token. However when adding also the scope `service1-scope` to the *Scope* field, it can be seen that there is client
 role `service1-role` as it is in *Role scope mappings* of the `service1-scope` and also in the role mappings of the user `john`. Due to that the `aud` claim will also contain `service1`.
 
@@ -168,9 +168,9 @@ Here the example steps for the hardcoded audience
 .Audience protocol mapper
 image:images/audience_mapper.png[]
 +
-. Link the newly created client scope with some client. For example it can be linked as *Optional* client scope to the client `frontend-client` created in the <<_audience_resolve,previous example>>.
+. Link the newly created client scope with some client. For example it can be linked as *Optional* client scope to the client `frontend-client` created in the <<audience_resolve,previous example>>.
 
-. You can optionally <<_client_scopes_evaluate, Evaluate Client Scopes>> for the client where the client scope was linked (For example `frontend-client`) and generate an example access token.
+. You can optionally <<client_scopes_evaluate, Evaluate Client Scopes>> for the client where the client scope was linked (For example `frontend-client`) and generate an example access token.
 The audience `service2` will be added to the audience of the generated access token if `service2-scope` is included in the _scope_ parameter, when you assigned it as an optional client scope.
 
 In your confidential client application, ensure that the _scope_ parameter is used. The value like _scope=service2-scope_ must be included when you want to issue the token for accessing `service2`.

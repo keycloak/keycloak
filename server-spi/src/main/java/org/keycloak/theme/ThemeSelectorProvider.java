@@ -52,7 +52,7 @@ public interface ThemeSelectorProvider extends Provider {
             return DEFAULT_V2;
         }
 
-        if (type == Theme.Type.LOGIN) {
+        if (type == Theme.Type.LOGIN || type == Theme.Type.WELCOME) {
             return DEFAULT_V3;
         }
 

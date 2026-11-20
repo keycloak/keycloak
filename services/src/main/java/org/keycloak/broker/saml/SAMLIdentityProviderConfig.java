@@ -121,7 +121,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public boolean isValidateSignature() {
-        return Boolean.valueOf(getConfig().get(VALIDATE_SIGNATURE));
+        return Boolean.valueOf(getConfig().getOrDefault(VALIDATE_SIGNATURE, "true"));
     }
 
     public void setValidateSignature(boolean validateSignature) {
@@ -190,7 +190,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     }
 
     public boolean isWantAssertionsSigned() {
-        return Boolean.valueOf(getConfig().get(WANT_ASSERTIONS_SIGNED));
+        return Boolean.valueOf(getConfig().getOrDefault(WANT_ASSERTIONS_SIGNED, "true"));
     }
 
     public void setWantAssertionsSigned(boolean wantAssertionsSigned) {

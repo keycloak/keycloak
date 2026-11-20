@@ -19,6 +19,7 @@
 package org.keycloak.common.util;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
@@ -83,6 +84,27 @@ public class StringPropertyReplacerTest {
                 break;
             }
         }
+    }
+
+    @Test
+    public void testDollarSignNotStartingPlaceholder() {
+        Map<String, String> props = new HashMap<>();
+        props.put("a", "A");
+        props.put("b", "B");
+
+        // a trailing '$' must be kept as-is, without appending a garbage character
+        Assertions.assertEquals("A$", StringPropertyReplacer.replaceProperties("${a}$", props::get));
+        Assertions.assertEquals("Bonjour A, total 25 $", StringPropertyReplacer.replaceProperties("Bonjour ${a}, total 25 $", props::get));
+
+        // a '$' directly before a placeholder is not handled consistently: the String variant starts processing at the first "${",
+        // so a leading "$${b}" is replaced, while it is kept as-is after an earlier placeholder or in the stream variant.
+        // This is left unchanged until an escape syntax for "${" exists, then it should be revisited:
+        // https://github.com/keycloak/keycloak/issues/55355
+        Assertions.assertEquals("$B", StringPropertyReplacer.replaceProperties("$${b}", props::get));
+        Assertions.assertEquals("A$${b}", StringPropertyReplacer.replaceProperties("${a}$${b}", props::get));
+
+        // a '$' directly before the closing brace must not prevent the placeholder from being closed
+        Assertions.assertEquals("5$ B", StringPropertyReplacer.replaceProperties("${x:5$} ${b}", props::get));
     }
 
     private String replaceProperties(String key) {

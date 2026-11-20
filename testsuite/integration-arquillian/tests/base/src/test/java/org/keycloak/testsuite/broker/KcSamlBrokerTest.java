@@ -73,6 +73,13 @@ import static org.hamcrest.Matchers.not;
  */
 public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
+    private void trustResponseSigningKey() {
+        var idp = identityProviderResource.toRepresentation();
+        idp.getConfig().put(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, "false");
+        idp.getConfig().put(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, AbstractSamlTest.REALM_SIGNING_CERTIFICATE);
+        identityProviderResource.update(idp);
+    }
+
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
         return KcSamlBrokerConfiguration.INSTANCE;
@@ -314,6 +321,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
     @Test
     public void emptyAttributeToRoleMapperTest() throws ParsingException, ConfigurationException, ProcessingException {
+        trustResponseSigningKey();
         createRolesForRealm(bc.consumerRealmName());
         createRoleMappersForConsumerRealm();
 
@@ -332,6 +340,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
                 .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
                 .processSamlResponse(Binding.POST)    // Response from producer IdP
+                    .signWith(AbstractSamlTest.REALM_PRIVATE_KEY, AbstractSamlTest.REALM_PUBLIC_KEY).signAssertions()
                     .transformObject(ob -> {
                         assertThat(ob, org.keycloak.testsuite.util.Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
                         ResponseType resp = (ResponseType) ob;
@@ -440,6 +449,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     // KEYCLOAK-17935
     @Test
     public void loginInResponseToMismatch() throws Exception {
+        trustResponseSigningKey();
         AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
@@ -455,6 +465,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
           .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
           .processSamlResponse(Binding.POST)    // Response from producer IdP
+            .signWith(AbstractSamlTest.REALM_PRIVATE_KEY, AbstractSamlTest.REALM_PUBLIC_KEY).signAssertions()
             .transformDocument(this::tamperInResponseTo)
           .build()
           .execute(hr -> assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST)));       // Response from consumer IdP
@@ -463,6 +474,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     // KEYCLOAK-17935
     @Test
     public void loginInResponseToMissing() throws Exception {
+        trustResponseSigningKey();
         AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
@@ -478,6 +490,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
           .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
           .processSamlResponse(Binding.POST)    // Response from producer IdP
+            .signWith(AbstractSamlTest.REALM_PRIVATE_KEY, AbstractSamlTest.REALM_PUBLIC_KEY).signAssertions()
             .transformDocument(this::removeInResponseTo)
           .build()
           .execute(hr -> assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST)));       // Response from consumer IdP
@@ -486,6 +499,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
     // KEYCLOAK-17935
     @Test
     public void loginInResponseToEmpty() throws Exception {
+        trustResponseSigningKey();
         AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
 
         Document doc = SAML2Request.convert(loginRep);
@@ -501,6 +515,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
           .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
           .processSamlResponse(Binding.POST)    // Response from producer IdP
+            .signWith(AbstractSamlTest.REALM_PRIVATE_KEY, AbstractSamlTest.REALM_PUBLIC_KEY).signAssertions()
             .transformDocument(this::clearInResponseTo)
           .build()
           .execute(hr -> assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST)));       // Response from consumer IdP
