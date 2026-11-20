@@ -26,6 +26,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import org.keycloak.common.util.DurationConverter;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+
 import io.quarkus.agroal.runtime.health.DataSourceHealthCheck;
 import io.smallrye.context.api.ManagedExecutorConfig;
 import io.smallrye.health.api.AsyncHealthCheck;
@@ -51,10 +55,11 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     public static final String FAILING_SINCE = "Failing since";
 
     /**
-     * Upper bound for a single check. The pool's network timeout normally aborts a hanging validation earlier;
-     * this is the backstop, for example when closing a broken TLS connection blocks as well.
+     * The upper bound for a single check is the database connect timeout plus this margin. The pool's network timeout, which uses
+     * the same value, normally aborts a hanging validation first; the check timeout is the backstop, for example when closing
+     * a broken TLS connection blocks as well.
      */
-    static final Duration CHECK_TIMEOUT = Duration.ofSeconds(20);
+    static final Duration CHECK_TIMEOUT_MARGIN = Duration.ofSeconds(1);
 
     private static final String CHECK_NAME = "Keycloak database connections async health check";
 
@@ -73,18 +78,21 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
 
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();
 
+    private final Duration checkTimeout = DurationConverter.parseDuration(
+            Configuration.getConfigValue(DatabaseOptions.DB_CONNECT_TIMEOUT).getValue()).plus(CHECK_TIMEOUT_MARGIN);
+
     @Override
     public Uni<HealthCheckResponse> call() {
         Uni<HealthCheckResponse> uni = Uni.createFrom().item(this::syncCheck);
         return uni.runSubscriptionOn(executor)
-                .ifNoItem().after(CHECK_TIMEOUT).recoverWithItem(this::timeoutResponse);
+                .ifNoItem().after(checkTimeout).recoverWithItem(this::timeoutResponse);
     }
 
     private HealthCheckResponse timeoutResponse() {
         Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
         return HealthCheckResponse.named(CHECK_NAME).down()
                 .withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime))
-                .withData("reason", "Database connection check timed out after " + CHECK_TIMEOUT)
+                .withData("reason", "Database connection check timed out after " + checkTimeout)
                 .build();
     }
 
