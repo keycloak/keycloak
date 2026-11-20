@@ -130,6 +130,39 @@ public class JsonWebTokenTest {
     }
 
     @Test
+    public void isActiveWithSkewReturnTrueWhenExpiredWithinTimeSkew() {
+        long expiredTime = Time.currentTime() - 5;
+        int allowedClockSkew = 10;
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.exp(expiredTime);
+        assertTrue(jsonWebToken.isActive(allowedClockSkew));
+    }
+
+    @Test
+    public void isActiveWithSkewReturnFalseWhenExpiredOutsideTimeSkew() {
+        long expiredTime = Time.currentTime() - 10;
+        int allowedClockSkew = 5;
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.exp(expiredTime);
+        assertFalse(jsonWebToken.isActive(allowedClockSkew));
+    }
+
+    @Test
+    public void isActiveNoArgReturnFalseWhenExpiredEvenIfWithinDefaultNbfSkewWindow() {
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.exp(Time.currentTime() - 1L);
+        assertFalse(jsonWebToken.isActive());
+    }
+
+    @Test
+    public void isExpiredHonorsAllowedTimeSkew() {
+        JsonWebToken jsonWebToken = new JsonWebToken();
+        jsonWebToken.exp(Time.currentTime() - 1L);
+        assertTrue(jsonWebToken.isExpired());
+        assertFalse(jsonWebToken.isExpired(5));
+    }
+
+    @Test
     public void testRealmAccessMerge() {
         Set<String> role1Set = new HashSet<>(Collections.singleton("role1"));
         Map<String, Object> map1 = new HashMap<>();

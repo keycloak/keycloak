@@ -74,6 +74,13 @@ public abstract class AbstractBaseJWTValidator {
 
         lifespan = token.getExp() - currentTime;
 
+        // Remaining lifetime is the single-use cache TTL. isActive(allowedClockSkew) can
+        // accept a token that is already past exp; this check still rejects that case,
+        // including assertions that omit iat (SPIFFE / Kubernetes client auth).
+        if (lifespan <= 0) {
+            return failure("Token is not active");
+        }
+
         if (token.getIat() == null) {
             if (lifespan > maxExp) {
                 return failure("Token expiration is too far in the future and iat claim not present in token");
