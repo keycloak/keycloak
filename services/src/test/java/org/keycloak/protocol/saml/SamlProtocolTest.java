@@ -841,8 +841,18 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public long searchClientByClientIdCount(String clientId) {
+            return 0;
+        }
+
+        @Override
         public Stream<ClientModel> searchClientByAttributes(Map<String, String> attributes, Integer firstResult, Integer maxResults) {
             return null;
+        }
+
+        @Override
+        public long searchClientByAttributesCount(Map<String, String> attributes) {
+            return 0;
         }
 
         @Override
