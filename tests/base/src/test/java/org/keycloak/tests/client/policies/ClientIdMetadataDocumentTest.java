@@ -1198,6 +1198,148 @@ public class ClientIdMetadataDocumentTest {
     }
 
     @Test
+    public void testClientIdMetadataDocumentExecutorVerifyBackchannelUris() throws Exception {
+        // register profiles: the trusted domains are *.example.com and localhost
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        oauth.redirectUri(REDIRECT_URI);
+        setCimdPublicClient();
+        String untrustedUri = "http://127.0.0.1:19080/capture";
+        String invalidSchemeUri = "ftp://localhost:8500/backchannel";
+        String trustedLogoutUri = "http://localhost:8500/backchannel-logout";
+        String trustedNotificationEndpoint = "http://localhost:8500/ciba-notification";
+
+        try {
+            // backchannel_logout_uri : not allowed domain
+            cimd.getRepresentation().setBackchannelLogoutUri(untrustedUri);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+            // backchannel_logout_uri : not allowed scheme
+            cimd.getRepresentation().setBackchannelLogoutUri(invalidSchemeUri);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_INVALID_SCHEME);
+
+            // backchannel_client_notification_endpoint : not allowed domain
+            cimd.getRepresentation().setBackchannelLogoutUri(null);
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint(untrustedUri);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+            // backchannel_client_notification_endpoint : not allowed scheme
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint(invalidSchemeUri);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_INVALID_SCHEME);
+
+            // no client metadata was persisted
+            Assertions.assertTrue(realm.admin().clients().findByClientId(CLIENT_ID).isEmpty());
+
+            // a blank value is handled in the same way as an absent one
+            cimd.getRepresentation().setBackchannelLogoutUri("");
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint("");
+            String code = loginUserAndGetCode(true);
+            AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+            Assertions.assertEquals(200, tokenResponse.getStatusCode());
+            logout(tokenResponse.getIdToken());
+
+            // both under a trusted domain
+            cimd.getRepresentation().setBackchannelLogoutUri(trustedLogoutUri);
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint(trustedNotificationEndpoint);
+            timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+            code = loginUserAndGetCode(false);
+            tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+            Assertions.assertEquals(200, tokenResponse.getStatusCode());
+
+            Map<String, String> attrs = findByClientIdByAdmin().getAttributes();
+            Assertions.assertEquals(trustedLogoutUri, attrs.get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+            Assertions.assertEquals(trustedNotificationEndpoint, attrs.get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT));
+
+            logout(tokenResponse.getIdToken());
+
+            // the re-fetched client metadata is verified as well, and the persisted one remains the same
+            cimd.getRepresentation().setBackchannelLogoutUri(untrustedUri);
+            timeOffSet.set(2 * (CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3));
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+            Assertions.assertEquals(trustedLogoutUri, findByClientIdByAdmin().getAttributes().get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL));
+        } finally {
+            realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
+        }
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorVerifyPersistedBackchannelUris() throws Exception {
+        // register profiles: the trusted domains are *.example.com and localhost
+        updatePolicy(createDefaultConditionConfig(), createDefaultExecutorConfig());
+
+        oauth.redirectUri(REDIRECT_URI);
+        setCimdPublicClient();
+        String untrustedUri = "http://127.0.0.1:19080/capture";
+
+        try {
+            String code = loginUserAndGetCode(true);
+            AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+            Assertions.assertEquals(200, tokenResponse.getStatusCode());
+            logout(tokenResponse.getIdToken());
+
+            // the persisted client metadata holds a URL that was not verified when it was registered
+            ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, untrustedUri);
+            realm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
+
+            // the persisted client metadata is still effective, so it is not fetched but verified
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+            // the re-fetched client metadata is not modified, so the persisted one stays in use and is verified
+            cimd.setStatus(Response.Status.NOT_MODIFIED);
+            timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+
+            // the re-fetched client metadata no longer includes the properties, but the update keeps the persisted endpoint
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "http://localhost:8500/backchannel-logout");
+            clientRepresentation.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, untrustedUri);
+            realm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
+            cimd.setStatus(Response.Status.OK);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_NOTALLOWED_DOMAIN);
+        } finally {
+            realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
+        }
+    }
+
+    @Test
+    public void testClientIdMetadataDocumentExecutorValidatePersistedBackchannelUrisRestrictSameDomain() throws Exception {
+        // register profiles: the trusted domains are *.example.com and localhost, and the same domain is not required
+        ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        updatePolicy(conditionConfig, executorConfig);
+
+        oauth.redirectUri(REDIRECT_URI);
+        setCimdPublicClient();
+        cimd.getRepresentation().setBackchannelClientNotificationEndpoint("https://www.example.com/ciba-notification");
+
+        try {
+            String code = loginUserAndGetCode(true);
+            AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
+            Assertions.assertEquals(200, tokenResponse.getStatusCode());
+            logout(tokenResponse.getIdToken());
+
+            // the same domain is required after the client metadata was persisted
+            executorConfig.setRestrictSameDomain(true);
+            updatePolicy(conditionConfig, executorConfig);
+
+            // the persisted client metadata is still effective, so it is not fetched but validated
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+            // the re-fetched client metadata is not modified, so the persisted one stays in use and is validated
+            cimd.setStatus(Response.Status.NOT_MODIFIED);
+            timeOffSet.set(CIMD_EXECUTOR_MIN_CACHE_TIME_SEC + 3);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+            // the re-fetched client metadata no longer includes the property, but the update keeps the persisted endpoint
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint(null);
+            cimd.setStatus(Response.Status.OK);
+            assertLoginAndError(AbstractClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        } finally {
+            realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
+        }
+    }
+
+    @Test
     public void testClientIdMetadataDocumentExecutorTrustedSectorIdentifierUri() throws Exception {
         // register profiles
         ClientIdUriSchemeCondition.Configuration conditionConfig = createDefaultConditionConfig();
@@ -1427,6 +1569,20 @@ public class ClientIdMetadataDocumentTest {
         cimd.getRepresentation().setTosUri("https://www.example.co.jp/mcp");
         cimd.getRepresentation().setPolicyUri("https://localhost/mcp");
         assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+        // backchannel_logout_uri and backchannel_client_notification_endpoint are under the same domain as well
+        cimd.getRepresentation().setClientUri("http://localhost:8500");
+        cimd.getRepresentation().setTosUri("https://localhost:8500/tos");
+        try {
+            cimd.getRepresentation().setBackchannelLogoutUri("https://www.example.com/backchannel-logout");
+            assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+
+            cimd.getRepresentation().setBackchannelLogoutUri(null);
+            cimd.getRepresentation().setBackchannelClientNotificationEndpoint("https://www.example.com/ciba-notification");
+            assertLoginAndError(ClientIdMetadataDocumentExecutor.ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        } finally {
+            realm.admin().clients().findByClientId(CLIENT_ID).forEach(client -> deleteClientByAdmin(client.getId()));
+        }
     }
 
     @Test

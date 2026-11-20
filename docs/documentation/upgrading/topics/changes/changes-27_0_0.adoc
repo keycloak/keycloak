@@ -763,6 +763,24 @@ As a workaround, use the default value of a property that is not defined, for ex
 This did not work before, as the `$` prevented the placeholder from being closed.
 It only works as long as the property is not defined.
 
+=== Client ID Metadata Document executor verifies the back-channel URLs of the client metadata
+// https://github.com/keycloak/keycloak/issues/55378
+
+The `client-id-metadata-document` client policy executor of the experimental Client ID Metadata Document feature now verifies the `backchannel_logout_uri` and `backchannel_client_notification_endpoint` properties of a client metadata document in the same way as the other URLs that {project_name} sends a request to, such as the `jwks_uri` property.
+Their host must match one of the *Trusted domains* of the executor.
+Their scheme must be `https` unless *Allow http scheme* is `ON`.
+Their host must not resolve to a loopback, private, link-local, unique local or multicast address unless *Allow private-use addresses* is `ON`.
+If *Restrict same domain* is `ON`, they must also be under the same trusted domain as the Client ID URL and the Redirect URI.
+
+An authorization request of a client whose metadata does not pass these checks is rejected.
+This also applies to a client that was registered before the upgrade, because the URLs that {project_name} stored for it are checked on every authorization request.
+If such a client is legitimate, add the host of these URLs to *Trusted domains*.
+
+{project_name} does not remove the URLs that it stored for a client before the upgrade, and it keeps sending back-channel logout requests and CIBA client notifications to them.
+Therefore, review the clients that were registered through a Client ID Metadata Document before the upgrade, which are the clients whose client ID is the URL of the document.
+Delete a client whose back-channel logout URL or CIBA client notification endpoint is a destination that {project_name} should not send requests to.
+A deleted client is registered again from its client metadata document on its next authorization request.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
