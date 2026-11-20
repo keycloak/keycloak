@@ -358,8 +358,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
      * @return {@code true} if the permission targets specific groups
      */
     public boolean targetsSpecificGroups(Policy permission) {
-        return GROUPS_RESOURCE_TYPE.equals(permission.getResourceType())
-                && permission.getResources().stream().map(Resource::getName).noneMatch(GROUPS_RESOURCE_TYPE::equals);
+        if (!GROUPS_RESOURCE_TYPE.equals(permission.getResourceType())) {
+            return false;
+        }
+
+        Set<Resource> resources = permission.getResources();
+
+        // a permission without resources, as left by a generic update without the resource type, targets no specific group
+        return !resources.isEmpty() && resources.stream().map(Resource::getName).noneMatch(GROUPS_RESOURCE_TYPE::equals);
     }
 
     /**
