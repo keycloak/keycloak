@@ -9,14 +9,16 @@
         </#if>
     <#elseif section = "form">
     <div id="kc-info-message">
-        <p class="instruction">${message.summary}</p>
-        <#if requiredActions?has_content>
-            <ol class="${properties.kcStepListClass!}" role="list">
-                <#list requiredActions as reqActionItem>
-                    <li>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}</li>
-                </#list>
-            </ol>
-        </#if>
+        <div class="${properties.kcInstructionGroupClass!}">
+            <p class="instruction">${message.summary}</p>
+            <#if requiredActions?has_content>
+                <ol class="${properties.kcStepListClass!}" role="list">
+                    <#list requiredActions as reqActionItem>
+                        <li>${kcSanitize(msg("requiredAction.${reqActionItem}"))?no_esc}</li>
+                    </#list>
+                </ol>
+            </#if>
+        </div>
         <#if skipLink??>
         <#else>
             <#if pageRedirectUri?has_content>

@@ -201,6 +201,10 @@ p.instruction:last-child,
     margin-bottom: 0;
 }
 
+.kc-instruction-group > p.instruction:not(:last-child) {
+    margin-bottom: var(--pf-t--global--spacer--sm);
+}
+
 .form-actions {
   margin-bottom: var(--pf-t--global--spacer--md);
 }
