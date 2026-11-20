@@ -41,7 +41,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
-import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerificationContext;
 import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
@@ -319,8 +319,8 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
     // Note: This might be possibly removed once option for skip-audience-check for introspection is removed from client and server options
     protected void addAdditionalVerifications(TokenVerifier<T> verifier) {
-        TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext((TokenVerifier<AccessToken>) verifier, session, realm, session.getContext().getUri());
-        new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
+        new TokenVerifierProviderManager().additionalAccessTokenVerifications((TokenVerifier<AccessToken>) verifier,
+                TokenVerificationContext.forIntrospection(session));
     }
 
     protected boolean verifyAudience() {

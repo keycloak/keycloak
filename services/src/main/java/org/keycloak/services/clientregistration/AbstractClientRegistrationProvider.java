@@ -296,7 +296,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     }
 
     private void validateUntrustedAttributes(ClientRepresentation rep, ClientModel existingClient) {
-        if (auth.isBearerToken()) {
+        if (auth.isAccessToken()) {
             // Admin callers retain authority to manage Vault expressions
             return;
         }
@@ -445,7 +445,7 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
      * without throwing an error.
      */
     private void stripPrivilegedAttributes(ClientRepresentation rep) {
-        if (auth.isBearerToken()) {
+        if (auth.isAccessToken()) {
             return; // Admin callers retain full write access
         }
         if (rep.getAttributes() == null || rep.getAttributes().isEmpty()) {

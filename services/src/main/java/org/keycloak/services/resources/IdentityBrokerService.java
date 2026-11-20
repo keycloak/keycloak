@@ -129,7 +129,6 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
-import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.services.validation.Validation;
@@ -541,11 +540,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
         // validate the token
         String tokenString = session.getContext().getHttpRequest().getDecodedFormParameters().getFirst(OAuth2Constants.TOKEN);
-        AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(
-                session, realmModel, session.getContext().getUri(), clientConnection, true, true, null, false, tokenString, headers,
-                verifier -> {
-                    DPoPUtil.withDPoPVerifier(verifier, realmModel, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
-                });
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyAccessTokenParameter(session, tokenString);
         if (authResult == null) {
             event.error(Errors.INVALID_TOKEN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TOKEN, "Invalid token", Response.Status.BAD_REQUEST);

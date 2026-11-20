@@ -43,7 +43,7 @@ import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRespo
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse.Status;
 import org.keycloak.protocol.oidc.grants.device.DeviceGrantType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
-import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerificationContext;
 import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
@@ -122,8 +122,8 @@ public class BackchannelAuthenticationCallbackEndpoint extends AbstractCibaEndpo
                     .checkActive(true)
                     .audience(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(tokenVerifier, session, realm, session.getContext().getUri());
-            new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
+            new TokenVerifierProviderManager().additionalAccessTokenVerifications(tokenVerifier,
+                    TokenVerificationContext.forAuthenticationChannel(session));
 
             bearerToken =  tokenVerifier.verify().getToken();
         } catch (Exception e) {

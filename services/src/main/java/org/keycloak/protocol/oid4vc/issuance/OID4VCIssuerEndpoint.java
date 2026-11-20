@@ -117,6 +117,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
+import org.keycloak.protocol.oidc.verifier.DPoPTokenVerifierProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.JsonWebToken;
@@ -127,7 +128,6 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 import org.keycloak.utils.MediaType;
@@ -1677,7 +1677,7 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Validate DPoP nonce if present in the DPoP proof
-        DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
+        DPoP dPoP = DPoPTokenVerifierProvider.getVerifiedResourceProof(session);
         if (dPoP != null) {
             Object nonceClaim = Optional.ofNullable(dPoP.getOtherClaims())
                     .map(m -> m.get("nonce"))

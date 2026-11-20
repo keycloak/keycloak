@@ -31,7 +31,7 @@ public class AuthorizationResponse extends AccessTokenResponse {
 
     public AuthorizationResponse(AccessTokenResponse response, boolean upgraded) {
         setToken(response.getToken());
-        setTokenType("Bearer");
+        setTokenType(response.getTokenType());
         setRefreshToken(response.getRefreshToken());
         setRefreshExpiresIn(response.getRefreshExpiresIn());
         setExpiresIn(response.getExpiresIn());
