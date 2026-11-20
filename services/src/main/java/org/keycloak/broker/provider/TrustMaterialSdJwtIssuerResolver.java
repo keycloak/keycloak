@@ -25,6 +25,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.JwkParsingUtils;
 import org.keycloak.sdjwt.consumer.StaticTrustedSdJwtIssuer;
@@ -34,22 +35,24 @@ import org.keycloak.sdjwt.vp.TrustedSdJwtIssuerResolver;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Bridges a {@link TrustMaterialIdentityProvider} to a {@link TrustedSdJwtIssuerResolver}. When the
- * provider exposes X.509 trust anchors, chain validation is mandated as required by HAIP 6.1.1: the
- * x5c header of the credential's issuer signed JWT must validate against the anchors and the chain
- * leaf key verifies the signature, a credential without an x5c header is rejected. Only providers
- * without X.509 trust anchors fall back to looking up the trusted keys by the issuer key hints
- * (kid, alg, iss).
+ * Bridges the {@link TrustMaterialIdentityProvider}s with the given aliases to a
+ * {@link TrustedSdJwtIssuerResolver}. When any of them exposes X.509 trust anchors, chain validation
+ * is mandated as required by HAIP 6.1.1: the x5c header of the credential's issuer signed JWT must
+ * validate against the anchors and the chain leaf key verifies the signature, a credential without
+ * an x5c header is rejected. Only when none of them has X.509 trust anchors are the trusted keys
+ * looked up by the issuer key hints (kid, alg, iss).
  *
  * TODO: Support looking up the JWKS dynamically from the .well-known/jwt-vc-issuer endpoint of the
  * issuer in the credential.
  */
 public class TrustMaterialSdJwtIssuerResolver implements TrustedSdJwtIssuerResolver {
 
-    private final TrustMaterialIdentityProvider<?> trustMaterial;
+    private final KeycloakSession session;
+    private final List<String> trustMaterialIdps;
 
-    public TrustMaterialSdJwtIssuerResolver(TrustMaterialIdentityProvider<?> trustMaterial) {
-        this.trustMaterial = trustMaterial;
+    public TrustMaterialSdJwtIssuerResolver(KeycloakSession session, List<String> trustMaterialIdps) {
+        this.session = session;
+        this.trustMaterialIdps = trustMaterialIdps;
     }
 
     @Override
@@ -62,12 +65,15 @@ public class TrustMaterialSdJwtIssuerResolver implements TrustedSdJwtIssuerResol
                 .issuer(issuer != null && issuer.isTextual() ? issuer.textValue() : null)
                 .build();
 
-        JWK leafKey = trustMaterial.validateX509Chain(request, header.getX5c(), header.getRawAlgorithm());
+        TrustMaterialResolver trustMaterial = new TrustMaterialResolver();
+        JWK leafKey = trustMaterial.validateX509Chain(session, String.join(",", trustMaterialIdps), request,
+                header.getX5c(),
+                header.getRawAlgorithm());
         if (leafKey != null) {
             return new StaticTrustedSdJwtIssuer(List.of(JwkParsingUtils.convertJwkToVerifierContext(leafKey)));
         }
 
-        List<SignatureVerifierContext> verifiers = trustMaterial.resolveKeys(request)
+        List<SignatureVerifierContext> verifiers = trustMaterial.resolveKeys(session, trustMaterialIdps, request)
                 .map(JwkParsingUtils::convertJwkToVerifierContext)
                 .collect(Collectors.toList());
         if (verifiers.isEmpty()) {

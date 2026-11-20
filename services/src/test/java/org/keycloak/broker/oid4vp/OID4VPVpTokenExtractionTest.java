@@ -17,57 +17,67 @@
 
 package org.keycloak.broker.oid4vp;
 
+import java.util.Map;
+
 import org.keycloak.common.VerificationException;
 
-import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class OID4VPVpTokenExtractionTest {
 
     private static final String CREDENTIAL = "eyJhbGciOiJFUzI1NiJ9.eyJ2Y3QiOiJ4In0.sig~WyJzIiwibiIsInYiXQ~";
 
+    private static final RequestedCredentials REQUESTED = RequestedCredentials.parse("""
+            {"credentials": [
+              {"id": "pid", "format": "dc+sd-jwt", "types": ["urn:eudi:pid:1"], "trustMaterialIdps": ["trust"]},
+              {"id": "membership", "format": "dc+sd-jwt", "types": ["membership"], "trustMaterialIdps": ["trust"]}],
+             "credentialSets": [{"options": [["pid"]]}, {"options": [["membership"]], "required": false}],
+             "principal": {"credential": "pid", "claim": "personal_administrative_number"}}""");
+
     @Test
-    public void unwrapsBareCompactSdJwt() throws Exception {
-        Assert.assertEquals(CREDENTIAL, OID4VPIdentityProviderEndpoint.extractCredential(CREDENTIAL));
+    public void extractsPresentationArrays() throws Exception {
+        assertEquals(Map.of("pid", CREDENTIAL, "membership", CREDENTIAL), extract(
+                "{\"pid\":[\"" + CREDENTIAL + "\"],\"membership\":[\"" + CREDENTIAL + "\"]}"));
     }
 
     @Test
-    public void unwrapsDcqlObject() throws Exception {
-        Assert.assertEquals(CREDENTIAL,
-                OID4VPIdentityProviderEndpoint.extractCredential("{\"identity\":\"" + CREDENTIAL + "\"}"));
+    public void extractsPresentationStrings() throws Exception {
+        assertEquals(Map.of("pid", CREDENTIAL), extract("{\"pid\":\"" + CREDENTIAL + "\"}"));
     }
 
     @Test
-    public void unwrapsDcqlObjectWithArrayValue() throws Exception {
-        Assert.assertEquals(CREDENTIAL,
-                OID4VPIdentityProviderEndpoint.extractCredential("{\"identity\":[\"" + CREDENTIAL + "\"]}"));
-    }
-
-    @Test
-    public void unwrapsTopLevelArray() throws Exception {
-        Assert.assertEquals(CREDENTIAL,
-                OID4VPIdentityProviderEndpoint.extractCredential("[\"" + CREDENTIAL + "\"]"));
+    public void leavesAbsentCredentialsOut() throws Exception {
+        assertEquals(Map.of(), extract("{}"));
     }
 
     @Test(expected = VerificationException.class)
-    public void rejectsJsonWithoutPresentation() throws Exception {
-        OID4VPIdentityProviderEndpoint.extractCredential("{}");
+    public void rejectsBareCompactSdJwt() throws Exception {
+        extract(CREDENTIAL);
+    }
+
+    @Test(expected = VerificationException.class)
+    public void rejectsTopLevelArray() throws Exception {
+        extract("[\"" + CREDENTIAL + "\"]");
+    }
+
+    @Test(expected = VerificationException.class)
+    public void rejectsCredentialThatIsNotRequested() throws Exception {
+        extract("{\"pid\":\"" + CREDENTIAL + "\",\"other\":\"" + CREDENTIAL + "\"}");
     }
 
     @Test(expected = VerificationException.class)
     public void rejectsNonTextualPresentation() throws Exception {
-        OID4VPIdentityProviderEndpoint.extractCredential("{\"identity\":123}");
+        extract("{\"pid\":123}");
     }
 
     @Test(expected = VerificationException.class)
-    public void rejectsMultipleCredentialsInObject() throws Exception {
-        OID4VPIdentityProviderEndpoint.extractCredential(
-                "{\"identity\":\"" + CREDENTIAL + "\",\"other\":\"" + CREDENTIAL + "\"}");
+    public void rejectsMultiplePresentationsOfOneCredential() throws Exception {
+        extract("{\"pid\":[\"" + CREDENTIAL + "\",\"" + CREDENTIAL + "\"]}");
     }
 
-    @Test(expected = VerificationException.class)
-    public void rejectsMultipleCredentialsInArray() throws Exception {
-        OID4VPIdentityProviderEndpoint.extractCredential(
-                "[\"" + CREDENTIAL + "\",\"" + CREDENTIAL + "\"]");
+    private static Map<String, String> extract(String vpToken) throws VerificationException {
+        return OID4VPIdentityProviderEndpoint.extractPresentations(vpToken, REQUESTED);
     }
 }

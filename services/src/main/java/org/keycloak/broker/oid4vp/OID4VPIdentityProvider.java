@@ -20,10 +20,8 @@ package org.keycloak.broker.oid4vp;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
@@ -32,12 +30,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
-import org.keycloak.broker.provider.TrustMaterialRequest;
-import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.broker.provider.TrustMaterialSdJwtIssuerResolver;
-import org.keycloak.broker.provider.X509TrustMaterial;
-import org.keycloak.broker.trust.TrustKeyUtil;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.Algorithm;
@@ -45,8 +38,6 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jwk.JWK;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -54,7 +45,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.sdjwt.vp.TrustedSdJwtIssuerResolver;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.QRCodeUtils;
 import org.keycloak.utils.StringUtil;
 
@@ -63,20 +53,20 @@ import org.jboss.logging.Logger;
 /**
  * Identity provider that authenticates users with an OpenID4VP (OID4VP) wallet presentation.
  *
- * <p>Supports the same device and cross device flows with a single SD-JWT VC. {@link #performLogin}
+ * <p>Supports the same device and cross device flows with the SD JWT VCs configured as requested
+ * credentials of the provider. {@link #performLogin}
  * renders a page with an {@code openid4vp://} link for a wallet on this device and a QR code for a
  * wallet on another device. The wallet fetches a signed request object and posts the presentation
  * back to {@link OID4VPIdentityProviderEndpoint}, which verifies it and drives the normal broker
  * machinery (existing or new user, first and post broker login). A remote wallet cannot redirect
  * the browser, so the login page polls the endpoint until the presentation arrives.
  *
- * <p>The provider also acts as its own {@link TrustMaterialIdentityProvider}: the credential issuer
- * signature is verified against the inline JWKS configured on this provider.
+ * <p>The issuer signature of each credential is verified against the trust material identity
+ * providers configured for that credential.
  *
  * @see <a href="https://openid.net/specs/openid-4-verifiable-presentations-1_0.html">OID4VP 1.0</a>
  */
-public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdentityProviderConfig>
-        implements TrustMaterialIdentityProvider<OID4VPIdentityProviderConfig> {
+public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdentityProviderConfig> {
 
     private static final Logger logger = Logger.getLogger(OID4VPIdentityProvider.class);
 
@@ -93,7 +83,7 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
     public static final String DEFERRED_PREFIX = "oid4vp.deferred.";
     public static final String VERIFIED_CLAIMS_NOTE = "OID4VP_VERIFIED_CLAIMS";
     // Key in BrokeredIdentityContext#getContextData() holding the disclosed claims of the verified
-    // credential presentation, consumed by the OID4VP identity provider mappers.
+    // credential presentations by credential id, consumed by the OID4VP identity provider mappers.
     public static final String CREDENTIAL_CLAIMS = "OID4VP_CREDENTIAL_CLAIMS";
     public static final String KEY_ROOT_SESSION_ID = "rootSessionId";
     public static final String KEY_TAB_ID = "tabId";
@@ -155,36 +145,11 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         return new OID4VPIdentityProviderEndpoint(session, realm, this, callback, event);
     }
 
-    @Override
-    public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
-        String trustMaterialIdps = getConfig().getTrustMaterialIdps();
-        if (StringUtil.isNotBlank(trustMaterialIdps)) {
-            return new TrustMaterialResolver().resolveKeys(session, trustMaterialIdps, request);
-        }
-        String jwksJson = getConfig().getTrustedIssuerJwks();
-        if (StringUtil.isBlank(jwksJson)) {
-            return Stream.empty();
-        }
-        try {
-            JSONWebKeySet jwks = JsonSerialization.readValue(jwksJson, JSONWebKeySet.class);
-            return TrustKeyUtil.filterKeys(Arrays.stream(jwks.getKeys()), request);
-        } catch (Exception e) {
-            logger.warnf("Failed to parse OID4VP trusted issuer JWKS: %s", e.getMessage());
-            return Stream.empty();
-        }
-    }
-
-    @Override
-    public Stream<X509TrustMaterial> resolveX509Trust(TrustMaterialRequest request) {
-        return new TrustMaterialResolver().resolveX509Trust(session, getConfig().getTrustMaterialIdps(), request);
-    }
-
-    // How trusted issuer material is resolved for a presented credential. The provider acts as its
-    // own trust material, either delegating to the configured trust material identity providers or
-    // serving the inline trusted issuer JWKS.
+    // How trusted issuer material is resolved for a presented credential, through the trust material
+    // identity providers configured for that credential.
     // TODO add a trust list backed resolver (e.g. ETSI), selected from configuration.
-    protected TrustedSdJwtIssuerResolver trustedIssuerResolver() {
-        return new TrustMaterialSdJwtIssuerResolver(this);
+    protected TrustedSdJwtIssuerResolver trustedIssuerResolver(RequestedCredentials.Credential credential) {
+        return new TrustMaterialSdJwtIssuerResolver(session, credential.trustMaterialIdps());
     }
 
     @Override

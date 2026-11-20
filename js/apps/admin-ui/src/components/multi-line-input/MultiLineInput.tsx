@@ -122,7 +122,7 @@ export const MultiLineInput = ({
           ? t("required")
           : undefined,
     });
-  }, [register]);
+  }, [register, name]);
 
   const getError = () => {
     return name.split(".").reduce((record: any, key) => record?.[key], errors);
