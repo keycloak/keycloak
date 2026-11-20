@@ -66,6 +66,7 @@ public class AuthZenResource {
     private static final String NAMESPACE_ID = "id:";
     private static final String NAMESPACE_USERNAME = "username:";
     private static final String NAMESPACE_EMAIL = "email:";
+    private static final String AUTHZEN_ATTRIBUTES_CLAIM = "authzen";
 
     private final KeycloakSession session;
 
@@ -193,17 +194,7 @@ public class AuthZenResource {
             return DECISION_FALSE;
         }
 
-        Map<String, List<String>> claims = null;
-        if (request.resource().properties() != null) {
-            claims = new HashMap<>();
-            convertContext(request.resource().properties(), claims);
-        }
-        if (request.context() != null) {
-            if (claims == null) {
-                claims = new HashMap<>();
-            }
-            convertContext(request.context(), claims);
-        }
+        Map<String, List<String>> claims = createEvaluationClaims(request.resource(), request.context());
 
         DefaultEvaluationContext context = new DefaultEvaluationContext(identity, claims, session);
         ResourcePermission permission = new ResourcePermission(resource, List.of(scope), resourceServer);
@@ -315,5 +306,28 @@ public class AuthZenResource {
 
     private static void convertContext(Map<String, Object> context, Map<String, List<String>> result) {
         convertValues(context, result);
+    }
+
+    private static Map<String, List<String>> createEvaluationClaims(AuthZen.Resource resource, Map<String, Object> context) {
+        Map<String, List<String>> claims = new HashMap<>();
+        Map<String, Object> sources = new HashMap<>();
+
+        if (resource.properties() != null) {
+            convertContext(resource.properties(), claims);
+            sources.put("resource", Map.of("properties", resource.properties()));
+        }
+
+        if (context != null) {
+            // Preserve the existing behavior: context values take precedence when names overlap.
+            convertContext(context, claims);
+            sources.put("context", context);
+        }
+
+        if (sources.isEmpty()) {
+            return null;
+        }
+
+        convertContext(Map.of(AUTHZEN_ATTRIBUTES_CLAIM, sources), claims);
+        return claims;
     }
 }
