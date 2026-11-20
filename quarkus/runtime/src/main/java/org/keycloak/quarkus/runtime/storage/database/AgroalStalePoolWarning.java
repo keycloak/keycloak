@@ -75,7 +75,7 @@ public final class AgroalStalePoolWarning {
 
         logger.warnf("The settings '%s' or '%s' combined with background validation can make Agroal %s open database connections without bound "
                         + "after a single failed validation of an idle connection. "
-                        + "Remove these settings, or update to an Agroal version that includes the fix. "
+                        + "Remove these settings. "
                         + "See https://github.com/agroal/agroal/issues/217 for details.",
                 VALIDATE_ON_BORROW, FOREGROUND_VALIDATION_INTERVAL, agroalVersion);
         return true;
