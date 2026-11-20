@@ -23,10 +23,15 @@ import org.keycloak.broker.oid4vp.DcqlQuery;
 import org.keycloak.models.IdentityProviderMapperModel;
 
 /**
- * An OID4VP identity provider mapper that reads claims of the presented credential. If no DCQL query
- * is configured on the identity provider, the claims of all its mappers are requested from the wallet.
+ * An OID4VP identity provider mapper that reads claims of one of the requested credentials. The claims
+ * of all mappers are requested from the wallet, each under the credential the mapper refers to.
  */
 public interface DcqlQueryContributor {
+
+    /**
+     * The id of the requested credential this mapper reads, null if none is configured.
+     */
+    String credentialId(IdentityProviderMapperModel mapperModel);
 
     /**
      * The claims this mapper reads, empty if it is misconfigured.
