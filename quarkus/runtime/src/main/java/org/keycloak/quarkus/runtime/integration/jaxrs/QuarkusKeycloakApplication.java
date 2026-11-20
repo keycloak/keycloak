@@ -33,6 +33,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.storage.database.AgroalStalePoolWarning;
 import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
@@ -72,6 +73,7 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     void onStartupEvent(@Observes StartupEvent event) {
+        AgroalStalePoolWarning.warnIfAffected();
         var asyncBootstrap = Configuration.getOptionalKcValue(ServerOptions.SERVER_ASYNC_BOOTSTRAP)
                 .map(Boolean::parseBoolean)
                 .orElse(Boolean.TRUE);
