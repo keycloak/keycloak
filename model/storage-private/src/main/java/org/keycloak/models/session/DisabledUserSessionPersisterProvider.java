@@ -20,6 +20,7 @@ package org.keycloak.models.session;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -121,14 +122,18 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
+    public UserSessionModel loadUserSessionsStreamByBrokerSessionId(RealmModel realm, String brokerSessionId, boolean offline) {
+        return null;
+    }
+
+    @Override
     public Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, UserModel user, boolean offline, Integer firstResult, Integer maxResults) {
         return Stream.empty();
     }
 
     @Override
-    public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
-                                                           String lastUserSessionId) {
-        return Stream.empty();
+    public Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        return Map.of();
     }
 
     @Override
@@ -149,6 +154,10 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     @Override
     public Map<String, Long> getUserSessionsCountsByClients(RealmModel realm, boolean offline) {
         return Collections.emptyMap();
+    }
+
+    @Override
+    public void removeUserSessions(RealmModel realm) {
     }
 
     @Override

@@ -40,7 +40,6 @@ import org.hibernate.annotations.DynamicUpdate;
  */
 @NamedQueries({
         @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
-        @NamedQuery(name="deleteUserSessionsByRealmSessionType", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId and sess.offline = :offline"),
         @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
         // The query "deleteExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="deleteExpiredUserSessions", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
@@ -51,9 +50,6 @@ import org.hibernate.annotations.DynamicUpdate;
                 " lastSessionRefreshCoarse = FLOOR((:lastSessionRefresh - MOD(sess.createdOn, :granularity)) / :granularity) * :granularity + MOD(sess.createdOn, :granularity)" +
                 " where sess.realmId = :realmId AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
-        @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
-                " AND sess.userSessionId > :lastSessionId" +
-                " order by sess.userSessionId"),
         // The query "findUserSession" is deprecated (since 26.7) and may be removed in the future.
         @NamedQuery(name="findUserSession", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh"),

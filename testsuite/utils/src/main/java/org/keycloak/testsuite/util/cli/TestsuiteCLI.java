@@ -56,7 +56,6 @@ public class TestsuiteCLI {
             AbstractSessionCacheCommand.CreateManySessionsCommand.class,
             AbstractSessionCacheCommand.CreateManySessionsProviderCommand.class,
             PersistSessionsCommand.class,
-            LoadPersistentSessionsCommand.class,
             UserCommands.Create.class,
             UserCommands.Remove.class,
             UserCommands.Count.class,

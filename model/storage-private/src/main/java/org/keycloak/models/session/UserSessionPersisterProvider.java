@@ -85,9 +85,7 @@ public interface UserSessionPersisterProvider extends Provider {
      * @param offline If {@code true}, returns offline sessions, otherwise online sessions.
      * @return A map of user-session id to the set of associated client UUIDs (the set may be empty).
      */
-    default Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
-        throw new IllegalStateException("not implemented");
-    }
+    Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline);
 
     /**
      * Loads the user sessions for the given {@link ClientModel} in the given {@link RealmModel} if present.
@@ -101,21 +99,7 @@ public interface UserSessionPersisterProvider extends Provider {
      */
     Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults);
 
-    default UserSessionModel loadUserSessionsStreamByBrokerSessionId(RealmModel realm, String brokerSessionId, boolean offline) {
-        throw new IllegalStateException("not implemented");
-    }
-
-    /**
-     * Called during startup. For each userSession, it loads also clientSessions.
-     * @param firstResult {@code Integer} Index of the first desired user session. Ignored if negative or {@code null}.
-     * @param maxResults {@code Integer} Maximum number of returned user sessions. Ignored if negative or {@code null}.
-     * @param offline {@code boolean} Flag to include offline sessions.
-     * @param lastUserSessionId {@code String} Id of the user session. It will return only user sessions with id's lexicographically greater than this.
-     * it will compare the id in dictionary order and takes only those created later.
-     * @return Stream of {@link UserSessionModel}. Never returns {@code null}.
-     */
-    Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
-                                                    String lastUserSessionId);
+    UserSessionModel loadUserSessionsStreamByBrokerSessionId(RealmModel realm, String brokerSessionId, boolean offline);
 
     /**
      * Loads client session from the db by provided user session and client.
@@ -155,20 +139,9 @@ public interface UserSessionPersisterProvider extends Provider {
     Map<String, Long> getUserSessionsCountsByClients(RealmModel realm, boolean offline);
 
     /**
-     * Remove the online user sessions for this realm.
-     */
-    default void removeUserSessions(RealmModel realm, boolean offline) {
-        throw new IllegalArgumentException("not supported");
-        // TODO: remove default implementation
-    }
-
-    /**
      * Removes all user sessions from the specified realm.
      */
-    default void removeUserSessions(RealmModel realm) {
-        removeUserSessions(realm, true);
-        removeUserSessions(realm, false);
-    }
+    void removeUserSessions(RealmModel realm);
 
     /**
      * Stream all the sessions belonging to the realm.
