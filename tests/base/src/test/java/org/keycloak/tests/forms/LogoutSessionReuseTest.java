@@ -677,12 +677,14 @@ public class LogoutSessionReuseTest {
     }
 
     /**
-     * Binding the logout session of user session A to user session B removes the logout states recorded for the clients
-     * of both user sessions, so that no state of A can suppress the logout of B. That includes a client that only A has,
-     * as B can get a session for that client before its logout reaches it.
+     * The logout states are recorded per bound user session, so binding the logout session of user session A to user
+     * session B hides the logout states recorded for A, whichever clients still have a session. That includes a client
+     * that only A has, as B can get a session for that client before its logout reaches it. Binding back to A shows
+     * its states again, as they describe the real progress of its logout. A state without a user session, as recorded by
+     * an older node, is never seen once the logout session is bound.
      */
     @Test
-    void bindingLogoutSessionToAnotherUserSessionRemovesClientLogoutStates() {
+    void bindingLogoutSessionToAnotherUserSessionHidesClientLogoutStates() {
         final String realmName = realm.getName();
         final String userId = user.getId();
         final String sharedClientId = oauth.getClientId();
@@ -710,21 +712,33 @@ public class LogoutSessionReuseTest {
                 RootAuthenticationSessionModel root = session.authenticationSessions().createRootAuthenticationSession(realmModel);
                 AuthenticationSessionModel logoutSession = root.createAuthenticationSession(sharedClient);
                 logoutSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
-                AuthenticationManager.bindLogoutSessionToUserSession(session, logoutSession, session.sessions().getUserSession(realmModel, sessionIdA));
+                // Before the binding the state is recorded without a user session, as an older node does
+                AuthenticationManager.setClientLogoutAction(logoutSession, clientOfA.getId(), AuthenticationSessionModel.Action.LOGGING_OUT);
+                String unboundState = AuthenticationManager.getClientLogoutAction(logoutSession, clientOfA.getId()) + "/"
+                        + logoutSession.getAuthNote(AuthenticationManager.CLIENT_LOGOUT_STATE + clientOfA.getId());
+                logoutSession.setAuthNote(AuthenticationManager.CLIENT_LOGOUT_STATE + sharedClient.getId(), AuthenticationSessionModel.Action.LOGGED_OUT.name());
+                AuthenticationManager.bindLogoutSessionToUserSession(logoutSession, session.sessions().getUserSession(realmModel, sessionIdA));
+                String legacyState = String.valueOf(AuthenticationManager.getClientLogoutAction(logoutSession, sharedClient.getId()));
                 AuthenticationManager.setClientLogoutAction(logoutSession, sharedClient.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
                 AuthenticationManager.setClientLogoutAction(logoutSession, clientOfA.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
+                // The key format is documented in the upgrading guide
+                String keyOfA = String.valueOf(logoutSession.getAuthNote(AuthenticationManager.CLIENT_LOGOUT_STATE + sessionIdA + "." + sharedClient.getId()));
 
-                AuthenticationManager.bindLogoutSessionToUserSession(session, logoutSession, session.sessions().getUserSession(realmModel, sessionIdB));
+                AuthenticationManager.bindLogoutSessionToUserSession(logoutSession, session.sessions().getUserSession(realmModel, sessionIdB));
+                String boundToB = logoutSession.getAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID) + ","
+                        + AuthenticationManager.getClientLogoutAction(logoutSession, sharedClient.getId()) + ","
+                        + AuthenticationManager.getClientLogoutAction(logoutSession, clientOfA.getId());
 
-                String result = logoutSession.getAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID) + ","
+                AuthenticationManager.bindLogoutSessionToUserSession(logoutSession, session.sessions().getUserSession(realmModel, sessionIdA));
+                String boundBackToA = logoutSession.getAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID) + ","
                         + AuthenticationManager.getClientLogoutAction(logoutSession, sharedClient.getId()) + ","
                         + AuthenticationManager.getClientLogoutAction(logoutSession, clientOfA.getId());
                 session.authenticationSessions().removeRootAuthenticationSession(realmModel, root);
-                return result;
+                return unboundState + ";" + legacyState + ";" + keyOfA + ";" + boundToB + ";" + boundBackToA;
             }, String.class);
 
-            Assertions.assertEquals(sessionIdB + ",null,null", boundState,
-                    "The logout session must be bound to B, without the logout states recorded for A");
+            Assertions.assertEquals("LOGGING_OUT/LOGGING_OUT;null;LOGGED_OUT;" + sessionIdB + ",null,null;" + sessionIdA + ",LOGGED_OUT,LOGGED_OUT", boundState,
+                    "An unbound logout session must keep its states under the key without a user session, a state without a user session must be ignored once bound, the state must be stored under the key of the bound user session, B must not see the states of A, and A must see them again");
         } finally {
             user.admin().logout();
         }

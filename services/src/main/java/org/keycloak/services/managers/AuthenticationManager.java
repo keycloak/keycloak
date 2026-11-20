@@ -495,7 +495,7 @@ public class AuthenticationManager {
             }
         }
         if (userSession != null) {
-            bindLogoutSessionToUserSession(session, logoutAuthSession, userSession);
+            bindLogoutSessionToUserSession(logoutAuthSession, userSession);
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
         session.getContext().setClient(client);
@@ -504,21 +504,11 @@ public class AuthenticationManager {
     }
 
     /**
-     * Binds the logout session to the user session through the {@link #LOGOUT_USER_SESSION_ID} note. If the logout
-     * session was bound to another user session, the logout states it recorded for clients belong to that user session
-     * and would suppress the logout of the same clients for this user session. They are removed for the clients of both
-     * user sessions (the previous one only if it still exists).
+     * Binds the logout session to the user session through the {@link #LOGOUT_USER_SESSION_ID} note. The logout states
+     * of clients are recorded per bound user session (see {@link #setClientLogoutAction}), so the states recorded for
+     * another user session are not seen after binding to this one.
      */
-    public static void bindLogoutSessionToUserSession(KeycloakSession session, AuthenticationSessionModel logoutSession, UserSessionModel userSession) {
-        String boundUserSessionId = logoutSession.getAuthNote(LOGOUT_USER_SESSION_ID);
-        if (boundUserSessionId != null && !boundUserSessionId.equals(userSession.getId())) {
-            Set<String> clientUuids = new HashSet<>(userSession.getAuthenticatedClientSessions().keySet());
-            UserSessionModel boundUserSession = session.sessions().getUserSession(userSession.getRealm(), boundUserSessionId);
-            if (boundUserSession != null) {
-                clientUuids.addAll(boundUserSession.getAuthenticatedClientSessions().keySet());
-            }
-            clientUuids.forEach(clientUuid -> logoutSession.removeAuthNote(CLIENT_LOGOUT_STATE + clientUuid));
-        }
+    public static void bindLogoutSessionToUserSession(AuthenticationSessionModel logoutSession, UserSessionModel userSession) {
         logoutSession.setAuthNote(LOGOUT_USER_SESSION_ID, userSession.getId());
     }
 
@@ -755,15 +745,26 @@ public class AuthenticationManager {
     }
 
     /**
-     * Sets logout state of the particular client into the {@code logoutAuthSession}
+     * Sets logout state of the particular client into the {@code logoutAuthSession}. The state belongs to the user
+     * session the logout session is bound to, see {@link #LOGOUT_USER_SESSION_ID}.
      * @param logoutAuthSession logoutAuthSession. May be {@code null} in which case this is a no-op.
      * @param clientUuid Client. Must not be {@code null}
      * @param action
      */
     public static void setClientLogoutAction(AuthenticationSessionModel logoutAuthSession, String clientUuid, Action action) {
         if (logoutAuthSession != null && clientUuid != null) {
-            logoutAuthSession.setAuthNote(CLIENT_LOGOUT_STATE + clientUuid, action.name());
+            logoutAuthSession.setAuthNote(clientLogoutStateKey(logoutAuthSession, clientUuid), action.name());
         }
+    }
+
+    /**
+     * The state is keyed by the bound user session, so a logout session that is bound to another user session cannot
+     * suppress the logout of the same client for it, whichever clients and sessions still exist. A logout session
+     * that is not bound yet uses the key without a user session.
+     */
+    private static String clientLogoutStateKey(AuthenticationSessionModel logoutAuthSession, String clientUuid) {
+        String boundUserSessionId = logoutAuthSession.getAuthNote(LOGOUT_USER_SESSION_ID);
+        return boundUserSessionId == null ? CLIENT_LOGOUT_STATE + clientUuid : CLIENT_LOGOUT_STATE + boundUserSessionId + "." + clientUuid;
     }
 
     /**
@@ -777,7 +778,7 @@ public class AuthenticationManager {
             return null;
         }
 
-        String state = logoutAuthSession.getAuthNote(CLIENT_LOGOUT_STATE + clientUuid);
+        String state = logoutAuthSession.getAuthNote(clientLogoutStateKey(logoutAuthSession, clientUuid));
         return state == null ? null : Action.valueOf(state);
     }
 
