@@ -111,6 +111,14 @@ public abstract class BaseResourceTypeProvider<M extends Model, R> implements Sc
             }
         }
 
+        return render(models, searchOptions);
+    }
+
+    /**
+     * Turns the models for one page into representations. A resource type that needs something about the whole page,
+     * such as one query for every id on it, overrides this instead of querying once per model.
+     */
+    protected Stream<R> render(Stream<M> models, SearchOptions searchOptions) {
         return models.map(m -> createResourceTypeInstance(m, searchOptions.getAttributes(), searchOptions.getExcludedAttributes()));
     }
 

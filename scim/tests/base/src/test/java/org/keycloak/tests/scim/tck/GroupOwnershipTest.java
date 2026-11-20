@@ -161,6 +161,11 @@ public class GroupOwnershipTest {
         patch(entra, id, new PatchOperation("remove", "members[value eq \"" + alice + "\" or value eq \"" + carol + "\"]", null));
         support.assertMembers(id);
 
+        // parentheses around the same or, which the shared filter parser accepts
+        patch(entra, id, new PatchOperation("Add", "members", members(alice, carol)));
+        patch(entra, id, new PatchOperation("remove", "members[(value eq \"" + alice + "\" or value eq \"" + carol + "\")]", null));
+        support.assertMembers(id);
+
         // remove without a filter or value removes everyone
         patch(entra, id, new PatchOperation("Add", "members", members(alice, bob)));
         patch(entra, id, new PatchOperation("Remove", "members", null));

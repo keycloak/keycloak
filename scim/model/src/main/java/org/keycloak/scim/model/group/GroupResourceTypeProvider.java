@@ -19,8 +19,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -51,6 +49,7 @@ import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.group.Member;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.schema.path.Path;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.MembershipChange;
 import org.keycloak.scim.resource.spi.SearchOptions;
@@ -63,10 +62,12 @@ import static org.keycloak.utils.StreamsUtil.closing;
 
 public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<GroupModel, Group> implements ScimAttributeJpaExpressionResolver {
 
-    private static final Pattern MEMBER_VALUE_FILTER = Pattern.compile("^\\s*value\\s+eq\\s+\"([^\"]+)\"\\s*$", Pattern.CASE_INSENSITIVE);
-    private static final Pattern OR = Pattern.compile("\\s+or\\s+", Pattern.CASE_INSENSITIVE);
-
     private final GroupCoreModelSchema schema;
+
+    /**
+     * The owned ids on the page being listed. A single read leaves this null and looks the group up on its own.
+     */
+    private Set<String> ownedOnPage;
 
     public GroupResourceTypeProvider(KeycloakSession session) {
         this(session, new GroupCoreModelSchema(session));
@@ -134,6 +135,25 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     }
 
     @Override
+    public Group get(String id, List<String> attributes, List<String> excludedAttributes) {
+        ownedOnPage = null;
+        return super.get(id, attributes, excludedAttributes);
+    }
+
+    @Override
+    protected Stream<Group> render(Stream<GroupModel> models, SearchOptions searchOptions) {
+        if (!GroupOwnership.isEnabled(session.getContext().getRealm())
+                || !returnsMembers(searchOptions.getAttributes(), searchOptions.getExcludedAttributes())) {
+            ownedOnPage = null;
+            return super.render(models, searchOptions);
+        }
+
+        List<GroupModel> page = models.toList();
+        ownedOnPage = GroupOwnership.ownedAmong(session, page.stream().map(GroupModel::getId).toList());
+        return page.stream().map(model -> createResourceTypeInstance(model, searchOptions.getAttributes(), searchOptions.getExcludedAttributes()));
+    }
+
+    @Override
     protected Group createResourceTypeInstance(GroupModel model, List<String> attributes, List<String> excludedAttributes) {
         if (session.getContext().getPermissions().isAdminGroup(model)) {
             Group group = new Group();
@@ -147,8 +167,11 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
         Group group = super.createResourceTypeInstance(model, attributes, excludedAttributes);
 
-        if (GroupOwnership.isEnabled(session.getContext().getRealm()) && returnsMembers(attributes, excludedAttributes)
-                && new GroupOwnership(session, schema).ownerOf(model) != null) {
+        boolean owned = ownedOnPage != null
+                ? ownedOnPage.contains(model.getId())
+                : new GroupOwnership(session, schema).ownerOf(model) != null;
+
+        if (GroupOwnership.isEnabled(session.getContext().getRealm()) && returnsMembers(attributes, excludedAttributes) && owned) {
             // An owner that sends full member lists may build the next list from a read, so a read of an owned group
             // shows every member without being asked, unless the request leaves them out.
             List<Member> members = schema.readMembers(model);
@@ -393,32 +416,54 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
      * @return {@code null} when the path targets another attribute
      */
     private MembersPath membersPath(String path) {
-        int bracket = path.indexOf('[');
-        Attribute<GroupModel, Group> attribute = schema.getAttributeByPath(bracket == -1 ? path : path.substring(0, bracket));
+        Path parsed;
+
+        try {
+            parsed = new Path(schema, path);
+        } catch (RuntimeException ex) {
+            throw new ModelValidationException("Only a members[value eq \"id\"] filter is supported in the path");
+        }
+
+        Attribute<GroupModel, Group> attribute = schema.getAttributeByPath(parsed.getPath());
 
         if (attribute == null || !"members".equals(attribute.getName())) {
             return null;
         }
 
-        if (bracket == -1) {
+        JsonNode value = parsed.getValue(attribute);
+
+        if (value == null || value.isNull()) {
             return new MembersPath(null);
         }
 
-        if (!path.endsWith("]")) {
+        return new MembersPath(filterIds(value));
+    }
+
+    /**
+     * The user ids from a filter the shared parser accepted: one comparison, or an {@code or} of them.
+     */
+    private static List<String> filterIds(JsonNode value) {
+        List<String> ids = new ArrayList<>();
+
+        if (value.isArray()) {
+            value.forEach(node -> ids.add(filterId(node)));
+        } else if (value.isObject()) {
+            ids.add(filterId(value));
+        } else {
             throw new ModelValidationException("Only a members[value eq \"id\"] filter is supported in the path");
         }
 
-        List<String> ids = new ArrayList<>();
+        return ids;
+    }
 
-        for (String term : OR.split(path.substring(bracket + 1, path.length() - 1))) {
-            Matcher matcher = MEMBER_VALUE_FILTER.matcher(term);
-            if (!matcher.matches()) {
-                throw new ModelValidationException("Only a members[value eq \"id\"] filter is supported in the path");
-            }
-            ids.add(matcher.group(1));
+    private static String filterId(JsonNode node) {
+        JsonNode id = node.get("value");
+
+        if (id == null || !id.isTextual()) {
+            throw new ModelValidationException("Only a members[value eq \"id\"] filter is supported in the path");
         }
 
-        return new MembersPath(ids);
+        return id.asText();
     }
 
     private static String membersField(JsonNode value) {
