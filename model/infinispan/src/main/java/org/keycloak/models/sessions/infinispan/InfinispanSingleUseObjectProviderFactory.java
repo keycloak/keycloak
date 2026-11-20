@@ -21,12 +21,14 @@ package org.keycloak.models.sessions.infinispan;
 import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -50,10 +52,15 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
 import org.infinispan.Cache;
+import org.infinispan.distribution.DistributionManager;
 import org.infinispan.notifications.Listener;
+import org.infinispan.notifications.cachelistener.annotation.TopologyChanged;
+import org.infinispan.notifications.cachelistener.event.TopologyChangedEvent;
 import org.infinispan.notifications.cachemanagerlistener.annotation.Merged;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
+import org.infinispan.partitionhandling.AvailabilityMode;
+import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
@@ -75,6 +82,11 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     private volatile boolean initialized;
     private boolean persistRevokedTokens;
     private final ViewChangeListener viewChangeListener = new ViewChangeListener();
+    private final TopologyListener topologyListener = new TopologyListener();
+    // Guards reloadPending. It is only held briefly and never during the database scan, so notification threads don't block.
+    // An explicit lock instead of synchronized, as notification threads may be virtual threads that synchronized would pin.
+    private final ReentrantLock stateLock = new ReentrantLock();
+    private boolean reloadPending;
     private Executor reloadExecutor;
     private KeycloakSessionFactory sessionFactory;
     private volatile boolean closed;
@@ -131,6 +143,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
             // Revocation entries can be lost with departed owners while LOADED survives. Reconcile on membership loss
             // instead of adding a database lookup to every cache miss on the token-validation path.
             singleUseObjectCache.getCacheManager().addListener(viewChangeListener);
+            singleUseObjectCache.addListener(topologyListener);
             factory.register(event -> {
                 if (event instanceof PostMigrationEvent pme) {
                     KeycloakSessionFactory sessionFactory = pme.getFactory();
@@ -149,6 +162,7 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         // The cache is not assigned when initialization failed before postInit(), and the cleanup must not mask that failure.
         if (persistRevokedTokens && singleUseObjectCache != null) {
             singleUseObjectCache.getCacheManager().removeListener(viewChangeListener);
+            singleUseObjectCache.removeListener(topologyListener);
         }
     }
 
@@ -209,22 +223,40 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
         });
     }
 
+    private void markReloadPending() {
+        stateLock.lock();
+        try {
+            reloadPending = true;
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
+    private boolean isReloadPending() {
+        stateLock.lock();
+        try {
+            return reloadPending;
+        } finally {
+            stateLock.unlock();
+        }
+    }
+
     private void requestReload() {
-        // Every member observes the view change, so skip submitting a task on nodes that would not scan anyway.
-        // The coordinator is checked again when the task runs, as it can change in between.
-        if (!closed && singleUseObjectCache.getCacheManager().isCoordinator()) {
-            // Keycloak's executor provider owns this shared pool. Offloading avoids blocking the Infinispan notification
-            // thread without retaining a thread owned by this provider between the rare cluster membership changes.
-            try {
-                reloadExecutor.execute(this::reloadRevokedTokens);
-            } catch (RejectedExecutionException e) {
-                // The default executor has an unbounded queue, so a rejection means the executor is shutting down.
-                // There is nothing left to retry, but clearing the marker lets the next node starting up reload.
-                if (!closed) {
-                    logger.warn("Failed to submit the reload of revoked tokens after a cluster membership change", e);
-                }
-                clearLoadedMarker();
+        // Topology changes are frequent, so only submit a task when a membership change is waiting for a reload.
+        if (closed || !isReloadPending()) {
+            return;
+        }
+        // Keycloak's executor provider owns this shared pool. Offloading avoids blocking the Infinispan notification
+        // thread without retaining a thread owned by this provider between the rare cluster membership changes.
+        try {
+            reloadExecutor.execute(this::reloadIfPendingAndSettled);
+        } catch (RejectedExecutionException e) {
+            // The default executor has an unbounded queue, so a rejection means the executor is shutting down.
+            // There is nothing left to retry, but clearing the marker lets the next node starting up reload.
+            if (!closed) {
+                logger.warn("Failed to submit the reload of revoked tokens after a cluster membership change", e);
             }
+            clearLoadedMarker();
         }
     }
 
@@ -239,6 +271,44 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
                 logger.warn("Failed to clear the revoked tokens loaded marker", removeFailure);
             }
         }
+    }
+
+    /**
+     * The view change is delivered before Infinispan has recovered the cache topology. Entries written in that window
+     * can be discarded when the partitions are reconciled, so the reload is deferred to a topology change that
+     * leaves the cache settled.
+     */
+    private synchronized void reloadIfPendingAndSettled() {
+        // Synchronized like the scan, so a task queued behind a running scan checks the topology again once it runs.
+        if (closed) {
+            return;
+        }
+        // Checking and clearing the flag together keeps a membership change that arrives meanwhile from being lost.
+        stateLock.lock();
+        try {
+            if (!reloadPending || !isTopologySettled()) {
+                return;
+            }
+            reloadPending = false;
+        } finally {
+            stateLock.unlock();
+        }
+        reloadRevokedTokens();
+    }
+
+    private boolean isTopologySettled() {
+        var cache = singleUseObjectCache.getAdvancedCache();
+        DistributionManager dm = cache.getDistributionManager();
+        if (dm == null) {
+            return cache.getAvailability() == AvailabilityMode.AVAILABLE;
+        }
+        // During a merge, Infinispan can publish an intermediate topology without a rebalance that still lacks the
+        // members of the other partition. Requiring the topology to match the cluster view excludes it.
+        List<Address> viewMembers = cache.getCacheManager().getMembers();
+        boolean membersRecovered = viewMembers == null
+                || new HashSet<>(dm.getCacheTopology().getMembers()).equals(new HashSet<>(viewMembers));
+        return cache.getAvailability() == AvailabilityMode.AVAILABLE
+                && dm.isJoinComplete() && !dm.isRehashInProgress() && membersRecovered;
     }
 
     private synchronized void reloadRevokedTokens() {
@@ -274,6 +344,18 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
             // Joining members receive state from existing owners and must not make every scale-up scan the database.
             // After a merge, neither partition can assume its surviving entries are complete.
             if (event.isMergeView() || !event.getNewMembers().containsAll(event.getOldMembers())) {
+                markReloadPending();
+            }
+        }
+    }
+
+    @Listener
+    public class TopologyListener {
+
+        // Runs for every topology change of the cache, but only acts when a membership change flagged a reload.
+        @TopologyChanged
+        public void topologyChanged(TopologyChangedEvent<?, ?> event) {
+            if (!event.isPre()) {
                 requestReload();
             }
         }
