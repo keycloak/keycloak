@@ -59,6 +59,27 @@ test.describe.serial("Group test", () => {
     await adminClient.deleteGroups(testBed!.realm);
   });
 
+  test("Preserve consecutive spaces in group names", async ({ page }) => {
+    const spacedGroupName = `group  with  spaces-${uuid()}`;
+    await adminClient.createGroup(spacedGroupName, testBed!.realm);
+
+    try {
+      await searchGroup(page, spacedGroupName);
+      const nameInTable = page.locator("table .keycloak-admin--groups__name", {
+        hasText: spacedGroupName,
+      });
+      await expect(nameInTable).toHaveText(spacedGroupName);
+      await expect(nameInTable).toHaveCSS("white-space", "pre-wrap");
+      await nameInTable.click();
+
+      const nameInDetails = page.getByTestId("view-header");
+      await expect(nameInDetails).toHaveText(spacedGroupName);
+      await expect(nameInDetails).toHaveCSS("white-space", "pre-wrap");
+    } finally {
+      await adminClient.deleteGroups(testBed!.realm);
+    }
+  });
+
   test("Fail to create group with empty name", async ({ page }) => {
     await createGroup(page, " ", "", true);
     await assertNotificationMessage(
