@@ -33,6 +33,7 @@ import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -67,6 +68,9 @@ public class ClientApplicationSynchronizer implements Synchronizer<ClientRemoved
         List<Policy> search = storeFactory.getPolicyStore().find(null, attributes, null, null);
 
         for (Policy policy : search) {
+            if (Logic.NEGATIVE.equals(policy.getLogic())) {
+                continue;
+            }
             PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
             ClientPolicyRepresentation representation = ClientPolicyRepresentation.class.cast(policyFactory.toRepresentation(policy, authorizationProvider));
             Set<String> clients = representation.getClients();

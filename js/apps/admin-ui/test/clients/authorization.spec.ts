@@ -230,6 +230,35 @@ test.describe.serial("Client authentication subtab", () => {
     await assertNotificationMessage(page, "Successfully created the policy");
   });
 
+  test("Should retain a missing group path when editing a policy", async ({
+    page,
+  }) => {
+    const policy = {
+      name: "Policy with a missing group path",
+      type: "group",
+      groups: [{ path: "/missing-policy-group" }],
+    };
+    await adminClient.createAuthzPolicy(clientId, policy);
+
+    await goToPoliciesSubTab(page);
+    await clickTableRowItem(page, policy.name);
+    const missingGroup = page.getByText("Missing group", { exact: true });
+    await expect(missingGroup).toBeVisible();
+    await fillForm(page, { description: "Updated description" });
+
+    const update = page.waitForResponse(
+      (response) =>
+        response.request().method() === "PUT" &&
+        response.url().includes("/authz/resource-server/policy/group/"),
+    );
+    await clickSaveButton(page);
+    expect((await update).ok()).toBeTruthy();
+
+    await page.reload();
+    await missingGroup.hover();
+    await expect(page.getByRole("tooltip")).toHaveText(policy.groups[0].path);
+  });
+
   test("Should copy auth details", async ({ page, context, browserName }) => {
     test.skip(browserName === "firefox", "Still working on it");
     await context.grantPermissions(["clipboard-write", "clipboard-read"]);
