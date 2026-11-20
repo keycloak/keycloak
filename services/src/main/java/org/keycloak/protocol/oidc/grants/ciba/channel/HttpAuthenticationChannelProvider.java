@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.grants.ciba.channel;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -44,7 +45,9 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
 
     public static final String AUTHENTICATION_CHANNEL_ID = "authentication_channel_id";
 
-    private static final Pattern LENIENT_HOST_PORT = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9._-]*(:\\d{1,5})?");
+    private static final Pattern LENIENT_HOST_PORT = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9._-]*(?::(\\d{1,5}))?");
+
+    private static final int MAX_PORT = 65535;
 
     protected KeycloakSession session;
     protected MultivaluedMap<String, String> formParams;
@@ -93,13 +96,22 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
     /**
      * {@link URI#getHost()} is null for host names that are not valid per RFC 2396, e.g. names containing '_',
      * which are common in container networks. In that case the authority must be a plain {@code host[:port]}.
+     * An explicit port must not exceed {@value #MAX_PORT}, as such a URI could never be called.
      */
     private static boolean hasHost(URI uri) {
         if (uri.getHost() != null) {
-            return !uri.getHost().isBlank();
+            return !uri.getHost().isBlank() && uri.getPort() <= MAX_PORT;
         }
         String authority = uri.getAuthority();
-        return authority != null && LENIENT_HOST_PORT.matcher(authority).matches();
+        if (authority == null) {
+            return false;
+        }
+        Matcher matcher = LENIENT_HOST_PORT.matcher(authority);
+        if (!matcher.matches()) {
+            return false;
+        }
+        String port = matcher.group(1);
+        return port == null || Integer.parseInt(port) <= MAX_PORT;
     }
 
     @Override

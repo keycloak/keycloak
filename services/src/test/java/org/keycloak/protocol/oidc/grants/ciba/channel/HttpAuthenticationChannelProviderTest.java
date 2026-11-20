@@ -51,5 +51,12 @@ public class HttpAuthenticationChannelProviderTest {
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://evil.example.com:80@ciba_server/ciba"));
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:80:90/ciba"));
         assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:port/ciba"));
+        // explicit ports above 65535 cannot be called
+        assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://localhost:65535/ciba"));
+        assertTrue(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:65535/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://localhost:65536/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:65536/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://ciba_server:99999/ciba"));
+        assertFalse(HttpAuthenticationChannelProvider.isValidHttpAuthenticationChannelUri("http://localhost:99999999999/ciba"));
     }
 }
