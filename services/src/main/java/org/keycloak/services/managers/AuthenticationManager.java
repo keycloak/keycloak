@@ -360,16 +360,11 @@ public class AuthenticationManager {
                     checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
         } finally {
             // The logout session may have joined a root that the browser shares with other tabs (for example an
-            // unfinished login), so only remove the logout tab from such a root
+            // unfinished login), so only remove the logout tab from such a root (which also removes the root if empty)
             RootAuthenticationSessionModel logoutRoot = logoutAuthSession.getParentSession();
             String logoutTabId = logoutAuthSession.getTabId();
-            if (logoutRoot.getAuthenticationSessions().keySet().stream().anyMatch(tabId -> !tabId.equals(logoutTabId))) {
-                logger.tracef("Removing logout session tab '%s' from '%s' after backchannel logout", logoutTabId, logoutRoot.getId());
-                logoutRoot.removeAuthenticationSessionByTabId(logoutTabId);
-            } else {
-                logger.tracef("Removing logout session '%s' after backchannel logout", logoutRoot.getId());
-                session.authenticationSessions().removeRootAuthenticationSession(realm, logoutRoot);
-            }
+            logger.tracef("Removing logout session tab '%s' from '%s' after backchannel logout", logoutTabId, logoutRoot.getId());
+            logoutRoot.removeAuthenticationSessionByTabId(logoutTabId);
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
@@ -469,7 +464,7 @@ public class AuthenticationManager {
             // which would suppress the logout of the same clients for this user session, so never reuse it
             String prevUserSessionId = prevAuthSession.getAuthNote(LOGOUT_USER_SESSION_ID);
             boolean otherUserSession = userSession != null && prevUserSessionId != null && !prevUserSessionId.equals(userSession.getId());
-            if (!otherUserSession && (!initiateLogout || client.getId().equals(prevAuthSession.getClient().getId()))) {
+            if (!otherUserSession && (!initiateLogout || (prevAuthSession.getClient() != null && client.getId().equals(prevAuthSession.getClient().getId())))) {
                 logoutAuthSession = prevAuthSession;
                 logger.tracef("Found existing logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
             }
@@ -482,7 +477,7 @@ public class AuthenticationManager {
             boolean removePreviousFirst = prevAuthSession != null && rootLogoutSession.getAuthenticationSessions().size() > 1;
             if (removePreviousFirst) {
                 rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
-                logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());
+                logger.tracef("Removing previous logout session tab '%s' in %s", prevAuthSession.getTabId(), rootLogoutSession.getId());
             }
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
@@ -490,7 +485,7 @@ public class AuthenticationManager {
             if (prevAuthSession != null && !removePreviousFirst) {
                 // remove previous logout session for the other client or user session
                 rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
-                logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());
+                logger.tracef("Removing previous logout session tab '%s' in %s", prevAuthSession.getTabId(), rootLogoutSession.getId());
             }
         }
         if (userSession != null) {

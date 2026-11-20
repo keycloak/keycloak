@@ -64,6 +64,8 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -96,8 +98,10 @@ import org.openqa.selenium.Cookie;
  *       only the identity cookie). That root must not be left behind.</li>
  * </ul>
  */
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = LogoutSessionReuseTest.ServerConfig.class)
 public class LogoutSessionReuseTest {
+
+    public static final int AUTH_SESSIONS_LIMIT = 5;
 
     private static final String STATE = "hint-only-logout-state";
 
@@ -124,6 +128,13 @@ public class LogoutSessionReuseTest {
 
     @InjectRunOnServer(permittedPackages = {"org.keycloak.tests", "org.keycloak.admin"})
     RunOnServerClient runOnServer;
+
+    public static class ServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.spiOption("authentication-sessions", "infinispan", "auth-sessions-limit", String.valueOf(AUTH_SESSIONS_LIMIT));
+        }
+    }
 
     public static class LogoutSessionReuseUserConfig implements UserConfig {
         @Override
@@ -428,7 +439,7 @@ public class LogoutSessionReuseTest {
      */
     @Test
     void replacingLogoutSessionAtAuthSessionLimitKeepsOldestLoginTab() throws Exception {
-        final int limit = 300;
+        final int limit = AUTH_SESSIONS_LIMIT;
         final String realmName = realm.getName();
         final String clientId = oauth.getClientId();
         final String postLogoutRedirectUri = testApp.getRedirectionUri();
@@ -455,11 +466,18 @@ public class LogoutSessionReuseTest {
                 return root.getAuthenticationSessions().keySet().iterator().next();
             }, String.class);
 
+            // Open a second browser tab for logging in user session A
+            driver.tabs().newTab("about:blank");
+
+            // Navigate the first tab away so authChecker.js does not poll and complete the login in the background
+            driver.tabs().switchToTab(0);
+            driver.open(postLogoutRedirectUri);
+            driver.tabs().switchToTab(1);
+
             // Wait over 1 s so that login tab L is strictly older than any tab created next
             Thread.sleep(1100);
 
-            // Log in user session A in a second tab so that login tab L is not consumed
-            driver.tabs().newTab("about:blank");
+            // Log in user session A in the second tab so that login tab L is not consumed
             oauth.openLoginForm();
             loginPage.assertCurrent();
             loginPage.fillLogin(user.getUsername(), user.getPassword());
@@ -476,7 +494,7 @@ public class LogoutSessionReuseTest {
                 RealmModel realmModel = session.realms().getRealmByName(realmName);
                 RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, finalRootId);
                 ClientModel client = realmModel.getClientByClientId(clientId);
-                while (root.getAuthenticationSessions().size() < limit) {
+                for (int i = 0; i < limit && root.getAuthenticationSessions().size() < limit; i++) {
                     root.createAuthenticationSession(client);
                 }
                 Assertions.assertEquals(limit, root.getAuthenticationSessions().size(), "Root R must hold exactly the limit of tabs");
