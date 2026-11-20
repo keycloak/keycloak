@@ -1,6 +1,5 @@
 package org.keycloak.protocol.saml.profile.ecp.authenticator;
 
-import java.util.Base64;
 import java.util.List;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -17,6 +16,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.util.BasicAuthHelper;
 
 public class HttpBasicAuthenticator implements Authenticator {
 
@@ -94,32 +94,17 @@ public class HttpBasicAuthenticator implements Authenticator {
     private String[] getUsernameAndPassword(final HttpHeaders httpHeaders) {
         final List<String> authHeaders = httpHeaders.getRequestHeader(HttpHeaders.AUTHORIZATION);
 
-        if (authHeaders == null || authHeaders.size() == 0) {
+        if (authHeaders == null) {
             return null;
         }
 
-        String credentials = null;
-
         for (final String authHeader : authHeaders) {
-            if (authHeader.startsWith(BASIC_PREFIX)) {
-                final String[] split = authHeader.trim().split("\\s+");
-
-                if (split.length != 2) return null;
-
-                credentials = split[1];
+            if (authHeader.regionMatches(true, 0, BASIC_PREFIX, 0, BASIC_PREFIX.length())) {
+                return BasicAuthHelper.parseHeader(authHeader);
             }
         }
 
-        try {
-            String val = new String(Base64.getMimeDecoder().decode(credentials));
-            int seperatorIndex = val.indexOf(":");
-            if(seperatorIndex == -1) return new String[]{val};
-            String user = val.substring(0, seperatorIndex);
-            String pw = val.substring(seperatorIndex + 1);
-            return new String[]{user,pw};
-        } catch (final IllegalArgumentException e) {
-            throw new RuntimeException("Failed to parse credentials.", e);
-        }
+        return null;
     }
 
     @Override
