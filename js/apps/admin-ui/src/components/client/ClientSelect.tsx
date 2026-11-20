@@ -160,11 +160,20 @@ export const ClientSelect = ({
                       );
                       setSelectedClients(remaining);
                       if (isSelectOne) {
-                        setValue(name!, "");
+                        setValue(name!, "", {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                          shouldTouch: true,
+                        });
                       } else {
                         setValue(
                           name!,
                           remaining.map((c) => c[clientKey] as string),
+                          {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                            shouldTouch: true,
+                          },
                         );
                       }
                     }}
