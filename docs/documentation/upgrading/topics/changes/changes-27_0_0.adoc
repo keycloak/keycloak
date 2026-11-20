@@ -476,6 +476,20 @@ Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remai
 
 Disabling signature validation reduces protection against forged identity-provider responses.
 
+=== Resource Indicators must be enabled for each client
+// https://github.com/keycloak/keycloak/issues/47121
+
+When the experimental `resource-indicators` feature is enabled, a client can now use the `resource` parameter only if Resource Indicators are enabled for that client.
+Previously, every client could use the `resource` parameter once the feature was enabled.
+The new client setting is disabled by default, and existing clients are not updated during the upgrade.
+
+After upgrading, {project_name} rejects authorization requests and token requests that include the `resource` parameter with the `invalid_target` error when they come from a client without this setting.
+A refresh token that was issued for a `resource` parameter value is rejected in the same way, even when the refresh request does not include the parameter.
+Requests without the `resource` parameter are not affected.
+
+To allow a client to use the `resource` parameter again, select *Resource Indicators* in the *Capability config* section of the client settings in the Admin Console, or set the `resource.indicators.enabled` client attribute to `true`.
+For a client registered through OAuth Client ID Metadata Document, the `client-id-metadata-document` executor enables the setting the next time the client sends an authorization request with a `resource` parameter value from the *Resource indicator allow list*, unless the setting has been set for the client before.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

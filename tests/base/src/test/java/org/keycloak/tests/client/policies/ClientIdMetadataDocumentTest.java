@@ -7,6 +7,7 @@ import java.util.Map;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -72,6 +73,7 @@ import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
@@ -356,6 +358,46 @@ public class ClientIdMetadataDocumentTest {
         Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), RESOURCE));
 
         deleteClientByAdmin(clientRepresentation.getId());
+    }
+
+    @Test
+    public void testResourceIndicatorExplicitlyDisabledForClientIsPreserved() throws Exception {
+        // 1. allow list includes the resource -> client registers and resource indicators get enabled for it.
+        String otherResource = "https://mcp.example.com/other-api";
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = createDefaultExecutorConfig();
+        executorConfig.setResourceIndicatorAllowList(List.of(RESOURCE, otherResource));
+        updatePolicy(createDefaultConditionConfig(), executorConfig);
+
+        String code = loginUserAndGetCode(true, RESOURCE);
+        String signedJwt = createSignedRequestToken();
+        AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).resource(RESOURCE).signedJwt(signedJwt).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        logout(tokenResponse.getIdToken());
+
+        ClientRepresentation clientRepresentation = findByClientIdByAdmin();
+        try {
+            Assertions.assertEquals("true", clientRepresentation.getAttributes().get(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED));
+
+            // 2. an administrator disables resource indicators for the client.
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED, "false");
+            realm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
+
+            // 3. the client's own cache is still valid (NO_UPDATE), an allow-listed resource is requested
+            // -> the explicit setting is not overwritten, so the authorization endpoint rejects the request.
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.loginForm().codeChallenge(null).resource(otherResource).open();
+            AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
+            Assertions.assertEquals(OAuthErrorException.INVALID_TARGET, authorizationEndpointResponse.getError());
+            Assertions.assertEquals(ResourceIndicatorConstants.ERROR_RESOURCE_INDICATORS_DISABLED, authorizationEndpointResponse.getErrorDescription());
+
+            // the client stays disabled, and no audience mapper got assigned for the rejected resource.
+            clientRepresentation = findByClientIdByAdmin();
+            Assertions.assertEquals("false", clientRepresentation.getAttributes().get(OIDCConfigAttributes.RESOURCE_INDICATORS_ENABLED));
+            Assertions.assertFalse(hasResourceIndicatorAudienceMapper(clientRepresentation.getId(), otherResource));
+        } finally {
+            deleteClientByAdmin(clientRepresentation.getId());
+        }
     }
 
     @Test
