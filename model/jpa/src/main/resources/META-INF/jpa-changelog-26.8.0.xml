@@ -395,9 +395,10 @@
     </changeSet>
 
     <!-- Record the target organization on organization group IdP mappers. Must run before ORGANIZATION_ID is dropped.
-         onSqlOutput="IGNORE": ORGANIZATION_ID existed before 26.8 and is always present on the generation database;
-         evaluating columnExists against it in script mode would always be true and would not skip anything, but
-         IGNORE is safer because an earlier changeset in the same script could in principle have added or removed it. -->
+         onSqlOutput="IGNORE": the precondition is not evaluated when generating a script, so the custom change always
+         runs there. ORGANIZATION_ID is only added in 26.0.0, so it is absent from the generation database when the
+         starting version is older; the custom change then reads the IdP links from the legacy kc.org entry of
+         IDENTITY_PROVIDER_CONFIG instead, and emits nothing if the database predates organizations. -->
     <changeSet author="keycloak" id="26.8.0-idp-mapper-organization-id">
         <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <columnExists tableName="IDENTITY_PROVIDER" columnName="ORGANIZATION_ID"/>
@@ -406,8 +407,9 @@
     </changeSet>
 
     <!-- Drop IDENTITY_PROVIDER.ORGANIZATION_ID column and related indexes.
-         onSqlOutput="IGNORE": the column existed before 26.8 and is guaranteed to be present at this point in the
-         script; evaluating against the generation database would give the wrong answer once the column is dropped. -->
+         onSqlOutput="IGNORE": the column is added in 26.0.0, so it is present at this point in the script for every
+         starting version, either already on the generation database or added by an earlier statement of the script;
+         evaluating against the generation database would give the wrong answer. This changeset only emits SQL. -->
     <changeSet author="keycloak" id="26.8.0-drop-idp-organization-id">
         <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <columnExists tableName="IDENTITY_PROVIDER" columnName="ORGANIZATION_ID"/>
@@ -424,9 +426,10 @@
     </changeSet>
 
     <!-- Backfill KEYCLOAK_GROUP.ORG_ID for orgs created before 26.6.0.
-         onSqlOutput="IGNORE": both columns existed before 26.8; the generation database always has them, so TEST
-         would always include this changeset but IGNORE is the correct mode because earlier changesets in the same
-         script may have altered these tables. -->
+         onSqlOutput="IGNORE": KEYCLOAK_GROUP.ORG_ID is only added in 26.6.0 and ORG.GROUP_ID in 25.0.0, so for an older
+         starting version they are absent from the generation database but are added by earlier statements of the
+         script. Evaluating the precondition against the generation database would wrongly skip this changeset. This
+         changeset only emits SQL. -->
     <changeSet author="keycloak" id="26.8.0-backfill-group-org-id">
         <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <and>
