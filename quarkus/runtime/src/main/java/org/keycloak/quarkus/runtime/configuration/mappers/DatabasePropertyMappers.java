@@ -71,6 +71,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
     public static final String JDBC_NETWORK_TIMEOUT = "quarkus.datasource.jdbc.network-timeout";
+    public static final String JDBC_VALIDATION_QUERY_TIMEOUT = "quarkus.datasource.jdbc.validation-query-timeout";
 
     static final String AWS_JDBC_WRAPPER_DRIVER = "software.amazon.jdbc.Driver";
 
@@ -110,11 +111,15 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 /* Agroal resets the network timeout to this value whenever a connection is returned to the pool; without it, idle
                    connections have no timeout. Connections used by a transaction get their timeout from
-                   UpdateSocketTimeoutOnConnectionAcquireInterceptor, so this only applies to pool-internal operations like the readiness probe.
-                   See https://github.com/keycloak/keycloak/issues/55357 */
+                   UpdateSocketTimeoutOnConnectionAcquireInterceptor, so this only applies to pool-internal operations like the readiness probe. */
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(JDBC_NETWORK_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> computeNetworkTimeout(value))
+                        .build(),
+                // Without it, Agroal validates connections with isValid(0), which has no timeout at the driver level.
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(JDBC_VALIDATION_QUERY_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> DurationConverter.parseDuration(value).toString())
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(CONNECT_TIMEOUT)

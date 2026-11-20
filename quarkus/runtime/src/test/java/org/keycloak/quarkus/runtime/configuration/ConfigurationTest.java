@@ -948,6 +948,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
         assertEquals("PT10S", config.getConfigValue(DatabasePropertyMappers.JDBC_NETWORK_TIMEOUT).getValue());
+        assertEquals("PT10S", config.getConfigValue(DatabasePropertyMappers.JDBC_VALIDATION_QUERY_TIMEOUT).getValue());
 
         config = createConfigFromCliArguments("--db=oracle", "--db-url=jdbc:oracle:oci:@keycloak");
         assertNull(config.getConfigValue(DatabasePropertyMappers.JDBC_NETWORK_TIMEOUT).getValue());
