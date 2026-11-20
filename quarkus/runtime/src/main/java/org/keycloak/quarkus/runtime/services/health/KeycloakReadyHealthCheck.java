@@ -16,6 +16,7 @@
  */
 package org.keycloak.quarkus.runtime.services.health;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -50,6 +51,14 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     public static final String FAILING_SINCE = "Failing since";
 
     /**
+     * Upper bound for a single check. The pool's network timeout normally aborts a hanging validation earlier;
+     * this is the backstop, for example when closing a broken TLS connection blocks as well.
+     */
+    static final Duration CHECK_TIMEOUT = Duration.ofSeconds(20);
+
+    private static final String CHECK_NAME = "Keycloak database connections async health check";
+
+    /**
      * Date formatter, the same as used by Quarkus. This enables users to quickly compare the date printed
      * by the probe with the logs.
      */
@@ -67,11 +76,20 @@ public class KeycloakReadyHealthCheck implements AsyncHealthCheck {
     @Override
     public Uni<HealthCheckResponse> call() {
         Uni<HealthCheckResponse> uni = Uni.createFrom().item(this::syncCheck);
-        return uni.runSubscriptionOn(executor);
+        return uni.runSubscriptionOn(executor)
+                .ifNoItem().after(CHECK_TIMEOUT).recoverWithItem(this::timeoutResponse);
+    }
+
+    private HealthCheckResponse timeoutResponse() {
+        Instant failingTime = failingSince.updateAndGet(KeycloakReadyHealthCheck::createInstanceIfNeeded);
+        return HealthCheckResponse.named(CHECK_NAME).down()
+                .withData(FAILING_SINCE, DATE_FORMATTER.format(failingTime))
+                .withData("reason", "Database connection check timed out after " + CHECK_TIMEOUT)
+                .build();
     }
 
     private HealthCheckResponse syncCheck() {
-        HealthCheckResponseBuilder builder = HealthCheckResponse.named("Keycloak database connections async health check").up();
+        HealthCheckResponseBuilder builder = HealthCheckResponse.named(CHECK_NAME).up();
         HealthCheckResponse activeCheckResult = dataSourceHealthCheck.call();
         if (activeCheckResult.getStatus() == HealthCheckResponse.Status.DOWN) {
             builder.down();

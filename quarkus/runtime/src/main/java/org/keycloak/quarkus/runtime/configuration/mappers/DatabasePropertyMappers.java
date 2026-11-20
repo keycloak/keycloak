@@ -70,6 +70,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
     public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
+    public static final String JDBC_NETWORK_TIMEOUT = "quarkus.datasource.jdbc.network-timeout";
+
     static final String AWS_JDBC_WRAPPER_DRIVER = "software.amazon.jdbc.Driver";
 
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
@@ -105,6 +107,14 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_POOL_ACQUISITION_TIMEOUT)
                         .to(JDBC_ACQUISITION_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> computeAcquisitionTimeout(value))
+                        .build(),
+                /* Agroal resets the network timeout to this value whenever a connection is returned to the pool; without it, idle
+                   connections have no timeout. Connections used by a transaction get their timeout from
+                   UpdateSocketTimeoutOnConnectionAcquireInterceptor, so this only applies to pool-internal operations like the readiness probe.
+                   See https://github.com/keycloak/keycloak/issues/55357 */
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(JDBC_NETWORK_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> computeNetworkTimeout(value))
                         .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(CONNECT_TIMEOUT)
@@ -789,6 +799,15 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             throw new PropertyException("Invalid duration format '%s' for option '%s'. %s"
                     .formatted(value, DatabaseOptions.DB_CONNECT_TIMEOUT.getKey(), OptionsUtil.DURATION_DESCRIPTION));
         }
+    }
+
+    private static String computeNetworkTimeout(String connectTimeoutValue) {
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValueOrDefault("");
+        if (dbUrl.startsWith("jdbc:oracle:oci")) {
+            // the OCI driver doesn't support Connection#setNetworkTimeout
+            return null;
+        }
+        return DurationConverter.parseDuration(connectTimeoutValue).toString();
     }
 
     private static String computeAcquisitionTimeout(String connectTimeoutValue) {
