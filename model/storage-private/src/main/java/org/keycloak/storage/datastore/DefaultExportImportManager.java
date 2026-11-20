@@ -1863,6 +1863,10 @@ public class DefaultExportImportManager implements ExportImportManager {
     private void importOrganizationGroup(OrganizationProvider provider, OrganizationModel organization, RealmModel realm, GroupRepresentation groupRep, GroupModel parent) {
         GroupModel group = provider.createGroup(organization, groupRep.getId(), groupRep.getName(), parent);
 
+        if (groupRep.getDescription() != null) {
+            group.setDescription(groupRep.getDescription());
+        }
+
         if (groupRep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> attr : groupRep.getAttributes().entrySet()) {
                 group.setAttribute(attr.getKey(), attr.getValue());

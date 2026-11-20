@@ -279,6 +279,11 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         // Validate group IDs are preserved
         validateGroupIds(topLevelGroups, expectedGroupIds);
 
+        // Validate descriptions of top-level groups are preserved
+        for (GroupRepresentation group : topLevelGroups) {
+            assertEquals(groupDescription(group.getName()), group.getDescription(), "Group description mismatch for group: " + group.getName());
+        }
+
         // Validate subgroups
         validateSubGroups(organization, topLevelGroups, expectedGroupIds);
 
@@ -306,6 +311,11 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         // Validate group IDs are preserved
         validateGroupIds(subGroups, expectedGroupIds);
+
+        // Validate descriptions of subgroups are preserved
+        for (GroupRepresentation group : subGroups) {
+            assertEquals(groupDescription(group.getName()), group.getDescription(), "Group description mismatch for group: " + group.getName());
+        }
     }
 
     private void validateGroupMemberships(OrganizationResource organization, List<GroupRepresentation> topLevelGroups) {
@@ -487,6 +497,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private String createTopLevelGroup(OrganizationResource organization, String name) {
         GroupRepresentation group = new GroupRepresentation();
         group.setName(name);
+        group.setDescription(groupDescription(name));
         try (Response response = organization.groups().addTopLevelGroup(group)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             return ApiUtil.getCreatedId(response);
@@ -496,9 +507,20 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private String createSubGroup(OrganizationResource organization, String parentId, String name) {
         GroupRepresentation group = new GroupRepresentation();
         group.setName(name);
+        String id;
         try (Response response = organization.groups().group(parentId).addSubGroup(group)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
-            return response.readEntity(GroupRepresentation.class).getId();
+            id = response.readEntity(GroupRepresentation.class).getId();
         }
+        // addSubGroup does not store the description, so set it with an update
+        group.setDescription(groupDescription(name));
+        try (Response response = organization.groups().group(id).update(group)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+        return id;
+    }
+
+    private static String groupDescription(String groupName) {
+        return "Description of " + groupName;
     }
 }
