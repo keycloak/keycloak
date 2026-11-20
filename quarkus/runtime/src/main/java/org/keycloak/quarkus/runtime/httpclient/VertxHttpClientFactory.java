@@ -2,20 +2,29 @@ package org.keycloak.quarkus.runtime.httpclient;
 
 import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.cache.LocalCache;
+import org.keycloak.cache.LocalCacheConfiguration;
+import org.keycloak.cache.LocalCacheProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.connections.httpclient.ClientCertificate;
 import org.keycloak.connections.httpclient.HttpClientFactory;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.connections.httpclient.ProxyMappings;
+import org.keycloak.connections.httpclient.SingleIdentityKeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
@@ -24,6 +33,7 @@ import io.quarkus.arc.Arc;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
@@ -39,6 +49,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
 
     private volatile WebClient webClient;
     private volatile HttpClient httpClient;
+    private volatile LocalCache<CacheKey, HttpClient> clientCertificateHttpClients;
     private Config.Scope config;
     private long maxConsumedResponseSize;
     private long socketTimeoutMs;
@@ -52,13 +63,20 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
     @Override
     public HttpClientProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new VertxHttpClientProvider(webClient, httpClient, maxConsumedResponseSize, socketTimeoutMs,
-                maxRetries, initialBackoffMillis, backoffMultiplier, useJitter, jitterFactor, proxyMappings);
+        return new VertxHttpClientProvider(webClient, httpClient,
+                certificate -> getClientCertificateHttpClient(session, certificate),
+                maxConsumedResponseSize, socketTimeoutMs, maxRetries, initialBackoffMillis, backoffMultiplier, useJitter,
+                jitterFactor, proxyMappings);
     }
 
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(LocalCacheProvider.class); // for caching of the client certificate clients
     }
 
     @Override
@@ -80,6 +98,14 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         useJitter = config.getBoolean("use-jitter", true);
         jitterFactor = Double.parseDouble(config.get("jitter-factor", "0.5"));
 
+        try (KeycloakSession session = factory.create()) {
+            clientCertificateHttpClients = session.getProvider(LocalCacheProvider.class)
+                    .create(LocalCacheConfiguration.<CacheKey, HttpClient>builder()
+                            .name("clientCertificateHttpClients")
+                            .expirationAfterAccess(Duration.ofMinutes(15))
+                            .removalListener(HttpClient::close)
+                            .build());
+        }
     }
 
     @Override
@@ -89,6 +115,9 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                 webClient.close();
             }
         } catch (Exception ignored) {
+        }
+        if (clientCertificateHttpClients != null) {
+            clientCertificateHttpClients.close();
         }
     }
 
@@ -112,7 +141,7 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
             synchronized (this) {
                 if (webClient == null) {
                     Vertx vertx = Arc.requireContainer().instance(Vertx.class).get();
-                    WebClientOptions options = buildOptions(session);
+                    WebClientOptions options = buildOptions(session, null);
                     httpClient = vertx.createHttpClient(options);
                     webClient = WebClient.wrap(httpClient, options);
                     logger.info("Vert.x HTTP client initialized (HTTP_CLIENT_V2)");
@@ -121,7 +150,21 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         }
     }
 
-    private WebClientOptions buildOptions(KeycloakSession session) {
+    private HttpClient getClientCertificateHttpClient(KeycloakSession session, ClientCertificate certificate) {
+        return clientCertificateHttpClients.computeIfAbsent(new CacheKey(certificate.getId(), List.of(certificate.getCertificateChain())), key -> {
+            Vertx vertx = Arc.requireContainer().instance(Vertx.class).get();
+            SingleIdentityKeyManager keyManager = new SingleIdentityKeyManager(certificate.getPrivateKey(), certificate.getCertificateChain());
+            WebClientOptions options = buildOptions(session, KeyCertOptions.wrap(keyManager));
+            // redirects are not followed as the certificate must only be presented to the configured endpoints
+            options.setFollowRedirects(false);
+            return vertx.createHttpClient(options);
+        });
+    }
+
+    private record CacheKey(String id, List<X509Certificate> chain) {
+    }
+
+    private WebClientOptions buildOptions(KeycloakSession session, KeyCertOptions clientCertificateOptions) {
         WebClientOptions options = new WebClientOptions();
 
         options.setMaxPoolSize(config.getInt("max-pooled-per-route", 64));
@@ -145,13 +188,13 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
         options.setFollowRedirects(config.getBoolean("allow-redirects", false));
         options.setDecompressionSupported(true);
 
-        configureTls(session, options);
+        configureTls(session, options, clientCertificateOptions);
         configureProxy();
 
         return options;
     }
 
-    private void configureTls(KeycloakSession session, WebClientOptions options) {
+    private void configureTls(KeycloakSession session, WebClientOptions options, KeyCertOptions clientCertificateOptions) {
         boolean disableTrustManager = config.getBoolean("disable-trust-manager", false);
         if (disableTrustManager) {
             logger.warn("TrustManager is disabled — all certificates will be trusted");
@@ -167,6 +210,13 @@ public class VertxHttpClientFactory implements HttpClientFactory, EnvironmentDep
                 options.setTrustOptions(keystoreToOptions(truststoreProvider.getTruststore(), null));
                 options.setSsl(true);
             }
+        }
+
+        if (clientCertificateOptions != null) {
+            // takes precedence over the client keystore of the server
+            options.setKeyCertOptions(clientCertificateOptions);
+            options.setSsl(true);
+            return;
         }
 
         String clientKeystore = config.get("client-keystore");

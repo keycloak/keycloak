@@ -23,11 +23,21 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javax.net.ssl.SSLPeerUnverifiedException;
 
+import org.keycloak.cache.LocalCache;
+import org.keycloak.cache.LocalCacheConfiguration;
+import org.keycloak.cache.LocalCacheProvider;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
@@ -94,6 +104,11 @@ public class DefaultHttpClientFactoryTest {
             server.start();
         }
 
+        @BeforeClass
+        public static void initCrypto() {
+            CryptoIntegration.init(CryptoProvider.class.getClassLoader());
+        }
+
         @AfterClass
         public static void stopHttpServer() {
             server.stop(0);
@@ -105,6 +120,7 @@ public class DefaultHttpClientFactoryTest {
 	private HttpClientProvider createDefaultProvider() {
 		factory = new DefaultHttpClientFactory();
 		factory.init(ScopeUtil.createScope(new HashMap<>()));
+		factory.initClientCertificateHttpClients(new InMemoryLocalCacheProvider());
 		session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
 		return factory.create(session);
 	}
@@ -115,6 +131,7 @@ public class DefaultHttpClientFactoryTest {
 	private HttpClientProvider createProviderWithProperties(Map<String, String> values) {
 		factory = new DefaultHttpClientFactory();
 		factory.init(ScopeUtil.createScope(values));
+		factory.initClientCertificateHttpClients(new InMemoryLocalCacheProvider());
 		session = new ResteasyKeycloakSession(new ResteasyKeycloakSessionFactory());
 		return factory.create(session);
 	}
@@ -204,6 +221,126 @@ public class DefaultHttpClientFactoryTest {
                 }
             }
         }
+
+    @Test
+    public void clientCertificateClientIsCachedPerCertificate() throws Exception {
+        HttpClientProvider provider = createProviderWithProperties(new HashMap<>());
+
+        KeyPair keyPairA = generateKeyPair();
+        X509Certificate[] chainA = { CertificateUtils.generateV1SelfSignedCertificate(keyPairA, "client-a") };
+        KeyPair keyPairB = generateKeyPair();
+        X509Certificate[] chainB = { CertificateUtils.generateV1SelfSignedCertificate(keyPairB, "client-b") };
+
+        CloseableHttpClient clientA = provider.getHttpClient(clientCertificate("a", keyPairA.getPrivate(), chainA));
+        // the same certificate shares the client, also across providers
+        Assert.assertSame(clientA, provider.getHttpClient(clientCertificate("a", keyPairA.getPrivate(), chainA)));
+        Assert.assertSame(clientA, factory.create(session).getHttpClient(clientCertificate("a", keyPairA.getPrivate(), chainA.clone())));
+        Assert.assertNotSame(clientA, provider.getHttpClient(clientCertificate("b", keyPairB.getPrivate(), chainB)));
+        Assert.assertNotSame(provider.getHttpClient(), clientA);
+    }
+
+    @Test
+    public void clientCertificateClientIsNotSharedWithAnotherOwnerOfTheCertificate() throws Exception {
+        HttpClientProvider provider = createProviderWithProperties(new HashMap<>());
+        KeyPair keyPair = generateKeyPair();
+        X509Certificate[] chain = { CertificateUtils.generateV1SelfSignedCertificate(keyPair, "client") };
+        CloseableHttpClient client = provider.getHttpClient(clientCertificate("owner", keyPair.getPrivate(), chain));
+
+        // e.g. a key provider of another realm with the same certificate
+        Assert.assertNotSame(client, provider.getHttpClient(clientCertificate("other", generateKeyPair().getPrivate(), chain)));
+    }
+
+    @Test
+    public void clientCertificateClientDoesNotFollowRedirects() throws Exception {
+        HttpClientProvider provider = createProviderWithProperties(
+                Map.of(DefaultHttpClientFactory.ALLOW_REDIRECTS, Boolean.TRUE.toString()));
+        KeyPair keyPair = generateKeyPair();
+        X509Certificate[] chain = { CertificateUtils.generateV1SelfSignedCertificate(keyPair, "client") };
+
+        // the shared client follows the redirect, the client with a certificate must not as it would send the certificate on
+        try (CloseableHttpResponse response = provider.getHttpClient(clientCertificate("client", keyPair.getPrivate(), chain)).execute(new HttpGet("http://localhost:8280/redirect"))) {
+            Assert.assertEquals(302, response.getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void clientCertificateClientsAreClosedWhenTheFactoryIsClosed() throws Exception {
+        HttpClientProvider provider = createProviderWithProperties(new HashMap<>());
+        KeyPair keyPair = generateKeyPair();
+        X509Certificate[] chain = { CertificateUtils.generateV1SelfSignedCertificate(keyPair, "client") };
+        CloseableHttpClient client = provider.getHttpClient(clientCertificate("client", keyPair.getPrivate(), chain));
+
+        factory.close();
+
+        Assert.assertThrows(IllegalStateException.class, () -> client.execute(new HttpGet("http://localhost:8280/")));
+    }
+
+    /**
+     * A cache that keeps everything until it is closed, which then calls the removal listener of every value.
+     */
+    private static class InMemoryLocalCacheProvider implements LocalCacheProvider {
+
+        @Override
+        public <K, V> LocalCache<K, V> create(LocalCacheConfiguration<K, V> configuration) {
+            Map<K, V> entries = new HashMap<>();
+            return new LocalCache<>() {
+                @Override
+                public V get(K key) {
+                    return entries.get(key);
+                }
+
+                @Override
+                public void put(K key, V value) {
+                    entries.put(key, value);
+                }
+
+                @Override
+                public void invalidate(K key) {
+                    entries.remove(key);
+                }
+
+                @Override
+                public V computeIfAbsent(K key, java.util.function.Function<K, V> mapper) {
+                    return entries.computeIfAbsent(key, mapper);
+                }
+
+                @Override
+                public void close() {
+                    entries.values().forEach(configuration.removalListener());
+                    entries.clear();
+                }
+            };
+        }
+
+        @Override
+        public void close() {
+        }
+    }
+
+    private static ClientCertificate clientCertificate(String id, PrivateKey privateKey, X509Certificate[] certificateChain) {
+        return new ClientCertificate() {
+            @Override
+            public String getId() {
+                return id;
+            }
+
+            @Override
+            public PrivateKey getPrivateKey() {
+                return privateKey;
+            }
+
+            @Override
+            public X509Certificate[] getCertificateChain() {
+                return certificateChain;
+            }
+        };
+    }
+
+    private KeyPair generateKeyPair() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        return generator.generateKeyPair();
+    }
 
 	private Optional<String> getTestURL() {
 		try {

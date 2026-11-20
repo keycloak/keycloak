@@ -1,5 +1,6 @@
 package org.keycloak.http.simple;
 
+import org.keycloak.connections.httpclient.ClientCertificate;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
@@ -26,6 +27,11 @@ public class SimpleHttp {
     public static SimpleHttp create(KeycloakSession session) {
         HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
         return new SimpleHttp(provider.getHttpClient(), provider.getMaxConsumedResponseSize());
+    }
+
+    public static SimpleHttp create(KeycloakSession session, ClientCertificate certificate) {
+        HttpClientProvider provider = session.getProvider(HttpClientProvider.class);
+        return new SimpleHttp(provider.getHttpClient(certificate), provider.getMaxConsumedResponseSize());
     }
 
     public static SimpleHttp create(HttpClient httpClient) {

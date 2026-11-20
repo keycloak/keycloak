@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.tracing;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.keycloak.Config;
@@ -63,7 +64,9 @@ public class OTelHttpClientFactory extends DefaultHttpClientFactory implements E
 
     @Override
     public Set<Class<? extends Provider>> dependsOn() {
-        return Set.of(TracingProvider.class);
+        HashSet<Class<? extends Provider>> result = new HashSet<>(super.dependsOn());
+        result.add(TracingProvider.class);
+        return result;
     }
 
     @Override
