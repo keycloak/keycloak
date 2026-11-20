@@ -254,11 +254,16 @@ NOTE: The specification states that the `client_id` URL SHOULD NOT include a que
 
 ===== System-wide settings for the Client ID Metadata Document executor
 
-The `client-id-metadata-document` executor has the following system-wide settings that control caching and metadata size limits. These settings cannot be configured through the Admin Console. Instead, they are configured as SPI options when starting {project_name}.
+The `client-id-metadata-document` executor has the following system-wide settings that control caching, metadata size limits, and the number of clients. These settings cannot be configured through the Admin Console. Instead, they are configured as SPI options when starting {project_name}.
 
 * *min-cache-time*: The minimum time (in seconds) that a fetched Client ID Metadata Document is cached. Default: `300` (5 minutes).
 * *max-cache-time*: The maximum time (in seconds) that a fetched Client ID Metadata Document is cached. Default: `259200` (3 days).
 * *upper-limit-metadata-bytes*: The maximum size (in bytes) of a Client ID Metadata Document that {project_name} accepts. Default: `5000` (5 KB).
+* *max-clients*: The maximum number of clients in a realm.
+When the number of clients in the realm, including clients that were not created from a Client ID Metadata Document, has reached this value, {project_name} rejects an authorization request whose `client_id` would create a new client.
+The limit is checked before a client is created, so concurrent requests can exceed it by the number of clients that are being created at the same time.
+`0` means unlimited.
+Default: `1000`.
 
 To configure these settings, use the `--spi-client-policy-executor--client-id-metadata-document--<property>=<value>` command-line option when starting {project_name}. For example:
 

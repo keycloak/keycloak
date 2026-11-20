@@ -1,5 +1,6 @@
 package org.keycloak.tests.client.policies;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeConditionFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutor;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
@@ -33,6 +35,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorSpi;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
@@ -105,6 +108,7 @@ public class ClientIdMetadataDocumentTest {
     private static final String LOGO_URI = "http://localhost:8500/logo.png";
     private static final String RESOURCE = "https://mcp.example.com/api";
     private static final int CIMD_EXECUTOR_MIN_CACHE_TIME_SEC = 300;
+    private static final int CIMD_MAX_CLIENTS_FOR_TEST = 20;
 
     @InjectRealm
     protected ManagedRealm realm;
@@ -1452,6 +1456,56 @@ public class ClientIdMetadataDocumentTest {
         Assertions.assertTrue(oidcConfig.getTokenEndpointAuthMethodsSupported().contains("none"));
     }
 
+    @Test
+    public void testClientIdMetadataDocumentExecutorMaxClientsLimitReached() throws Exception {
+        setupConfigForMaxClientsLimit();
+
+        // Create dummy clients to fill the realm up to the max-clients limit (CIMD_MAX_CLIENTS_FOR_TEST)
+        int currentCount = realm.admin().clients().findAll().size();
+        int dummyCount = CIMD_MAX_CLIENTS_FOR_TEST - currentCount;
+        List<String> dummyClientIds = new ArrayList<>();
+        try {
+            for (int i = 0; i < dummyCount; i++) {
+                ClientRepresentation dummy = new ClientRepresentation();
+                String dummyClientId = "dummy-max-clients-" + i;
+                dummy.setClientId(dummyClientId);
+                try (Response response = realm.admin().clients().create(dummy)) {
+                    Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+                }
+                dummyClientIds.add(dummyClientId);
+            }
+
+            Assertions.assertTrue(realm.admin().clients().findAll().size() >= CIMD_MAX_CLIENTS_FOR_TEST);
+
+            // the limit is checked before the client metadata is fetched, so a fetch that would fail is not attempted
+            cimd.setStatus(Response.Status.NOT_FOUND);
+
+            oauth.client(CLIENT_ID);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.openLoginForm();
+            errorPage.assertCurrent();
+            Assertions.assertEquals(AbstractClientIdMetadataDocumentExecutor.ERR_CLIENTS_LIMIT_REACHED, errorPage.getError());
+        } finally {
+            // Clean up dummy clients
+            for (String dummyClientId : dummyClientIds) {
+                List<ClientRepresentation> found = realm.admin().clients().findByClientId(dummyClientId);
+                if (!found.isEmpty()) {
+                    realm.admin().clients().get(found.get(0).getId()).remove();
+                }
+            }
+        }
+    }
+
+    private void setupConfigForMaxClientsLimit() {
+        ClientIdUriSchemeCondition.Configuration conditionConfig = new ClientIdUriSchemeCondition.Configuration();
+        conditionConfig.setClientIdUriSchemes(List.of("http", "https"));
+        conditionConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        ClientIdMetadataDocumentExecutor.Configuration executorConfig = newExecutorConfig();
+        executorConfig.setTrustedDomains(List.of("*.example.com", "localhost"));
+        executorConfig.setAllowHttpScheme(true);
+        updatePolicy(conditionConfig, executorConfig);
+    }
+
     private String loginUserAndGetCode(boolean isGrantRequred) {
         return loginUserAndGetCode(isGrantRequred, null);
     }
@@ -1627,7 +1681,11 @@ public class ClientIdMetadataDocumentTest {
     public static class CimdServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS);
+            return config.features(Profile.Feature.CIMD, Profile.Feature.RESOURCE_INDICATORS)
+                    .spiOption(ClientPolicyExecutorSpi.SPI_NAME,
+                            ClientIdMetadataDocumentExecutorFactory.PROVIDER_ID,
+                            AbstractClientIdMetadataDocumentExecutorFactory.CONFIG_MAX_CLIENTS,
+                            String.valueOf(CIMD_MAX_CLIENTS_FOR_TEST));
         }
     }
 
