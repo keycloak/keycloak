@@ -42,18 +42,17 @@ Existing registrations are not automatically rewritten or removed.
 === Client registration policies restrict default roles and full scope (CVE-2026-109081)
 // https://github.com/keycloak/keycloak/issues/54702
 
-Dynamic Client Registration can no longer change the realm-wide default-role composite through the deprecated `defaultRoles` field, and authenticated registration can no longer enable `fullScopeAllowed`, unless a realm administrator removes the corresponding client registration policies.
+The built-in OpenID Connect Dynamic Client Registration endpoint does not accept `defaultRoles` or `fullScopeAllowed`.
+Use the Admin REST API to update the realm's default-role composite or to set `fullScopeAllowed` on a client.
+Keep the client registration policies in place when making these changes through the Admin REST API.
 
-Starting with this release:
+The policies still apply to custom registration providers that expose these fields:
 
 * A *Default Roles Disabled* client registration policy is added to both the anonymous and authenticated client registration policies (including during migration of existing realms).
 While this policy is present, create or update requests that would add, change, or remove roles in the realm `default-roles-<realm>` composite through `defaultRoles` are rejected with HTTP `403 Forbidden`.
 * The existing *Full Scope Disabled* policy (`scope`) is also added to the authenticated client registration policies (it was already present for anonymous registration).
-Newly registered clients through authenticated Dynamic Client Registration have `fullScopeAllowed` disabled, and updates that try to enable it are rejected with HTTP `403 Forbidden`.
-
-Realm administrators who intentionally want Dynamic Client Registration to manage these settings can remove the corresponding policies under *Clients* -> *Client registration* -> *Client registration policies*.
-Removing them restores the previous behavior and should be done only when the security implications are understood.
-Use the Admin REST API to manage realm default roles and full scope when the policies remain in place.
+The policy disables full scope on newly registered clients, including those registered through the built-in endpoint.
+For custom providers that expose `fullScopeAllowed`, updates that try to enable it are rejected with HTTP `403 Forbidden`.
 
 This migration installs a new client registration policy provider that earlier nodes do not know.
 A rolling upgrade is therefore not supported for this change; shut down the cluster and upgrade all nodes together (or use a recreate update) so that older nodes never process Dynamic Client Registration requests against the new policy components.
@@ -377,6 +376,57 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
+
+=== Client registration `install` provider removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The `install` client registration provider, which was deprecated in {project_name} 26.8, has been removed.
+Requests to `/realms/<realm>/clients-registrations/install/<clientId>` now return a `404 Not Found` response.
+
+The following related APIs have also been removed:
+
+* The `getAdapterConfig()` method of the `ClientRegistration` class in the Java client registration library (`keycloak-client-registration-api`).
+* The `install` endpoint type (`-e install` or `-e adapter`) of the `kcreg get` command.
+
+Retrieve the adapter configuration of a client with the Admin REST API instead, using `GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`, for example with the `keycloak-oidc-keycloak-json` provider.
+The same configuration is available from `kcadm.sh get clients/<client-uuid>/installation/providers/keycloak-oidc-keycloak-json`.
+
+The removed endpoint accepted client credentials or a registration access token, and it did not require authentication for public clients.
+The Admin REST API endpoint requires an access token with permission to view the client.
+Applications that loaded their `keycloak.json` anonymously from the removed endpoint, such as JavaScript applications, must bundle the configuration with the application or fetch it with an authenticated call.
+
+=== SAML Entity Descriptor client registration endpoint removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The deprecated client registration provider `saml2-entity-descriptor` has been removed.
+Requests to `/realms/<realm>/clients-registrations/saml2-entity-descriptor` now return an HTTP 404 status.
+
+The following related APIs have also been removed:
+
+* The `ClientRegistration.saml()` method and the `ClientRegistration.SAMLClientRegistration` class in the Java client registration API.
+* The `saml2` endpoint type of the `kcreg` command-line tool. `kcreg create -e saml2` is no longer accepted, and `kcreg create` no longer treats an XML input document as a SAML entity descriptor. Use JSON input with the `oidc` endpoint type.
+
+To create a client from a SAML entity descriptor, convert the descriptor with the Admin REST API (`POST /admin/realms/<realm>/client-description-converter`), then create the returned client representation (`POST /admin/realms/<realm>/clients`).
+The conversion endpoint itself is not affected by this change.
+
+=== Default client registration provider removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The `default` client registration provider, deprecated in {project_name} 26.8, has been removed.
+Requests to `/realms/<realm>/clients-registrations/default` and its client resources now return HTTP 404.
+The outer `ClientRegistration` methods `create(ClientRepresentation)`, `get(String)`, `update(ClientRepresentation)`, `delete(ClientRepresentation)` and `delete(String)` have also been removed from the Java client registration API.
+Use `reg.oidc()` with `OIDCClientRepresentation` for OIDC registration, or the Admin REST API for {project_name} Client Representations.
+The Admin REST API requires an administrator access token with appropriate client-management permissions and does not accept initial access tokens or registration access tokens.
+
+The `kcreg` create, get, update, delete and attrs commands now use OIDC metadata by default.
+The `-e default` option is no longer accepted.
+Replace fields such as `clientId`, `redirectUris` and `baseUrl` with the supported OIDC fields `client_name`, `redirect_uris` and `client_uri`, where appropriate.
+`client_name` is a display name; the server generates `client_id`, which must be used for subsequent get, update and delete commands.
+Use `kcreg create -i` to print that identifier, or retrieve it from the `-o` JSON output.
+Use the Admin REST API or `kcadm` for internal representation settings without an OIDC equivalent.
+
+Client registration policies that still apply to OIDC remain available, including protocol-mapper filtering after client creation.
+The default-roles policy is retained for existing realm components and custom registration providers; OIDC metadata does not expose `defaultRoles`.
 
 === Kerberos password authentication accepts only allowed realms
 // https://github.com/keycloak/keycloak/issues/54271

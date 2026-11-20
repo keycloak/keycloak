@@ -22,6 +22,7 @@ import java.io.StringWriter;
 
 import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.registration.cli.CmdStdinContext;
+import org.keycloak.client.registration.cli.EndpointType;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
@@ -56,7 +57,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
             warnfErr(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
         }
 
-        String regType = "default";
+        String regType = EndpointType.OIDC.getEndpoint();
 
         ConfigData config = loadConfig();
         config = copyWithServerInfo(config);

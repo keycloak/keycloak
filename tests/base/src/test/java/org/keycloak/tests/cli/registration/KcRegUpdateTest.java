@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.keycloak.client.cli.config.FileConfigHandler;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.cli.KcRegExec;
 import org.keycloak.tests.cli.TempFileResource;
@@ -37,70 +37,48 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
 
             // create an object so we can update it
-            KcRegExec exe = execute("create --config '" + configFile.getName() + "' -o -s clientId=my_client");
+            KcRegExec exe = execute("create --config '" + configFile.getName() + "' -o -s client_name=my_client");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
-            Assertions.assertEquals(true, client.isEnabled(), "enabled");
-            Assertions.assertEquals(false, client.isPublicClient(), "publicClient");
-            Assertions.assertEquals(false, client.isBearerOnly(), "bearerOnly");
-            Assertions.assertTrue(client.getRedirectUris().isEmpty(), "redirectUris is empty");
-
+            String clientId = client.getClientId();
+            Assertions.assertNotNull(clientId);
+            Assertions.assertEquals("my_client", client.getClientName());
 
             // Merge update
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o " +
-                        " -s enabled=true -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]'");
+            exe = execute("update " + clientId + " --config '" + configFile.getName() + "' -o " +
+                        " -s client_name=my_client -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assertions.assertEquals(true, client.isEnabled(), "enabled");
-            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirectUris");
+            client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirect_uris");
 
 
 
             // Another merge update - test deleting an attribute, deleting a list item and adding a list item
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -d redirectUris -s webOrigins+=http://localhost:8980/myapp -s webOrigins+=http://localhost:8981/myapp -d webOrigins[0]");
+            exe = execute("update " + clientId + " --config '" + configFile.getName() + "' -o -d redirect_uris -s redirect_uris+=http://localhost:8980/myapp -s redirect_uris+=http://localhost:8981/myapp -d 'redirect_uris[0]'");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
-            Assertions.assertTrue(client.getRedirectUris().isEmpty(), "redirectUris is empty");
-            Assertions.assertEquals(Arrays.asList("http://localhost:8981/myapp"), client.getWebOrigins(), "webOrigins");
+            Assertions.assertEquals(Arrays.asList("http://localhost:8981/myapp"), client.getRedirectUris(), "redirect_uris");
 
-
-
-            // Another merge update - test nested attributes and setting an attribute using json format
-            // TODO KEYCLOAK-3705 Updating protocolMapper config via client registration endpoint has no effect
-            /*
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s 'protocolMappers[0].config.\"id.token.claim\"=false' " +
-                    "-s 'protocolMappers[4].config={\"single\": \"true\", \"attribute.nameformat\": \"Basic\", \"attribute.name\": \"Role\"}'");
-
-            assertExitCodeAndStdErrSize(exe, 0, 0);
-
-            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assert.assertEquals("protocolMapper[0].config.\"id.token.claim\"", "false", client.getProtocolMappers().get(0).getConfig().get("id.token.claim"));
-            Assert.assertEquals("protocolMappers[4].config.single", "true", client.getProtocolMappers().get(4).getConfig().get("single"));
-            Assert.assertEquals("protocolMappers[4].config.\"attribute.nameformat\"", "Basic", client.getProtocolMappers().get(4).getConfig().get("attribute.nameformat"));
-            Assert.assertEquals("protocolMappers[4].config.\"attribute.name\"", "Role", client.getProtocolMappers().get(4).getConfig().get("attribute.name"));
-            */
-
-            // update using oidc format
 
 
             // check that using an invalid attribute key is not ignored
-            exe = execute("update my_client --nonexisting --config '" + configFile.getName() + "'");
+            exe = execute("update " + clientId + " --nonexisting --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 2, 0, 3);
             Assertions.assertEquals("Unknown option: '--nonexisting'", exe.stderrLines().get(0), "error message");
             Assertions.assertEquals("Try '" + CMD + " update --help' for more information on the available options.", exe.stderrLines().get(2), "try help");
 
 
-            // try use incompatible endpoint
-            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s enabled=true -e oidc");
+            // Internal representation fields are rejected by the OIDC endpoint.
+            exe = execute("update " + clientId + " --config '" + configFile.getName() + "' -o -s enabled=true -e oidc");
 
             assertExitCodeAndStreamSizes(exe, 1, 0, 1);
             Assertions.assertEquals("Failed to set attribute 'enabled' on document type 'oidc'", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
@@ -109,44 +87,42 @@ class KcRegUpdateTest extends AbstractRegCliTest {
 
             // test overwrite from file
             exe = KcRegExec.newBuilder()
-                    .argsLine("update my_client --config '" + configFile.getName() +
-                            "' -o  -s clientId=my_client -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -f -")
-                    .stdin(new ByteArrayInputStream("{ \"enabled\": true }".getBytes()))
+                    .argsLine("update " + clientId + " --config '" + configFile.getName() +
+                            "' -o -s client_id=" + clientId + " -s client_name=my_client -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]' -f -")
+                    .stdin(new ByteArrayInputStream("{ \"client_name\": \"updated\" }".getBytes()))
                     .execute();
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            // web origin is not sent to the server, thus it retains the current value
-            Assertions.assertEquals(Arrays.asList("http://localhost:8981/myapp"), client.getWebOrigins(), "webOrigins");
-            Assertions.assertTrue(client.isEnabled(), "enabled is true");
-            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirectUris");
+            client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+            Assertions.assertEquals("my_client", client.getClientName());
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirect_uris");
 
 
 
             // test using merge with file
             exe = KcRegExec.newBuilder()
-                    .argsLine("update my_client --config '" + configFile.getName() +
-                            "' -o -s enabled=true -m -f -")
-                    .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp\"] }".getBytes()))
+                    .argsLine("update " + clientId + " --config '" + configFile.getName() +
+                            "' -o -s client_name=my_client -m -f -")
+                    .stdin(new ByteArrayInputStream("{ \"client_uri\": \"http://localhost:8980/myapp\" }".getBytes()))
                     .execute();
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp"), client.getWebOrigins(), "webOrigins");
-            Assertions.assertTrue(client.isEnabled(), "enabled is true");
-            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirectUris");
+            client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+            Assertions.assertEquals("http://localhost:8980/myapp", client.getClientUri(), "client_uri");
+            Assertions.assertEquals("my_client", client.getClientName());
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirect_uris");
 
 
 
             // remove registration access token
             exe = execute("config registration-token --config '" + configFile.getName() + "' --server " + serverUrl +
-                    " --realm " + realm + " --client my_client -d");
+                    " --realm " + realm + " --client " + clientId + " -d");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            Assertions.assertNull(handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get("my_client"), "my_client registration token");
+            Assertions.assertNull(handler.loadConfig().ensureRealmConfigData(serverUrl, realm).getClients().get(clientId), "my_client registration token");
         }
     }
 }
