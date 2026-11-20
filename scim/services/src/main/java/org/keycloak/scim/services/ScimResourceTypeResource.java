@@ -87,6 +87,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                             .resourcePath(session.getContext().getUri(), created.getId())
                             .representation(created)
                             .success();
+                    emitMembershipChangeEvents(created.getId(), false, resourceTypeProvider.pollCreateMembershipChanges());
                     return created;
                 });
     }
@@ -266,14 +267,22 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
      *           (group id, user id) is not already {@code id}
      */
     private void emitMembershipChangeEvents(String id) {
-        for (MembershipChange change : resourceTypeProvider.pollMembershipChanges()) {
+        emitMembershipChangeEvents(id, true, resourceTypeProvider.pollMembershipChanges());
+    }
+
+    /**
+     * @param idInUri whether the current request URI already ends with {@code id}. The URI of a create ends at the
+     *                collection, so the new resource's id goes into the event's resource path as well.
+     */
+    private void emitMembershipChangeEvents(String id, boolean idInUri, List<MembershipChange> changes) {
+        for (MembershipChange change : changes) {
             String otherId = id.equals(change.user().getId()) ? change.group().getId() : change.user().getId();
             // reset accumulated details from a previous iteration: detail() is a no-op for blank values,
             // so a blank value on this change could otherwise inherit the previous change's detail
             adminEvent.getEvent().setDetails(null);
             adminEvent.operation(change.added() ? OperationType.CREATE : OperationType.DELETE)
                     .resource(ResourceType.GROUP_MEMBERSHIP)
-                    .resourcePath(session.getContext().getUri(), otherId)
+                    .resourcePath(session.getContext().getUri(), idInUri ? otherId : id + "/" + otherId)
                     .representation(ModelToRepresentation.toRepresentation(change.group(), true))
                     .detail(UserModel.USERNAME, change.user().getUsername())
                     .detail(UserModel.EMAIL, change.user().getEmail())

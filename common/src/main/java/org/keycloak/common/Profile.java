@@ -205,6 +205,8 @@ public class Profile {
 
         SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.DEFAULT),
 
+        SCIM_GROUP_MEMBERSHIP_CLAIMS("Groups owned by the SCIM client that created them, with full member lists on PUT", Type.EXPERIMENTAL, SCIM_API),
+
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 
         IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1, true, null, null),

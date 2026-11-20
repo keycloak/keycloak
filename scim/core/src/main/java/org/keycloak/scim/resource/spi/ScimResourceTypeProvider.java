@@ -157,6 +157,14 @@ public interface ScimResourceTypeProvider<R> extends Provider {
     }
 
     /**
+     * Returns the group membership changes made by the last {@link #create} call that the caller should record as
+     * {@code GROUP_MEMBERSHIP} admin events, then clears them. By default a create reports none.
+     */
+    default List<MembershipChange> pollCreateMembershipChanges() {
+        return List.of();
+    }
+
+    /**
      * Returns the admin event {@link ResourceType} for this SCIM resource type.
      * By default, derives it from {@link #getName()} by converting to uppercase and matching against known values.
      * Providers can override this to map to a different {@link ResourceType} value.

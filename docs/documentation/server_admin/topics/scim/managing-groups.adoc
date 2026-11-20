@@ -46,6 +46,7 @@ A successful response returns the created group with a `201 Created` status.
 
 NOTE: Group members cannot be specified during group creation. Attempting to include members in the `POST`
 request results in a `400 Bad Request` error. Use the `PATCH` method to add members after creating the group.
+Realms where groups are owned by a SCIM client accept members on `POST`. See <<_scim_membership_claims_,Groups owned by a SCIM client>>.
 
 If a group with the same `displayName` already exists, the API returns a `409 Conflict` response with
 `scimType: "uniqueness"`.
@@ -93,6 +94,8 @@ curl -X PUT http://localhost:8080/realms/myrealm/scim/v2/Groups/{id} \
 
 NOTE: Group members cannot be modified through `PUT` requests. Attempting to include members in the `PUT`
 request results in a `400 Bad Request` error. Use the `PATCH` method to manage group members.
+Realms where groups are owned by a SCIM client accept `members` on `PUT` from the client that owns the group. See
+<<_scim_membership_claims_,Groups owned by a SCIM client>>.
 
 == Partially updating a group
 
@@ -231,6 +234,85 @@ curl "http://localhost:8080/realms/myrealm/scim/v2/Groups?filter=members.value+e
 NOTE: Organization-related groups cannot have their members managed through the SCIM API. Attempting to add or
 remove members from an organization group returns a `400 Bad Request` error. Use the Organization API to manage
 organization group memberships.
+
+[[_scim_membership_claims_]]
+=== Groups owned by a SCIM client
+
+Some identity providers send the full member list of a group on every update, with `PUT`. Okta applications built
+with the App Integration Wizard work this way and cannot be switched to `PATCH`. A realm can accept these requests
+by letting the SCIM client that creates a group own it. Two switches must both be on:
+
+* the experimental server feature `scim-group-membership-claims`, for example `--features=scim-group-membership-claims`;
+* the realm attribute `scimGroupMembershipClaims`, set to `true`.
+
+Both are off by default. While either is off, the SCIM endpoints behave as described in the rest of this chapter.
+
+The realm attribute has no toggle in the Admin Console. Set it with the Admin REST API. A realm update replaces the
+realm's attributes with the ones it sends, so read the realm first, add the attribute, and send the whole
+representation back:
+
+[source,bash]
+----
+curl -s http://localhost:8080/admin/realms/myrealm \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  | jq '.attributes.scimGroupMembershipClaims = "true"' \
+  | curl -X PUT http://localhost:8080/admin/realms/myrealm \
+      -H "Authorization: Bearer $ADMIN_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d @-
+----
+
+To turn it off, set the attribute to `false` the same way.
+
+When it is on, the SCIM client that creates a group with `POST /Groups` owns that group. The client is the one the
+access token was issued to. {project_name} stores the owner by the client's Client ID. The rules are:
+
+* A `POST` can include `members`. The group is created with them, and the caller becomes its owner.
+* The owner can send the full member list with `PUT`, or with a `PATCH` that replaces `members`. A `replace` with no
+  path, or with the Group schema URN as its path, and `members` in its `value` counts the same. {project_name} adds
+  the listed users who are not members yet, and removes the members who are not listed.
+* The owner can also use `PATCH` `add` and `remove`. A `remove` can name the members with a
+  `members[value eq "{userId}"]` filter in the path or, as Microsoft Entra ID does, with a `value` listing them.
+  A `remove` on `members` with neither removes every member that the owner may remove. An empty `value` list
+  removes nobody.
+* Service accounts and administrators stay in the group. When the owner's full list leaves one out, that member is
+  kept, the rest of the request is applied, and the request succeeds. A request that names one in an `add` or a
+  `remove`, or lists one who is not a member yet, is rejected with a `400 Bad Request` or `403 Forbidden` error, as
+  in a realm without owners. Listing one who is already a member changes nothing and is accepted.
+* A listed user that does not exist rejects the whole request. Every member in a request is checked before anything
+  changes. If one member is invalid, nothing in the request is applied.
+* Requests that change the members of the same group are processed one after the other.
+* Any other SCIM client that sends a `PUT`, a `PATCH` or a `DELETE` for an owned group gets a `403 Forbidden` error
+  saying that the group is managed by another SCIM client. Deleting a group deletes its subgroups, so a client also
+  gets a `403 Forbidden` error when it deletes a group that has a group owned by another client anywhere below it.
+* A user's `groups` cannot be used to change the members of an owned group, as RFC 7643 section 4.1.2 describes.
+  A `POST`, `PUT` or `PATCH` on `/Users` that would add the user to an owned group, or remove the user from one, is
+  rejected with a `400 Bad Request` error and `scimType: "mutability"`. A request that sends no `groups`, or that
+  sends the user's current direct groups unchanged, is accepted. Changes to groups that no SCIM client owns work as
+  before.
+* A read of an owned group shows every member to every client, without `attributes=members`. A client that pushes a
+  full member list therefore reads back the full list. Members are left out when the request excludes them
+  (`excludedAttributes=members`), or when `attributes` names other attributes but not `members`.
+
+A group that no SCIM client owns behaves as described in the rest of this chapter. Such a group was created before
+the switches were turned on, or by an administrator. Any SCIM client can change its members with `PATCH` `add` and
+`remove`, a `PUT` with `members` is rejected, and any SCIM client with permission to manage groups can delete it.
+A client never becomes the owner of an existing group. An identity provider that offers to link a group it pushes to
+an existing group, as Okta does, cannot manage that group's members with full lists. Let the identity provider
+create the group instead.
+
+The owner is stored by Client ID, so it outlives the client. If the owning client is deleted, its groups keep the
+owner, and no other SCIM client can change or delete them. A client created again with the same Client ID owns them
+again. Renaming a client's Client ID has the same effect as deleting it: its groups have no reachable owner until a
+client with the old Client ID exists again.
+
+Administrators are not limited by these rules yet. An administrator can change the members of an owned group in the
+Admin Console or with the Admin REST API. The owner's next full list, sent with `PUT` or with a `PATCH` that replaces
+`members`, then overwrites that change, except for service accounts and administrators, who stay.
+
+NOTE: Memberships stored outside the {project_name} database, for example by an LDAP group mapper, cannot be
+managed this way. A request that would remove one is rejected before anything changes. A request that would add one
+returns an error, but a change already written to the external store is not undone.
 
 == Deleting a group
 
