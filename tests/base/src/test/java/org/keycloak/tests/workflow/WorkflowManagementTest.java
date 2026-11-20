@@ -151,6 +151,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                     .clientId(Constants.ADMIN_CLI_CLIENT_ID)
                     .username(username)
                     .password("password")
+                    .autoClose()
                     .build();
             WorkflowRepresentation definition = WorkflowRepresentation.withName("read-permissions")
                     .withSteps(WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
