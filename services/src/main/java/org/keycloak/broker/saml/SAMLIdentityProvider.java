@@ -63,6 +63,7 @@ import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.models.FederatedIdentityModel;
@@ -540,9 +541,24 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         if (getConfig().isEnabled() && getConfig().isUseMetadataDescriptorUrl()) {
             String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), getConfig().getInternalId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            return keyStorage.reloadKeys(modelKey, new SamlMetadataPublicKeyLoader(session, getConfig().getMetadataDescriptorUrl()));
+            return keyStorage.reloadKeys(modelKey, createMetadataPublicKeyLoader());
         }
         return false;
+    }
+
+    /**
+     * Creates the loader for the keys that the identity provider publishes in the metadata descriptor URL.
+     * If the validation of the metadata signature is enabled, the loader only accepts metadata that is signed
+     * with one of the configured metadata signing certificates.
+     *
+     * @return The loader for the keys in the metadata descriptor URL
+     */
+    public PublicKeyLoader createMetadataPublicKeyLoader() {
+        SAMLIdentityProviderConfig config = getConfig();
+        if (config.isValidateMetadataSignature()) {
+            return new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl(), true, config.getMetadataSigningCertificates());
+        }
+        return new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl());
     }
 
     @Override

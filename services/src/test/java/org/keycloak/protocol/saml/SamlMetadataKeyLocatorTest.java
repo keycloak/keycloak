@@ -16,17 +16,28 @@
  */
 package org.keycloak.protocol.saml;
 
+import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyManagementException;
+import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.crypto.dsig.DigestMethod;
+import javax.xml.crypto.dsig.SignatureMethod;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.CertificateUtils;
+import org.keycloak.common.util.KeyUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -35,12 +46,16 @@ import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  *
@@ -137,10 +152,20 @@ public class SamlMetadataKeyLocatorTest {
             this.descriptor = descriptor;
         }
 
+        public TestSamlMetadataPublicKeyLoader(String descriptor, boolean forIdP, String[] signingCertificates) {
+            super(forIdP, signingCertificates);
+            this.descriptor = descriptor;
+        }
+
         @Override
         protected String getKeys() throws Exception {
             return descriptor;
         }
+    }
+
+    @BeforeClass
+    public static void initCrypto() {
+        CryptoIntegration.init(SamlMetadataKeyLocatorTest.class.getClassLoader());
     }
 
     @Test
@@ -242,5 +267,70 @@ public class SamlMetadataKeyLocatorTest {
         String desc = DESCRIPTOR.replaceFirst("cacheDuration=\"P1D\"", "validUntil=\"" + calendar.toXMLFormat() + "\"");
         loader = new TestSamlMetadataPublicKeyLoader(desc, true);
         MatcherAssert.assertThat(loader.loadKeys().getExpirationTime(), Matchers.allOf(Matchers.greaterThan(expiration - 5000), Matchers.lessThanOrEqualTo(expiration)));
+    }
+
+    @Test
+    public void testLoaderWithSignatureValidation() throws Exception {
+        KeyPair signingKey = KeyUtils.generateRsaKeyPair(2048);
+        String signingCert = PemUtils.encodeCertificate(CertificateUtils.generateV1SelfSignedCertificate(signingKey, "metadata"));
+        String otherCert = PemUtils.encodeCertificate(CertificateUtils.generateV1SelfSignedCertificate(KeyUtils.generateRsaKeyPair(2048), "other"));
+        String signedDescriptor = signDescriptor(signingKey);
+        String modifiedDescriptor = signedDescriptor.replace("<ds:KeyName>keycloak2</ds:KeyName>", "<ds:KeyName>keycloak3</ds:KeyName>");
+
+        // keys are loaded when the descriptor is signed with one of the certificates
+        PublicKeyLoader loader = new TestSamlMetadataPublicKeyLoader(signedDescriptor, true, new String[] { otherCert, signingCert });
+        MatcherAssert.assertThat(loader.loadKeys().getKids(), Matchers.containsInAnyOrder("keycloak", "keycloak2"));
+
+        // descriptor signed with a certificate that is not one of the certificates
+        assertDescriptorRejected(new TestSamlMetadataPublicKeyLoader(signedDescriptor, true, new String[] { otherCert }),
+                "The signature of the SAML metadata is not valid for the trusted keys");
+
+        // descriptor that is not signed
+        assertDescriptorRejected(new TestSamlMetadataPublicKeyLoader(DESCRIPTOR, true, new String[] { signingCert }),
+                "The SAML metadata is not signed");
+
+        // descriptor modified after it was signed
+        assertDescriptorRejected(new TestSamlMetadataPublicKeyLoader(modifiedDescriptor, true, new String[] { signingCert }),
+                "The signature of the SAML metadata is not valid for the trusted keys");
+
+        // the signature is not validated when the loader is created without certificates
+        loader = new TestSamlMetadataPublicKeyLoader(modifiedDescriptor, true);
+        MatcherAssert.assertThat(loader.loadKeys().getKids(), Matchers.containsInAnyOrder("keycloak", "keycloak3"));
+    }
+
+    @Test
+    public void testLoaderWithSignatureValidationAndInvalidCertificates() throws Exception {
+        KeyPair signingKey = KeyUtils.generateRsaKeyPair(2048);
+        String signingCert = PemUtils.encodeCertificate(CertificateUtils.generateV1SelfSignedCertificate(signingKey, "metadata"));
+        String expiredSigningCert = PemUtils.encodeCertificate(CertificateUtils.generateV1SelfSignedCertificate(signingKey, "metadata",
+                BigInteger.ONE, new Date(System.currentTimeMillis() - 1000)));
+        String signedDescriptor = signDescriptor(signingKey);
+
+        // the descriptor is rejected when there is no valid certificate, an expired certificate is not valid
+        assertDescriptorRejected(new TestSamlMetadataPublicKeyLoader(signedDescriptor, true, new String[] { expiredSigningCert }),
+                "No valid certificate is configured to validate the signature of the SAML metadata");
+        assertDescriptorRejected(new TestSamlMetadataPublicKeyLoader(signedDescriptor, true, new String[] { "invalid" }),
+                "No valid certificate is configured to validate the signature of the SAML metadata");
+        assertDescriptorRejected(new TestSamlMetadataPublicKeyLoader(signedDescriptor, true, new String[] { }),
+                "No valid certificate is configured to validate the signature of the SAML metadata");
+
+        // the certificates that are not valid are ignored when there is a valid one
+        PublicKeyLoader loader = new TestSamlMetadataPublicKeyLoader(signedDescriptor, true, new String[] { expiredSigningCert, "invalid", signingCert });
+        MatcherAssert.assertThat(loader.loadKeys().getKids(), Matchers.containsInAnyOrder("keycloak", "keycloak2"));
+    }
+
+    private static void assertDescriptorRejected(PublicKeyLoader loader, String expectedMessage) {
+        VerificationException e = Assert.assertThrows(VerificationException.class, loader::loadKeys);
+        MatcherAssert.assertThat(e.getMessage(), Matchers.is(expectedMessage));
+    }
+
+    private static String signDescriptor(KeyPair keyPair) throws Exception {
+        Document doc = DocumentUtil.getDocument(DESCRIPTOR);
+        Element root = doc.getDocumentElement();
+        root.setAttribute("ID", "ID_metadata");
+        root.setIdAttribute("ID", true);
+        XMLSignatureUtil.sign(root, root.getFirstChild(), "metadata", keyPair, DigestMethod.SHA256,
+                SignatureMethod.RSA_SHA256, "#ID_metadata", CanonicalizationMethod.EXCLUSIVE);
+        return DocumentUtil.getDocumentAsString(doc);
     }
 }

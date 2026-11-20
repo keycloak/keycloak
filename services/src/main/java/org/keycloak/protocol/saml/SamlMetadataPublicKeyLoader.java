@@ -16,7 +16,9 @@
  */
 package org.keycloak.protocol.saml;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.models.KeycloakSession;
 
 import org.jboss.logging.Logger;
@@ -41,6 +43,30 @@ public class SamlMetadataPublicKeyLoader extends SamlAbstractMetadataPublicKeyLo
         super(forIdP);
         this.session = session;
         this.metadataUrl = metadataUrl;
+    }
+
+    /**
+     * Creates a loader that only loads the keys if the metadata is signed with one of the certificates.
+     *
+     * @param session The keycloak session
+     * @param metadataUrl The metadata endpoint
+     * @param forIdP true to load the keys of an IDP, false to load the keys of a SP
+     * @param signingCertificates The certificates that are trusted to sign the metadata
+     */
+    public SamlMetadataPublicKeyLoader(KeycloakSession session, String metadataUrl, boolean forIdP, String[] signingCertificates) {
+        super(forIdP, signingCertificates);
+        this.session = session;
+        this.metadataUrl = metadataUrl;
+    }
+
+    @Override
+    public PublicKeysWrapper loadKeys() throws Exception {
+        try {
+            return super.loadKeys();
+        } catch (VerificationException e) {
+            logger.warnf("Rejected the SAML metadata loaded from %s: %s", metadataUrl, e.getMessage());
+            throw e;
+        }
     }
 
     @Override
