@@ -20,6 +20,7 @@ import {
   clickClearConfirmButton,
   closeModal,
   fillTextarea,
+  selectOrganizations,
   toggleClients,
   toggleGroups,
   toggleUsers,
@@ -30,7 +31,7 @@ test.describe.serial("Partial import test", () => {
   const testRealm2 = `Partial-import-2-${uuid()}`;
 
   test.beforeAll(async () => {
-    await adminClient.createRealm(testRealm);
+    await adminClient.createRealm(testRealm, { organizationsEnabled: true });
     await adminClient.createRealm(testRealm2);
   });
 
@@ -121,6 +122,19 @@ test.describe.serial("Partial import test", () => {
 
     await assertTextContent(page, "One record added");
     await assertResultTable(page, "customer-portal3");
+  });
+
+  test("Imports an organization", async ({ page }) => {
+    await chooseFile(page, "../utils/files/organization-only.json");
+
+    await assertTextContent(page, "1 Organizations");
+
+    await selectOrganizations(page);
+    await confirmModal(page);
+
+    await assertTextContent(page, "One record added");
+    await assertResultTable(page, "Organizations");
+    await assertResultTable(page, "customer-org");
   });
 
   test("Should clear the input with the button", async ({ page }) => {

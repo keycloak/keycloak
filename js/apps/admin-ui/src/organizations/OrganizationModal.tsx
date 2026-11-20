@@ -1,5 +1,4 @@
 import OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation";
-import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   KeycloakDataTable,
   ListEmptyState,
@@ -34,7 +33,9 @@ export const OrganizationModal = ({
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
 
-  const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
+  const [selectedRows, setSelectedRows] = useState<
+    OrganizationRepresentation[]
+  >([]);
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params = {
