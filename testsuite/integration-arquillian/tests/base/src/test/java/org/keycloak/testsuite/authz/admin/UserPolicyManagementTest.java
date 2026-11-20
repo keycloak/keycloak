@@ -19,6 +19,7 @@ package org.keycloak.testsuite.authz.admin;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
@@ -39,7 +40,6 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -158,31 +158,14 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
 
         assertCreated(authorization, representation);
 
+        UserPolicyResource policy = authorization.policies().user().findById(representation.getId());
+        Set<String> userIds = policy.toRepresentation().getUsers();
         UsersResource users = getRealm().users();
-        UserRepresentation user = users.search("User D").get(0);
 
-        users.get(user.getId()).remove();
-
-        representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
-
-        Assertions.assertEquals(2, representation.getUsers().size());
-        Assertions.assertFalse(representation.getUsers().contains(user.getId()));
-
-        user = users.search("User E").get(0);
-        users.get(user.getId()).remove();
-
-        representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
-
-        Assertions.assertEquals(1, representation.getUsers().size());
-        Assertions.assertFalse(representation.getUsers().contains(user.getId()));
-
-        user = users.search("User F").get(0);
-        users.get(user.getId()).remove();
-
-        representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
-
-        Assertions.assertEquals(0, representation.getUsers().size());
-        Assertions.assertFalse(representation.getUsers().contains(user.getId()));
+        for (String userId : userIds) {
+            users.get(userId).remove();
+            assertEquals(userIds, policy.toRepresentation().getUsers());
+        }
     }
 
     @Test

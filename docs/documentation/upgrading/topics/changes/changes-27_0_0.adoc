@@ -4,6 +4,12 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Authorization policies with deleted references
+
+Role policies with a missing required role and negative role, group, user, client, or client scope policies with unresolved references now evaluate as invalid.
+Deleting the last client scope referenced by a client scope policy leaves the policy attached to its dependent permissions.
+Update the affected policies to restore their intended authorization rules.
+
 === Allow UTF-8 email setting requires SMTPUTF8 server support
 // https://github.com/keycloak/keycloak/issues/55267
 

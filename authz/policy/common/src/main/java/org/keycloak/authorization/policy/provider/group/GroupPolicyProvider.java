@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
@@ -44,6 +45,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
+import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation.GroupDefinition;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 
 import org.jboss.logging.Logger;
@@ -51,6 +54,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.runWithoutAuthorization;
 import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.DENY;
 import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.GRANT;
+import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.INVALID;
 import static org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome.SKIP;
 import static org.keycloak.models.utils.ModelToRepresentation.buildGroupPath;
 import static org.keycloak.models.utils.RoleUtils.isDirectMember;
@@ -70,6 +74,16 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
     }
 
     @Override
+    public boolean isValid(Policy policy, AuthorizationProvider authorization) {
+        Set<GroupDefinition> groups = representationFunction.apply(policy, authorization).getGroups();
+        RealmModel realm = authorization.getRealm();
+        if (Logic.NEGATIVE.equals(policy.getLogic())) {
+            return !groups.isEmpty() && groups.stream().allMatch(group -> getRealmGroup(realm, group) != null);
+        }
+        return groups.stream().anyMatch(group -> getRealmGroup(realm, group) != null);
+    }
+
+    @Override
     public void evaluate(Evaluation evaluation) {
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         GroupPolicyRepresentation policy = representationFunction.apply(evaluation.getPolicy(), authorizationProvider);
@@ -82,22 +96,34 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         }
 
         KeycloakSession session = authorizationProvider.getKeycloakSession();
-        Outcome outcome = isGranted(session, realm, null, policy, groupsClaim);
+        Outcome outcome = evaluateGroups(session, realm, null, policy, groupsClaim,
+                Logic.NEGATIVE.equals(evaluation.getPolicy().getLogic()));
 
-        if (GRANT.equals(outcome)) {
+        if (INVALID.equals(outcome)) {
+            evaluation.setEffect(Effect.INVALID);
+        } else if (GRANT.equals(outcome)) {
             evaluation.grant();
         }
 
         logger.debugf("Groups policy %s evaluated to %s with identity groups %s", policy.getName(), evaluation.getEffect(), groupsClaim);
     }
 
-    private Outcome isGranted(KeycloakSession session, RealmModel realm, UserModel subject, GroupPolicyRepresentation policy, Entry groupsClaim) {
+    private Outcome evaluateGroups(KeycloakSession session, RealmModel realm, UserModel subject, GroupPolicyRepresentation policy, Entry groupsClaim, boolean negative) {
         boolean skipped = false;
+        boolean granted = false;
+        boolean hasResolvedGroup = false;
 
-        for (GroupPolicyRepresentation.GroupDefinition definition : policy.getGroups()) {
-            GroupModel allowedGroup = realm.getGroupById(definition.getId());
+        for (GroupDefinition definition : policy.getGroups()) {
+            GroupModel allowedGroup = getRealmGroup(realm, definition);
 
             if (allowedGroup == null) {
+                if (negative) {
+                    return INVALID;
+                }
+                continue;
+            }
+            hasResolvedGroup = true;
+            if (granted) {
                 continue;
             }
 
@@ -106,38 +132,46 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
                 continue;
             }
 
-            String allowedGroupPath = buildGroupPath(allowedGroup);
-
-            for (int i = 0; i < groupsClaim.size(); i++) {
-                String groupPath = groupsClaim.asString(i);
-                GroupModel group = resolveTopLevelGroupByName(session, realm, groupPath);
-
-                if (group != null) {
-                    // the claim matches the name of a top-level group, so it is compared by id and never as a path
-                    if (group.getId().equals(allowedGroup.getId())) {
-                        return GRANT;
-                    }
-                    continue;
+            if (matchesGroup(session, realm, allowedGroup, definition.isExtendChildren(), groupsClaim)) {
+                if (!negative) {
+                    return GRANT;
                 }
-
-                // no top-level group is named after the claim, so it is treated as a group path
-                if (groupPath.indexOf('/') != -1) {
-                    if (groupPath.equals(allowedGroupPath)) {
-                        return GRANT;
-                    }
-
-                    if (definition.isExtendChildren() && groupPath.startsWith(allowedGroupPath + "/")) {
-                        return GRANT;
-                    }
-                }
+                granted = true;
             }
         }
 
+        if (!hasResolvedGroup) {
+            return INVALID;
+        }
+        if (granted) {
+            return GRANT;
+        }
         if (skipped) {
             return SKIP;
         }
 
         return DENY;
+    }
+
+    private boolean matchesGroup(KeycloakSession session, RealmModel realm, GroupModel allowedGroup, boolean extendChildren, Entry groupsClaim) {
+        String allowedGroupPath = buildGroupPath(allowedGroup);
+
+        for (int i = 0; i < groupsClaim.size(); i++) {
+            String groupPath = groupsClaim.asString(i);
+            GroupModel group = resolveTopLevelGroupByName(session, realm, groupPath);
+
+            if (group != null) {
+                // A claim matching a top-level group name is compared by ID.
+                if (group.getId().equals(allowedGroup.getId())) {
+                    return true;
+                }
+            } else if (groupPath.indexOf('/') != -1
+                    && (groupPath.equals(allowedGroupPath) || (extendChildren && groupPath.startsWith(allowedGroupPath + "/")))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -194,7 +228,13 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
         GroupPolicyRepresentation groupPolicy = representationFunction.apply(policy, authorizationProvider);
         List<String> userGroups = resolveSubjectGroupPaths(session, subject);
-        return isGranted(session, realm, subject, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups));
+        return evaluateGroups(session, realm, subject, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups),
+                Logic.NEGATIVE.equals(policy.getLogic()));
+    }
+
+    private GroupModel getRealmGroup(RealmModel realm, GroupDefinition definition) {
+        GroupModel group = definition.getId() == null ? null : realm.getGroupById(definition.getId());
+        return group == null || GroupModel.Type.ORGANIZATION.equals(group.getType()) ? null : group;
     }
 
     private List<String> resolveSubjectGroupPaths(KeycloakSession session, UserModel subject) {

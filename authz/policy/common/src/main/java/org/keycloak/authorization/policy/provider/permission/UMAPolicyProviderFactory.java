@@ -26,12 +26,16 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.policy.provider.client.ClientPolicyProviderFactory;
+import org.keycloak.authorization.policy.provider.role.RolePolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -130,21 +134,16 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
             AbstractPolicyRepresentation associatedRep = ModelToRepresentation.toRepresentation(associatedPolicy, authorization, false, false);
 
             if ("role".equals(associatedRep.getType())) {
-                RolePolicyRepresentation rep = RolePolicyRepresentation.class.cast(associatedRep);
-
-                rep.setRoles(new HashSet<>());
-
                 Set<String> updatedRoles = representation.getRoles();
 
-                if (updatedRoles != null) {
-                    for (String role : updatedRoles) {
-                        rep.addRole(role);
-                    }
-                }
-
-                if (rep.getRoles().isEmpty()) {
+                if (updatedRoles == null || updatedRoles.isEmpty()) {
                     policyStore.delete(associatedPolicy.getId());
+                } else if (authorization.getProviderFactory(associatedPolicy.getType()) instanceof RolePolicyProviderFactory factory) {
+                    factory.updateFromUma(associatedPolicy, updatedRoles, authorization);
                 } else {
+                    RolePolicyRepresentation rep = RolePolicyRepresentation.class.cast(associatedRep);
+                    rep.setRoles(new HashSet<>());
+                    updatedRoles.forEach(rep::addRole);
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
             } else if (associatedRep instanceof JSPolicyRepresentation) {
@@ -159,37 +158,34 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
             } else if ("group".equals(associatedRep.getType())) {
                 GroupPolicyRepresentation rep = GroupPolicyRepresentation.class.cast(associatedRep);
 
-                rep.setGroups(new HashSet<>());
-
                 Set<String> updatedGroups = representation.getGroups();
 
-                if (updatedGroups != null) {
-                    for (String group : updatedGroups) {
-                        rep.addGroupPath(group);
-                    }
-                }
-
-                if (rep.getGroups().isEmpty()) {
+                if (updatedGroups == null || updatedGroups.isEmpty()) {
                     policyStore.delete(associatedPolicy.getId());
                 } else {
+                    Set<GroupDefinition> retained = new HashSet<>();
+                    Set<String> newPaths = new HashSet<>(updatedGroups);
+                    for (GroupDefinition definition : rep.getGroups()) {
+                        String reference = getGroupReference(definition, authorization.getRealm());
+                        if (reference != null && updatedGroups.contains(reference)) {
+                            retained.add(definition);
+                            newPaths.remove(reference);
+                        }
+                    }
+                    rep.setGroups(retained);
+                    newPaths.forEach(rep::addGroupPath);
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
             } else if ("client".equals(associatedRep.getType())) {
-                ClientPolicyRepresentation rep = ClientPolicyRepresentation.class.cast(associatedRep);
-
-                rep.setClients(new HashSet<>());
-
                 Set<String> updatedClients = representation.getClients();
 
-                if (updatedClients != null) {
-                    for (String client : updatedClients) {
-                        rep.addClient(client);
-                    }
-                }
-
-                if (rep.getClients().isEmpty()) {
+                if (updatedClients == null || updatedClients.isEmpty()) {
                     policyStore.delete(associatedPolicy.getId());
+                } else if (authorization.getProviderFactory(associatedPolicy.getType()) instanceof ClientPolicyProviderFactory factory) {
+                    factory.updateFromUma(associatedPolicy, updatedClients, authorization);
                 } else {
+                    ClientPolicyRepresentation rep = ClientPolicyRepresentation.class.cast(associatedRep);
+                    rep.setClients(new HashSet<>(updatedClients));
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
             } else if ("user".equals(associatedRep.getType())) {
@@ -323,7 +319,9 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 for (RoleDefinition definition : rep.getRoles()) {
                     RoleModel role = realm.getRoleById(definition.getId());
 
-                    if (role.isClientRole()) {
+                    if (role == null) {
+                        representation.addRole(definition.getId());
+                    } else if (role.isClientRole()) {
                         representation.addClientRole(ClientModel.class.cast(role.getContainer()).getClientId(),role.getName());
                     } else {
                         representation.addRole(role.getName());
@@ -336,24 +334,34 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 GroupPolicyRepresentation rep = GroupPolicyRepresentation.class.cast(associatedRep);
 
                 for (GroupDefinition definition : rep.getGroups()) {
-                    representation.addGroup(ModelToRepresentation.buildGroupPath(realm.getGroupById(definition.getId())));
+                    representation.addGroup(getGroupReference(definition, realm));
                 }
             } else if ("client".equals(associatedRep.getType())) {
                 ClientPolicyRepresentation rep = ClientPolicyRepresentation.class.cast(associatedRep);
 
                 for (String client : rep.getClients()) {
-                    representation.addClient(realm.getClientById(client).getClientId());
+                    ClientModel model = realm.getClientById(client);
+                    representation.addClient(model == null ? client : model.getClientId());
                 }
             } else if ("user".equals(associatedPolicy.getType())) {
                 UserPolicyRepresentation rep = UserPolicyRepresentation.class.cast(associatedRep);
 
                 for (String user : rep.getUsers()) {
-                    representation.addUser(authorization.getKeycloakSession().users().getUserById(realm, user).getUsername());
+                    UserModel model = authorization.getKeycloakSession().users().getUserById(realm, user);
+                    representation.addUser(model == null ? user : model.getUsername());
                 }
             }
         }
 
         return representation;
+    }
+
+    private String getGroupReference(GroupDefinition definition, RealmModel realm) {
+        if (definition.getId() == null) {
+            return definition.getPath();
+        }
+        GroupModel group = realm.getGroupById(definition.getId());
+        return group == null ? definition.getId() : ModelToRepresentation.buildGroupPath(group);
     }
 
     @Override
