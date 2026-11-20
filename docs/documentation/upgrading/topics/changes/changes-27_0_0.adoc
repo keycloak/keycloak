@@ -778,7 +778,7 @@ A logout authentication session that is used for the logout of another user sess
 
 During a rolling upgrade, the nodes do not see the records written by nodes of the other version.
 For a browser logout that is in flight while the nodes are upgraded, a client can be notified a second time, with another back-channel logout token or another front-channel logout redirect.
-The logout still completes, and no logout is skipped.
+The logout still completes.
 No user action is required.
 
 // ------------------------ Deprecated features ------------------------ //

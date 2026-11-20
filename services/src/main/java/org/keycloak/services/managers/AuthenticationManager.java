@@ -493,8 +493,10 @@ public class AuthenticationManager {
                 rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
                 logger.tracef("Removing previous logout session tab '%s' in %s", prevAuthSession.getTabId(), rootLogoutSession.getId());
             }
-        }
-        if (userSession != null) {
+            if (userSession != null) {
+                logoutAuthSession.setAuthNote(LOGOUT_USER_SESSION_ID, userSession.getId());
+            }
+        } else if (userSession != null) {
             bindLogoutSessionToUserSession(logoutAuthSession, userSession);
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
@@ -507,8 +509,20 @@ public class AuthenticationManager {
      * Binds the logout session to the user session through the {@link #LOGOUT_USER_SESSION_ID} note. The logout states
      * of clients are recorded per bound user session (see {@link #setClientLogoutAction}), so the states recorded for
      * another user session are not seen after binding to this one.
+     * <p>
+     * When the binding changes, the states without a user session ({@link #CLIENT_LOGOUT_STATE} followed by the client
+     * UUID) are removed for the clients of the user session. Nodes of an older version write and read only those, so
+     * a state recorded for the previous binding must not suppress the logout of the clients of the new one.
      */
     public static void bindLogoutSessionToUserSession(AuthenticationSessionModel logoutSession, UserSessionModel userSession) {
+        if (!userSession.getId().equals(logoutSession.getAuthNote(LOGOUT_USER_SESSION_ID))) {
+            userSession.getAuthenticatedClientSessions().keySet().forEach(clientUuid -> {
+                String key = CLIENT_LOGOUT_STATE + clientUuid;
+                if (logoutSession.getAuthNote(key) != null) {
+                    logoutSession.removeAuthNote(key);
+                }
+            });
+        }
         logoutSession.setAuthNote(LOGOUT_USER_SESSION_ID, userSession.getId());
     }
 

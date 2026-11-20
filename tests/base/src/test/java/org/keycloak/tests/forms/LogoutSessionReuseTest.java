@@ -723,9 +723,12 @@ public class LogoutSessionReuseTest {
                 AuthenticationManager.setClientLogoutAction(logoutSession, clientOfA.getId(), AuthenticationSessionModel.Action.LOGGED_OUT);
                 // The key format is documented in the upgrading guide
                 String keyOfA = String.valueOf(logoutSession.getAuthNote(AuthenticationManager.CLIENT_LOGOUT_STATE + sessionIdA + "." + sharedClient.getId()));
+                // An older node writes the state without a user session, also while the logout session is bound
+                logoutSession.setAuthNote(AuthenticationManager.CLIENT_LOGOUT_STATE + sharedClient.getId(), AuthenticationSessionModel.Action.LOGGED_OUT.name());
 
                 AuthenticationManager.bindLogoutSessionToUserSession(logoutSession, session.sessions().getUserSession(realmModel, sessionIdB));
-                String boundToB = logoutSession.getAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID) + ","
+                String boundToB = logoutSession.getAuthNote(AuthenticationManager.CLIENT_LOGOUT_STATE + sharedClient.getId()) + ","
+                        + logoutSession.getAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID) + ","
                         + AuthenticationManager.getClientLogoutAction(logoutSession, sharedClient.getId()) + ","
                         + AuthenticationManager.getClientLogoutAction(logoutSession, clientOfA.getId());
 
@@ -737,8 +740,8 @@ public class LogoutSessionReuseTest {
                 return unboundState + ";" + legacyState + ";" + keyOfA + ";" + boundToB + ";" + boundBackToA;
             }, String.class);
 
-            Assertions.assertEquals("LOGGING_OUT/LOGGING_OUT;null;LOGGED_OUT;" + sessionIdB + ",null,null;" + sessionIdA + ",LOGGED_OUT,LOGGED_OUT", boundState,
-                    "An unbound logout session must keep its states under the key without a user session, a state without a user session must be ignored once bound, the state must be stored under the key of the bound user session, B must not see the states of A, and A must see them again");
+            Assertions.assertEquals("LOGGING_OUT/LOGGING_OUT;null;LOGGED_OUT;" + "null," + sessionIdB + ",null,null;" + sessionIdA + ",LOGGED_OUT,LOGGED_OUT", boundState,
+                    "An unbound logout session must keep its states under the key without a user session, a state without a user session must be ignored once bound, the state must be stored under the key of the bound user session, B must not see the states of A or a state without a user session written by an older node, and A must see them again");
         } finally {
             user.admin().logout();
         }
