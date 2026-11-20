@@ -194,6 +194,9 @@ public class AdminEventTest {
         String userId = createUser("resource-path-user");
         managedRealm.admin().clearAdminEvents();
         String database = Extensions.getInstance().findSupplierByType(TestDatabase.class).getAlias();
+        if ("remote".equals(database)) {
+            database = org.keycloak.testframework.config.Config.getValueTypeConfig(TestDatabase.class, "vendor", null, String.class);
+        }
 
         int status = updateUser(managedRealm.getName().toUpperCase(Locale.ROOT), userId);
         if (CASE_INSENSITIVE_DATABASES.contains(database)) {
