@@ -16,11 +16,16 @@
  */
 package org.keycloak.social.github;
 
+import java.util.List;
+
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -92,6 +97,60 @@ public class GitHubIdentityProviderTest {
         GitHubIdentityProvider idp = new GitHubIdentityProvider(null, config);
 
         assertEquals(GitHubIdentityProvider.DEFAULT_SCOPE, idp.getDefaultScopes());
+    }
+
+    // --- Email domains: pick the verified work address, not the primary one
+
+    private static JsonNode emails(String json) throws Exception {
+        return new ObjectMapper().readTree(json);
+    }
+
+    private static final String PERSONAL_PRIMARY_AND_WORK = "["
+            + "{\"email\":\"olli@example.com\",\"primary\":true,\"verified\":true},"
+            + "{\"email\":\"olli.erinko@wunder.io\",\"primary\":false,\"verified\":true},"
+            + "{\"email\":\"olli.erinko@mearra.com\",\"primary\":false,\"verified\":true}]";
+
+    @Test
+    public void testParseEmailDomains() {
+        assertEquals(List.of("mearra.com", "wunder.io"), GitHubIdentityProvider.parseEmailDomains(" Mearra.com , wunder.io,, "));
+        assertEquals(List.of(), GitHubIdentityProvider.parseEmailDomains("  "));
+        assertEquals(List.of(), GitHubIdentityProvider.parseEmailDomains(null));
+    }
+
+    @Test
+    public void testSelectEmailPrefersFirstConfiguredDomainOverPrimary() throws Exception {
+        assertEquals("olli.erinko@mearra.com", GitHubIdentityProvider.selectEmail(emails(PERSONAL_PRIMARY_AND_WORK), List.of("mearra.com", "wunder.io")));
+        assertEquals("olli.erinko@wunder.io", GitHubIdentityProvider.selectEmail(emails(PERSONAL_PRIMARY_AND_WORK), List.of("wunder.io", "mearra.com")));
+    }
+
+    @Test
+    public void testSelectEmailIgnoresUnverifiedDomainAddress() throws Exception {
+        // Anyone can add an unverified address to their GitHub account; trusting it would allow account takeover.
+        String json = "[{\"email\":\"olli@example.com\",\"primary\":true,\"verified\":true},"
+                + "{\"email\":\"ceo@mearra.com\",\"primary\":false,\"verified\":false}]";
+        assertEquals("olli@example.com", GitHubIdentityProvider.selectEmail(emails(json), List.of("mearra.com")));
+    }
+
+    @Test
+    public void testSelectEmailMatchesWholeDomainOnly() throws Exception {
+        String json = "[{\"email\":\"a@notmearra.com\",\"primary\":false,\"verified\":true},"
+                + "{\"email\":\"b@mearra.com.evil.io\",\"primary\":false,\"verified\":true},"
+                + "{\"email\":\"c@sub.mearra.com\",\"primary\":false,\"verified\":true},"
+                + "{\"email\":\"d@MEARRA.com\",\"primary\":false,\"verified\":true}]";
+        assertEquals("d@MEARRA.com", GitHubIdentityProvider.selectEmail(emails(json), List.of("mearra.com")));
+    }
+
+    @Test
+    public void testSelectEmailFallsBackToVerifiedPrimary() throws Exception {
+        String json = "[{\"email\":\"olli@example.com\",\"primary\":true,\"verified\":true}]";
+        assertEquals("olli@example.com", GitHubIdentityProvider.selectEmail(emails(json), List.of("mearra.com")));
+    }
+
+    @Test
+    public void testSelectEmailReturnsNullForUnverifiedPrimaryAndNoMatch() throws Exception {
+        String json = "[{\"email\":\"olli@example.com\",\"primary\":true,\"verified\":false}]";
+        assertNull(GitHubIdentityProvider.selectEmail(emails(json), List.of("mearra.com")));
+        assertNull(GitHubIdentityProvider.selectEmail(emails("{}"), List.of("mearra.com")));
     }
 
     protected void validateUrls(GitHubIdentityProvider idp, String baseUrl, String apiUrl) {
