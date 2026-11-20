@@ -10,12 +10,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.client.scim.BaseClientModelSchema;
-import org.keycloak.services.client.scim.OIDCClientModelSchema;
-import org.keycloak.services.client.scim.SAMLClientModelSchema;
+import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,9 +30,7 @@ class QueryableFieldsDocTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String COMMON_GROUP = "common";
-    private static final Map<String, BaseClientModelSchema<?>> PROTOCOL_SCHEMAS = Map.of(
-            OIDCClientRepresentation.PROTOCOL, OIDCClientModelSchema.INSTANCE,
-            SAMLClientRepresentation.PROTOCOL, SAMLClientModelSchema.INSTANCE);
+    private static final Map<String, ? extends BaseClientModelSchema<?>> PROTOCOL_SCHEMAS = ClientResourceTypeProvider.SCHEMAS;
 
     private static JsonNode queryableFields;
     private static JsonNode schemas;
