@@ -29,6 +29,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -36,16 +37,20 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
@@ -54,6 +59,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
@@ -81,6 +87,9 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
+
+    @Page
+    protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -395,6 +404,76 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         String backToAppLink = errorPage.getBackToApplicationLink();
         ClientRepresentation thirdParty = findClientByClientId(adminClient.realm(REALM_NAME), THIRD_PARTY_APP).toRepresentation();
         Assertions.assertEquals(backToAppLink, thirdParty.getBaseUrl());
+    }
+
+    @Test
+    public void consentWithoutSessionCodeDoesNotSkipRequiredActionConsentClient() {
+        assertConsentRequestDoesNotSkipRequiredAction(THIRD_PARTY_APP, null);
+    }
+
+    @Test
+    public void consentWithoutSessionCodeDoesNotSkipRequiredActionNoConsentClient() {
+        assertConsentRequestDoesNotSkipRequiredAction("test-app", null);
+    }
+
+    @Test
+    public void consentWithInvalidSessionCodeDoesNotSkipRequiredAction() {
+        assertConsentRequestDoesNotSkipRequiredAction(THIRD_PARTY_APP, "invalid");
+    }
+
+    private void assertConsentRequestDoesNotSkipRequiredAction(String clientId, String sessionCode) {
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), DEFAULT_USERNAME);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+        user.update(userRep);
+
+        try {
+            oauth.client(clientId, "password");
+            oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+            updatePasswordPage.assertCurrent();
+
+            // Send the consent request directly, while the required action is still pending
+            String consentUri = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource())
+                    .replace("/login-actions/required-action", "/login-actions/consent");
+            consentUri = ActionURIUtils.removeQueryParamFromURI(consentUri, "session_code");
+            consentUri = ActionURIUtils.removeQueryParamFromURI(consentUri, "execution");
+
+            StringBuilder script = new StringBuilder("var form = document.createElement('form');")
+                    .append("document.body.appendChild(form);")
+                    .append("form.method = 'POST';")
+                    .append("form.action = arguments[0];");
+            if (sessionCode != null) {
+                script.append("var input = document.createElement('input');")
+                        .append("input.type = 'hidden';")
+                        .append("input.name = 'code';")
+                        .append("input.value = arguments[1];")
+                        .append("form.appendChild(input);");
+            }
+            script.append("form.submit();");
+            if (sessionCode != null) {
+                ((JavascriptExecutor) driver).executeScript(script.toString(), consentUri, sessionCode);
+            } else {
+                ((JavascriptExecutor) driver).executeScript(script.toString(), consentUri);
+            }
+            WaitUtils.waitForPageToLoad();
+
+            // No authorization code is issued and the user did not get past the required action
+            Assertions.assertFalse(driver.getCurrentUrl().startsWith(oauth.getRedirectUri()), driver.getCurrentUrl());
+            Assertions.assertFalse(driver.getCurrentUrl().contains("code="), driver.getCurrentUrl());
+            Assertions.assertTrue(user.toRepresentation().getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+            Assertions.assertTrue(user.getUserSessions().isEmpty());
+            Assertions.assertTrue(user.getConsents().isEmpty());
+        } finally {
+            // Undo any effect of a successful bypass so that a failure does not leak into other tests
+            user.logout();
+            if (!user.getConsents().isEmpty()) {
+                user.revokeConsent(clientId);
+            }
+            userRep = user.toRepresentation();
+            userRep.setRequiredActions(List.of());
+            user.update(userRep);
+            events.clear();
+        }
     }
 
     // KEYCLOAK-7470
