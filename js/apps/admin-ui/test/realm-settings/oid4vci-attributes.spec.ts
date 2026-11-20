@@ -529,6 +529,59 @@ test("should reject invalid issuer info JSON", async ({ page }) => {
   ).toHaveCount(0);
 });
 
+test("should save issuer display setting", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const issuerDisplayField = page.getByTestId("attributes.oid4vci🍺display");
+  await expect(issuerDisplayField).toBeVisible();
+
+  const issuerDisplayJson =
+    '[{"name":"Example Issuer","locale":"en","logo":{"uri":"https://example.com/logo.png"}}]';
+  await issuerDisplayField.fill(issuerDisplayJson);
+
+  await page.getByTestId("tokens-tab-save").click();
+  await assertNotificationMessage(page, "Realm successfully updated");
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.display"]).toBe(issuerDisplayJson);
+});
+
+test("should reject issuer display with malformed elements", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const issuerDisplayField = page.getByTestId("attributes.oid4vci🍺display");
+  await issuerDisplayField.fill('[{"logo":{"alt_text":"Example logo"}}]');
+
+  await page.getByTestId("tokens-tab-save").click();
+
+  await expect(
+    page.getByText("Must be a valid JSON array of display elements.").first(),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId("global-alerts").getByText("Realm successfully updated"),
+  ).toHaveCount(0);
+});
+
 test("should reject issuer info with malformed elements", async ({ page }) => {
   await using testBed = await createTestBed({
     verifiableCredentialsEnabled: true,

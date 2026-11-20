@@ -61,6 +61,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequestEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
+import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.representations.JsonWebToken;
@@ -101,6 +102,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static final String ATTR_RESPONSE_ENCRYPTION_REQUIRED = "oid4vci.response.encryption.required";
     public static final String ATTR_REQUEST_ENCRYPTION_REQUIRED = "oid4vci.request.encryption.required";
     public static final String ISSUER_INFO_ATTR = "oid4vci.issuer_info";
+    public static final String ISSUER_DISPLAY_ATTR = "oid4vci.display";
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String ATTR_REQUEST_ZIP_ALGS = "oid4vci.request.zip.algorithms";
@@ -154,6 +156,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(responseEnc)
                 .setCredentialRequestEncryption(requestEnc)
+                .setDisplay(getIssuerDisplay(context.getRealm()))
                 .setIssuerInfo(getIssuerInfo(context.getRealm()))
                 .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession));
     }
@@ -206,6 +209,45 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
             LOGGER.warnf(e, "Failed to parse %s from realm attributes. Skipping issuer_info.", ISSUER_INFO_ATTR);
             return null;
         }
+    }
+
+    /**
+     * Returns the parsed issuer display elements from the realm attribute, or null if not configured or invalid.
+     */
+    public static List<DisplayObject> getIssuerDisplay(RealmModel realm) {
+        String rawValue = realm.getAttribute(ISSUER_DISPLAY_ATTR);
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+        try {
+            List<DisplayObject> display = JsonSerialization.readValue(rawValue,
+                    new TypeReference<List<DisplayObject>>() {
+                    });
+            if (!isValidIssuerDisplay(display)) {
+                LOGGER.warnf("Invalid %s realm attribute. Skipping display.", ISSUER_DISPLAY_ATTR);
+                return null;
+            }
+            return display;
+        } catch (IOException e) {
+            LOGGER.warnf(e, "Failed to parse %s from realm attributes. Skipping display.", ISSUER_DISPLAY_ATTR);
+            return null;
+        }
+    }
+
+    private static boolean isValidIssuerDisplay(List<DisplayObject> display) {
+        if (display == null || display.isEmpty()) {
+            return false;
+        }
+        for (DisplayObject element : display) {
+            if (element == null) {
+                return false;
+            }
+            DisplayObject.LogoObject logo = element.getLogo();
+            if (logo != null && (logo.getUri() == null || logo.getUri().isBlank())) {
+                return false;
+            }
+        }
+        return display.stream().map(DisplayObject::getLocale).distinct().count() == display.size();
     }
 
     /**
