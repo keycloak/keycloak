@@ -25,6 +25,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -46,5 +47,17 @@ public interface RealmsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<RealmRepresentation> findAll();
+
+    /**
+     * Returns the realms the caller is allowed to view.
+     *
+     * @param briefRepresentation if {@code true}, each realm only contains basic information
+     *                            (id, realm, displayName, displayNameHtml and enabled).
+     *                            If {@code false}, the full realm representations are returned.
+     * @return the list of realms
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<RealmRepresentation> findAll(@QueryParam("briefRepresentation") boolean briefRepresentation);
 
 }

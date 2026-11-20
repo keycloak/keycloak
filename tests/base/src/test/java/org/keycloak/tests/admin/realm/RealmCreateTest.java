@@ -49,6 +49,22 @@ public class RealmCreateTest extends AbstractRealmTest {
     }
 
     @Test
+    public void getRealmsBriefRepresentation() {
+        List<RealmRepresentation> brief = adminClient.realms().findAll(true);
+        Assert.assertNames(brief, "master", managedRealm.getName());
+        for (RealmRepresentation rep : brief) {
+            assertNotNull(rep.getId());
+            assertNull(rep.getAccessTokenLifespan());
+        }
+
+        List<RealmRepresentation> full = adminClient.realms().findAll(false);
+        Assert.assertNames(full, "master", managedRealm.getName());
+        for (RealmRepresentation rep : full) {
+            assertNotNull(rep.getAccessTokenLifespan());
+        }
+    }
+
+    @Test
     public void getRealmRepresentation() {
         RealmRepresentation rep = managedRealm.admin().toRepresentation();
         Assertions.assertEquals(managedRealm.getName(), rep.getRealm());
