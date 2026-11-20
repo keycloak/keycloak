@@ -28,6 +28,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -43,6 +44,7 @@ import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentat
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -148,6 +150,29 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         // and later back to a specific group, still without sending the flag
         permission.setResources(Set.of(department.getId()));
         getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+
+        // the permission is not extended to the descendants again
+        assertCanView(department);
+        assertCannotView(team);
+        assertCannotView(subteam);
+    }
+
+    @Test
+    public void testExtendChildrenRemovedWhenPermissionTargetsAllGroupsThroughGenericPolicy() {
+        ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), true, allowMyAdmin);
+        PolicyResource policy = adminPermissionsClient.authorization().policies().policy(permission.getId());
+
+        // a generic client keeps the config as is when changing the permission to all groups
+        PolicyRepresentation generic = policy.toRepresentation();
+        generic.setResources(Set.of());
+        policy.update(generic);
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+
+        // and later back to a specific group
+        generic = policy.toRepresentation();
+        generic.setResources(Set.of(department.getId()));
+        policy.update(generic);
         assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
 
         // the permission is not extended to the descendants again
@@ -515,6 +540,28 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         createGroupPermission(team, Set.of(VIEW_MEMBERS), false, onlyOthers);
         UserRepresentation member = createMember("subteam-member", subteam);
 
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+    }
+
+    @Test
+    public void testInheritedMemberScopeWithUnanimousGroupPolicyForAnotherGroup() {
+        GroupRepresentation others = createGroup("others");
+        GroupPolicyRepresentation onlyOthers = createGroupPolicy(realm, adminPermissionsClient, "Only Others", Logic.POSITIVE, others.getId());
+        // the admin is not in the other group, so the permission denies even though its user policy grants
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType(GROUPS_RESOURCE_TYPE);
+        permission.setScopes(Set.of(VIEW, VIEW_MEMBERS));
+        permission.setResources(Set.of(department.getId()));
+        permission.setExtendChildren(true);
+        permission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        permission.addPolicy(allowMyAdmin.getName(), onlyOthers.getName());
+        createPermission(adminPermissionsClient, permission);
+        UserRepresentation member = createMember("subteam-member", subteam);
+
+        assertCannotView(subteam);
+        assertThat(searchGroupIds("subteam"), empty());
         assertCannotView(member);
         assertThat(searchUserIds(member), empty());
     }

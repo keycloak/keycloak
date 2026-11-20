@@ -111,8 +111,6 @@ public final class PartialEvaluator {
 
         Set<String> allowedResources = new HashSet<>();
         Set<String> deniedResources = new HashSet<>();
-        // outcome for the admin of each permission, used to resolve permissions extended to children groups
-        Map<String, Boolean> permissionOutcomes = new HashMap<>();
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
 
@@ -130,10 +128,8 @@ public final class PartialEvaluator {
 
                     if (granted) {
                         allowedResources.addAll(ids);
-                        permissionOutcomes.putIfAbsent(permission.getId(), true);
                     } else {
                         deniedResources.addAll(ids);
-                        permissionOutcomes.put(permission.getId(), false);
                     }
                 }
             });
@@ -144,19 +140,12 @@ public final class PartialEvaluator {
             boolean memberScope = groupResourceType != null;
             String scope = memberScope ? AdminPermissionsSchema.VIEW_MEMBERS : AdminPermissionsSchema.VIEW;
 
-            // the permissions returned by the policy providers only include those whose policies reference the admin, so
-            // the other permissions are evaluated as well. For instance, a permission whose policy denies another admin
-            // grants access to the current admin
-            Map<String, Boolean> otherOutcomes = new HashMap<>();
-            ExtendChildrenPartialEvaluator.Result inherited = extendChildrenEvaluator.evaluate(session, scope, memberScope, permission -> {
-                if (permissionOutcomes.containsKey(permission.getId())) {
-                    return permissionOutcomes.get(permission.getId());
-                }
-                if (!otherOutcomes.containsKey(permission.getId())) {
-                    otherOutcomes.put(permission.getId(), evaluatePermission(session, authorization, policyProviders, permission, adminUser));
-                }
-                return otherOutcomes.get(permission.getId());
-            });
+            // the permissions returned by the policy providers only include those whose policies reference the admin, and
+            // their outcome ignores skipped group policies, so all permissions are evaluated again. For instance, a
+            // permission whose policy denies another admin grants access to the current admin, and a permission that
+            // also requires a group the admin is not a member of denies access
+            ExtendChildrenPartialEvaluator.Result inherited = extendChildrenEvaluator.evaluate(session, scope, memberScope,
+                    permission -> evaluatePermission(session, authorization, policyProviders, permission, adminUser));
 
             allowedResources.addAll(inherited.allowed());
             deniedResources.addAll(inherited.denied());
