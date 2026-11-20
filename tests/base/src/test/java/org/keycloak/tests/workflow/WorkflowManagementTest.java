@@ -35,6 +35,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.WorkflowResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
@@ -55,7 +56,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
+import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -79,6 +82,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.fasterxml.jackson.jakarta.rs.yaml.JacksonYAMLProvider;
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -116,6 +121,83 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP, realmRef = DEFAULT_REALM_NAME)
     Keycloak bootstrapAdmin;
+
+    @InjectAdminClientFactory
+    AdminClientFactory adminClientFactory;
+
+    @ParameterizedTest
+    @CsvSource({
+            "master, view-realm, true",
+            "default, view-realm, true",
+            "master, view-users, false",
+            "default, view-users, false"
+    })
+    public void testWorkflowReadPermissions(String realmName, String role, boolean canRead) {
+        RealmResource realm = bootstrapAdmin.realm(realmName.equals("default") ? managedRealm.getName() : realmName);
+        String username = "workflow-reader";
+        String userId;
+        try (Response response = realm.users().create(UserBuilder.create().username(username).password("password")
+                .name("Workflow", "Reader").email("workflow-reader@example.org").emailVerified(true).build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+        try {
+            String managementClient = realmName.equals("master") ? "master-realm" : Constants.REALM_MANAGEMENT_CLIENT_ID;
+            String clientId = realm.clients().findByClientId(managementClient).get(0).getId();
+            realm.users().get(userId).roles().clientLevel(clientId)
+                    .add(List.of(realm.clients().get(clientId).roles().get(role).toRepresentation()));
+            ApiUtil.addAdminApiClientScope(realm, Constants.ADMIN_CLI_CLIENT_ID);
+            Keycloak reader = adminClientFactory.create()
+                    .realm(realm.toRepresentation().getRealm())
+                    .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                    .username(username)
+                    .password("password")
+                    .autoClose()
+                    .build();
+            WorkflowRepresentation definition = WorkflowRepresentation.withName("read-permissions")
+                    .withSteps(WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                            .after(Duration.ofDays(10)).build())
+                    .build();
+            String workflowId;
+            try (Response response = realm.workflows().create(definition)) {
+                workflowId = ApiUtil.getCreatedId(response);
+            }
+            try {
+                realm.workflows().workflow(workflowId).activate(ResourceType.USERS.name(), userId);
+                WorkflowsResource workflows = reader.realm(realm.toRepresentation().getRealm()).workflows();
+                WorkflowResource workflow = workflows.workflow(workflowId);
+                if (canRead) {
+                    assertTrue(workflows.list().stream().anyMatch(w -> workflowId.equals(w.getId())));
+                    WorkflowRepresentation actual = workflow.toRepresentation();
+                    assertEquals("read-permissions", actual.getName());
+                    assertEquals(DisableUserStepProviderFactory.ID, actual.getSteps().get(0).getUses());
+                    assertTrue(workflows.getScheduledWorkflows(userId).stream().anyMatch(w -> workflowId.equals(w.getId())));
+                } else {
+                    assertThrows(ForbiddenException.class, workflows::list);
+                    assertThrows(ForbiddenException.class, workflow::toRepresentation);
+                    assertThrows(ForbiddenException.class, () -> workflows.getScheduledWorkflows(userId));
+                }
+                try (Response response = workflows.create(definition)) {
+                    assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+                }
+                try (Response response = workflow.update(definition)) {
+                    assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+                }
+                try (Response response = workflow.delete()) {
+                    assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+                }
+                assertThrows(ForbiddenException.class, () -> workflow.activate(ResourceType.USERS.name(), userId));
+                assertThrows(ForbiddenException.class, () -> workflow.deactivate(ResourceType.USERS.name(), userId));
+                String stepId = realm.workflows().workflow(workflowId).toRepresentation().getSteps().get(0).getId();
+                try (Response response = workflows.migrate(stepId, stepId)) {
+                    assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+                }
+            } finally {
+                realm.workflows().workflow(workflowId).delete().close();
+            }
+        } finally {
+            realm.users().delete(userId).close();
+        }
+    }
 
     @Test
     public void testCreate() {

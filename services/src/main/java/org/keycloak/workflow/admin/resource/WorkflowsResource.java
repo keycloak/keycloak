@@ -54,7 +54,7 @@ public class WorkflowsResource {
         if (!Profile.isFeatureEnabled(Feature.WORKFLOWS)) {
             throw new NotFoundException();
         }
-        auth.requireRealmAdmin();
+        auth.realm().requireViewRealm();
         this.session = session;
         this.provider = session.getProvider(WorkflowProvider.class);
         this.auth = auth;
@@ -74,6 +74,7 @@ public class WorkflowsResource {
             @APIResponse(responseCode = "400", description = "Bad Request")
     })
     public Response create(WorkflowRepresentation rep) {
+        auth.requireRealmAdmin();
         try {
             Workflow workflow = provider.toModel(rep);
             rep.setId(workflow.getId());
@@ -113,7 +114,7 @@ public class WorkflowsResource {
             throw new NotFoundException("Workflow with id " + id + " not found");
         }
 
-        return new WorkflowResource(session, provider, workflow, adminEvent, locale);
+        return new WorkflowResource(session, provider, workflow, auth, adminEvent, locale);
     }
 
     @GET
@@ -177,6 +178,7 @@ public class WorkflowsResource {
             @QueryParam("from") String stepIdFrom,
             @Parameter(description = "A String representing the id of the step to migrate to")
             @QueryParam("to") String stepIdTo) {
+        auth.requireRealmAdmin();
         auth.realm().requireManageRealm();
 
         if (stepIdFrom == null || stepIdTo == null) {

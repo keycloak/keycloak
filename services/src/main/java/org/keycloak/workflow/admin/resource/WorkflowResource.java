@@ -25,6 +25,7 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import com.fasterxml.jackson.jakarta.rs.yaml.YAMLMediaTypes;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -42,13 +43,15 @@ public class WorkflowResource {
     private final KeycloakSession session;
     private final WorkflowProvider provider;
     private final Workflow workflow;
+    private final AdminPermissionEvaluator auth;
     private final AdminEventBuilder adminEvent;
     private final String locale;
 
-    public WorkflowResource(KeycloakSession session, WorkflowProvider provider, Workflow workflow, AdminEventBuilder adminEvent, String locale) {
+    public WorkflowResource(KeycloakSession session, WorkflowProvider provider, Workflow workflow, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, String locale) {
         this.session = session;
         this.provider = provider;
         this.workflow = workflow;
+        this.auth = auth;
         this.adminEvent = adminEvent;
         this.locale = locale;
     }
@@ -64,6 +67,7 @@ public class WorkflowResource {
             @APIResponse(responseCode = "400", description = "Bad Request")
     })
     public void delete() {
+        auth.requireRealmAdmin();
         try {
             provider.removeWorkflow(workflow);
             adminEvent.operation(OperationType.DELETE)
@@ -89,6 +93,7 @@ public class WorkflowResource {
             @APIResponse(responseCode = "400", description = "Bad Request")
     })
     public void update(WorkflowRepresentation rep) {
+        auth.requireRealmAdmin();
         try {
             rep.setId(workflow.getId());
             provider.updateWorkflow(workflow, rep);
@@ -167,6 +172,7 @@ public class WorkflowResource {
             )
             @QueryParam("notBefore") String notBefore
     ) {
+        auth.requireRealmAdmin();
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
@@ -214,6 +220,7 @@ public class WorkflowResource {
             @Parameter(description = "Resource identifier")
             @PathParam("resourceId") String resourceId
     ) {
+        auth.requireRealmAdmin();
         Object resource = provider.getResourceTypeSelector(type).resolveResource(resourceId);
 
         if (resource == null) {
