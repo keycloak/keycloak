@@ -79,7 +79,6 @@ export async function assertOnExcludeSessionStateSwitch(page: Page) {
 export async function clickAllCompatibilitySwitch(page: Page) {
   await switchOn(page, excludeSessionStateSwitch);
   await switchOff(page, "#useRefreshTokens");
-  await switchOn(page, "#useRefreshTokenForClientCredentialsGrant");
   await switchOn(page, "#useLowerCaseBearerType");
 }
 

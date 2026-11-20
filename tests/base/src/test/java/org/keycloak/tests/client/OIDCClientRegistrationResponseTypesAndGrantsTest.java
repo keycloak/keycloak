@@ -270,7 +270,6 @@ public class OIDCClientRegistrationResponseTypesAndGrantsTest extends AbstractCl
         Assertions.assertEquals(expectedDirectGrantFlow, kcClient.isDirectAccessGrantsEnabled(), "Expected direct grant flow: " + expectedDirectGrantFlow + " did not match.");
         Assertions.assertEquals(expectedServiceAccountsFlow, kcClient.isServiceAccountsEnabled(), "Expected service accounts flow: " + expectedServiceAccountsFlow + " did not match.");
         Assertions.assertEquals(expectedRefreshToken, config.isUseRefreshToken(), "Expected refresh: " + expectedRefreshToken + " did not match.");
-        Assertions.assertFalse(config.isUseRefreshTokenForClientCredentialsGrant(), "Don't expect refresh token for client credentials grant enabled");
         boolean deviceEnabled = kcClient.getAttributes() != null && Boolean.parseBoolean(kcClient.getAttributes().get(OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED));
         Assertions.assertEquals(expectedDeviceGrant, deviceEnabled, "Expected device: " + expectedDeviceGrant + " did not match.");
         Assertions.assertEquals(expectedTokenExchange, config.isStandardTokenExchangeEnabled(), "Expected Token Exchange: " + expectedTokenExchange + " did not match.");

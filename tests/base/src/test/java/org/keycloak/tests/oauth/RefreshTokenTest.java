@@ -171,7 +171,6 @@ public class RefreshTokenTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.clients(ClientBuilder.create("service-account-app")
                     .serviceAccountsEnabled(true)
-                    .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                     .secret("secret"));
             realm.realmRoles("user");
             return realm;
@@ -1226,14 +1225,13 @@ public class RefreshTokenTest {
     }
 
     @Test
-    public void refreshTokenServiceAccount() {
+    public void clientCredentialsGrantNoRefreshToken() {
         String origClientId = oauth.config().getClientId();
         String origClientSecret = oauth.config().getClientSecret();
         try {
             AccessTokenResponse response = oauth.client("service-account-app", "secret").doClientCredentialsGrantAccessTokenRequest();
-            assertNotNull(response.getRefreshToken());
-            response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-            assertNotNull(response.getRefreshToken());
+            assertNotNull(response.getAccessToken());
+            assertNull(response.getRefreshToken());
         } finally {
             oauth.client(origClientId, origClientSecret);
         }

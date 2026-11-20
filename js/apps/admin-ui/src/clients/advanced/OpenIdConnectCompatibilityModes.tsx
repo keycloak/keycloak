@@ -137,35 +137,6 @@ export const OpenIdConnectCompatibilityModes = ({
         />
       </FormGroup>
       <FormGroup
-        label={t("useRefreshTokenForClientCredentialsGrant")}
-        fieldId="useRefreshTokenForClientCredentialsGrant"
-        hasNoPaddingTop
-        labelIcon={
-          <HelpItem
-            helpText={t("useRefreshTokenForClientCredentialsGrantHelp")}
-            fieldLabelId="useRefreshTokenForClientCredentialsGrant"
-          />
-        }
-      >
-        <Controller
-          name={convertAttributeNameToForm<FormFields>(
-            "attributes.client_credentials.use_refresh_token",
-          )}
-          defaultValue="false"
-          control={control}
-          render={({ field }) => (
-            <Switch
-              id="useRefreshTokenForClientCredentialsGrant"
-              label={t("on")}
-              labelOff={t("off")}
-              isChecked={field.value === "true"}
-              onChange={(_event, value) => field.onChange(value.toString())}
-              aria-label={t("useRefreshTokenForClientCredentialsGrant")}
-            />
-          )}
-        />
-      </FormGroup>
-      <FormGroup
         label={t("useLowerCaseBearerType")}
         fieldId="useLowerCaseBearerType"
         hasNoPaddingTop
