@@ -31,8 +31,10 @@ import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
+import org.keycloak.it.windows.WindowsServiceStartupTestProvider;
 
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -58,8 +60,8 @@ public class WindowsServiceDistTest {
     private static final Logger LOG = Logger.getLogger(WindowsServiceDistTest.class);
     private static final String TEST_SERVICE_NAME_PREFIX = "keycloak-test-";
     private static final int SERVICE_START_TIMEOUT_SECONDS = 120;
-    private static final int SERVICE_STOP_TIMEOUT_SECONDS = 60;
-    private static final int SERVICE_PROCESS_STOP_TIMEOUT_SECONDS = 1;
+    // Allow for slow Windows runners (#48629), with time for Procrun to finish after its stop budget.
+    private static final int SERVICE_STOP_TIMEOUT_SECONDS = 90;
 
     private String testServiceName;
     private boolean serviceCreated = false;
@@ -126,8 +128,7 @@ public class WindowsServiceDistTest {
                 "--name=" + testServiceName,
                 "--display-name=" + customDisplayName,
                 "--description=" + customDescription,
-                "--startup=manual",
-                "--stop-timeout=" + SERVICE_PROCESS_STOP_TIMEOUT_SECONDS);
+                "--startup=manual");
 
         assertEquals(0, installResult.exitCode(), "Service installation failed: " + installResult.getOutput());
         assertThat(installResult.getOutput(), containsString("installed successfully"));
@@ -153,6 +154,7 @@ public class WindowsServiceDistTest {
         assertTrue(stopService(), "Service should stop successfully");
         assertTrue(waitForServiceStopped(), () -> "Service should be in STOPPED state, but was " + getServiceState(testServiceName));
         assertFalse(isKeycloakAccessible(), "Keycloak should not be accessible after service stop");
+        assertThat("Log should confirm orderly Quarkus shutdown", Files.readString(logFile).substring(logContent.length()), containsString("stopped in"));
 
         // Test service uninstall
         CLIResult uninstallResult = runner.run("tools", "windows-service", "uninstall", "--name=" + testServiceName);
@@ -160,6 +162,64 @@ public class WindowsServiceDistTest {
         assertThat(uninstallResult.getOutput(), containsString("uninstalled successfully"));
         serviceCreated = false;
         assertFalse(isServiceCreated(testServiceName), "Service should be uninstalled");
+    }
+
+    @Test
+    @TestProvider(WindowsServiceStartupTestProvider.class)
+    void stopDuringStartupCancelsBootstrapAndClosesResources(KeycloakRunner runner) throws Exception {
+        assertPrunsrvAvailable();
+        assertAdminPrivileges();
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        Path data = rawDist.getDistPath().resolve("data");
+        Files.createDirectories(data);
+        Path gate = data.resolve("windows-service-startup.gate");
+        Path entered = data.resolve("windows-service-startup.entered");
+        Path closed = data.resolve("windows-service-startup.closed");
+        Files.deleteIfExists(entered);
+        Files.deleteIfExists(closed);
+        Files.writeString(gate, "hold startup until the stop request is received");
+        Path logFile = data.resolve("log").resolve("startup-stop.log");
+        rawDist.setProperty("http-enabled", "true");
+        rawDist.setProperty("hostname-strict", "false");
+        rawDist.setProperty("log", "console,file");
+        rawDist.setProperty("log-file", logFile.toString());
+        // A normal shutdown would exhaust the wrapper's default stop budget.
+        rawDist.setProperty("shutdown-delay", "2m");
+        try {
+            CLIResult install = runner.run("tools", "windows-service", "install",
+                    "--name=" + testServiceName, "--startup=manual");
+            assertEquals(0, install.exitCode(), install.getOutput());
+            serviceCreated = true;
+            assertTrue(startService());
+            org.awaitility.Awaitility.await().atMost(SERVICE_START_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .until(() -> Files.exists(entered));
+
+            Process stop = new ProcessBuilder("sc", "stop", testServiceName).redirectErrorStream(true).start();
+            try {
+                assertTrue(stop.waitFor(SERVICE_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS));
+                assertEquals(0, stop.exitValue(), new String(stop.getInputStream().readAllBytes()));
+            } finally {
+                if (stop.isAlive()) {
+                    stop.destroyForcibly();
+                }
+            }
+            // Observe receipt before releasing startup; no sleeps or machine-speed assumptions.
+            org.awaitility.Awaitility.await().atMost(SERVICE_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .until(() -> Files.exists(logFile) && Files.readString(logFile)
+                            .contains("Windows service stop requested during startup"));
+            Files.delete(gate);
+            assertTrue(waitForServiceStopped(), "Service should cancel startup within the default stop budget");
+            String log = Files.readString(logFile);
+            assertThat(log, containsString("Windows service startup cancelled"));
+            assertFalse(log.contains("Listening on:"), "Cancelled startup must not reach the running state");
+            assertTrue(Files.exists(closed), "Startup cancellation must close initialized resources");
+            CLIResult uninstall = runner.run("tools", "windows-service", "uninstall", "--name=" + testServiceName);
+            assertEquals(0, uninstall.exitCode(), uninstall.getOutput());
+            serviceCreated = false;
+            assertFalse(isServiceCreated(testServiceName));
+        } finally {
+            Files.deleteIfExists(gate);
+        }
     }
 
     private boolean waitForLogFile(Path logFile) {
@@ -244,8 +304,10 @@ public class WindowsServiceDistTest {
         if (!process.waitFor(SERVICE_STOP_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
             LOG.errorf("'net stop' did not complete within %d seconds", SERVICE_STOP_TIMEOUT_SECONDS);
             process.destroyForcibly();
+            return false;
         } else if (process.exitValue() != 0) {
             LOG.errorf("'net stop' failed with exit code %d: %s", process.exitValue(), new String(process.getInputStream().readAllBytes()));
+            return false;
         }
         return true;
     }

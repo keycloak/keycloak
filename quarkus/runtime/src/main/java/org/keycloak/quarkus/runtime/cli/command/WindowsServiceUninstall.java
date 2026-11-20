@@ -34,7 +34,9 @@ import picocli.CommandLine.Option;
         description = {
                 "%nUninstall Keycloak Windows service installed with 'kc.bat tools windows-service install'.",
                 "",
-                "This command requires prunsrv.exe to be present in the bin directory."
+                "This command requires prunsrv.exe to be present in the bin directory.",
+                "Run this command from an elevated terminal.",
+                "If the service is running, Procrun stops it before deleting it."
         },
         footerHeading = "Examples:",
         footer = { "  Uninstall with default service name:%n%n"

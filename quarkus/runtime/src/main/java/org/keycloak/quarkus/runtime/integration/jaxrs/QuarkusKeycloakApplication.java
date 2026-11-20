@@ -72,6 +72,7 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     void onStartupEvent(@Observes StartupEvent event) {
+        KeycloakMain.checkWindowsServiceStartup();
         var asyncBootstrap = Configuration.getOptionalKcValue(ServerOptions.SERVER_ASYNC_BOOTSTRAP)
                 .map(Boolean::parseBoolean)
                 .orElse(Boolean.TRUE);
