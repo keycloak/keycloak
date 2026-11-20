@@ -45,9 +45,7 @@ public class AdminEventV2Builder extends AdminEventBuilder {
 
     @Override
     protected String getResourcePath(UriInfo uriInfo) {
-        String path = uriInfo.getPath();
-        String realmRelative = "/admin/api/%s/".formatted(realm.getName());
-        return path.substring(path.indexOf(realmRelative) + realmRelative.length());
+        return getResourcePath(uriInfo, "admin/api/", "realmName");
     }
 
     @Override
