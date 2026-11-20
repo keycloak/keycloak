@@ -1297,6 +1297,66 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    public void testIncludeOrganizationName() throws Exception {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = realm.admin().organizations().get(orgRep.getId());
+        orgRep.setName("Organization Display Name");
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        addMember(organization);
+
+        ClientScopeRepresentation orgScope = realm.admin().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny().orElseThrow();
+        ClientScopeResource orgScopeResource = realm.admin().clientScopes().get(orgScope.getId());
+        ProtocolMapperRepresentation mapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny().orElseThrow();
+        Map<String, String> originalConfig = new HashMap<>(mapper.getConfig());
+
+        try {
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.FALSE.toString());
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_DOMAIN, Boolean.FALSE.toString());
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_NAME, null);
+            setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+            oauth.client("direct-grant", "password");
+            oauth.scope("openid organization");
+
+            AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+            assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+            AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+            assertEquals(Map.of(orgRep.getAlias(), Map.of()), accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION));
+
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_NAME, Boolean.TRUE.toString());
+            setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+            response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+            assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+            accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+            assertEquals(Map.of(orgRep.getAlias(), Map.of("name", orgRep.getName())), accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION));
+
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_NAME, Boolean.FALSE.toString());
+            setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+            response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+            assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+            accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+            assertEquals(Map.of(orgRep.getAlias(), Map.of()), accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION));
+
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_NAME, Boolean.TRUE.toString());
+            setMapperConfig(ProtocolMapperUtils.MULTIVALUED, Boolean.FALSE.toString());
+            setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+            response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+            assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+            accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+            assertEquals(orgRep.getAlias(), accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION));
+        } finally {
+            mapper.setConfig(originalConfig);
+            orgScopeResource.getProtocolMappers().update(mapper.getId(), mapper);
+        }
+    }
+
+    @Test
     public void testOrganizationsClaimAsList() throws Exception {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(realm.admin().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
