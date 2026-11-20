@@ -24,7 +24,8 @@ import java.util.Set;
 /**
  * X.509 trust material and validation policy exposed by a trust material identity provider.
  *
- * @param trustAnchors              self signed CA roots for one trust domain
+ * @param trustAnchors              CA certificates for one trust domain. Path validation ends at a listed
+ *                                  certificate, so a subordinate CA is a valid anchor
  * @param requiredExtendedKeyUsages extended key usage OIDs of which the end entity certificate must
  *                                  contain at least one, an empty list imposes no restriction
  */
@@ -48,16 +49,6 @@ public record X509TrustMaterial(Set<X509Certificate> trustAnchors,
         boolean[] keyUsage = certificate.getKeyUsage();
         if (keyUsage != null && (keyUsage.length <= 5 || !keyUsage[5])) {
             throw new IllegalArgumentException("X.509 trust anchors must be valid for certificate signing");
-        }
-
-        if (!certificate.getSubjectX500Principal().equals(certificate.getIssuerX500Principal())) {
-            throw new IllegalArgumentException("X.509 trust anchors must be self-issued root certificates");
-        }
-
-        try {
-            certificate.verify(certificate.getPublicKey());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("X.509 trust anchors must be self-signed root certificates", e);
         }
     }
 }
