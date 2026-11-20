@@ -290,6 +290,27 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
+    public void rejectGroupNameLongerThan255Characters() {
+        RealmResource realm = managedRealm.admin();
+        GroupRepresentation group = GroupBuilder.create().name("g".repeat(255)).build();
+
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(201, response.getStatus());
+            group.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation tooLongGroup = GroupBuilder.create().name("g".repeat(256)).build();
+        try (Response response = realm.groups().add(tooLongGroup)) {
+            assertEquals(400, response.getStatus());
+        }
+
+        group.setName("g".repeat(256));
+        ClientErrorException exception = assertThrows(ClientErrorException.class, () -> realm.groups().group(group.getId()).update(group));
+        assertEquals(400, exception.getResponse().getStatus());
+    }
+
+    @Test
     public void allowSameGroupNameAtDifferentLevel() {
         RealmResource realm = managedRealm.admin();
 

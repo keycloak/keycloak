@@ -96,8 +96,15 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         if (isBlank(name)) {
             throw new ModelException("Group name cannot be null or empty");
         }
+        validateGroupName(name);
         group.setName(name);
         fireGroupUpdatedEvent();
+    }
+
+    static void validateGroupName(String name) {
+        if (name != null && name.length() > GroupEntity.NAME_MAX_LENGTH) {
+            throw new ModelValidationException("Group name must not exceed " + GroupEntity.NAME_MAX_LENGTH + " characters");
+        }
     }
 
     @Override
