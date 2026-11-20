@@ -61,6 +61,9 @@ public class DefaultRefreshTokenProvider extends AbstractRefreshTokenProvider im
             refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
             refreshToken.exp(getExpiration(clientSessionCtx, userSession, true));
             responseBuilder.createOrUpdateOfflineSession();
+            // The offline sessions record their start time when they are created above. If that took more than a
+            // second, the token would be older than its own session and be rejected on first use, so stamp it afterwards.
+            refreshToken.issuedNow();
         } else {
             refreshToken.exp(getExpiration(clientSessionCtx, userSession, false));
         }
