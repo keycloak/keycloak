@@ -225,6 +225,27 @@ public class GeneratedEcdhKeyProviderTest {
     }
 
     @Test
+    public void customKid() {
+        String kid = "019a91a4-5b7e-7c3d-8f2a-4b6c8d0e1f23";
+
+        ComponentRepresentation rep = createRep("valid", GeneratedEcdhKeyProviderFactory.ID);
+        rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(System.currentTimeMillis()));
+        rep.getConfig().putSingle(ECDH_ALGORITHM_KEY, Algorithm.ECDH_ES);
+        rep.getConfig().putSingle(Attributes.KID_KEY, kid);
+
+        Response response = realm.admin().components().add(rep);
+        String id = ApiUtil.getCreatedId(response);
+        realm.cleanup().add(r -> r.components().component(id).remove());
+        response.close();
+
+        KeyMetadataRepresentation key = realm.admin().keys().getKeyMetadata().getKeys().stream()
+                .filter(k -> KeyType.EC.equals(k.getType()) && id.equals(k.getProviderId()))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(kid, key.getKid());
+    }
+
+    @Test
     public void changeCurveFromP256ToP384Direct() throws Exception {
         changeCurve("P-256", "P-384", Algorithm.ECDH_ES, Algorithm.ECDH_ES);
     }

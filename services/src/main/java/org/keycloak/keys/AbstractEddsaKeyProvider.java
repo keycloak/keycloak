@@ -64,7 +64,7 @@ public abstract class AbstractEddsaKeyProvider implements KeyProvider {
         key.setProviderId(model.getId());
         key.setProviderPriority(model.get("priority", 0l));
 
-        key.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
+        key.setKid(model.get(Attributes.KID_KEY) != null ? model.get(Attributes.KID_KEY) : KeyUtils.createKeyId(keyPair.getPublic()));
         key.setUse(KeyUse.SIG);
         key.setType(KeyType.OKP);
         key.setAlgorithm(Algorithm.EdDSA);
