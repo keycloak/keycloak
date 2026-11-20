@@ -18,6 +18,7 @@ import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -78,7 +79,8 @@ public class DatabaseCompatibilityMetadataProvider implements CompatibilityMetad
             Set<ChangeSet> changeSets = new HashSet<>();
             Set<Migration> migrations = new HashSet<>();
 
-            ObjectMapper objectMapper = new ObjectMapper();
+            // plain defaults are required as the serialized form is hashed
+            ObjectMapper objectMapper = JsonSerialization.plainMapper;
             while(resources.hasMoreElements()) {
                 URL url = resources.nextElement();
                 try (InputStream inputStream = url.openStream()) {

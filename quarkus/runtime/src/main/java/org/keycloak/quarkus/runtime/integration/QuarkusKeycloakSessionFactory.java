@@ -30,6 +30,9 @@ import org.keycloak.quarkus.runtime.themes.QuarkusJarThemeProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.arc.Arc;
+
 public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionFactory {
 
     public QuarkusKeycloakSessionFactory(
@@ -72,6 +75,14 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
         }
 
         return factory;
+    }
+
+    /**
+     * Uses the mapper managed by Quarkus, which is created, with all customizers applied, on first lookup.
+     */
+    @Override
+    public ObjectMapper getObjectMapper() {
+        return Arc.container().instance(ObjectMapper.class).get();
     }
 
     @Override
