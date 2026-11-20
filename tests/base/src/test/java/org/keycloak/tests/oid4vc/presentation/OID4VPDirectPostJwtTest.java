@@ -59,9 +59,7 @@ public class OID4VPDirectPostJwtTest extends OID4VPVerifierTestBase {
     public void configureTestRealm() {
         super.configureTestRealm();
         createVerifierIdp(Map.of(
-                OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks(),
-                OID4VPIdentityProviderConfig.RESPONSE_MODE, OID4VCConstants.RESPONSE_MODE_DIRECT_POST_JWT,
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
+                OID4VPIdentityProviderConfig.RESPONSE_MODE, OID4VCConstants.RESPONSE_MODE_DIRECT_POST_JWT));
     }
 
     @Test

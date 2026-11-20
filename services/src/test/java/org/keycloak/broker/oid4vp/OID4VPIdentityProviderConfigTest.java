@@ -4,16 +4,22 @@ import java.util.Map;
 
 import org.keycloak.models.IdentityProviderModel;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  *
  * @author rmartinc
  */
 public class OID4VPIdentityProviderConfigTest {
+
+    private static final String REQUESTED_CREDENTIALS = """
+            {"credentials": [{"id": "pid", "format": "dc+sd-jwt", "types": ["urn:eudi:pid:1"], "trustMaterialIdps": ["trust"]}],
+             "principal": {"credential": "pid", "claim": "personal_administrative_number"}}""";
 
     @Test
     public void validateWalletScheme() {
@@ -43,33 +49,48 @@ public class OID4VPIdentityProviderConfigTest {
     }
 
     @Test
-    public void validateTrustedMaterial() {
-         IllegalArgumentException iae = Assert.assertThrows(IllegalArgumentException.class,
-                 () -> create(Map.of(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test")).validate(null));
-         MatcherAssert.assertThat(iae.getMessage(), Matchers.is("Either a trusted issuer JWKS or trust material identity provider aliases are required"));
+    public void validateRequestedCredentials() {
+         IllegalArgumentException iae = assertThrows(IllegalArgumentException.class,
+                 () -> create(Map.of()).validate(null));
+         assertThat(iae.getMessage(), is("The requested credentials are required"));
 
-         create(Map.of(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
-         create(Map.of(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, "other")).validate(null);
+         create(Map.of(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, REQUESTED_CREDENTIALS)).validate(null);
+    }
+
+    @Test
+    public void validateThePrincipalCredentialIsAlwaysPresented() {
+        String requestedCredentials = """
+                {"credentials": [
+                  {"id": "pid", "format": "dc+sd-jwt", "types": ["urn:eudi:pid:1"], "trustMaterialIdps": ["trust"]},
+                  {"id": "employee", "format": "dc+sd-jwt", "types": ["employee"], "trustMaterialIdps": ["trust"]}],
+                 "credentialSets": [{"options": [["pid", "employee"], ["pid"]]}],
+                 "principal": {"credential": "employee", "claim": "sub"}}""";
+        OID4VPIdentityProviderConfig config = create(Map.of(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, requestedCredentials));
+
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> config.validate(null));
+        assertThat(iae.getMessage(),
+                is("The principal credential 'employee' must be part of every option of at least one required credential set"));
+        assertEquals("employee", config.getRequestedCredentials().principal().credential());
     }
 
     private void validateWalletSchemeSuccess(String scheme) {
-        create(Map.of(OID4VPIdentityProviderConfig.WALLET_SCHEME, scheme, OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
+        create(Map.of(OID4VPIdentityProviderConfig.WALLET_SCHEME, scheme, OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, REQUESTED_CREDENTIALS)).validate(null);
     }
 
     private void validateWalletSchemeFailure(String scheme) {
-        IllegalArgumentException iae = Assert.assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class,
                 () -> create(Map.of(OID4VPIdentityProviderConfig.WALLET_SCHEME, scheme)).validate(null));
-        MatcherAssert.assertThat(iae.getMessage(), Matchers.is("Invalid wallet scheme '" + scheme + "'"));
+        assertThat(iae.getMessage(), is("Invalid wallet scheme '" + scheme + "'"));
     }
 
     private void validateResponseModeSuccess(String mode) {
-        create(Map.of(OID4VPIdentityProviderConfig.RESPONSE_MODE, mode, OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, "test", OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, "{\"keys\":[]}")).validate(null);
+        create(Map.of(OID4VPIdentityProviderConfig.RESPONSE_MODE, mode, OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, REQUESTED_CREDENTIALS)).validate(null);
     }
 
     private void validateResponseModeFailure(String mode) {
-        IllegalArgumentException iae = Assert.assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class,
                 () -> create(Map.of(OID4VPIdentityProviderConfig.RESPONSE_MODE, mode)).validate(null));
-        MatcherAssert.assertThat(iae.getMessage(), Matchers.is("Unsupported OID4VP response mode " + mode));
+        assertThat(iae.getMessage(), is("Unsupported OID4VP response mode " + mode));
     }
 
     private OID4VPIdentityProviderConfig create(Map<String, String> config) {

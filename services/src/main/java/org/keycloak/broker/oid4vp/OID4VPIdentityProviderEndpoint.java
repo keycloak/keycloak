@@ -19,6 +19,7 @@ package org.keycloak.broker.oid4vp;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,6 +70,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 
 /**
@@ -199,8 +201,7 @@ public class OID4VPIdentityProviderEndpoint {
 
         String claimsJson;
         try {
-            SdJwtVpVerificationResult result = verifyPresentation(vpToken, requestContext.nonce());
-            claimsJson = JsonSerialization.writeValueAsString(result.getClaims());
+            claimsJson = JsonSerialization.writeValueAsString(verifyPresentations(vpToken, requestContext.nonce()));
         } catch (Exception e) {
             logger.warnf("OID4VP presentation rejected: %s", e.getMessage());
             return loginError(Response.Status.BAD_REQUEST, OAuthErrorException.ACCESS_DENIED, e.getMessage(),
@@ -356,12 +357,9 @@ public class OID4VPIdentityProviderEndpoint {
 
     protected DcqlQuery dcqlQuery() {
         OID4VPIdentityProviderConfig config = provider.getConfig();
-        if (StringUtil.isNotBlank(config.getDcqlQuery())) {
-            return DcqlQuery.parse(config.getDcqlQuery());
-        }
         return DcqlQuery.fromMappers(session.getKeycloakSessionFactory(),
                 session.identityProviders().getMappersByAliasStream(config.getAlias()),
-                config.getDefaultCredentialTypes(), config.getPrincipalAttribute());
+                config.getRequestedCredentials());
     }
 
     protected DecryptedResponse decryptResponse(String response) throws VerificationException {
@@ -419,10 +417,40 @@ public class OID4VPIdentityProviderEndpoint {
         return new DecryptedResponse(vpToken, state, requestContext);
     }
 
-    protected SdJwtVpVerificationResult verifyPresentation(String vpToken, String nonce) throws VerificationException {
+    /**
+     * Verifies the presentation of each presented credential and requires the presented credentials
+     * to satisfy the required credential sets.
+     *
+     * @return the disclosed claims of the presented credentials by credential id
+     */
+    protected ObjectNode verifyPresentations(String vpToken, String nonce) throws VerificationException {
+        RequestedCredentials requested = provider.getConfig().getRequestedCredentials();
+        Map<String, String> presentations = extractPresentations(vpToken, requested);
+        if (!requested.isSatisfiedBy(presentations.keySet())) {
+            throw new VerificationException("vp_token does not contain the required credentials, presented were "
+                    + presentations.keySet());
+        }
+        ObjectNode claims = JsonSerialization.mapper.createObjectNode();
+        for (RequestedCredentials.Credential credential : requested.credentials()) {
+            String presentation = presentations.get(credential.id());
+            if (presentation == null) {
+                continue;
+            }
+            SdJwtVpVerificationResult result = verifyPresentation(credential, presentation, nonce);
+            if (!credential.types().contains(result.getCredentialType())) {
+                throw new VerificationException("The credential '" + credential.id() + "' has the type '"
+                        + result.getCredentialType() + "', which is not requested");
+            }
+            claims.set(credential.id(), result.getClaims());
+        }
+        return claims;
+    }
+
+    protected SdJwtVpVerificationResult verifyPresentation(RequestedCredentials.Credential credential,
+            String presentation, String nonce) throws VerificationException {
         SdJwtVP sdJwtVP;
         try {
-            sdJwtVP = SdJwtVP.of(extractCredential(vpToken));
+            sdJwtVP = SdJwtVP.of(presentation);
         } catch (IllegalArgumentException e) {
             throw new VerificationException("Malformed vp_token presentation", e);
         }
@@ -451,13 +479,14 @@ public class OID4VPIdentityProviderEndpoint {
                 .withNonceCheck(nonce)
                 .build();
 
-        // TODO bind the presentation to the requested credential type and claims, so that not any
-        // credential from a trusted issuer satisfies the login: derive PresentationRequirements from
-        // the DCQL query and enforce them here. The principal check in requirePrincipalClaim then
-        // becomes just another requested claim. https://github.com/keycloak/keycloak/issues/50657
+        // TODO require the claims the DCQL query requests for this credential: derive
+        // PresentationRequirements from the query and enforce them here. The principal check in
+        // requirePrincipalClaim then becomes just another requested claim.
+        // https://github.com/keycloak/keycloak/issues/50657
         PresentationRequirements noAdditionalRequirements = disclosedPayload -> {
         };
-        TrustedSdJwtIssuer trustedIssuer = provider.trustedIssuerResolver().resolve(sdJwtVP.getIssuerSignedJWT());
+        TrustedSdJwtIssuer trustedIssuer = provider.trustedIssuerResolver(credential)
+                .resolve(sdJwtVP.getIssuerSignedJWT());
         return new SdJwtPresentationConsumer().verifySdJwtPresentation(
                 sdJwtVP, noAdditionalRequirements, List.of(trustedIssuer), issuerOpts, kbOpts);
     }
@@ -468,59 +497,75 @@ public class OID4VPIdentityProviderEndpoint {
         }
     }
 
-    // The DCQL vp_token is a JSON object keyed by credential id whose value is the presentation, or an
-    // array of them. A bare SD-JWT compact string is not valid JSON and is used as is.
-    // TODO support multiple credentials (mapped by credential id set in the DCQL).
-    static String extractCredential(String vpToken) throws VerificationException {
+    /**
+     * The DCQL vp_token is a JSON object keyed by credential id whose value is an array of
+     * presentations (OID4VP 1.0 §8.1). A single presentation is also accepted as a string. Only one
+     * presentation per credential is supported, since no credential query allows multiple.
+     *
+     * @return the presentation by credential id
+     */
+    static Map<String, String> extractPresentations(String vpToken, RequestedCredentials requested)
+            throws VerificationException {
         JsonNode token;
         try {
             token = JsonSerialization.readValue(vpToken, JsonNode.class);
-        } catch (IOException notJson) {
-            return vpToken.trim();
+        } catch (IOException e) {
+            throw new VerificationException("vp_token must be a JSON object keyed by credential id", e);
+        }
+        if (token == null || !token.isObject()) {
+            throw new VerificationException("vp_token must be a JSON object keyed by credential id");
         }
 
-        JsonNode presentation = token;
-        if (token.isObject()) {
-            if (token.size() != 1) {
-                throw new VerificationException("vp_token must carry exactly one credential");
+        Map<String, String> presentations = new HashMap<>();
+        for (Map.Entry<String, JsonNode> entry : token.properties()) {
+            String credentialId = entry.getKey();
+            if (requested.credential(credentialId).isEmpty()) {
+                throw new VerificationException("vp_token contains the credential '" + credentialId
+                        + "', which is not requested");
             }
-            presentation = token.elements().next();
-        }
-        if (presentation.isArray()) {
-            if (presentation.size() != 1) {
-                throw new VerificationException("vp_token must carry exactly one credential");
+            JsonNode presentation = entry.getValue();
+            if (presentation.isArray()) {
+                if (presentation.size() != 1) {
+                    throw new VerificationException(
+                            "vp_token must carry exactly one presentation of the credential '" + credentialId + "'");
+                }
+                presentation = presentation.get(0);
             }
-            presentation = presentation.get(0);
+            if (!presentation.isTextual() || StringUtil.isBlank(presentation.textValue())) {
+                throw new VerificationException(
+                        "vp_token does not contain a presentation of the credential '" + credentialId + "'");
+            }
+            presentations.put(credentialId, presentation.textValue());
         }
-        if (!presentation.isTextual()) {
-            throw new VerificationException("vp_token does not contain a credential presentation");
-        }
-        return presentation.textValue();
+        return presentations;
     }
 
     // The principal claim becomes the brokered subject. Rejects presentations without a usable value.
-    protected String requirePrincipalClaim(JsonNode claims) {
-        JsonNode principal = claims.get(provider.getConfig().getPrincipalAttribute());
-        if (principal == null || principal.isNull() || !principal.isValueNode()
-                || StringUtil.isBlank(principal.asText())) {
-            throw new IllegalStateException(
-                    "Credential does not contain a usable value for the configured principal attribute '"
-                            + provider.getConfig().getPrincipalAttribute() + "'");
+    protected String requirePrincipalClaim(RequestedCredentials.Principal principal, JsonNode claims) {
+        List<JsonNode> values = principal.claimPath().select(claims);
+        JsonNode value = values.size() == 1 ? values.get(0) : null;
+        if (value == null || value.isNull() || !value.isValueNode() || StringUtil.isBlank(value.asText())) {
+            throw new IllegalStateException("The credential '" + principal.credential()
+                    + "' does not contain a usable value for the principal claim '" + principal.claim() + "'");
         }
-        return principal.asText();
+        return value.asText();
     }
 
     protected BrokeredIdentityContext toBrokeredContext(JsonNode claims, AuthenticationSessionModel authSession) {
-        String subject = requirePrincipalClaim(claims);
+        RequestedCredentials.Principal principal = provider.getConfig().getRequestedCredentials().principal();
+        JsonNode principalClaims = claims.get(principal.credential());
+        String subject = requirePrincipalClaim(principal, principalClaims);
+        // A subject is only unique within its credential type, so the link carries the verified vct
+        String federatedUserId = principalClaims.get(OID4VCConstants.CLAIM_NAME_VCT).asText() + "#" + subject;
 
-        BrokeredIdentityContext context = new BrokeredIdentityContext(subject, provider.getConfig());
+        BrokeredIdentityContext context = new BrokeredIdentityContext(federatedUserId, provider.getConfig());
         context.setIdp(provider);
         context.setUsername(subject);
         context.setModelUsername(subject);
-        context.setBrokerUserId(provider.getConfig().getAlias() + "." + subject);
+        context.setBrokerUserId(provider.getConfig().getAlias() + "." + federatedUserId);
         context.setAuthenticationSession(authSession);
 
-        JsonNode email = claims.get(IDToken.EMAIL);
+        JsonNode email = principalClaims.get(IDToken.EMAIL);
         if (email != null && email.isValueNode()) {
             context.setEmail(email.asText());
         }
