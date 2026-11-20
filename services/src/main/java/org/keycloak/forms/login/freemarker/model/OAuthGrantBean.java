@@ -34,10 +34,12 @@ public class OAuthGrantBean {
     private List<ClientScopeEntry> clientScopesRequested = new ArrayList<>();
     private String code;
     private ClientModel client;
+    private String redirectUri;
 
-    public OAuthGrantBean(String code, ClientModel client, List<AuthorizationDetails> clientScopesRequested) {
+    public OAuthGrantBean(String code, ClientModel client, List<AuthorizationDetails> clientScopesRequested, String redirectUri) {
         this.code = code;
         this.client = client;
+        this.redirectUri = redirectUri;
 
         for (AuthorizationDetails authDetails : clientScopesRequested) {
             ClientScopeModel clientScope = authDetails.getClientScope();
@@ -55,6 +57,9 @@ public class OAuthGrantBean {
         return client.getClientId();
     }
 
+    public String getRedirectUri() {
+        return redirectUri;
+    }
 
     public List<ClientScopeEntry> getClientScopesRequested() {
         return clientScopesRequested;
