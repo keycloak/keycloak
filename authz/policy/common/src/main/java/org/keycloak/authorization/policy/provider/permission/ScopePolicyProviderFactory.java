@@ -27,6 +27,7 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
 /**
@@ -66,6 +67,9 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
     public ScopePermissionRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
         representation.setResourceType(policy.getConfig().get("defaultResourceType"));
+        if (AdminPermissionsSchema.SCHEMA.isExtendChildren(policy)) {
+            representation.setExtendChildren(Boolean.TRUE);
+        }
         return representation;
     }
 
@@ -77,6 +81,12 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
     @Override
     public void onUpdate(Policy policy, ScopePermissionRepresentation representation, AuthorizationProvider authorization) {
         updateResourceType(policy, representation);
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        // the config of generic representations is copied as is, so the flag is removed as for typed representations
+        removeExtendChildrenIfNotTargetingSpecificGroups(policy);
     }
 
     @Override
@@ -93,6 +103,29 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
                 return resourceType != null ? representation.getResourceType() : null;
             });
 
+            Boolean extendChildren = representation.getExtendChildren();
+
+            // null means the flag is not being changed, so that clients unaware of it do not reset it on update
+            if (Boolean.TRUE.equals(extendChildren)) {
+                config.put(AdminPermissionsSchema.EXTEND_CHILDREN, Boolean.TRUE.toString());
+            } else if (Boolean.FALSE.equals(extendChildren)) {
+                config.remove(AdminPermissionsSchema.EXTEND_CHILDREN);
+            }
+
+            policy.setConfig(config);
+            removeExtendChildrenIfNotTargetingSpecificGroups(policy);
+        }
+    }
+
+    /**
+     * The flag only applies to specific groups. It is removed once the permission no longer targets them, so that a
+     * client unaware of it does not silently extend the permission again when targeting specific groups later. The
+     * resources of the permission must already be updated.
+     */
+    private void removeExtendChildrenIfNotTargetingSpecificGroups(Policy policy) {
+        if (policy.getConfig().containsKey(AdminPermissionsSchema.EXTEND_CHILDREN) && !AdminPermissionsSchema.SCHEMA.targetsSpecificGroups(policy)) {
+            Map<String, String> config = new HashMap<>(policy.getConfig());
+            config.remove(AdminPermissionsSchema.EXTEND_CHILDREN);
             policy.setConfig(config);
         }
     }

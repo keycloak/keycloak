@@ -13,6 +13,16 @@ This removes the need for a separate API call to discover the service account us
 The dedicated `GET /admin/realms/\{realm}/clients/\{id}/service-account-user` endpoint has been removed.
 See the upgrading guide for migration details.
 
+== Delegate the administration of a group hierarchy with fine-grained admin permissions
+// https://github.com/keycloak/keycloak/issues/43865
+
+Until now, a fine-grained admin permission for a group applied only to that group, so a delegated administrator could not manage the subgroups of a group without a full administrator granting a permission on each of them, including every newly created subgroup.
+
+A permission for specific groups can now be extended to all their subgroups, including subgroups created later, by enabling the new *Extend to children* option.
+A subgroup can still override an inherited permission with a permission of its own.
+
+For more details, see link:{adminguide_link}#_extending-group-permissions-to-subgroups[Extending group permissions to subgroups] in the {adminguide_name}.
+
 = Security and Standards
 
 == PAR discovery respects the feature flag

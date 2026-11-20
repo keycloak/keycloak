@@ -183,11 +183,50 @@ For example, given a hierarchy `Department > Team A > Subteam X`:
 * To also restore access to `Subteam X` members, you must add a separate allow for `view-members` on `Subteam X`.
 * Granting a direct `view` permission on a specific user in `Team A` does not restore access if the group deny is in effect.
 
+[[_extending-group-permissions-to-subgroups]]
+====== Extending group permissions to subgroups
+
+By default, a permission for specific groups applies only to the groups selected in the permission.
+To also apply it to all the subgroups of the selected groups, including subgroups created later, enable *Extend to children* on the permission.
+When using the Admin REST API, set the `extendChildren` property of the permission to `true`.
+This option is only available for permissions of the *Groups* resource type that apply to specific groups.
+
+This is useful for delegating the administration of a group hierarchy.
+For example, an administrator granted `view` and `manage` on `Department` with *Extend to children* enabled can create subgroups under `Department` and manage them without any further permission.
+
+The following rules decide which permission applies to a subgroup for a given scope:
+
+* If the subgroup has a permission of its own for the scope, only that permission is evaluated, regardless of the administrators it targets.
+* Otherwise, for the `view`, `manage`, and `manage-membership` scopes, the closest ancestor with an extended permission for the scope decides.
+* For the member scopes (`view-members`, `manage-members`, `impersonate-members`, `delegate-members`, and `manage-membership-of-members`), every ancestor with an extended permission for the scope is evaluated, so a deny from any of them takes precedence.
+Once a member scope is inherited from an extended ancestor, the permissions of the other ancestors for that scope are also evaluated, even without *Extend to children*.
+This is consistent with how member scopes protect the users of a group and of its subgroups when evaluating the users themselves.
+* A permission inherited from an ancestor only decides the scopes that are not decided by a more specific group, even if the permission has more scopes.
+* A permission inherited from an ancestor takes precedence over a permission for all groups, as a permission for a specific group does.
+* For the `view`, `manage`, and `manage-membership` scopes, a permission without *Extend to children* only applies to its own groups and does not stop the inheritance.
+As a result, an administrator can be granted access to a subgroup while being denied access to its parent group.
+
+For example, given a hierarchy `Department > Team A > Subteam X`:
+
+* Granting `view` on `Department` with *Extend to children* enabled grants `view` on `Department`, `Team A`, and `Subteam X`.
+* Adding a permission that denies `view` on `Team A`, without *Extend to children*, denies `view` on `Team A` only.
+`Subteam X` still inherits from `Department`.
+* Adding the same deny on `Team A` with *Extend to children* enabled also denies `view` on `Subteam X`.
+* Granting `view-members` on `Department` with *Extend to children* enabled and denying `view-members` on `Team A`, without *Extend to children*, denies `view-members` on `Team A` and `Subteam X`.
+The members of `Subteam X` are neither viewable nor included in user search results.
+
+When *Extend to children* is enabled on a permission with the `view-members` scope, members of the subgroups are also included in user search and count results.
+
+NOTE: A permission without any policy, which can only be created with the Admin REST API, is ignored when searching groups and users.
+It is still a permission of its own for its groups in direct checks, so it denies its scopes on these groups instead of the inherited permissions.
+For member scopes, the members of these groups might then be included in user search results while being denied when accessed directly.
+To avoid this, associate at least one policy with every permission.
+
 ====== Search visibility for group member permissions
 
 When `view-members` is granted on a parent group, members of child groups are accessible via direct user lookup (for example, `GET /admin/realms/{realm}/users/{userId}`) but may not appear in user search or count results. The search mechanism uses a partial evaluation that matches users against the specific groups referenced in the permission, not against their descendants.
 
-To ensure that members of child groups appear in search and count results, grant `view-members` on each child group explicitly.
+To ensure that members of child groups appear in search and count results, grant `view-members` on each child group explicitly, or enable *Extend to children* on the permission.
 
 When a delegated administrator has `view` permission on a group but not on its ancestor groups, the Admin REST API returns the full group hierarchy so the administrator can understand where the group belongs. Ancestor groups without `view` permission are returned as stripped representations containing only `id`, `name`, `path`, `parentId`, and `description`. Sensitive fields such as `attributes`, `realmRoles`, `clientRoles`, and `access` are omitted from these ancestors.
 
