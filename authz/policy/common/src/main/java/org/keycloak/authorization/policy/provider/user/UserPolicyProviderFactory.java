@@ -19,11 +19,11 @@
 package org.keycloak.authorization.policy.provider.user;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +37,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -47,8 +48,9 @@ import org.keycloak.util.JsonSerialization;
 public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPolicyRepresentation> {
 
     public static final String ID = "user";
+    private static final String UNRESOLVED_USERS = "unresolvedUsers";
 
-    private UserPolicyProvider provider = new UserPolicyProvider(this::toRepresentation);
+    private UserPolicyProvider provider = new UserPolicyProvider();
 
     @Override
     public String getName() {
@@ -74,19 +76,10 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
     public UserPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         UserPolicyRepresentation representation = new UserPolicyRepresentation();
 
-        try {
-            String users = policy.getConfig().get("users");
-
-            if (users == null) {
-                representation.setUsers(Collections.emptySet());
-            } else {
-                representation.setUsers((Set<String>) JsonSerialization.readValue(users, Set.class).stream()
-                        .filter(id -> getUser((String) id, authorization) != null)
-                        .collect(Collectors.toSet()));
-            }
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to deserialize roles", cause);
-        }
+        Set<String> users = getUsers(policy);
+        representation.setUsers(Logic.NEGATIVE.equals(policy.getLogic()) ? users : users.stream()
+                .filter(id -> getUserById(id, authorization) != null)
+                .collect(Collectors.toSet()));
 
         return representation;
     }
@@ -98,38 +91,50 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
 
     @Override
     public void onCreate(Policy policy, UserPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateUsers(policy, authorization, representation.getUsers());
+        updateUsers(policy, authorization, representation.getUsers(), Set.of(), Set.of());
     }
 
     @Override
     public void onUpdate(Policy policy, UserPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateUsers(policy, authorization, representation.getUsers());
+        updateUsers(policy, authorization, representation.getUsers(), getUsers(policy), Set.of());
     }
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        try {
-            updateUsers(policy, authorization, JsonSerialization.readValue(representation.getConfig().get("users"), Set.class));
-        } catch (IOException cause) {
-            throw new RuntimeException("Failed to deserialize users during import", cause);
+        onImport(policy, representation, authorization, Map.of());
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization, Map<String, String> previousConfig) {
+        Map<String, String> config = representation.getConfig();
+        String users = config.get("users");
+        if (users == null) {
+            throw new RuntimeException("No users provided.");
         }
+        updateUsers(policy, authorization, readUsers(users), readUsers(previousConfig.get("users")),
+                readUsers(config.get(UNRESOLVED_USERS)));
+        policy.removeConfig(UNRESOLVED_USERS);
     }
 
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
-        UserPolicyRepresentation userRep = toRepresentation(policy, authorizationProvider);
         Map<String, String> config = new HashMap<>();
+        Set<String> resolved = new HashSet<>();
+        Set<String> unresolved = new HashSet<>();
+        for (String id : getUsers(policy)) {
+            UserModel user = getUserById(id, authorizationProvider);
+            if (user == null) {
+                unresolved.add(id);
+            } else {
+                resolved.add(user.getUsername());
+            }
+        }
 
         try {
-            UserProvider userProvider = authorizationProvider.getKeycloakSession().users();
-            RealmModel realm = authorizationProvider.getRealm();
-
-            config.put("users", JsonSerialization.writeValueAsString(userRep.getUsers().stream()
-                    .map(id -> {
-                        UserModel user = userProvider.getUserById(realm, id);
-                        return user != null ? user.getUsername() : null;
-                    })
-                    .filter(Objects::nonNull).collect(Collectors.toList())));
+            config.put("users", JsonSerialization.writeValueAsString(resolved));
+            if (!unresolved.isEmpty()) {
+                config.put(UNRESOLVED_USERS, JsonSerialization.writeValueAsString(unresolved));
+            }
         } catch (IOException cause) {
             throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);
         }
@@ -137,11 +142,16 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         representation.setConfig(config);
     }
 
-    private void updateUsers(Policy policy, AuthorizationProvider authorization, Set<String> users) {
-        Set<String> updatedUsers = new HashSet<>();
+    private void updateUsers(Policy policy, AuthorizationProvider authorization, Set<String> users,
+            Set<String> existingUsers, Set<String> unresolvedUsers) {
+        Set<String> updatedUsers = new HashSet<>(unresolvedUsers);
 
         if (users != null) {
             for (String userId : users) {
+                if (existingUsers.contains(userId)) {
+                    updatedUsers.add(userId);
+                    continue;
+                }
                 UserModel user = getUser(userId, authorization);
 
                 if (user == null) {
@@ -158,6 +168,25 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         } catch (IOException cause) {
             throw new RuntimeException("Failed to serialize users", cause);
         }
+    }
+
+    static Set<String> getUsers(Policy policy) {
+        return readUsers(policy.getConfig().get("users"));
+    }
+
+    private static Set<String> readUsers(String users) {
+        if (users == null) {
+            return Collections.emptySet();
+        }
+        try {
+            return Set.copyOf(Arrays.asList(JsonSerialization.readValue(users, String[].class)));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to deserialize users", cause);
+        }
+    }
+
+    static UserModel getUserById(String userId, AuthorizationProvider authorization) {
+        return authorization.getKeycloakSession().users().getUserById(authorization.getRealm(), userId);
     }
 
     private static UserModel getUser(String userId, AuthorizationProvider authorization) {

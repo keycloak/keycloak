@@ -43,7 +43,6 @@ import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -188,7 +187,7 @@ public class ClientScopePolicyTest extends AbstractAuthzTest {
     }
 
     @Test
-    public void testRemovePolicyWhenRemovingScope() {
+    public void testKeepPolicyWhenRemovingLastScope() {
         createClientScopePolicy("Client Scope To Remove Policy", "to-remove-a", "to-remove-b");
         ClientScopesResource clientScopes = getRealm().clientScopes();
         ClientScopeRepresentation scopeRep = clientScopes.findAll().stream().filter(r -> r.getName().equals("to-remove-a"))
@@ -207,7 +206,7 @@ public class ClientScopePolicyTest extends AbstractAuthzTest {
         getClient().removeDefaultClientScope(scopeRep.getId());
         getRealm().clientScopes().get(scopeRep.getId()).remove();
 
-        assertNull(getClient().authorization().policies().clientScope().findByName("Client Scope To Remove Policy"));
+        assertNotNull(getClient().authorization().policies().clientScope().findByName("Client Scope To Remove Policy"));
     }
 
     private AuthzClient getAuthzClient() {

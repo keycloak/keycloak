@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
+import { MissingPolicyReference } from "../../../components/MissingPolicyReference";
 import { DefaultSwitchControl } from "../../../components/SwitchControl";
 import {
   AddRoleButton,
@@ -33,21 +34,21 @@ export const Role = () => {
   useFetch(
     async () => {
       if (values && values.length > 0) {
-        const roles = await Promise.all(
-          values.map((r) => adminClient.roles.findOneById({ id: r.id })),
-        );
         return Promise.all(
-          roles
-            // A role deleted since it was selected comes back as null.
-            .filter((role) => role !== null)
-            .map(async (role) => ({
+          values.map(async ({ id }) => {
+            const role = await adminClient.roles.findOneById({ id });
+            if (!role) {
+              return { role: { id } };
+            }
+            return {
               role,
               client: role.clientRole
                 ? ((await adminClient.clients.findOne({
                     id: role.containerId!,
                   })) ?? undefined)
                 : undefined,
-            })),
+            };
+          }),
         );
       }
       return Promise.resolve([]);
@@ -114,7 +115,14 @@ export const Role = () => {
               {selectedRoles.map((row, index) => (
                 <Tr key={row.role.id}>
                   <Td>
-                    <ServiceRole role={row.role} client={row.client} />
+                    {row.role.name === undefined ? (
+                      <MissingPolicyReference
+                        id={row.role.id}
+                        label={t("missingRole")}
+                      />
+                    ) : (
+                      <ServiceRole role={row.role} client={row.client} />
+                    )}
                   </Td>
                   <Td>
                     <Controller
