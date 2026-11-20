@@ -30,6 +30,8 @@ import org.keycloak.scim.resource.user.User;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.KeycloakSessionUtil;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 public final class UserCoreModelSchema extends AbstractUserModelSchema {
 
     private final List<MembershipChange> membershipChanges = new ArrayList<>();
@@ -171,12 +173,15 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     List<GroupModel> remove = new ArrayList<>();
 
                     for (GroupUtils.GroupMembership membership : GroupUtils.getAllMemberships(session, model.getGroupsStream().toList())) {
-                        if (values.stream().noneMatch(m -> m.getValue().equals(membership.group().getId()))) {
+                        if (values.stream().noneMatch(m -> membership.group().getId().equals(m.getValue()))) {
                             remove.add(membership.group());
                         }
                     }
 
                     for (GroupMembership membership : values) {
+                        if (isBlank(membership.getValue())) {
+                            throw new ModelValidationException("Group value is required");
+                        }
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
                         if (group == null || !canViewGroup(group)) {
@@ -216,6 +221,9 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     checkUserMembershipPermission(session.getContext().getPermissions(), model);
 
                     for (GroupMembership membership : values) {
+                        if (isBlank(membership.getValue())) {
+                            throw new ModelValidationException("Group value is required");
+                        }
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
                         if (group == null || !canViewGroup(group)) {
@@ -235,6 +243,9 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     checkUserMembershipPermission(session.getContext().getPermissions(), model);
 
                     for (GroupMembership membership : values) {
+                        if (isBlank(membership.getValue())) {
+                            throw new ModelValidationException("Group value is required");
+                        }
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
 
                         if (group == null || !canViewGroup(group)) {

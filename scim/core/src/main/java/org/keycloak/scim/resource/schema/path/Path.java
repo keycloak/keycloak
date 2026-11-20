@@ -49,6 +49,10 @@ public final class Path {
         return path;
     }
 
+    public boolean hasFilter() {
+        return filter != null;
+    }
+
     public JsonNode getValue(Attribute<?, ?> attribute) {
         if (filter == null) {
             return NullNode.getInstance();
