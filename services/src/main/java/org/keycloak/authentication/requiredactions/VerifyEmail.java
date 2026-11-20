@@ -36,6 +36,8 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.util.Time;
+import org.keycloak.cookie.CookieProvider;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -47,9 +49,12 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.policy.MaxAuthAgePasswordPolicyProviderFactory;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.RestartLoginCookie;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
@@ -71,6 +76,35 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
     // Auth note to set that verifyEmail is triggered during registration
     private static final String VERIFY_EMAIL_DURING_REGISTRATION = "VERIFY_EMAIL_DURING_REGISTRATION";
+    // Client note in the restart cookie set while a newly registered user waits for email verification
+    private static final String REGISTRATION_RESTART_NOTE = "verify_email_registration_restart";
+    public static final String CONTINUE_AS_REGISTERED_USER = "continue-as-registered-user";
+
+    /**
+     * For an authentication session just restarted from the restart cookie, returns the newly registered user when the
+     * restart is for a registration that was waiting for email verification, and the user has verified their email since
+     * (typically in another browser, which removes the authentication session). Otherwise returns null.
+     * Clears the marker from the authentication session, so it applies to this restart only.
+     */
+    public static UserModel getUserVerifiedAfterRegistrationRestart(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
+        String restartNote = authSession.getClientNote(REGISTRATION_RESTART_NOTE);
+        authSession.removeClientNote(REGISTRATION_RESTART_NOTE);
+        String username = authSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        if (!"true".equals(restartNote) || username == null) {
+            return null;
+        }
+        UserModel user = session.users().getUserByUsername(realm, username);
+        return user != null && user.isEnabled() && user.isEmailVerified() ? user : null;
+    }
+
+    /**
+     * Whether the login restarted after the registered user verified their email in another browser should continue with
+     * that user already chosen, see {@link #CONTINUE_AS_REGISTERED_USER}.
+     */
+    public static boolean isContinueAsRegisteredUser(RealmModel realm) {
+        RequiredActionConfigModel config = realm.getRequiredActionConfigByAlias(UserModel.RequiredAction.VERIFY_EMAIL.name());
+        return config != null && Boolean.parseBoolean(config.getConfigValue(CONTINUE_AS_REGISTERED_USER));
+    }
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -133,6 +167,15 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         loginFormsProvider.setAuthenticationSession(context.getAuthenticationSession());
         Response challenge;
         authSession.setClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW, null);
+        if ("true".equals(authSession.getAuthNote(NEW_USER_REGISTERED))) {
+            // When the email is verified in another browser, this authentication session is removed (see VerifyEmailActionTokenHandler).
+            // Make the restart go to the login page, with the registered username as login_hint (client note set during registration).
+            RestartLoginCookie restart = new RestartLoginCookie(authSession);
+            restart.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
+            restart.getNotes().put(REGISTRATION_RESTART_NOTE, "true");
+            context.getSession().getProvider(CookieProvider.class)
+                    .set(CookieType.AUTH_RESTART, RestartLoginCookie.encodeAndEncrypt(context.getSession(), restart));
+        }
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
@@ -217,7 +260,16 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         maxAge.setType(ProviderConfigProperty.STRING_TYPE);
         maxAge.setDefaultValue(MaxAuthAgePasswordPolicyProviderFactory.DEFAULT_MAX_AUTH_AGE);
 
-        return List.of(maxAge, EmailCooldownManager.createCooldownConfigProperty());
+        ProviderConfigProperty continueAsRegisteredUser = new ProviderConfigProperty();
+        continueAsRegisteredUser.setName(CONTINUE_AS_REGISTERED_USER);
+        continueAsRegisteredUser.setLabel("Continue as registered user");
+        continueAsRegisteredUser.setHelpText("When a user registers, then verifies their email in another browser, the login in the browser used " +
+                "for the registration restarts with the registered user already chosen, so the user isn't asked for their username again. " +
+                "The user still has to authenticate as the browser flow requires, for example with their password.");
+        continueAsRegisteredUser.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        continueAsRegisteredUser.setDefaultValue(false);
+
+        return List.of(maxAge, EmailCooldownManager.createCooldownConfigProperty(), continueAsRegisteredUser);
     }
 
 
