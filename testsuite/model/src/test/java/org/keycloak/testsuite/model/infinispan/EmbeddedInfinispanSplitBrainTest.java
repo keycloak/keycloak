@@ -142,6 +142,8 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
          await("Cluster did not form with exactly the test nodes")
                .atMost(Duration.ofSeconds(10))
                .until(() -> cacheManager.getMembers().size() == numFactories);
+         // Neither node may split before both have confirmed the precondition.
+         awaitBarrier(barrier);
 
          if (index == 0) {
             partitionManager.splitCluster(new int[]{0}, new int[]{1});

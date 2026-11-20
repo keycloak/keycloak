@@ -21,6 +21,7 @@ package org.keycloak.models.sessions.infinispan;
 import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +60,7 @@ import org.infinispan.notifications.cachemanagerlistener.annotation.Merged;
 import org.infinispan.notifications.cachemanagerlistener.annotation.ViewChanged;
 import org.infinispan.notifications.cachemanagerlistener.event.ViewChangedEvent;
 import org.infinispan.partitionhandling.AvailabilityMode;
+import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
@@ -276,7 +278,8 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
      * can be discarded when the partitions are reconciled, so the reload is deferred to a topology change that
      * leaves the cache settled.
      */
-    private void reloadIfPendingAndSettled() {
+    private synchronized void reloadIfPendingAndSettled() {
+        // Synchronized like the scan, so a task queued behind a running scan checks the topology again once it runs.
         if (closed) {
             return;
         }
@@ -296,8 +299,16 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
     private boolean isTopologySettled() {
         var cache = singleUseObjectCache.getAdvancedCache();
         DistributionManager dm = cache.getDistributionManager();
+        if (dm == null) {
+            return cache.getAvailability() == AvailabilityMode.AVAILABLE;
+        }
+        // During a merge, Infinispan can publish an intermediate topology without a rebalance that still lacks the
+        // members of the other partition. Requiring the topology to match the cluster view excludes it.
+        List<Address> viewMembers = cache.getCacheManager().getMembers();
+        boolean membersRecovered = viewMembers == null
+                || new HashSet<>(dm.getCacheTopology().getMembers()).equals(new HashSet<>(viewMembers));
         return cache.getAvailability() == AvailabilityMode.AVAILABLE
-                && (dm == null || (dm.isJoinComplete() && !dm.isRehashInProgress()));
+                && dm.isJoinComplete() && !dm.isRehashInProgress() && membersRecovered;
     }
 
     private synchronized void reloadRevokedTokens() {
