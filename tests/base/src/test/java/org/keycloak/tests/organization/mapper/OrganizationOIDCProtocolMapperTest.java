@@ -34,6 +34,7 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.utils.Organizations;
@@ -54,6 +55,7 @@ import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -78,6 +80,7 @@ import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -174,6 +177,37 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         String orgbName = orgb.toRepresentation().getName();
         assertThat(claim.contains(orgaName), is(true));
         assertThat(claim.contains(orgbName), is(true));
+    }
+
+    @Test
+    public void testOfflineRefreshKeepsOrganization() {
+        OrganizationRepresentation org = createOrganization("orga", true);
+        MemberRepresentation member = addMember(realm.admin().organizations().get(org.getId()), "member@orga.org");
+
+        RoleRepresentation offlineAccess = realm.admin().roles().get(Constants.OFFLINE_ACCESS_ROLE).toRepresentation();
+        realm.admin().users().get(member.getId()).roles().realmLevel().add(List.of(offlineAccess));
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS + " organization:" + org.getAlias());
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("member@orga.org", memberPassword);
+        Assertions.assertTrue(response.isSuccess());
+
+        RefreshToken offlineToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(offlineToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
+        assertThat(offlineToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), is(org.getAlias()));
+
+        // The rotated token is issued from the offline client session, so the organization has to be carried over
+        // through the inherited grant type and the organization claim of the incoming refresh token.
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        Assertions.assertTrue(refreshResponse.isSuccess());
+
+        RefreshToken rotatedToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
+        assertThat(rotatedToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
+        assertThat(rotatedToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), is(org.getAlias()));
+
+        AccessToken accessToken = oauth.verifyToken(refreshResponse.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        assertThat(String.valueOf(accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION)), containsString(org.getAlias()));
     }
 
     @Test

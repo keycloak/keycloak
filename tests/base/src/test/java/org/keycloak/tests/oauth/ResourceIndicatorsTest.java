@@ -3,6 +3,7 @@ package org.keycloak.tests.oauth;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -33,6 +34,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -157,6 +159,32 @@ public class ResourceIndicatorsTest {
     }
 
     @Test
+    public void testOfflineRefreshWithNoResource() {
+        AccessTokenResponse tokenResponse = createOfflineToken();
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).send();
+        assertValidResponse(refreshResponse, "theservice");
+        Assertions.assertEquals("urn:client:theservice", resourceOf(refreshResponse));
+    }
+
+    @Test
+    public void testOfflineRefreshWithMatchingResource() {
+        AccessTokenResponse tokenResponse = createOfflineToken();
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource("urn:client:theservice").send();
+        assertValidResponse(refreshResponse, "theservice");
+        Assertions.assertEquals("urn:client:theservice", resourceOf(refreshResponse));
+    }
+
+    @Test
+    public void testOfflineRefreshWithDifferentResource() {
+        AccessTokenResponse tokenResponse = createOfflineToken();
+
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource("urn:client:otherservice").send();
+        assertErrorResponse(refreshResponse, INVALID_TARGET, ERROR_NOT_MATCHING);
+    }
+
+    @Test
     public void testNullAudienceReturnsInvalidTarget() {
         AccessTokenResponse tokenResponse = bareOauth.passwordGrantRequest("user-without-roles", "pass")
                 .resource("urn:client:theservice").send();
@@ -272,6 +300,7 @@ public class ResourceIndicatorsTest {
             realm.clients(ClientBuilder.create("https://custom-api").secret("introspection-secret"));
 
             realm.users(UserBuilder.create("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
+                    .realmRoles("user", "offline_access")
                     .clientRoles("theservice", "myrole")
                     .clientRoles("otherservice", "myrole")
                     .clientRoles("serviceWithoutResource", "myrole"));
@@ -322,6 +351,23 @@ public class ResourceIndicatorsTest {
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.RESOURCE_INDICATORS);
         }
+    }
+
+    private AccessTokenResponse createOfflineToken() {
+        oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        try {
+            AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("urn:client:theservice").send();
+            Assertions.assertTrue(tokenResponse.isSuccess());
+            // the resource indicator handling has to run on the offline branch of the refresh below
+            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getType());
+            return tokenResponse;
+        } finally {
+            oauth.scope(null);
+        }
+    }
+
+    private Object resourceOf(AccessTokenResponse response) {
+        return oauth.parseRefreshToken(response.getRefreshToken()).getOtherClaims().get(OAuth2Constants.RESOURCE);
     }
 
     private void assertValidResponse(AccessTokenResponse response, String... expectedAudience) {
