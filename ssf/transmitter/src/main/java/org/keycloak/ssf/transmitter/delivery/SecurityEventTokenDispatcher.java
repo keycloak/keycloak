@@ -293,7 +293,7 @@ public class SecurityEventTokenDispatcher {
     /**
      * Holds an event for a paused stream by signing it and writing it to
      * the outbox in
-     * {@link org.keycloak.models.jpa.entities.OutboxEntryStatus#HELD HELD}
+     * {@link org.keycloak.events.outbox.OutboxEntryStatus#HELD HELD}
      * status. The drainer / POLL endpoint skip HELD rows; they're
      * released to {@code PENDING} when the stream is resumed
      * ({@link org.keycloak.events.outbox.OutboxStore#releaseHeldForOwner releaseHeldForOwner}).

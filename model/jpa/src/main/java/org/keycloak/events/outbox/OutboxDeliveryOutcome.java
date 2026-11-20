@@ -25,6 +25,13 @@ package org.keycloak.events.outbox;
  *   <li>{@link #RETRY} → attempts++, {@code next_attempt_at} pushed forward
  *       per the kind's backoff curve. Promoted to {@link #DEAD_LETTER} once
  *       attempts are exhausted.</li>
+ *   <li>{@link #DEFER} → {@code next_attempt_at} set to the handler-supplied
+ *       instant, attempts left untouched. For conditions that are not a
+ *       failed delivery attempt: the destination is temporarily paused,
+ *       asked for a back-off (HTTP 429 / 503 with Retry-After), or a
+ *       dependency the handler needs is not available yet. Deferred rows
+ *       stay in PENDING and are still subject to the kind's
+ *       {@code pendingMaxAge} backstop, which bounds an endless defer loop.</li>
  *   <li>{@link #DEAD_LETTER} → terminal failure regardless of remaining
  *       attempt budget (e.g. permanent destination error). Status set to
  *       {@code DEAD_LETTER} immediately.</li>
@@ -38,6 +45,7 @@ package org.keycloak.events.outbox;
 public enum OutboxDeliveryOutcome {
     DELIVERED,
     RETRY,
+    DEFER,
     DEAD_LETTER,
     ORPHANED
 }
