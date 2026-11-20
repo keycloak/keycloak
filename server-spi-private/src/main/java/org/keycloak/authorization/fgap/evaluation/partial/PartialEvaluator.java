@@ -55,6 +55,9 @@ public final class PartialEvaluator {
     private static final String ID_FIELD = "id";
     private static final String PARTIAL_EVALUATION_CONTEXT_CACHE = "kc.authz.fgap.partial.evaluation.cache";
 
+    // the type of the group policies, which skip their evaluation when the admin is not a member of their groups
+    private static final String GROUP_POLICY_TYPE = "group";
+
     private final ExtendChildrenPartialEvaluator extendChildrenEvaluator = new ExtendChildrenPartialEvaluator();
 
     /**
@@ -119,7 +122,7 @@ public final class PartialEvaluator {
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
                 for (Policy policy : policies) {
-                    Boolean granted = evaluatePolicy(session, authorization, policyProviders, policy, adminUser);
+                    Boolean granted = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, false);
 
                     if (granted == null) {
                         continue;
@@ -187,7 +190,7 @@ public final class PartialEvaluator {
         Boolean granted = null;
 
         for (Policy policy : permission.getAssociatedPolicies()) {
-            Boolean outcome = evaluatePolicy(session, authorization, policyProviders, policy, adminUser);
+            Boolean outcome = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, true);
 
             if (Boolean.FALSE.equals(outcome)) {
                 return false;
@@ -202,10 +205,13 @@ public final class PartialEvaluator {
     }
 
     /**
+     * @param resolveSkippedGroupPolicy {@code true} to resolve a group policy skipped because the {@code adminUser} is not a
+     *                                  member of its groups as it is during direct evaluation, where the policy does not match
+     *                                  the admin and its logic applies
      * @return {@code true} if the {@code policy} grants access to the {@code adminUser}, {@code false} if it denies access,
      * or {@code null} if it can not be partially evaluated or should be skipped
      */
-    private Boolean evaluatePolicy(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy policy, UserModel adminUser) {
+    private Boolean evaluatePolicy(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy policy, UserModel adminUser, boolean resolveSkippedGroupPolicy) {
         PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
 
         if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
@@ -221,7 +227,10 @@ public final class PartialEvaluator {
         Outcome granted = provider.evaluateOutcome(session, policy, adminUser);
 
         if (Outcome.SKIP.equals(granted)) {
-            return null;
+            if (!resolveSkippedGroupPolicy || !GROUP_POLICY_TYPE.equals(policy.getType())) {
+                return null;
+            }
+            granted = Outcome.DENY;
         }
 
         if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {

@@ -497,13 +497,26 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
     public void testInheritedMemberScopeWithNegativeGroupPolicyForAnotherGroupOnAncestor() {
         GroupRepresentation others = createGroup("others");
         GroupPolicyRepresentation denyOthers = createGroupPolicy(realm, adminPermissionsClient, "Deny Others", Logic.NEGATIVE, others.getId());
-        // the permission on the ancestor can not be decided by partial evaluation, so it does not block the extended grant
+        // the admin is not in the other group, so the permission on the ancestor grants and does not block the extended grant
         createGroupPermission(department, Set.of(VIEW_MEMBERS), false, denyOthers);
         createGroupPermission(team, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
         UserRepresentation member = createMember("subteam-member", subteam);
 
         assertCanView(member);
         assertThat(searchUserIds(member), contains(member.getId()));
+    }
+
+    @Test
+    public void testUserDeniedByNonExtendedMemberScopeWithGroupPolicyForAnotherGroupOnIntermediateGroup() {
+        GroupRepresentation others = createGroup("others");
+        GroupPolicyRepresentation onlyOthers = createGroupPolicy(realm, adminPermissionsClient, "Only Others", Logic.POSITIVE, others.getId());
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
+        // the admin is not in the other group, so the permission on the intermediate group denies
+        createGroupPermission(team, Set.of(VIEW_MEMBERS), false, onlyOthers);
+        UserRepresentation member = createMember("subteam-member", subteam);
+
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
     }
 
     @Test
