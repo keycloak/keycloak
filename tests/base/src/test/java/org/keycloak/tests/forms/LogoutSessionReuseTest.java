@@ -437,6 +437,38 @@ public class LogoutSessionReuseTest {
     }
 
     /**
+     * The backchannel logout creates its logout root and removes it again in the same transaction. A provider that only
+     * persists new roots when the transaction commits (JPA) must drop the transient root instead of persisting an empty
+     * one, so the root must not exist once the transaction is committed. The test is part of the
+     * {@code StatelessTestSuite}, which runs with the JPA provider.
+     */
+    @Test
+    void backchannelLogoutDoesNotPersistTransientLogoutRoot() {
+        login();
+        final String realmName = realm.getName();
+        final String userSessionId = user.admin().getUserSessions().get(0).getId();
+
+        String logoutRootId = runOnServer.fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName(realmName);
+            UserSessionModel userSession = session.sessions().getUserSession(realmModel, userSessionId);
+            AuthenticationManager.backchannelLogout(session, realmModel, userSession, session.getContext().getUri(),
+                    session.getContext().getConnection(), session.getContext().getRequestHeaders(), true);
+            AuthenticationSessionModel logoutSession = session.getContext().getAuthenticationSession();
+            Assertions.assertNotNull(logoutSession, "The backchannel logout must have used a logout session");
+            return logoutSession.getParentSession().getId();
+        }, String.class);
+
+        try {
+            Assertions.assertTrue(user.admin().getUserSessions().isEmpty(), "The user session must be logged out");
+            Assertions.assertFalse(rootAuthenticationSessionExists(logoutRootId),
+                    "The logout root must not be persisted once the backchannel logout removed it");
+        } finally {
+            removeRootAuthenticationSession(logoutRootId);
+            user.admin().logout();
+        }
+    }
+
+    /**
      * A root authentication session at the limit of allowed authentication sessions holds an unfinished login tab (the
      * oldest tab in the root) and the logout tab of user session A. A logout of user session B from the same browser
      * replaces the logout tab of A. The replacement must not evict the unfinished login tab.

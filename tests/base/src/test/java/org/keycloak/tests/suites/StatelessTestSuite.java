@@ -10,6 +10,7 @@ import org.keycloak.tests.admin.concurrency.ConcurrentLoginTest;
 import org.keycloak.tests.cli.admin.KcAdmSessionTest;
 import org.keycloak.tests.db.AsyncCommitHqlTest;
 import org.keycloak.tests.db.JdbcPingReconnectCacheClearTest;
+import org.keycloak.tests.forms.LogoutSessionReuseTest;
 import org.keycloak.tests.forms.RecoveryAuthnCodesAuthenticatorTest;
 import org.keycloak.tests.loginfailures.LoginFailureExpirationTest;
 import org.keycloak.tests.model.AuthenticationSessionExpirationTest;
@@ -46,7 +47,8 @@ import org.junit.platform.suite.api.Suite;
         AuthenticationSessionProviderTest.class,
         SingleUseProviderTest.class,
         JdbcPingReconnectCacheClearTest.class,
-        LightWeightAccessTokenTest.class
+        LightWeightAccessTokenTest.class,
+        LogoutSessionReuseTest.class
 })
 public class StatelessTestSuite {
 
