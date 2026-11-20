@@ -34,6 +34,8 @@ import org.jboss.logging.Logger;
  * In the affected Agroal versions, a failed background validation of an idle connection makes the pool discard every connection
  * on borrow and create new ones without bound, as long as connections are validated on borrow.
  * Keycloak doesn't enable validation on borrow by default, therefore only custom Quarkus settings can trigger this.
+ * <p>
+ * TODO: Remove this class, its call and its test once Agroal is updated to 3.3 or later, see https://github.com/keycloak/keycloak/issues/55410
  */
 public final class AgroalStalePoolWarning {
 
