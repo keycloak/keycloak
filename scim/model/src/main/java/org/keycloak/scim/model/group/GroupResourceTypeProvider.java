@@ -167,11 +167,16 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
         Group group = super.createResourceTypeInstance(model, attributes, excludedAttributes);
 
+        if (!GroupOwnership.isEnabled(session.getContext().getRealm())
+                || !returnsMembers(attributes, excludedAttributes)) {
+            return group;
+        }
+
         boolean owned = ownedOnPage != null
                 ? ownedOnPage.contains(model.getId())
                 : new GroupOwnership(session, schema).ownerOf(model) != null;
 
-        if (GroupOwnership.isEnabled(session.getContext().getRealm()) && returnsMembers(attributes, excludedAttributes) && owned) {
+        if (owned) {
             // An owner that sends full member lists may build the next list from a read, so a read of an owned group
             // shows every member without being asked, unless the request leaves them out.
             List<Member> members = schema.readMembers(model);
