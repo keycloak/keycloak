@@ -360,11 +360,17 @@ public class AuthenticationManager {
                     checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
         } finally {
             // The logout session may have joined a root that the browser shares with other tabs (for example an
-            // unfinished login), so only remove the logout tab from such a root (which also removes the root if empty)
+            // unfinished login), so only remove the logout tab from such a root. A root that only holds the logout tab
+            // is removed through the provider, which also drops a root that has not been persisted yet.
             RootAuthenticationSessionModel logoutRoot = logoutAuthSession.getParentSession();
             String logoutTabId = logoutAuthSession.getTabId();
-            logger.tracef("Removing logout session tab '%s' from '%s' after backchannel logout", logoutTabId, logoutRoot.getId());
-            logoutRoot.removeAuthenticationSessionByTabId(logoutTabId);
+            if (logoutRoot.getAuthenticationSessions().size() > 1) {
+                logger.tracef("Removing logout session tab '%s' from '%s' after backchannel logout", logoutTabId, logoutRoot.getId());
+                logoutRoot.removeAuthenticationSessionByTabId(logoutTabId);
+            } else {
+                logger.tracef("Removing logout session '%s' after backchannel logout", logoutRoot.getId());
+                session.authenticationSessions().removeRootAuthenticationSession(realm, logoutRoot);
+            }
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);

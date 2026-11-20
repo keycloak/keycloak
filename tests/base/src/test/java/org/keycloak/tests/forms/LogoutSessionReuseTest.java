@@ -132,7 +132,11 @@ public class LogoutSessionReuseTest {
     public static class ServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.spiOption("authentication-sessions", "infinispan", "auth-sessions-limit", String.valueOf(AUTH_SESSIONS_LIMIT));
+            // The provider in use depends on the configured session storage, so set the limit for all of them
+            String limit = String.valueOf(AUTH_SESSIONS_LIMIT);
+            return config.spiOption("authentication-sessions", "infinispan", "auth-sessions-limit", limit)
+                    .spiOption("authentication-sessions", "jpa", "auth-sessions-limit", limit)
+                    .spiOption("authentication-sessions", "remote", "auth-sessions-limit", limit);
         }
     }
 
