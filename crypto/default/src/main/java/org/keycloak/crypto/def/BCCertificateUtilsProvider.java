@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -133,15 +134,10 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
 
             // Content Signer
             ContentSigner sigGen;
-            switch (caCert.getPublicKey().getAlgorithm())
-            {
-                case "EC":
-                    sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER)
-                                                                               .build(caPrivateKey);
-                    break;
-                default:
-                    sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER)
-                                                                                       .build(caPrivateKey);
+            if (caCert.getPublicKey().getAlgorithm().equals("EC")) {
+                sigGen = new JcaContentSignerBuilder("SHA256WithECDSA").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
+            } else {
+                sigGen = new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
             }
 
             // Certificate
@@ -195,27 +191,29 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
     private ContentSigner createSigner(PrivateKey privateKey) {
         try {
             JcaContentSignerBuilder signerBuilder;
-            switch (privateKey.getAlgorithm()) {
-                case "RSA": {
+            String keyAlgorithm = privateKey.getAlgorithm();
+            switch (keyAlgorithm) {
+                case "RSA":
                     signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
-                }
                 case "EC":
-                case "ECDSA": {
+                case "ECDSA":
                     signerBuilder = new JcaContentSignerBuilder("SHA256WithECDSA")
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
-                }
                 case JavaAlgorithm.Ed25519:
-                case JavaAlgorithm.Ed448: {
-                    signerBuilder = new JcaContentSignerBuilder(privateKey.getAlgorithm())
+                case JavaAlgorithm.Ed448:
+                    signerBuilder = new JcaContentSignerBuilder(keyAlgorithm)
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
-                }
-                default: {
-                    throw new RuntimeException(String.format("Keytype %s is not supported.", privateKey.getAlgorithm()));
-                }
+                case Algorithm.ML_DSA_44:
+                case Algorithm.ML_DSA_65:
+                case Algorithm.ML_DSA_87:
+                    signerBuilder = new JcaContentSignerBuilder(keyAlgorithm);
+                    break;
+                default:
+                    throw new RuntimeException(String.format("Keytype %s is not supported.", keyAlgorithm));
             }
             return signerBuilder.build(privateKey);
         } catch (Exception e) {

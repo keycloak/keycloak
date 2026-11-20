@@ -88,7 +88,7 @@ public class CryptoKeyStore {
 
     public KeystoreInfo generateKeystore(File folder, KeystoreUtil.KeystoreFormat keystoreType, String alias,
             String keystorePassword, String keyPassword, SecretKey secretKey) throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(keystoreType.name());
+        KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(keystoreType);
         keyStore.load(null, null);
 
         KeyStore.SecretKeyEntry secretKeyEntry = new KeyStore.SecretKeyEntry(secretKey);
