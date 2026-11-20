@@ -1,6 +1,8 @@
 package org.keycloak.tests.admin.user;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 
 import jakarta.ws.rs.BadRequestException;
@@ -29,6 +31,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -294,6 +297,42 @@ public class UserUpdateTest extends AbstractUserTest {
         assertEquals(Argon2Parameters.DEFAULT_ITERATIONS, updatedCredential.getPasswordCredentialData().getHashIterations());
         assertNotEquals("EFGH", updatedCredential.getPasswordSecretData().getValue());
         Assertions.assertEquals(CredentialRepresentation.PASSWORD, updatedCredential.getType());
+    }
+
+    @Test
+    public void updateUserWithIncompleteDeprecatedPasswordCredential() throws IOException {
+        String id = createUser();
+
+        UserResource user = managedRealm.admin().users().get(id);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setFirstName("Changed");
+
+        PasswordCredentialModel pcm = PasswordCredentialModel.createFromValues("my-algorithm", "theSalt".getBytes(), 22, "ABC");
+        String deprecatedCredential = "{\n" +
+                "      \"type\" : \"password\",\n" +
+                "      \"hashedSaltedValue\" : \"" + pcm.getPasswordSecretData().getValue() + "\",\n" +
+                "      \"salt\" : \"" + Base64.getEncoder().encodeToString(pcm.getPasswordSecretData().getSalt()) + "\"\n" +
+                "    }";
+
+        CredentialRepresentation deprecatedHashedPassword = JsonSerialization.readValue(deprecatedCredential, CredentialRepresentation.class);
+        deprecatedHashedPassword.setType(CredentialRepresentation.PASSWORD);
+        userRep.setCredentials(Arrays.asList(deprecatedHashedPassword));
+
+        try {
+            user.update(userRep);
+            fail("Expected failure - incomplete deprecated credential");
+        } catch (ClientErrorException e) {
+            assertNotNull(e.getResponse());
+            assertThat(e.getResponse().getStatus(), is(400));
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assertions.assertEquals("Invalid deprecated password credential format: missing hashIterations, algorithm", error.getErrorMessage());
+            Assertions.assertNull(adminEvents.poll());
+        }
+
+        // the profile change is rolled back with the failed update
+        UserRepresentation unchanged = managedRealm.admin().users().get(id).toRepresentation();
+        Assertions.assertEquals("user1", unchanged.getUsername());
+        Assertions.assertNull(unchanged.getFirstName());
     }
 
     @Test
