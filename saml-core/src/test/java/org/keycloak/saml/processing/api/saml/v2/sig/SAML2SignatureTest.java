@@ -145,6 +145,127 @@ public class SAML2SignatureTest {
     }
 
     /**
+     * Regression test: an unsigned LogoutRequest carrying a validly signed
+     * Assertion (e.g. one replayed from a login) inside its Extensions must be
+     * rejected. The signed Assertion does not cover the LogoutRequest that is
+     * acted upon.
+     */
+    @Test
+    public void validateRejectsUnsignedRequestWithSignedEmbeddedAssertion() throws Exception {
+        String xml = "<samlp:LogoutRequest"
+                + " xmlns:samlp=\"" + PROTOCOL_NS + "\""
+                + " xmlns:saml=\"" + ASSERTION_NS + "\""
+                + " ID=\"LReq_unsigned\""
+                + " Version=\"2.0\""
+                + " IssueInstant=\"2025-01-01T00:00:00Z\">"
+                + "<saml:Issuer>attacker</saml:Issuer>"
+                + "<samlp:Extensions>"
+                + "<saml:Assertion"
+                + " ID=\"A_signed\""
+                + " Version=\"2.0\""
+                + " IssueInstant=\"2025-01-01T00:00:00Z\">"
+                + "<saml:Issuer>test-idp</saml:Issuer>"
+                + "<saml:Subject><saml:NameID>attacker</saml:NameID></saml:Subject>"
+                + "</saml:Assertion>"
+                + "</samlp:Extensions>"
+                + "<saml:NameID>victim</saml:NameID>"
+                + "</samlp:LogoutRequest>";
+
+        Document doc = signAssertion(xml, "A_signed");
+
+        SAML2Signature saml2Signature = new SAML2Signature();
+        HardcodedKeyLocator locator = new HardcodedKeyLocator(keyPair.getPublic());
+
+        assertThat(saml2Signature.validate(doc, locator), is(false));
+    }
+
+    /**
+     * Sanity guard: a Response whose root is unsigned but whose assertion is
+     * signed must continue to validate.
+     */
+    @Test
+    public void validateAcceptsResponseWithSignedAssertion() throws Exception {
+        String xml = "<samlp:Response"
+                + " xmlns:samlp=\"" + PROTOCOL_NS + "\""
+                + " xmlns:saml=\"" + ASSERTION_NS + "\""
+                + " ID=\"R_unsigned\""
+                + " Version=\"2.0\""
+                + " IssueInstant=\"2025-01-01T00:00:00Z\">"
+                + "<saml:Issuer>test-idp</saml:Issuer>"
+                + "<samlp:Status/>"
+                + "<saml:Assertion"
+                + " ID=\"A_signed\""
+                + " Version=\"2.0\""
+                + " IssueInstant=\"2025-01-01T00:00:00Z\">"
+                + "<saml:Issuer>test-idp</saml:Issuer>"
+                + "<saml:Subject><saml:NameID>user</saml:NameID></saml:Subject>"
+                + "</saml:Assertion>"
+                + "</samlp:Response>";
+
+        Document doc = signAssertion(xml, "A_signed");
+
+        SAML2Signature saml2Signature = new SAML2Signature();
+        HardcodedKeyLocator locator = new HardcodedKeyLocator(keyPair.getPublic());
+
+        assertThat(saml2Signature.validate(doc, locator), is(true));
+    }
+
+    /**
+     * Sanity guard: an unsigned ArtifactResponse carrying an unsigned Response
+     * whose assertion is signed must continue to validate.
+     */
+    @Test
+    public void validateAcceptsArtifactResponseWithSignedAssertion() throws Exception {
+        String xml = "<samlp:ArtifactResponse"
+                + " xmlns:samlp=\"" + PROTOCOL_NS + "\""
+                + " xmlns:saml=\"" + ASSERTION_NS + "\""
+                + " ID=\"AR_unsigned\""
+                + " Version=\"2.0\""
+                + " IssueInstant=\"2025-01-01T00:00:00Z\">"
+                + "<samlp:Status/>"
+                + "<samlp:Response"
+                + " ID=\"R_unsigned\""
+                + " Version=\"2.0\""
+                + " IssueInstant=\"2025-01-01T00:00:00Z\">"
+                + "<saml:Issuer>test-idp</saml:Issuer>"
+                + "<saml:Assertion"
+                + " ID=\"A_signed\""
+                + " Version=\"2.0\""
+                + " IssueInstant=\"2025-01-01T00:00:00Z\">"
+                + "<saml:Issuer>test-idp</saml:Issuer>"
+                + "<saml:Subject><saml:NameID>user</saml:NameID></saml:Subject>"
+                + "</saml:Assertion>"
+                + "</samlp:Response>"
+                + "</samlp:ArtifactResponse>";
+
+        Document doc = signAssertion(xml, "A_signed");
+
+        SAML2Signature saml2Signature = new SAML2Signature();
+        HardcodedKeyLocator locator = new HardcodedKeyLocator(keyPair.getPublic());
+
+        assertThat(saml2Signature.validate(doc, locator), is(true));
+    }
+
+    private Document signAssertion(String xml, String assertionId) throws Exception {
+        Document doc = DocumentUtil.getDocument(xml);
+
+        Element assertion = (Element) doc.getElementsByTagNameNS(ASSERTION_NS, "Assertion").item(0);
+        assertion.setIdAttribute("ID", true);
+
+        XMLSignatureUtil.sign(
+                assertion,
+                assertion.getFirstChild().getNextSibling(),
+                "test-key",
+                keyPair,
+                DigestMethod.SHA256,
+                SignatureMethod.RSA_SHA256,
+                "#" + assertionId,
+                CanonicalizationMethod.EXCLUSIVE);
+
+        return DocumentUtil.getDocument(DocumentUtil.getDocumentAsString(doc));
+    }
+
+    /**
      * Builds a document shaped like a real Shibboleth artifact response and
      * signs only the <em>nested</em> {@code samlp:Response} sub-element:
 

@@ -495,7 +495,10 @@ public class XMLSignatureUtil {
             return true;
         }
 
-        if (JBossSAMLConstants.from(signedDoc.getDocumentElement()) == JBossSAMLConstants.ARTIFACT_RESPONSE) {
+        JBossSAMLConstants rootType = JBossSAMLConstants.from(signedDoc.getDocumentElement());
+        JBossSAMLConstants payloadType = rootType;
+
+        if (rootType == JBossSAMLConstants.ARTIFACT_RESPONSE) {
             Element singlePayload = null;
             for (Node child = signedDoc.getDocumentElement().getFirstChild(); child != null; child = child.getNextSibling()) {
                 if (JBossSAMLConstants.ARTIFACT_SIGNED_ELEMENTS.contains(JBossSAMLConstants.from(child))) {
@@ -510,6 +513,13 @@ public class XMLSignatureUtil {
                 logger.trace("ArtifactResponse not signed at root but its single protocol payload is signed OK");
                 return true;
             }
+            payloadType = singlePayload == null ? null : JBossSAMLConstants.from(singlePayload);
+        }
+
+        // Signed assertions only vouch for a SAML Response, any other message has to be signed itself
+        if (payloadType != JBossSAMLConstants.RESPONSE__PROTOCOL) {
+            logger.debug("Document is not a SAML Response and its root is not signed. Signature validation will fail.");
+            return false;
         }
 
         NodeList assertions = signedDoc.getElementsByTagNameNS(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get());
