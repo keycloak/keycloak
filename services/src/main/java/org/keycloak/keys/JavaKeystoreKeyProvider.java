@@ -25,10 +25,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
@@ -37,6 +40,8 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.EdECPrivateKey;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -45,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.crypto.SecretKey;
 
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentModel;
@@ -57,6 +63,7 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.utils.FeatureHelper;
 import org.keycloak.vault.VaultTranscriber;
 
 /**
@@ -114,6 +121,8 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
                     loadECKey(keyStore, keyAlias, KeyUse.ENC);
                 case Algorithm.EdDSA ->
                     loadEdDSAKey(keyStore, keyAlias, KeyUse.SIG);
+                case Algorithm.ML_DSA_44, Algorithm.ML_DSA_65, Algorithm.ML_DSA_87 ->
+                    loadMlDsaKey(keyStore, keyAlias, KeyUse.SIG, algorithm);
                 case Algorithm.AES ->
                     loadOctKey(keyStore, keyAlias, JavaAlgorithm.getJavaAlgorithm(algorithm), KeyUse.ENC);
                 case Algorithm.HS256, Algorithm.HS384, Algorithm.HS512 ->
@@ -137,7 +146,7 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
         }
     }
 
-    private KeyStore loadKeyStore(FileInputStream inputStream, String keystorePath) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+    private KeyStore loadKeyStore(FileInputStream inputStream, String keystorePath) throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException, NoSuchProviderException {
         // Use "JKS" as default type for backwards compatibility
         String keystoreType = KeystoreUtil.getKeystoreType(model.get(JavaKeystoreKeyProviderFactory.KEYSTORE_TYPE_KEY), keystorePath, "JKS");
         KeyStore keyStore = KeyStore.getInstance(keystoreType);
@@ -203,6 +212,37 @@ public class JavaKeystoreKeyProvider implements KeyProvider {
         PublicKey publicKey = x509Cert.getPublicKey();
         KeyPair keyPair = new KeyPair(publicKey, privateKey);
         return createKeyWrapper(keyPair, x509Cert, loadCertificateChain(privateKeyEntry), KeyType.OKP, keyUse, privateKey.getParams().getName());
+    }
+
+    private KeyWrapper loadMlDsaKey(KeyStore keyStore, String keyAlias, KeyUse keyUse, String algorithm) throws GeneralSecurityException {
+        if (!FeatureHelper.isMlDsaOAuthEnabled()) {
+            throw new RuntimeException(String.format("Keys for algorithm %s are not supported.", algorithm));
+        }
+
+        KeyStore.PrivateKeyEntry privateKeyEntry = checkKeyEntry(keyStore, keyAlias, KeyStore.PrivateKeyEntry.class, keyUse);
+        PrivateKey privateKey = checkKey(privateKeyEntry.getPrivateKey(), keyAlias, PrivateKey.class, null);
+        X509Certificate x509Cert = checkCertificate(privateKeyEntry.getCertificate());
+        PublicKey publicKey = x509Cert.getPublicKey();
+        KeyPair keyPair = new KeyPair(publicKey, privateKey);
+
+        // OpenJDK creates KeyPair with the generic algorithm ML-DSA, which can't be used by BouncyCastle
+        if (keyPair.getPrivate().getAlgorithm().equals("ML-DSA")) {
+            KeyFactory bcKeyFactory = KeyFactory.getInstance("ML-DSA", CryptoIntegration.getProvider().getBouncyCastleProvider());
+
+            PrivateKey bcPrivateKey = bcKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyPair.getPrivate().getEncoded()));
+            PublicKey bcPublicKey = bcKeyFactory.generatePublic(new X509EncodedKeySpec(keyPair.getPublic().getEncoded()));
+
+            keyPair = new KeyPair(bcPublicKey, bcPrivateKey);
+        }
+
+        if (!algorithm.equals(keyPair.getPrivate().getAlgorithm())) {
+            throw new NoSuchAlgorithmException(String.format("Invalid private %s key for alias %s. Algorithm is %s.", algorithm, keyAlias, keyPair.getPrivate().getAlgorithm()));
+        }
+        if (!algorithm.equals(keyPair.getPublic().getAlgorithm())) {
+            throw new NoSuchAlgorithmException(String.format("Invalid public %s key for alias %s. Algorithm is %s.", algorithm, keyAlias, keyPair.getPublic().getAlgorithm()));
+        }
+
+        return createKeyWrapper(keyPair, x509Cert, loadCertificateChain(privateKeyEntry), KeyType.AKP, keyUse, null);
     }
 
     private KeyWrapper loadECKey(KeyStore keyStore, String keyAlias, KeyUse keyUse) throws GeneralSecurityException {

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
@@ -20,6 +19,7 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.utils.FeatureHelper;
 
 import org.jboss.logging.Logger;
 
@@ -139,7 +139,7 @@ public class GeneratedMlDsaKeyProviderFactory implements KeyProviderFactory<Gene
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.OAUTH_ML_DSA);
+        return FeatureHelper.isMlDsaOAuthEnabled();
     }
 
 }

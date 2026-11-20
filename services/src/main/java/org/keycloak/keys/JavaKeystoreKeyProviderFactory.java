@@ -26,11 +26,10 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -45,6 +44,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.utils.FeatureHelper;
 
 import org.jboss.logging.Logger;
 
@@ -189,15 +189,20 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
 
     // merge the algorithms supported for RSA and EC keys and provide them as one configuration property
     private static ProviderConfigProperty mergedAlgorithmProperties() {
-        List<String> algorithms = Stream.of(
-                        List.of(Algorithm.AES, Algorithm.EdDSA),
-                        List.of(Algorithm.ES256, Algorithm.ES384, Algorithm.ES512),
-                        Attributes.HS_ALGORITHM_PROPERTY.getOptions(),
-                        Attributes.RS_ALGORITHM_PROPERTY.getOptions(),
-                        Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions(),
-                        GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_PROPERTY.getOptions())
-                .flatMap(Collection::stream)
-                .toList();
+        List<String> algorithms = new LinkedList<>();
+        algorithms.add(Algorithm.AES);
+        algorithms.add(Algorithm.EdDSA);
+        algorithms.add(Algorithm.ES256);
+        algorithms.add(Algorithm.ES384);
+        algorithms.add(Algorithm.ES512);
+        algorithms.addAll(Attributes.HS_ALGORITHM_PROPERTY.getOptions());
+        algorithms.addAll(Attributes.RS_ALGORITHM_PROPERTY.getOptions());
+        algorithms.addAll(Attributes.RS_ENC_ALGORITHM_PROPERTY.getOptions());
+        algorithms.addAll(GeneratedEcdhKeyProviderFactory.ECDH_ALGORITHM_PROPERTY.getOptions());
+        if (FeatureHelper.isMlDsaOAuthEnabled()) {
+            algorithms.addAll(GeneratedMlDsaKeyProviderFactory.SUPPORTED_ALGORITHMS);
+        }
+
         return new ProviderConfigProperty(Attributes.RS_ALGORITHM_PROPERTY.getName(), Attributes.RS_ALGORITHM_PROPERTY.getLabel(),
                 Attributes.RS_ALGORITHM_PROPERTY.getHelpText(), Attributes.RS_ALGORITHM_PROPERTY.getType(),
                 Attributes.RS_ALGORITHM_PROPERTY.getDefaultValue(), algorithms.toArray(String[]::new));

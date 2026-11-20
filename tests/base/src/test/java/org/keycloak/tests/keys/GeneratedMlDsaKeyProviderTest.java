@@ -13,6 +13,7 @@ import java.util.Set;
 import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.admin.client.resource.ComponentResource;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
@@ -159,15 +160,18 @@ public class GeneratedMlDsaKeyProviderTest {
         createKey("verifyKeyMetadata", 100, true, true, Algorithm.ML_DSA_65);
         runOnServer.run(s -> {
             KeyWrapper activeKey = new DefaultKeyManager(s).getActiveKey(s.getContext().getRealm(), KeyUse.SIG, Algorithm.ML_DSA_65);
+            Assertions.assertEquals(Algorithm.ML_DSA_65, activeKey.getAlgorithm());
+            Assertions.assertEquals(Algorithm.ML_DSA_65, activeKey.getPrivateKey().getAlgorithm());
+            Assertions.assertEquals(Algorithm.ML_DSA_65, activeKey.getPublicKey().getAlgorithm());
             try {
                 byte[] payload = "Hello".getBytes(StandardCharsets.UTF_8);
 
-                Signature signer = Signature.getInstance("ML-DSA");
+                Signature signer = Signature.getInstance("ML-DSA", CryptoIntegration.getProvider().getBouncyCastleProvider());
                 signer.initSign((PrivateKey) activeKey.getPrivateKey());
                 signer.update(payload);
                 byte[] sign = signer.sign();
 
-                Signature verifier = Signature.getInstance("ML-DSA");
+                Signature verifier = Signature.getInstance("ML-DSA", CryptoIntegration.getProvider().getBouncyCastleProvider());
                 verifier.initVerify((PublicKey) activeKey.getPublicKey());
                 verifier.update(payload);
                 Assertions.assertTrue(verifier.verify(sign));

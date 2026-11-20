@@ -32,10 +32,13 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -43,10 +46,15 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
+import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.KeyManager;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -58,6 +66,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.crypto.CryptoHelper;
 import org.keycloak.testframework.crypto.KeystoreInfo;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -75,6 +85,7 @@ import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -100,6 +111,9 @@ public class JavaKeystoreKeyProviderTest {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
+
+    @InjectOAuthClient
+    OAuthClient oAuthClient;
 
     protected Logger log = Logger.getLogger(this.getClass());
 
@@ -216,7 +230,36 @@ public class JavaKeystoreKeyProviderTest {
         createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
     }
 
+    @Test
+    public void createPkcs12MlDsa44() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.MLDSA, Algorithm.ML_DSA_44, true);
+    }
+
+    @Test
+    public void createPkcs12MlDsa65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.MLDSA, Algorithm.ML_DSA_65, true);
+    }
+
+    @Test
+    public void createJksMlDsa65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.MLDSA, Algorithm.ML_DSA_65, true);
+    }
+
+    @Test
+    public void createBcFksMlDsa65() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.BCFKS, AlgorithmType.MLDSA, Algorithm.ML_DSA_65, true);
+    }
+
+    @Test
+    public void createPkcs12MlDsa87() throws Exception {
+        createSuccess(KeystoreUtil.KeystoreFormat.PKCS12, AlgorithmType.MLDSA, Algorithm.ML_DSA_87, true);
+    }
+
     private void createSuccess(KeystoreUtil.KeystoreFormat keystoreType, AlgorithmType algorithmType, String keyAlgorithm, boolean vault) throws Exception {
+        if (algorithmType.equals(AlgorithmType.MLDSA)) {
+            Assumptions.assumeFalse(cryptoHelper.isFips());
+        }
+
         cryptoHelper.keystore().assumeKeystoreTypeSupported(keystoreType);
         generateKeystore(keystoreType, algorithmType, keyAlgorithm);
 
@@ -261,6 +304,22 @@ public class JavaKeystoreKeyProviderTest {
             case EDDSA -> {
                 assertEquals(KeyType.OKP, key.getType());
                 assertEquals(keyAlgorithm, key.getAlgorithm());
+            }
+            case MLDSA -> {
+                assertEquals(KeyType.AKP, key.getType());
+                assertEquals(keyAlgorithm, key.getAlgorithm());
+                assertNotNull(key.getCertificate());
+                final String kid = key.getKid();
+                runOnServer.run(s -> {
+                    KeyManager keyManager = new DefaultKeyManager(s);
+                    KeyWrapper keyWrapper = keyManager.getKey(s.getContext().getRealm(), kid, KeyUse.SIG, keyAlgorithm);
+                    Assertions.assertEquals(keyAlgorithm, keyWrapper.getAlgorithm());
+                    Assertions.assertEquals(keyAlgorithm, keyWrapper.getPrivateKey().getAlgorithm());
+                    Assertions.assertEquals(keyAlgorithm, keyWrapper.getPublicKey().getAlgorithm());
+                });
+                JWK jwk = Arrays.stream(oAuthClient.keys().getRealmKeys().getKeys()).filter(j -> j.getKeyId().equals(key.getKid())).findFirst().orElseThrow();
+                assertEquals(KeyType.AKP, jwk.getKeyType());
+                assertEquals(keyAlgorithm, jwk.getAlgorithm());
             }
         }
 
@@ -446,6 +505,10 @@ public class JavaKeystoreKeyProviderTest {
                 this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
                         KeyUtils.generateEdDSAKey(Algorithm.Ed25519));
             }
+            case MLDSA -> {
+                this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password",
+                        CryptoIntegration.getProvider().getKeyPairGen(keyAlgorithm).generateKeyPair());
+            }
         }
     }
 
@@ -478,7 +541,7 @@ public class JavaKeystoreKeyProviderTest {
                 if (url == null) {
                     throw new RuntimeException("Unable to find the vault folder in the classpath for the default_keystore__password file!");
                 }
-                return config.option("vault", "file").option("vault-dir", Path.of(url.toURI()).toString());
+                return config.features(Profile.Feature.OAUTH_ML_DSA).option("vault", "file").option("vault-dir", Path.of(url.toURI()).toString());
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
             }
