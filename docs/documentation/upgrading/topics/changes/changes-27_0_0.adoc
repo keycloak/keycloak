@@ -769,6 +769,18 @@ As a workaround, use the default value of a property that is not defined, for ex
 This did not work before, as the `$` prevented the placeholder from being closed.
 It only works as long as the property is not defined.
 
+=== Logout progress of clients is recorded per user session
+// https://github.com/keycloak/keycloak/issues/55118
+
+While a browser logout is in progress, {project_name} records in the logout authentication session which clients have already been notified.
+These records are now stored per user session, in auth notes named `logout.state.<user session id>.<client UUID>` instead of `logout.state.<client UUID>`, where the client UUID is the internal id of the client.
+A logout authentication session that is used for the logout of another user session of the same browser therefore no longer suppresses the logout of the clients that both user sessions have in common.
+
+During a rolling upgrade, the nodes do not see the records written by nodes of the other version.
+For a browser logout that is in flight while the nodes are upgraded, a client can be notified a second time, with another back-channel logout token or another front-channel logout redirect.
+The logout still completes.
+No user action is required.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

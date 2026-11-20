@@ -359,8 +359,18 @@ public class AuthenticationManager {
             userSessionOnlyHasLoggedOutClients =
                     checkUserSessionOnlyHasLoggedOutClients(realm, userSession, logoutAuthSession);
         } finally {
-            logger.tracef("Removing logout session '%s' after backchannel logout", logoutAuthSession.getParentSession().getId());
-            session.authenticationSessions().removeRootAuthenticationSession(realm, logoutAuthSession.getParentSession());
+            // The logout session may have joined a root that the browser shares with other tabs (for example an
+            // unfinished login), so only remove the logout tab from such a root. A root that only holds the logout tab
+            // is removed through the provider, which also drops a root that has not been persisted yet.
+            RootAuthenticationSessionModel logoutRoot = logoutAuthSession.getParentSession();
+            String logoutTabId = logoutAuthSession.getTabId();
+            if (logoutRoot.getAuthenticationSessions().size() > 1) {
+                logger.tracef("Removing logout session tab '%s' from '%s' after backchannel logout", logoutTabId, logoutRoot.getId());
+                logoutRoot.removeAuthenticationSessionByTabId(logoutTabId);
+            } else {
+                logger.tracef("Removing logout session '%s' after backchannel logout", logoutRoot.getId());
+                session.authenticationSessions().removeRootAuthenticationSession(realm, logoutRoot);
+            }
         }
 
         userSession.setState(UserSessionModel.State.LOGGED_OUT);
@@ -456,29 +466,64 @@ public class AuthenticationManager {
         AuthenticationSessionModel prevAuthSession = null;
         if (found.isPresent()) {
             prevAuthSession = found.get();
-            if (!initiateLogout || client.getId().equals(prevAuthSession.getClient().getId())) {
+            // A logout session that belongs to another user session holds the logout states of that session's clients,
+            // which would suppress the logout of the same clients for this user session, so never reuse it
+            String prevUserSessionId = prevAuthSession.getAuthNote(LOGOUT_USER_SESSION_ID);
+            boolean otherUserSession = userSession != null && prevUserSessionId != null && !prevUserSessionId.equals(userSession.getId());
+            if (!otherUserSession && (!initiateLogout || (prevAuthSession.getClient() != null && client.getId().equals(prevAuthSession.getClient().getId())))) {
                 logoutAuthSession = prevAuthSession;
                 logger.tracef("Found existing logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
             }
         }
 
         if (logoutAuthSession == null) {
+            // Remove the previous logout session first when other tabs remain in the root, so that creating the replacement
+            // at the authentication session limit cannot evict an unfinished login tab. A single-tab root keeps create-first,
+            // since removing its last tab removes the root.
+            boolean removePreviousFirst = prevAuthSession != null && rootLogoutSession.getAuthenticationSessions().size() > 1;
+            if (removePreviousFirst) {
+                rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
+                logger.tracef("Removing previous logout session tab '%s' in %s", prevAuthSession.getTabId(), rootLogoutSession.getId());
+            }
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
             logger.tracef("Creating logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
-            if (prevAuthSession != null) {
-                // remove previous logout session for the other client
+            if (prevAuthSession != null && !removePreviousFirst) {
+                // remove previous logout session for the other client or user session
                 rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
-                logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());
+                logger.tracef("Removing previous logout session tab '%s' in %s", prevAuthSession.getTabId(), rootLogoutSession.getId());
             }
-        }
-        if (userSession != null) {
-            logoutAuthSession.setAuthNote(LOGOUT_USER_SESSION_ID, userSession.getId());
+            if (userSession != null) {
+                logoutAuthSession.setAuthNote(LOGOUT_USER_SESSION_ID, userSession.getId());
+            }
+        } else if (userSession != null) {
+            bindLogoutSessionToUserSession(logoutAuthSession, userSession);
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
         session.getContext().setClient(client);
 
         return logoutAuthSession;
+    }
+
+    /**
+     * Binds the logout session to the user session through the {@link #LOGOUT_USER_SESSION_ID} note. The logout states
+     * of clients are recorded per bound user session (see {@link #setClientLogoutAction}), so the states recorded for
+     * another user session are not seen after binding to this one.
+     * <p>
+     * When the binding changes, the states without a user session ({@link #CLIENT_LOGOUT_STATE} followed by the client
+     * UUID) are removed for the clients of the user session. Nodes of an older version write and read only those, so
+     * a state recorded for the previous binding must not suppress the logout of the clients of the new one.
+     */
+    public static void bindLogoutSessionToUserSession(AuthenticationSessionModel logoutSession, UserSessionModel userSession) {
+        if (!userSession.getId().equals(logoutSession.getAuthNote(LOGOUT_USER_SESSION_ID))) {
+            userSession.getAuthenticatedClientSessions().keySet().forEach(clientUuid -> {
+                String key = CLIENT_LOGOUT_STATE + clientUuid;
+                if (logoutSession.getAuthNote(key) != null) {
+                    logoutSession.removeAuthNote(key);
+                }
+            });
+        }
+        logoutSession.setAuthNote(LOGOUT_USER_SESSION_ID, userSession.getId());
     }
 
     private static RootAuthenticationSessionModel findRecordedLogoutRoot(KeycloakSession session, RealmModel realm, UserSessionModel userSession) {
@@ -497,9 +542,9 @@ public class AuthenticationManager {
     }
 
     /**
-     * Makes the browser able to find the logout root again: points the AUTH_SESSION_ID cookie to it, unless the
-     * cookie already does or the root was recovered (see {@code createOrJoinLogoutSession}), and records its id in
-     * the user session.
+     * Makes the browser able to find the logout root again: points the AUTH_SESSION_ID cookie (and the
+     * KC_AUTH_SESSION_HASH cookie that authChecker.js compares with the page) to it, unless the cookie already does
+     * or the root was recovered (see {@code createOrJoinLogoutSession}), and records its id in the user session.
      */
     private static void bindLogoutRootToBrowser(KeycloakSession session, AuthenticationSessionManager asm,
             RootAuthenticationSessionModel cookieRoot, UserSessionModel userSession, RootAuthenticationSessionModel logoutRoot) {
@@ -507,6 +552,8 @@ public class AuthenticationManager {
         boolean recovered = logoutRoot.getId().equals(session.getAttribute(RECOVERED_LOGOUT_ROOT_ID));
         if (!recovered && (cookieRoot == null || !cookieRoot.getId().equals(logoutRoot.getId()))) {
             asm.setAuthSessionCookie(logoutRoot.getId());
+            // A login that later joins this root renders its hash, a stale hash from a previous root makes the page reload
+            asm.setAuthSessionIdHashCookie(logoutRoot.getId());
         }
         if (userSession != null && !logoutRoot.getId().equals(userSession.getNote(LOGOUT_ROOT_SESSION_ID))) {
             userSession.setNote(LOGOUT_ROOT_SESSION_ID, logoutRoot.getId());
@@ -712,15 +759,26 @@ public class AuthenticationManager {
     }
 
     /**
-     * Sets logout state of the particular client into the {@code logoutAuthSession}
+     * Sets logout state of the particular client into the {@code logoutAuthSession}. The state belongs to the user
+     * session the logout session is bound to, see {@link #LOGOUT_USER_SESSION_ID}.
      * @param logoutAuthSession logoutAuthSession. May be {@code null} in which case this is a no-op.
      * @param clientUuid Client. Must not be {@code null}
      * @param action
      */
     public static void setClientLogoutAction(AuthenticationSessionModel logoutAuthSession, String clientUuid, Action action) {
         if (logoutAuthSession != null && clientUuid != null) {
-            logoutAuthSession.setAuthNote(CLIENT_LOGOUT_STATE + clientUuid, action.name());
+            logoutAuthSession.setAuthNote(clientLogoutStateKey(logoutAuthSession, clientUuid), action.name());
         }
+    }
+
+    /**
+     * The state is keyed by the bound user session, so a logout session that is bound to another user session cannot
+     * suppress the logout of the same client for it, whichever clients and sessions still exist. A logout session
+     * that is not bound yet uses the key without a user session.
+     */
+    private static String clientLogoutStateKey(AuthenticationSessionModel logoutAuthSession, String clientUuid) {
+        String boundUserSessionId = logoutAuthSession.getAuthNote(LOGOUT_USER_SESSION_ID);
+        return boundUserSessionId == null ? CLIENT_LOGOUT_STATE + clientUuid : CLIENT_LOGOUT_STATE + boundUserSessionId + "." + clientUuid;
     }
 
     /**
@@ -734,7 +792,7 @@ public class AuthenticationManager {
             return null;
         }
 
-        String state = logoutAuthSession.getAuthNote(CLIENT_LOGOUT_STATE + clientUuid);
+        String state = logoutAuthSession.getAuthNote(clientLogoutStateKey(logoutAuthSession, clientUuid));
         return state == null ? null : Action.valueOf(state);
     }
 
