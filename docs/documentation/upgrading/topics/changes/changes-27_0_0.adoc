@@ -583,6 +583,14 @@ Previously, the Redirect URL was used without validation, which could allow an o
 
 The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
 
+=== Admin events for the creation of organization groups include the group ID
+// https://github.com/keycloak/keycloak/issues/55123
+
+The admin event recorded when a top-level organization group is created now has the resource path `organizations/\{orgId}/groups/\{groupId}`, the same way the creation of a realm group is recorded as `groups/\{groupId}`.
+Previously, the event was recorded as `organizations/\{orgId}/groups` without the ID of the new group, so it was not listed in the *Admin events* tab of the group.
+Events recorded before the upgrade keep their original resource path.
+If you filter admin events by this path, update your filter accordingly.
+
 === The `admin-permissions` client is treated as an internal client
 // https://github.com/keycloak/keycloak/issues/51630
 
