@@ -1245,6 +1245,19 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         }
         assertEquals(200, accessTokenResponse.getStatusCode());
 
+        // Check token refresh without certificate.
+        AccessTokenResponse accessTokenResponseRefreshedWithoutCert;
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
+            oauth.httpClient().set(client);
+            accessTokenResponseRefreshedWithoutCert = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient().reset();
+        }
+        assertEquals(400, accessTokenResponseRefreshedWithoutCert.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, accessTokenResponseRefreshedWithoutCert.getError());
+
         // Check token refresh.
         AccessTokenResponse accessTokenResponseRefreshed;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
@@ -1341,7 +1354,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
             oauth.httpClient().reset();
         }
         assertEquals(400, accessTokenResponseRefreshed.getStatusCode());
-        assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponseRefreshed.getError());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, accessTokenResponseRefreshed.getError());
 
         // Check token revoke with other certificate
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {

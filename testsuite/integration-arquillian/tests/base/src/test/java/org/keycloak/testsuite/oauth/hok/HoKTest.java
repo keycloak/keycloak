@@ -360,8 +360,8 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         }
 
         // Error Pattern
-        assertEquals(401, response.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals(CERT_VERIFY_ERROR_DESC, response.getErrorDescription());
     }
 
@@ -456,8 +456,8 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         }
 
         // Error Pattern
-        assertEquals(401, response.getStatusCode());
-        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(400, response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals(CERT_VERIFY_ERROR_DESC, response.getErrorDescription());
     }
 
