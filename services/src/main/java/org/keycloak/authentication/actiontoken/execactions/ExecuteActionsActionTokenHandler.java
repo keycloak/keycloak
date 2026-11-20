@@ -70,10 +70,12 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
     public Predicate<? super ExecuteActionsActionToken>[] getVerifiers(ActionTokenContext<ExecuteActionsActionToken> tokenContext) {
         return TokenUtils.predicates(
           TokenUtils.checkThat(
-            // either redirect URI is not specified or must be valid for the client
+            // either redirect URI is not specified or must be valid for the client; the forbidden
+            // parameter set follows the client protocol, consistent with the email-generation side
             t -> t.getRedirectUri() == null
                  || RedirectUtils.verifyRedirectUri(tokenContext.getSession(), t.getRedirectUri(),
-                      tokenContext.getAuthenticationSession().getClient()) != null,
+                      tokenContext.getAuthenticationSession().getClient(), true,
+                      RedirectUtils.resolveForbiddenParams(tokenContext.getAuthenticationSession().getClient())) != null,
             Errors.INVALID_REDIRECT_URI,
             Messages.INVALID_REDIRECT_URI
           ),
@@ -106,7 +108,8 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
                     .createInfoPage();
         }
 
-        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
+        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient(), true,
+                RedirectUtils.resolveForbiddenParams(authSession.getClient()));
 
         if (redirectUri != null) {
             authSession.setAuthNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");

@@ -220,7 +220,10 @@ public class LoginActionsServiceChecks {
 
             ClientModel client = context.getAuthenticationSession().getClient();
 
-            if (RedirectUtils.verifyRedirectUri(context.getSession(), redirectUri, client) == null) {
+            // the action-token link completes with an info page that sends the browser straight to the
+            // redirect URI, or with required actions ending on such a page - OIDC response parameters
+            // are never appended, so the SAML exemption applies (see keycloak/keycloak#53823)
+            if (RedirectUtils.verifyRedirectUri(context.getSession(), redirectUri, client, true, RedirectUtils.resolveForbiddenParams(client)) == null) {
                 throw new ExplainedTokenVerificationException(t, Errors.INVALID_REDIRECT_URI, Messages.INVALID_REDIRECT_URI);
             }
 

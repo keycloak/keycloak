@@ -26,6 +26,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resteasy.HttpRequestImpl;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
@@ -510,6 +511,95 @@ public class RedirectUtilsTest {
                 RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback?state=val", set, false, Collections.emptySet()));
         Assert.assertEquals("Empty forbidden set should allow forbidden params in fragment", "https://example.com/callback#state=val",
                 RedirectUtils.verifyRedirectUri(session, null, "https://example.com/callback#state=val", set, false, Collections.emptySet()));
+    }
+
+    @Test
+    public void testVerifyRedirectUriClientBasedOverloadKeepsOidcDefaultForbiddenParams() {
+        // Contract of the client-based overloads (see keycloak/keycloak#53823): they keep the OIDC
+        // default forbidden set for every client, including SAML clients. Flows that force OIDC onto
+        // the authentication session regardless of the client protocol (the reset-credentials flow
+        // for example) must not lose the parameter-pollution protection of CVE-2026-9689, so the
+        // exemption is opt-in: only call sites that know their redirect is completed without
+        // appending OIDC response parameters pass resolveForbiddenParams(client) explicitly.
+        Set<String> redirectUris = Stream.of("https://example.com/acs*").collect(Collectors.toSet());
+        ClientModel samlClient = mockClient(null, redirectUris, "saml");
+        ClientModel oidcClient = mockClient(null, redirectUris, "openid-connect");
+
+        Assert.assertNull("Client-based overload must return null for a null client",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", null, true));
+
+        Assert.assertNull("SAML client through the plain client-based overload: OIDC-named query parameter is still rejected",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", samlClient, true));
+        Assert.assertNull("OIDC client: OIDC-named query parameter is rejected (CVE-2026-9689)",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", oidcClient, true));
+        Assert.assertEquals("Harmless parameter names are accepted for both protocols as before",
+                "https://example.com/acs?foo=bar",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?foo=bar", oidcClient, true));
+    }
+
+    @Test
+    public void testResolveForbiddenParamsResolvesSetFromClientProtocol() {
+        // Contract of resolveForbiddenParams (see keycloak/keycloak#53823): a SAML client never has OIDC
+        // response parameters appended to its redirect URIs, so its forbidden set is empty; every other
+        // client keeps the OIDC default set. Call sites opt in to this resolution explicitly.
+        Set<String> redirectUris = Stream.of("https://example.com/acs*").collect(Collectors.toSet());
+        ClientModel samlClient = mockClient(null, redirectUris, "saml");
+        ClientModel oidcClient = mockClient(null, redirectUris, "openid-connect");
+        ClientModel noProtocolClient = mockClient(null, redirectUris, null);
+
+        Assert.assertTrue("SAML client resolves to an empty forbidden set",
+                RedirectUtils.resolveForbiddenParams(samlClient).isEmpty());
+        Assert.assertEquals("OIDC client resolves to the OIDC default set",
+                RedirectUtils.FORBIDDEN_OIDC_PARAMS, RedirectUtils.resolveForbiddenParams(oidcClient));
+        Assert.assertEquals("Client without a protocol resolves to the OIDC default set",
+                RedirectUtils.FORBIDDEN_OIDC_PARAMS, RedirectUtils.resolveForbiddenParams(noProtocolClient));
+        Assert.assertEquals("Null client resolves to the OIDC default set",
+                RedirectUtils.FORBIDDEN_OIDC_PARAMS, RedirectUtils.resolveForbiddenParams((ClientModel) null));
+        Assert.assertEquals("SAML protocol string resolves to an empty forbidden set",
+                0, RedirectUtils.resolveForbiddenParams("saml").size());
+        Assert.assertEquals("OIDC protocol string resolves to the OIDC default set",
+                RedirectUtils.FORBIDDEN_OIDC_PARAMS, RedirectUtils.resolveForbiddenParams("openid-connect"));
+
+        // The SAML call sites pass the resolved set explicitly and accept OIDC-named parameters,
+        // while the redirect matching itself stays fully intact.
+        Assert.assertEquals("SAML client with the resolved set: redirect URI with OIDC-named query parameter is accepted",
+                "https://example.com/acs?state=foo",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", samlClient, true,
+                        RedirectUtils.resolveForbiddenParams(samlClient)));
+        Assert.assertEquals("SAML client with the resolved set: fragment parameters are not forbidden either",
+                "https://example.com/acs#code=foo",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs#code=foo", samlClient, true,
+                        RedirectUtils.resolveForbiddenParams(samlClient)));
+        Assert.assertNull("SAML client with the resolved set: redirect matching itself is untouched - unregistered URI is rejected",
+                RedirectUtils.verifyRedirectUri(session, "https://evil.com/acs?state=foo", samlClient, true,
+                        RedirectUtils.resolveForbiddenParams(samlClient)));
+        Assert.assertNull("OIDC client with the resolved set keeps rejecting OIDC-named parameters",
+                RedirectUtils.verifyRedirectUri(session, "https://example.com/acs?state=foo", oidcClient, true,
+                        RedirectUtils.resolveForbiddenParams(oidcClient)));
+    }
+
+
+    private static ClientModel mockClient(String rootUrl, Set<String> redirectUris, String protocol) {
+        return (ClientModel) java.lang.reflect.Proxy.newProxyInstance(ClientModel.class.getClassLoader(),
+                new Class<?>[]{ClientModel.class},
+                (proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "getRootUrl":
+                            return rootUrl;
+                        case "getRedirectUris":
+                            return redirectUris;
+                        case "getProtocol":
+                            return protocol;
+                        case "toString":
+                            return "ClientModelStub";
+                        case "hashCode":
+                            return System.identityHashCode(proxy);
+                        case "equals":
+                            return proxy == args[0];
+                        default:
+                            return null;
+                    }
+                });
     }
 
     @Test

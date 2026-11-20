@@ -49,4 +49,8 @@ public class InfoPage extends AbstractLoginPage {
     public void clickBackToApplicationLink() {
         backToApplicationLink.click();
     }
+
+    public String getBackToApplicationUrl() {
+        return backToApplicationLink.getAttribute("href");
+    }
 }
