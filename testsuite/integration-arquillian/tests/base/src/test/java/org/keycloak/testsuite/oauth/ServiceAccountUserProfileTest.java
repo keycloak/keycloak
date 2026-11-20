@@ -28,7 +28,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -72,7 +71,6 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
                 .clientId("service-account-cl-refresh-on")
                 .secret("secret1")
                 .serviceAccountsEnabled(true)
-                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .build();
 
         realm.clients(enabledApp);

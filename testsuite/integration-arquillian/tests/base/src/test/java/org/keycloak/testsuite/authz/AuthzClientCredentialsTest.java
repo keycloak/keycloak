@@ -102,7 +102,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
                 .build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test"), ClientBuilder.create().secret("secret")).build());
         testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-session").accessTokenLifespan(1), ClientBuilder.create().secret("secret")).build());
-        testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-no-rt").accessTokenLifespan(1), ClientBuilder.create().secret("secret").attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "false")).build());
+        testRealms.add(configureRealm(RealmBuilder.create().name("authz-test-no-rt").accessTokenLifespan(1), ClientBuilder.create().secret("secret")).build());
     }
 
     @Before
@@ -241,18 +241,18 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     }
 
     @Test
-    public void testReusingAccessAndRefreshTokens_refreshEnabled() throws Exception {
-        // Use userSessions and refresh tokens
+    public void testReusingAccessAndRefreshTokens_legacyAttributeIgnored() throws Exception {
+        // The obsolete attribute must not enable userSessions and refresh tokens
         ClientResource client = AdminApiUtil.findClientByClientId(getAdminClient().realm("authz-test-session"), "resource-server-test");
         ClientRepresentation clientRepresentation = ClientBuilder.update(client.toRepresentation())
-                .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
+                .attribute("client_credentials.use_refresh_token", "true")
                 .build();
         client.update(clientRepresentation);
 
-        testReusingAccessAndRefreshTokens( 1);
+        testReusingAccessAndRefreshTokens(0);
 
         // Rollback configuration
-        clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "false");
+        clientRepresentation.getAttributes().remove("client_credentials.use_refresh_token");
         client.update(clientRepresentation);
     }
 

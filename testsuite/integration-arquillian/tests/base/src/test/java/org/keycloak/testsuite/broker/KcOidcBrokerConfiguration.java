@@ -206,7 +206,6 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
                 "/auth/realms/" + REALM_CONS_NAME + "/app");
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseRefreshTokenForClientCredentialsGrant(true);
 
         ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
         audienceMapper.setName("audience-broker-app");
