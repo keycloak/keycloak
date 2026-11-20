@@ -18,7 +18,10 @@
 package org.keycloak.social.github;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
@@ -86,6 +89,11 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     protected static final String EMAIL_URL_KEY = "emailUrl";
     /** Organizations key in config map. Comma-separated list of GitHub organizations allowed to log in. */
     protected static final String ORGANIZATIONS_KEY = "organizations";
+    /**
+     * Email domains key in config map. Comma-separated, in order of preference. If set, the user's first verified
+     * GitHub address in these domains is used instead of the public or primary one.
+     */
+    protected static final String EMAIL_DOMAINS_KEY = "emailDomains";
 
     private final String authUrl;
     private final String tokenUrl;
@@ -182,7 +190,11 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
                     logger.tracef("profile retrieved from github: %s", profile);
                     BrokeredIdentityContext user = extractIdentityFromProfile(null, profile);
 
-                    if (user.getEmail() == null) {
+                    List<String> emailDomains = parseEmailDomains(getConfig().getConfig().get(EMAIL_DOMAINS_KEY));
+                    if (!emailDomains.isEmpty()) {
+                        // The public profile address may be personal: always choose from the verified list.
+                        user.setEmail(selectEmail(fetchEmails(accessToken), emailDomains));
+                    } else if (user.getEmail() == null) {
                         user.setEmail(searchEmail(accessToken));
                     }
 
@@ -231,6 +243,22 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 	}
 
 	private String searchEmail(String accessToken) {
+		JsonNode emails = fetchEmails(accessToken);
+		if (emails.isArray()) {
+			Iterator<JsonNode> loop = emails.elements();
+			while (loop.hasNext()) {
+				JsonNode mail = loop.next();
+				JsonNode primary = mail.get("primary");
+				if (primary != null && primary.asBoolean()) {
+					return getJsonProperty(mail, "email");
+				}
+			}
+		}
+
+		throw new IdentityBrokerException("Primary email from github is not found in the user's email list.");
+	}
+
+	private JsonNode fetchEmails(String accessToken) {
 		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(emailUrl)
                         .header("Authorization", "Bearer " + accessToken)
                         .header("Accept", "application/json")
@@ -243,21 +271,68 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
                     JsonNode emails = response.asJson();
                     logger.tracef("emails retrieved from github: %s", emails);
-                    if (emails.isArray()) {
-                        Iterator<JsonNode> loop = emails.elements();
-                        while (loop.hasNext()) {
-                            JsonNode mail = loop.next();
-                            JsonNode primary = mail.get("primary");
-                            if (primary != null && primary.asBoolean()) {
-                                return getJsonProperty(mail, "email");
-                            }
-                        }
-                    }
-
-                    throw new IdentityBrokerException("Primary email from github is not found in the user's email list.");
+                    return emails;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Primary email could not be retrieved from the github endpoint", e);
 		}
+	}
+
+	/**
+	 * Parse the comma-separated email domains setting into lower-case domains, in order.
+	 */
+	static List<String> parseEmailDomains(String value) {
+		List<String> domains = new ArrayList<>();
+		if (value == null) {
+			return domains;
+		}
+		for (String domain : value.split(",")) {
+			String trimmed = domain.trim().toLowerCase(Locale.ROOT);
+			if (!trimmed.isEmpty()) {
+				domains.add(trimmed);
+			}
+		}
+		return domains;
+	}
+
+	/**
+	 * Choose the address to use from GitHub's /user/emails list: the first verified address whose domain is in
+	 * {@code domains} (in the order of {@code domains}), else the verified primary address, else null.
+	 * Unverified addresses are never returned, so the realm can trust the email of this provider.
+	 */
+	static String selectEmail(JsonNode emails, List<String> domains) {
+		if (emails == null || !emails.isArray()) {
+			return null;
+		}
+		for (String domain : domains) {
+			for (JsonNode mail : emails) {
+				String address = emailOf(mail);
+				if (isVerified(mail) && address != null && domain.equals(domainOf(address))) {
+					return address;
+				}
+			}
+		}
+		for (JsonNode mail : emails) {
+			JsonNode primary = mail.get("primary");
+			if (primary != null && primary.asBoolean() && isVerified(mail)) {
+				return emailOf(mail);
+			}
+		}
+		return null;
+	}
+
+	private static String emailOf(JsonNode mail) {
+		JsonNode email = mail.get("email");
+		return email == null || email.isNull() ? null : email.asText();
+	}
+
+	private static boolean isVerified(JsonNode mail) {
+		JsonNode verified = mail.get("verified");
+		return verified != null && verified.asBoolean();
+	}
+
+	private static String domainOf(String address) {
+		int at = address.lastIndexOf('@');
+		return at < 0 ? null : address.substring(at + 1).toLowerCase(Locale.ROOT);
 	}
 
     private void verifyToken(String accessToken) throws IOException {
