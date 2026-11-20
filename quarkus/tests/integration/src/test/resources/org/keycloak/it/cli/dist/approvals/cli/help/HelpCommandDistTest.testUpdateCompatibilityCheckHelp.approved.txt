@@ -56,8 +56,8 @@ Cache:
                      Encrypts the network communication between Keycloak servers. If no additional
                        parameters about a keystore and truststore are provided, ephemeral key pairs
                        and certificates are created and rotated automatically, which is recommended
-                       for standard setups. Default: true. Available only when a TCP based
-                       cache-stack is used.
+                       for standard setups. Default: true. Available only when the embedded cache
+                       uses TCP transport.
 --cache-embedded-mtls-key-store-file <file>
                      The Keystore file path. The Keystore must contain the certificate to use by
                        the TLS protocol. By default, it looks up 'cache-mtls-keystore.p12' under
@@ -116,12 +116,6 @@ Cache:
                      The hostname of the external Infinispan cluster. Available only when feature
                        'multi-site' or 'clusterless' is set. Required when feature 'multi-site' or
                        'clusterless' is set.
---cache-stack <stack>
-                     Define the default stack to use for cluster communication and node discovery.
-                       Defaults to 'jdbc-ping' if not set. Possible values are: jdbc-ping,
-                       kubernetes (deprecated), jdbc-ping-udp (deprecated), tcp (deprecated), udp
-                       (deprecated), ec2 (deprecated), azure (deprecated), google (deprecated), or
-                       a custom one. Available only when 'cache' type is set to 'ispn'.
 
 Config:
 

@@ -52,7 +52,7 @@ the legacy {project_name} Java OIDC adapters or by the link:https://docs.wildfly
 * _ON_
 +
 For server-side clients that perform browser logins and require client secrets when making an Access Token Request. This setting should be used for server-side applications.
-Clients with the client authentication enabled are referred as confidential clients. For more details, see <<_client-credentials, Client credentials>>.
+Clients with the client authentication enabled are referred as confidential clients. For more details, see <<client-credentials, Client credentials>>.
 
 * _OFF_
 +
@@ -91,7 +91,7 @@ See https://datatracker.ietf.org/doc/html/rfc7636[RFC 7636 Proof Key for Code Ex
 
 *Require DPoP bound tokens*
 
-DPoP binds an access token and a refresh token together with the public part of a client's key pair. For the details, see <<_dpop-bound-tokens, DPoP>>.
+DPoP binds an access token and a refresh token together with the public part of a client's key pair. For the details, see <<dpop-bound-tokens, DPoP>>.
 
 == Login settings
 

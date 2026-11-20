@@ -19,6 +19,8 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 
+import static org.keycloak.testframework.util.ApiUtil.addAdminApiClientScope;
+
 public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient> {
 
     @Override
@@ -58,6 +60,8 @@ public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient
                     .findFirst().orElseThrow(() -> new FatalTestClassException("Client with clientId=\"" + annotation.client() + "\" not found in realm with ref=\"" + annotation.realmRef() + "\""));
 
             adminBuilder.clientId(clientId).clientSecret(clientRep.getSecret());
+
+            addAdminApiClientScope(managedRealm.admin(), clientId);
 
             if (userId != null) {
                 UserRepresentation userRep = realmRep.getUsers().stream()

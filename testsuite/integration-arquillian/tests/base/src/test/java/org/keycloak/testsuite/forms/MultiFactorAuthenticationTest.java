@@ -35,7 +35,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -44,6 +43,7 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -215,27 +215,8 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
     }
 
     private void configureBrowserFlowWithAlternativeCredentials() {
-        configureBrowserFlowWithAlternativeCredentials(testingClient);
+        testingClient.server("test").run(RunHelpers.configureBrowserFlowWithAlternativeCredentials());
     }
-
-    static void configureBrowserFlowWithAlternativeCredentials(KeycloakTestingClient testingClient) {
-        final String newFlowAlias = "browser - alternative";
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
-                .selectFlow(newFlowAlias)
-                .inForms(forms -> forms
-                        .clear()
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
-                        .addSubFlowExecution(AuthenticationExecutionModel.Requirement.REQUIRED, altSubFlow -> altSubFlow
-                                // Add 2 basic authenticator executions
-                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, PasswordFormFactory.PROVIDER_ID)
-                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, OTPFormAuthenticatorFactory.PROVIDER_ID)
-                        )
-                )
-                .defineAsBrowserFlow()
-        );
-    }
-
 
     @Test
     public void testAlternativeMechanismsInDifferentSubflows() {

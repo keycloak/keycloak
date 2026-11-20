@@ -107,7 +107,6 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
         createX509TrustIdp(X509_TRUST_IDP_ALIAS, CHAIN.caCertificatePem());
         createX509TrustIdp(UNRELATED_X509_TRUST_IDP_ALIAS, CHAIN.unrelatedCaCertificatePem());
         createVerifierIdp(Map.of(
-                OID4VPIdentityProviderConfig.DCQL_QUERY, dcqlQuery(),
                 OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email",
                 OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, TRUST_IDP_ALIAS));
     }
@@ -201,7 +200,7 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
         idp.setProviderId(OID4VPIdentityProviderFactory.PROVIDER_ID);
         idp.setEnabled(true);
         idp.setConfig(Map.of(
-                OID4VPIdentityProviderConfig.DCQL_QUERY, dcqlQuery(),
+                OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, sdJwtTypeCredentialVct,
                 OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
 
         try (Response response = testRealm.admin().identityProviders().create(idp)) {

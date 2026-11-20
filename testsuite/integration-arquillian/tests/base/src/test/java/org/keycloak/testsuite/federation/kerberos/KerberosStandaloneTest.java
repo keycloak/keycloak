@@ -269,6 +269,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         }
 
         // get the email from green mail
+        Assertions.assertTrue(mail.waitForIncomingEmail(1));
         MimeMessage message = mail.getLastReceivedMessage();
         Assertions.assertNotNull(message);
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);

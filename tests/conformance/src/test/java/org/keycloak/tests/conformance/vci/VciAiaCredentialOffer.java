@@ -52,12 +52,20 @@ import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.REALM;
  * it at, which only resolves inside the container network, so the browser maps that hostname to loopback where
  * the managed Keycloak listens.
  */
-final class VciAiaCredentialOffer {
+public final class VciAiaCredentialOffer {
 
     private VciAiaCredentialOffer() {
     }
 
     static String createOfferUri() {
+        return createOfferUri(false);
+    }
+
+    public static String createPreAuthorizedOfferUri() {
+        return createOfferUri(true);
+    }
+
+    private static String createOfferUri(boolean preAuthorized) {
         URI keycloakUri = OpenIdConformanceServer.KEYCLOAK_BASE_URI;
 
         ChromeOptions options = new ChromeOptions();
@@ -72,7 +80,7 @@ final class VciAiaCredentialOffer {
                 "--host-resolver-rules=MAP " + keycloakUri.getHost() + " 127.0.0.1");
         WebDriver driver = new ChromeDriver(options);
         try {
-            driver.get(authorizationUrl(keycloakUri));
+            driver.get(authorizationUrl(keycloakUri, preAuthorized));
 
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             wait.until(ExpectedConditions.presenceOfElementLocated(By.id("username")));
@@ -93,10 +101,10 @@ final class VciAiaCredentialOffer {
         }
     }
 
-    private static String authorizationUrl(URI keycloakUri) {
+    private static String authorizationUrl(URI keycloakUri, boolean preAuthorized) {
         VerifiableCredentialOfferActionConfig actionConfig = new VerifiableCredentialOfferActionConfig();
         actionConfig.setCredentialConfigurationId(CREDENTIAL_CONFIGURATION_ID);
-        actionConfig.setPreAuthorized(false);
+        actionConfig.setPreAuthorized(preAuthorized);
 
         String realmBase = keycloakUri + "/realms/" + REALM;
         try {

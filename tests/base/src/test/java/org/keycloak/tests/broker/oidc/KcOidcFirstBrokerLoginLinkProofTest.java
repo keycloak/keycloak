@@ -284,7 +284,23 @@ public class KcOidcFirstBrokerLoginLinkProofTest extends AbstractKcOidcBrokerTes
 
     private String linkProofKey(String consumerUserId) {
         String federatedUserId = getProviderRealm().admin().users().search(getUserLogin(), true).get(0).getId();
-        return "kc.brokering.user.verified." + consumerUserId + "." + getIdpAlias() + "." + federatedUserId;
+        return IdpVerifyAccountLinkActionTokenHandler.getUserVerifiedSingleObjectKey(consumerUserId, getIdpAlias(), federatedUserId);
+    }
+
+    @Test
+    public void testLinkProofKeyDelimiterCollisionCrossConsumptionFails() {
+        String consumerUserId = "victim-user-id";
+        String key1 = IdpVerifyAccountLinkActionTokenHandler.getUserVerifiedSingleObjectKey(consumerUserId, "corp", "partner.user");
+        String key2 = IdpVerifyAccountLinkActionTokenHandler.getUserVerifiedSingleObjectKey(consumerUserId, "corp.partner", "user");
+        org.junit.jupiter.api.Assertions.assertNotEquals(key1, key2);
+
+        runOnServer.run(session -> session.singleUseObjects().put(key1, 300, java.util.Map.of()));
+        try {
+            assertTrue(runOnServer.fetch(session -> session.singleUseObjects().contains(key1), Boolean.class));
+            assertFalse(runOnServer.fetch(session -> session.singleUseObjects().contains(key2), Boolean.class));
+        } finally {
+            runOnServer.run(session -> session.singleUseObjects().remove(key1));
+        }
     }
 
     private boolean isLinkProofPresent(String consumerUserId) {

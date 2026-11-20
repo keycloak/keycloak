@@ -30,12 +30,17 @@ import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,6 +52,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
 public class GroupTest extends AbstractScimTest {
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     @Test
     public void testCreate() {
@@ -413,6 +421,33 @@ public class GroupTest extends AbstractScimTest {
         assertThat(lastModifiedAfterUpdate, greaterThanOrEqualTo(lastModifiedAfterCreate));
     }
 
+
+    @Test
+    public void testPatchUpdatesMetaTimestamps() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        User user = createScimUser();
+
+        Instant lastModifiedBeforePatch = Instant.parse(group.getMeta().getLastModified());
+
+        timeOffSet.set(10);
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", "[{\"value\":\"" + user.getId() + "\"}]").build());
+
+        Group afterPatch = client.groups().get(group.getId(), List.of("displayName", "members"));
+        assertEquals(1, afterPatch.getMembers().size());
+        assertMember(afterPatch.getMembers(), user.getId(), user.getUserName());
+        assertEquals(group.getMeta().getCreated(), afterPatch.getMeta().getCreated());
+        assertThat(Instant.parse(afterPatch.getMeta().getLastModified()), greaterThan(lastModifiedBeforePatch));
+
+        String filter = ResourceFilter.filter().eq("displayName", afterPatch.getDisplayName()).and()
+                .gt("meta.lastModified", lastModifiedBeforePatch.toString()).build();
+        ListResponse<Group> response = client.groups().getAll(filter);
+        assertEquals(1, response.getTotalResults());
+        assertEquals(group.getId(), response.getResources().get(0).getId());
+        assertEquals(afterPatch.getMeta().getLastModified(), response.getResources().get(0).getMeta().getLastModified());
+    }
 
     @Test
     public void testGetWithAttributes() {
@@ -824,8 +859,9 @@ public class GroupTest extends AbstractScimTest {
         }
     }
 
-    @Test
-    public void testGroupMembersReplace() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testGroupMembersReplace(boolean emptyMembers) {
         // create users via SCIM
         User userA = createScimUser();
         User userB = createScimUser();
@@ -842,16 +878,19 @@ public class GroupTest extends AbstractScimTest {
                 .add("members", userB.getId())
                 .build());
 
-        // PUT update: replace members with a different set
+        // PUT update: replace members with a different or empty set
         Group toUpdate = client.groups().get(group.getId());
-        toUpdate.setMembers(null);
-        toUpdate.addMember(userC.getId());
+        toUpdate.setMembers(new ArrayList<>());
+        if (!emptyMembers) {
+            toUpdate.addMember(userC.getId());
+        }
         try {
             client.groups().update(toUpdate);
             fail("Should have thrown an exception");
         } catch (ScimClientException e) {
             ErrorResponse error = e.getError();
             assertNotNull(error);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), error.getStatusInt());
             assertEquals("Managing members on updates is not supported", error.getDetail());
         }
     }

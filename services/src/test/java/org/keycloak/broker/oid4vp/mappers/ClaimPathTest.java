@@ -17,6 +17,7 @@
 
 package org.keycloak.broker.oid4vp.mappers;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.util.JsonSerialization;
@@ -51,6 +52,14 @@ public class ClaimPathTest {
     @Test
     public void parsesEscapedDotAsLiteralFieldName() {
         assertEquals(List.of(fieldStep("org.example")), ClaimPath.parse("org\\.example").steps());
+    }
+
+    @Test
+    public void convertsToClaimsPathPointer() {
+        assertEquals(List.of("address", "locality"), ClaimPath.parse("address.locality").toClaimsPathPointer());
+        assertEquals(Arrays.asList("degrees", null, "type"), ClaimPath.parse("degrees[].type").toClaimsPathPointer());
+        assertEquals(List.of("degrees", 0, "type"), ClaimPath.parse("degrees[0].type").toClaimsPathPointer());
+        assertEquals(List.of("org.example"), ClaimPath.parse("org\\.example").toClaimsPathPointer());
     }
 
     @Test

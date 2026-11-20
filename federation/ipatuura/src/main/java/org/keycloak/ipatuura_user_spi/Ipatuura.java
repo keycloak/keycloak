@@ -74,8 +74,6 @@ public class Ipatuura {
 
     public Integer csrfAuthLogin() {
 
-        SimpleHttpResponse response;
-
         /* Get inputs */
         String server = model.getConfig().getFirst("scimurl");
         String username = model.getConfig().getFirst("loginusername");
@@ -84,23 +82,18 @@ public class Ipatuura {
         /* Execute GET to get initial csrftoken */
         String url = String.format("https://%s%s", server, "/admin/login/");
 
-        try {
-            response = SimpleHttp.create(session).doGet(url).asResponse();
+        try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(url).asResponse()) {
             parseSetCookie(response);
-            response.close();
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
             throw new RuntimeException(e);
         }
 
         /* Perform login POST */
-        try {
-            /* Here we retrieve the Response sessionid and csrftoken cookie */
-            response = SimpleHttp.create(session).doPost(url).header("X-CSRFToken", csrf_value).header("Cookie", csrf_cookie)
-                    .header("referer", url).param("username", username).param("password", password).asResponse();
-
+        /* Here we retrieve the Response sessionid and csrftoken cookie */
+        try (SimpleHttpResponse response = SimpleHttp.create(session).doPost(url).header("X-CSRFToken", csrf_value).header("Cookie", csrf_cookie)
+                .header("referer", url).param("username", username).param("password", password).asResponse()) {
             parseSetCookie(response);
-            response.close();
         } catch (Exception e) {
             logger.error("Error: " + e.getMessage());
             throw new RuntimeException(e);
@@ -230,11 +223,8 @@ public class Ipatuura {
         String usersSearchUrl = "Users/.search";
         SCIMUser user = null;
 
-        SimpleHttpResponse response;
-        try {
-            response = clientRequest(usersSearchUrl, "POST", newSearch);
+        try (SimpleHttpResponse response = clientRequest(usersSearchUrl, "POST", newSearch)) {
             user = response.asJson(SCIMUser.class);
-            response.close();
         } catch (Exception e) {
             logger.errorv("Error: {0}", e.getMessage());
             throw new RuntimeException(e);

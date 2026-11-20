@@ -361,7 +361,7 @@ kcLogoIdP-myProvider = fa fa-lock
 ----
 
 All icons are available on the official website of PatternFly4.
-Icons for social providers are already defined in `base` login theme properties (`themes/keycloak/login/theme.properties`), where you can inspire yourself.
+Icons for social providers are already defined in the built-in login theme properties (`themes/keycloak.v3/login/theme.properties`), where you can inspire yourself.
 
 === Creating a custom HTML template
 
@@ -500,7 +500,7 @@ To create a custom theme selector you need to implement `ThemeSelectorProviderFa
 When implementing custom providers there may often be a need to add additional templates, resources and messages bundles.
 
 ifeval::[{project_product}!=true]
-An example use-case would be a https://www.keycloak.org/docs/latest/server_development/index.html#_auth_spi[custom authenticator] that requires additional templates and resources.
+An example use-case would be a https://www.keycloak.org/docs/latest/server_development/index.html#auth_spi[custom authenticator] that requires additional templates and resources.
 endif::[]
 
 The easiest way to load additional theme resources is to create a JAR with templates in `theme-resources/templates`

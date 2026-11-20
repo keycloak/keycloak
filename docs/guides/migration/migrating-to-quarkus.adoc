@@ -99,7 +99,7 @@ apiVersion: keycloak.org/v1alpha1
 For the new operator, the apiVersion is:
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 ----
 
 When using `kubectl` commands, and the 2 CRDs are installed in the cluster, make sure to use fully qualified names including the API Group, e.g.:

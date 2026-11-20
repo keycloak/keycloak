@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.kerberos;
 
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
@@ -95,6 +96,15 @@ public class KerberosStandaloneCrossRealmTrustTest extends AbstractKerberosTest 
         testAppHelper.login("jduke", "theduke");
         Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertTrue(testAppHelper.logout());
+
+        // Realm KC2.COM is trusted by the KDC of KEYCLOAK.ORG, but the provider does not allow it yet. The login is rejected
+        // before any KDC is contacted and no user is imported
+        testAppHelper.startLogin("jduke@kc2.com", "theduke2");
+        loginPage.assertCurrent();
+        Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        Assertions.assertTrue(testRealmResource().users().search("jduke@kc2.com", true).isEmpty());
+
+        updateUserStorageProvider(kerberosProvider -> kerberosProvider.getConfig().putSingle(KerberosConstants.ALLOWED_KERBEROS_REALMS, "KC2.COM"));
 
         // Login in username/password form as "jduke@KC2.COM"
         testAppHelper.login("jduke@kc2.com", "theduke2");

@@ -5,15 +5,15 @@
     state: latest
 
 - name: Update apt cache on Ubuntu/Debian
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts['os_family'] == 'Debian'
   apt:
     update_cache: yes
 
 
-- name: Install Java {{ item }} packages on Ubuntu/Debian
+- name: Install Java packages on Ubuntu/Debian
   when:
     - install_java
-    - ansible_os_family == 'Debian'
+    - ansible_facts['os_family'] == 'Debian'
   package:
     name:
       - "openjdk-{{ item }}-jdk"
@@ -21,10 +21,10 @@
     state: present
   loop: "{{ [java_version] | flatten }}"
 
-- name: Install Java {{ item }} packages on RedHat/Amazon
+- name: Install Java packages on RedHat/Amazon
   when:
     - install_java
-    - ansible_os_family != 'Debian'
+    - ansible_facts['os_family'] != 'Debian'
   package:
     name:
       - "java-{{ item }}-openjdk"

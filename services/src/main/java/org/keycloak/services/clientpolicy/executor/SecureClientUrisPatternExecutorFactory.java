@@ -17,16 +17,13 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.saml.SamlConfigAttributes;
-import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.validation.ClientUriField;
 
 public class SecureClientUrisPatternExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
@@ -35,36 +32,7 @@ public class SecureClientUrisPatternExecutorFactory implements ClientPolicyExecu
     public static final String ALLOWED_PATTERNS = "allowed-patterns";
     public static final String CLIENT_URI_FIELDS = "client-uri-fields";
 
-    public static final List<String> ALL_CLIENT_URI_FIELDS = Arrays.asList(
-            "rootUrl",
-            "adminUrl",
-            "baseUrl",
-            "redirectUris",
-            "webOrigins",
-
-            //attributes in OIDC clients
-            "jwksUri",
-            "requestUris",
-            "backchannelLogoutUrl",
-            "frontChannelLogoutUrl",
-            "postLogoutRedirectUris",
-            "cibaClientNotificationEndpoint",
-            OIDCConfigAttributes.LOGO_URI,
-            OIDCConfigAttributes.POLICY_URI,
-            OIDCConfigAttributes.TOS_URI,
-            OIDCConfigAttributes.SECTOR_IDENTIFIER_URI,
-
-            // attributes in SAML clients
-            SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE,
-            SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE,
-            SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE,
-            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE,
-            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE,
-            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE,
-            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE,
-            SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE,
-            SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL
-    );
+    public static final List<String> ALL_CLIENT_URI_FIELDS = ClientUriField.getNames();
 
     private static final ProviderConfigProperty CLIENT_URI_FIELDS_PROPERTY = new ProviderConfigProperty(
             CLIENT_URI_FIELDS,

@@ -571,7 +571,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
         predicates.add(builder.equal(root.get("parentId"), parent != null ? parent.getId() : GroupEntity.TOP_PARENT_ID));
         predicates.add(builder.equal(root.get("name"), name));
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, null, realm, builder, queryBuilder, root));
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(root.get("name")));

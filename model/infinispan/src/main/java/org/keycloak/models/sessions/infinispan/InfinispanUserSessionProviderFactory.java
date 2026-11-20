@@ -32,10 +32,8 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
@@ -83,8 +81,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public static final String REALM_REMOVED_SESSION_EVENT = "REALM_REMOVED_EVENT_SESSIONS";
 
     public static final String REMOVE_USER_SESSIONS_EVENT = "REMOVE_USER_SESSIONS_EVENT";
-    public static final String CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE = "offlineSessionCacheEntryLifespanOverride";
-    public static final String CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE = "offlineClientSessionCacheEntryLifespanOverride";
     public static final String CONFIG_USE_CACHES = "useCaches";
     private static final boolean DEFAULT_USE_CACHES = true;
     public static final String CONFIG_EXPIRATION_PERIOD = "sessionExpirationPeriod";
@@ -104,10 +100,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     private SessionResurrectionGuardListener<String, UserSessionEntity> sessionResurrectionListener;
     private SessionResurrectionGuardListener<String, UserSessionEntity> offlineSessionResurrectionListener;
     private ExpirationTask expirationTask;
-
-    private long offlineSessionCacheEntryLifespanOverride;
-
-    private long offlineClientSessionCacheEntryLifespanOverride;
 
     private PersisterLastSessionRefreshStore persisterLastSessionRefreshStore;
     private boolean useCaches;
@@ -132,23 +124,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
                 tx.offlineSessionTx,
                 tx.clientSessionTx,
                 tx.offlineClientSessionTx,
-                this::deriveOfflineSessionCacheEntryLifespanMs,
-                this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs
+                SessionTimeouts::getOfflineSessionLifespanMs,
+                SessionTimeouts::getOfflineClientSessionLifespanMs
         );
     }
 
     @Override
     public void init(Config.Scope config) {
-        offlineSessionCacheEntryLifespanOverride = config.getInt(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, -1);
-        if (offlineSessionCacheEntryLifespanOverride != -1) {
-            // to be removed in KC 27
-            log.warn("The option spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
-        }
-        offlineClientSessionCacheEntryLifespanOverride = config.getInt(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, -1);
-        if (offlineClientSessionCacheEntryLifespanOverride != -1) {
-            // to be removed in KC 27
-            log.warn("The option spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override is deprecated and will be removed in a future release");
-        }
         // Deprecated since 26.8: disabling persistent user sessions (volatile sessions) is deprecated.
         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
             log.warn("Disabling the persistent-user-sessions feature is deprecated since Keycloak 26.8 and will not be supported in a future release. Persistent user sessions will become the only supported mode.");
@@ -212,9 +194,9 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         } else {
             try (var session = factory.create()) {
                 sessionCacheHolder = InfinispanChangesUtils.createWithCache(session, USER_SESSION_CACHE_NAME, SessionTimeouts::getUserSessionLifespanMs, SessionTimeouts::getUserSessionMaxIdleMs, SecretGenerator.SECURE_ID_GENERATOR);
-                offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, this::deriveOfflineSessionCacheEntryLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs, null, true);
+                offlineSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_USER_SESSION_CACHE_NAME, SessionTimeouts::getOfflineSessionLifespanMs, SessionTimeouts::getOfflineSessionMaxIdleMs, null, true);
                 clientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getClientSessionLifespanMs, SessionTimeouts::getClientSessionMaxIdleMs);
-                offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, this::deriveOfflineClientSessionCacheEntryLifespanOverrideMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
+                offlineClientSessionCacheHolder = InfinispanChangesUtils.createWithCache(session, OFFLINE_CLIENT_SESSION_CACHE_NAME, SessionTimeouts::getOfflineClientSessionLifespanMs, SessionTimeouts::getOfflineClientSessionMaxIdleMs);
                 var blockingManager = session.getProvider(InfinispanConnectionProvider.class).getBlockingManager();
                 expirationListener = new EmbeddedUserSessionExpirationListener(session.getKeycloakSessionFactory(), blockingManager);
             }
@@ -317,41 +299,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         log.debug("Registered cluster listeners");
     }
 
-    protected Long deriveOfflineSessionCacheEntryLifespanMs(RealmModel realm, ClientModel client, UserSessionEntity entity) {
-
-        long configuredOfflineSessionLifespan = SessionTimeouts.getOfflineSessionLifespanMs(realm, client, entity);
-
-        if (offlineSessionCacheEntryLifespanOverride == -1) {
-            // override not configured -> take the value from realm settings
-            return configuredOfflineSessionLifespan;
-        }
-
-        if (configuredOfflineSessionLifespan == -1) {
-            // "Offline Session Max Limited" is "off"
-            return TimeUnit.SECONDS.toMillis(offlineSessionCacheEntryLifespanOverride);
-        }
-
-        // both values are configured, Offline Session Max could be smaller than the override, so we use the minimum of both
-        return Math.min(TimeUnit.SECONDS.toMillis(offlineSessionCacheEntryLifespanOverride), configuredOfflineSessionLifespan);
-    }
-
-    protected Long deriveOfflineClientSessionCacheEntryLifespanOverrideMs(RealmModel realm, ClientModel client, AuthenticatedClientSessionEntity entity) {
-
-        long configuredOfflineClientSessionLifespan = SessionTimeouts.getOfflineClientSessionLifespanMs(realm, client, entity);
-
-        if (offlineClientSessionCacheEntryLifespanOverride == -1) {
-            // override not configured -> take the value from realm settings
-            return configuredOfflineClientSessionLifespan;
-        }
-
-        if (configuredOfflineClientSessionLifespan == -1) {
-            // "Offline Session Max Limited" is "off"
-            return TimeUnit.SECONDS.toMillis(offlineClientSessionCacheEntryLifespanOverride);
-        }
-
-        // both values are configured, Offline Session Max could be smaller than the override, so we use the minimum of both
-        return Math.min(TimeUnit.SECONDS.toMillis(offlineClientSessionCacheEntryLifespanOverride), configuredOfflineClientSessionLifespan);
-    }
 
     @Override
     public void close() {
@@ -391,8 +338,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public Map<String, String> getOperationalInfo() {
         Map<String, String> info = new HashMap<>();
-        info.put(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, Long.toString(offlineSessionCacheEntryLifespanOverride));
-        info.put(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE, Long.toString(offlineClientSessionCacheEntryLifespanOverride));
         info.put(CONFIG_USE_CACHES, Boolean.toString(useCaches));
         info.put(CONFIG_EXPIRATION_PERIOD, Integer.toString(expirationPeriodSeconds));
         return info;
@@ -401,18 +346,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
-
-        builder.property()
-                .name(CONFIG_OFFLINE_CLIENT_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
-                .type("int")
-                .helpText("Override how long offline client sessions should be kept in memory in seconds (deprecated, to be removed in Keycloak 27)")
-                .add();
-
-        builder.property()
-                .name(CONFIG_OFFLINE_SESSION_CACHE_ENTRY_LIFESPAN_OVERRIDE)
-                .type("int")
-                .helpText("Override how long offline user sessions should be kept in memory in seconds (deprecated, to be removed in Keycloak 27)")
-                .add();
 
         builder.property()
                 .name(CONFIG_USE_CACHES)

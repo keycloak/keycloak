@@ -2215,6 +2215,7 @@
 }, {
   "id" : "Migration",
   "realm" : "Migration",
+  "loginTheme" : "keycloak",
   "notBefore" : 0,
   "defaultSignatureAlgorithm" : "RS256",
   "revokeRefreshToken" : true,
@@ -2802,6 +2803,7 @@
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
     "attributes" : {
+      "login_theme" : "keycloak-custom",
       "post.logout.redirect.uris" : "+"
     },
     "authenticationFlowBindingOverrides" : { },
@@ -2890,6 +2892,7 @@
     "frontchannelLogout" : false,
     "protocol" : "openid-connect",
     "attributes" : {
+      "login_theme" : "keycloak",
       "post.logout.redirect.uris" : "+",
       "backchannel.logout.session.required" : "true",
       "backchannel.logout.revoke.offline.tokens" : "false"
@@ -4214,6 +4217,7 @@
 }, {
   "id" : "Migration2",
   "realm" : "Migration2",
+  "loginTheme" : "custom-theme",
   "notBefore" : 0,
   "defaultSignatureAlgorithm" : "RS256",
   "revokeRefreshToken" : false,

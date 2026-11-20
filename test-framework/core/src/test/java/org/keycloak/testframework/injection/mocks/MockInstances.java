@@ -1,13 +1,12 @@
 package org.keycloak.testframework.injection.mocks;
 
 import java.util.Set;
-
-import io.vertx.core.impl.ConcurrentHashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MockInstances {
 
-    public static final Set<Object> INSTANCES = new ConcurrentHashSet<>();
-    public static final Set<Object> CLOSED_INSTANCES = new ConcurrentHashSet<>();
+    public static final Set<Object> INSTANCES = ConcurrentHashMap.newKeySet();
+    public static final Set<Object> CLOSED_INSTANCES = ConcurrentHashMap.newKeySet();
 
     public static void reset() {
         INSTANCES.clear();

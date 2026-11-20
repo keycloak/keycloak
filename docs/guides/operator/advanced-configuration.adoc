@@ -384,7 +384,7 @@ This behavior is now implemented by the server and enabled by default. You can d
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -564,7 +564,7 @@ This is useful when you want a cleaner URL (for example, `https://keycloak.mynam
 .Custom Service name and port
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc

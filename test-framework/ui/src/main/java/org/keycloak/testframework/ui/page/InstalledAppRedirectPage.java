@@ -46,7 +46,7 @@ public class InstalledAppRedirectPage extends AbstractPage {
     @FindBy(id = "kc-page-title")
     private WebElement pageTitle;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement errorBox;
 
     public InstalledAppRedirectPage(ManagedWebDriver driver) {

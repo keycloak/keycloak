@@ -1,17 +1,23 @@
 package org.keycloak.testsuite.model.infinispan;
 
+import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
@@ -20,8 +26,11 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -99,6 +108,65 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
 
          // Ensure that both nodes see the updated realm entity after merge
          withRealmConsumer(realmId, (session, realm) -> assertEquals(customDisplayName, realm.getDisplayNameHtml()));
+      });
+   }
+
+   @Test
+   public void testRevokedTokensReloadedOnMergeEvent() throws InterruptedException {
+      // The actionTokens cache does not exist when STATELESS is enabled
+      Assume.assumeFalse(Profile.isFeatureEnabled(Profile.Feature.STATELESS));
+      var numFactories = 2;
+      var partitionManager = new PartitionManager(numFactories);
+      var factoryIndex = new AtomicInteger(0);
+      var barrier = new CyclicBarrier(numFactories);
+      var tokenId = UUID.randomUUID().toString();
+      closeKeycloakSessionFactory();
+
+      inIndependentFactories(numFactories, 60, () -> {
+         var index = factoryIndex.getAndIncrement();
+
+         inComittedTransaction(session -> {
+            var cacheManager = session.getProvider(InfinispanConnectionProvider.class)
+                  .getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE)
+                  .getCacheManager();
+            partitionManager.addManager(index, cacheManager);
+
+            if (index == 0) {
+               session.revokedTokens().put(tokenId, 60);
+            }
+         });
+         awaitBarrier(barrier);
+
+         if (index == 0) {
+            partitionManager.splitCluster(new int[]{0}, new int[]{1});
+         }
+         awaitBarrier(barrier);
+
+         // Simulate both partitions losing the cached entry while the database and cluster-wide startup marker survive.
+         inComittedTransaction(session -> {
+            var cache = session.getProvider(InfinispanConnectionProvider.class)
+                  .<String, SingleUseObjectValueEntity>getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
+            cache.remove(tokenId + SingleUseObjectProvider.REVOKED_KEY);
+            assertNotNull(cache.get(InfinispanSingleUseObjectProviderFactory.LOADED));
+            assertFalse(session.revokedTokens().contains(tokenId));
+         });
+         awaitBarrier(barrier);
+
+         if (index == 0) {
+            partitionManager.merge(0, 1);
+         }
+         awaitBarrier(barrier);
+
+         // The reload runs asynchronously after the merge view is installed.
+         await("Persisted revocation was not restored after the view merge")
+               .atMost(Duration.ofSeconds(30))
+               .pollInterval(Duration.ofMillis(100))
+               // the session factory is bound to the thread running inIndependentFactories
+               .pollInSameThread()
+               .until(() -> {
+                  Function<KeycloakSession, Boolean> contains = session -> session.revokedTokens().contains(tokenId);
+                  return inComittedTransaction(contains);
+               });
       });
    }
 

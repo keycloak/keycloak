@@ -8,7 +8,6 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
@@ -23,9 +22,11 @@ public class ScimRealmResource {
     private static final Logger logger = Logger.getLogger(ScimRealmResource.class);
 
     private final KeycloakSession session;
+    private final AdminAuth auth;
 
-    public ScimRealmResource(KeycloakSession session) {
+    public ScimRealmResource(KeycloakSession session, AdminAuth auth) {
         this.session = session;
+        this.auth = auth;
     }
 
     @Path("/v2/{resourceType}")
@@ -47,8 +48,6 @@ public class ScimRealmResource {
 
     private AdminEventBuilder createAdminEventBuilder() {
         RealmModel realm = session.getContext().getRealm();
-        AccessToken token = (AccessToken) session.getContext().getBearerToken();
-        AdminAuth auth = new AdminAuth(realm, token, session.getContext().getUser(), session.getContext().getClient());
         return new AdminEventBuilder(realm, auth, session, session.getContext().getConnection());
     }
 }

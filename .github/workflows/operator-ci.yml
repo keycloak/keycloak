@@ -185,6 +185,14 @@ jobs:
             END{if(k&&n)print k"/"ns"/"n}' | sort | uniq -d)
           if [ -n "$dupes" ]; then echo "duplicate resources rendered:"; echo "$dupes"; exit 1; fi
 
+      - name: helm template — release namespace
+        run: |
+          set -euo pipefail
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm --namespace custom-namespace)
+          # Every ServiceAccount subject of a ClusterRoleBinding must use the release namespace.
+          ns=$(echo "$out" | yq -N 'select(.kind == "ClusterRoleBinding") | .subjects[] | select(.kind == "ServiceAccount") | .namespace' | sort -u)
+          if [ "$ns" != "custom-namespace" ]; then echo "expected subject namespace custom-namespace, got: $ns"; exit 1; fi
+
       - name: helm template — crds.enabled=false
         run: |
           set -euo pipefail

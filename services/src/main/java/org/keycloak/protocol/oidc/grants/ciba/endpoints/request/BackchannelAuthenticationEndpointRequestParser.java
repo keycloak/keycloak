@@ -25,6 +25,8 @@ import java.util.Set;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
+import org.keycloak.representations.JsonWebToken;
 
 import org.jboss.logging.Logger;
 
@@ -80,6 +82,27 @@ public abstract class BackchannelAuthenticationEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_SECRET);
     }
 
+    /**
+     * Reserved protocol claim names that map to server-controlled top-level
+     * {@link CIBAAuthenticationRequest} claims. Supplied as request parameters they would be
+     * serialized as top-level claims and could overwrite server-controlled claims (or forge
+     * initially unset ones) when the authentication request is deserialized, so they are never
+     * copied into the additional request parameters.
+     */
+    public static final Set<String> DISABLED_REQ_PARAMS = new HashSet<>();
+    static {
+        DISABLED_REQ_PARAMS.add(JsonWebToken.SUBJECT);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.AUD);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.AZP);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.ISSUER);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.JTI);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.EXPIRED);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.ISSUED_AT);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.NOT_BEFORE);
+        DISABLED_REQ_PARAMS.add(JsonWebToken.TYPE);
+        DISABLED_REQ_PARAMS.add(CIBAAuthenticationRequest.AUTH_RESULT_ID);
+    }
+
     public void parseRequest(BackchannelAuthenticationEndpointRequest request) {
         request.scope = replaceIfNotNull(request.scope, getParameter(OIDCLoginProtocol.SCOPE_PARAM));
 
@@ -103,6 +126,13 @@ public abstract class BackchannelAuthenticationEndpointRequestParser {
 
     protected void extractAdditionalReqParams(Map<String, String> additionalReqParams) {
         for (String paramName : keySet()) {
+            if (DISABLED_REQ_PARAMS.contains(paramName)) {
+                // Never copy reserved names into additional request parameters: they could overwrite
+                // internal CIBA authentication request properties on deserialization.
+                // Some are required claims of the client's signed request JWT; skip them here.
+                // The form-body parser rejects reserved names before calling this method.
+                continue;
+            }
             if (!KNOWN_REQ_PARAMS.contains(paramName)) {
                 String value = getParameter(paramName);
                 if (value != null && value.trim().isEmpty()) {

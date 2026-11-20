@@ -1,4 +1,4 @@
-[[_parameterized_client_scopes]]
+[[parameterized_client_scopes]]
 == Parameterized client scopes
 
 :tech_feature_name: Parameterized scopes
@@ -53,11 +53,11 @@ When this type is selected, an additional *Allow access to user data* switch app
 | Yes
 
 | `user-delegation`
-| Extends the `username` type with an additional delegation check. The parameter must be the username (or email address when the realm allows login with email) of an existing, enabled user. The user cannot target themselves, and the target user must be granted the `delegate` permission on the current user through <<_fine_grained_permissions, Fine-grained admin permissions version 2>>.
+| Extends the `username` type with an additional delegation check. The parameter must be the username (or email address when the realm allows login with email) of an existing, enabled user. The user cannot target themselves, and the target user must be granted the `delegate` permission on the current user through <<fine_grained_permissions, Fine-grained admin permissions version 2>>.
 | No
 
 | `client-delegation`
-| Validates that the parameter value is the client ID of an existing, enabled client that has service accounts enabled. The service account of that client must be granted the `delegate` permission on the current user through <<_fine_grained_permissions, Fine-grained admin permissions version 2>>.
+| Validates that the parameter value is the client ID of an existing, enabled client that has service accounts enabled. The service account of that client must be granted the `delegate` permission on the current user through <<fine_grained_permissions, Fine-grained admin permissions version 2>>.
 | No
 
 | `custom`

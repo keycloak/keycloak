@@ -14,10 +14,20 @@ You can use {project_name} to:
 
 You perform these actions in the *Mappers* tab in the Admin Console.
 
+WARNING: Creating, updating, and deleting protocol mappers on clients and client scopes is restricted to users with
+permission to manage the realm (for example, users holding the `manage-realm` role when role-based access control is used).
+Delegated administrators who only have permission to manage clients (or client scopes) cannot create or modify protocol mappers
+unless the realm administrator explicitly configures the allowed protocol mapper types via the **Allowed protocol mapper types for client administrators** option in **Realm settings**.
+When updating a client or client scope via the Admin REST API, a delegated administrator is still allowed to proceed even if the
+request body contains `protocolMappers`, as long as no mapper was added, modified, or deleted compared to the existing ones.
+For clients managed through OpenID Connect Dynamic Client Registration (DCR), the allowed protocol mappers that can be created, updated, or deleted during client CRUD operations are the **intersection** of the realm-level **Allowed protocol mapper types for client administrators** option and the policy-level *Allowed Protocol Mapper Types* list in *Clients* > *Client Registration*. Since the realm-level option is empty by default, no protocol mappers can be managed via Dynamic Client Registration by default. Existing mappers of a disallowed type may still be included unchanged in an update.
+See the link:{securing_apps_base_link}/client-registration#_client_registration_policies[Client Registration Policies] section in the
+{securing_apps_name} for details and security considerations that apply.
+
 .Mappers tab
 image:images/mappers-oidc.png[]
 
-New clients do not have built-in mappers, but they can inherit some mappers from client scopes. See the <<_client_scopes, client scopes section>> for more details.
+New clients do not have built-in mappers, but they can inherit some mappers from client scopes. See the <<client_scopes, client scopes section>> for more details.
 
 Protocol mappers map items (such as an email address, for example) to
 a specific claim in the identity and access token. The function of a mapper should be self-explanatory from its name. You  add pre-configured mappers by clicking *Add Builtin*.
@@ -77,7 +87,7 @@ However it is not strictly needed as the *Subject (sub)* protocol mapper is exec
 by the Subject mapper. This is due to the <<_protocol-mappers_priority, priority>> of the Subject mapper. So the only advantage of removing the built-in *Subject (sub)* mapper might be to
 save a little bit of performance by avoiding the use of the protocol mapper, which may not have any effect.
 
-[[_using_lightweight_access_token]]
+[[using_lightweight_access_token]]
 == Using lightweight access token
 The access token in {project_name} contains sensitive information, including Personal Identifiable Information (PII).
 Therefore, if the resource server does not want to disclose this type of information to third party entities such as clients, {project_name} supports lightweight access tokens that remove PII from access tokens.
@@ -88,7 +98,7 @@ Information that cannot be removed from a lightweight access token::
   `exp`, `iat`, `jti`, `iss`, `typ`, `azp`, `sid`, `scope`, `cnf`
 
 Using a lightweight access token in {project_name}::
-  By applying `use-lightweight-access-token` executor of <<_client_policies, client policies>> to a client, the client can receive a lightweight access token instead of an access token. The lightweight access token contains a claim controlled by a protocol mapper where its setting `Add to lightweight access token`(default OFF) is turned ON. Also, by turning ON its setting `Add to token introspection` of the protocol mapper, the client can obtain the claim by sending the access token to {project_name}'s token introspection endpoint.
+  By applying `use-lightweight-access-token` executor of <<client_policies, client policies>> to a client, the client can receive a lightweight access token instead of an access token. The lightweight access token contains a claim controlled by a protocol mapper where its setting `Add to lightweight access token`(default OFF) is turned ON. Also, by turning ON its setting `Add to token introspection` of the protocol mapper, the client can obtain the claim by sending the access token to {project_name}'s token introspection endpoint.
 
 Converting a lightweight access token to a regular access token::
   To obtain a full access token from a lightweight access token, use link:{securing_apps_token_exchange_link}[Token Exchange]. The client holding a lightweight access token can exchange it for a regular access token that contains all standard claims. This is useful when you need to call APIs that require full access tokens or when you need access to claims that are not included in the lightweight token.

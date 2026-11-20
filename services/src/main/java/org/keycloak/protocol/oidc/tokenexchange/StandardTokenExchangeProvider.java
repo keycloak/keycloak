@@ -349,6 +349,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session,
                     clientSessionCtx.getClientSession().getUserSession(), clientSessionCtx).generateAccessToken();
 
+            capExpirationBySubjectToken(responseBuilder.getAccessToken(), subjectToken);
+
             checkRequestedAudiences(responseBuilder);
 
             if (encoder.getTokenContextFromTokenId(responseBuilder.getAccessToken().getId()).getSessionType() == AccessTokenContext.SessionType.TRANSIENT) {
@@ -410,6 +412,22 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         event.detail(Details.REASON, "requested_token_type unsupported");
         event.error(Errors.INVALID_REQUEST);
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
+    /**
+     * Limits the lifetime of the exchanged token to the lifetime of the subject token, unless the client explicitly
+     * allows the exchanged token to outlive it. The ID token inherits the expiration from the access token.
+     */
+    private void capExpirationBySubjectToken(AccessToken exchangedToken, AccessToken subjectToken) {
+        if (subjectToken == null || OIDCAdvancedConfigWrapper.fromClientModel(client).isStandardTokenExchangeAllowExpirationAfterSubject()) {
+            return;
+        }
+
+        Long subjectExp = subjectToken.getExp();
+        Long exchangedExp = exchangedToken.getExp();
+        if (subjectExp != null && subjectExp > 0 && (exchangedExp == null || exchangedExp == 0 || exchangedExp > subjectExp)) {
+            exchangedToken.exp(subjectExp);
+        }
     }
 
     protected void checkRequestedAudiences(TokenManager.AccessTokenResponseBuilder responseBuilder) {

@@ -35,11 +35,13 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Encode;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
@@ -55,9 +57,12 @@ import org.keycloak.services.resources.admin.info.ServerInfoAdminResource;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.TokenUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.protocol.oidc.mappers.AdminApiAudienceMapper.getAdminApiAudience;
 
 /**
  * Root resource for admin console and admin REST API
@@ -68,7 +73,6 @@ import org.jboss.logging.Logger;
 @Provider
 @Path("/admin")
 public class AdminRoot {
-    private static final String ADMIN_AUTH_KEY = "AdminRoot.adminAuth";
 
     protected static final Logger logger = Logger.getLogger(AdminRoot.class);
 
@@ -182,7 +186,7 @@ public class AdminRoot {
     }
 
     public static Optional<AdminAuth> getRealmAdminAuth(KeycloakSession session) {
-        return Optional.ofNullable(session.getAttribute(ADMIN_AUTH_KEY, AdminAuth.class));
+        return AdminAuth.getRealmAdminAuth(session);
     }
 
     public static AdminAuth authenticateRealmAdminRequest(KeycloakSession session) {
@@ -205,22 +209,30 @@ public class AdminRoot {
         }
         session.getContext().setRealm(realm);
 
-        AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
+        AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
                 .setConnection(session.getContext().getConnection())
-                .setHeaders(headers)
-                .authenticate();
+                .setHeaders(headers);
+
+        if (isAudienceCheckEnabled()) {
+            authenticator.setAudience(getAdminApiAudience(session, realm));
+        }
+
+        AuthenticationManager.AuthResult authResult = authenticator.authenticate();
 
         if (authResult == null) {
             logger.debug("Token not valid");
             throw new NotAuthorizedException("Bearer");
         }
 
+        if (isAudienceCheckEnabled() && !TokenUtil.hasScope(authResult.token().getScope(), Constants.KEYCLOAK_ADMIN_API_SCOPE)) {
+            logger.debug("Token is missing the required admin API scope");
+            throw new NotAuthorizedException("Bearer");
+        }
+
         session.getContext().setBearerToken(authResult.token());
 
-        AdminAuth result = new AdminAuth(realm, authResult.token(), authResult.user(), authResult.client());
-        session.setAttribute(ADMIN_AUTH_KEY, result);
-        return result;
+        return new AdminAuth(session, realm, authResult.token(), authResult.user(), authResult.client());
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {
@@ -344,6 +356,10 @@ public class AdminRoot {
 
     private static boolean isAdminApiEnabled() {
         return Profile.isFeatureEnabled(Profile.Feature.ADMIN_API);
+    }
+
+    private static boolean isAudienceCheckEnabled() {
+        return Config.scope("admin").getBoolean("audienceCheckEnabled", true);
     }
 
     private static boolean isAdminConsoleEnabled() {

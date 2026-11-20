@@ -68,9 +68,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.utils.Assert.assertExpiration;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findRealmRoleByName;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsernameId;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeAdminApiClientScope;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -567,6 +569,9 @@ public class OfflineTokenBasicFlowTest {
         UserResource testUser = findUserByUsernameId(appRealm, "test-user@localhost");
         testUser.roles().clientLevel(realmMgmtUuid).add(Collections.singletonList(roleRep));
 
+        ClientResource offlineClient = AdminApiUtil.findClientByClientId(appRealm, "offline-client");
+        addAdminApiClientScope(appRealm, offlineClient, true);
+
         try {
             // Login with offline token now
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -599,6 +604,7 @@ public class OfflineTokenBasicFlowTest {
         } finally {
             // clean up the admin role
             testUser.roles().clientLevel(realmMgmtUuid).remove(Collections.singletonList(roleRep));
+            removeAdminApiClientScope(appRealm, offlineClient, true);
         }
     }
 

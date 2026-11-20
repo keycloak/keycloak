@@ -32,15 +32,19 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.PasswordCredentialProvider;
 import org.keycloak.credential.PasswordCredentialProviderFactory;
+import org.keycloak.email.EmailDeliveryListener;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.email.RenderedEmail;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.Event;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -51,6 +55,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.ServicesLogger;
@@ -59,6 +64,7 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.adapter.InMemoryUserAdapter;
 
 import org.jboss.logging.Logger;
 
@@ -73,6 +79,9 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     public static final String PROVIDER_ID = "reset-credential-email";
     public static final String FORCE_LOGIN = "force-login";
     public static final String FEDERATED_OPTION = "only-federated";
+    public static final String EMAIL_COOLDOWN_KEY_PREFIX = "reset-credential-email-cooldown-known-";
+    private static final String EMAIL_COOLDOWN_UNKNOWN_USER_KEY_PREFIX = "reset-credential-email-cooldown-unknown-";
+    private static final int EMAIL_COOLDOWN_UNKNOWN_USER_KEYS = 10000;
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -80,64 +89,100 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
         String username = authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
 
-        // we don't want people guessing usernames, so if there was a problem obtaining the user, the user will be null.
-        // just reset login for with a success message
-        if (user == null) {
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
-            return;
-        }
-
-        String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
-        if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
-            logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
-            if (forceLogin(context.getAuthenticatorConfig(), user)) {
-                // force end of auth session after the required actions
-                context.getAuthenticationSession().setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+        if (user != null) {
+            String actionTokenUserId = authenticationSession.getAuthNote(DefaultActionTokenKey.ACTION_TOKEN_USER_ID);
+            if (actionTokenUserId != null && Objects.equals(user.getId(), actionTokenUserId)) {
+                logger.debugf("Forget-password triggered when reauthenticating user after authentication via action token. Skipping " + PROVIDER_ID + " screen and using user '%s' ", user.getUsername());
+                if (forceLogin(context.getAuthenticatorConfig(), user)) {
+                    // force end of auth session after the required actions
+                    context.getAuthenticationSession().setAuthNote(AuthenticationManager.END_AFTER_REQUIRED_ACTIONS, "true");
+                }
+                context.success();
+                return;
             }
-            context.success();
-            return;
         }
 
-
+        // we don't want people guessing usernames, so every request does the same work, even when no email is sent
         EventBuilder event = context.getEvent();
-        // we don't want people guessing usernames, so if there is a problem, just continuously challenge
-        if (user.getEmail() == null || user.getEmail().trim().length() == 0) {
+        boolean deliverable = user != null && user.getEmail() != null && user.getEmail().trim().length() != 0;
+        if (user != null && !deliverable) {
             event.user(user)
                     .detail(Details.USERNAME, username)
                     .error(Errors.INVALID_EMAIL);
-
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
-            return;
         }
+        UserModel recipient = deliverable ? user : dummyUser(context, username);
+        boolean inCooldown = !startEmailCooldown(context, user, username);
 
         int validityInSecs = context.getRealm().getActionTokenGeneratedByUserLifespan(ResetCredentialsActionToken.TOKEN_TYPE);
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
         // We send the secret in the email in a link as a query param.
         String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authenticationSession).getEncodedId();
-        ResetCredentialsActionToken token = new ResetCredentialsActionToken(user.getId(), user.getEmail(), absoluteExpirationInSecs, authSessionEncodedId, authenticationSession.getClient().getClientId());
+        ResetCredentialsActionToken token = new ResetCredentialsActionToken(recipient.getId(), recipient.getEmail(), absoluteExpirationInSecs, authSessionEncodedId, authenticationSession.getClient().getClientId());
         String link = UriBuilder
           .fromUri(context.getActionTokenUrl(token.serialize(context.getSession(), context.getRealm(), context.getUriInfo())))
           .build()
           .toString();
         long expirationInMinutes = TimeUnit.SECONDS.toMinutes(validityInSecs);
         try {
-            context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(user).setAuthenticationSession(authenticationSession).sendPasswordReset(link, expirationInMinutes);
-
-            event.clone().event(EventType.SEND_RESET_PASSWORD)
-                         .user(user)
-                         .detail(Details.USERNAME, username)
-                         .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId()).success();
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+            EmailTemplateProvider emailTemplateProvider = context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(recipient).setAuthenticationSession(authenticationSession);
+            RenderedEmail email = emailTemplateProvider.renderPasswordReset(link, expirationInMinutes);
+            if (deliverable && inCooldown) {
+                failedEvent(event, user, username).error(Errors.SLOW_DOWN);
+            } else if (deliverable) {
+                if (email == null) {
+                    // this provider can only send right away
+                    emailTemplateProvider.sendPasswordReset(link, expirationInMinutes);
+                } else {
+                    emailTemplateProvider.send(email, absoluteExpirationInSecs, failedListener(event, user, username));
+                }
+                sentEvent(event, user, username, authenticationSession).success();
+            }
         } catch (EmailException e) {
-            event.clone().event(EventType.SEND_RESET_PASSWORD)
-                    .detail(Details.REASON, e.getMessage())
-                    .detail(Details.USERNAME, username)
-                    .user(user)
-                    .error(Errors.EMAIL_SEND_FAILED);
-            ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
-            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+            if (deliverable) {
+                failedEvent(event, user, username).detail(Details.REASON, e.getMessage()).error(Errors.EMAIL_SEND_FAILED);
+                ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
+            }
         }
+        context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+    }
+
+    // unknown users share a fixed number of entries, picked from the typed name, so a repeated request does the same work as for a known user
+    private static boolean startEmailCooldown(AuthenticationFlowContext context, UserModel user, String username) {
+        if (user != null) {
+            return EmailCooldownManager.addCooldownEntryIfAbsent(context, EMAIL_COOLDOWN_KEY_PREFIX, user.getId());
+        }
+        int entry = Math.floorMod(Objects.hashCode(KeycloakModelUtils.toLowerCaseSafe(username)), EMAIL_COOLDOWN_UNKNOWN_USER_KEYS);
+        return EmailCooldownManager.addCooldownEntryIfAbsent(context, EMAIL_COOLDOWN_UNKNOWN_USER_KEY_PREFIX, String.valueOf(entry));
+    }
+
+    private static UserModel dummyUser(AuthenticationFlowContext context, String username) {
+        UserModel user = new InMemoryUserAdapter(context.getSession(), context.getRealm(), KeycloakModelUtils.generateId());
+        user.setUsername(username == null ? "unknown" : username);
+        user.setEmail("unknown@invalid");
+        return user;
+    }
+
+    private static EventBuilder sentEvent(EventBuilder event, UserModel user, String username, AuthenticationSessionModel authenticationSession) {
+        return event.clone().event(EventType.SEND_RESET_PASSWORD)
+                .user(user)
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, user.getEmail()).detail(Details.CODE_ID, authenticationSession.getParentSession().getId());
+    }
+
+    private static EventBuilder failedEvent(EventBuilder event, UserModel user, String username) {
+        return event.clone().event(EventType.SEND_RESET_PASSWORD)
+                .detail(Details.USERNAME, username)
+                .user(user);
+    }
+
+    private static EmailDeliveryListener failedListener(EventBuilder event, UserModel user, String username) {
+        // runs later with another session, so keep only the event data
+        Event failedEvent = failedEvent(event, user, username).getEvent();
+        return (session, e) -> {
+            new EventBuilder(session.getContext().getRealm(), session, failedEvent).detail(Details.REASON, e.getMessage()).error(Errors.EMAIL_SEND_FAILED);
+            ServicesLogger.LOGGER.failedToSendPwdResetEmail(e);
+        };
     }
 
     public static Long getLastChangedTimestamp(KeycloakSession session, RealmModel realm, UserModel user) {
@@ -217,16 +262,23 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                 .label("Force login after reset")
                 .helpText(
                         """
-                        If this property is true, the user needs to login again after the reset credentials.
-                        If this property is false, the user will be automatically logged in after the succesful
+                        If this property is true (default), the user needs to login again after the reset credentials.
+                        If this property is false, the user will be automatically logged in after the successful
                         reset credentials when the same authentication session is used.
-                        If this property is only-federated (default), only federated users will be forced to login again,
+                        If this property is only-federated, only federated users will be forced to login again,
                         users stored in the internal database will be logged in if using the same authentication session.
                         """
                 )
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString(), FEDERATED_OPTION))
-                .defaultValue(FEDERATED_OPTION)
+                .defaultValue(Boolean.TRUE.toString())
+                .add()
+                .property()
+                .name(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_SECONDS)
+                .label("Cooldown between reset emails (seconds)")
+                .helpText("Minimum delay in seconds before another reset email is sent to the same user. Set it to 0 to send an email for every request.")
+                .type(ProviderConfigProperty.INTEGER_TYPE)
+                .defaultValue(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS)
                 .add()
                 .build();
     }
@@ -258,11 +310,12 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
 
     private boolean forceLogin(AuthenticatorConfigModel config, UserModel user) {
         final String forceLogin = config != null? config.getConfig().get(FORCE_LOGIN) : null;
-        if (forceLogin == null || FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
-            // default is only-federated, return true only for federated users
-            return !StorageId.isLocalStorage(user.getId()) || user.isFederated();
-        } else if (Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
+        if (forceLogin == null || Boolean.TRUE.toString().equalsIgnoreCase(forceLogin)) {
+            // default is to force login for everyone
             return Boolean.TRUE;
+        } else if (FEDERATED_OPTION.equalsIgnoreCase(forceLogin)) {
+            // return true only for federated users
+            return !StorageId.isLocalStorage(user.getId()) || user.isFederated();
         } else if (Boolean.FALSE.toString().equalsIgnoreCase(forceLogin)) {
             return Boolean.FALSE;
         } else {

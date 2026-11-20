@@ -60,16 +60,47 @@
         </modifySql>
     </changeSet>
 
+    <!-- The index drops in this file replace an index by dropping it and creating one of the same name.
+         They are guarded by "the index exists OR the changeset creating it is not recorded in DATABASECHANGELOG":
+         - When generating a script (migration-strategy=manual) for an empty database or an older release, the live
+           database does not contain the index yet because an earlier changeset of the same script creates it. That
+           changeset is not recorded in the persisted history, so the drop is emitted and the re-created index of the
+           same name does not fail with "already exists".
+         - When the creating changeset has already run but the index is absent (for example its creation was deferred
+           by CustomCreateIndexChange because the table is above the row-count threshold), the drop is skipped, both
+           when updating automatically and when generating a script.
+         ChangeSetPersistedPrecondition queries the persisted history instead of using changeSetExecuted: that
+         precondition reads Liquibase's in-memory history, which is also updated for changesets that are only written
+         to the script. -->
+
     <changeSet id="26.8.0-51851-drop-old-expiration-idx-created" author="keycloak">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
+            <or>
+                <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
+                <not>
+                    <customPrecondition className="org.keycloak.connections.jpa.updater.liquibase.custom.ChangeSetPersistedPrecondition">
+                        <param name="id" value="26.5.0-add-sess-refresh-idx"/>
+                        <param name="author" value="keycloak"/>
+                        <param name="file" value="META-INF/jpa-changelog-26.5.0.xml"/>
+                    </customPrecondition>
+                </not>
+            </or>
         </preConditions>
         <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_CREATED"/>
     </changeSet>
 
     <changeSet id="26.8.0-51851-drop-old-expiration-idx-last-refresh" author="keycloak">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
+            <or>
+                <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
+                <not>
+                    <customPrecondition className="org.keycloak.connections.jpa.updater.liquibase.custom.ChangeSetPersistedPrecondition">
+                        <param name="id" value="26.5.0-add-sess-create-idx"/>
+                        <param name="author" value="keycloak"/>
+                        <param name="file" value="META-INF/jpa-changelog-26.5.0.xml"/>
+                    </customPrecondition>
+                </not>
+            </or>
         </preConditions>
         <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_USER_SESSION_EXPIRATION_LAST_REFRESH"/>
     </changeSet>
@@ -109,7 +140,16 @@
 
     <changeSet id="26.8.0-51854-drop-css-user-session-offline-idx" author="keycloak">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE"/>
+            <or>
+                <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE"/>
+                <not>
+                    <customPrecondition className="org.keycloak.connections.jpa.updater.liquibase.custom.ChangeSetPersistedPrecondition">
+                        <param name="id" value="26.6.0-44424-index-css-user-session-and-offline"/>
+                        <param name="author" value="keycloak"/>
+                        <param name="file" value="META-INF/jpa-changelog-26.6.0.xml"/>
+                    </customPrecondition>
+                </not>
+            </or>
         </preConditions>
         <dropIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE"/>
     </changeSet>
@@ -121,7 +161,16 @@
                     <dbms type="postgresql"/>
                     <dbms type="mssql"/>
                 </or>
-                <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+                <or>
+                    <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
+                    <not>
+                        <customPrecondition className="org.keycloak.connections.jpa.updater.liquibase.custom.ChangeSetPersistedPrecondition">
+                            <param name="id" value="25.0.0-28265-index-2-not-mysql"/>
+                            <param name="author" value="keycloak"/>
+                            <param name="file" value="META-INF/jpa-changelog-25.0.0.xml"/>
+                        </customPrecondition>
+                    </not>
+                </or>
             </and>
         </preConditions>
         <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
@@ -129,15 +178,10 @@
 
     <changeSet id="26.8.0-51854-add-filtered-broker-session-idx" author="keycloak">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <and>
-                <or>
-                    <dbms type="postgresql"/>
-                    <dbms type="mssql"/>
-                </or>
-                <not>
-                    <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID"/>
-                </not>
-            </and>
+            <or>
+                <dbms type="postgresql"/>
+                <dbms type="mssql"/>
+            </or>
         </preConditions>
         <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID">
             <column name="BROKER_SESSION_ID"/>
@@ -198,7 +242,16 @@
 
     <changeSet id="26.8.0-53211-drop-old-root-auth-session-idx" author="keycloak">
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
-            <indexExists tableName="ROOT_AUTH_SESSION" indexName="IDX_ROOT_AUTH_SESSION_REALM"/>
+            <or>
+                <indexExists tableName="ROOT_AUTH_SESSION" indexName="IDX_ROOT_AUTH_SESSION_REALM"/>
+                <not>
+                    <customPrecondition className="org.keycloak.connections.jpa.updater.liquibase.custom.ChangeSetPersistedPrecondition">
+                        <param name="id" value="26.7.0-persistent-auth-session-root-index"/>
+                        <param name="author" value="keycloak"/>
+                        <param name="file" value="META-INF/jpa-changelog-26.7.0.xml"/>
+                    </customPrecondition>
+                </not>
+            </or>
         </preConditions>
         <dropIndex tableName="ROOT_AUTH_SESSION" indexName="IDX_ROOT_AUTH_SESSION_REALM"/>
     </changeSet>
@@ -229,17 +282,22 @@
         </addColumn>
     </changeSet>
 
-    <!-- Populate REALM_ID from ORG table -->
+    <!-- Populate REALM_ID from ORG table.
+         onSqlOutput="IGNORE": the preceding changeset adds the column on the live database only when it is absent;
+         in script mode it is always added by an earlier statement in the same script.  Evaluating the precondition
+         against the generation database (which already has REALM_ID) would skip this changeset. -->
     <changeSet author="keycloak" id="26.8.0-org-domain-populate-realm-id">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+        <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
         </preConditions>
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_PopulateOrgDomainRealmId"/>
     </changeSet>
 
-    <!-- Make REALM_ID NOT NULL + add unique constraint and index -->
+    <!-- Make REALM_ID NOT NULL + add unique constraint and index.
+         onSqlOutput="IGNORE": same reasoning as the populate changeset above — the column is always present by this
+         point in the script because an earlier changeset in the same script adds it. -->
     <changeSet author="keycloak" id="26.8.0-org-domain-realm-id-not-null">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+        <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <columnExists tableName="ORG_DOMAIN" columnName="REALM_ID"/>
         </preConditions>
         <addNotNullConstraint tableName="ORG_DOMAIN" columnName="REALM_ID" columnDataType="VARCHAR(255)"/>
@@ -336,17 +394,22 @@
         </createIndex>
     </changeSet>
 
-    <!-- Record the target organization on organization group IdP mappers. Must run before ORGANIZATION_ID is dropped -->
+    <!-- Record the target organization on organization group IdP mappers. Must run before ORGANIZATION_ID is dropped.
+         onSqlOutput="IGNORE": ORGANIZATION_ID existed before 26.8 and is always present on the generation database;
+         evaluating columnExists against it in script mode would always be true and would not skip anything, but
+         IGNORE is safer because an earlier changeset in the same script could in principle have added or removed it. -->
     <changeSet author="keycloak" id="26.8.0-idp-mapper-organization-id">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+        <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <columnExists tableName="IDENTITY_PROVIDER" columnName="ORGANIZATION_ID"/>
         </preConditions>
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_8_0_IdpMapperOrganizationId"/>
     </changeSet>
 
-    <!-- Drop IDENTITY_PROVIDER.ORGANIZATION_ID column and related indexes -->
+    <!-- Drop IDENTITY_PROVIDER.ORGANIZATION_ID column and related indexes.
+         onSqlOutput="IGNORE": the column existed before 26.8 and is guaranteed to be present at this point in the
+         script; evaluating against the generation database would give the wrong answer once the column is dropped. -->
     <changeSet author="keycloak" id="26.8.0-drop-idp-organization-id">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+        <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <columnExists tableName="IDENTITY_PROVIDER" columnName="ORGANIZATION_ID"/>
         </preConditions>
         <dropIndex tableName="IDENTITY_PROVIDER" indexName="IDX_IDP_REALM_ORG"/>
@@ -360,9 +423,12 @@
         </createIndex>
     </changeSet>
 
-    <!-- Backfill KEYCLOAK_GROUP.ORG_ID for orgs created before 26.6.0 -->
+    <!-- Backfill KEYCLOAK_GROUP.ORG_ID for orgs created before 26.6.0.
+         onSqlOutput="IGNORE": both columns existed before 26.8; the generation database always has them, so TEST
+         would always include this changeset but IGNORE is the correct mode because earlier changesets in the same
+         script may have altered these tables. -->
     <changeSet author="keycloak" id="26.8.0-backfill-group-org-id">
-        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+        <preConditions onFail="MARK_RAN" onSqlOutput="IGNORE">
             <and>
                 <columnExists tableName="KEYCLOAK_GROUP" columnName="ORG_ID"/>
                 <columnExists tableName="ORG" columnName="GROUP_ID"/>

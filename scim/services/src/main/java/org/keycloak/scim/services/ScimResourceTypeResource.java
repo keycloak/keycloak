@@ -154,7 +154,11 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             }
 
             List<R> resources = stream.toList();
-            Long totalResults = resourceTypeProvider.count(searchOptions, resources.size());
+            // count() uses a page shorter than the requested count as the signal that the last page was reached, so
+            // it must be given the size of the page the query produced. When getAll removed resources the caller
+            // cannot view, that is no longer the size of the page being returned.
+            int matchedSize = searchOptions.getMatchedSize() != null ? searchOptions.getMatchedSize() : resources.size();
+            Long totalResults = resourceTypeProvider.count(searchOptions, matchedSize);
             ListResponse<R> response = new ListResponse<>();
 
             response.setResources(resources);

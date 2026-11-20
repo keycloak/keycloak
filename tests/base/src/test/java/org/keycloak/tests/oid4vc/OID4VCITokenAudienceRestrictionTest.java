@@ -35,6 +35,9 @@ import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.removeAdminApiClientScope;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -213,16 +216,24 @@ public class OID4VCITokenAudienceRestrictionTest extends OID4VCIssuerTestBase {
         RoleRepresentation role = mgmtClientApi.roles().get(AdminRoles.VIEW_REALM).toRepresentation();
         user.admin().roles().clientLevel(mgmtClient.getId()).add(List.of(role));
 
-        // Successful admin REST API call when OID4VCI scope not used
-        String normalAccessToken = obtainAccessToken(false);
-        RealmRepresentation realmRep = invokeAdminRest(normalAccessToken);
-        assertEquals(testRealm.getName(), realmRep.getRealm());
+        // The wallet client needs the kc-admin-api scope so its non-OID4VCI token is accepted by the Admin REST API.
+        // An OID4VCI-scoped token remains rejected because OID4VCITokenPostProcessor overwrites its audience with the credential endpoint only.
+        addAdminApiClientScope(testRealm.admin(), managedClient.admin(), true);
 
-        // Should fail admin REST API call when OID4VCI scope is used
-        String oid4vciAccessToken = obtainAccessToken(true);
-        assertThrows(NotAuthorizedException.class,
-                () -> invokeAdminRest(oid4vciAccessToken),
-                "Admin REST API must reject an OID4VCI-scoped access token");
+        try {
+            // Successful admin REST API call when OID4VCI scope not used
+            String normalAccessToken = obtainAccessToken(false);
+            RealmRepresentation realmRep = invokeAdminRest(normalAccessToken);
+            assertEquals(testRealm.getName(), realmRep.getRealm());
+
+            // Should fail admin REST API call when OID4VCI scope is used
+            String oid4vciAccessToken = obtainAccessToken(true);
+            assertThrows(NotAuthorizedException.class,
+                    () -> invokeAdminRest(oid4vciAccessToken),
+                    "Admin REST API must reject an OID4VCI-scoped access token");
+        } finally {
+            removeAdminApiClientScope(testRealm.admin(), managedClient.admin(), true);
+        }
     }
 
     @Test

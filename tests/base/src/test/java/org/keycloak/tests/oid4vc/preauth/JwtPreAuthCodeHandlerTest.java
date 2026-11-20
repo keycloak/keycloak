@@ -39,6 +39,7 @@ import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerWithPre
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -170,6 +171,20 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void mustRejectReplayedPreAuthCodeJwtsWithAlternateEncoding() {
+        String preAuthCode = createPreAuthOffer();
+        assertValidPreAuthCodeJwt(preAuthCode);
+
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals(HttpStatus.SC_OK, resp.getStatusCode());
+
+        // Trailing padding on the signature segment is ignored when decoding, so this is the same signed code
+        AccessTokenResponse replayResp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode + "=").send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, replayResp.getStatusCode());
+        assertEquals("Pre-authorized code has already been used", replayResp.getErrorDescription());
+    }
+
+    @Test
     public void mustUseDefaultLifespanWhenConfiguredValueIsNotNumeric() {
         String originalLifespan = getRealmAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY);
         try {
@@ -276,7 +291,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
     }
 
     private void assertPreAuthCodeCtx(PreAuthCodeCtx preAuthCodeCtx) {
-        assertEquals(client.getClientId(), preAuthCodeCtx.getTargetClientId());
+        assertNull(preAuthCodeCtx.getTargetClientId());
         assertEquals(requireExistingUser(ctx.getHolder()).getId(), preAuthCodeCtx.getTargetUserId());
         assertEquals(List.of(ctx.getCredentialScope().getCredentialConfigurationId()),
                 preAuthCodeCtx.getCredentialConfigurationIds());

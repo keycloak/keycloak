@@ -43,7 +43,7 @@
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 30,
-  "loginTheme": "rh-sso",
+  "loginTheme": "keycloak",
   "emailTheme": "rh-sso",
   "accountTheme": "rh-sso.v2",
   "roles": {
@@ -698,7 +698,9 @@
       "publicClient": false,
       "frontchannelLogout": false,
       "protocol": "openid-connect",
-      "attributes": {},
+      "attributes": {
+        "login_theme": "keycloak-custom"
+      },
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": false,
       "nodeReRegistrationTimeout": 0,
@@ -801,6 +803,7 @@
       "frontchannelLogout": false,
       "protocol": "openid-connect",
       "attributes": {
+        "login_theme": "keycloak",
         "backchannel.logout.session.required": "true",
         "backchannel.logout.revoke.offline.tokens": "false"
       },
@@ -1626,6 +1629,23 @@
           ],
           "priority": [
             "100"
+          ]
+        }
+      },
+      {
+        "id": "ff2c4bb4-563e-483b-87b9-a9c24594ea23",
+        "name": "aes-generated-256",
+        "providerId": "aes-generated",
+        "subComponents": {},
+        "config": {
+          "kid": [
+            "cb0a1c3d-902f-4e5d-905b-581bda97f090"
+          ],
+          "secret": [
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          ],
+          "priority": [
+            "-100"
           ]
         }
       },

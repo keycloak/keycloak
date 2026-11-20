@@ -122,6 +122,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     public static final ResourceType ROLES = new ResourceType(ROLES_RESOURCE_TYPE, Set.of(MAP_ROLE, MAP_ROLE_CLIENT_SCOPE, MAP_ROLE_COMPOSITE));
     public static final ResourceType USERS = new ResourceType(USERS_RESOURCE_TYPE, Set.of(MANAGE, VIEW, IMPERSONATE, DELEGATE, MAP_ROLES, MANAGE_GROUP_MEMBERSHIP, RESET_PASSWORD), Map.of(VIEW, Set.of(VIEW_MEMBERS), MANAGE, Set.of(MANAGE_MEMBERS), IMPERSONATE, Set.of(IMPERSONATE_MEMBERS), DELEGATE, Set.of(DELEGATE_MEMBERS), MANAGE_GROUP_MEMBERSHIP, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS)), GROUPS.getType());
     public static final ResourceType ORGANIZATIONS = new ResourceType(ORGANIZATIONS_RESOURCE_TYPE, Set.of(MANAGE, VIEW));
+    private static final String AUTHORIZATION_USER = "kc.authz.fgap.user";
     private static final String SKIP_EVALUATION = "kc.authz.fgap.skip";
     public static final AdminPermissionsSchema SCHEMA = new AdminPermissionsSchema();
 
@@ -538,11 +539,11 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     public List<Predicate> applyAuthorizationFilters(KeycloakSession session, ResourceType resourceType, PartialEvaluationStorageProvider evaluator, RealmModel realm, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
-        return partialEvaluator.getPredicates(session, resourceType, evaluator, realm, builder, queryBuilder, path);
+        return partialEvaluator.getPredicates(session, getAdminUser(session), resourceType, evaluator, realm, builder, queryBuilder, path);
     }
 
     public boolean isPartialEvaluationActive(KeycloakSession session, ResourceType resourceType) {
-        return partialEvaluator.isActive(session, resourceType);
+        return partialEvaluator.isActive(session, getAdminUser(session), resourceType);
     }
 
     public PolicyEvaluator getPolicyEvaluator(KeycloakSession session, ResourceServer resourceServer) {
@@ -575,14 +576,26 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         return aliases;
     }
 
+    public static FGAPAdminUserModel setAdminUser(KeycloakSession session, UserModel user) {
+        Objects.requireNonNull(session.getContext().getRealm(), "A realm is required for authorization filtering");
+        Objects.requireNonNull(user, "An admin user is required for authorization filtering");
+        FGAPAdminUserModel admin = UnfilteredUserModelInvocationHandler.wrap(session, user);
+        session.setAttribute(AUTHORIZATION_USER, admin);
+        return admin;
+    }
+
+    private static UserModel getAdminUser(KeycloakSession session) {
+        return session == null ? null : session.getAttribute(AUTHORIZATION_USER, UserModel.class);
+    }
+
     /**
-     * <p>Disables authorization and evaluation of permissions for realm resource types when executing the given {@code runnable}
+     * <p>Disables automatic FGAP query filtering when executing the given {@code runnable}
      * in the context of the given {@code session}.
      *
-     * <p>This method should be used whenever a code block should be executed without any evaluation or filtering based on
-     * the permissions set to a realm. For instance, when caching realm resources where access enforcement does not apply.
+     * <p>Use this for internal model lookups, for instance when caching realm resources. Explicit permission checks
+     * are unaffected. Streams and other lazy results must be consumed within the runnable.
      *
-     * @param session the session. If {@code null}, authorization is enabled when executing the code block
+     * @param session the session. If {@code null}, the runnable is executed directly
      * @param runnable the runnable to execute
      */
     public static void runWithoutAuthorization(KeycloakSession session, Runnable runnable) {
@@ -600,7 +613,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     /**
-     * <p>Disables authorization and evaluation of permissions for realm resource types when executing the given {@code supplier}
+     * <p>Disables automatic FGAP query filtering when executing the given {@code supplier}
      * in the context of the given {@code session}, returning the supplier's result.
      *
      * @param session the session. If {@code null}, the supplier is executed directly without modifying authorization state
@@ -623,11 +636,11 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     /**
-     * Returns if authorization is disabled in the context of the given {@code session} at the moment that this method is called.
+     * Returns whether FGAP v2 partial evaluation is disabled by the realm configuration or temporarily suppressed.
+     * Filtering also requires an admin bound to the session by {@link #setAdminUser(KeycloakSession, UserModel)}.
      *
      * @param session the session
-     * @return {@code true} if authorization is disabled. Otherwise, returns {@code false}.
-     * Otherwise, {@code false}.
+     * @return {@code true} if partial evaluation must be skipped
      * @see AdminPermissionsSchema#runWithoutAuthorization(KeycloakSession, Runnable)
      */
     public static boolean isSkipEvaluation(KeycloakSession session) {

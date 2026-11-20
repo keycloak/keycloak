@@ -3,8 +3,8 @@ set -e
 
 GROUP="$1"
 if [ "$GROUP" == "" ]; then
-  echo 'Usage: suite.sh <group>'
-  exit
+  echo 'Usage: suite.sh <group>' >&2
+  exit 1
 fi
 
 cd "`readlink -f "$0" | xargs dirname`"
@@ -13,7 +13,7 @@ TEST_DIR="../src/test/java/"
 SUITE_FILE="$GROUP-suite"
 
 if [ ! -f "$SUITE_FILE" ]; then
-  echo "$SUITE_FILE not found"
+  echo "$SUITE_FILE not found" >&2
   exit 1
 fi
 
@@ -24,7 +24,7 @@ for i in `cat "$SUITE_FILE" | grep -v '^[[:space:]]*$' | grep -v '^[[:space:]]*#
   if [[ "$i" != *'.'* ]]; then
     SEARCH=`find "$TEST_DIR" -name "$i.java"`
     if [ "$SEARCH" == "" ]; then
-      echo "$i not found in testsuite"
+      echo "$i not found in testsuite" >&2
       exit 1
     fi
   fi

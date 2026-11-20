@@ -67,11 +67,26 @@ public class InfinispanClusterProvider implements ClusterProvider {
 
     private final ExecutorService localExecutor;
 
-    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache, ExecutorService localExecutor) {
+    private final long clockSkewThresholdMillis;
+    private static final long DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS = 100;
+
+    /**
+     * Constructor with default clock skew threshold for backward compatibility.
+     * @deprecated Use {@link #InfinispanClusterProvider(int, NodeInfo, Cache, ExecutorService, long)} to specify threshold
+     */
+    @Deprecated
+    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache,
+                                      ExecutorService localExecutor) {
+        this(clusterStartupTime, nodeInfo, workCache, localExecutor, DEFAULT_CLOCK_SKEW_THRESHOLD_MILLIS);
+    }
+
+    public InfinispanClusterProvider(int clusterStartupTime, NodeInfo nodeInfo, Cache<String, Object> workCache,
+                                      ExecutorService localExecutor, long clockSkewThresholdMillis) {
         this.nodeInfo = nodeInfo;
         this.clusterStartupTime = clusterStartupTime;
         this.workCache = workCache;
         this.localExecutor = localExecutor;
+        this.clockSkewThresholdMillis = clockSkewThresholdMillis;
     }
 
 
@@ -176,20 +191,16 @@ public class InfinispanClusterProvider implements ClusterProvider {
     }
 
     @Override
-    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender, DCNotify dcNotify) {
-        notify(taskKey, Collections.singleton(event), ignoreSender, dcNotify);
-    }
-
-    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
-        notify(taskKey, events, ignoreSender, DCNotify.ALL_DCS);
+    public void notify(String taskKey, ClusterEvent event, boolean ignoreSender) {
+        notify(taskKey, Collections.singleton(event), ignoreSender);
     }
 
     @Override
-    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), dcNotify, ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), ignoreSender);
 
         String eventKey = SecretGenerator.getInstance().generateSecureID();
 
@@ -221,16 +232,21 @@ public class InfinispanClusterProvider implements ClusterProvider {
     }
 
     private void eventReceived(String key, Object obj) {
-        if (!(obj instanceof WrapperClusterEvent event)) {
+        if (obj instanceof WrapperClusterEvent event) {
+            handleWrapperClusterEvent(event);
+        } else if (obj instanceof ClockSkewTimestampSample sample) {
+            handleClockSkewSample(sample);
+        } else {
             // Items with the TASK_KEY_PREFIX might be gone fast once the locking is complete, therefore, don't log them.
             // It is still good to have the warning in case of real events return null because they have been, for example, expired
-            if (obj == null && !key.startsWith(TASK_KEY_PREFIX)) {
+            if (obj == null && !key.startsWith(TASK_KEY_PREFIX) && !key.startsWith(ClockSkewDetectionTask.CLOCK_SKEW_SAMPLE_KEY_PREFIX)) {
                 logger.warnf("Event object wasn't available in remote cache after event was received. Event key: %s", key);
             }
-            return;
         }
+    }
 
-        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
+    private void handleWrapperClusterEvent(WrapperClusterEvent event) {
+        if (event.rejectEvent(nodeInfo.nodeName())) {
             return;
         }
 
@@ -245,6 +261,29 @@ public class InfinispanClusterProvider implements ClusterProvider {
             for (var e : event.getDelegateEvents()) {
                 myListeners.forEach(e);
             }
+        }
+    }
+
+    private void handleClockSkewSample(ClockSkewTimestampSample sample) {
+        // Ignore samples from this node
+        if (sample.nodeName().equals(nodeInfo.nodeName())) {
+            return;
+        }
+
+        long localTime = Time.currentTimeMillis();
+        long remoteTime = sample.timestampMillis();
+        long skew = remoteTime - localTime;
+
+        if (logger.isTraceEnabled()) {
+            logger.tracef("Received clock skew sample from node %s: remote=%d, local=%d, skew=%d ms",
+                    sample.nodeName(), remoteTime, localTime, skew);
+        }
+
+        // Only warn if the remote node is ahead by more than the threshold
+        if (skew > clockSkewThresholdMillis) {
+            logger.warnf("Clock skew detected: node '%s' is ahead by %d ms (threshold: %d ms). " +
+                            "This node's time may be behind. Ensure NTP is properly configured on all cluster nodes.",
+                    sample.nodeName(), skew, clockSkewThresholdMillis);
         }
     }
 

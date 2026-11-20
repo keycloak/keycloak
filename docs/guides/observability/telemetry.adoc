@@ -90,7 +90,7 @@ WARNING: OpenTelemetry Logs and Metrics are preview/experimental features.
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc

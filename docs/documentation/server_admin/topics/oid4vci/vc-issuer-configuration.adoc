@@ -1,4 +1,4 @@
-[[_oid4vci]]
+[[oid4vci]]
 == Configuring {project_name} as a Verifiable Credential Issuer
 
 [WARNING]
@@ -351,7 +351,7 @@ choose some of the pre-defined OID4VCI credential scopes or some credential scop
 
 Once verifiable credential is created, administrator can send credential offer to the user by email by click **Send credential offer** in the table of available verifiable credentials.
 This link is available in case user has email. It is also needed that SMTP is properly configured for the realm as described in the <<_email,dedicated section>>. The email will also
-inform user that he has some verifiable credential available. User can also visit <<_account-service,Account console>> and request issuance of some available verifiable credential by himself.
+inform user that he has some verifiable credential available. User can also visit <<account-service,Account console>> and request issuance of some available verifiable credential by himself.
 
 [NOTE]
 ====
@@ -628,7 +628,7 @@ Alternatively, you can create and configure the client programmatically. Ensure 
     "oid4vci.enabled": "true",
     "client.secret.creation.time": "1719785014",
     "client.introspection.response.allow.jwt.claim.enabled": "false",
-    "login_theme": "keycloak",
+    "login_theme": "keycloak.v2",
     "post.logout.redirect.uris": "http://localhost:8080"
   }
 }

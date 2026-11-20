@@ -69,7 +69,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Describe the bug
+      label: Bug Description
       description: Provide a clear and concise description of what the problem is.
     validations:
       required: true

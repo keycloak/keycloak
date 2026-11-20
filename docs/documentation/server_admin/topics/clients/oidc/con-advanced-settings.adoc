@@ -148,6 +148,7 @@ really requires level 2, the client is encouraged to check the presence of the `
 To actually enforce the usage of a certain ACR on the {project_name} side, use the `Minimum ACR Value` setting.
 This allows administrators to enforce ACRs even on applications that are not able to validate the requested `acr` claim inside the token.
 
+WARNING: The `Minimum ACR Value` configuration option in OIDC clients does not affect non-browser authentication flows: *Direct access grants*,  *Services account roles*, *Standard Token Exchange* and *JWT Authorization Grant*. Those grants should be enabled by administrators in the <<_access-type, Capability config>> client section and will authenticate with default ACR level `1` (Default Token Exchange can reuse the existing SSO-authenticated client session and return ACR 0). Do not enable them if the grant is not suitable for the client.
 
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 

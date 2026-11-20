@@ -16,6 +16,11 @@ languages:
     maintainers:
       - pionl
       - pschiffe
+  da:
+    name: Danish
+    maintainers:
+      - bargib
+      - laped
   de:
     name: German
     maintainers:

@@ -85,13 +85,17 @@ export const MultiLineInput = ({
 
   const update = (values: (string | undefined)[]) => {
     const fieldValue = values.flatMap((field) => field);
-    // Avoid persisting blank-only values as "" / [""]. Empty string attributes
-    // (e.g. post.logout.redirect.uris) break client policy executors such as
-    // secure-redirect-uris-enforcer used by oauth-2-1-for-public-client.
+    // Blank is special and should be "" for stringify and [] for array
     const isBlank = fieldValue.every((v) => !(v ?? "").trim());
     setValue(
       name,
-      isBlank ? undefined : stringify ? toStringValue(fieldValue) : fieldValue,
+      isBlank
+        ? stringify
+          ? ""
+          : []
+        : stringify
+          ? toStringValue(fieldValue)
+          : fieldValue,
       {
         shouldDirty: true,
         shouldValidate: true,
@@ -109,12 +113,6 @@ export const MultiLineInput = ({
   }
 
   useEffect(() => {
-    // Normalize blank string values left by older UI versions so they are omitted
-    // on save instead of being re-submitted as "".
-    if (stringify && getValues(name) === "") {
-      setValue(name, undefined, { shouldDirty: false, shouldValidate: false });
-    }
-
     register(name, {
       validate: (value) =>
         isRequired &&
@@ -147,7 +145,7 @@ export const MultiLineInput = ({
             </InputGroupItem>
             <InputGroupItem>
               <Button
-                data-testid={"remove" + index}
+                data-testid={`${name}-remove${index}`}
                 variant={ButtonVariant.link}
                 onClick={() => remove(index)}
                 tabIndex={-1}

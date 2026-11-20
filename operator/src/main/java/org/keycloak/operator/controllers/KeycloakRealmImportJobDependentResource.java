@@ -93,8 +93,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var cacheEnvVarName = getKeycloakOptionEnvVarName("cache");
         var healthEnvVarName = getKeycloakOptionEnvVarName("health-enabled");
-        var cacheStackEnvVarName = getKeycloakOptionEnvVarName("cache-stack");
-        var toRemove = Set.of(cacheEnvVarName, healthEnvVarName, cacheStackEnvVarName);
+        var toRemove = Set.of(cacheEnvVarName, healthEnvVarName);
         envvars.removeIf(e -> toRemove.contains(e.getName()));
 
         // The Job should not connect to the cache

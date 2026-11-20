@@ -18,9 +18,13 @@ package org.keycloak.tests.client.policies;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -111,6 +115,64 @@ public class ClientUrisPatternExecutorTest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testSamlPartialUpdateByAdmin() throws Exception {
+        setupPolicy(List.of(SAFE_PATTERN), null);
+        String id = createClientByAdmin(realm, generateSuffixedName("partial-saml"), SamlProtocol.LOGIN_PROTOCOL, client -> {
+            client.setRedirectUris(List.of(VALID_URL));
+            client.setAttributes(Map.of(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, VALID_URL));
+        });
+        ClientResource resource = realm.admin().clients().get(id);
+        for (String attribute : List.of(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL,
+                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE)) {
+            ClientRepresentation update = new ClientRepresentation();
+            update.setAttributes(Map.of(attribute, INVALID_URL));
+            Assertions.assertThrows(BadRequestException.class, () -> resource.update(update));
+            Assertions.assertNotEquals(INVALID_URL, resource.toRepresentation().getAttributes().get(attribute));
+
+            update.setAttributes(Map.of(attribute, VALID_URL));
+            resource.update(update);
+            Assertions.assertEquals(VALID_URL, resource.toRepresentation().getAttributes().get(attribute));
+            Assertions.assertEquals(SamlProtocol.LOGIN_PROTOCOL, resource.toRepresentation().getProtocol());
+        }
+        ClientRepresentation update = new ClientRepresentation();
+        update.setName("Updated without URI changes");
+        resource.update(update);
+        Assertions.assertEquals(update.getName(), resource.toRepresentation().getName());
+    }
+
+    @Test
+    public void testSamlUrisAreValidatedBeforeSwitchingProtocol() throws Exception {
+        setupPolicy(List.of(SAFE_PATTERN), null);
+        for (String attribute : List.of(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL,
+                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE)) {
+            ClientPolicyException error = Assertions.assertThrows(ClientPolicyException.class, () ->
+                    createClientByAdmin(realm, generateSuffixedName("invalid-inactive-saml"), OIDCLoginProtocol.LOGIN_PROTOCOL,
+                            client -> {
+                                client.setRedirectUris(List.of(VALID_URL));
+                                client.setAttributes(Map.of(attribute, INVALID_URL));
+                            }));
+            Assertions.assertEquals("Invalid " + attribute, error.getErrorDetail());
+
+            String id = createClientByAdmin(realm, generateSuffixedName("inactive-saml"), OIDCLoginProtocol.LOGIN_PROTOCOL, client -> {
+                client.setRedirectUris(List.of(VALID_URL));
+                client.setAttributes(Map.of(attribute, VALID_URL));
+            });
+            ClientResource resource = realm.admin().clients().get(id);
+            ClientRepresentation update = new ClientRepresentation();
+            update.setAttributes(Map.of(attribute, INVALID_URL));
+            Assertions.assertThrows(BadRequestException.class, () -> resource.update(update));
+            Assertions.assertEquals(VALID_URL, resource.toRepresentation().getAttributes().get(attribute));
+
+            ClientRepresentation protocolUpdate = new ClientRepresentation();
+            protocolUpdate.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+            resource.update(protocolUpdate);
+            ClientRepresentation stored = resource.toRepresentation();
+            Assertions.assertEquals(SamlProtocol.LOGIN_PROTOCOL, stored.getProtocol());
+            Assertions.assertEquals(VALID_URL, stored.getAttributes().get(attribute));
+        }
+    }
+
+    @Test
     public void testFieldsDynamically() throws Exception {
         //remove trust registration policy
         List<ComponentRepresentation> components = realm.admin().components().query(null, ClientRegistrationPolicy.class.getCanonicalName())
@@ -143,6 +205,57 @@ public class ClientUrisPatternExecutorTest extends AbstractClientPoliciesTest {
             c.setSubjectType("pairwise");
             c.setSectorIdentifierUri(s);
         }), sectorIdentifierUriPattern, "http://localhost:8500/sector-identifier-redirect-uris", INVALID_URL);
+    }
+
+    @Test
+    public void testLiteralMarkersByAdmin() throws Exception {
+        setupPolicy(List.of("\\+", "-", "\\*", "null", SAFE_PATTERN), List.of("webOrigins", "postLogoutRedirectUris"));
+
+        String clientId = generateSuffixedName("literal-markers");
+        String id = createClientByAdmin(realm, clientId, OIDCLoginProtocol.LOGIN_PROTOCOL, client -> {
+            client.setRedirectUris(List.of("https://untrusted.com/callback"));
+            client.setWebOrigins(List.of("+", "*", "null"));
+            client.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##-##*##" + VALID_URL);
+        });
+        updateClientByAdmin(realm, id, client -> {
+            client.setWebOrigins(List.of("+"));
+            client.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "-");
+        });
+
+        ClientPolicyException origins = Assertions.assertThrows(ClientPolicyException.class, () ->
+                updateClientByAdmin(realm, id, client -> client.setWebOrigins(List.of("+", INVALID_URL))));
+        Assertions.assertEquals("Invalid webOrigins", origins.getErrorDetail());
+        ClientPolicyException logout = Assertions.assertThrows(ClientPolicyException.class, () ->
+                updateClientByAdmin(realm, id, client -> client.getAttributes().put(
+                        OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+##-##" + INVALID_URL)));
+        Assertions.assertEquals("Invalid postLogoutRedirectUris", logout.getErrorDetail());
+    }
+
+    @Test
+    public void testReferencesRequireMatchingLiteralPatterns() throws Exception {
+        setupPolicy(List.of(SAFE_PATTERN), List.of("webOrigins", "postLogoutRedirectUris"));
+        String clientId = generateSuffixedName("explicit-values");
+        String id = createClientByAdmin(realm, clientId, OIDCLoginProtocol.LOGIN_PROTOCOL, client -> {
+            client.setRedirectUris(List.of(VALID_URL));
+            client.setWebOrigins(List.of("https://trusted.com"));
+            client.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, VALID_URL);
+        });
+        for (String field : List.of("webOrigins", "postLogoutRedirectUris")) {
+            BiConsumer<ClientRepresentation, String> setter = field.equals("webOrigins")
+                    ? (client, value) -> client.setWebOrigins(List.of(value))
+                    : (client, value) -> client.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, value);
+            ClientPolicyException create = Assertions.assertThrows(ClientPolicyException.class, () ->
+                    createClientByAdmin(realm, generateSuffixedName("unmatched-marker"), OIDCLoginProtocol.LOGIN_PROTOCOL, client -> {
+                        client.setRedirectUris(List.of(VALID_URL));
+                        client.setWebOrigins(List.of("https://trusted.com"));
+                        client.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, VALID_URL);
+                        setter.accept(client, "+");
+                    }));
+            Assertions.assertEquals("Invalid " + field, create.getErrorDetail());
+            ClientPolicyException update = Assertions.assertThrows(ClientPolicyException.class, () ->
+                    updateClientByAdmin(realm, id, client -> setter.accept(client, "+")));
+            Assertions.assertEquals("Invalid " + field, update.getErrorDetail());
+        }
     }
 
     @Test

@@ -87,12 +87,17 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
 
         OAuth2CodeParser.ParseResult parseResult = OAuth2CodeParser.parseCode(session, code, realm, event);
         if (parseResult.isIllegalCode()) {
-            // Attempt to use same code twice should invalidate existing clientSession.
-            // Detach must persist even when the error response rolls back the main tx.
-            KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
-                AuthenticatedClientSessionModel cs = ctx.findClientSession(parseResult.getClientSession());
-                if (cs != null) cs.detachFromUserSession();
-            });
+            AuthenticatedClientSessionModel illegalCodeClientSession = parseResult.getClientSession();
+
+            // Attempt to use same code twice should invalidate existing clientSession. Only the client the clientSession
+            // belongs to is allowed to invalidate it, otherwise any client could detach another client's session with a forged code.
+            if (illegalCodeClientSession != null && client.getId().equals(illegalCodeClientSession.getClient().getId())) {
+                // Detach must persist even when the error response rolls back the main tx.
+                KeycloakModelUtils.enlistAfterRollback(session, ctx -> {
+                    AuthenticatedClientSessionModel cs = ctx.findClientSession(illegalCodeClientSession);
+                    if (cs != null) cs.detachFromUserSession();
+                });
+            }
 
             event.error(Errors.INVALID_CODE);
 
@@ -184,6 +189,13 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
         if (authUsername == null) {
             authUsername = "unknown";
+        }
+
+        String errorDescription = PkceUtils.checkPKCEParams(client, codeChallengeMethod, codeChallenge);
+        if (errorDescription != null) {
+            event.detail(Details.REASON, errorDescription);
+            event.error(Errors.PKCE_VERIFICATION_FAILED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorDescription, Response.Status.BAD_REQUEST);
         }
 
         if (codeChallengeMethod != null && !codeChallengeMethod.isEmpty()) {

@@ -23,6 +23,8 @@ public class SearchOptions {
 
     private ScimFilterParser.FilterContext filterContext;
 
+    private Integer matchedSize;
+
     // Getters and setters
 
     public List<String> getAttributes() {
@@ -73,6 +75,20 @@ public class SearchOptions {
         this.count = count;
     }
     
+    /**
+     * The number of resources the query matched for this page, before any post-query authorization filtering was
+     * applied, or {@code null} when the page was not filtered after the query ran.
+     *
+     * @return the unfiltered size of the page the query produced
+     */
+    public Integer getMatchedSize() {
+        return matchedSize;
+    }
+
+    public void setMatchedSize(Integer matchedSize) {
+        this.matchedSize = matchedSize;
+    }
+
     public List<SortField> getSort() {
         return Optional.ofNullable(sort).orElse(List.of());
     }

@@ -25,17 +25,6 @@
 
     <fileSets>
         <fileSet>
-            <directory>src/main/resources/licenses/keycloak</directory>
-            <outputDirectory>licenses</outputDirectory>
-            <excludes>
-                <exclude>licenses.xml</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}/licenses</directory>
-            <outputDirectory>licenses</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>${project.build.directory}/modules</directory>
             <outputDirectory>modules</outputDirectory>
         </fileSet>

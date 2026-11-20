@@ -19,6 +19,7 @@ package org.keycloak.connections.jpa.dialect;
 
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.sql.ast.H2SqlAstTranslator;
+import org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.SqlAstTranslator;
 import org.hibernate.sql.ast.SqlAstTranslatorFactory;
@@ -34,6 +35,14 @@ import org.hibernate.sql.exec.spi.JdbcOperation;
  * See <a href="https://hibernate.atlassian.net/browse/HHH-20826">HHH-20826</a> for the upstream tracker.
  */
 public class KeycloakH2Dialect extends H2Dialect {
+
+    public KeycloakH2Dialect() {
+        super();
+    }
+
+    public KeycloakH2Dialect(DialectResolutionInfo info) {
+        super(info);
+    }
 
     @Override
     public SqlAstTranslatorFactory getSqlAstTranslatorFactory() {

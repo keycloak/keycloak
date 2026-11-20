@@ -11,7 +11,7 @@ observer.observe(document.body, { childList: true, subtree: true });
 /** @type {AnnotationDescriptor[]} */
 const descriptors = [];
 
-/** @type {WeakMap<HTMLElement, () => void>} */
+/** @type {WeakMap<HTMLElement, Map<AnnotationDescriptor, (() => void) | void>>} */
 const cleanupFunctions = new WeakMap();
 
 /**
@@ -38,21 +38,42 @@ function onMutate(mutations) {
       continue;
     }
 
-    const handleRemovedElement = cleanupFunctions.get(node);
+    for (const element of [node, ...node.querySelectorAll('*')]) {
+      if (!(element instanceof HTMLElement)) {
+        continue;
+      }
 
-    if (handleRemovedElement) {
-      handleRemovedElement();
+      const cleanups = cleanupFunctions.get(element);
+
+      if (cleanups) {
+        for (const cleanup of cleanups.values()) {
+          if (cleanup) {
+            cleanup();
+          }
+        }
+      }
+
+      cleanupFunctions.delete(element);
     }
-
-    cleanupFunctions.delete(node);
   }
 
   const addedNodes = mutations.flatMap((mutation) => Array.from(mutation.addedNodes));
 
   for (const descriptor of descriptors) {
+    const selector = `[data-${descriptor.name}]`;
+
     for (const node of addedNodes) {
-      if (node instanceof HTMLElement && node.hasAttribute(`data-${descriptor.name}`)) {
-        handleNewElement(node, descriptor);
+      if (!(node instanceof HTMLElement)) {
+        continue;
+      }
+
+      const elements = node.matches(selector) ? [node] : [];
+      elements.push(...node.querySelectorAll(selector));
+
+      for (const element of elements) {
+        if (element instanceof HTMLElement) {
+          handleNewElement(element, descriptor);
+        }
       }
     }
   }
@@ -63,9 +84,14 @@ function onMutate(mutations) {
  * @param {AnnotationDescriptor} descriptor
  */
 function handleNewElement(element, descriptor) {
-  const cleanup = descriptor.onAdd(element);
+  let cleanups = cleanupFunctions.get(element);
 
-  if (cleanup) {
-    cleanupFunctions.set(element, cleanup);
+  if (!cleanups) {
+    cleanups = new Map();
+    cleanupFunctions.set(element, cleanups);
+  }
+
+  if (!cleanups.has(descriptor)) {
+    cleanups.set(descriptor, descriptor.onAdd(element));
   }
 }

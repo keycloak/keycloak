@@ -53,6 +53,8 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         name = model.getName();
         this.realm = realm.getId();
+        // The fallback is used when the role was removed from the database after it was cached.
+        // A role that no longer exists has no composites.
         composites = new DefaultLazyLoader<>(roleModel -> {
             Set<String> ids = new HashSet<>();
             Set<String> clientContainerIds = new HashSet<>();
@@ -63,7 +65,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
                 }
             });
             return new CompositeRolesRecord(Collections.unmodifiableSet(clientContainerIds), Collections.unmodifiableSet(ids));
-        }, null);
+        }, () -> new CompositeRolesRecord(Set.of(), Set.of()));
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
     }
 

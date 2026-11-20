@@ -32,6 +32,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.representations.JsonWebToken;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -129,6 +130,15 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         Object receivedHdParam = token.getOtherClaims().get(OIDC_PARAMETER_HOSTED_DOMAINS);
         validateHostedDomain(receivedHdParam != null ? receivedHdParam.toString() : null);
         return token;
+    }
+
+    @Override
+    public BrokeredIdentityContext validateAuthorizationGrantAssertion(JWTAuthorizationGrantValidationContext context) throws IdentityBrokerException {
+        BrokeredIdentityContext user = super.validateAuthorizationGrantAssertion(context);
+        // the hosted domain restriction is enforced in this flow too
+        Object receivedHdParam = context.getJWT().getOtherClaims().get(OIDC_PARAMETER_HOSTED_DOMAINS);
+        validateHostedDomain(receivedHdParam != null ? receivedHdParam.toString() : null);
+        return user;
     }
 
     private void validateHostedDomain(String receivedHd) {

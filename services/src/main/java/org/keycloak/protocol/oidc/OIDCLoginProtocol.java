@@ -228,8 +228,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     @Override
     public Response authenticated(AuthenticationSessionModel authSession, UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
-        // not at the point of visiting the authorization endpoint (RFC 9126 §4)
-        String requestUri = authSession.getAuthNote(Constants.AUTHORIZATION_REQUEST_URI);
+        // not at the point of visiting the authorization endpoint (RFC 9126 §4).
+        // Stored as a client note so /login-actions/restart (which clears auth notes) cannot drop it.
+        String requestUri = authSession.getClientNote(Constants.AUTHORIZATION_REQUEST_URI);
         RequestUriType requestUriType = Optional.ofNullable(requestUri)
                 .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
                 .orElse(null);
@@ -295,7 +296,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.DPOP_JKT),
-                userSession.getId());
+                userSession.getId(),
+                userSession.getUser().getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
             redirectUri.addParam(OAuth2Constants.CODE, code);

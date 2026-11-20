@@ -20,6 +20,7 @@ package org.keycloak.connections.jpa.dialect;
 import org.hibernate.LockMode;
 import org.hibernate.dialect.SQLServerDialect;
 import org.hibernate.dialect.sql.ast.SQLServerSqlAstTranslator;
+import org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.sql.ast.SqlAstTranslator;
 import org.hibernate.sql.ast.SqlAstTranslatorFactory;
@@ -39,6 +40,14 @@ import org.hibernate.sql.exec.spi.JdbcOperation;
  * See <a href="https://hibernate.atlassian.net/browse/HHH-20826">HHH-20826</a> for the upstream tracker.
  */
 public class KeycloakSQLServerDialect extends SQLServerDialect {
+
+    public KeycloakSQLServerDialect() {
+        super();
+    }
+
+    public KeycloakSQLServerDialect(DialectResolutionInfo info) {
+        super(info);
+    }
 
     @Override
     public SqlAstTranslatorFactory getSqlAstTranslatorFactory() {

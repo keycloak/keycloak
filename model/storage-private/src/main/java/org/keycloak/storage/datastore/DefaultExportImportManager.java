@@ -51,6 +51,7 @@ import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.migration.migrators.MigrateTo8_0_0;
 import org.keycloak.migration.migrators.MigrationUtils;
+import org.keycloak.migration.migrators.OidcIssuerMigration;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -66,6 +67,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.OrganizationModel;
@@ -85,12 +87,14 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ProtocolMapperValidationUtil;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.validation.OrganizationsValidation;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
@@ -213,6 +217,10 @@ public class DefaultExportImportManager implements ExportImportManager {
         ModelVersion version = DefaultMigrationManager.getModelVersionFromRep(rep);
 
         convertDeprecatedSocialProviders(rep);
+        // Migrate before identity provider configurations are validated during import.
+        if (version == null || version.lessThan(OidcIssuerMigration.VERSION)) {
+            OidcIssuerMigration.migrateImport(session, rep);
+        }
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
 
@@ -479,7 +487,21 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         importUserFederationProvidersAndMappers(session, rep, newRealm);
 
-
+        // Mapper validation may resolve other clients or realm components. Validate only after those
+        // dependencies exist, but before importing users, which can commit batches independently.
+        for (ClientModel client : createdClients.values()) {
+            ValidationUtil.validateClient(session, client, false, r -> {
+                throw new ModelValidationException("Invalid client " + client.getClientId() + ": " + r.getAllErrorsAsString());
+            });
+        }
+        for (ClientScopeModel clientScope : clientScopes.values()) {
+            try {
+                ProtocolMapperValidationUtil.validateProtocolMappers(session, newRealm, clientScope);
+            } catch (ProtocolMapperConfigException ex) {
+                logger.warnf("Invalid protocol mapper configuration in client scope '%s': %s", clientScope.getName(), ex.getMessage());
+                throw new ModelValidationException(ProtocolMapperValidationUtil.INVALID_CONFIG_MESSAGE);
+            }
+        }
 
         // create users and their role mappings and social mappings
 
@@ -609,10 +631,6 @@ public class DefaultExportImportManager implements ExportImportManager {
                 addSamlEncryptionAttributes(app);
             }
             appMap.put(app.getClientId(), app);
-
-            ValidationUtil.validateClient(session, app, false, r -> {
-                throw new RuntimeException("Invalid client " + app.getClientId() + ": " + r.getAllErrorsAsString());
-            });
         }
         return appMap;
     }
@@ -637,7 +655,11 @@ public class DefaultExportImportManager implements ExportImportManager {
     private static void importIdentityProviders(RealmRepresentation rep, RealmModel newRealm, KeycloakSession session) {
         if (rep.getIdentityProviders() != null) {
             for (IdentityProviderRepresentation representation : rep.getIdentityProviders()) {
-                session.identityProviders().create(RepresentationToModel.toModel(newRealm, representation, session));
+                try {
+                    session.identityProviders().create(RepresentationToModel.toModel(newRealm, representation, session));
+                } catch (IllegalArgumentException e) {
+                    throw new ModelValidationException("Invalid configuration for identity provider '" + representation.getAlias() + "': " + e.getMessage());
+                }
             }
         }
     }

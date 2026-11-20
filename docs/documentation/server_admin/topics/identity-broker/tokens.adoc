@@ -6,3 +6,7 @@ With {project_name}, you can store tokens and responses from the authentication 
 Application code can retrieve these tokens and responses to import extra user information or to request the external IDP securely. For example, an application can use the Google token to use other Google services and REST APIs.
 
 For the details on how to configure and use this functionality, please see the link:{developerguide_link}#_identity-brokering-apis-tokens[section for retrieving external IDP tokens from {developerguide_name}].
+
+This endpoint is the only supported way for an application to obtain the tokens of an external IDP. Identity Brokering API V1 requires the `read-token` role on the `broker` client, while V2 requires client authentication and permission for the client to retrieve tokens from the specified IDP alias.
+{project_name} stores those tokens as notes on the user session, but a *User Session Note* mapper cannot copy them into a token claim or a SAML attribute.
+Such a mapper is rejected when the client is created or updated, and any mapper that already exists is ignored when a token is issued.

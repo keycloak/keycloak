@@ -31,6 +31,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
 import org.keycloak.constants.AdapterConstants;
@@ -60,6 +61,7 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestRedirectUriContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
@@ -148,7 +150,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
-            throw new ErrorPageException(session, authenticationSession, cpe.getErrorStatus(), cpe.getErrorDetail());
+            throw ErrorPageException.oauthError(session, authenticationSession, cpe.getErrorStatus(), cpe.getError(), cpe.getErrorDetail());
         }
         checkClient(clientId);
 
@@ -167,6 +169,16 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             this.redirectUri = checker.getRedirectUri();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             checker.throwAsErrorPageException(authenticationSession, ex);
+        }
+
+        try {
+            session.clientPolicy().triggerOnEvent(new AuthorizationRequestRedirectUriContext(client, request, redirectUri));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw ErrorPageException.oauthError(session, null, cpe.getErrorStatus(), cpe.getError(), cpe.getErrorDetail());
         }
 
         try {
@@ -217,6 +229,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authenticationSession, false);
+            if (Boolean.FALSE.equals(cpe.getDetails().get(Constants.ERROR_REDIRECT_ALLOWED))) {
+                throw ErrorPageException.oauthError(session, null, cpe.getErrorStatus(), cpe.getError(), cpe.getErrorDetail());
+            }
             return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
         }
 
@@ -285,7 +300,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         if (clientId == null) {
             event.detail(Details.REASON, "Missing parameter: " + OIDCLoginProtocol.CLIENT_ID_PARAM);
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
+            throw ErrorPageException.oauthError(session, authenticationSession, Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
         }
 
         event.client(clientId);
@@ -293,17 +308,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         client = realm.getClientByClientId(clientId);
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+            throw ErrorPageException.oauthError(session, authenticationSession, Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_CLIENT, Messages.CLIENT_NOT_FOUND);
         }
 
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CLIENT_DISABLED);
+            throw ErrorPageException.oauthError(session, authenticationSession, Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_CLIENT, Messages.CLIENT_DISABLED);
         }
 
         if (client.isBearerOnly()) {
             event.error(Errors.NOT_ALLOWED);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.FORBIDDEN, Messages.BEARER_ONLY);
+            throw ErrorPageException.oauthError(session, authenticationSession, Response.Status.FORBIDDEN, OAuthErrorException.UNAUTHORIZED_CLIENT, Messages.BEARER_ONLY);
         }
 
         String protocol = client.getProtocol();
@@ -315,7 +330,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             String errorMessage = "Wrong client protocol.";
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_CLIENT);
-            throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, errorMessage);
+            throw ErrorPageException.oauthError(session, authenticationSession, Response.Status.BAD_REQUEST, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
 
         session.getContext().setClient(client);
@@ -368,7 +383,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                 logger.errorf("Requested essential acr value list contains values lower than the client minimum. Please doublecheck the client configuration or correct ACR passed in the 'claims' parameter.");
                 event.detail(Details.REASON, "Invalid requested essential acr value");
                 event.error(Errors.INVALID_REQUEST);
-                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
+                throw ErrorPageException.oauthError(session, authenticationSession, Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
             }
             authenticationSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
         }
@@ -384,7 +399,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
                     logger.errorf("Requested essential acr value '%s' is not a number and it is not mapped in the ACR-To-Loa mappings of realm or client. Please doublecheck ACR-to-LOA mapping or correct ACR passed in the 'claims' parameter.", acr);
                     event.detail(Details.REASON, "Invalid requested essential acr value");
                     event.error(Errors.INVALID_REQUEST);
-                    throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
+                    throw ErrorPageException.oauthError(session, authenticationSession, Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.CLAIMS_PARAM);
                 }
             }).min().ifPresent(loa -> authenticationSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(loa)));
         } else {
@@ -423,7 +438,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private Response buildAuthorizationCodeAuthorizationResponse(String requestUri) {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
-        authenticationSession.setAuthNote(Constants.AUTHORIZATION_REQUEST_URI, requestUri);
+        // Client note so the PAR request_uri survives /login-actions/restart (which clears auth notes)
+        authenticationSession.setClientNote(Constants.AUTHORIZATION_REQUEST_URI, requestUri);
 
         RequestUriType requestUriType = Optional.ofNullable(requestUri)
                 .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)

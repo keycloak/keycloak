@@ -24,7 +24,7 @@ backwards compatible with future {project_name} versions, and it will be finally
 provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
 
 NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
-link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
+link:{adminguide_link}#fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
 token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
 
 [[_standard-token-exchange]]
@@ -97,7 +97,7 @@ The example token exchange response may look like this:
 
 For standard token exchange, `token-exchange-standard:v2` is enabled by default.  However, you also need to enable the *Standard token exchange* switch for
 the client that is supposed to send token exchange requests, such as the `requester-client` from the <<_standard-token-exchange-flow,previous example>>. Note that `requester-client` must be a confidential client.
-Also, as is the case for other grant requests, the token exchange requests must be authenticated by the appropriate link:{adminguide_link}#_client-credentials[client authentication method] that is configured
+Also, as is the case for other grant requests, the token exchange requests must be authenticated by the appropriate link:{adminguide_link}#client-credentials[client authentication method] that is configured
 for the client.
 
 .Enabling Token Exchange
@@ -121,12 +121,13 @@ subject_token_type::
 requested_token_type::
     _OPTIONAL._ This parameter represents the type of token that the client wants to exchange for. In this version,  only oauth and OpenID Connect token types are supported. The default value for this
     is `urn:ietf:params:oauth:token-type:access_token`. Another possible value is `urn:ietf:params:oauth:token-type:id_token` if the ID token issued to `requester-client` is requested. The possible value might
-    be also `urn:ietf:params:oauth:token-type:refresh_token`; in this case, you will receive both an access token and refresh token within the response. However, the refresh token is allowed if the `Allow refresh token in Standard Token Exchange` client configuration option is enabled as specified in the <<_standard-token-exchange-details,standard token exchange>> section.
+    be also `urn:ietf:params:oauth:token-type:refresh_token`; in this case, you will receive both an access token and refresh token within the response. However, the refresh token is allowed if the
+    `Allow refresh token in Standard Token Exchange` client configuration option is enabled as specified in the <<_standard-token-exchange-details,standard token exchange>> section.
 
 scope::
-   _OPTIONAL._ This parameter represents the space-delimited set of OAuth and OpenID Connect scopes that the client is requesting. You can use link:{adminguide_link}#_client_scopes[Optional client scopes]
+   _OPTIONAL._ This parameter represents the space-delimited set of OAuth and OpenID Connect scopes that the client is requesting. You can use link:{adminguide_link}#client_scopes[Optional client scopes]
    of the `requester-client`. For more details, see <<_standard-token-exchange-scope,scopes and audiences>>. Omitting this parameter means that only
-   the link:{adminguide_link}#_client_scopes[Default client scopes] are effectively used.
+   the link:{adminguide_link}#client_scopes[Default client scopes] are effectively used.
 
 audience::
   _OPTIONAL._ Audience specifies `client_id` of the client, which is supposed to be used as the token audience. In <<_standard-token-exchange-flow,the example above>>, it could be `target-client`. Multiple
@@ -152,8 +153,8 @@ token_type::
 === Scopes and audiences
 
 The `scope` parameter in the token exchange request has the same meaning as other grants. This parameter is optional. When it is omitted, the effective client scopes used in the request are
-the link:{adminguide_link}#_client_scopes[Default client scopes] of the `requester-client`. When this parameter is used, the effective client scopes are the default scopes together with
-the link:{adminguide_link}#_client_scopes[Optional client scopes]
+the link:{adminguide_link}#client_scopes[Default client scopes] of the `requester-client`. When this parameter is used, the effective client scopes are the default scopes together with
+the link:{adminguide_link}#client_scopes[Optional client scopes]
 
 By default, the used client scopes will add the audiences to the `aud` claim of the token based on the used client scopes and client roles as specified in the link:{adminguide_link}#audience-support[Audience documentation].
 
@@ -169,7 +170,7 @@ NOTE: The `audience` parameter can be used to filter the audiences that are comi
 no filtering occurs. As a result, the `audience` parameter is effectively used for "downscoping" the token to make sure that it contains only the requested audiences. However, the `scope` parameter is used
 to add optional client scopes and hence it can be used for "upscoping" and adding more scopes.
 
-NOTE: By default, token exchange can be used to request extra scopes and audiences that are not present in the initial `subject_token`. If, for security reasons, you want to ensure that scopes are limited to the ones already granted to the `subject_token`, the `downscope-assertion-grant-enforcer` policy executor can be applied to the client. This executor enforces that only downscoping is allowed for token exchange. See link:{adminguide_link}#_downscoping[Downscoping] and link:{adminguide_link}#_client_policies[Client Policies] chapters in the {adminguide_name} for more information.
+NOTE: By default, token exchange can be used to request extra scopes and audiences that are not present in the initial `subject_token`. If, for security reasons, you want to ensure that scopes are limited to the ones already granted to the `subject_token`, the `downscope-assertion-grant-enforcer` policy executor can be applied to the client. This executor enforces that only downscoping is allowed for token exchange. See link:{adminguide_link}#downscoping[Downscoping] and link:{adminguide_link}#client_policies[Client Policies] chapters in the {adminguide_name} for more information.
 
 ==== Examples
 
@@ -192,15 +193,15 @@ Assume we have the realm with:
 * Authenticated user, who is member of both `target-client1-role` and `target-client2-role`
 
 The settings above means that using scope `default-scope1` will add the audience `target-client1` to the token and using `optional-scope2` will add the audience `target-client2`. This is because of the
-audience resolving described in the link:{adminguide_link}#_audience_resolve[Audience documentation].
+audience resolving described in the link:{adminguide_link}#audience_resolve[Audience documentation].
 
 
 ===== Example 1
 
 Token exchange request sent with `scope=optional-scope2` and without audience parameter:
 
-There will be no filtering of audience. The scopes and audiences will be resolved as is the case for any other grants as described in the link:{adminguide_link}#_client_scopes[Client scopes] and
-link:{adminguide_link}#_audience_resolve[Audience documentation] sections. The response token will be similar to this (claims not interesting for this example omitted for brevity):
+There will be no filtering of audience. The scopes and audiences will be resolved as is the case for any other grants as described in the link:{adminguide_link}#client_scopes[Client scopes] and
+link:{adminguide_link}#audience_resolve[Audience documentation] sections. The response token will be similar to this (claims not interesting for this example omitted for brevity):
 
 [source,json]
 ----
@@ -251,7 +252,7 @@ The `target-client3` is not part of the token audience as user does not have any
 NOTE: As mentioned in the token exchange specification, it is good practice to downscope the token as much as possible and use only the audiences needed. Ideally use a single audience. This strategy increases the probability
 that request will be allowed.
 
-NOTE: If you have a more complex deployment with many various scopes and audiences, it can be challenging to model it in an appropriate way. Consider using the link:{adminguide_link}#_client_scopes_evaluate[Client scopes evaluate tab]
+NOTE: If you have a more complex deployment with many various scopes and audiences, it can be challenging to model it in an appropriate way. Consider using the link:{adminguide_link}#client_scopes_evaluate[Client scopes evaluate tab]
 to test if the token looks as expected for the given user and for the given set of scopes and audiences.
 
 [[_standard-token-exchange-details]]
@@ -271,17 +272,29 @@ If the client does not match or the proof is missing/invalid, the request is rej
 
 * Consents - If the requester client has *Consent required* enabled, the token exchange is allowed only if the user is already granted consent to all requested scopes
 
-* link:{adminguide_link}#_fine_grain_permissions[Fine-grained admin permissions (FGAP)] are not needed for the standard token exchange. We plan to eventually integrate with FGAP for the future, but that
+* link:{adminguide_link}#fine_grained_permissions[Fine-grained admin permissions (FGAP)] are not needed for the standard token exchange. We plan to eventually integrate with FGAP for the future, but that
 integration might be available to all grants. It will not be specific only to token exchange as it was in token exchange V1.
 
-* Integrating token exchange with link:{adminguide_link}#_client_policies[Client policies] is possible. This integration can be useful to address certain use cases. For example, consider the use case to reject the token exchange request if the
+* Integrating token exchange with link:{adminguide_link}#client_policies[Client policies] is possible. This integration can be useful to address certain use cases. For example, consider the use case to reject the token exchange request if the
 client `requester-client` sends the request with `scope=some-confidential-scope`. In this example, it can be useful to create a client policy condition with combined conditions
 for `client-scope`, `grant-type` and `client-roles`.
 
+* [[_standard-token-exchange-expiration]]The exchanged access token and ID token expire together with the subject token. Their expiration is capped by the `exp` claim of the `subject_token` and the
+`expires_in` value of the response is reduced accordingly, so that a client cannot use token exchange to extend the lifetime of the identity it was given. The switch *Allow exchange token expiration
+after subject token expiration*, available in the Admin Console in the *Advanced* tab of the OIDC client in the *OpenID Connect Compatibility Modes* section, makes the exchanged tokens expire according
+to the regular realm and client token lifespans instead. Keeping the switch off is recommended.
++
+WARNING: This applies to access and ID tokens only. Refresh tokens are governed by the separate switch described below, and when both switches are combined, with *Allow exchange token expiration after
+subject token expiration* off and *Allow refresh token in Standard Token Exchange* on, the expiration can still be increased indirectly: the requester client exchanges for a refresh token, which is not
+capped, and refreshes it for an access token with the regular lifespan.
+
 * Requesting a refresh token is allowed only if the client has the switch *Allow refresh token in Standard Token Exchange* set to a value other than `No` (the default value). The switch is available in the
 Admin Console in the *Advanced* tab of the OIDC client in the *OpenID Connect Compatibility Modes* section. The other available value of the switch is *Same session*, which means that the refresh token is
-allowed only if the refresh token can use the same user session as the subject token. If that subject token is coming from a link:{adminguide_link}#_transient-session[Transient session] or from an
-link:{adminguide_link}#_offline-access[Offline session], the requesting refresh token will not be allowed. Similarly it will not be allowed to request an offline token (using `scope=offline_access`).
+allowed only if the refresh token can use the same user session as the subject token. If that subject token is coming from a link:{adminguide_link}#transient-session[Transient session] or from an
+link:{adminguide_link}#offline-access[Offline session], the requesting refresh token will not be allowed. Similarly it will not be allowed to request an offline token (using `scope=offline_access`).
++
+WARNING: A refresh token lets the requester client obtain new tokens on behalf of the user for as long as the user session lives, well beyond the expiration of the subject token. Consider carefully
+whether the requester client needs one, and prefer performing a new token exchange with a fresh subject token.
 
 .Enabling refresh token in Token Exchange
 image::token-exchange-switch-refresh.png[Enabling refresh token in Token Exchange]
@@ -331,7 +344,7 @@ s|Revocation chain | Not available for access tokens. Available for refresh toke
 s|Sender-constrained tokens (DPoP, mTLS) | Supported. See <@links.securingapps id="dpop" />. | Not supported. The exchanged token is issued without any binding.
 s|Delegation per RFC 8693|Preview support via <<_token-exchange-delegation,Token Exchange Delegation>>|Not supported
 s|Resource parameter per RFC 8693|Not supported yet|Not supported
-s|Internal to external Token Exchange | Identity brokering APIs can be used instead. See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for more information. | Implemented as a preview
+s|Internal to external Token Exchange | Identity brokering APIs can be used instead. See link:{developerguide_link}#identity-brokering-apis[Identity Brokering APIs] for more information. | Implemented as a preview
 s|External to internal Token Exchange | Use-case implemented by Standard Token Exchange V2 and JWT Authorization Grant. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information. | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===
@@ -388,7 +401,7 @@ When the feature is enabled, the delegation client scopes (`delegation:user` and
 
 The client requesting a delegation scope must have *Consent required* enabled. The delegation scopes are marked as always requiring consent, and {project_name} rejects a request for such a scope from a client that does not require consent. The delegation consent is never stored permanently, so the user approves the delegation on every login session.
 
-Delegation also requires granting a delegation permission through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2). Without a matching permission granting the `delegate` scope, the delegation scope is silently dropped from the request and the `may_act` claim is not included in the token. The login itself still succeeds.
+Delegation also requires granting a delegation permission through link:{adminguide_link}#fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2). Without a matching permission granting the `delegate` scope, the delegation scope is silently dropped from the request and the `may_act` claim is not included in the token. The login itself still succeeds.
 
 NOTE: Delegation permissions require FGAP V2. FGAP V1 does not support delegation.
 
@@ -421,7 +434,7 @@ With this in place, `scope=openid delegation:client:actor-app` succeeds for any 
 
 === Admin delegation
 
-Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation:user` scope with the administrator's identifier as a parameter using the link:{adminguide_link}#_parameterized_client_scopes[parameterized scopes] syntax.
+Admin delegation allows a user (subject) to delegate their token to an administrator (actor). The client requests the `delegation:user` scope with the administrator's identifier as a parameter using the link:{adminguide_link}#parameterized_client_scopes[parameterized scopes] syntax.
 
 ==== How it works
 
@@ -475,7 +488,7 @@ Other useful claims to add include `may_act.email` (user attribute `email`) or `
 [[_client-delegation]]
 === Client delegation
 
-Client delegation allows a user (subject) to delegate their token to a client application (actor), such as an AI agent or automated service. The client requests the `delegation:client` scope with the actor client's identifier as a parameter using the link:{adminguide_link}#_parameterized_client_scopes[parameterized scopes] syntax (for example, `delegation:client:actor-app`).
+Client delegation allows a user (subject) to delegate their token to a client application (actor), such as an AI agent or automated service. The client requests the `delegation:client` scope with the actor client's identifier as a parameter using the link:{adminguide_link}#parameterized_client_scopes[parameterized scopes] syntax (for example, `delegation:client:actor-app`).
 
 Unlike admin delegation, which is designed for human administrators, client delegation is designed for application-to-application scenarios where a user consents to let a specific client act on their behalf. The actor client does not need any admin roles or access to the Admin REST API.
 
@@ -670,7 +683,7 @@ Two constraints are easy to miss: `delegation:user` cannot name a service accoun
 [NOTE]
 ====
 If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
-link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
+link:{adminguide_link}#fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
 token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
 
 For details, see the <@links.server id="features" /> {section}.
@@ -886,7 +899,7 @@ the client making the request to successfully complete the exchange.
 
 === Internal token to external token exchange
 
-NOTE: For internal token to external token exchange, it is recommended to use link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] instead. The legacy Token Exchange V1 is deprecated and will be removed in future versions.
+NOTE: For internal token to external token exchange, it is recommended to use link:{developerguide_link}#identity-brokering-apis[Identity Brokering APIs] instead. The legacy Token Exchange V1 is deprecated and will be removed in future versions.
 
 You can exchange a realm token for an external token minted by an external identity provider.  This external identity provider
 must be configured within the `Identity Provider` section of the Admin Console.  Currently only OAuth/OpenID Connect based external
@@ -1029,6 +1042,7 @@ The `subject_token_type` must either be `urn:ietf:params:oauth:token-type:access
 If the type is `urn:ietf:params:oauth:token-type:access_token` you specify the `subject_issuer` parameter and it must be the
 alias of the configured identity provider.  If the type is `urn:ietf:params:oauth:token-type:jwt`, the provider will be matched via
 the `iss` (issuer) claim within the JWT which must be the alias of the provider, or a registered issuer within the provider's configuration.
+Each OIDC identity provider accepts a single configured issuer. To exchange tokens from multiple issuers, configure a separate identity provider for each issuer.
 
 For validation, if the token is an access token, the provider's user info service will be invoked to validate the token.  A successful call
 will mean that the access token is valid.  If the subject token is a JWT and if the provider has signature validation enabled, that will be attempted,

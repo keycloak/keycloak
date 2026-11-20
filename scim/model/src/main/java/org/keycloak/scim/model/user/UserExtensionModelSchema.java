@@ -88,7 +88,14 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
                 continue;
             }
 
-            String scimName = (String) metadata.getAnnotations().get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+            Map<String, Object> annotations = metadata.getAnnotations();
+
+            if (annotations == null) {
+                // user profile attributes are not required to declare annotations
+                continue;
+            }
+
+            String scimName = (String) annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
 
             if (scimName == null || !scimName.contains(":")) {
                 continue;
@@ -181,13 +188,14 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
                         AttributeMetadata metadata = attributes.getMetadata(modelName);
 
                         if (metadata == null) {
-                            return null;
+                            continue;
                         }
 
                         Map<String, Object> annotations = metadata.getAnnotations();
 
                         if (annotations == null) {
-                            return null;
+                            // skip attributes without annotations instead of aborting the lookup
+                            continue;
                         }
 
                         Object modelScimAttributeName = annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);

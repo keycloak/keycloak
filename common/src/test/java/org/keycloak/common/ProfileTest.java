@@ -33,7 +33,7 @@ public class ProfileTest {
     private static final Profile.Feature DISABLED_BY_DEFAULT_FEATURE = Profile.Feature.DOCKER;
     private static final Profile.Feature PREVIEW_FEATURE = Profile.Feature.TOKEN_EXCHANGE;
     private static final Profile.Feature EXPERIMENTAL_FEATURE = Profile.Feature.TRANSIENT_USERS;
-    private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.LOGIN_V1;
+    private static Profile.Feature DEPRECATED_FEATURE = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ;
 
     @TempDir
     public File temporaryFolder;
@@ -174,6 +174,9 @@ public class ProfileTest {
         Assertions.assertEquals("account-v3", Profile.Feature.ACCOUNT_V3.getKey());
         Assertions.assertEquals("account", Profile.Feature.ACCOUNT_V3.getUnversionedKey());
         Assertions.assertEquals("account:v3", Profile.Feature.ACCOUNT_V3.getVersionedKey());
+        Assertions.assertEquals("login-v3", Profile.Feature.LOGIN_V3.getKey());
+        Assertions.assertEquals("login", Profile.Feature.LOGIN_V3.getUnversionedKey());
+        Assertions.assertEquals("login:v3", Profile.Feature.LOGIN_V3.getVersionedKey());
     }
 
     @Test

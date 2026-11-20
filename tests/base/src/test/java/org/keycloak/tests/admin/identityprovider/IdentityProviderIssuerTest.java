@@ -39,6 +39,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
 
     @Test
+    public void testMultipleIssuersNotAllowed() {
+        String multipleIssuers = "https://issuer-a.example,https://issuer-b.example";
+        IdentityProviderRepresentation identityProvider = createRep("oidc", OIDCIdentityProviderFactory.PROVIDER_ID,
+                multipleIssuers, false, false);
+        identityProvider.getConfig().put("jwksUrl", "https://issuer-a.example/jwks");
+
+        try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
+            Assertions.assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Only one issuer is supported. Configure a separate identity provider for each issuer.", error.getErrorMessage());
+        }
+    }
+
+    @Test
     public void testCreateUpdateDuplicateIdentityProvider() {
         String issuer = "http://localhost:8080";
 

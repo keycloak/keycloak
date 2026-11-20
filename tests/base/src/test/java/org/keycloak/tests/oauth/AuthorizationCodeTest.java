@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
@@ -32,7 +34,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -51,6 +56,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -108,6 +115,9 @@ public class AuthorizationCodeTest {
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectRunOnServer(permittedPackages = {"org.keycloak.tests", "org.keycloak.admin"})
+    RunOnServerClient runOnServer;
 
     @Test
     public void authorizationRequest() throws IOException {
@@ -497,6 +507,120 @@ public class AuthorizationCodeTest {
             assertEquals(INVALID_GRANT, tokenResponse.getError());
             EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR).error(Errors.INVALID_CODE);
         }
+    }
+
+    @Test
+    public void forgedCodeDoesNotDetachClientSessionOfAnotherClient() {
+        String redirectUri = oauth.getRedirectUri();
+
+        ClientRepresentation clientRep = ClientBuilder.create("attacker-client")
+                .secret("secret")
+                .redirectUris(redirectUri)
+                .build();
+        try (Response resp = managedRealm.admin().clients().create(clientRep)) {
+            managedRealm.cleanup().add(r -> r.clients().delete(ApiUtil.getCreatedId(resp)));
+
+            // The victim client logs in and exchanges its code for tokens
+            AuthorizationEndpointResponse victimLogin = oauth
+                    .client("test-app", "test-secret")
+                    .redirectUri(redirectUri)
+                    .loginForm()
+                    .doLogin("test-user@localhost", "password");
+            AccessTokenResponse victimTokens = oauth.accessTokenRequest(victimLogin.getCode()).send();
+            assertTrue(victimTokens.isSuccess());
+
+            String victimClientUuid = managedRealm.admin()
+                    .clients()
+                    .findByClientId("test-app")
+                    .get(0)
+                    .getId();
+            String forgedCode = "forged-code." + victimLogin.getSessionState() + "." + victimClientUuid;
+
+            events.clear();
+
+            // The attacker client sends a forged code pointing at the victim's client session
+            AccessTokenResponse tokenResponse = oauth
+                    .client("attacker-client", "secret")
+                    .redirectUri(redirectUri)
+                    .accessTokenRequest(forgedCode)
+                    .send();
+
+            Assertions.assertFalse(tokenResponse.isSuccess());
+            assertEquals(INVALID_GRANT, tokenResponse.getError());
+            EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR).error(Errors.INVALID_CODE);
+
+            // The victim client session must not have been detached, so its refresh token still works
+            AccessTokenResponse refreshResponse = oauth
+                    .client("test-app", "test-secret")
+                    .redirectUri(redirectUri)
+                    .doRefreshTokenRequest(victimTokens.getRefreshToken());
+            assertTrue(refreshResponse.isSuccess());
+        }
+    }
+
+    @Test
+    public void reusedCodeStillDetachesOwnClientSession() {
+        String redirectUri = oauth.getRedirectUri();
+
+        AuthorizationEndpointResponse login = oauth
+                .client("test-app", "test-secret")
+                .redirectUri(redirectUri)
+                .loginForm()
+                .doLogin("test-user@localhost", "password");
+        String code = login.getCode();
+
+        AccessTokenResponse tokens = oauth.accessTokenRequest(code).send();
+        assertTrue(tokens.isSuccess());
+
+        events.clear();
+
+        // Reusing the own code detaches the client session, so the previously issued refresh token stops working
+        AccessTokenResponse reuseResponse = oauth.accessTokenRequest(code).send();
+        Assertions.assertFalse(reuseResponse.isSuccess());
+        assertEquals(INVALID_GRANT, reuseResponse.getError());
+
+        AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokens.getRefreshToken());
+        Assertions.assertFalse(refreshResponse.isSuccess());
+    }
+
+    @Test
+    public void authorizationCodeExchange() {
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        assertTrue(response.isRedirected());
+        String code = response.getCode();
+        Assertions.assertNotNull(code);
+
+        EventAssertion.expectLoginSuccess(events.poll());
+
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+        Assertions.assertNotNull(tokenResponse.getAccessToken());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN);
+    }
+
+    @Test
+    public void authorizationCodeCannotBeRedeemedByDifferentUser() {
+        AuthorizationEndpointResponse response = oauth.loginForm().doLogin("test-user@localhost", "password");
+        assertTrue(response.isRedirected());
+        String code = response.getCode();
+        Assertions.assertNotNull(code);
+
+        EventAssertion.expectLoginSuccess(events.poll());
+
+        // Tamper with the stored code data so that it is bound to a different user than the one owning the user session
+        String codeUUID = code.split("\\.")[0];
+        runOnServer.run(session -> {
+            SingleUseObjectProvider codeStore = session.singleUseObjects();
+            Map<String, String> data = codeStore.get(OAuth2CodeParser.CACHE_KEY_PREFIX + codeUUID);
+            Map<String, String> modified = new HashMap<>(data);
+            modified.put(OAuth2Code.USER_ID_NOTE, "different-user-id");
+            codeStore.put(OAuth2CodeParser.CACHE_KEY_PREFIX + codeUUID, 300, modified);
+        });
+
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).send();
+        Assertions.assertFalse(tokenResponse.isSuccess());
+        assertEquals(INVALID_GRANT, tokenResponse.getError());
+        EventAssertion.assertError(events.poll()).type(EventType.CODE_TO_TOKEN_ERROR).error(Errors.INVALID_CODE);
     }
 
     private static class AuthzCodeRealmConfig implements RealmConfig {

@@ -119,7 +119,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
             return deleted;
         }, Boolean.class);
 
-        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/welcome/keycloak/css/welcome.css", ".pf-v5-c-background-image");
+        assertEncoded(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v3/css/styles.css", "--keycloak-logo-url");
 
         // Check no files exists inside "/tmp" directory. We need to skip this test in the rare case when there are thombstone files created by different user
         if (filesNotExistsInTmp) {
@@ -145,7 +145,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         if (dirs != null) {
             for (File dir : dirs) {
                 if (dir.getName().startsWith(resourcesVersion)) {
-                    File candidate = Paths.get(dir.getPath(), "welcome", "keycloak", "css", "welcome.css.gz").toFile();
+                    File candidate = Paths.get(dir.getPath(), "login", "keycloak.v3", "css", "styles.css.gz").toFile();
                     if (candidate.isFile()) {
                         return candidate;
                     }
@@ -159,22 +159,22 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void notFoundOnInvalidThemeType() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
-        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/invalid-theme-type/keycloak/css/welcome.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/invalid-theme-type/keycloak.v3/css/styles.css");
     }
 
     @Test
     public void fetchStaticResourceShouldRedirectOnUnknownVersion() throws IOException {
         final String resourcesVersion = testingClient.server().fetch(session -> Version.RESOURCES_VERSION, String.class);
-        assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css");
-        assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css%2Fstyles.css");
-        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css%2Fstyles.css");
-        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkn%2F" + "/login/keycloak.v2/css/styles.css");
-        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/unknown.css");
+        assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v3/css/styles.css");
+        assertFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v3/css%2Fstyles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v3/css%2Fstyles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkn%2F" + "/login/keycloak.v3/css/styles.css");
+        assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v3/css/unknown.css");
         // This on check will fail on Quarkus as Quarkus will normalize the URL before handing it to the REST endpoint
         // It will succeed on Undertow
-        // assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/../css/styles.css");
-        assertRedirectAndValidateRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v2/css/styles.css?name=%2Fvalue",
-                suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v2/css/styles.css");
+        // assertNotFound(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v3/css/../css/styles.css");
+        assertRedirectAndValidateRedirect(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + "unkno" + "/login/keycloak.v3/css/styles.css?name=%2Fvalue",
+                suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/resources/" + resourcesVersion + "/login/keycloak.v3/css/styles.css");
     }
 
 

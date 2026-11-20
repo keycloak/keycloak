@@ -16,6 +16,20 @@ Example for a bug report's area field (from the `Area` dropdown in `bug.yml`):
 <one of the options from the template>
 ```
 
+Issue titles:
+
+* For bug reports, name the problem, not the solution.
+* For enhancement requests, describe the proposed change.
+
+Issues for flaky tests get the `flaky-test` label and issues for flaky CI jobs get the `flaky-job` label.
+A flaky test or flaky CI job issue references a CI failure on specific versions, so the versions to fix are known when it is created: also add the `backport/<version>` labels for all supported versions the fix should be applied to.
+Do not add `backport/<version>` labels to any other kind of issue, as they can only be added once the scope of the fix and its regression risk are understood.
+
+The issue template sets the issue type through its `type` field, but that is not applied when creating an issue via the GitHub CLI or API.
+Set the type explicitly to the `type` value of the chosen template, for example `gh issue create --type bug`.
+
+When writing issue and pull request descriptions, put each paragraph on a single line, as GitHub renders single newlines in descriptions as line breaks. In Markdown files in the repository, put each sentence on its own line.
+
 ## Security vulnerabilities
 
 Do not create public issues for security vulnerabilities. Follow the process in [SECURITY.md](SECURITY.md).
@@ -23,3 +37,12 @@ Do not create public issues for security vulnerabilities. Follow the process in 
 ## Contributing code
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, testing, documentation, and commit messages.
+
+* Sign off every commit with `git commit --signoff`.
+* Create pull requests as drafts, and only when asked.
+* In pull request descriptions, state rationales, assumptions, and decisions. Do not repeat the issue or the code change. Put each paragraph on a single line.
+  Keep them short: a `Closes #NNNN` line, optionally one sentence of rationale if it is not obvious from the issue, and a short "Decisions and assumptions" list.
+  Do not add sections like Summary, Root Cause, Solution, Changes, Advantages, or Testing, and do not use emojis.
+  Disclose AI agent usage in a single short sentence, as required by [CONTRIBUTING.md](CONTRIBUTING.md#use-of-generative-ai), instead of a promotional footer.
+  Mention testing only if something is non-obvious.
+* Run `./mvnw -Pspotless spotless:apply` before committing (see [CONTRIBUTING.md](CONTRIBUTING.md#spotless)); CI fails on formatting violations.

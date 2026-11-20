@@ -252,6 +252,7 @@ public class RegisterWithEmailVerificationTest {
             resetPasswordPage2.changePassword("john@email.cz");
 
             // Receive the email and click it on browser2
+            assertTrue(mailServer.waitForIncomingEmail(2));
             MimeMessage message = mailServer.getLastReceivedMessage();
             String forgetPasswordEmailLink = MailUtils.getPasswordResetEmailLink(message);
             driver2.open(forgetPasswordEmailLink);
@@ -266,6 +267,9 @@ public class RegisterWithEmailVerificationTest {
             changePasswordPage2.assertCurrent();
             String password = generatePassword();
             changePasswordPage2.changePassword(password, password);
+            oauth2.openLoginForm();
+            loginPage2.fillLogin("john", password);
+            loginPage2.submit();
 
             String code = oauth2.parseLoginResponse().getCode();
             assertNotNull(code);

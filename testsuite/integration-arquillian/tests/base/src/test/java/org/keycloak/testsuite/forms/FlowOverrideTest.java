@@ -18,11 +18,8 @@
 package org.keycloak.testsuite.forms;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -31,24 +28,20 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.common.Profile;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowBindings;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
@@ -56,7 +49,6 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.util.BasicAuthHelper;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -377,33 +369,35 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
     }
 
+    /**
+     * Verifies that a client override pointing to a flow that no longer exists falls back to the realm's default flow.
+     * <p>
+     * The flow binding override is stored as a client attribute without a foreign key to the flow, and the admin API rejects unknown flow ids
+     * and refuses to delete a flow that is in use.
+     * Such a dangling override can therefore only appear through a race between binding and deleting the flow,
+     * a realm import or restore, a manual database change, or stale state in a cluster.
+     * To simulate this, the override of {@code test-app} for the given binding is set to an unknown flow id via the model, bypassing the validation of the admin API.
+     * The override is removed afterwards, as the callers expect {@code test-app} to have no override for this binding.
+     *
+     * @param binding the flow binding whose override should point to a missing flow
+     * @param testNoOverride the assertions to run against the client id, expecting the realm's default flow to be used
+     */
     private void testWithRemovedFlowOverrideByClient(String binding, Consumer<String> testNoOverride) {
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        Assertions.assertNotNull(clientResource);
-        ClientRepresentation clientRep = clientResource.toRepresentation();
+        String clientId = "test-app";
+        String missingFlowId = KeycloakModelUtils.generateId();
 
-        String newFlowAlias = "Copy of Browser Flow";
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
-        AuthenticationFlowRepresentation newFlow = findFlowByAlias(newFlowAlias);
+        testingClient.server("test").run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            session.clients().getClientByClientId(realm, clientId).setAuthenticationFlowBindingOverride(binding, missingFlowId);
+        });
 
         try {
-            // 1. set a flow override for client
-            clientRep.setAuthenticationFlowBindingOverrides(Map.of(binding, newFlow.getId()));
-            clientResource.update(clientRep);
-
-            // 2. remove the flow through database, since we could not delete the flow which is used by client
-            testingClient.server("test").run(session -> {
-                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-                AuthenticationFlowEntity entity = em.find(AuthenticationFlowEntity.class, newFlow.getId(), LockModeType.PESSIMISTIC_WRITE);
-                em.remove(entity);
-                em.flush();
-            });
-
-            // 3. login with client
-            testNoOverride.accept(clientRep.getClientId());
+            testNoOverride.accept(clientId);
         } finally {
-            clientRep.setAuthenticationFlowBindingOverrides(Map.of(binding, ""));
-            clientResource.update(clientRep);
+            testingClient.server("test").run(session -> {
+                RealmModel realm = session.getContext().getRealm();
+                session.clients().getClientByClientId(realm, clientId).removeAuthenticationFlowBindingOverride(binding);
+            });
         }
     }
 }

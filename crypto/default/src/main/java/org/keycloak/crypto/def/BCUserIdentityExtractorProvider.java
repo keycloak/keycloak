@@ -154,8 +154,7 @@ public class BCUserIdentityExtractorProvider  extends UserIdentityExtractorProvi
                             if (obj instanceof byte[]) {
                                 byte[] otherNameBytes = (byte[]) obj;
 
-                                try {
-                                    ASN1InputStream asn1Stream = new ASN1InputStream(new ByteArrayInputStream(otherNameBytes));
+                                try (ASN1InputStream asn1Stream = new ASN1InputStream(new ByteArrayInputStream(otherNameBytes))) {
                                     ASN1Encodable asn1otherName = asn1Stream.readObject();
                                     asn1otherName = unwrap(asn1otherName);
 

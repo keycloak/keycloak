@@ -52,9 +52,10 @@ public class BCFIPSECDSACryptoProvider implements ECDSACryptoProvider {
     public byte[] asn1derToConcatenatedRS(final byte[] derEncodedSignatureValue, int signLength) throws IOException {
         int len = signLength / 2;
 
-        ASN1InputStream asn1InputStream = new ASN1InputStream(derEncodedSignatureValue);
-        ASN1Primitive asn1Primitive = asn1InputStream.readObject();
-        asn1InputStream.close();
+        ASN1Primitive asn1Primitive;
+        try (ASN1InputStream asn1InputStream = new ASN1InputStream(derEncodedSignatureValue)) {
+            asn1Primitive = asn1InputStream.readObject();
+        }
 
         ASN1Sequence asn1Sequence = (ASN1Sequence.getInstance(asn1Primitive));
         ASN1Integer rASN1 = (ASN1Integer) asn1Sequence.getObjectAt(0);

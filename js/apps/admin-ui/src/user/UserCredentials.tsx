@@ -128,7 +128,7 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
 
   useFetch(
     () => {
-      if (user.enabled) {
+      if (user.enabled || !user.federationLink) {
         return adminClient.users.getCredentials({ id: user.id! });
       }
       return Promise.resolve([]);

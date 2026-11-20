@@ -371,7 +371,7 @@ The following table shows the recommended paths to expose.
 |===
 
 We assume you run {project_name} on the root path `/` on your reverse proxy/gateway's public API.
-If not, prefix the path with your desired one.
+If not, prefix the Reverse Proxy Path with your desired one. See <<context-path-on-reverse-proxy, Context path on reverse proxy>> for how the context path must be handled between the proxy and {project_name}.
 
 NOTE: If you configured an `http-relative-path` on the server, proceed as follows to use discovery with RFC 8414: Configure a reverse proxy to map the `/.well-known/` path without the prefix to the path with the prefix on the server.
 
@@ -389,14 +389,26 @@ To do that, do not expose the path `/realms/master/` to the public internet.
 
 Depending on your topology, you can combine this with serving the Admin UI and Admin API on a dedicated hostname and port. See <@links.server id="hostname" anchor="administration-console-on-a-separate-hostname" /> for details.
 
-=== Different context path on reverse proxy
+[#context-path-on-reverse-proxy]
+=== Context path on reverse proxy
 
 By default, {project_name} is exposed through the root context path (`/`).
-If the proxy uses a different context path than {project_name}, one of the following must be done:
+If the proxy exposes {project_name} under a context path, such as `/auth`, the proxy and {project_name} must agree on whether that path is part of the request URI that reaches the server. Choose one of the following approaches.
+
+WARNING: A mismatch between the request URI sent by the reverse proxy and the one expected by {project_name} typically results in `404 Not Found` errors, or in redirects and links that point to the wrong location.
+
+==== Proxy removes the context path
+
+The server keeps serving requests at the root context path, and the context path is only used by {project_name} to build the URLs it returns. To configure this, do one of the following:
 
 * Use a simple hostname for the `hostname` option, `xforwarded` for the `proxy-headers` option, and have the proxy set the `X-Forwarded-Prefix` header.
-* Use a full URL for the `hostname` option including the proxy context path, for example using `--hostname=https://my.keycloak.org/auth` if {project_name} is exposed through the reverse proxy on `/auth`.
-* Change the context path of {project_name} itself to match the context path for the reverse proxy using the `http-relative-path` option.
+* Use a full URL for the `hostname` option including the proxy context path, for example using `--hostname=https://my.keycloak.org/auth` if {project_name} is exposed through the reverse proxy on `/auth`. The `proxy-headers` option must also be set, otherwise the server logs a likely misconfiguration warning because the path in `hostname` does not match `http-relative-path`.
+
+In both cases, the reverse proxy must remove the context path from the request URI before forwarding the request to {project_name}. For example, a request to `/auth/realms/master` must be forwarded as `/realms/master`. Consult the documentation of your reverse proxy for how to rewrite or strip a path prefix.
+
+==== Proxy and server use the same context path
+
+Set the `http-relative-path` option on {project_name} to the same context path the proxy exposes, for example `--http-relative-path=/auth`. The server then serves requests under that path, so the reverse proxy must forward the request URI unchanged.
 
 For more details on exposing {project_name} on a different hostname or context path, including the Administration REST API and Console, see <@links.server id="hostname"/>.
 

@@ -31,6 +31,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
 import org.keycloak.authorization.common.KeycloakIdentity;
@@ -67,6 +68,10 @@ public class ResourceService {
     public Response create(UmaResourceRepresentation resource) {
         if (resource == null) {
             return Response.status(Status.BAD_REQUEST).build();
+        }
+
+        if (resource.getId() != null) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource identifier must not be provided when creating a resource.", Status.BAD_REQUEST);
         }
 
         ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();

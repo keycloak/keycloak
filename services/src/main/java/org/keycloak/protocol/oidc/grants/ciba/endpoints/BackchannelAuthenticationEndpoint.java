@@ -91,6 +91,12 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         HttpRequest httpRequest = session.getContext().getHttpRequest();
         CIBAAuthenticationRequest request = authorizeClient(httpRequest.getDecodedFormParameters());
 
+        if (CibaOtherClaimsValidator.hasForgedOtherClaims(request)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST,
+                    "Invalid parameter in CIBAAuthenticationRequest, found forged duplicity in otherClaims!",
+                    Response.Status.BAD_REQUEST);
+        }
+
         try {
             String authReqId = request.serialize(session);
             AuthenticationChannelProvider provider = session.getProvider(AuthenticationChannelProvider.class);

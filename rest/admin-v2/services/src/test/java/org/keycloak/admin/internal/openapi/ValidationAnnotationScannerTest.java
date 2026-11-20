@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -182,6 +183,21 @@ public class ValidationAnnotationScannerTest {
         String description = scanner.buildDescription(classInfo, "notBlankField");
 
         assertTrue(description.contains("must not be blank"));
+    }
+
+    @Test
+    public void buildDescription_isEnglishRegardlessOfDefaultLocale() {
+        Locale defaultLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.GERMANY);
+            ValidationAnnotationScanner germanScanner = new ValidationAnnotationScanner(index);
+            ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+            assertTrue(germanScanner.buildDescription(classInfo, "notBlankField").contains("must not be blank"));
+            assertTrue(germanScanner.buildDescription(classInfo, "sizedString").contains("size must be between 5 and 100"));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
     }
 
     @Test
