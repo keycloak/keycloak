@@ -25,12 +25,14 @@ import org.keycloak.common.util.Time;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
@@ -42,6 +44,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -400,8 +403,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         validateClientId(clientIdURI);
 
         if (fetchOp == FetchOperation.NO_UPDATE) {
-            // no update, but the resource parameter still needs to be enforced on every authorization request.
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            // no update, but the persisted client metadata and the resource parameter still need to be verified on every authorization request.
+            ClientModel clientModel = session.getContext().getRealm().getClientByClientId(clientId);
+            verifyPersistedClientMetadata(redirectUriURI, clientModel);
+            enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
             return;
         }
 
@@ -409,7 +414,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl = fetchClientMetadata(clientIdURI, fetchOp == FetchOperation.UPDATE, provider);
         if (clientOIDCWithCacheControl == null) {
             // fetched but no update
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            ClientModel clientModel = session.getContext().getRealm().getClientByClientId(clientId);
+            verifyPersistedClientMetadata(redirectUriURI, clientModel);
+            enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
             return;
         }
 
@@ -428,6 +435,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             clientModel = provider.updateClientMetadata(clientOIDCWithCacheControl);
         }
 
+        // an update does not remove every property that the fetched client metadata no longer includes
+        verifyPersistedClientMetadata(redirectUriURI, clientModel);
         enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
     }
 
@@ -739,6 +748,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
         // OIDC Dynamic Client Registration (optional): sector_identifier_uri, request_uris, fetched by the
         // authorization server after the registration
+        // OIDC Back-Channel Logout (optional): backchannel_logout_uri, CIBA (optional): backchannel_client_notification_endpoint,
+        // which the authorization server sends a request to after the registration
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
@@ -759,6 +770,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             verifyFetchedUriProperty(requestUri, "request_uris", trustedDomains);
         }
 
+        verifyRequestedUriProperty(clientOIDC.getBackchannelLogoutUri(), "backchannel_logout_uri", trustedDomains);
+        verifyRequestedUriProperty(clientOIDC.getBackchannelClientNotificationEndpoint(), "backchannel_client_notification_endpoint", trustedDomains);
+
         URI clientIdURIfromMetadata;
         try {
             clientIdURIfromMetadata = new URI(clientOIDC.getClientId());
@@ -769,6 +783,46 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         }
 
         return clientIdURIfromMetadata;
+    }
+
+    /**
+     * Verifies and validates the URLs of a persisted client metadata that the authorization server sends a request to,
+     * in the same way as the ones of a fetched client metadata.
+     * It is done on every authorization request, because the persisted client metadata is used whether it was fetched
+     * for the request or not, and it can have been persisted before the configuration of the executor changed.
+     *
+     * @param redirectUriURI a value of {redirect_uri} parameter of an authorization request in {@link URI}
+     * @param clientModel a persisted client metadata
+     * @throws ClientPolicyException when verifying or validating a persisted client metadata fails.
+     */
+    protected void verifyPersistedClientMetadata(final URI redirectUriURI, final ClientModel clientModel) throws ClientPolicyException {
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
+        String backchannelLogoutUrl = OIDCAdvancedConfigWrapper.fromClientModel(clientModel).getBackchannelLogoutUrl();
+        String backchannelClientNotificationEndpoint = clientModel.getAttribute(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
+        verifyRequestedUriProperty(backchannelLogoutUrl, "backchannel_logout_uri", trustedDomains);
+        verifyRequestedUriProperty(backchannelClientNotificationEndpoint, "backchannel_client_notification_endpoint", trustedDomains);
+
+        if (getConfiguration().isRestrictSameDomain()) {
+            List<String> l = Stream.of(backchannelLogoutUrl, backchannelClientNotificationEndpoint).filter(StringUtil::isNotBlank).toList();
+            validateSameDomain(l, redirectUriURI, trustedDomains);
+        }
+    }
+
+    // same domain policy: the URIs have to be under the same trusted domain as the redirect_uri parameter
+    private void validateSameDomain(List<String> uris, URI redirectUriURI, List<String> trustedDomains) throws ClientPolicyException {
+        String redirectUriHost = redirectUriURI.getHost();
+        try {
+            for (String s : uris) {
+                URI u = new URI(s);
+                if (redirectUriHost == null || trustedDomains.stream().noneMatch(i -> checkTrustedDomain(u.getHost(), i) && checkTrustedDomain(redirectUriHost, i))) {
+                    getLogger().warnv("not under the same domain = {0}", u.getHost());
+                    throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+                }
+            }
+        } catch (URISyntaxException e) {
+            getLogger().warnv("URI not resolved {0}}", e);
+            throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
+        }
     }
 
     private void verifyUriProperty(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
@@ -787,6 +841,13 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             getLogger().warnv(logMessageTemplate, propertyName, uriString);
             throw invalidClientIdMetadata(error);
         });
+    }
+
+    // for a property whose URL the authorization server sends a request to itself, which it does not do for a blank one
+    private void verifyRequestedUriProperty(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
+        if (StringUtil.isNotBlank(uriString)) {
+            verifyFetchedUriProperty(uriString, propertyName, trustedDomains);
+        }
     }
 
     private void verifyUriPropertyIfPresent(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
@@ -888,7 +949,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // An authorization server MAY impose restrictions or relationships
         // between the redirect_uris and the client_id or client_uri properties
 
-        // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri
+        // same domain policy: client_id, redirect_uri, redirect_uris, client_uri, logo_uri, tos_uri,, policy_uri, jwks_uri,
+        // backchannel_logout_uri, backchannel_client_notification_endpoint
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
         if (getConfiguration().isRestrictSameDomain() && trustedDomains != null && !trustedDomains.isEmpty()) {
             // Client Metadata verification ensures that
@@ -900,20 +962,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_URIS_SAMEDOMAIN);
             }
 
-            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri())
-                    .filter(Objects::nonNull).toList();
-            try {
-                for (String s : l) {
-                    URI u = new URI(s);
-                    if (trustedDomains.stream().filter(i->!i.isBlank()).noneMatch(i -> checkTrustedDomain(u.getHost(), i) && checkTrustedDomain(redirectUriURI.getHost(), i))) {
-                        getLogger().warnv("not under the same domain = {0}", u.getHost());
-                        throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
-                    }
-                }
-            } catch (URISyntaxException e) {
-                getLogger().warnv("URI not resolved {0}}", e);
-                throw invalidClientIdMetadata(ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN);
-            }
+            List<String> l = Stream.of(clientOIDC.getClientId(), clientOIDC.getClientUri(), clientOIDC.getLogoUri(), clientOIDC.getTosUri(), clientOIDC.getPolicyUri(), clientOIDC.getJwksUri(),
+                            clientOIDC.getBackchannelLogoutUri(), clientOIDC.getBackchannelClientNotificationEndpoint())
+                    .filter(StringUtil::isNotBlank).toList();
+            validateSameDomain(l, redirectUriURI, trustedDomains);
         }
 
         // required properties policy

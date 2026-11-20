@@ -84,7 +84,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
         ProviderConfigProperty property = new ProviderConfigProperty(
                 ALLOW_HTTP_SCHEME,
                 "Allow http scheme",
-                "If ON, then the executor allows http scheme as a valid Client ID URL and property of Client Metadata whose value is URL: client_uri, logo_uri, tos_uri, policy_uri, jwks_uri. " +
+                "If ON, then the executor allows http scheme for a URL that the server sends a request to itself, namely the Client ID URL and the " +
+                        "jwks_uri, sector_identifier_uri, request_uris, backchannel_logout_uri and backchannel_client_notification_endpoint " +
+                        "properties of Client Metadata. " +
                         "It can be ON only for development environment. It must be OFF in production environment. ",
                 ProviderConfigProperty.BOOLEAN_TYPE,
                 false);
@@ -93,8 +95,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
         property = new ProviderConfigProperty(
                 ALLOW_PRIVATE_USE_ADDRESSES,
                 "Allow private-use addresses",
-                "If OFF, then the executor rejects a URL that the server fetches itself, namely the Client ID URL and the " +
-                        "jwks_uri, sector_identifier_uri and request_uris properties of Client Metadata, whose host resolves to a " +
+                "If OFF, then the executor rejects a URL that the server sends a request to itself, namely the Client ID URL and the " +
+                        "jwks_uri, sector_identifier_uri, request_uris, backchannel_logout_uri and backchannel_client_notification_endpoint " +
+                        "properties of Client Metadata, whose host resolves to a " +
                         "loopback, private, link-local, unique local or multicast address. Such URLs are rejected even if their host " +
                         "matches one of the trusted domains, which prevents Server-Side Request Forgery (SSRF) against hosts only " +
                         "reachable from the server. It can be ON only for development environment. It must be OFF in production environment.",
@@ -108,7 +111,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 "Trusted domains",
                 "If some domains are filled, the executor only accepts the following URL-formatted parameters whose host part matches one of the filled domains: " +
                         "Authorization request parameters: client_id, redirect_uri, " +
-                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri, sector_identifier_uri, request_uris. " +
+                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri, sector_identifier_uri, request_uris, " +
+                        "backchannel_logout_uri, backchannel_client_notification_endpoint. " +
                         "The domains are checked by using wildcard pattern matching (e.g. '*.example.org'). " +
                         "If the domains not filled, the executor denies all such the parameters and properties. " +
                         "For example, use pattern like '*.example.org' if you want to accept the parameter / property whose domain is 'example.org' or its subdomains.",
