@@ -818,7 +818,8 @@ The following unused method has been removed from the `UserSessionPersisterProvi
 
 This method was only used to load all sessions from the database in bulk, and no longer has any callers.
 The named queries `findUserSessionsOrderedById` and `findClientSessionsOrderedByIdInterval` that supported it have been removed as well.
-If you call this method, use `readOnlyUserSessionStream(RealmModel realm, boolean offline)` instead.
+For read-only access to sessions in a single realm, use `readOnlyUserSessionStream(RealmModel realm, boolean offline)` instead.
+Unlike the removed method, it excludes sessions past the idle timeout and does not provide pagination or mutable session models.
 
 The following method previously had a default implementation that delegated to other methods.
 The default implementation has been removed, and the method is now abstract:
