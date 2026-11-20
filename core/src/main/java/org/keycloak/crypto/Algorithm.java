@@ -20,6 +20,9 @@ import org.keycloak.common.crypto.CryptoConstants;
 
 public interface Algorithm {
 
+    /* Unsigned JWS (JWA) */
+    String none = "none";
+
     /* RSA signing algorithms  */
     String HS256 = "HS256";
     String HS384 = "HS384";

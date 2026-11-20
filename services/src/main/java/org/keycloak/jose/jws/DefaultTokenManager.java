@@ -188,7 +188,7 @@ public class DefaultTokenManager implements TokenManager {
             ClientSignatureVerifierProvider signatureProvider = session.getProvider(ClientSignatureVerifierProvider.class, signatureAlgorithm);
 
             if (signatureProvider == null) {
-                if (allowNoneAlgorithm && jws.getHeader().getAlgorithm().equals(org.keycloak.jose.jws.Algorithm.none)) {
+                if (allowNoneAlgorithm && Algorithm.none.equals(jws.getHeader().getRawAlgorithm())) {
                     return jws.readJsonContent(clazz);
                 }
                 return null;
@@ -392,7 +392,7 @@ public class DefaultTokenManager implements TokenManager {
 
     private void rejectUnsignedContentIfSignatureRequired(ClientModel client) {
         String requestedSignatureAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestObjectSignatureAlg();
-        if (requestedSignatureAlgorithm != null) {
+        if (requestedSignatureAlgorithm != null && !Algorithm.none.equals(requestedSignatureAlgorithm)) {
             throw new RuntimeException("Request object signature algorithm is required but decrypted JWE content is not a signed JWS");
         }
     }
