@@ -171,6 +171,11 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
 
     @Override
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate) {
+        return generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber, validityEndDate, false);
+    }
+
+    @Override
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate, boolean rsaPss) {
         try {
             X500Name subjectDN = new X500NameBuilder(BCStyle.INSTANCE).addRDN(BCStyle.CN, subject).build();
             Date validityStartDate = new Date(System.currentTimeMillis() - 100000);
@@ -178,7 +183,7 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
 
             X509v1CertificateBuilder builder = new X509v1CertificateBuilder(subjectDN, serialNumber, validityStartDate,
                     validityEndDate, subjectDN, subPubKeyInfo);
-            X509CertificateHolder holder = builder.build(createSigner(caKeyPair.getPrivate()));
+            X509CertificateHolder holder = builder.build(createSigner(caKeyPair.getPrivate(), rsaPss));
 
             return new JcaX509CertificateConverter().getCertificate(holder);
         } catch (Exception e) {
@@ -190,14 +195,15 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
      * Creates the content signer for generation of Version 1 {@link X509Certificate}.
      *
      * @param privateKey the private key
+     * @param rsaPss use RSASSA-PSS instead of PKCS #1 v1.5 for RSA keys
      * @return the content signer
      */
-    private ContentSigner createSigner(PrivateKey privateKey) {
+    private ContentSigner createSigner(PrivateKey privateKey, boolean rsaPss) {
         try {
             JcaContentSignerBuilder signerBuilder;
             switch (privateKey.getAlgorithm()) {
                 case "RSA": {
-                    signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
+                    signerBuilder = new JcaContentSignerBuilder(rsaPss ? "SHA256WITHRSAANDMGF1" : "SHA256WithRSAEncryption")
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
                 }

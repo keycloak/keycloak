@@ -11,6 +11,7 @@ public class RunOnServerRealmResourceProviderFactory implements RealmResourcePro
 
     private static final String ID = "testing-run-on-server";
 
+    private String testClassUrl = TestClassLoader.DEFAULT_TEST_CLASS_URL;
     private String executionId;
     private ClassLoader testClassLoader;
 
@@ -35,7 +36,7 @@ public class RunOnServerRealmResourceProviderFactory implements RealmResourcePro
     public ClassLoader getTestClassLoader(String executionId) {
         if (!executionId.equals(this.executionId)) {
             try {
-                testClassLoader = new TestClassLoader();
+                testClassLoader = new TestClassLoader(testClassUrl);
             } catch (MalformedURLException e) {
                 throw new RuntimeException(e);
             }
@@ -46,8 +47,10 @@ public class RunOnServerRealmResourceProviderFactory implements RealmResourcePro
 
     @Override
     public void init(org.keycloak.Config.Scope config) {
+        // Servers running in a container cannot reach the test class server on localhost
+        testClassUrl = config.get("test-class-url", TestClassLoader.DEFAULT_TEST_CLASS_URL);
         try {
-            testClassLoader = new TestClassLoader();
+            testClassLoader = new TestClassLoader(testClassUrl);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }

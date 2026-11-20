@@ -85,6 +85,13 @@ public class CertificateUtils {
     }
 
     /**
+     * @param rsaPss sign RSA keys with RSASSA-PSS instead of PKCS #1 v1.5; ignored for other key types
+     */
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate, boolean rsaPss) {
+        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, truncateCN(subject), serialNumber, validityEndDate, rsaPss);
+    }
+
+    /**
      * Checks whether the certificate is self signed, meaning it is self issued with matching subject and
      * issuer names and its signature verifies with its own public key.
      *

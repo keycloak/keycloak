@@ -55,6 +55,19 @@ public class BCCertificateUtilsProviderTest {
     }
 
     @Test
+    public void testV1SelfSignedCertificateWithRsaPss() throws Exception {
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
+        java.util.Date end = new java.util.Date(System.currentTimeMillis() + 100000);
+
+        X509Certificate pss = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "pss", java.math.BigInteger.ONE, end, true);
+        X509Certificate pkcs1 = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "pkcs1", java.math.BigInteger.ONE, end, false);
+
+        Assert.assertEquals("1.2.840.113549.1.1.10", pss.getSigAlgOID());
+        Assert.assertEquals("1.2.840.113549.1.1.11", pkcs1.getSigAlgOID());
+        pss.verify(keyPair.getPublic());
+    }
+
+    @Test
     public void testV3CertificateWithSpecialCharactersInSubject() throws Exception {
         String subject = "https://example.com/?action=sso_id";
         KeyPair caKeyPair = KeyUtils.generateRsaKeyPair(2048);

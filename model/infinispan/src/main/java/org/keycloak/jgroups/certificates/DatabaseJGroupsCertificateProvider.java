@@ -20,11 +20,17 @@ package org.keycloak.jgroups.certificates;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.KeyManager;
@@ -61,11 +67,21 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
     private final ReloadingX509ExtendedKeyManager keyManager;
     private final ReloadingX509ExtendedTrustManager trustManager;
     private final Lock lock = new ReentrantLock();
+    // Keeps the handshake thread free. A request is dropped when a reload is already running (debounce).
+    private final ThreadPoolExecutor reloadExecutor = new ThreadPoolExecutor(0, 1, 10, TimeUnit.SECONDS, new SynchronousQueue<>(), r -> {
+        var thread = new Thread(r, "jgroups-certificate-reload");
+        thread.setDaemon(true);
+        return thread;
+    }, new ThreadPoolExecutor.DiscardPolicy());
     // not final to be updated for testing
     private volatile Duration rotationPeriod;
+    private final KeySpec keySpec;
     private volatile JGroupsCertificate currentCertificate;
+    // the stored certificate does not match the configured key, and is replaced once this node has joined the cluster
+    private volatile boolean migrationPending;
 
-    private DatabaseJGroupsCertificateProvider(KeycloakSessionFactory sessionFactory, Duration rotationPeriod) {
+    private DatabaseJGroupsCertificateProvider(KeycloakSessionFactory sessionFactory, Duration rotationPeriod, KeySpec keySpec) {
+        this.keySpec = Objects.requireNonNull(keySpec);
         this.sessionFactory = Objects.requireNonNull(sessionFactory);
         this.rotationPeriod = Objects.requireNonNull(rotationPeriod);
         keyManager = new ReloadingX509ExtendedKeyManager();
@@ -73,8 +89,8 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         currentCertificate = new JGroupsCertificate();
     }
 
-    public static DatabaseJGroupsCertificateProvider create(KeycloakSessionFactory factory, Duration rotationPeriod) {
-        var provider = new DatabaseJGroupsCertificateProvider(factory, rotationPeriod);
+    public static DatabaseJGroupsCertificateProvider create(KeycloakSessionFactory factory, Duration rotationPeriod, KeySpec keySpec) {
+        var provider = new DatabaseJGroupsCertificateProvider(factory, rotationPeriod, keySpec);
         provider.init();
         return provider;
     }
@@ -84,11 +100,26 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         var cert = Retry.call(ignored -> KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, this::loadOrCreateCertificate), STARTUP_RETRIES, STARTUP_RETRY_SLEEP_MILLIS);
         useCertificate(cert);
         trustManager.setExceptionHandler(this::onTrustManagerException);
+        trustManager.setAcceptedIssuersHandler(this::reloadAsync);
     }
 
     @Override
     public void rotateCertificate() {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, this::replaceCertificateFromDatabase);
+    }
+
+    @Override
+    public boolean migrateCertificate() {
+        if (!migrationPending) {
+            return false;
+        }
+        // Replace only if still mismatching, so concurrently starting nodes with the same configuration replace it once.
+        // A failure keeps the migration pending, so the caller can retry it.
+        var replaced = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session ->
+                session.getProvider(ServerConfigStorageProvider.class)
+                        .replace(CERTIFICATE_ID, json -> needsReplacement(json), this::generateSelfSignedCertificate));
+        migrationPending = false;
+        return replaced;
     }
 
     @Override
@@ -138,10 +169,28 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         doReload();
     }
 
+    // A peer that rejects the certificate of this node aborts the handshake before the trust manager sees its certificate.
+    // Each incoming handshake therefore triggers a reload, so a node that still uses an outdated certificate picks up the new one.
+    private void reloadAsync() {
+        reloadExecutor.execute(() -> {
+            try {
+                doReload();
+            } catch (RuntimeException e) {
+                logger.warn("Failed to reload the JGroups certificate", e);
+            }
+        });
+    }
+
     private void doReload() {
-        KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, DatabaseJGroupsCertificateProvider::loadCertificateFromDatabase)
-                .map(JGroupsCertificate::fromJson)
-                .ifPresent(this::useCertificate);
+        // Read and apply under one lock, so a delayed reload cannot reinstall a certificate that a newer reload has superseded.
+        lock.lock();
+        try {
+            KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, DatabaseJGroupsCertificateProvider::loadCertificateFromDatabase)
+                    .map(JGroupsCertificate::fromJson)
+                    .ifPresent(this::useCertificate);
+        } finally {
+            lock.unlock();
+        }
     }
 
     private Duration delayUntilNextRotation(Instant certificateStartInstant, Instant certificateEndInstant) {
@@ -180,6 +229,9 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
             currentCertificate = certificate;
             keyManager.reload(km);
             trustManager.reload(tm);
+            var x509 = certificate.getCertificate();
+            logger.infof("JGroups mTLS certificate in use: key=%s, signature=%s, valid until %s, rotation every %s.",
+                    describe(x509.getPublicKey()), x509.getSigAlgName(), x509.getNotAfter().toInstant(), rotationPeriod);
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -187,12 +239,63 @@ public class DatabaseJGroupsCertificateProvider implements JGroupsCertificatePro
         }
     }
 
+    // describes the key of the certificate in use, which differs from the configured key until this node has regenerated or reloaded it
+    private static String describe(PublicKey publicKey) {
+        if (publicKey instanceof RSAPublicKey rsa) {
+            return "RSA-" + rsa.getModulus().bitLength();
+        }
+        if (publicKey instanceof ECPublicKey ec) {
+            return "ECDSA-" + ec.getParams().getOrder().bitLength() + "bit";
+        }
+        return publicKey.getAlgorithm();
+    }
+
     private JGroupsCertificate loadOrCreateCertificate(KeycloakSession session) {
+        migrationPending = false;
         var storage = session.getProvider(ServerConfigStorageProvider.class);
-        return fromJson(storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate));
+        var json = storage.loadOrCreate(CERTIFICATE_ID, this::generateSelfSignedCertificate);
+        var stored = usableCertificate(json);
+        if (stored.isEmpty()) {
+            // A node cannot join with an expired or unreadable certificate, so replace it now.
+            // Replace only if it is still unusable, so concurrently starting nodes with the same configuration regenerate it once.
+            logger.infof("Stored JGroups certificate is unusable. Regenerating it with the configured key (%s).", keySpec.description());
+            storage.replace(CERTIFICATE_ID, current -> usableCertificate(current).isEmpty(), this::generateSelfSignedCertificate);
+            stored = usableCertificate(storage.find(CERTIFICATE_ID).orElseThrow());
+        }
+        var certificate = stored.orElseThrow(() -> new IllegalStateException("The stored JGroups certificate is unusable."));
+        if (!matchesKeySpec(certificate)) {
+            // The running nodes trust only the stored certificate, so join with it and replace it afterwards in migrateCertificate().
+            logger.infof("Stored JGroups certificate does not match the configured key (%s). Replacing it once this node has joined the cluster.", keySpec.description());
+            // Fail the startup now if the key cannot be generated, as the replacement would otherwise fail on every retry.
+            // This is done only on a mismatch to keep the regular startup fast.
+            keySpec.generate();
+            migrationPending = true;
+        }
+        return certificate;
+    }
+
+    private boolean needsReplacement(String json) {
+        return usableCertificate(json).map(certificate -> !matchesKeySpec(certificate)).orElse(true);
+    }
+
+    // empty if the certificate is malformed, expired or its key material cannot be loaded
+    private static Optional<JGroupsCertificate> usableCertificate(String json) {
+        try {
+            var certificate = fromJson(json);
+            certificate.getCertificate().checkValidity();
+            Utils.createKeyManager(certificate);
+            Utils.createTrustManager(certificate);
+            return Optional.of(certificate);
+        } catch (GeneralSecurityException | IOException | RuntimeException e) {
+            return Optional.empty();
+        }
+    }
+
+    private boolean matchesKeySpec(JGroupsCertificate certificate) {
+        return keySpec.matches(certificate.getCertificate().getPublicKey());
     }
 
     private String generateSelfSignedCertificate() {
-        return toJson(Utils.generateSelfSignedCertificate(rotationPeriod.multipliedBy(2L)));
+        return toJson(Utils.generateSelfSignedCertificate(rotationPeriod.multipliedBy(2L), keySpec));
     }
 }

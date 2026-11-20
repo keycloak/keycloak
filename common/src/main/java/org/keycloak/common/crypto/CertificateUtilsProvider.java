@@ -65,6 +65,11 @@ public interface CertificateUtilsProvider {
 
     public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate);
 
+    /**
+     * @param rsaPss sign RSA keys with RSASSA-PSS instead of PKCS #1 v1.5; ignored for other key types
+     */
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber, Date validityEndDate, boolean rsaPss);
+
     public List<String> getCertificatePolicyList(X509Certificate cert) throws GeneralSecurityException;
 
     public List<String> getCRLDistributionPoints(X509Certificate cert) throws IOException;

@@ -55,6 +55,20 @@ public class BCFIPSCertificateUtilsProviderTest {
     }
 
     @Test
+    public void testV1SelfSignedCertificateWithRsaPssAndEcdsa() throws Exception {
+        java.util.Date end = new java.util.Date(System.currentTimeMillis() + 100000);
+
+        KeyPair rsa = KeyUtils.generateRsaKeyPair(3072);
+        X509Certificate pss = CertificateUtils.generateV1SelfSignedCertificate(rsa, "pss", java.math.BigInteger.ONE, end, true);
+        Assert.assertEquals("1.2.840.113549.1.1.10", pss.getSigAlgOID());
+        pss.verify(rsa.getPublic());
+
+        KeyPair ec = KeyUtils.generateEcKeyPair("secp256r1");
+        X509Certificate ecdsa = CertificateUtils.generateV1SelfSignedCertificate(ec, "ec", java.math.BigInteger.ONE, end, true);
+        ecdsa.verify(ec.getPublic());
+    }
+
+    @Test
     public void testV3CertificateWithSpecialCharactersInSubject() throws Exception {
         String subject = "https://example.com/?action=sso_id";
         KeyPair caKeyPair = KeyUtils.generateRsaKeyPair(2048);
