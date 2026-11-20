@@ -64,8 +64,10 @@ final class ExtendChildrenPartialEvaluator {
      * @param memberScope {@code true} if the scope protects the members of a group rather than the group itself
      * @param outcome the outcome of a permission for the current admin: {@code true} if it grants access, {@code false}
      *                if it denies access, or {@code null} if it can not be decided during partial evaluation (e.g.: its
-     *                policies can not be partially evaluated), in which case it neither grants nor denies access to the
-     *                descendants, as for permissions that are not extended
+     *                policies can not be partially evaluated, or an aggregated policy skips all of its policies), in
+     *                which case an extended permission neither grants nor denies access to the descendants. For member
+     *                scopes, such a permission might deny access during direct evaluation, so it also stops grants
+     *                inherited from ancestors, as a deny would
      */
     Result evaluate(KeycloakSession session, String scope, boolean memberScope, Function<Policy, Boolean> outcome) {
         RealmModel realm = session.getContext().getRealm();
@@ -91,6 +93,8 @@ final class ExtendChildrenPartialEvaluator {
         Set<String> claimedGroups = new HashSet<>();
         // groups with a permission of their own for the scope that denies access to the admin
         Set<String> deniedGroups = new HashSet<>();
+        // groups with a permission of their own for the scope whose outcome can not be decided for the admin
+        Set<String> undecidedGroups = new HashSet<>();
         // outcome of the extended permissions for the scope, by group
         Map<String, List<Boolean>> extendedByGroup = new HashMap<>();
         Set<String> visitedPermissions = new HashSet<>();
@@ -112,6 +116,8 @@ final class ExtendChildrenPartialEvaluator {
 
                 if (Boolean.FALSE.equals(grants)) {
                     deniedGroups.add(groupId);
+                } else if (grants == null) {
+                    undecidedGroups.add(groupId);
                 }
 
                 if (extended) {
@@ -123,6 +129,11 @@ final class ExtendChildrenPartialEvaluator {
         if (extendedByGroup.isEmpty()) {
             return Result.EMPTY;
         }
+
+        // for member scopes, the groups whose own permissions deny or might deny access, which protects the members of
+        // their descendants from grants inherited from their ancestors
+        Set<String> protectingGroups = new HashSet<>(deniedGroups);
+        protectingGroups.addAll(undecidedGroups);
 
         Set<String> allowed = new HashSet<>();
         Set<String> denied = new HashSet<>();
@@ -145,15 +156,15 @@ final class ExtendChildrenPartialEvaluator {
             // all extended permissions on the group must grant, as with any other set of permissions for a resource
             boolean granted = !outcomes.contains(Boolean.FALSE);
 
-            if (memberScope && granted && isDeniedOrHasDeniedAncestor(group, deniedGroups)) {
+            if (memberScope && granted && isDeniedOrHasDeniedAncestor(group, protectingGroups)) {
                 // for member scopes, a deny from the group itself or from any of its ancestors, extended or not, also
                 // protects the members of the descendants, so the grant is not propagated
                 continue;
             }
 
             // for member scopes, a deny from any ancestor, extended or not, protects the members of the descendants, so
-            // the walk stops at denied groups to not grant access to their descendants
-            Set<String> stopAt = memberScope ? (granted ? deniedGroups : Set.of()) : extendedByGroup.keySet();
+            // the walk stops at groups that deny or might deny to not grant access to their descendants
+            Set<String> stopAt = memberScope ? (granted ? protectingGroups : Set.of()) : extendedByGroup.keySet();
 
             for (String descendant : getInheritingDescendants(group, claimedGroups, stopAt)) {
                 if (granted) {
