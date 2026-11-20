@@ -476,10 +476,18 @@ public class AuthenticationManager {
         }
 
         if (logoutAuthSession == null) {
+            // Remove the previous logout session first when other tabs remain in the root, so that creating the replacement
+            // at the authentication session limit cannot evict an unfinished login tab. A single-tab root keeps create-first,
+            // since removing its last tab removes the root.
+            boolean removePreviousFirst = prevAuthSession != null && rootLogoutSession.getAuthenticationSessions().size() > 1;
+            if (removePreviousFirst) {
+                rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
+                logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());
+            }
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
             logger.tracef("Creating logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
-            if (prevAuthSession != null) {
+            if (prevAuthSession != null && !removePreviousFirst) {
                 // remove previous logout session for the other client or user session
                 rootLogoutSession.removeAuthenticationSessionByTabId(prevAuthSession.getTabId());
                 logger.tracef("Removing previous logout session for client '%s' in %s", prevAuthSession.getClient().getClientId(), rootLogoutSession.getId());

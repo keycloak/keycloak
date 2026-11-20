@@ -66,6 +66,7 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LogoutConfirmPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -114,6 +115,9 @@ public class LogoutSessionReuseTest {
 
     @InjectPage
     LogoutConfirmPage logoutConfirmPage;
+
+    @InjectPage
+    LoginPage loginPage;
 
     @InjectTestApp
     TestApp testApp;
@@ -408,6 +412,96 @@ public class LogoutSessionReuseTest {
             Assertions.assertTrue(user.admin().getUserSessions().isEmpty(), "The user session must be logged out");
             Assertions.assertEquals(1, rootAuthenticationSessionTabCount(rootId),
                     "Only the logout tab may be removed from root R, the login tab must be kept");
+        } finally {
+            if (rootId != null) {
+                removeRootAuthenticationSession(rootId);
+            }
+            resetBrowser();
+            user.admin().logout();
+        }
+    }
+
+    /**
+     * A root authentication session at the limit of allowed authentication sessions holds an unfinished login tab (the
+     * oldest tab in the root) and the logout tab of user session A. A logout of user session B from the same browser
+     * replaces the logout tab of A. The replacement must not evict the unfinished login tab.
+     */
+    @Test
+    void replacingLogoutSessionAtAuthSessionLimitKeepsOldestLoginTab() throws Exception {
+        final int limit = 300;
+        final String realmName = realm.getName();
+        final String clientId = oauth.getClientId();
+        final String postLogoutRedirectUri = testApp.getRedirectionUri();
+        updateClient(Map.of(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUri));
+        resetBrowser();
+
+        String rootId = null;
+        try {
+            // User session B
+            AccessTokenResponse tokensB = login();
+            final String idTokenB = tokensB.getIdToken();
+            dropCookies(CookieType.IDENTITY, CookieType.SESSION, CookieType.AUTH_SESSION_ID);
+
+            // An unfinished login creates login tab L, the first tab in root R
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            rootId = authSessionIdFromCookie();
+            final String finalRootId = rootId;
+
+            String loginTabId = runOnServer.fetch(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, finalRootId);
+                Assertions.assertEquals(1, root.getAuthenticationSessions().size(), "Root R must hold only the login tab");
+                return root.getAuthenticationSessions().keySet().iterator().next();
+            }, String.class);
+
+            // Wait over 1 s so that login tab L is strictly older than any tab created next
+            Thread.sleep(1100);
+
+            // Log in user session A in a second tab so that login tab L is not consumed
+            driver.tabs().newTab("about:blank");
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            loginPage.fillLogin(user.getUsername(), user.getPassword());
+            loginPage.submit();
+
+            // Start the logout of A and leave it unfinished on the confirmation screen
+            oauth.logoutForm()
+                    .withClientId()
+                    .open();
+            logoutConfirmPage.assertCurrent();
+
+            // Fill root R up to the authentication session limit
+            runOnServer.run(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, finalRootId);
+                ClientModel client = realmModel.getClientByClientId(clientId);
+                while (root.getAuthenticationSessions().size() < limit) {
+                    root.createAuthenticationSession(client);
+                }
+                Assertions.assertEquals(limit, root.getAuthenticationSessions().size(), "Root R must hold exactly the limit of tabs");
+            });
+
+            // Log out B from the same browser without identity or session cookies
+            dropCookies(CookieType.IDENTITY, CookieType.SESSION);
+            oauth.logoutForm()
+                    .idTokenHint(idTokenB)
+                    .postLogoutRedirectUri(postLogoutRedirectUri)
+                    .open();
+
+            String currentUrl = driver.getCurrentUrl();
+            Assertions.assertTrue(currentUrl.startsWith(postLogoutRedirectUri),
+                    "The browser must be redirected to post_logout_redirect_uri, but was: " + currentUrl);
+
+            boolean loginTabKept = runOnServer.fetch(session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realmModel, finalRootId);
+                return root != null && root.getAuthenticationSession(realmModel.getClientByClientId(clientId), loginTabId) != null;
+            }, Boolean.class);
+
+            Assertions.assertTrue(loginTabKept, "The oldest login tab must not be evicted when replacing a logout tab at the limit");
+            Assertions.assertEquals(limit - 1, rootAuthenticationSessionTabCount(rootId),
+                    "Root R must hold limit minus one tabs after B's backchannel logout completes");
         } finally {
             if (rootId != null) {
                 removeRootAuthenticationSession(rootId);
