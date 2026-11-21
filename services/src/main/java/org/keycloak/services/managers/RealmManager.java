@@ -134,8 +134,10 @@ public class RealmManager {
         else {
             ReservedCharValidator.validate(id);
         }
-        ReservedCharValidator.validate(name);
+        ReservedCharValidator.validateRealmName(name);
         RealmModel realm = model.createRealm(id, name);
+        //ReservedCharValidator.validate(name);
+        //RealmModel realm = model.createRealm(id, name);
         realm.setName(name);
 
         // setup defaults
@@ -645,7 +647,8 @@ public class RealmManager {
 
         try {
             session.getContext().setRealm(realm);
-            ReservedCharValidator.validate(rep.getRealm());
+            //ReservedCharValidator.validate(rep.getRealm());
+            ReservedCharValidator.validateRealmName(rep.getRealm());
             ReservedCharValidator.validateLocales(rep.getSupportedLocales());
             ReservedCharValidator.validateSecurityHeaders(rep.getBrowserSecurityHeaders());
             SMTPUtil.checkSMTPConfiguration(session, rep.getSmtpServer());
