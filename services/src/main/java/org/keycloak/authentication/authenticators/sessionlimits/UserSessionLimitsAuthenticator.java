@@ -168,7 +168,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     private List<UserSessionModel> handleLimitExceeded(AuthenticationFlowContext context, List<UserSessionModel> userSessions, String eventDetails, long limit) {
         switch (behavior) {
             case UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION:
-                logger.info("Denying new session");
+                logger.infof("Denying new session (%s)", eventDetails);
                 String errorMessage = Optional.ofNullable(context.getAuthenticatorConfig())
                         .map(AuthenticatorConfigModel::getConfig)
                         .map(f -> f.get(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE))
@@ -180,8 +180,8 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 return Collections.emptyList();
 
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
-                logger.info("Terminating oldest session");
-                var removedSessions = logoutOldestSessions(userSessions, limit, context.getEvent());
+                logger.infof("Terminating oldest session (%s)", eventDetails);
+                var removedSessions = logoutOldestSessions(userSessions, limit, context.getEvent(), eventDetails);
                 context.success();
                 return removedSessions;
         }
@@ -192,16 +192,16 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     /**
      * @return A list of logged-out user sessions, if any.
      */
-    private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit, EventBuilder eventBuilder) {
+    private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit, EventBuilder eventBuilder, String eventDetails) {
         long numberOfSessionsThatNeedToBeLoggedOut = getNumberOfSessionsThatNeedToBeLoggedOut(userSessions.size(), limit);
 
         if (numberOfSessionsThatNeedToBeLoggedOut == 0) {
-            logger.debug("No additional sessions that need to be logged out");
+            logger.debugf("No additional sessions that need to be logged out (%s)", eventDetails);
             return Collections.emptyList();
         } else if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
-            logger.info("Logging out oldest session");
+            logger.infof("Logging out oldest session (%s)", eventDetails);
         } else {
-            logger.infof("Logging out oldest %s sessions", numberOfSessionsThatNeedToBeLoggedOut);
+            logger.infof("Logging out oldest %s sessions (%s)", numberOfSessionsThatNeedToBeLoggedOut, eventDetails);
         }
 
         List<UserSessionModel> userSessionsToBeRemoved = userSessions
