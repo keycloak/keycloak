@@ -67,8 +67,35 @@ public class IdentityProviderAuthenticator implements Authenticator {
             LOG.tracef("Skipping: %s parameter is empty", AdapterConstants.KC_IDP_HINT);
             context.attempted();
         } else {
-            redirect(context, providerId);
+            redirect(context, fallbackToDefaultProviderIfUnavailable(context, providerId));
         }
+    }
+
+    /**
+     * Returns the configured default provider instead of the given one if the fallback is enabled and the given provider
+     * (resolved from {@code kc_idp_hint}) does not exist or is disabled. Otherwise, returns the given provider unchanged.
+     */
+    private String fallbackToDefaultProviderIfUnavailable(AuthenticationFlowContext context, String providerId) {
+        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+
+        if (config == null || !Boolean.parseBoolean(config.getConfig().get(IdentityProviderAuthenticatorFactory.FALLBACK_TO_DEFAULT_PROVIDER))) {
+            return providerId;
+        }
+
+        String defaultProvider = config.getConfig().get(IdentityProviderAuthenticatorFactory.DEFAULT_PROVIDER);
+
+        if (isBlank(defaultProvider) || defaultProvider.equals(providerId)) {
+            return providerId;
+        }
+
+        IdentityProviderModel idp = context.getSession().identityProviders().getByAlias(providerId);
+
+        if (idp != null && idp.isEnabled()) {
+            return providerId;
+        }
+
+        LOG.debugf("Provider %s from %s not found or not enabled, falling back to default provider %s", providerId, AdapterConstants.KC_IDP_HINT, defaultProvider);
+        return defaultProvider;
     }
 
     private String getIdentityProviderAlias(AuthenticationFlowContext context) {
