@@ -18,6 +18,10 @@ public class CredentialOfferActionToken extends DefaultActionToken {
     private String redirectUri;
 
     public CredentialOfferActionToken(String userId, int absoluteExpirationInSecs, VerifiableCredentialOfferActionConfig actionConfig, String redirectUri, String clientId) {
+        this(userId, (long) absoluteExpirationInSecs, actionConfig, redirectUri, clientId);
+    }
+
+    public CredentialOfferActionToken(String userId, long absoluteExpirationInSecs, VerifiableCredentialOfferActionConfig actionConfig, String redirectUri, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
         setActionConfig(actionConfig);
         setRedirectUri(redirectUri);
@@ -25,6 +29,10 @@ public class CredentialOfferActionToken extends DefaultActionToken {
     }
 
     public CredentialOfferActionToken(String userId, String email, int absoluteExpirationInSecs, VerifiableCredentialOfferActionConfig actionConfig, String redirectUri, String clientId) {
+        this(userId, email, (long) absoluteExpirationInSecs, actionConfig, redirectUri, clientId);
+    }
+
+    public CredentialOfferActionToken(String userId, String email, long absoluteExpirationInSecs, VerifiableCredentialOfferActionConfig actionConfig, String redirectUri, String clientId) {
         this(userId, absoluteExpirationInSecs, actionConfig, redirectUri, clientId);
         setEmail(email);
     }
