@@ -741,6 +741,22 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== SCIM PATCH removes the members or groups listed in the operation value
+// https://github.com/keycloak/keycloak/issues/55307
+
+A SCIM `PATCH` with `"op": "remove"` and a list in `value` now removes the listed entries.
+On a group, `"path": "members"` removes the listed members; on a user, `"path": "groups"` removes the user from the listed groups.
+Previously, {project_name} answered `200 OK` and changed nothing.
+Microsoft Entra ID uses this form to remove a member from a provisioned group, so groups it manages may still hold members it already recorded as removed.
+The upgrade does not remove them; review the membership of such groups after upgrading.
+
+If a listed user or group does not exist, the request now fails with `400 Bad Request` and removes nothing.
+For group members, this matches the filter form `members[value eq "<id>"]`.
+A `remove` that has both a filter in its `path` and a `value` is now rejected with `400 Bad Request` for every attribute of a user or a group; previously the `value` was ignored.
+An entry without a `value` is also rejected with `400 Bad Request`: a member in an `add` or a `remove` on a group, and a group in an `add`, a `remove` or a `PUT` on a user.
+In an `add` or a `remove` on a multi-valued attribute such as `members` or `groups`, an entry that is not an object, for example `null` or a bare id, and an entry whose fields cannot be read, for example `{"value": {}}`, are now rejected with `400 Bad Request` instead of failing with `500 Internal Server Error`.
+An `add` or a `remove` that spells such an attribute in another case, for example `"path": "Members"`, with a single object in `value` now works as the lowercase spelling does, instead of failing with `500 Internal Server Error`.
+
 === Hibernate second-level cache disabled
 // https://github.com/keycloak/keycloak/issues/55297
 

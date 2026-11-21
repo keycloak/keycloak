@@ -99,6 +99,11 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
 
     @Override
     public void remove(R resource, M model, String rawPath) {
+        remove(resource, model, rawPath, null);
+    }
+
+    @Override
+    public void remove(R resource, M model, String rawPath, JsonNode value) {
         Objects.requireNonNull(model, "model cannot be null");
 
         if (isBlank(rawPath)) {
@@ -106,9 +111,23 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
 
         Path path = new Path(this, rawPath);
+        boolean hasValue = value != null && !value.isNull();
+
+        if (hasValue && path.hasFilter()) {
+            // the two would select the values to remove in different ways, and one of them would be silently ignored
+            throw new ModelValidationException("Patch operation remove cannot have both a filter in the path and a value");
+        }
 
         for (Entry<Attribute<M, R>, JsonNode> entry : resolveAttributes(path.getPath(), NullNode.getInstance()).entrySet()) {
-            setValue(model, entry.getKey(), path.getValue(entry.getKey()), REMOVE);
+            Attribute<M, R> attribute = entry.getKey();
+            JsonNode values = path.getValue(attribute);
+
+            if (hasValue && attribute.isMultivalued() && attribute.getComplexType() != null) {
+                // the value lists the values to remove, e.g. "members" with [{"value": "<user id>"}], normalized as for add
+                values = ofNullable(resolveAttributes(path.getPath(), value).get(attribute)).orElse(NullNode.getInstance());
+            }
+
+            setValue(model, attribute, values, REMOVE);
         }
     }
 
@@ -261,6 +280,10 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
                 Attribute<M, R> attr = entry.getValue();
 
                 if (hasPath(attr, path)) {
+                    if (valueJson.isObject() && attr.isMultivalued() && attr.getComplexType() != null && attr.equals(getAttributes().get(attr.getName()))) {
+                        // another spelling of the attribute name, e.g. "Members": resolve the object as for "members" instead of unwrapping it
+                        return resolveAttributes(attr.getName(), valueJson);
+                    }
                     return Map.of(attr, resolveAttributeValue(attr, valueJson));
                 }
             }
@@ -378,6 +401,15 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
 
         JsonNode jsonValue = toJsonNode(value);
+
+        if (operation != SET && attribute.isMultivalued() && attribute.getComplexType() != null && jsonValue != null && jsonValue.isArray()) {
+            for (JsonNode entry : jsonValue) {
+                if (!entry.isObject()) {
+                    // e.g. "members" with [null] or ["<user id>"] instead of [{"value": "<user id>"}]
+                    throw new ModelValidationException("Each entry of " + attribute.getName() + " must be an object");
+                }
+            }
+        }
 
         switch (operation) {
             case SET -> attribute.set(model, jsonValue);

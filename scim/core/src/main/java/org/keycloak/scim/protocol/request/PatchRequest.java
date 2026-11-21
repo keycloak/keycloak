@@ -141,6 +141,11 @@ public class PatchRequest {
             return this;
         }
 
+        public Builder remove(String path, String value) {
+            operation("remove", path, value);
+            return this;
+        }
+
         private void operation(String operation, String path, String value) {
             operations.add(new PatchOperation(operation, path, value));
         }
