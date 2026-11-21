@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        suite: [Oid4VpTestSuite, Oid4VciHaipTestSuite, Oid4VciNonHaipTestSuite]
+        suite: [Oid4VpTestSuite, Oid4VciHaipTestSuite, Oid4VciNonHaipTestSuite, OidcTestSuite, OidcFormPostTestSuite, OidcDynamicTestSuite]
       fail-fast: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -28,6 +28,9 @@ public interface BrowserInteraction {
     BrowserInteraction DENY_CONSENT = new DenyConsent();
     BrowserInteraction LOGIN_ON_SECOND_VISIT = new LoginOnSecondVisit();
     BrowserInteraction ERROR_CALLBACK = new ErrorCallback();
+    BrowserInteraction LOGIN_WITH_SCREENSHOT_ON_SECOND_LOGIN = new LoginWithScreenshotOnSecondLogin();
+    BrowserInteraction LOGIN_WITH_CONSENT = new LoginWithConsent();
+    BrowserInteraction CONSENT_PAGE_SCREENSHOT = new ConsentPageScreenshot();
 
     /**
      * Asserts Keycloak renders its error page with a message matching {@code messageRegexp} at the authorization
@@ -53,8 +56,10 @@ public interface BrowserInteraction {
             return "https://*/realms/" + realm + "/protocol/openid-connect/auth*";
         }
 
+        // Keycloak renders the login form on the authorization endpoint for a plain authorization request, and under
+        // login-actions once the flow has been restarted (e.g. after resolving a PAR request_uri), so match both
         String loginPage() {
-            return "https://*/realms/" + realm + "/login-actions/authenticate*";
+            return "https://*/realms/" + realm + "/*";
         }
     }
 
@@ -77,6 +82,18 @@ public interface BrowserInteraction {
                 context.callbackUrl() + "*",
                 // command, element selector type, element selector, timeout in seconds
                 List.of(List.of(BrowserTask.WAIT, "id", "submission_complete", 10)));
+    }
+
+    // Keycloak's consent (oauth grant) page, which follows the login for a client requiring consent
+    private static BrowserTask grantConsentTask(BrowserContext context) {
+        return new BrowserTask(
+                "Keycloak Grant Consent",
+                context.loginPage(),
+                // optional, as a later authorization of the same client reuses the consent already granted
+                true,
+                List.of(
+                        List.of(BrowserTask.WAIT, "id", "kc-oauth", 10),
+                        List.of(BrowserTask.CLICK, "id", "kc-login")));
     }
 
     private static BrowserTask errorPageTask(BrowserContext context, String messageRegexp) {
@@ -173,6 +190,76 @@ public interface BrowserInteraction {
                     loginTask(context, false),
                     verifyCompleteTask(context)));
             return List.of(firstVisit, secondVisit);
+        }
+    }
+
+    /**
+     * Logs in on the first authorization visit, then requires the login page again on the second visit (e.g.
+     * prompt=login or max_age=1) and snapshots it into the screenshot placeholder before logging in, as the module
+     * waits for that screenshot. The first flow uses match-limit 1 so it applies only once.
+     */
+    record LoginWithScreenshotOnSecondLogin() implements BrowserInteraction {
+
+        @Override
+        public List<BrowserFlow> browserFlows(BrowserContext context) {
+            BrowserFlow firstVisit = new BrowserFlow(context.authorizationEndpoint(), 1, List.of(
+                    loginTask(context, false),
+                    verifyCompleteTask(context)));
+            BrowserFlow secondVisit = new BrowserFlow(context.authorizationEndpoint(), List.of(
+                    new BrowserTask(
+                            "Keycloak Second Login",
+                            context.loginPage(),
+                            List.of(
+                                    // command, element selector type, element selector, timeout in seconds,
+                                    // element text regexp, action
+                                    List.of(BrowserTask.WAIT, "id", "kc-page-title", 10, ".*",
+                                            BrowserTask.UPDATE_IMAGE_PLACEHOLDER),
+                                    // the re-authentication form only asks for the password, as the user is known
+                                    List.of(BrowserTask.TEXT, "id", "username", context.username(), "optional"),
+                                    List.of(BrowserTask.TEXT, "id", "password", context.password()),
+                                    List.of(BrowserTask.CLICK, "id", "kc-login"))),
+                    verifyCompleteTask(context)));
+            return List.of(firstVisit, secondVisit);
+        }
+    }
+
+    /**
+     * Like {@link Login}, for a client requiring consent, e.g. one registered dynamically under Keycloak's consent
+     * required client registration policy: grants the consent after the login.
+     */
+    record LoginWithConsent() implements BrowserInteraction {
+
+        @Override
+        public List<BrowserFlow> browserFlows(BrowserContext context) {
+            BrowserFlow firstVisit = new BrowserFlow(context.authorizationEndpoint(), 1, List.of(
+                    loginTask(context, false),
+                    grantConsentTask(context),
+                    verifyCompleteTask(context)));
+            BrowserFlow laterVisits = new BrowserFlow(context.authorizationEndpoint(), List.of(
+                    loginTask(context, true),
+                    grantConsentTask(context),
+                    verifyCompleteTask(context)));
+            return List.of(firstVisit, laterVisits);
+        }
+    }
+
+    /**
+     * Logs in and snapshots Keycloak's consent page into the screenshot placeholder, e.g. as it shows the logo, terms
+     * of service and policy links a client registered, which the module waits for.
+     */
+    record ConsentPageScreenshot() implements BrowserInteraction {
+
+        @Override
+        public List<BrowserFlow> browserFlows(BrowserContext context) {
+            return List.of(new BrowserFlow(context.authorizationEndpoint(), List.of(
+                    loginTask(context, false),
+                    new BrowserTask(
+                            "Keycloak Consent Page",
+                            context.loginPage(),
+                            // command, element selector type, element selector, timeout in seconds,
+                            // element text regexp, action
+                            List.of(List.of(BrowserTask.WAIT, "id", "kc-oauth", 10, ".*",
+                                    BrowserTask.UPDATE_IMAGE_PLACEHOLDER))))));
         }
     }
 
