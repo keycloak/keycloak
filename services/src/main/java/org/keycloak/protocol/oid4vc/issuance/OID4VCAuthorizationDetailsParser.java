@@ -13,7 +13,6 @@ import static org.keycloak.OID4VCConstants.CREDENTIAL_IDENTIFIERS;
 import static org.keycloak.protocol.oid4vc.model.ClaimsDescription.MANDATORY;
 import static org.keycloak.protocol.oid4vc.model.ClaimsDescription.PATH;
 import static org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail.CLAIMS;
-import static org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail.CREDENTIALS_OFFER_ID;
 import static org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail.ISSUED_CREDENTIAL_ID;
 
 public class OID4VCAuthorizationDetailsParser implements AuthorizationDetailsParser {
@@ -38,7 +37,6 @@ public class OID4VCAuthorizationDetailsParser implements AuthorizationDetailsPar
         outDetail.setLocations(inDetail.getLocations());
         outDetail.setCredentialConfigurationId((String) inDetail.getCustomData().get(CREDENTIAL_CONFIGURATION_ID));
         outDetail.setCredentialIdentifiers((List<String>) inDetail.getCustomData().get(CREDENTIAL_IDENTIFIERS));
-        outDetail.setCredentialsOfferId((String) inDetail.getCustomData().get(CREDENTIALS_OFFER_ID));
         outDetail.setIssuedCredentialId((String) inDetail.getCustomData().get(ISSUED_CREDENTIAL_ID));
         outDetail.setClaims(parseClaims((List<Map>) inDetail.getCustomData().get(CLAIMS)));
     }
