@@ -413,7 +413,7 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
     }
 
     // Assert that creation of clientScope fails. Return the error message returned by the server
-    private String assertClientScopeCreateFailure(CredentialScopeRepresentation scope) {
+    private String assertClientScopeCreateFailure(ClientScopeRepresentation scope) {
         ClientScopesResource clientScopes = testRealm.admin().clientScopes();
         try (Response response = clientScopes.create(scope)) {
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
@@ -632,6 +632,84 @@ public class OID4VCClientScopeTest extends OID4VCIssuerTestBase {
         String error = assertClientScopeCreateFailure(scope);
         assertTrue(error.contains("refresh interval") && error.contains("exceed"),
                 "Error message should explain the validation failure");
+    }
+
+    /**
+     * Test that creating a client scope with a proof key index other than 0 is rejected with 400
+     */
+    @Test
+    public void testProofKeyIndexOtherThanZeroIsRejectedOnCreate() {
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-invalid-proof-key-index");
+        scope.getAttributes().put(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "1");
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX)
+                        && error.contains("0"),
+                "Error message should name the attribute and the accepted value: " + error);
+    }
+
+    /**
+     * Test that creating a client scope with a non-integer proof key index is rejected with 400
+     */
+    @Test
+    public void testNonIntegerProofKeyIndexIsRejectedOnCreate() {
+        // Send the raw attributes through a plain representation: the typed CredentialScopeRepresentation getter
+        // parses the value on serialization and would fail client-side before the request is sent.
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("test-non-integer-proof-key-index");
+        scope.setProtocol(OID4VC_PROTOCOL);
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(VC_FORMAT, VC_FORMAT_DEFAULT);
+        attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "abc");
+        scope.setAttributes(attributes);
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX),
+                "Error message should name the attribute: " + error);
+    }
+
+    /**
+     * Test that a Unicode-whitespace-only proof key index is rejected with 400
+     */
+    @Test
+    public void testUnicodeWhitespaceOnlyProofKeyIndexIsRejectedOnCreate() {
+        ClientScopeRepresentation scope = new ClientScopeRepresentation();
+        scope.setName("test-whitespace-proof-key-index");
+        scope.setProtocol(OID4VC_PROTOCOL);
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put(VC_FORMAT, VC_FORMAT_DEFAULT);
+        attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "\u2003");
+        scope.setAttributes(attributes);
+
+        String error = assertClientScopeCreateFailure(scope);
+        assertTrue(error.contains(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX),
+                "Error message should name the attribute: " + error);
+    }
+
+    /**
+     * Test that proof key index 0 is accepted and round-trips, and that updating to 1 is rejected with 400
+     */
+    @Test
+    public void testProofKeyIndexZeroIsAcceptedAndInvalidUpdateIsRejected() {
+        ClientScopesResource clientScopes = testRealm.admin().clientScopes();
+        CredentialScopeRepresentation scope = new CredentialScopeRepresentation("test-valid-proof-key-index");
+        scope.setProofKeyIndex(0);
+
+        String scopeId = null;
+        try {
+            scopeId = assertClientScopeCreateSuccess(scope);
+            ClientScopeResource scopeResource = clientScopes.get(scopeId);
+            assertEquals("0", scopeResource.toRepresentation().getAttributes()
+                    .get(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX));
+
+            CredentialScopeRepresentation update = new CredentialScopeRepresentation(scopeResource.toRepresentation());
+            update.getAttributes().put(CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX, "1");
+            assertThrows(BadRequestException.class, () -> scopeResource.update(update));
+        } finally {
+            if (scopeId != null) {
+                clientScopes.get(scopeId).remove();
+            }
+        }
     }
 
     /**

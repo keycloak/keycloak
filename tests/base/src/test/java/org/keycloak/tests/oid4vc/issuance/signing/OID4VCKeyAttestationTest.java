@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
@@ -44,6 +45,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
@@ -58,12 +60,14 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.StaticAttestationKeyReso
 import org.keycloak.protocol.oid4vc.issuance.keybinding.TrustedAttestationKeyResolver;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
@@ -102,6 +106,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_CNF;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_JWK;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX;
 import static org.keycloak.protocol.oid4vc.model.ProofType.ATTESTATION;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.protocol.oidc.utils.JWKSServerUtils.toJwk;
@@ -318,11 +323,67 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testKidIndexJwtProofWithKeyAttestation() {
+        String cNonce = getCNonce();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runKidIndexJwtProofWithKeyAttestationTest(session, cNonce);
+        });
+    }
+
+    @Test
     public void testJwtProofWithKeyAttestationMustContainProofKey() {
         String cNonce = getCNonce();
         runOnServer.run(session -> {
             setupSessionContext(session);
             runJwtProofWithKeyAttestationMustContainProofKeyTest(session, cNonce);
+        });
+    }
+
+    @Test
+    public void testProofKeyIndexZeroEnforcesFirstAttestedKey() {
+        String cNonce = getCNonce();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runProofKeyIndexZeroEnforcesFirstAttestedKey(session, cNonce);
+        });
+    }
+
+    @Test
+    public void testProofKeyIndexIsParsedFromCredentialScope() {
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            CredentialScopeModel credentialScope = requireJwtCredentialScope(session);
+            try {
+                credentialScope.setProofKeyIndex(0);
+
+                SupportedCredentialConfiguration config = SupportedCredentialConfiguration.parse(
+                        session, credentialScope, List.of("ES256"));
+
+                assertEquals(Integer.valueOf(0), config.getRequiredProofKeyIndex(),
+                        "Configured proof key index should be part of the credential configuration");
+            } finally {
+                credentialScope.removeAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX);
+            }
+        });
+    }
+
+    @Test
+    public void testProofKeyIndexOtherThanZeroIsRejected() {
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            CredentialScopeModel credentialScope = requireJwtCredentialScope(session);
+            try {
+                credentialScope.setProofKeyIndex(1);
+
+                IllegalStateException exception = assertThrows(IllegalStateException.class,
+                        () -> SupportedCredentialConfiguration.parse(session, credentialScope, List.of("ES256")));
+
+                assertTrue(exception.getMessage().contains(VC_KEY_ATTESTATION_PROOF_KEY_INDEX),
+                        "Expected rejection of unsupported proof key index but got: " + exception.getMessage());
+            } finally {
+                credentialScope.removeAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX);
+            }
         });
     }
 
@@ -601,6 +662,24 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     @ParameterizedTest(name = "{0} proof")
     @ValueSource(strings = {JWT, ATTESTATION})
+    public void testCompleteSdJwtIssuanceWithMultipleAttestedKeys(String proofType) {
+        KeyWrapper attestationKey = getECKey("trusted-attestation-key");
+        String attestationJwks = JsonSerialization.valueAsString(toJwks(attestationKey));
+
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            configureTrustIdentityProvider(session.getContext().getRealm(),
+                    OID4VCI_ATTESTER_DEFAULT_TRUST_IDP_ALIAS,
+                    DefaultTrustIdentityProviderFactory.PROVIDER_ID,
+                    Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, attestationJwks));
+        });
+
+        runCompleteSdJwtIssuance(proofType, attestationKey, null,
+                List.of(getECKey("credential-holder-key-1"), getECKey("credential-holder-key-2")));
+    }
+
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = {JWT, ATTESTATION})
     public void testCompleteSdJwtIssuanceWithKidKeyAttestation(String proofType) {
         KeyWrapper attestationKey = getECKey("trusted-attestation-key");
         String attestationJwks = JsonSerialization.valueAsString(toJwks(attestationKey));
@@ -789,6 +868,13 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     private void runCompleteSdJwtIssuance(String proofType, KeyWrapper attestationKey,
                                           List<X509Certificate> attestationCertificateChain) {
+        runCompleteSdJwtIssuance(proofType, attestationKey, attestationCertificateChain,
+                List.of(getECKey("credential-holder-key")));
+    }
+
+    private void runCompleteSdJwtIssuance(String proofType, KeyWrapper attestationKey,
+                                          List<X509Certificate> attestationCertificateChain,
+                                          List<KeyWrapper> proofKeys) {
         ClientResource clientResource = testRealm.admin().clients().get(pubClient.getId());
         String holder = "alice";
         String userId = testRealm.admin().users().search(holder, true).get(0).getId();
@@ -823,14 +909,19 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
             assertNotNull(credentialIdentifier, "Token response must authorize one credential identifier");
 
-            KeyWrapper proofKey = getECKey("credential-holder-key");
-            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-            proofJwk.setKeyId(proofKey.getKid());
-            proofJwk.setAlgorithm(proofKey.getAlgorithm());
+            List<JWK> proofJwks = proofKeys.stream()
+                    .map(key -> {
+                        JWK jwk = JWKBuilder.create().ec(key.getPublicKey());
+                        jwk.setKeyId(key.getKid());
+                        jwk.setAlgorithm(key.getAlgorithm());
+                        return jwk;
+                    })
+                    .toList();
+            KeyWrapper proofKey = proofKeys.get(0);
 
             String cNonce = getCNonce();
             String attestationJwt = createCompleteFlowAttestationJwt(attestationKey,
-                    attestationCertificateChain, proofJwk, cNonce);
+                    attestationCertificateChain, proofJwks, cNonce);
             Proofs proofs;
             if (JWT.equals(proofType)) {
                 String credentialIssuer = wallet.getIssuerMetadata(ctx).getCredentialIssuer();
@@ -850,7 +941,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode(),
                     "Credential endpoint rejected " + proofType + " proof: " + response.getErrorDescription());
 
-            assertSdJwtBoundToProofKey(response.getCredentialResponse(), proofKey);
+            assertSdJwtBoundToProofKeys(response.getCredentialResponse(), proofKeys);
         } finally {
             if (credentialCreated) {
                 credentialsResource.revokeCredential(keyAttestationCredentialScope.getName());
@@ -861,14 +952,14 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     private static String createCompleteFlowAttestationJwt(KeyWrapper attestationKey,
                                                            List<X509Certificate> certificateChain,
-                                                           JWK proofJwk,
+                                                           List<JWK> proofJwks,
                                                            String cNonce) {
         KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
         long now = Time.currentTime();
         payload.setIat(now);
         payload.setExp(now + 3600);
         payload.setNonce(cNonce);
-        payload.setAttestedKeys(List.of(proofJwk));
+        payload.setAttestedKeys(proofJwks);
         payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.MODERATE));
         payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.MODERATE));
         payload.setStatus(Map.of("status", "valid"));
@@ -882,25 +973,29 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         return builder.jsonContent(payload).sign(new ECDSASignatureSignerContext(attestationKey));
     }
 
-    private static void assertSdJwtBoundToProofKey(CredentialResponse response, KeyWrapper proofKey) {
+    private static void assertSdJwtBoundToProofKeys(CredentialResponse response, List<KeyWrapper> proofKeys) {
         assertNotNull(response, "Credential response body must be present");
         assertNotNull(response.getCredentials(), "Credentials array must be present");
-        assertEquals(1, response.getCredentials().size(), "Exactly one credential must be issued");
+        assertEquals(proofKeys.size(), response.getCredentials().size(),
+                "One credential must be issued per attested key");
 
-        Object credential = response.getCredentials().get(0).getCredential();
-        assertNotNull(credential, "Issued credential must be present");
-        SdJwtVP sdJwt = SdJwtVP.of(credential.toString());
-        var cnf = sdJwt.getIssuerSignedJWT().getPayload().get(CLAIM_NAME_CNF);
-        assertNotNull(cnf, "Issued SD-JWT must contain the cnf holder-binding claim");
-        var boundJwkNode = cnf.get(CLAIM_NAME_JWK);
-        assertNotNull(boundJwkNode, "SD-JWT cnf claim must contain a jwk");
+        for (int i = 0; i < proofKeys.size(); i++) {
+            Object credential = response.getCredentials().get(i).getCredential();
+            assertNotNull(credential, "Issued credential must be present");
+            SdJwtVP sdJwt = SdJwtVP.of(credential.toString());
+            var cnf = sdJwt.getIssuerSignedJWT().getPayload().get(CLAIM_NAME_CNF);
+            assertNotNull(cnf, "Issued SD-JWT must contain the cnf holder-binding claim");
+            var boundJwkNode = cnf.get(CLAIM_NAME_JWK);
+            assertNotNull(boundJwkNode, "SD-JWT cnf claim must contain a jwk");
 
-        JWK boundJwk = JsonSerialization.mapper.convertValue(boundJwkNode, JWK.class);
-        assertEquals(proofKey.getKid(), boundJwk.getKeyId(),
-                "SD-JWT must retain the attested proof key identifier");
-        assertArrayEquals(proofKey.getPublicKey().getEncoded(),
-                JWKParser.create(boundJwk).toPublicKey().getEncoded(),
-                "SD-JWT holder binding must use the exact key from the proof");
+            KeyWrapper proofKey = proofKeys.get(i);
+            JWK boundJwk = JsonSerialization.mapper.convertValue(boundJwkNode, JWK.class);
+            assertEquals(proofKey.getKid(), boundJwk.getKeyId(),
+                    "SD-JWT must retain the attested proof key identifier");
+            assertArrayEquals(proofKey.getPublicKey().getEncoded(),
+                    JWKParser.create(boundJwk).toPublicKey().getEncoded(),
+                    "SD-JWT holder binding must use the exact key from the proof");
+        }
     }
 
     private static KeyWrapper getECKey(String keyId) {
@@ -1005,11 +1100,29 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
         return generateJwtProofWithKeyAttestation(credentialIssuer, proofKey, attestationJwt, cNonce, false);
     }
 
+    private static String generateJwtProofWithKeyAttestation(KeycloakSession session,
+                                                             KeyWrapper proofKey,
+                                                             String attestationJwt,
+                                                             String cNonce,
+                                                             String kidHeader) {
+        String credentialIssuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
+        return generateJwtProofWithKeyAttestation(credentialIssuer, proofKey, attestationJwt, cNonce, kidHeader);
+    }
+
     private static String generateJwtProofWithKeyAttestation(String credentialIssuer,
                                                              KeyWrapper proofKey,
                                                              String attestationJwt,
                                                              String cNonce,
                                                              boolean useKidHeader) {
+        return generateJwtProofWithKeyAttestation(credentialIssuer, proofKey, attestationJwt, cNonce,
+                useKidHeader ? proofKey.getKid() : null);
+    }
+
+    private static String generateJwtProofWithKeyAttestation(String credentialIssuer,
+                                                             KeyWrapper proofKey,
+                                                             String attestationJwt,
+                                                             String cNonce,
+                                                             String kidHeader) {
         try {
             JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
             proofJwk.setKeyId(proofKey.getKid());
@@ -1023,8 +1136,8 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             Map<String, Object> header = new HashMap<>();
             header.put("alg", proofKey.getAlgorithm());
             header.put("typ", JwtProofValidator.PROOF_JWT_TYP);
-            if (useKidHeader) {
-                header.put("kid", proofKey.getKid());
+            if (kidHeader != null) {
+                header.put("kid", kidHeader);
             } else {
                 header.put("jwk", proofJwk);
             }
@@ -1328,6 +1441,94 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
         assertThrows(VCIssuerException.class, () -> validator.validateProof(vcIssuanceContext),
                 "Expected proof key mismatch against attested_keys to fail");
+    }
+
+    private static void runProofKeyIndexZeroEnforcesFirstAttestedKey(KeycloakSession session, String cNonce) {
+        KeyWrapper attestationKey = getECKey("attestationKey");
+        KeyWrapper firstProofKey = getECKey("firstProofKey");
+        KeyWrapper secondProofKey = getECKey("secondProofKey");
+
+        String attestationJwt = createValidAttestationJwt(attestationKey,
+                List.of(toJwk(firstProofKey), toJwk(secondProofKey)), cNonce,
+                AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+
+        AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(
+                Map.of(attestationKey.getKid(), JWKBuilder.create().ec(attestationKey.getPublicKey()))
+        );
+        JwtProofValidator validator = new JwtProofValidator(session, keyResolver);
+
+        VCIssuerException exception = assertThrows(VCIssuerException.class,
+                () -> validator.validateProof(proofContextWithRequiredKeyIndex(session, secondProofKey,
+                        attestationJwt, cNonce)));
+        assertEquals(ErrorType.INVALID_PROOF, exception.getErrorType());
+        assertEquals("JWT proof key is not attested_keys[0], it is at index 1", exception.getMessage());
+
+        List<JWK> validatedKeys = validator.validateProof(
+                proofContextWithRequiredKeyIndex(session, firstProofKey, attestationJwt, cNonce));
+        assertEquals(2, validatedKeys.size(), "All attested keys should be returned");
+        assertEquals(firstProofKey.getKid(), validatedKeys.get(0).getKeyId());
+        assertEquals(secondProofKey.getKid(), validatedKeys.get(1).getKeyId());
+    }
+
+    private static void runKidIndexJwtProofWithKeyAttestationTest(KeycloakSession session, String cNonce) {
+        KeyWrapper attestationKey = getECKey("attestationKey");
+        KeyWrapper firstProofKey = getECKey("firstProofKey");
+        KeyWrapper secondProofKey = getECKey("secondProofKey");
+
+        String attestationJwt = createValidAttestationJwt(attestationKey,
+                List.of(toJwk(firstProofKey), toJwk(secondProofKey)), cNonce,
+                AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+
+        AttestationKeyResolver keyResolver = new StaticAttestationKeyResolver(
+                Map.of(attestationKey.getKid(), JWKBuilder.create().ec(attestationKey.getPublicKey())));
+        JwtProofValidator validator = new JwtProofValidator(session, keyResolver);
+
+        VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
+        vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(
+                generateJwtProofWithKeyAttestation(session, firstProofKey, attestationJwt, cNonce, "0"))));
+
+        List<JWK> validatedKeys = validator.validateProof(vcIssuanceContext);
+        assertEquals(2, validatedKeys.size());
+        assertEquals(firstProofKey.getKid(), validatedKeys.get(0).getKeyId());
+        assertEquals(secondProofKey.getKid(), validatedKeys.get(1).getKeyId());
+
+        // The proof is signed by the key at the position given in kid, so the signature also proves the resolution.
+        VCIssuanceContext secondPosition = createVCIssuanceContext(session);
+        secondPosition.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(
+                generateJwtProofWithKeyAttestation(session, secondProofKey, attestationJwt, cNonce, "1"))));
+
+        List<JWK> keysFromSecondPosition = validator.validateProof(secondPosition);
+        assertEquals(2, keysFromSecondPosition.size());
+        assertEquals(firstProofKey.getKid(), keysFromSecondPosition.get(0).getKeyId());
+        assertEquals(secondProofKey.getKid(), keysFromSecondPosition.get(1).getKeyId());
+
+        VCIssuanceContext outOfRange = createVCIssuanceContext(session);
+        outOfRange.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(
+                generateJwtProofWithKeyAttestation(session, firstProofKey, attestationJwt, cNonce, "2"))));
+
+        VCIssuerException exception = assertThrows(VCIssuerException.class,
+                () -> validator.validateProof(outOfRange));
+        assertEquals(ErrorType.INVALID_PROOF, exception.getErrorType());
+        assertEquals("No attested key found matching kid: 2", exception.getMessage());
+    }
+
+    private static VCIssuanceContext proofContextWithRequiredKeyIndex(KeycloakSession session,
+                                                                      KeyWrapper proofKey,
+                                                                      String attestationJwt,
+                                                                      String cNonce) {
+        VCIssuanceContext context = createVCIssuanceContext(session);
+        context.getCredentialConfig().setRequiredProofKeyIndex(0);
+        context.getCredentialRequest().setProofs(new Proofs().setJwt(List.of(
+                generateJwtProofWithKeyAttestation(session, proofKey, attestationJwt, cNonce))));
+        return context;
+    }
+
+    private static CredentialScopeModel requireJwtCredentialScope(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        return Optional.ofNullable(CredentialScopeUtils.findCredentialScopeModelByName(
+                        realm, realm::getClientScopesStream, jwtTypeCredentialScopeName))
+                .orElseThrow(() -> new IllegalStateException(
+                        "No such credential scope: " + jwtTypeCredentialScopeName));
     }
 
     private static void runJwtProofWithJwkAndKidHeadersIsRejectedTest(KeycloakSession session, String cNonce) {

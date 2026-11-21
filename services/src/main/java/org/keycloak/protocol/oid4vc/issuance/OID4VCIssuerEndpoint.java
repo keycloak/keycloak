@@ -1027,42 +1027,47 @@ public class OID4VCIssuerEndpoint {
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, "Proof values must not be null or blank"));
         }
 
+        int maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
+                .map(BatchCredentialIssuance::getBatchSize)
+                .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
+
         // Prepare credential bodies and validate key binding proofs before consuming the nonce.
         List<VCIssuanceContext> vcIssuanceContexts = new ArrayList<>();
 
         if (allProofs.isEmpty()) {
             // Single issuance without proof
-            VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
-            vcIssuanceContexts.add(vcIssuanceContext);
-            verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
+            vcIssuanceContexts.addAll(prepareCredentials(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder));
         } else {
             // Issue credentials for each proof
             Proofs originalProofs = credentialRequest.getProofs();
             // Determine the proof type from the original proofs
             String proofType = originalProofs.getProofType();
 
-            if (allProofs.size() > 1) {
-                Integer maxBatchSize = Optional.ofNullable(issuerMetadata.getBatchCredentialIssuance())
-                        .map(BatchCredentialIssuance::getBatchSize)
-                        .orElse(BATCH_CREDENTIAL_ISSUANCE_DEFAULT_MAX_BATCH_SIZE);
-                if (allProofs.size() > maxBatchSize) {
-                    LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
-                    allProofs = allProofs.subList(0, maxBatchSize);
-                }
+            if (allProofs.size() > maxBatchSize) {
+                LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+                allProofs = allProofs.subList(0, maxBatchSize);
             }
 
             try {
                 for (String currentProof : allProofs) {
                     Proofs proofForIteration = Proofs.create(proofType, currentProof);
-                    // Creating credential with keybinding to the current proof
+                    // Creating credentials with keybinding to the current proof
                     credentialRequest.setProofs(proofForIteration);
-                    VCIssuanceContext vcIssuanceContext = prepareCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
-                    vcIssuanceContexts.add(vcIssuanceContext);
-                    verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
+                    vcIssuanceContexts.addAll(prepareCredentials(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder));
                 }
             } finally {
                 credentialRequest.setProofs(originalProofs);
             }
+        }
+
+        // A proof can bind several attested keys, so the limit applies to credentials, not proofs.
+        if (vcIssuanceContexts.size() > maxBatchSize) {
+            LOGGER.warnf("Reducing credential batch size to: %d", maxBatchSize);
+            vcIssuanceContexts = new ArrayList<>(vcIssuanceContexts.subList(0, maxBatchSize));
+        }
+
+        for (VCIssuanceContext vcIssuanceContext : vcIssuanceContexts) {
+            verifiedProofCNonces.putAll(vcIssuanceContext.getVerifiedCNonces());
         }
 
         // Fail-fast if any cnonce already consumed without consuming it
@@ -1709,20 +1714,41 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Prepare an unsigned credential and validate any key binding proof before signing.
+     * Prepare one unsigned credential per validated binding key and validate the proof before signing.
      */
-    private VCIssuanceContext prepareCredential(AuthenticationManager.AuthResult authResult,
-                                                SupportedCredentialConfiguration credentialConfig,
-                                                OID4VCAuthorizationDetail authDetail,
-                                                CredentialRequest credentialRequestVO,
-                                                EventBuilder eventBuilder
+    private List<VCIssuanceContext> prepareCredentials(AuthenticationManager.AuthResult authResult,
+                                                       SupportedCredentialConfiguration credentialConfig,
+                                                       OID4VCAuthorizationDetail authDetail,
+                                                       CredentialRequest credentialRequestVO,
+                                                       EventBuilder eventBuilder
     ) {
 
         // Get the client scope model from the credential configuration
         CredentialScopeModel credentialScopeModel = getClientScopeModel(credentialConfig);
 
-        // Get the protocol mappers from the client scope
-        List<OID4VCMapper> protocolMappers = credentialScopeModel.getProtocolMappersStream()
+        VCIssuanceContext firstContext = getVCToSign(getProtocolMappers(credentialScopeModel), credentialConfig,
+                authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
+
+        // Enforce key binding prior to signing if necessary
+        List<JWK> keys = enforceKeyBindingIfProofProvided(firstContext, eventBuilder);
+        if (keys.isEmpty()) {
+            return List.of(firstContext);
+        }
+
+        List<VCIssuanceContext> contexts = new ArrayList<>(keys.size());
+        contexts.add(firstContext);
+        bindKey(firstContext, keys.get(0), eventBuilder);
+        for (int i = 1; i < keys.size(); i++) {
+            VCIssuanceContext context = getVCToSign(getProtocolMappers(credentialScopeModel), credentialConfig,
+                    authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
+            bindKey(context, keys.get(i), eventBuilder);
+            contexts.add(context);
+        }
+        return contexts;
+    }
+
+    private List<OID4VCMapper> getProtocolMappers(CredentialScopeModel credentialScopeModel) {
+        return credentialScopeModel.getProtocolMappersStream()
                 .map(pm -> {
                     if (session.getProvider(ProtocolMapper.class, pm.getProtocolMapper()) instanceof OID4VCMapper mapperFactory) {
                         ProtocolMapper protocolMapper = mapperFactory.create(session);
@@ -1737,13 +1763,23 @@ public class OID4VCIssuerEndpoint {
                 .filter(Objects::nonNull)
                 .filter(mapper -> mapper.supportsCredentialFormat(credentialScopeModel.getFormat()))
                 .toList();
+    }
 
-        VCIssuanceContext vcIssuanceContext = getVCToSign(protocolMappers, credentialConfig, authResult, authDetail, credentialRequestVO, credentialScopeModel, eventBuilder);
+    private void bindKey(VCIssuanceContext vcIssuanceContext, JWK jwk, EventBuilder eventBuilder) {
+        try {
+            vcIssuanceContext.getCredentialBody().addKeyBinding(jwk);
+        } catch (CredentialBuilderException e) {
+            eventBuilder.detail(Details.REASON, e.getMessage())
+                    .error(INVALID_PROOF.getValue());
 
-        // Enforce key binding prior to signing if necessary
-        enforceKeyBindingIfProofProvided(vcIssuanceContext, eventBuilder);
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(e.getMessage(), e);
+            }
 
-        return vcIssuanceContext;
+            // A proof key that cannot be bound to the credential, such as an mDoc COSE_Key conversion that rejects
+            // the key curve, is an invalid proof rather than a server error.
+            throw new ErrorResponseException(INVALID_PROOF.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+        }
     }
 
     private Object signCredential(SupportedCredentialConfiguration credentialConfig,
@@ -1898,34 +1934,33 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Enforce key binding: Validate proof and bind associated key to credential in issuance context.
+     * Validate the provided proofs and return the keys to bind credentials to.
      */
-    private void enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext, EventBuilder eventBuilder) {
+    private List<JWK> enforceKeyBindingIfProofProvided(VCIssuanceContext vcIssuanceContext, EventBuilder eventBuilder) {
         Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
         if (proofs == null) {
             LOGGER.debugf("No proofs provided, skipping key binding");
-            return;
+            return List.of();
         }
 
         // Validate each proof type that is present
+        List<JWK> keys = new ArrayList<>();
         for (String proofType : proofs.getPresentProofTypes()) {
-            validateProofs(vcIssuanceContext, proofType, eventBuilder);
+            keys.addAll(validateProofs(vcIssuanceContext, proofType, eventBuilder));
         }
+        return keys;
     }
 
-    private void validateProofs(VCIssuanceContext vcIssuanceContext, String proofType, EventBuilder eventBuilder) {
+    private List<JWK> validateProofs(VCIssuanceContext vcIssuanceContext, String proofType, EventBuilder eventBuilder) {
         ProofValidator proofValidator = session.getProvider(ProofValidator.class, proofType);
         if (proofValidator == null) {
             throw new BadRequestException(String.format("Unable to validate proofs of type %s", proofType));
         }
 
-        // Validate proof and bind public keys to credential
+        // Validate proof and return the keys to bind
         try {
             List<JWK> jwks = proofValidator.validateProof(vcIssuanceContext);
-            if (jwks != null && !jwks.isEmpty()) {
-                // Bind the first JWK to the credential
-                vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
-            }
+            return jwks == null ? List.of() : jwks;
         } catch (VCIssuerException e) {
             eventBuilder.detail(Details.REASON, e.getMessage())
                     .error(e.getErrorType().getValue());
@@ -1942,17 +1977,6 @@ public class OID4VCIssuerEndpoint {
                 default:
                     throw new BadRequestException("Could not validate provided proof", e);
             }
-        } catch (CredentialBuilderException e) {
-            eventBuilder.detail(Details.REASON, e.getMessage())
-                    .error(INVALID_PROOF.getValue());
-
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(e.getMessage(), e);
-            }
-
-            // A proof key that cannot be bound to the credential, such as an mDoc COSE_Key conversion that rejects
-            // the key curve, is an invalid proof rather than a server error.
-            throw new ErrorResponseException(INVALID_PROOF.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
