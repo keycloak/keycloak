@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -14,6 +15,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestRedirectUriContext;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,6 +25,10 @@ import org.jboss.logging.Logger;
  * The class is a condition of client policies. On {@code PRE_AUTHORIZATION_REQUEST} and
  * {@code AUTHORIZATION_REQUEST_REDIRECT_URI} events, it checks if the client ID is a URI and
  * the scheme part of the URI is the one defined in its configuration.
+ *
+ * <p>On the events of requests obtaining a token for an existing client, for example {@code SERVICE_ACCOUNT_TOKEN_REQUEST},
+ * {@code IMPLICIT_HYBRID_TOKEN_RESPONSE} of a login finished through the login actions and {@code PERMISSION_TOKEN_REQUEST} of UMA,
+ * it checks the client ID of the client in the same way, so that the CIMD executor can enforce its policies on them, too.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
@@ -78,6 +84,21 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
             case AUTHORIZATION_REQUEST_REDIRECT_URI:
                 clientId = ((AuthorizationRequestRedirectUriContext) context).getClient().getClientId();
                 break;
+            case TOKEN_REQUEST:
+            case TOKEN_REFRESH:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST:
+            case TOKEN_EXCHANGE_REQUEST:
+            case JWT_AUTHORIZATION_GRANT:
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+            case BACKCHANNEL_TOKEN_REQUEST:
+            case DEVICE_AUTHORIZATION_REQUEST:
+            case DEVICE_TOKEN_REQUEST:
+            case IMPLICIT_HYBRID_TOKEN_RESPONSE:
+            case PERMISSION_TOKEN_REQUEST:
+                ClientModel client = getClient(context, session);
+                clientId = client == null ? null : client.getClientId();
+                break;
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
@@ -94,6 +115,19 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
         if (isUriSchemeMatched(uri) && isTrustedDomainMatched(uri)) return ClientPolicyVote.YES;
 
         return ClientPolicyVote.NO;
+    }
+
+    /**
+     * Returns the client of a request obtaining a token, which has been already authenticated.
+     *
+     * @param context a client policy context
+     * @return {@code ClientModel} the client, {@code null} if not resolved
+     */
+    public static ClientModel getClient(ClientPolicyContext context, KeycloakSession session) {
+        if (context instanceof ClientModelContext clientModelContext && clientModelContext.getClient() != null) {
+            return clientModelContext.getClient();
+        }
+        return session.getContext().getClient();
     }
 
     private boolean isUriSchemeMatched(URI uri) {

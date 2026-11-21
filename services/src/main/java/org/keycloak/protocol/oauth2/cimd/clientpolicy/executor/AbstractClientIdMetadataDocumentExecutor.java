@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -30,14 +31,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
 import org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
+import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
@@ -150,6 +154,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         protected boolean restrictSameDomain = false;
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.REQUIRED_PROPERTIES)
         protected List<String> requiredProperties = null;
+        @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.ALLOWED_GRANT_TYPES)
+        protected List<String> allowedGrantTypes = null;
 
         // Resource Indicators (RFC 8707) allow list
         @JsonProperty(AbstractClientIdMetadataDocumentExecutorFactory.RESOURCE_INDICATOR_ALLOW_LIST)
@@ -196,6 +202,14 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
         public void setRequiredProperties(List<String> requiredProperties) {
             this.requiredProperties = requiredProperties;
+        }
+
+        public List<String> getAllowedGrantTypes() {
+            return allowedGrantTypes;
+        }
+
+        public void setAllowedGrantTypes(List<String> allowedGrantTypes) {
+            this.allowedGrantTypes = allowedGrantTypes;
         }
 
         public List<String> getResourceIndicatorAllowList() {
@@ -369,13 +383,109 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 PreAuthorizationRequestContext preAuthorizationRequestContext = (PreAuthorizationRequestContext)context;
                 process(preAuthorizationRequestContext);
                 break;
+            case TOKEN_REQUEST:
+            case TOKEN_REFRESH:
+            case SERVICE_ACCOUNT_TOKEN_REQUEST:
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST:
+            case TOKEN_EXCHANGE_REQUEST:
+            case JWT_AUTHORIZATION_GRANT:
+            case BACKCHANNEL_AUTHENTICATION_REQUEST:
+            case BACKCHANNEL_TOKEN_REQUEST:
+            case DEVICE_AUTHORIZATION_REQUEST:
+            case DEVICE_TOKEN_REQUEST:
+            case IMPLICIT_HYBRID_TOKEN_RESPONSE:
+            case PERMISSION_TOKEN_REQUEST:
+                enforceAllowedGrantType(context);
+                break;
             default:
         }
     }
 
-    private void process(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
+    private void setUpProvider() {
         provider = session.getProvider(ClientIdMetadataDocumentProvider.class, providerConfig.getCimdProviderName());
         provider.setConfiguration(getConfiguration());
+    }
+
+    /**
+     * Returns the grant type that a request obtaining a token uses.
+     *
+     * @param event an event of a request obtaining a token
+     * @return {@code String} the grant type, {@code null} if the event is not the one of a request obtaining a token
+     */
+    protected static String getGrantType(ClientPolicyEvent event) {
+        return switch (event) {
+            case TOKEN_REQUEST -> OAuth2Constants.AUTHORIZATION_CODE;
+            case TOKEN_REFRESH -> OAuth2Constants.REFRESH_TOKEN;
+            case SERVICE_ACCOUNT_TOKEN_REQUEST -> OAuth2Constants.CLIENT_CREDENTIALS;
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST -> OAuth2Constants.PASSWORD;
+            case TOKEN_EXCHANGE_REQUEST -> OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE;
+            case JWT_AUTHORIZATION_GRANT -> OAuth2Constants.JWT_AUTHORIZATION_GRANT;
+            case BACKCHANNEL_AUTHENTICATION_REQUEST, BACKCHANNEL_TOKEN_REQUEST -> OAuth2Constants.CIBA_GRANT_TYPE;
+            case DEVICE_AUTHORIZATION_REQUEST, DEVICE_TOKEN_REQUEST -> OAuth2Constants.DEVICE_CODE_GRANT_TYPE;
+            // the token response of the hybrid flow issues an ID token or an access token by the front channel,
+            // which needs the implicit grant type (see isResponseTypeAllowed)
+            case IMPLICIT_HYBRID_TOKEN_RESPONSE -> OAuth2Constants.IMPLICIT;
+            case PERMISSION_TOKEN_REQUEST -> OAuth2Constants.UMA_GRANT_TYPE;
+            default -> null;
+        };
+    }
+
+    // Grant types are otherwise restricted only on an authorization request, and the restriction is rolled back if the
+    // authorization request is rejected, for example when the re-fetched client metadata is invalid. So a client could keep
+    // obtaining tokens directly by a grant type no longer allowed, for example client_credentials after an administrator
+    // removed it from the allowed grant types. Therefore, the allowed grant types are enforced on every request obtaining a token, too.
+    // It includes the token response of the implicit or hybrid flow, as a login started while implicit was allowed can be
+    // finished through the login actions without another authorization request, and a UMA permission request, which can use
+    // a bearer token or a subject token without any other request obtaining a token.
+    private void enforceAllowedGrantType(ClientPolicyContext context) throws ClientPolicyException {
+        String grantType = getGrantType(context.getEvent());
+        ClientModel clientModel = ClientIdUriSchemeCondition.getClient(context, session);
+        if (grantType == null || clientModel == null) {
+            return;
+        }
+
+        List<String> allowedGrantTypes = getAllowedGrantTypes();
+        if (allowedGrantTypes.contains(grantType)) {
+            return;
+        }
+
+        setUpProvider();
+        if (!isManagedByCimd(clientModel.getClientId())) {
+            getLogger().debugv("client not managed by CIMD, left untouched: clientId = {0}", clientModel.getClientId());
+            return;
+        }
+
+        // disable the capabilities no longer allowed, and persist it in a separate transaction so that the change
+        // survives the rollback that happens when the ClientPolicyException below is thrown.
+        restrictGrantTypesInNewTransaction(clientModel);
+        getLogger().warnv("grant type not allowed: clientId = {0}, grant type = {1}, allowed grant types = {2}", clientModel.getClientId(), grantType, allowedGrantTypes);
+        throw new ClientPolicyException(OAuthErrorException.UNAUTHORIZED_CLIENT, ERR_NOTALLOWED_GRANT_TYPE);
+    }
+
+    // a client registered by CIMD has its client metadata cached, namely it does not need to be created
+    private boolean isManagedByCimd(String clientId) {
+        return provider.determineFetchOperation(clientId) != FetchOperation.CREATE;
+    }
+
+    private void restrictGrantTypesInNewTransaction(ClientModel clientModel) {
+        String realmId = clientModel.getRealm().getId();
+        String clientUuid = clientModel.getId();
+        List<String> allowedGrantTypes = getAllowedGrantTypes();
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), newSession -> {
+            RealmModel newRealm = newSession.realms().getRealm(realmId);
+            ClientModel newClientModel = newRealm == null ? null : newRealm.getClientById(clientUuid);
+            if (newClientModel == null) {
+                return;
+            }
+            newSession.getContext().setRealm(newRealm);
+            ClientIdMetadataDocumentProvider<CONFIG> newProvider = newSession.getProvider(ClientIdMetadataDocumentProvider.class, providerConfig.getCimdProviderName());
+            newProvider.setConfiguration(getConfiguration());
+            newProvider.restrictGrantTypes(newClientModel, allowedGrantTypes);
+        });
+    }
+
+    private void process(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
+        setUpProvider();
 
         String clientId = preAuthorizationRequestContext.getClientId();
 
@@ -400,16 +510,21 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         validateClientId(clientIdURI);
 
         if (fetchOp == FetchOperation.NO_UPDATE) {
-            // no update, but the resource parameter still needs to be enforced on every authorization request.
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            // no update, but the allowed grant types and the resource parameter still need to be enforced on every authorization request.
+            ClientModel clientModel = session.getContext().getRealm().getClientByClientId(clientId);
+            provider.restrictGrantTypes(clientModel, getAllowedGrantTypes());
+            enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
             return;
         }
 
         // fetch Client ID Metadata
         OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl = fetchClientMetadata(clientIdURI, fetchOp == FetchOperation.UPDATE, provider);
         if (clientOIDCWithCacheControl == null) {
-            // fetched but no update
-            enforceResourceIndicator(preAuthorizationRequestContext, session.getContext().getRealm().getClientByClientId(clientId));
+            // fetched but no update (304 Not Modified), so the allowed grant types are enforced on the existing client,
+            // otherwise a client could keep a capability no longer allowed by always responding with 304 Not Modified.
+            ClientModel clientModel = session.getContext().getRealm().getClientByClientId(clientId);
+            provider.restrictGrantTypes(clientModel, getAllowedGrantTypes());
+            enforceResourceIndicator(preAuthorizationRequestContext, clientModel);
             return;
         }
 
@@ -464,6 +579,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     public static final String ERR_METADATA_URIS_SAMEDOMAIN = "Invalid Client Metadata: client_id parameter, redirect_uri parameter and at least one of redirect_uris properties in client metadata should be under the same domain.";
     public static final String ERR_METADATA_NO_REQUIRED_PROPERTIES = "Invalid Client Metadata: it does not include all required properties.";
     public static final String ERR_METADATA_NO_ALL_URIS_SAMEDOMAIN = "Invalid Client Metadata: some uri property is not under the same permitted domain";
+    public static final String ERR_METADATA_NO_ALLOWED_RESPONSE_TYPE = "Invalid Client Metadata: it does not include any response type allowed by the allowed grant types.";
+
+    // Token Request Validation Errors
+    public static final String ERR_NOTALLOWED_GRANT_TYPE = "Grant type not allowed for the client.";
 
 
     // Implementation
@@ -925,6 +1044,126 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_NO_REQUIRED_PROPERTIES);
             }
         }
+
+        // allowed grant types policy
+        restrictGrantTypes(clientOIDC);
+        restrictResponseTypes(clientOIDC);
+    }
+
+    /**
+     * The grant types an unauthenticated CIMD registration may enable when no allow list is configured.
+     * They are the ones needed by an MCP client, which obtains tokens on behalf of a user.
+     */
+    public static final List<String> DEFAULT_ALLOWED_GRANT_TYPES = List.of(
+            OAuth2Constants.AUTHORIZATION_CODE,
+            OAuth2Constants.REFRESH_TOKEN
+    );
+
+    /**
+     * The grant types assumed when a client metadata omits the {@code grant_types} property.
+     * They keep the behavior of a client registered from such a client metadata: the authorization code flow
+     * with refresh tokens, which is the default of a client in Keycloak.
+     */
+    protected static final List<String> GRANT_TYPES_IF_OMITTED = List.of(
+            OAuth2Constants.AUTHORIZATION_CODE,
+            OAuth2Constants.REFRESH_TOKEN
+    );
+
+    /**
+     * Restricts the grant types of a client metadata to the allowed grant types.
+     * A CIMD registration is unattended and unauthenticated, so the fetched document must not be able to enable
+     * capabilities such as a service account (client_credentials), CIBA, device authorization, token exchange,
+     * JWT authorization grant or UMA authorization services unless an administrator explicitly allowed them.
+     *
+     * <p>The {@code grant_types} property is always set explicitly, even if the client metadata omits it, so that
+     * {@code DescriptionConverter.toInternal} explicitly disables every capability bound to a grant type not allowed.
+     * Otherwise, an update of an existing client would keep a capability enabled before, for example a service account
+     * of a client registered while {@code client_credentials} was allowed.
+     *
+     * @param clientOIDC a client metadata
+     */
+    protected void restrictGrantTypes(final OIDCClientRepresentation clientOIDC) {
+        List<String> allowedGrantTypes = getAllowedGrantTypes();
+        List<String> requestedGrantTypes = clientOIDC.getGrantTypes() == null ? GRANT_TYPES_IF_OMITTED : clientOIDC.getGrantTypes();
+        List<String> grantTypes = new ArrayList<>(requestedGrantTypes);
+        if (grantTypes.retainAll(allowedGrantTypes) && clientOIDC.getGrantTypes() != null) {
+            getLogger().warnv("client metadata includes not allowed grant types. The executor overwrites the Client Metadata by excluding such grants: client_id = {0}, grant_types = {1}, allowed grant types = {2}",
+                    clientOIDC.getClientId(), clientOIDC.getGrantTypes(), allowedGrantTypes);
+        }
+        clientOIDC.setGrantTypes(grantTypes);
+    }
+
+    /**
+     * Restricts the response types of a client metadata to the ones the grant types of the client metadata allow.
+     * {@code DescriptionConverter.toInternal} enables the authorization code flow and the implicit flow according to
+     * the response types, so a response type not matching the grant types could otherwise enable a flow whose grant type
+     * is not allowed, for example the implicit flow by {@code response_types: ["code", "token"]}.
+     *
+     * <p>The {@code response_types} property is always set explicitly. Otherwise, {@code DescriptionConverter.toInternal}
+     * would fall back to the {@code code} response type if no grant type is left.
+     * Must be called after {@link #restrictGrantTypes(OIDCClientRepresentation)}.
+     *
+     * @param clientOIDC a client metadata whose grant types are already restricted
+     * @throws ClientPolicyException when no response type is left.
+     */
+    protected void restrictResponseTypes(final OIDCClientRepresentation clientOIDC) throws ClientPolicyException {
+        List<String> grantTypes = clientOIDC.getGrantTypes();
+        List<String> requestedResponseTypes = clientOIDC.getResponseTypes();
+        if (requestedResponseTypes == null || requestedResponseTypes.isEmpty()) {
+            // the same default as DescriptionConverter.toInternal, except for no fallback when no grant type is left
+            requestedResponseTypes = new ArrayList<>();
+            if (grantTypes.contains(OAuth2Constants.AUTHORIZATION_CODE)) {
+                requestedResponseTypes.add(OIDCResponseType.CODE);
+            }
+            if (grantTypes.contains(OAuth2Constants.IMPLICIT)) {
+                requestedResponseTypes.add(OIDCResponseType.ID_TOKEN);
+            }
+        }
+
+        List<String> responseTypes = requestedResponseTypes.stream()
+                .filter(responseType -> isResponseTypeAllowed(responseType, grantTypes))
+                .toList();
+        if (responseTypes.size() != requestedResponseTypes.size() && clientOIDC.getResponseTypes() != null) {
+            getLogger().warnv("client metadata includes response types not allowed by its grant types. The executor overwrites the Client Metadata by excluding such response types: client_id = {0}, response_types = {1}, grant_types = {2}",
+                    clientOIDC.getClientId(), clientOIDC.getResponseTypes(), grantTypes);
+        }
+        if (responseTypes.isEmpty()) {
+            getLogger().warnv("client metadata does not include any response type allowed by its grant types: client_id = {0}, grant_types = {1}",
+                    clientOIDC.getClientId(), grantTypes);
+            throw invalidClientIdMetadata(ERR_METADATA_NO_ALLOWED_RESPONSE_TYPE);
+        }
+        clientOIDC.setResponseTypes(new ArrayList<>(responseTypes));
+    }
+
+    // a response type, which may combine several values (e.g. "code id_token"), is allowed only if all its values are
+    private static boolean isResponseTypeAllowed(String responseType, List<String> grantTypes) {
+        if (responseType == null || responseType.isBlank()) {
+            return false;
+        }
+        return Arrays.stream(responseType.trim().split("\\s+")).allMatch(value -> switch (value) {
+            case OIDCResponseType.CODE, OIDCResponseType.NONE -> grantTypes.contains(OAuth2Constants.AUTHORIZATION_CODE);
+            case OIDCResponseType.TOKEN, OIDCResponseType.ID_TOKEN -> grantTypes.contains(OAuth2Constants.IMPLICIT);
+            default -> false;
+        });
+    }
+
+    /**
+     * Returns the allowed grant types: the configured ones, or {@link #DEFAULT_ALLOWED_GRANT_TYPES} if none is configured.
+     * UMA authorization services depend on a service account of the client, so the UMA grant type is allowed only if
+     * {@code client_credentials} is allowed too. Otherwise, allowing UMA alone would give the client a service account.
+     *
+     * @return the allowed grant types
+     */
+    protected List<String> getAllowedGrantTypes() {
+        List<String> allowedGrantTypes = convertContentFilledList(getConfiguration().getAllowedGrantTypes());
+        if (allowedGrantTypes.isEmpty()) {
+            return DEFAULT_ALLOWED_GRANT_TYPES;
+        }
+        if (allowedGrantTypes.contains(OAuth2Constants.UMA_GRANT_TYPE) && !allowedGrantTypes.contains(OAuth2Constants.CLIENT_CREDENTIALS)) {
+            getLogger().debugv("{0} is not allowed unless {1} is allowed too.", OAuth2Constants.UMA_GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS);
+            return allowedGrantTypes.stream().filter(grantType -> !OAuth2Constants.UMA_GRANT_TYPE.equals(grantType)).toList();
+        }
+        return allowedGrantTypes;
     }
 
     // unique name prefix for the protocol mappers added below; the resource value itself is matched via the

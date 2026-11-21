@@ -65,7 +65,8 @@ public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyCondi
     @Override
     public String getHelpText() {
         return "The condition checks that the scheme part of client_id parameter matches one of the filled ones " +
-               "and the host part of the client_id matches one of the filled domains.";
+               "and the host part of the client_id matches one of the filled domains. " +
+               "On a request obtaining a token, including the token response of the implicit or hybrid flow and a UMA permission request, the condition checks the client ID of the client in the same way.";
     }
 
     @Override

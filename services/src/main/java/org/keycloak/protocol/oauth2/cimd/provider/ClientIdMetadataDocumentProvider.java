@@ -1,5 +1,7 @@
 package org.keycloak.protocol.oauth2.cimd.provider;
 
+import java.util.Collection;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutor.FetchOperation;
@@ -16,6 +18,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
  *     <li>Concrete process of caching a client metadata: create and update</li>
  *     <li>Update cache expiry time</li>
  *     <li>Augment a client metadata in {@code ClientRepresentation}</li>
+ *     <li>Restrict the grant types of an existing client to the allowed ones</li>
  * </ul>
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -71,6 +74,15 @@ public interface ClientIdMetadataDocumentProvider<CONFIG extends AbstractClientI
      * @throws ClientPolicyException when updating a client metadata fails
      */
     ClientModel updateClientMetadata(OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl) throws ClientPolicyException;
+
+    /**
+     * Disables the capabilities of an existing client whose grant types are not allowed.
+     * It is used when no client metadata is (re-)fetched, namely when the cached client metadata is still effective or
+     * re-fetching it results in 304 Not Modified, so that a client keeps no capability an administrator no longer allows.
+     * @param clientModel an existing client metadata in {@link ClientModel}, not {@code null}
+     * @param allowedGrantTypes the allowed grant types, not {@code null}
+     */
+    void restrictGrantTypes(ClientModel clientModel, Collection<String> allowedGrantTypes);
 
     /**
      * Augments a client metadata.
