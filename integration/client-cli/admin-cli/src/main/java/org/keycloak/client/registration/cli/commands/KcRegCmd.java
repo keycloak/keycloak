@@ -105,7 +105,7 @@ public class KcRegCmd extends BaseGlobalOptionsCmd {
         out.println("Commands: ");
         out.println("  config        Set up credentials, and other configuration settings using the config file");
         out.println("  create        Register a new client");
-        out.println("  get           Get configuration of existing client in Keycloak or OIDC format, or adapter install configuration");
+        out.println("  get           Get configuration of existing client in Keycloak or OIDC format");
         out.println("  update        Update a client configuration");
         out.println("  delete        Delete a client");
         out.println("  attrs         List available attributes");
