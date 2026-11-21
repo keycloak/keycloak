@@ -46,6 +46,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
@@ -90,6 +91,9 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
       if(!clientHasDeleteAccountRole(context)) {
         throw new ForbiddenException();
       }
+
+      UserSessionUtil.logoutAllUserSessions(session, realm, user);
+
       boolean removed = new UserManager(session).removeUser(realm, user);
 
       if (removed) {
