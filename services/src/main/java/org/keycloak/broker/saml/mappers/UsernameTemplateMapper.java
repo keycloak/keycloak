@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -45,16 +46,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
-
-import org.jboss.logging.Logger;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
-
-    private static final Logger logger = Logger.getLogger(UsernameTemplateMapper.class);
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};
 
@@ -147,9 +145,9 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        // preprocessFederatedIdentity gets called anyways, so we only need to set the username if necessary.
-        // However, we don't want to set the username when the email is used as username
-        if (getTarget(mapperModel.getConfig().get(TARGET)) == Target.LOCAL && !realm.isRegistrationEmailAsUsername()) {
+
+        if (getTarget(mapperModel.getConfig().get(TARGET)) == Target.LOCAL && !realm.isRegistrationEmailAsUsername()
+                && StringUtil.isNotBlank(context.getModelUsername())) {
             user.setUsername(context.getModelUsername());
         }
     }
@@ -208,13 +206,15 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
         }
         m.appendTail(sb);
 
-        if (hasUnresolvedVariable) {
-            logger.warnf("Username template '%s' for identity provider '%s' contains unresolved attributes. Check that the identity provider is sending the expected SAML attributes.",
-                    template, context.getIdpConfig().getAlias());
+        Target t = getTarget(mapperModel.getConfig().get(TARGET));
+        String username = sb.toString();
+
+        if (hasUnresolvedVariable || StringUtil.isBlank(username)) {
+            throw new IdentityBrokerException("Username template '%s' for identity provider '%s' could not be resolved to a username, check that the identity provider sends the expected attributes."
+                    .formatted(template, context.getIdpConfig().getAlias()));
         }
 
-        Target t = getTarget(mapperModel.getConfig().get(TARGET));
-        t.set(context, hasUnresolvedVariable ? "" : sb.toString());
+        t.set(context, username);
     }
 
     @Override

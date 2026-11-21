@@ -67,6 +67,28 @@ bin/kc.[sh|bat] start --spi-storage--ldap--disable-kerberos-authentication-round
   --spi-storage--kerberos--disable-kerberos-authentication-round-trip true
 ----
 
+=== Identity provider mappers no longer create users with a blank username
+// https://github.com/keycloak/keycloak/issues/53164
+
+When the username template of an identity provider mapper could not be fully resolved, the mapper set a blank username and the federated account was created with it. Such an account cannot be found by username, and could not be edited or deleted, because invalidating the user in the cache required a username.
+
+A username template that does not resolve to a non-blank username now fails the login with an error, and `addUser` rejects a blank username. Accounts that were already created with a blank username can be edited and deleted again.
+
+Review the username template of any identity provider mapper that does not resolve for every user, before upgrading.
+
+No database constraint was added, so existing accounts are not rejected. Use the following query to find accounts that are affected:
+
+[source,sql]
+----
+SELECT id, email, realm_id
+FROM user_entity
+WHERE username IS NULL OR TRIM(username) = '';
+----
+
+Assign them a username through the Admin Console or the Admin REST API by user ID, enabling *Edit username* in the realm if necessary.
+Resetting or unlinking a federated identity does not assign a local username.
+Re-linking the identity does not repair the username when the mapper uses the `IMPORT` or `LEGACY` sync mode.
+
 === Registration access tokens are rejected by client registration endpoints of a different protocol
 
 Updating or deleting a client through a client registration endpoint whose protocol does not match the client, such as using a SAML client's registration access token against the `openid-connect` endpoint, is now rejected with `400 invalid_client`, matching the behavior that already applied to read requests. Use the protocol-agnostic `clients-registrations/default` endpoint or the Admin REST API to manage clients of other protocols.
