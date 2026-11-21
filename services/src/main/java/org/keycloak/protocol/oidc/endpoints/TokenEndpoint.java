@@ -54,6 +54,7 @@ import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.refresh.RefreshTokenException;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 import org.keycloak.protocol.oidc.token.TokenInterceptorException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
@@ -288,8 +289,10 @@ public class TokenEndpoint {
 
             int maxLength = config.getMaxLengthForTheParameter(paramName, isTokenParam);
             if (totalLengthOfParamValues > maxLength) {
-                LOGGER.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast(isTokenParam) ? "Request not allowed." : "Ignoring the parameter.");
-                if (config.isAdditionalReqParamsFailFast(isTokenParam)) {
+                // the resource parameter is not ignored when it is too long
+                boolean failFast = config.isAdditionalReqParamsFailFast(isTokenParam) || ResourceIndicators.isProcessedParameter(paramName);
+                LOGGER.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, failFast ? "Request not allowed." : "Ignoring the parameter.");
+                if (failFast) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "The size of OIDC parameter '" + paramName + "' is longer than allowed.",
                             Response.Status.BAD_REQUEST);
                 } else {

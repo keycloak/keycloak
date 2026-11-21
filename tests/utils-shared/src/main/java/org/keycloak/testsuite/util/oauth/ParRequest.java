@@ -89,6 +89,11 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
         return this;
     }
 
+    public ParRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
+        return this;
+    }
+
     public ParRequest idpHint(String idpHint) {
         parameter(AdapterConstants.KC_IDP_HINT, idpHint);
         return this;

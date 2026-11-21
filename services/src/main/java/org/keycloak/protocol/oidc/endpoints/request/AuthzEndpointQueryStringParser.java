@@ -21,7 +21,10 @@ import java.util.Set;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 
 import org.jboss.logging.Logger;
 
@@ -38,12 +41,22 @@ public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
     private final boolean isResponseTypeParameterRequired;
 
+    private final boolean multipleResourcesAllowed;
+
     private String invalidRequestMessage = null;
 
     public AuthzEndpointQueryStringParser(KeycloakSession keycloakSession, MultivaluedMap<String, String> requestParams, boolean isResponseTypeParameterRequired) {
+        this(keycloakSession, requestParams, isResponseTypeParameterRequired, false);
+    }
+
+    /**
+     * @param multipleResourcesAllowed whether the endpoint processes multiple values of the {@code resource} parameter
+     */
+    public AuthzEndpointQueryStringParser(KeycloakSession keycloakSession, MultivaluedMap<String, String> requestParams, boolean isResponseTypeParameterRequired, boolean multipleResourcesAllowed) {
         super(keycloakSession);
         this.requestParams = requestParams;
         this.isResponseTypeParameterRequired = isResponseTypeParameterRequired;
+        this.multipleResourcesAllowed = multipleResourcesAllowed;
     }
 
     @Override
@@ -59,6 +72,13 @@ public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
     @Override
     protected String getParameter(String paramName) {
+        if (OIDCLoginProtocol.RESOURCE_PARAM.equals(paramName)) {
+            // the resource parameter can be sent multiple times to the endpoints processing all its values
+            if (!multipleResourcesAllowed || !Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
+                checkDuplicated(requestParams, paramName);
+            }
+            return ResourceIndicators.join(requestParams.get(paramName));
+        }
         checkDuplicated(requestParams, paramName);
         return requestParams.getFirst(paramName);
     }

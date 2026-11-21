@@ -49,6 +49,7 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.par.ParResponse;
 import org.keycloak.protocol.oidc.par.clientpolicy.context.PushedAuthorizationRequestContext;
 import org.keycloak.protocol.oidc.par.endpoints.request.ParEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -161,6 +162,7 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         try {
             checker.checkInvalidRequestMessage();
+            checker.checkValidResource();
             checker.checkOIDCRequest();
             checker.checkOIDCParams();
             checker.checkPKCEParams();
@@ -226,6 +228,9 @@ public class ParEndpoint extends AbstractParEndpoint {
             if (parameterValues.isEmpty()) {
                 // We emit the empty parameter as a marker, but only if it does not exist yet. This prevents "accidental" value overrides.
                 params.putIfAbsent(parameterName, null);
+            } else if (OIDCLoginProtocol.RESOURCE_PARAM.equals(parameterName)) {
+                // The resource parameter can be sent multiple times, so all its values are kept.
+                params.put(parameterName, ResourceIndicators.join(parameterValues));
             } else {
                 // We flatten the MultivaluedMap values list by emitting the first value only.
                 // We override potential empty parameters that were added to the params map before.

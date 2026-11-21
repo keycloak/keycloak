@@ -16,10 +16,13 @@
  */
 package org.keycloak.protocol.oidc.endpoints.request;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+import org.keycloak.common.Profile;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWE;
@@ -29,6 +32,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -61,11 +65,28 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
         JsonNode val = this.requestParams.get(paramName);
         if (val == null) {
             return null;
+        } else if (OIDCLoginProtocol.RESOURCE_PARAM.equals(paramName)) {
+            return getResourceParameter(val);
         } else if (val.isValueNode()) {
             return val.asText();
         } else {
             return val.toString();
         }
+    }
+
+    private String getResourceParameter(JsonNode val) {
+        List<String> resources = new ArrayList<>();
+        if (val.isArray() && Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
+            // the resource parameter can have multiple values. Only strings are valid values. The other values and
+            // an empty array are replaced by an empty value, which is rejected when validating the values.
+            val.forEach(resource -> resources.add(resource.isTextual() ? resource.asText() : ""));
+            if (resources.isEmpty()) {
+                resources.add("");
+            }
+        } else {
+            resources.add(val.isValueNode() ? val.asText() : val.toString());
+        }
+        return ResourceIndicators.join(resources);
     }
 
     @Override

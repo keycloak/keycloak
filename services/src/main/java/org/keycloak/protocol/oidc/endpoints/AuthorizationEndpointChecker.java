@@ -42,6 +42,7 @@ import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorValidation;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
@@ -301,12 +302,25 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkValidResource() throws AuthorizationCheckException {
-        if (!ResourceIndicatorValidation.isValidResourceIndicator(request.getResource())) {
-            ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
+        Set<String> resources = ResourceIndicators.parse(request.getResource());
+        if (resources == null) {
+            return;
+        }
+        if (!resources.stream().allMatch(ResourceIndicatorValidation::isValidResourceIndicator)) {
+            ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESOURCE_PARAM);
             String errorMessage = "Invalid resource: " + request.getResource();
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
+        }
+        // the resources are applied only to the access tokens issued by the token endpoint. The submitted values are
+        // counted, so that the same value sent multiple times is rejected as well.
+        if (ResourceIndicators.isMultivalued(request.getResource()) && parsedResponseType != null && parsedResponseType.hasResponseType(OIDCResponseType.TOKEN)) {
+            ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESOURCE_PARAM);
+            String errorMessage = "Multiple resource parameters are not supported when the authorization endpoint issues an access token";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
     }
 

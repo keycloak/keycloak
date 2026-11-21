@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicators;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
@@ -56,7 +57,9 @@ public class AuthorizationEndpointRequestParserProcessor {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
             boolean isResponseTypeParameterRequired = isResponseTypeParameterRequired(requestParams, endpointType);
-            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(session, requestParams, isResponseTypeParameterRequired);
+            // the other endpoints do not process the resource parameter
+            boolean multipleResourcesAllowed = endpointType == EndpointType.OIDC_AUTH_ENDPOINT;
+            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(session, requestParams, isResponseTypeParameterRequired, multipleResourcesAllowed);
             parser.parseRequest(request);
 
             if (parser.getInvalidRequestMessage() != null) {
@@ -103,6 +106,12 @@ public class AuthorizationEndpointRequestParserProcessor {
                     String retrievedRequest = session.getProvider(HttpClientProvider.class).getString(requestUri);
                     new AuthzEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
                 }
+            }
+
+            if (!multipleResourcesAllowed && ResourceIndicators.isMultivalued(request.getResource())) {
+                // a request object or a pushed authorization request can have multiple values as well
+                request.invalidRequestMessage = "Multiple resource parameters are not supported by this endpoint";
+                return request;
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.PARAMETERIZED_SCOPES)) {

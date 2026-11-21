@@ -25,6 +25,11 @@ public class JWTAuthorizationGrantRequest extends AbstractHttpPostRequest<JWTAut
         return this;
     }
 
+    public JWTAuthorizationGrantRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.JWT_AUTHORIZATION_GRANT);
         parameter("assertion", assertion);
