@@ -22,10 +22,13 @@ that is able to provide an active key pair.
 
 ==== Rotating keys
 
-We recommend that you regularly rotate keys. Start by creating new keys with a higher priority than the existing active keys. You can instead create new keys with the same priority and making the previous keys passive.
+We recommend that you regularly rotate keys. Start by creating new keys with a lower priority than the keys currently
+used for signing. Wait until OpenID Connect clients have refreshed their cached public keys from the certificate
+endpoint and SAML service providers have refreshed the realm SAML descriptor or received the new certificate manually.
+Then increase the priority of the new keys above the keys previously used for signing.
 
-Once new keys are available, all new tokens and cookies will be signed with the new keys. When a user authenticates to an
-application, the SSO cookie is updated with the new signature. When OpenID Connect tokens are refreshed new tokens are
+Once the new keys have the highest priority, all new tokens and cookies will be signed with the new keys. When a user
+authenticates to an application, the SSO cookie is updated with the new signature. When OpenID Connect tokens are refreshed new tokens are
 signed with the new keys. Eventually, all cookies and tokens use the new keys and after a while the old keys can be removed.
 
 The frequency of deleting old keys is a tradeoff between security and making sure all cookies and tokens are updated. Consider creating new keys every three to six months and deleting old keys one to two months after you create the new keys. If a user was inactive in the period between the new keys being added and the old keys being removed, that user will have to re-authenticate.
