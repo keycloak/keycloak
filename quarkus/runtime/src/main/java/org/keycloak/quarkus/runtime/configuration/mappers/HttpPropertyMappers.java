@@ -203,6 +203,11 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                 .withRuntimeSpecificDefault(getDefaultKeystorePathValue());
 
         mappers.add(fromOption(ksFileWithDefault).paramLabel("file").build());
+        mappers.add(fromOption(ksFileWithDefault)
+                .mapFrom(ksFileWithDefault, (name, file, context) -> bcPkcs12Provider(file,
+                        HttpOptions.HTTPS_KEY_STORE_TYPE, StoreRole.KEY_STORE))
+                .to(TLS_PREFIX + "key-store.p12.provider")
+                .build());
 
         for (StoreType type : StoreType.values()) {
             if (type == StoreType.PEM) continue;
@@ -250,6 +255,11 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
 
     private void addTrustStoreMappers(List<PropertyMapper<?>> mappers) {
         mappers.add(fromOption(HttpOptions.HTTPS_TRUST_STORE_FILE).paramLabel("file").build());
+        mappers.add(fromOption(HttpOptions.HTTPS_TRUST_STORE_FILE)
+                .mapFrom(HttpOptions.HTTPS_TRUST_STORE_FILE, (name, file, context) -> bcPkcs12Provider(file,
+                        HttpOptions.HTTPS_TRUST_STORE_TYPE, StoreRole.TRUST_STORE))
+                .to(TLS_PREFIX + "trust-store.p12.provider")
+                .build());
 
         for (StoreType type : StoreType.values()) {
             mappers.add(
@@ -292,6 +302,14 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("type")
                         .build()
         );
+    }
+
+    private static String bcPkcs12Provider(String file, Option<String> type, StoreRole role) {
+        String fips = getOptionalKcValue(SecurityOptions.FIPS_MODE.getKey()).orElse(FipsMode.DISABLED.toString());
+        if (!FipsMode.DISABLED.toString().equals(fips)) {
+            return null;
+        }
+        return dispatchStoreFile(file, type, StoreType.PKCS12, role) != null ? "BC" : null;
     }
 
     static String keyStoreSubPath(StoreType type, String property) {
