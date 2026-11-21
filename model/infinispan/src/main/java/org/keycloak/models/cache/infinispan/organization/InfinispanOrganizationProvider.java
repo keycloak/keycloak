@@ -40,6 +40,7 @@ import org.keycloak.models.cache.infinispan.UserCacheSession;
 import org.keycloak.organization.InvitationManager;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.storage.UserStorageProvider;
 
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyIdpAlias;
@@ -281,7 +282,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public long getMembersCount(OrganizationModel organization) {
-        if (realmCache == null) {
+        if (realmCache == null || !isMembersCountCacheable()) {
             return getDelegate().getMembersCount(organization);
         }
 
@@ -299,6 +300,21 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
 
         return membersCount;
+    }
+
+    /**
+     * The cached count is keyed only by organization. It can not be used when the count depends on who is asking
+     * (fine-grained admin permissions), or when it includes members from user storage providers, because enabling,
+     * disabling or removing a provider does not invalidate the cached count.
+     */
+    private boolean isMembersCountCacheable() {
+        RealmModel realm = getRealm();
+
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
+            return false;
+        }
+
+        return realm.getComponentsStream(realm.getId(), UserStorageProvider.class.getName()).findAny().isEmpty();
     }
 
     @Override
