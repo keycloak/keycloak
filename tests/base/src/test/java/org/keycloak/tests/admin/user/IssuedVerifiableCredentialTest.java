@@ -220,6 +220,30 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
 
     @Test
     @DatabaseTest
+    public void testRevokeAllIssuedCredentials() {
+        String userId = createUser("vc-owner", "vc-owner@test.com");
+        String otherUserId = createUser("vc-other", "vc-other@test.com");
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_1, "wallet-123", "rev-001");
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_2, "wallet-456", "rev-002");
+        createIssuedVcViaModelLayer(otherUserId, CREDENTIAL_TYPE_1, "wallet-789", "rev-003");
+
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        UserResource otherUserResource = managedRealm.admin().users().get(otherUserId);
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), hasSize(2));
+        assertThat(otherUserResource.verifiableCredentials().getIssuedCredentials(), hasSize(1));
+
+        userResource.verifiableCredentials().revokeAllIssuedCredentials();
+
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), empty());
+        assertThat(otherUserResource.verifiableCredentials().getIssuedCredentials(), hasSize(1));
+
+        // Revoking an empty collection is idempotent.
+        userResource.verifiableCredentials().revokeAllIssuedCredentials();
+        assertThat(userResource.verifiableCredentials().getIssuedCredentials(), empty());
+    }
+
+    @Test
+    @DatabaseTest
     public void testRevokeIssuedCredential_CrossUserDenied() {
         String ownerId = createUser("vc-owner", "vc-owner@test.com");
         UserResource ownerResource = managedRealm.admin().users().get(ownerId);
