@@ -72,17 +72,21 @@ public class CryptoKeyStore {
 
     public KeystoreInfo generateKeystore(File folder, KeystoreUtil.KeystoreFormat keystoreType,
             String subject, String keystorePassword, String keyPassword, PrivateKey privKey, Certificate certificate) throws Exception {
+        return generateKeystore(folder, keystoreType, subject, keystorePassword, keyPassword, privKey, new Certificate[] { certificate });
+    }
+
+    public KeystoreInfo generateKeystore(File folder, KeystoreUtil.KeystoreFormat keystoreType,
+            String alias, String keystorePassword, String keyPassword, PrivateKey privKey, Certificate[] chain) throws Exception {
         KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(keystoreType);
         keyStore.load(null, null);
-        Certificate[] chain = {certificate};
-        keyStore.setKeyEntry(subject, privKey, keyPassword.trim().toCharArray(), chain);
+        keyStore.setKeyEntry(alias, privKey, keyPassword.trim().toCharArray(), chain);
 
         File file = saveKeystore(folder, keystoreType, keyStore, keystorePassword);
 
         CertificateRepresentation certRep = new CertificateRepresentation();
         certRep.setPrivateKey(PemUtils.encodeKey(privKey));
-        certRep.setPublicKey(PemUtils.encodeKey(certificate.getPublicKey()));
-        certRep.setCertificate(PemUtils.encodeCertificate(certificate));
+        certRep.setPublicKey(PemUtils.encodeKey(chain[0].getPublicKey()));
+        certRep.setCertificate(PemUtils.encodeCertificate(chain[0]));
         return new KeystoreInfo(certRep, file);
     }
 
