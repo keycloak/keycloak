@@ -89,6 +89,23 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
                 form.setError(error);
             }
         }
+        return createLoginForm(context, form);
+    }
+
+    /**
+     * Creates the login page of this authenticator from the given form. It is called by
+     * {@link #challenge(AuthenticationFlowContext, String, String)}, for example after an invalid username or password,
+     * and by {@link UsernamePasswordForm} when a passkey authentication fails.
+     * <p>
+     * The default implementation delegates to {@link #createLoginForm(LoginFormsProvider)}. Override this method
+     * instead of {@link #createLoginForm(LoginFormsProvider)} when the page needs the flow context, for example the
+     * authenticator configuration or the authentication session.
+     *
+     * @param context the authentication flow context
+     * @param form the login form, including any error that should be displayed
+     * @return the response with the login page
+     */
+    protected Response createLoginForm(AuthenticationFlowContext context, LoginFormsProvider form) {
         return createLoginForm(form);
     }
 
