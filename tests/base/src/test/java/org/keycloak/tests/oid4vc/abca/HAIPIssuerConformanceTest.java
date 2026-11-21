@@ -153,7 +153,7 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
 
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, wallet.buildClientAttestationPoPJWT(ctx, rsaKey))
                 .codeVerifier(pkce)
                 .dpopProof(dpopProof)
                 .send();
@@ -245,7 +245,7 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
 
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, wallet.buildClientAttestationPoPJWT(ctx, rsaKey))
                 .codeVerifier(pkce)
                 .dpopProof(dpopProof)
                 .send();
@@ -523,7 +523,7 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
 
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, wallet.buildClientAttestationPoPJWT(ctx, abcaKey))
                 .codeVerifier(pkce)
                 .dpopProof(dpopProof)
                 .send();
@@ -582,7 +582,7 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         dpopProof = wallet.generateSignedDPoPProof(tokenEndpoint, ecKey, encodedRefreshToken);
         tokenResponse = oauth.refreshRequest(encodedRefreshToken)
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
-                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, wallet.buildClientAttestationPoPJWT(ctx, abcaKey))
                 .dpopProof(dpopProof)
                 .send();
 

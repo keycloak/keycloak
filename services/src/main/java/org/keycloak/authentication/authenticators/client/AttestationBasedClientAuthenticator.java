@@ -39,6 +39,7 @@ import org.keycloak.broker.provider.TrustMaterialResolver;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -48,10 +49,12 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -67,6 +70,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.codec.binary.Hex;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
@@ -99,6 +103,18 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     /** The token confirmation type */
     public static final String ABCA_JKT_TYPE = "Client-Attestation";
+
+    /**
+     * Maximum acceptable age of a Client Attestation PoP JWT based on its {@code iat} claim,
+     * aligned with {@link org.keycloak.services.util.DPoPUtil#DEFAULT_PROOF_LIFETIME}.
+     */
+    public static final int DEFAULT_POP_LIFETIME_SECONDS = 10;
+
+    /**
+     * Allowed clock skew when validating PoP {@code iat},
+     * aligned with {@link org.keycloak.services.util.DPoPUtil#DEFAULT_ALLOWED_CLOCK_SKEW}.
+     */
+    public static final int DEFAULT_POP_CLOCK_SKEW_SECONDS = 15;
 
     @Override
     public String getId() {
@@ -468,6 +484,17 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             return true;
         };
 
+        TokenVerifier.Predicate<JsonWebToken> iatFreshnessCheck = (t) -> {
+            long now = Time.currentTime();
+            long iat = t.getIat();
+            // Same window semantics as DPoP: iat - skew <= now <= iat + lifetime + skew
+            if (!(iat <= now + DEFAULT_POP_CLOCK_SKEW_SECONDS
+                    && iat >= now - DEFAULT_POP_LIFETIME_SECONDS - DEFAULT_POP_CLOCK_SKEW_SECONDS)) {
+                throw new TokenVerificationException(t, "Client Attestation PoP is not fresh enough");
+            }
+            return true;
+        };
+
         TokenVerifier.Predicate<JsonWebToken> issCheck = (t) -> {
             if (Strings.isEmpty(t.getIssuer()) || !t.getIssuer().equals(attestationJwt.getSubject()))
                 throw new TokenVerificationException(t, "The value of the iss (issuer) claim, representing the client_id MUST match the value of the sub (subject) claim in the Client Attestation");
@@ -491,7 +518,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         // Client Attestation PoP JWT verification without signature check
         //
         TokenVerifier.createWithoutSignature(attestationPoPJwt)
-                .withChecks(jtiCheck, iatCheck, issCheck, audCheck)
+                .withChecks(jtiCheck, iatCheck, iatFreshnessCheck, issCheck, audCheck)
                 .verify();
 
         // Client Attestation PoP JWT signature check
@@ -506,13 +533,25 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new TokenSignatureInvalidException(attestationPoPJwt, "Invalid token signature");
         }
 
+        rejectReplay(session, attestationPoPJwt);
+
         abcaResult.setAttestationPoPJwt(attestationPoPJwt);
 
-        // [TODO] The authorization server can utilize the jti value for replay attack detection
-        // [TODO] The authorization server may reject JWTs with an "iat" claim value that is unreasonably far in the past
-
         // [TODO] If the server provided a challenge value to the client, the challenge claim is present in the Client Attestation PoP JWT and matches the server-provided challenge value.
-        // [TODO] Additional checks to guarantee replay protection for the Client Attestation PoP JWT might need to be applied
+    }
+
+    private void rejectReplay(KeycloakSession session, ClientAttestationPoPJwt attestationPoPJwt) throws TokenVerificationException {
+        SingleUseObjectProvider singleUseCache = session.singleUseObjects();
+        // Namespace + realm isolate ABCA PoP jtis from other single-use entries and other realms
+        String realmId = session.getContext().getRealm().getId();
+        String hashKey = "abca-pop\n" + realmId + "\n" + attestationPoPJwt.getId() + "\n" + attestationPoPJwt.getIssuer();
+        String hashString = Hex.encodeHexString(HashUtils.hash("SHA1", hashKey.getBytes(StandardCharsets.UTF_8)));
+        // +1 covers the inclusive freshness boundary where JPA treats expire <= now as expired
+        int lifespan = Math.max(1, (int) (attestationPoPJwt.getIat() + DEFAULT_POP_LIFETIME_SECONDS
+                + DEFAULT_POP_CLOCK_SKEW_SECONDS - Time.currentTime()) + 1);
+        if (!singleUseCache.putIfAbsent(hashString, lifespan)) {
+            throw new TokenVerificationException(attestationPoPJwt, "Client Attestation PoP has already been used");
+        }
     }
 
     public static class ABCAResult {
