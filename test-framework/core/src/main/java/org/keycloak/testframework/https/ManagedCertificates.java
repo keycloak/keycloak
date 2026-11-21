@@ -11,10 +11,14 @@ import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
+import java.util.Collections;
 import javax.net.ssl.SSLContext;
 
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -100,6 +104,32 @@ public class ManagedCertificates {
      */
     public String getServerKeyStorePath() {
         return tlsEnabled ? serverKeystorePath.toString() : null;
+    }
+
+    /**
+     * The base64 encoded SHA-256 hash of the SubjectPublicKeyInfo of the Keycloak server certificate. This is the format
+     * expected by the Chrome flag <code>--ignore-certificate-errors-spki-list</code>.
+     *
+     * @return the base64 encoded SPKI hash, or <code>null</code> if TLS is not enabled
+     */
+    public String getServerCertificateSpkiSha256() {
+        if (!tlsEnabled) {
+            return null;
+        }
+
+        try {
+            KeyStore serverKeyStore = load(serverKeystorePath);
+            for (String alias : Collections.list(serverKeyStore.aliases())) {
+                if (serverKeyStore.isKeyEntry(alias)) {
+                    Certificate cert = serverKeyStore.getCertificate(alias);
+                    byte[] hash = MessageDigest.getInstance("SHA-256").digest(cert.getPublicKey().getEncoded());
+                    return Base64.getEncoder().encodeToString(hash);
+                }
+            }
+        } catch (Exception e) {
+            throw new ManagedCertificatesException(e);
+        }
+        throw new ManagedCertificatesException(new IllegalStateException("No key entry found in server keystore"));
     }
 
     /**
