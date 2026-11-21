@@ -49,6 +49,9 @@ public class RoleMapperConfig extends CommonLDAPGroupMapperConfig {
     // Customized LDAP filter which is added to the whole LDAP query
     public static final String ROLES_LDAP_FILTER = "roles.ldap.filter";
 
+    // Only roles created by this mapper can be removed during a subsequent sync.
+    public static final String DROP_NON_EXISTING_ROLES_DURING_SYNC = "drop.non.existing.roles.during.sync";
+
     // See UserRolesRetrieveStrategy
     public static final String LOAD_ROLES_BY_MEMBER_ATTRIBUTE = "LOAD_ROLES_BY_MEMBER_ATTRIBUTE";
     public static final String GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE = "GET_ROLES_FROM_USER_MEMBEROF_ATTRIBUTE";
@@ -103,6 +106,10 @@ public class RoleMapperConfig extends CommonLDAPGroupMapperConfig {
 
     public String getCustomLdapFilter() {
         return mapperModel.getConfig().getFirst(ROLES_LDAP_FILTER);
+    }
+
+    public boolean isDropNonExistingRolesDuringSync() {
+        return Boolean.parseBoolean(mapperModel.getConfig().getFirst(DROP_NON_EXISTING_ROLES_DURING_SYNC));
     }
 
     public boolean isRealmRolesMapping() {
