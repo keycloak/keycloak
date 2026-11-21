@@ -23,4 +23,11 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface ClusterProviderFactory extends ProviderFactory<ClusterProvider> {
+    /**
+     * Notify the cluster provider of a potential database failover. With a synchronous database, no data should have been lost.
+     * For an asynchronously replicated database, there might be a small data loss, so any cached data might be out of sync.
+     * An implementation should then clear any local caches to get them back in sync with the database.
+     */
+    default void databaseFailoverDetected() {
+    }
 }
