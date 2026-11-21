@@ -18,6 +18,7 @@ package org.keycloak.models;
 
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
@@ -103,6 +104,30 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
                 .filter(Objects::nonNull)
                 .flatMap(RoleModel::getCompositesStream)
                 .distinct();
+    }
+
+    /**
+     * Returns the subset of the given role ids that are composite.
+     * <p>
+     * This is the bulk counterpart of {@link RoleModel#isComposite()}: it lets callers resolve the
+     * composite flag for a whole page of roles with a single lookup instead of one per role. The
+     * default implementation resolves each role individually; storage-backed providers should
+     * override it with a batched lookup.
+     *
+     * @param realm Realm. Cannot be {@code null}.
+     * @param roleIds Ids of the roles to test.
+     * @return Ids of those roles that have at least one direct child. Never returns {@code null}.
+     */
+    default Set<String> getCompositeRoleIds(RealmModel realm, Set<String> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return Set.of();
+        }
+        return roleIds.stream()
+                .map(id -> getRoleById(realm, id))
+                .filter(Objects::nonNull)
+                .filter(RoleModel::isComposite)
+                .map(RoleModel::getId)
+                .collect(Collectors.toSet());
     }
 
     /**

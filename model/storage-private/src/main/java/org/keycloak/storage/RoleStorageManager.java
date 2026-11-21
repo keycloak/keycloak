@@ -16,6 +16,7 @@
  */
 package org.keycloak.storage;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -187,6 +188,33 @@ public class RoleStorageManager implements RoleProvider {
                 .flatMap(RoleModel::getCompositesStream);
 
         return Stream.concat(localComposites, externalComposites).distinct();
+    }
+
+    @Override
+    public Set<String> getCompositeRoleIds(RealmModel realm, Set<String> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return Set.of();
+        }
+        // Same split as getCompositeRolesStream above. Federated ids stay per-role: RoleLookupProvider
+        // has no bulk or composite lookup to batch them against.
+        Set<String> localIds = roleIds.stream()
+                .filter(StorageId::isLocalStorage)
+                .collect(Collectors.toSet());
+        Set<String> externalIds = roleIds.stream()
+                .filter(id -> !StorageId.isLocalStorage(id))
+                .collect(Collectors.toSet());
+
+        Set<String> compositeIds = localIds.isEmpty()
+                ? new HashSet<>()
+                : new HashSet<>(localStorage().getCompositeRoleIds(realm, localIds));
+
+        externalIds.stream()
+                .map(id -> getRoleById(realm, id))
+                .filter(Objects::nonNull)
+                .filter(RoleModel::isComposite)
+                .forEach(role -> compositeIds.add(role.getId()));
+
+        return compositeIds;
     }
 
     /**
