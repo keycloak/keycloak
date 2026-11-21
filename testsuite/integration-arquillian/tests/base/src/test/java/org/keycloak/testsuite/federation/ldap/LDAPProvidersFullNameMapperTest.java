@@ -35,6 +35,9 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -46,6 +49,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -212,6 +216,32 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
 
             // Remove "fullnameUser" to prevent conflicts with other tests
             session.users().removeUser(appRealm, fullnameUser);
+        });
+    }
+
+    @Test
+    public void testUpdateEmailProfileOfUserWhoseNameIsDeclaredByTwoMappers() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullnameemail", "James", "Dee", "fullnameemail@email.org", null, "4579");
+        });
+
+        // The "full name" and "last name" mappers both declare lastName, which the UPDATE_EMAIL context does not define
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            UserModel user = session.users().getUserByUsername(appRealm, "fullnameemail");
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.UPDATE_EMAIL, user);
+
+            assertThat(profile.getAttributes().getMetadata(UserModel.EMAIL), notNullValue());
+            assertThat(profile.getAttributes().getMetadata(UserModel.LAST_NAME), notNullValue());
+
+            session.users().removeUser(appRealm, user);
         });
     }
 }
