@@ -418,6 +418,21 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     @ParameterizedTest(name = "{0} proof")
     @ValueSource(strings = {ATTESTATION, JWT})
+    public void testX5cKeyAttestationWithTrustAnchorIncludedIsRejectedWhenConfigured(String proofType) {
+        String cNonce = getCNonce();
+        String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
+        String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
+        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runAttestationWithPresentedX5cCertificates(session, cNonce, caCertificatePem,
+                    List.of(leafCertificatePem, caCertificatePem), leafPrivateKeyPem, proofType, true,
+                    TEST_ATTESTATION_EKU, false, true);
+        });
+    }
+
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = {ATTESTATION, JWT})
     public void testX5cKeyAttestationWithTrustAnchorOmitted(String proofType) {
         String cNonce = getCNonce();
         String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
@@ -428,6 +443,21 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             runAttestationWithPresentedX5cCertificates(session, cNonce, caCertificatePem,
                     List.of(leafCertificatePem), leafPrivateKeyPem, proofType, true,
                     TEST_ATTESTATION_EKU, true);
+        });
+    }
+
+    @ParameterizedTest(name = "{0} proof")
+    @ValueSource(strings = {ATTESTATION, JWT})
+    public void testX5cKeyAttestationWithTrustAnchorOmittedIsAcceptedWhenRejectionConfigured(String proofType) {
+        String cNonce = getCNonce();
+        String caCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.caCertificatePem();
+        String leafCertificatePem = X5C_TEST_CERTIFICATE_CHAIN.leafCertificatePem();
+        String leafPrivateKeyPem = X5C_TEST_CERTIFICATE_CHAIN.leafPrivateKeyPem();
+        runOnServer.run(session -> {
+            setupSessionContext(session);
+            runAttestationWithPresentedX5cCertificates(session, cNonce, caCertificatePem,
+                    List.of(leafCertificatePem), leafPrivateKeyPem, proofType, true,
+                    TEST_ATTESTATION_EKU, true, true);
         });
     }
 
@@ -1662,6 +1692,19 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                                                                    boolean configureTrustProvider,
                                                                    String requiredExtendedKeyUsage,
                                                                    boolean expectSuccess) {
+        runAttestationWithPresentedX5cCertificates(session, cNonce, trustedCaCertificatePem,
+                presentedCertificatePems, leafPrivateKeyPem, proofType, configureTrustProvider,
+                requiredExtendedKeyUsage, expectSuccess, false);
+    }
+
+    private static void runAttestationWithPresentedX5cCertificates(KeycloakSession session, String cNonce,
+                                                                   String trustedCaCertificatePem,
+                                                                   List<String> presentedCertificatePems,
+                                                                   String leafPrivateKeyPem, String proofType,
+                                                                   boolean configureTrustProvider,
+                                                                   String requiredExtendedKeyUsage,
+                                                                   boolean expectSuccess,
+                                                                   boolean rejectTrustAnchorInX5c) {
         try {
             List<X509Certificate> presentedCertificates = presentedCertificatePems.stream()
                     .map(PemUtils::decodeCertificate)
@@ -1675,7 +1718,9 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                                 DefaultTrustIdentityProviderConfig.USE_X509, "true",
                                 DefaultTrustIdentityProviderConfig.TRUSTED_CERTIFICATES, trustedCaCertificatePem,
                                 DefaultTrustIdentityProviderConfig.REQUIRED_EXTENDED_KEY_USAGES,
-                                requiredExtendedKeyUsage));
+                                requiredExtendedKeyUsage,
+                                DefaultTrustIdentityProviderConfig.REJECT_TRUST_ANCHOR_IN_X5C,
+                                Boolean.toString(rejectTrustAnchorInX5c)));
             }
 
             KeyWrapper signerKey = new KeyWrapper();
@@ -1707,10 +1752,14 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
             if (!expectSuccess) {
-                assertThrows(VCIssuerException.class,
+                VCIssuerException exception = assertThrows(VCIssuerException.class,
                         () -> validateX5cKeyAttestation(session, vcIssuanceContext, proofKey, attestationJwt,
                                 cNonce, proofType),
                         "Attestation certificate policy must fail closed");
+                if (rejectTrustAnchorInX5c) {
+                    assertTrue(exception.getMessage().contains(
+                            "The x5c certificate chain must not include a configured trust anchor"));
+                }
                 return;
             }
 
