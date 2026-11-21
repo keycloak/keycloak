@@ -186,9 +186,6 @@
                                 <resource>
                                     <directory>${basedir}/src/main/resources</directory>
                                 </resource>
-                                <resource>
-                                    <directory>${basedir}/src/main/layers/${saml.adapter.galleon.pack.metadata.dir}</directory>
-                                </resource>
                             </resources>
                         </configuration>
                     </execution>
@@ -272,6 +269,7 @@
                         <configuration>
                             <wildfly-channel-resolution-mode>REQUIRED</wildfly-channel-resolution-mode>
                             <config-file>wildfly-feature-pack-build-eap.xml</config-file>
+                            <sbom-cpe-resolution-mode>SERVER_PRODUCT_CONF</sbom-cpe-resolution-mode>
                         </configuration>
                     </plugin>
                 </plugins>
