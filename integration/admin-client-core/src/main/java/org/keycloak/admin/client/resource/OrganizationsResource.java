@@ -73,7 +73,7 @@ public interface OrganizationsResource {
     /**
      * Returns all organizations that match the specified filter.
      *
-     * @param search a {@code String} representing either an organization name or domain.
+     * @param search a {@code String} representing either an organization name, alias, or domain.
      * @return a list containing the matched organizations.
      */
     @GET
@@ -83,10 +83,10 @@ public interface OrganizationsResource {
     /**
      * Returns all organizations that match the specified filters.
      *
-     * @param search a {@code String} representing either an organization name or domain.
+     * @param search a {@code String} representing either an organization name, alias, or domain.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
-     *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
-     *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     *              either the organization name, alias, or one of its domains must match exactly the {@code search} param. If false,
+     *              the method returns all organizations whose name, alias, or (domains) partially match the {@code search} param.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return a list containing the matched organizations.
@@ -103,10 +103,10 @@ public interface OrganizationsResource {
     /**
      * Returns all organizations that match the specified filters.
      *
-     * @param search a {@code String} representing either an organization name or domain.
+     * @param search a {@code String} representing either an organization name, alias, or domain.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
-     *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
-     *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     *              either the organization name, alias, or one of its domains must match exactly the {@code search} param. If false,
+     *              the method returns all organizations whose name, alias, or (domains) partially match the {@code search} param.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @param briefRepresentation if {@code false} the full representation is to be returned. Otherwise, only the basic fields are returned. The parameter is supported since Keycloak 26.1
@@ -127,7 +127,7 @@ public interface OrganizationsResource {
      * Returns the organizations linked to the given identity provider that match the specified filters.
      *
      * @param identityProviderAlias the alias of the identity provider the organizations are linked to.
-     * @param search a {@code String} representing either an organization name or domain.
+     * @param search a {@code String} representing either an organization name, alias, or domain.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
@@ -190,8 +190,8 @@ public interface OrganizationsResource {
      * Counts organizations by search.
      * @param search text to look for.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param - i.e.
-     *              either the organization name or one of its domains must match exactly the {@code search} param. If false,
-     *              the method returns all organizations whose name or (domains) partially match the {@code search} param.
+     *              either the organization name, alias, or one of its domains must match exactly the {@code search} param. If false,
+     *              the method returns all organizations whose name, alias, or (domains) partially match the {@code search} param.
      * @return the number of organizations that match the search.
      * @since Keycloak 26.3
      */
@@ -208,7 +208,7 @@ public interface OrganizationsResource {
      * Counts the organizations linked to the given identity provider that match the specified filters.
      *
      * @param identityProviderAlias the alias of the identity provider the organizations are linked to.
-     * @param search a {@code String} representing either an organization name or domain.
+     * @param search a {@code String} representing either an organization name, alias, or domain.
      * @param exact if {@code true}, the organizations will be searched using exact match for the {@code search} param.
      * @return the number of organizations that match the filters.
      * @since Keycloak 26.8
