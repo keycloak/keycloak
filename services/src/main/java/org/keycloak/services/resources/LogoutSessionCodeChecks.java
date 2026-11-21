@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**
@@ -54,6 +55,14 @@ public class LogoutSessionCodeChecks extends SessionCodeChecks {
         // Skip restarting authentication session from KC_RESTART cookie during logout
         getEvent().error(Errors.SESSION_EXPIRED);
         return ErrorPage.error(getSession(), null, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
+    }
+
+    @Override
+    protected Response showPageExpired(AuthenticationSessionModel authSession) {
+        // A logout authentication session has no login protocol and no login flow to continue, so the
+        // generic "page expired" page cannot be built for it. Show the logout error page instead.
+        // The event is left to LogoutEndpoint.logoutConfirmAction(), which emits SESSION_EXPIRED itself.
+        return ErrorPage.error(getSession(), authSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
     }
 
     @Override
