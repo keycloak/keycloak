@@ -30,6 +30,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -152,6 +153,25 @@ public final class AuthenticatorUtils {
             form.setAttribute(LoginFormsProvider.USERNAME_HIDDEN, true);
             form.setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true);
         }
+    }
+
+    /**
+     * Consumes the note set by the LDAP provider when the directory itself requires the user to change the password
+     * and the provider cannot perform the change (its edit mode is not writable). Password authenticators use it to
+     * answer with a message saying that the password must be changed, instead of a generic invalid credentials error.
+     *
+     * @return true if the credential validation failed, because the password has to be changed in the directory
+     */
+    public static boolean consumePasswordChangeRequiredInDirectory(AuthenticationFlowContext context) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        if (authSession == null) {
+            return false;
+        }
+        if (!Boolean.parseBoolean(authSession.getAuthNote(LDAPConstants.PASSWORD_CHANGE_REQUIRED_IN_DIRECTORY))) {
+            return false;
+        }
+        authSession.removeAuthNote(LDAPConstants.PASSWORD_CHANGE_REQUIRED_IN_DIRECTORY);
+        return true;
     }
 
     /**

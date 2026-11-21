@@ -158,29 +158,39 @@ public class MSADUserAccountControlStorageMapper extends AbstractLDAPStorageMapp
     protected boolean processAuthErrorCode(String errorCode, UserModel user) {
         logger.debugf("MSAD Error code is '%s' after failed LDAP login of user '%s'. Realm is '%s'", errorCode, user.getUsername(), getRealmName());
 
-        if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
-            if (errorCode.equals("532") || errorCode.equals("773")) {
-                // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action to authenticationSession
-                if (user.getRequiredActionsStream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
-                    // This usually happens when 532 was returned, which means that "pwdLastSet" is set to some positive value, which is older than MSAD password expiration policy.
-                    AuthenticationSessionModel authSession = getSession().getContext().getAuthenticationSession();
-                    if (authSession != null) {
-                        if (authSession.getRequiredActions().stream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
-                            logger.debugf("Adding requiredAction UPDATE_PASSWORD to the authenticationSession of user %s", user.getUsername());
-                            authSession.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-                        }
-                    } else {
-                        // Just a fallback. It should not happen during normal authentication process
-                        logger.debugf("Adding requiredAction UPDATE_PASSWORD to the user %s", user.getUsername());
-                        user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        if (errorCode.equals("532") || errorCode.equals("773")) {
+            if (ldapProvider.getEditMode() != UserStorageProvider.EditMode.WRITABLE) {
+                // The user is required to change the password in MSAD, but Keycloak is not allowed to update the
+                // password there, so the required action cannot be offered. Report the reason instead, so that the
+                // authentication flow can tell the user that the password must be changed, instead of showing a
+                // generic invalid credentials error.
+                logger.warnf("User '%s' in realm '%s' is required to change the password in the directory, but editMode is '%s'. Failing login.", user.getUsername(), getRealmName(), ldapProvider.getEditMode());
+                ldapProvider.reportPasswordChangeRequiredInDirectory();
+                return false;
+            }
+
+            // User needs to change his MSAD password. Allow him to login, but add UPDATE_PASSWORD required action to authenticationSession
+            if (user.getRequiredActionsStream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
+                // This usually happens when 532 was returned, which means that "pwdLastSet" is set to some positive value, which is older than MSAD password expiration policy.
+                AuthenticationSessionModel authSession = getSession().getContext().getAuthenticationSession();
+                if (authSession != null) {
+                    if (authSession.getRequiredActions().stream().noneMatch(action -> Objects.equals(action, UserModel.RequiredAction.UPDATE_PASSWORD.name()))) {
+                        logger.debugf("Adding requiredAction UPDATE_PASSWORD to the authenticationSession of user %s", user.getUsername());
+                        authSession.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
                     }
                 } else {
-                    // This usually happens when "773" error code is returned by MSAD. This typically happens when "pwdLastSet" is set to 0 and password was manually set
-                    // by administrator (or user) to expire
-                    logger.tracef("Skip adding required action UPDATE_PASSWORD. It was already set on user '%s' in realm '%s'", user.getUsername(), getRealmName());
+                    // Just a fallback. It should not happen during normal authentication process
+                    logger.debugf("Adding requiredAction UPDATE_PASSWORD to the user %s", user.getUsername());
+                    user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
                 }
-                return true;
-            } else if (errorCode.equals("533")) {
+            } else {
+                // This usually happens when "773" error code is returned by MSAD. This typically happens when "pwdLastSet" is set to 0 and password was manually set
+                // by administrator (or user) to expire
+                logger.tracef("Skip adding required action UPDATE_PASSWORD. It was already set on user '%s' in realm '%s'", user.getUsername(), getRealmName());
+            }
+            return true;
+        } else if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
+            if (errorCode.equals("533")) {
                 // User is disabled in MSAD. Set him to disabled in KC as well
                 if (user.isEnabled()) {
                     user.setEnabled(false);

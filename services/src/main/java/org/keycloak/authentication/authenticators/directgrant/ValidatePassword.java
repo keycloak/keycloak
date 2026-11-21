@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -49,6 +50,16 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
         String password = retrievePassword(context);
         boolean valid = context.getUser().credentialManager().isValid(UserCredentialModel.password(password));
         if (!valid) {
+            if (AuthenticatorUtils.consumePasswordChangeRequiredInDirectory(context)) {
+                // The password must be changed in the directory, but Keycloak cannot perform the change, as the
+                // federated provider is not writable. Answer with the same outcome as for pending required actions,
+                // instead of "Invalid user credentials", which is indistinguishable from a wrong password.
+                context.getEvent().user(context.getUser());
+                context.getEvent().error(Errors.RESOLVE_REQUIRED_ACTIONS);
+                Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account is not fully set up");
+                context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
+                return;
+            }
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
