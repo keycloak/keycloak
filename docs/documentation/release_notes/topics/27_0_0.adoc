@@ -13,6 +13,16 @@ This removes the need for a separate API call to discover the service account us
 The dedicated `GET /admin/realms/\{realm}/clients/\{id}/service-account-user` endpoint has been removed.
 See the upgrading guide for migration details.
 
+== Manage clients as YAML with Admin API v2 (experimental)
+// https://github.com/keycloak/keycloak/issues/43294
+
+Declarative tools and GitOps workflows typically keep resource definitions in YAML, which required converting them to JSON before they could be sent to the Admin API v2.
+
+The client endpoints of the Admin API v2 now accept and return YAML in addition to JSON, and the OpenAPI specification describes the new media types.
+Use the `application/yaml` media type in the `Content-Type` and `Accept` headers to read, create, and replace clients.
+To partially update a client, send a YAML JSON Merge Patch with the `application/merge-patch+yaml` content type.
+Requests that do not specify a YAML media type continue to use JSON.
+
 = Security and Standards
 
 == PAR discovery respects the feature flag

@@ -301,6 +301,14 @@
                     "$ref" : "#/components/schemas/BaseClientRepresentation"
                   }
                 }
+              },
+              "application/yaml" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BaseClientRepresentation"
+                  }
+                }
               }
             }
           },
@@ -320,6 +328,11 @@
               "schema" : {
                 "$ref" : "#/components/schemas/BaseClientRepresentation"
               }
+            },
+            "application/yaml" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BaseClientRepresentation"
+              }
             }
           },
           "required" : true
@@ -329,6 +342,11 @@
             "description" : "Created",
             "content" : {
               "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BaseClientRepresentation"
+                }
+              },
+              "application/yaml" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BaseClientRepresentation"
                 }
@@ -360,6 +378,11 @@
                 "schema" : {
                   "$ref" : "#/components/schemas/BaseClientRepresentation"
                 }
+              },
+              "application/yaml" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BaseClientRepresentation"
+                }
               }
             }
           },
@@ -379,6 +402,11 @@
               "schema" : {
                 "$ref" : "#/components/schemas/BaseClientRepresentation"
               }
+            },
+            "application/yaml" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BaseClientRepresentation"
+              }
             }
           },
           "required" : true
@@ -388,6 +416,11 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BaseClientRepresentation"
+                }
+              },
+              "application/yaml" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BaseClientRepresentation"
                 }
@@ -401,6 +434,11 @@
                 "schema" : {
                   "$ref" : "#/components/schemas/BaseClientRepresentation"
                 }
+              },
+              "application/yaml" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BaseClientRepresentation"
+                }
               }
             }
           }
@@ -408,12 +446,17 @@
       },
       "patch" : {
         "summary" : "Patch a client",
-        "description" : "Partially updates a client using JSON Merge Patch",
+        "description" : "Partially updates a client using JSON Merge Patch (in either JSON or YAML form)",
         "operationId" : "patchClient",
         "tags" : [ "Clients (v2)" ],
         "requestBody" : {
           "content" : {
             "application/merge-patch+json" : {
+              "schema" : {
+                "type" : "object"
+              }
+            },
+            "application/merge-patch+yaml" : {
               "schema" : {
                 "type" : "object"
               }
@@ -426,6 +469,11 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BaseClientRepresentation"
+                }
+              },
+              "application/yaml" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BaseClientRepresentation"
                 }
