@@ -411,6 +411,7 @@ public class GroupResource {
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.groups().setPermissionsEnabled(group, ref.isEnabled());
+        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(ref).success();
         if (ref.isEnabled()) {
             return toMgmtRef(group, permissions);
         } else {

@@ -23,17 +23,23 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.common.Profile;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,6 +56,9 @@ public class ManagementPermissionsTest {
     @InjectRealm
     private ManagedRealm realm;
 
+    @InjectAdminEvents
+    private AdminEvents adminEvents;
+
     @Test
     public void updateGroupPermissions() {
         RealmResource realmResource = realm.admin();
@@ -58,10 +67,12 @@ public class ManagementPermissionsTest {
         Response response = realmResource.groups().add(group);
         String id = ApiUtil.getCreatedId(response);
         GroupResource groupResource = realmResource.groups().group(id);
+        adminEvents.skipAll();
 
         ManagementPermissionReference result = groupResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.groupPermissionsPath(id), managementPermissionReference(true), ResourceType.GROUP);
         result = groupResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -69,6 +80,7 @@ public class ManagementPermissionsTest {
         result = groupResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.groupPermissionsPath(id), managementPermissionReference(false), ResourceType.GROUP);
         result = groupResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -76,6 +88,7 @@ public class ManagementPermissionsTest {
         result = groupResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.groupPermissionsPath(id), managementPermissionReference(true), ResourceType.GROUP);
         result = groupResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -83,6 +96,7 @@ public class ManagementPermissionsTest {
         result = groupResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.groupPermissionsPath(id), managementPermissionReference(true), ResourceType.GROUP);
         result = groupResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -90,6 +104,7 @@ public class ManagementPermissionsTest {
         result = groupResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.groupPermissionsPath(id), managementPermissionReference(false), ResourceType.GROUP);
         result = groupResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -97,6 +112,7 @@ public class ManagementPermissionsTest {
         result = groupResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.groupPermissionsPath(id), managementPermissionReference(false), ResourceType.GROUP);
         result = groupResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -110,10 +126,12 @@ public class ManagementPermissionsTest {
         Response response = realmResource.clients().create(clientRepresentation);
         String id = ApiUtil.getCreatedId(response);
         ClientResource clientResource = realmResource.clients().get(id);
+        adminEvents.skipAll();
 
         ManagementPermissionReference result = clientResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePermissionsPath(id), managementPermissionReference(true), ResourceType.CLIENT);
         result = clientResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -121,6 +139,7 @@ public class ManagementPermissionsTest {
         result = clientResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePermissionsPath(id), managementPermissionReference(false), ResourceType.CLIENT);
         result = clientResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -128,6 +147,7 @@ public class ManagementPermissionsTest {
         result = clientResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePermissionsPath(id), managementPermissionReference(true), ResourceType.CLIENT);
         result = clientResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -135,6 +155,7 @@ public class ManagementPermissionsTest {
         result = clientResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePermissionsPath(id), managementPermissionReference(true), ResourceType.CLIENT);
         result = clientResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -142,6 +163,7 @@ public class ManagementPermissionsTest {
         result = clientResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePermissionsPath(id), managementPermissionReference(false), ResourceType.CLIENT);
         result = clientResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -149,6 +171,7 @@ public class ManagementPermissionsTest {
         result = clientResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientResourcePermissionsPath(id), managementPermissionReference(false), ResourceType.CLIENT);
         result = clientResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -161,10 +184,12 @@ public class ManagementPermissionsTest {
         roleRepresentation.setName("perm-role-test");
         realmResource.roles().create(roleRepresentation);
         RoleResource roleResource = realmResource.roles().get("perm-role-test");
+        adminEvents.skipAll();
 
         ManagementPermissionReference result = roleResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.roleResourcePermissionsPath("perm-role-test"), managementPermissionReference(true), ResourceType.REALM_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -172,6 +197,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.roleResourcePermissionsPath("perm-role-test"), managementPermissionReference(false), ResourceType.REALM_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -179,6 +205,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.roleResourcePermissionsPath("perm-role-test"), managementPermissionReference(true), ResourceType.REALM_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -186,6 +213,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.roleResourcePermissionsPath("perm-role-test"), managementPermissionReference(true), ResourceType.REALM_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -193,6 +221,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.roleResourcePermissionsPath("perm-role-test"), managementPermissionReference(false), ResourceType.REALM_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -200,6 +229,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.roleResourcePermissionsPath("perm-role-test"), managementPermissionReference(false), ResourceType.REALM_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -217,10 +247,12 @@ public class ManagementPermissionsTest {
         roleRepresentation.setName("perm-client-role-test");
         clientResource.roles().create(roleRepresentation);
         RoleResource roleResource = clientResource.roles().get("perm-client-role-test");
+        adminEvents.skipAll();
 
         ManagementPermissionReference result = roleResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePermissionsPath(id, "perm-client-role-test"), managementPermissionReference(true), ResourceType.CLIENT_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -228,6 +260,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePermissionsPath(id, "perm-client-role-test"), managementPermissionReference(false), ResourceType.CLIENT_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -235,6 +268,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePermissionsPath(id, "perm-client-role-test"), managementPermissionReference(true), ResourceType.CLIENT_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -242,6 +276,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(true));
         assertNotNull(result);
         assertTrue(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePermissionsPath(id, "perm-client-role-test"), managementPermissionReference(true), ResourceType.CLIENT_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertTrue(result.isEnabled());
@@ -249,6 +284,7 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePermissionsPath(id, "perm-client-role-test"), managementPermissionReference(false), ResourceType.CLIENT_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
@@ -256,9 +292,16 @@ public class ManagementPermissionsTest {
         result = roleResource.setPermissions(new ManagementPermissionRepresentation(false));
         assertNotNull(result);
         assertFalse(result.isEnabled());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientRoleResourcePermissionsPath(id, "perm-client-role-test"), managementPermissionReference(false), ResourceType.CLIENT_ROLE);
         result = roleResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
+    }
+
+    private static ManagementPermissionReference managementPermissionReference(boolean enabled) {
+        ManagementPermissionReference ref = new ManagementPermissionReference();
+        ref.setEnabled(enabled);
+        return ref;
     }
 
     public static class ServerConfig implements KeycloakServerConfig {

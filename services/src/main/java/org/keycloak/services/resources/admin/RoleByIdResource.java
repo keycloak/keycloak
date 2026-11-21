@@ -380,6 +380,12 @@ public class RoleByIdResource extends RoleResource {
 
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
         permissions.roles().setPermissionsEnabled(role, ref.isEnabled());
+        if (role.isClientRole()) {
+            adminEvent.resource(ResourceType.CLIENT_ROLE);
+        } else {
+            adminEvent.resource(ResourceType.REALM_ROLE);
+        }
+        adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(ref).success();
         if (ref.isEnabled()) {
             return toMgmtRef(role, permissions);
         } else {

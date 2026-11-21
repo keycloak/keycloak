@@ -101,6 +101,18 @@ public class AdminEventPaths {
         return uri.toString();
     }
 
+    public static String clientRoleResourcePermissionsPath(String clientDbId, String roleName) {
+        URI uri = UriBuilder.fromUri(clientRoleResourcePath(clientDbId, roleName))
+                .path(RoleResource.class, "setPermissions").build();
+        return uri.toString();
+    }
+
+    public static String clientResourcePermissionsPath(String clientDbId) {
+        URI uri = UriBuilder.fromUri(clientResourcePath(clientDbId))
+                .path(ClientResource.class, "setPermissions").build();
+        return uri.toString();
+    }
+
     public static String clientProtocolMappersPath(String clientDbId) {
         URI uri = UriBuilder.fromUri(clientResourcePath(clientDbId))
                 .path(ClientResource.class, "getProtocolMappers")
@@ -226,6 +238,11 @@ public class AdminEventPaths {
 
     public static String roleResourceCompositesPath(String roleName) {
         URI uri = UriBuilder.fromUri(roleResourcePath(roleName)).path(RoleResource.class, "getRoleComposites").build();
+        return uri.toString();
+    }
+
+    public static String roleResourcePermissionsPath(String roleName) {
+        URI uri = UriBuilder.fromUri(roleResourcePath(roleName)).path(RoleResource.class, "setPermissions").build();
         return uri.toString();
     }
 
@@ -356,6 +373,12 @@ public class AdminEventPaths {
     public static String groupPath(String groupId) {
         URI uri = UriBuilder.fromUri(groupsPath()).path(GroupsResource.class, "group")
                 .build(groupId);
+        return uri.toString();
+    }
+
+    public static String groupPermissionsPath(String groupId) {
+        URI uri = UriBuilder.fromUri(groupPath(groupId)).path(GroupResource.class, "setPermissions")
+                .build();
         return uri.toString();
     }
 
