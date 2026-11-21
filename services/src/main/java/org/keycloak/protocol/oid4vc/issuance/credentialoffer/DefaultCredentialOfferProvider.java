@@ -38,6 +38,7 @@ import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.protocol.oid4vc.model.TxCode;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.util.Strings;
 
@@ -66,9 +67,10 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
+            Boolean withTxCode,
             Integer expireAt) {
         return createCredentialOffer(user, grantType, credentialConfigurationIds, targetClientId, targetUsername,
-                expireAt.longValue());
+                withTxCode, expireAt.longValue());
     }
 
     @Override
@@ -78,6 +80,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
+            Boolean withTxCode,
             long expireAt) {
 
         // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
@@ -116,7 +119,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Create the CredentialOfferState
         //
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, withTxCode, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
                 CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(
@@ -136,7 +139,13 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         if (preAuthorized) {
             String code = createPreAuthorizedCode(offerState);
-            credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
+            PreAuthorizedCodeGrant grant = new PreAuthorizedCodeGrant().setPreAuthorizedCode(code);
+            if (offerState.getTxCode() != null) {
+                grant.setTxCode(new TxCode()
+                        .setInputMode(CredentialOfferState.TX_CODE_INPUT_MODE)
+                        .setLength(CredentialOfferState.TX_CODE_LENGTH));
+            }
+            credOffer.addGrant(grant);
         } else {
             IssuerState issuerState = new IssuerState().setCredentialsOfferId(offerState.getCredentialsOfferId());
             credOffer.addGrant(new AuthorizationCodeGrant().setIssuerState(issuerState.encodeToString()));

@@ -64,7 +64,9 @@ public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
             req.targetUser(ctx.getHolder());
             req.preAuthorized(true);
         });
+
         String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "No preAuthCode");
 
         // Redeem Pre-Authorized Code for AccessToken
         //

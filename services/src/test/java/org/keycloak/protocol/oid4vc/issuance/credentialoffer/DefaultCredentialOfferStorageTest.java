@@ -71,7 +71,7 @@ public class DefaultCredentialOfferStorageTest {
 
         testOfferState = new CredentialOfferState(
                 credOffer, "test-client", null,
-                Time.currentTimeSeconds() + 100, null
+                Time.currentTimeSeconds() + 100, null, null
         );
         testOfferId = testOfferState.getCredentialsOfferId();
     }
@@ -134,7 +134,7 @@ public class DefaultCredentialOfferStorageTest {
 
         CredentialOfferState expiredOffer = new CredentialOfferState(
                 credOffer, "test-client", null,
-                Time.currentTimeSeconds() - 100, null  // already expired
+                Time.currentTimeSeconds() - 100, null, null  // already expired
         );
 
         storage.putOfferState(expiredOffer);
