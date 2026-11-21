@@ -31,6 +31,14 @@ import static org.junit.Assert.assertTrue;
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
     @Test
+    public void databaseVersionDefaultsAreDelegatedToQuarkus() {
+        var config = createConfigFromCliArguments("--db=postgres", "--db-kind-users=postgres");
+        assertEquals("compatible", config.getConfigValue("quarkus.datasource.db-version-defaults").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.db-version").getValue());
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".db-version").getValue());
+    }
+
+    @Test
     public void defaultDatasource() {
         ConfigArgsConfigSource.setCliArgs("--db-kind-default=mariadb", "--db=postgres");
         initConfig();
