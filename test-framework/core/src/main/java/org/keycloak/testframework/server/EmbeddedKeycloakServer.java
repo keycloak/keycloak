@@ -18,6 +18,7 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
+        // TODO add support for keycloakServerConfigBuilder.toProviderFactories()
         Keycloak.Builder builder = Keycloak.builder().setVersion(Version.VERSION);
         this.tlsEnabled = tlsEnabled;
 
