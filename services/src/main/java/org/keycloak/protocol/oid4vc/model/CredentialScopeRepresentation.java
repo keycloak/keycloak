@@ -31,6 +31,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_IDENTIFIER;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_ISSUER_DID;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_PROOF_KEY_INDEX;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH;
@@ -328,6 +329,17 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
     public CredentialScopeRepresentation setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
                 .map(list -> String.join(",", list)).orElse(null));
+    }
+
+    public Integer getProofKeyIndex() {
+        return Optional.ofNullable(getAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX))
+                .map(Integer::parseInt)
+                .orElse(null);
+    }
+
+    public CredentialScopeRepresentation setProofKeyIndex(Integer proofKeyIndex) {
+        return setAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX, Optional.ofNullable(proofKeyIndex)
+                .map(String::valueOf).orElse(null));
     }
 
     public <T> T getCredentialPolicyValue(CredentialClientPolicy<T> policy) {

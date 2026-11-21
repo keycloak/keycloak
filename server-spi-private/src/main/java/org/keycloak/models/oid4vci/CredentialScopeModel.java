@@ -140,6 +140,14 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String VC_KEY_ATTESTATION_REQUIRED_USER_AUTH = "vc.key_attestations_required.user_authentication";
 
     /**
+     * OPTIONAL. Position the proof signing key must occupy in the 'attested_keys' array of the key attestation,
+     * as required by ETSI TS 119 472-3 and Regulation (EU) 2026/1731. Only '0' is a valid value. If this
+     * attribute is absent, the proof key only has to be included in 'attested_keys' as required by OpenID4VCI
+     * Appendix D.
+     */
+    public static final String VC_KEY_ATTESTATION_PROOF_KEY_INDEX = "vc.key_attestation.proof_key_index";
+
+    /**
      * OPTIONAL. Flag that indicates whether cryptographic holder binding is REQUIRED for this credential configuration.
      * If this flag is not set or set to false, the issuer metadata MUST omit the
      * {@code cryptographic_binding_methods_supported} and {@code proof_types_supported} parameters for this
@@ -436,6 +444,17 @@ public class CredentialScopeModel implements ClientScopeModel {
     public void setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         clientScope.setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
                 .map(list -> String.join(",", list)).orElse(null));
+    }
+
+    public Integer getProofKeyIndex() {
+        return Optional.ofNullable(clientScope.getAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX))
+                .map(Integer::parseInt)
+                .orElse(null);
+    }
+
+    public void setProofKeyIndex(Integer proofKeyIndex) {
+        clientScope.setAttribute(VC_KEY_ATTESTATION_PROOF_KEY_INDEX, Optional.ofNullable(proofKeyIndex)
+                .map(String::valueOf).orElse(null));
     }
 
     @Override
