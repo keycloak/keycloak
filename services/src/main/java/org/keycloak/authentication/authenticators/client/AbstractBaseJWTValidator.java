@@ -82,7 +82,8 @@ public abstract class AbstractBaseJWTValidator {
             if (token.getIat() - allowedClockSkew > currentTime) {
                 return failure("Token was issued in the future");
             }
-            lifespan = Math.min(lifespan, maxExp);
+            // the token is accepted until iat + maxExp, which is later than now + maxExp when iat is ahead of the server clock
+            lifespan = Math.min(lifespan, Math.max(maxExp, token.getIat() + maxExp - currentTime));
             if (lifespan <= 0) {
                 return failure("Token is not active");
             }
