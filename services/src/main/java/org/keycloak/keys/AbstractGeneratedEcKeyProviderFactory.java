@@ -18,12 +18,18 @@ package org.keycloak.keys;
 
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.interfaces.ECPublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.crypto.KeyUse;
@@ -98,6 +104,11 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
                 getLogger().debugv("Elliptic Curve changed, generating new keys for {0}", realm.getName());
             }
         }
+
+        // persist the self-signed certificate so it stays the same across provider reloads and cluster nodes
+        if (Boolean.parseBoolean(model.get(Attributes.EC_GENERATE_CERTIFICATE_KEY)) && !model.contains(Attributes.CERTIFICATE_KEY)) {
+            generateCertificate(realm, model);
+        }
     }
 
     protected void generateKeys(ComponentModel model, String ecInNistRep) {
@@ -107,8 +118,22 @@ public abstract class AbstractGeneratedEcKeyProviderFactory<T extends KeyProvide
             model.put(getEcPrivateKeyKey(), Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
             model.put(getEcPublicKeyKey(), Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
             model.put(getEcEllipticCurveKey(), ecInNistRep);
+            // a certificate issued for the previous key pair is no longer valid
+            model.getConfig().remove(Attributes.CERTIFICATE_KEY);
         } catch (Throwable t) {
             throw new ComponentValidationException("Failed to generate EC keys", t);
+        }
+    }
+
+    private void generateCertificate(RealmModel realm, ComponentModel model) {
+        try {
+            KeyFactory kf = KeyFactory.getInstance("EC");
+            PrivateKey privateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(model.get(getEcPrivateKeyKey()))));
+            PublicKey publicKey = kf.generatePublic(new X509EncodedKeySpec(Base64.getMimeDecoder().decode(model.get(getEcPublicKeyKey()))));
+            Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(new KeyPair(publicKey, privateKey), realm.getName());
+            model.put(Attributes.CERTIFICATE_KEY, PemUtils.encodeCertificate(certificate));
+        } catch (Throwable t) {
+            throw new ComponentValidationException("Failed to generate certificate", t);
         }
     }
 
