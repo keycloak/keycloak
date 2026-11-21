@@ -2771,6 +2771,358 @@ public class UserProfileTest extends AbstractUserProfileTest {
         provider.create(UserProfileContext.USER_API, Map.of());
     }
 
+    @Test
+    public void testNoDefaultConvertersAreConfigured() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testNoDefaultConvertersAreConfigured);
+    }
+
+    private static void testNoDefaultConvertersAreConfigured(KeycloakSession session) {
+        // Converters are opt-in: the shipped default user-profile configuration must not declare any converter
+        // on any attribute. This guards against an accidental behavior change for existing realms on upgrade.
+        UPConfig config = parseSystemDefaultConfig();
+        for (UPAttribute attribute : config.getAttributes()) {
+            Map<String, Map<String, Object>> converters = attribute.getConverters();
+            assertTrue(converters == null || converters.isEmpty(),
+                    "Attribute '" + attribute.getName() + "' declares converters by default but should not: " + converters);
+        }
+    }
+
+    @Test
+    public void testWhitespaceIsPreservedWithoutConverter() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testWhitespaceIsPreservedWithoutConverter);
+    }
+
+    private static void testWhitespaceIsPreservedWithoutConverter(KeycloakSession session) {
+        // Without any configured converter, surrounding whitespace on an attribute value must be preserved.
+        // This locks in the opt-in contract so that adding a converter to a built-in attribute (e.g. in the
+        // default user-profile JSON) cannot silently change attribute normalization for existing realms.
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseSystemDefaultConfig();
+        // custom attribute so that built-in validators like 'username-prohibited-characters' don't interfere
+        config.addOrReplaceAttribute(new UPAttribute("nickname", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN))));
+        provider.setConfiguration(config);
+
+        String padded = "   alice   ";
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("nickname", padded);
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        profile.validate();
+
+        // the raw value is preserved - no converter is applied by default
+        assertEquals(padded, profile.getAttributes().getFirst("nickname"));
+    }
+
+    @Test
+    public void testTrimWhitespaceConverterOnBuiltInAttributes() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testTrimWhitespaceConverterOnBuiltInAttributes);
+    }
+
+    private static void testTrimWhitespaceConverterOnBuiltInAttributes(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseSystemDefaultConfig();
+        // converters are opt-in, configure trim-whitespace for this test
+        config.getAttribute(UserModel.USERNAME).setConverters(Map.of("trim-whitespace", Map.of()));
+        config.getAttribute(UserModel.EMAIL).setConverters(Map.of("trim-whitespace", Map.of()));
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        String username = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+        String email = org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org";
+        attributes.put(UserModel.USERNAME, "  " + username + "  ");
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, "\t" + email + "\n");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        profile.validate();
+
+        // values returned by the profile should already be trimmed
+        assertEquals(username, profile.getAttributes().getFirst(UserModel.USERNAME));
+        assertEquals(email, profile.getAttributes().getFirst(UserModel.EMAIL));
+
+        UserModel user = profile.create();
+        assertEquals(username, user.getUsername());
+        assertEquals(email, user.getEmail());
+    }
+
+    @Test
+    public void testTrimWhitespacePreventsDuplicateUsernames() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testTrimWhitespacePreventsDuplicateUsernames);
+    }
+
+    private static void testTrimWhitespacePreventsDuplicateUsernames(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseSystemDefaultConfig();
+        config.getAttribute(UserModel.USERNAME).setConverters(Map.of("trim-whitespace", Map.of()));
+        provider.setConfiguration(config);
+        RealmModel realm = session.getContext().getRealm();
+
+        String username = org.keycloak.models.utils.KeycloakModelUtils.generateId();
+
+        Map<String, Object> first = new HashMap<>();
+        first.put(UserModel.USERNAME, username);
+        first.put(UserModel.FIRST_NAME, "John");
+        first.put(UserModel.LAST_NAME, "Doe");
+        first.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        UserModel created = provider.create(UserProfileContext.USER_API, first).create();
+
+        // a second registration using the same username but with surrounding whitespace used to succeed,
+        // creating a distinct account. The trim-whitespace converter must normalize the input so the
+        // conflict is detected.
+        Map<String, Object> second = new HashMap<>();
+        second.put(UserModel.USERNAME, "  " + username + "  ");
+        second.put(UserModel.FIRST_NAME, "Jane");
+        second.put(UserModel.LAST_NAME, "Doe");
+        second.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+
+        UserProfile duplicate = provider.create(UserProfileContext.REGISTRATION, second);
+        try {
+            duplicate.validate();
+            fail("Should fail because the trimmed username already exists");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
+        } finally {
+            session.users().removeUser(realm, created);
+        }
+    }
+
+    @Test
+    public void testConverterOnCustomAttribute() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testConverterOnCustomAttribute);
+    }
+
+    private static void testConverterOnCustomAttribute(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseSystemDefaultConfig();
+        UPAttribute address = new UPAttribute("address", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN)));
+        address.addConverter("trim-whitespace", Map.of());
+        config.addOrReplaceAttribute(address);
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("address", "  221B Baker Street  ");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        profile.validate();
+
+        assertEquals("221B Baker Street", profile.getAttributes().getFirst("address"));
+    }
+
+    @Test
+    public void testConverterRunsBeforeValidators() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testConverterRunsBeforeValidators);
+    }
+
+    private static void testConverterRunsBeforeValidators(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseSystemDefaultConfig();
+        UPAttribute nickname = new UPAttribute("nickname", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN)));
+        // after trimming, the value is 5 chars which fits the max; with the surrounding whitespace it would exceed it
+        nickname.addConverter("trim-whitespace", Map.of());
+        nickname.addValidation(LengthValidator.ID, Map.of(LengthValidator.KEY_MAX, 5, LengthValidator.KEY_TRIM_DISABLED, true));
+        config.addOrReplaceAttribute(nickname);
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("nickname", "   alice   ");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        // must not throw: the converter trims the value to "alice" (5 chars) before the length validator runs
+        profile.validate();
+        assertEquals("alice", profile.getAttributes().getFirst("nickname"));
+    }
+
+    @Test
+    public void testConverterNotAppliedToReadOnlyAttribute() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testConverterNotAppliedToReadOnlyAttribute);
+    }
+
+    private static void testConverterNotAppliedToReadOnlyAttribute(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        RealmModel realm = session.getContext().getRealm();
+        UPConfig config = parseSystemDefaultConfig();
+        // users can only view the attribute, admins can edit it
+        config.addOrReplaceAttribute(new UPAttribute("nickname", new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN))));
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("nickname", "Doe ");
+        UserModel user = provider.create(UserProfileContext.USER_API, attributes).create();
+
+        try {
+            // the converter is added after the value was stored
+            config.getAttribute("nickname").addConverter("trim-whitespace", Map.of());
+            provider.setConfiguration(config);
+
+            // the read-only value is loaded from the user and must not be converted
+            Map<String, List<String>> withoutNickname = new HashMap<>(user.getAttributes());
+            withoutNickname.remove("nickname");
+            UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, withoutNickname, user);
+            profile.validate();
+            assertEquals("Doe ", profile.getAttributes().getFirst("nickname"));
+
+            // the read-only value is sent back unchanged and must not be converted
+            profile = provider.create(UserProfileContext.ACCOUNT, new HashMap<>(user.getAttributes()), user);
+            profile.validate();
+            assertEquals("Doe ", profile.getAttributes().getFirst("nickname"));
+
+            // the attribute is writable for admins, so the value is converted
+            profile = provider.create(UserProfileContext.USER_API, new HashMap<>(user.getAttributes()), user);
+            profile.validate();
+            assertEquals("Doe", profile.getAttributes().getFirst("nickname"));
+        } finally {
+            session.users().removeUser(realm, user);
+        }
+    }
+
+    @Test
+    public void testDefaultValueIsConvertedBeforeValidation() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDefaultValueIsConvertedBeforeValidation);
+    }
+
+    private static void testDefaultValueIsConvertedBeforeValidation(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        UPConfig config = parseSystemDefaultConfig();
+        UPAttribute nickname = new UPAttribute("nickname", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN)));
+        nickname.setDefaultValue(" foo ");
+        nickname.addConverter("trim-whitespace", Map.of());
+        nickname.addValidation("pattern", Map.of("pattern", "^\\S+$"));
+        config.addOrReplaceAttribute(nickname);
+
+        // the default value is only valid once converted, as it is at runtime
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        profile.validate();
+        assertEquals("foo", profile.getAttributes().getFirst("nickname"));
+    }
+
+    @Test
+    public void testStoredValuesAreNotConvertedOnRead() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testStoredValuesAreNotConvertedOnRead);
+    }
+
+    private static void testStoredValuesAreNotConvertedOnRead(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        RealmModel realm = session.getContext().getRealm();
+        UPConfig config = parseSystemDefaultConfig();
+        config.addOrReplaceAttribute(new UPAttribute("nickname", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN))));
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+        attributes.put("nickname", " foo ");
+        UserModel user = provider.create(UserProfileContext.USER_API, attributes).create();
+
+        try {
+            // the converter and a validator rejecting the stored value are added after the value was stored
+            UPAttribute nickname = config.getAttribute("nickname");
+            nickname.addConverter("trim-whitespace", Map.of());
+            nickname.addValidation("pattern", Map.of("pattern", "^\\S+$"));
+            provider.setConfiguration(config);
+
+            // a profile built from the stored user returns and validates the stored value, as when verifying the profile
+            UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, user);
+            assertEquals(" foo ", profile.getAttributes().getFirst("nickname"));
+            try {
+                profile.validate();
+                fail("Should fail because the stored value was not converted");
+            } catch (ValidationException ve) {
+                assertTrue(ve.isAttributeOnError("nickname"));
+            }
+
+            // submitted values are converted
+            profile = provider.create(UserProfileContext.UPDATE_PROFILE, new HashMap<>(user.getAttributes()), user);
+            profile.validate();
+            assertEquals("foo", profile.getAttributes().getFirst("nickname"));
+        } finally {
+            session.users().removeUser(realm, user);
+        }
+    }
+
+    @Test
+    public void testUnavailableConverterIsAcceptedWhenLoadingConfiguration() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUnavailableConverterIsAcceptedWhenLoadingConfiguration);
+    }
+
+    private static void testUnavailableConverterIsAcceptedWhenLoadingConfiguration(KeycloakSession session) {
+        UPConfig config = parseSystemDefaultConfig();
+        UPAttribute nickname = new UPAttribute("nickname", new UPAttributePermissions(Set.of(), Set.of(ROLE_USER, ROLE_ADMIN)));
+        nickname.addConverter("removed-converter", Map.of());
+        config.addOrReplaceAttribute(nickname);
+
+        // saving a configuration with an unknown converter is rejected
+        List<String> errors = UPConfigUtils.validate(session, config);
+        assertEquals(1, errors.size(), errors.toString());
+        assertTrue(errors.get(0).contains("removed-converter"), errors.toString());
+
+        // loading an existing configuration whose converter provider was removed must not fail
+        assertTrue(UPConfigUtils.validateExisting(session, config).isEmpty());
+
+        // a default value that is only valid once converted cannot be validated without the converter when loading
+        nickname.setDefaultValue(" foo ");
+        nickname.addValidation("pattern", Map.of("pattern", "^\\S+$"));
+        assertTrue(UPConfigUtils.validateExisting(session, config).isEmpty());
+    }
+
+    @Test
+    public void testReadOnlyDefaultValueIsStoredConverted() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadOnlyDefaultValueIsStoredConverted);
+    }
+
+    private static void testReadOnlyDefaultValueIsStoredConverted(KeycloakSession session) {
+        UserProfileProvider provider = getUserProfileProvider(session);
+        RealmModel realm = session.getContext().getRealm();
+        UPConfig config = parseSystemDefaultConfig();
+        // only admins can edit the attribute, so it is read-only during registration and its default is stored on create
+        UPAttribute nickname = new UPAttribute("nickname", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN)));
+        nickname.setDefaultValue(" foo ");
+        nickname.addConverter("trim-whitespace", Map.of());
+        config.addOrReplaceAttribute(nickname);
+        provider.setConfiguration(config);
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.FIRST_NAME, "John");
+        attributes.put(UserModel.LAST_NAME, "Doe");
+        attributes.put(UserModel.EMAIL, org.keycloak.models.utils.KeycloakModelUtils.generateId() + "@keycloak.org");
+
+        UserModel user = provider.create(UserProfileContext.REGISTRATION, attributes).create();
+
+        try {
+            assertEquals("foo", user.getFirstAttribute("nickname"));
+        } finally {
+            session.users().removeUser(realm, user);
+        }
+    }
+
     private static void setRequiredActionEnabled(RealmResource realmResource, RequiredAction requiredAction, boolean enabled) {
         RequiredActionProviderRepresentation rep = realmResource.flows().getRequiredAction(requiredAction.name());
         rep.setEnabled(enabled);

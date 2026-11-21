@@ -136,9 +136,10 @@ public class UserProfileUtil {
                 continue;
             }
 
-            AttributeMetadata attributeMetadata = attributes.getMetadata(name);
+            // the default value comes from the configuration and is converted the same way as at validation
+            String defaultValue = attributes.getDefaultValue(name);
 
-            if (attributeMetadata == null || StringUtil.isBlank(attributeMetadata.getDefaultValue())) {
+            if (StringUtil.isBlank(defaultValue)) {
                 continue;
             }
 
@@ -146,7 +147,7 @@ public class UserProfileUtil {
                 continue;
             }
 
-            user.setSingleAttribute(name, attributeMetadata.getDefaultValue());
+            user.setSingleAttribute(name, defaultValue);
         }
     }
 
