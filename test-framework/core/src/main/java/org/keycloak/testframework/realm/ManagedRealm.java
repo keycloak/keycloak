@@ -1,5 +1,6 @@
 package org.keycloak.testframework.realm;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.keycloak.admin.client.resource.ComponentResource;
@@ -153,7 +154,18 @@ public class ManagedRealm extends ManagedTestResource {
 
         realmResource.clients().get(original.getId()).update(updated);
 
-        cleanup().add(r -> r.clients().get(original.getId()).update(original));
+        // Client updates only merge attributes, so attributes added by the update need to be cleared with an empty value
+        ClientRepresentation restore = RepresentationUtils.clone(original);
+        if (updated.getAttributes() != null) {
+            if (restore.getAttributes() == null) {
+                restore.setAttributes(new HashMap<>());
+            }
+            updated.getAttributes().keySet().stream()
+                    .filter(k -> !restore.getAttributes().containsKey(k))
+                    .forEach(k -> restore.getAttributes().put(k, ""));
+        }
+
+        cleanup().add(r -> r.clients().get(original.getId()).update(restore));
     }
 
     /**
