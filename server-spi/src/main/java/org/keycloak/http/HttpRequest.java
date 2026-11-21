@@ -19,6 +19,7 @@ package org.keycloak.http;
 
 import java.security.cert.X509Certificate;
 
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriInfo;
@@ -46,6 +47,7 @@ public interface HttpRequest {
      * <p>The values are already decoded using HTML form decoding.
      *
      * @return the decoded form parameters
+     * @throws WebApplicationException if the request contains a file item as a form parameter
      */
     MultivaluedMap<String, String> getDecodedFormParameters();
 

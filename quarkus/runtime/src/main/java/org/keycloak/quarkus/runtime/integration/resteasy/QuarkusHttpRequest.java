@@ -27,8 +27,10 @@ import javax.net.ssl.SSLSession;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.config.ProxyOptions;
@@ -81,6 +83,9 @@ public final class QuarkusHttpRequest implements HttpRequest {
                 }
 
                 for (FormValue value : values) {
+                    if (value.isFileItem()) {
+                        throw new WebApplicationException("Form parameter " + name + " is a file item", Response.Status.BAD_REQUEST);
+                    }
                     decodedFormParameters.add(name, value.getValue());
                 }
             }
