@@ -59,7 +59,7 @@ public class IdentityProviderMapperTest extends AbstractIdentityProviderTest {
         create(createRep("google", "google"));
         provider = managedRealm.admin().identityProviders().get("google");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "google-user-attribute-mapper", "oidc-username-idp-mapper");
+        assertMapperTypes(mapperTypes, "google-user-attribute-mapper", "oidc-username-idp-mapper", "oidc-role-idp-mapper", "oidc-advanced-group-idp-mapper", "oidc-advanced-role-idp-mapper");
 
         create(createRep("facebook", "facebook"));
         provider = managedRealm.admin().identityProviders().get("facebook");

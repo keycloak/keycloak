@@ -17,6 +17,7 @@
 package org.keycloak.social.google;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
@@ -83,6 +84,24 @@ public class GoogleIdentityProviderFactory extends AbstractIdentityProviderFacto
                         "endpoint, to get a refresh token back. Useful if planning to use Token Exchange to retrieve " +
                         "Google token to access Google APIs when the user is not at the browser.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .add()
+                .property().name(GoogleIdentityProviderConfig.GROUP_RETRIEVAL_MODE)
+                .label("Group Retrieval Mode")
+                .helpText("Fetch the user's Google Workspace or Cloud Identity groups using the user's OAuth2 access token " +
+                        "and expose them under the 'groups' claim. Requires the Cloud Identity API to be enabled in the Google Cloud project. " +
+                        "When enabled ('DIRECT', 'TRANSITIVE', or 'SCOPED'), the 'https://www.googleapis.com/auth/cloud-identity.groups.readonly' scope is automatically requested. " +
+                        "'DIRECT' fetches direct memberships only, 'TRANSITIVE' fetches all nested memberships across the organization, and 'SCOPED' resolves the membership graph under the configured Scoped Groups.")
+                .type(ProviderConfigProperty.LIST_TYPE)
+                .options(Stream.of(GoogleIdentityProviderConfig.GroupRetrievalMode.values()).map(Enum::name).toList())
+                .defaultValue(GoogleIdentityProviderConfig.GroupRetrievalMode.DISABLED.name())
+                .add()
+                .property().name(GoogleIdentityProviderConfig.SCOPED_GROUPS)
+                .label("Scoped Groups")
+                .helpText("Comma-separated list of Google Cloud Identity group identifiers (group emails such as 'team@example.com', " +
+                        "group IDs such as '01abc23def45ghi', or resource names such as 'groups/01abc23def45ghi') " +
+                        "used when Group Retrieval Mode is set to 'SCOPED'. For each configured group, Keycloak queries its membership graph " +
+                        "and includes all groups on the path between the scoped group and the user.")
+                .type(ProviderConfigProperty.STRING_TYPE)
                 .add().build();
 
         if (Profile.isFeatureEnabled(Profile.Feature.JWT_AUTHORIZATION_GRANT)) {

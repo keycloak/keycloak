@@ -16,7 +16,12 @@
  */
 package org.keycloak.social.google;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.UriBuilder;
@@ -24,6 +29,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -31,11 +37,18 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 
 
@@ -51,6 +64,12 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     public static final String TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
     public static final String JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
     public static final String DEFAULT_SCOPE = "openid profile email";
+    public static final String CLOUD_IDENTITY_GROUPS_SCOPE = "https://www.googleapis.com/auth/cloud-identity.groups.readonly";
+    public static final String SEARCH_DIRECT_GROUPS_URL = "https://cloudidentity.googleapis.com/v1/groups/-/memberships:searchDirectGroups";
+    public static final String SEARCH_TRANSITIVE_GROUPS_URL = "https://cloudidentity.googleapis.com/v1/groups/-/memberships:searchTransitiveGroups";
+    public static final String LOOKUP_GROUP_URL = "https://cloudidentity.googleapis.com/v1/groups:lookup";
+    public static final String GET_MEMBERSHIP_GRAPH_URL_TEMPLATE = "https://cloudidentity.googleapis.com/v1/groups/%s/memberships:getMembershipGraph";
+    public static final String GROUPS_CLAIM_NAME = "groups";
 
     private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
     private static final String OIDC_PARAMETER_ACCESS_TYPE = "access_type";
@@ -100,10 +119,22 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
 
 
     @Override
+    protected BrokeredIdentityContext extractIdentity(AccessTokenResponse tokenResponse, String accessToken, JsonWebToken idToken) throws IOException {
+        BrokeredIdentityContext identity = super.extractIdentity(tokenResponse, accessToken, idToken);
+        fetchUserGroups(accessToken, identity);
+        return identity;
+    }
+
+    @Override
     protected BrokeredIdentityContext exchangeExternalImpl(EventBuilder event, MultivaluedMap<String, String> params) {
         BrokeredIdentityContext context = exchangeExternalUserInfoValidationOnly(event, params);
         JsonNode profile = (JsonNode) context.getContextData().get(USER_INFO);
         validateHostedDomain(getJsonProperty(profile, OIDC_PARAMETER_HOSTED_DOMAINS));
+        try {
+            fetchUserGroups(params.getFirst(OAuth2Constants.SUBJECT_TOKEN), context);
+        } catch (IOException e) {
+            throw new IdentityBrokerException("Could not retrieve user groups from Google Cloud Identity API.", e);
+        }
         return context;
     }
 
@@ -121,7 +152,135 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
             uriBuilder.queryParam(OIDC_PARAMETER_ACCESS_TYPE, ACCESS_TYPE_OFFLINE);
         }
 
+        if (googleConfig.getGroupRetrievalMode() != GoogleIdentityProviderConfig.GroupRetrievalMode.DISABLED) {
+            String defaultScope = googleConfig.getDefaultScope();
+            if (defaultScope == null || !Arrays.asList(defaultScope.trim().split("\\s+")).contains(CLOUD_IDENTITY_GROUPS_SCOPE)) {
+                String updatedScope = ((defaultScope == null ? "" : defaultScope.trim()) + " " + CLOUD_IDENTITY_GROUPS_SCOPE).trim();
+                uriBuilder.replaceQueryParam(OAUTH2_PARAMETER_SCOPE, updatedScope);
+            }
+        }
+
         return uriBuilder;
+    }
+
+    private void fetchUserGroups(String accessToken, BrokeredIdentityContext identity) throws IOException {
+        GoogleIdentityProviderConfig googleConfig = (GoogleIdentityProviderConfig) getConfig();
+        GoogleIdentityProviderConfig.GroupRetrievalMode mode = googleConfig.getGroupRetrievalMode();
+        if (mode == GoogleIdentityProviderConfig.GroupRetrievalMode.DISABLED || accessToken == null) {
+            return;
+        }
+
+        String email = identity.getEmail();
+        if (email == null || email.isBlank()) {
+            throw new IdentityBrokerException("Could not retrieve user groups from Google Cloud Identity API: user email is missing.");
+        }
+
+        List<String> groups = mode == GoogleIdentityProviderConfig.GroupRetrievalMode.SCOPED
+                ? fetchScopedGroups(googleConfig.getParsedScopedGroups(), accessToken, email)
+                : fetchSearchedGroups(
+                        mode == GoogleIdentityProviderConfig.GroupRetrievalMode.TRANSITIVE
+                                ? SEARCH_TRANSITIVE_GROUPS_URL
+                                : SEARCH_DIRECT_GROUPS_URL,
+                        accessToken,
+                        email);
+
+        JsonNode existingProfile = (JsonNode) identity.getContextData().get(USER_INFO);
+        ObjectNode profileNode = existingProfile instanceof ObjectNode
+                ? (ObjectNode) existingProfile
+                : JsonSerialization.createObjectNode();
+        ArrayNode groupsNode = profileNode.putArray(GROUPS_CLAIM_NAME);
+        groups.forEach(groupsNode::add);
+        AbstractJsonUserAttributeMapper.storeUserProfileForMapper(identity, profileNode, getConfig().getAlias());
+
+        Object rawIdToken = identity.getContextData().get(VALIDATED_ID_TOKEN);
+        if (rawIdToken instanceof JsonWebToken idToken) {
+            idToken.getOtherClaims().put(GROUPS_CLAIM_NAME, groups);
+        }
+    }
+
+    private List<String> fetchSearchedGroups(String endpointUrl, String accessToken, String email) throws IOException {
+        Set<String> groups = new LinkedHashSet<>();
+        String nextPageToken = null;
+        do {
+            JsonNode page = fetchGroupsPage(endpointUrl, accessToken, email, nextPageToken);
+            JsonNode memberships = page.get("memberships");
+            if (memberships != null && memberships.isArray()) {
+                for (JsonNode membership : memberships) {
+                    String groupId = getJsonProperty(membership.get("groupKey"), "id");
+                    if (groupId != null && !groupId.isBlank()) {
+                        groups.add(groupId);
+                    }
+                }
+            }
+            nextPageToken = getJsonProperty(page, "nextPageToken");
+        } while (nextPageToken != null && !nextPageToken.isEmpty());
+        return new ArrayList<>(groups);
+    }
+
+    private List<String> fetchScopedGroups(List<String> scopedGroupEntries, String accessToken, String email) throws IOException {
+        if (scopedGroupEntries == null || scopedGroupEntries.isEmpty()) {
+            throw new IdentityBrokerException("Could not retrieve user groups from Google Cloud Identity API: scoped groups are not configured.");
+        }
+
+        Set<String> groups = new LinkedHashSet<>();
+        for (String scopedGroup : scopedGroupEntries) {
+            String scopedGroupId = scopedGroup;
+            if (scopedGroup.contains("@")) {
+                JsonNode lookupNode = fetchGroupsPage(LOOKUP_GROUP_URL, accessToken, scopedGroup, null);
+                String resourceName = getJsonProperty(lookupNode, "name");
+                if (resourceName == null || resourceName.isBlank()) {
+                    throw new IdentityBrokerException("Could not resolve Google Cloud Identity group ID for [" + scopedGroup + "].");
+                }
+                scopedGroupId = resourceName.startsWith("groups/")
+                        ? resourceName.substring("groups/".length()).trim()
+                        : resourceName.trim();
+            }
+            String endpointUrl = String.format(GET_MEMBERSHIP_GRAPH_URL_TEMPLATE, scopedGroupId);
+            JsonNode responseNode = fetchGroupsPage(endpointUrl, accessToken, email, null);
+            if (responseNode == null || !responseNode.path("done").asBoolean(false)
+                    || responseNode.hasNonNull("error") || !responseNode.path("response").isObject()) {
+                logger.warnf("Incomplete or failed membership graph operation from Google Cloud Identity API [%s]: %s",
+                        endpointUrl, responseNode);
+                throw new IdentityBrokerException("Could not retrieve user groups from Google Cloud Identity API.");
+            }
+            JsonNode graphGroups = responseNode.path("response").get("groups");
+            if (graphGroups != null && graphGroups.isArray()) {
+                for (JsonNode groupNode : graphGroups) {
+                    String groupEmail = getJsonProperty(groupNode.get("groupKey"), "id");
+                    if (groupEmail != null && !groupEmail.isBlank()) {
+                        groups.add(groupEmail);
+                    }
+                }
+            }
+        }
+        return new ArrayList<>(groups);
+    }
+
+    protected JsonNode fetchGroupsPage(String endpointUrl, String accessToken, String email, String pageToken) throws IOException {
+        SimpleHttpRequest request = SimpleHttp.create(session).doGet(endpointUrl)
+                .auth(accessToken)
+                .acceptJson();
+        if (LOOKUP_GROUP_URL.equals(endpointUrl)) {
+            request.param("groupKey.id", email);
+        } else {
+            String escapedEmail = email.replace("\\", "\\\\").replace("'", "\\'");
+            String query = SEARCH_DIRECT_GROUPS_URL.equals(endpointUrl)
+                    ? "member_key_id=='" + escapedEmail + "'"
+                    : "member_key_id=='" + escapedEmail + "' && 'cloudidentity.googleapis.com/groups.discussion_forum' in labels";
+            request.param("query", query);
+            if (pageToken != null && !pageToken.isEmpty()) {
+                request.param("pageToken", pageToken);
+            }
+        }
+        try (SimpleHttpResponse response = request.asResponse()) {
+            if (response.getStatus() != 200) {
+                String errorBody = response.asString();
+                logger.warnf("Failed to retrieve groups from Google Cloud Identity API [%s] (status %d): %s",
+                        endpointUrl, response.getStatus(), errorBody);
+                throw new IdentityBrokerException("Could not retrieve user groups from Google Cloud Identity API.");
+            }
+            return response.asJson();
+        }
     }
 
     @Override

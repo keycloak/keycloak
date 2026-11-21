@@ -24,4 +24,9 @@ image:images/google-add-identity-provider.png[Add Identity Provider]
 . Click *Add*
 . Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the following scopes: *openid* *profile* *email*. See the https://developers.google.com/oauthplayground/[OAuth Playground] for a list of Google scopes.
 . To restrict access to your GSuite organization's members only, enter the G Suite domain into the *Hosted Domain* field.
+. (Optional) To retrieve the user's Google Workspace or Cloud Identity groups using the user's OAuth2 access token and expose them under the `groups` claim, set *Group Retrieval Mode* to `DIRECT`, `TRANSITIVE`, or `SCOPED`.
+`TRANSITIVE` resolves nested group memberships across the entire organization, which requires Google Workspace Enterprise or Cloud Identity Premium and fails with HTTP `403` (aborting login) if any ancestor group in the user's membership tree restricts membership visibility.
+When set to `SCOPED`, specify a comma-separated list of Google Cloud Identity group emails or group IDs in *Scoped Groups* so {project_name} resolves the membership graph between each scoped group and the user without traversing unrelated groups in the organization.
+Ensure the *Cloud Identity API* is enabled in your Google Cloud project.
+When enabled, {project_name} automatically requests the `https://www.googleapis.com/auth/cloud-identity.groups.readonly` scope.
 . Click *Save*.
