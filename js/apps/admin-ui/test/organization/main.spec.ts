@@ -27,6 +27,7 @@ test.describe.serial("Organization CRUD", () => {
   test.beforeAll(() =>
     adminClient.createRealm(realmName, { organizationsEnabled: true }),
   );
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

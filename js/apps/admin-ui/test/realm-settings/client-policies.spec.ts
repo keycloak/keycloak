@@ -48,6 +48,7 @@ test.describe.serial("Realm settings client policies tab tests", () => {
   const placeHolder = "Search client policy";
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
@@ -80,6 +81,7 @@ test.describe.serial("Realm settings client policies tab tests", () => {
     );
 
     test.afterAll(() => adminClient.deleteClientPolicy("Test", realmName));
+
     test.beforeEach(async ({ page }) => {
       await goToClientPoliciesList(page);
       await clickTableRowItem(page, "Test");
@@ -177,9 +179,11 @@ test.describe.serial("Realm settings client policies tab tests", () => {
 
   test.describe.serial("Delete client policy", () => {
     const testPolicy = "DeletablePolicy";
+
     test.beforeEach(() =>
       adminClient.createClientPolicy(testPolicy, "Test Description", realmName),
     );
+
     test.beforeEach(async ({ page }) => {
       await goToClientPoliciesList(page);
     });

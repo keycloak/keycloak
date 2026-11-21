@@ -4,11 +4,7 @@ import { generateEncodedPath } from "../../utils/generateEncodedPath";
 import type { AppRouteObject } from "../../routes";
 
 export type IdentityProviderTab =
-  | "settings"
-  | "mappers"
-  | "organizations"
-  | "permissions"
-  | "events";
+  "settings" | "mappers" | "organizations" | "permissions" | "events";
 
 export type IdentityProviderParams = {
   realm: string;

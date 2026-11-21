@@ -39,8 +39,7 @@ export const UserProfileGroup = ({
 
   const component = renderer?.(attribute);
   const error = get(errors, fieldName(attribute.name)) as
-    | FieldError
-    | undefined;
+    FieldError | undefined;
 
   return (
     <FormGroup

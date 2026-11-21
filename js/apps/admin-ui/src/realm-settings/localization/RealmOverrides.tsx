@@ -146,36 +146,34 @@ export const RealmOverrides = ({
     };
 
     void fetchLocalizationTexts().then((translations) => {
-      const updatedRows: IRow[] = translations.map(
-        (translation): IRow => ({
-          rowEditBtnAriaLabel: () =>
-            t("rowEditBtnAriaLabel", {
-              translation: translation[1],
-            }),
-          rowSaveBtnAriaLabel: () =>
-            t("rowSaveBtnAriaLabel", {
-              translation: translation[1],
-            }),
-          rowCancelBtnAriaLabel: () =>
-            t("rowCancelBtnAriaLabel", {
-              translation: translation[1],
-            }),
-          cells: [
-            {
-              title: translation[0],
-              props: {
-                value: translation[0],
-              },
+      const updatedRows: IRow[] = translations.map((translation): IRow => ({
+        rowEditBtnAriaLabel: () =>
+          t("rowEditBtnAriaLabel", {
+            translation: translation[1],
+          }),
+        rowSaveBtnAriaLabel: () =>
+          t("rowSaveBtnAriaLabel", {
+            translation: translation[1],
+          }),
+        rowCancelBtnAriaLabel: () =>
+          t("rowCancelBtnAriaLabel", {
+            translation: translation[1],
+          }),
+        cells: [
+          {
+            title: translation[0],
+            props: {
+              value: translation[0],
             },
-            {
-              title: translation[1],
-              props: {
-                value: translation[1],
-              },
+          },
+          {
+            title: translation[1],
+            props: {
+              value: translation[1],
             },
-          ],
-        }),
-      );
+          },
+        ],
+      }));
 
       setTableRows(updatedRows);
     });

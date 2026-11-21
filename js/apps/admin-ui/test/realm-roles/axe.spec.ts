@@ -11,6 +11,7 @@ test.describe.serial("Accessibility tests for realm roles", () => {
   const defaultRolesMaster = "default-roles-" + realmName;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

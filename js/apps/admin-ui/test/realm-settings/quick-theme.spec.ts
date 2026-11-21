@@ -8,6 +8,7 @@ test.describe("Realm settings quick theme", () => {
   const realmName = `quick-theme-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async () => {
