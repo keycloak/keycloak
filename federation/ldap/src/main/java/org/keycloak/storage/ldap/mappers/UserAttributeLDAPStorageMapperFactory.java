@@ -20,16 +20,20 @@ package org.keycloak.storage.ldap.mappers;
 import java.util.Arrays;
 import java.util.List;
 
+import java.util.regex.Matcher;
+
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -118,18 +122,49 @@ public class UserAttributeLDAPStorageMapperFactory extends AbstractLDAPStorageMa
         return PROVIDER_ID;
     }
 
-    @Override
-    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
-        checkMandatoryConfigAttribute(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, "User Model Attribute", config);
-        checkMandatoryConfigAttribute(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, "LDAP Attribute", config);
+	@Override
+	public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
+		checkMandatoryConfigAttribute(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, "User Model Attribute", config);
+		checkMandatoryConfigAttribute(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE, "LDAP Attribute", config);
 
-        boolean isBinaryAttribute = config.get(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE, false);
-        boolean alwaysReadValueFromLDAP = config.get(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, false);
-        if (isBinaryAttribute && !alwaysReadValueFromLDAP) {
-            throw new ComponentValidationException("With Binary attribute enabled, the ''Always read value from LDAP'' must be enabled too");
-        }
+		String mapping = config.getConfig().getFirst(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE);
+		boolean isBinaryAttribute = config.get(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE, false);
 
-    }
+		Matcher placeholder = LDAPUtils.matchVariableInString(mapping);
+
+		if (placeholder.find()) {
+			if (placeholder.find()) {
+				throw new ComponentValidationException("LDAP username templates support only one attribute placeholder with optional static prefix and suffix.");
+			}
+			String userModelAttribute = config.getConfig().getFirst(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE);
+
+			if (!UserModel.USERNAME.equalsIgnoreCase(userModelAttribute)) {
+				throw new ComponentValidationException("LDAP attribute templates are supported only for the user model attribute 'username'.");
+			}
+
+			if (isBinaryAttribute) {
+				throw new ComponentValidationException("LDAP attribute templates cannot be used with binary attributes.");
+			}
+
+			ComponentModel parent = realm.getComponent(config.getParentId());
+
+			if (parent == null) {
+				throw new ComponentValidationException("Cannot validate LDAP attribute template: parent LDAP provider was not found.");
+			}
+
+			LDAPConfig parentConfig = new LDAPConfig(parent.getConfig());
+
+			if (parentConfig.getEditMode() != UserStorageProvider.EditMode.READ_ONLY) {
+				throw new ComponentValidationException("LDAP attribute templates are supported only for providers with edit mode READ_ONLY.");
+			}
+		}
+
+		boolean alwaysReadValueFromLDAP = config.get(UserAttributeLDAPStorageMapper.ALWAYS_READ_VALUE_FROM_LDAP, false);
+
+		if (isBinaryAttribute && !alwaysReadValueFromLDAP) {
+			throw new ComponentValidationException("With Binary attribute enabled, the ''Always read value from LDAP'' must be enabled too");
+		}
+	}
 
     @Override
     protected AbstractLDAPStorageMapper createMapper(ComponentModel mapperModel, LDAPStorageProvider federationProvider) {
