@@ -56,6 +56,8 @@ export const PasswordControl = <
         validated={
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
+        aria-invalid={!!fieldState.error}
+        aria-errormessage={fieldState.error ? `${props.name}-error` : undefined}
         isDisabled={props.isDisabled}
         {...rest}
         {...field}

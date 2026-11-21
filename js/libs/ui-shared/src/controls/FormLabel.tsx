@@ -38,7 +38,11 @@ export const FormLabel = ({
   >
     {children}
     {error && (
-      <FormErrorText data-testid={`${name}-helper`} message={error.message} />
+      <FormErrorText
+        id={`${id || name}-error`}
+        data-testid={`${name}-helper`}
+        message={error.message}
+      />
     )}
   </FormGroup>
 );
