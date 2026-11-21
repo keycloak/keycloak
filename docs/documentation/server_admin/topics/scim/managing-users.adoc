@@ -406,7 +406,7 @@ curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
       {
         "op": "remove",
         "path": "groups",
-        "value": [{"value": "{groupId1}"}, {"value": "{groupId2}"}]
+        "value": [{"value": "{groupIdA}"}, {"value": "{groupIdB}"}]
       }
     ]
   }'
