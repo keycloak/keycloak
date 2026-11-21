@@ -39,8 +39,6 @@ public class RoleWorkflowConditionProvider implements WorkflowConditionProvider 
 
     @Override
     public boolean evaluate(WorkflowExecutionContext context) {
-        validate();
-
         RealmModel realm = session.getContext().getRealm();
         UserModel user = session.users().getUserById(realm, context.getResourceId());
 
@@ -55,8 +53,6 @@ public class RoleWorkflowConditionProvider implements WorkflowConditionProvider 
 
     @Override
     public Predicate toPredicate(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> path) {
-        validate();
-
         RoleModel role = getRole(expectedRole, session.getContext().getRealm());
         if (role == null) {
             return cb.disjunction(); // always false
