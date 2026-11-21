@@ -18,7 +18,7 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import liquibase.database.core.MySQLDatabase;
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 
 public class JpaUpdate26_0_0_OrganizationGroupType extends CustomKeycloakTask {
 
@@ -28,9 +28,9 @@ public class JpaUpdate26_0_0_OrganizationGroupType extends CustomKeycloakTask {
         String orgTable = getTableName("ORG");
 
         if (database instanceof MySQLDatabase) {
-            statements.add(new RawSqlStatement("UPDATE " + groupTable + " SET TYPE = 1 WHERE CONVERT(NAME USING utf8) IN (SELECT CONVERT(ID USING utf8) FROM " +  orgTable + ")"));
+            statements.add(new RawParameterizedSqlStatement("UPDATE " + groupTable + " SET TYPE = 1 WHERE CONVERT(NAME USING utf8) IN (SELECT CONVERT(ID USING utf8) FROM " + orgTable + ")"));
         } else {
-            statements.add(new RawSqlStatement("UPDATE " + groupTable + " SET TYPE = 1 WHERE NAME IN (SELECT ID FROM " +  orgTable + ")"));
+            statements.add(new RawParameterizedSqlStatement("UPDATE " + groupTable + " SET TYPE = 1 WHERE NAME IN (SELECT ID FROM " +  orgTable + ")"));
         }
     }
 
