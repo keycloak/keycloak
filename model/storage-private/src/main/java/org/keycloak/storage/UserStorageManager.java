@@ -1181,6 +1181,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         localStorage().unlinkUsers(realm, storageProviderId);
     }
 
+    @Override
+    public Stream<Map.Entry<String, String>> getImportedUserIdsWithAttributeStream(RealmModel realm, String storageProviderId,
+            String attributeName, Integer firstResult, Integer maxResults) {
+        return localStorage().getImportedUserIdsWithAttributeStream(realm, storageProviderId, attributeName, firstResult, maxResults);
+    }
+
     /** {@link UserProvider} methods implementations end here */
 
     @Override

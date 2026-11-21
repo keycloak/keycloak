@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
@@ -99,6 +100,26 @@ public interface UserProvider extends Provider,
      * @param storageProviderId id of the storage provider
      */
     void unlinkUsers(RealmModel realm, String storageProviderId);
+
+    /**
+     * Returns ids of users imported from a specific User Storage Provider (users with federation link set to
+     * {@code storageProviderId}) together with the value of the given attribute (may be {@code null}).
+     * <p>
+     * Users are NOT validated against the storage provider, so this method is cheap and has no side effects.
+     * Results are ordered by user id to allow stable pagination.
+     *
+     * @param realm a reference to the realm
+     * @param storageProviderId id of the storage provider
+     * @param attributeName name of the attribute to return for each user (e.g. {@code LDAP_ID})
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @return stream of entries where key is the user id and value is the attribute value
+     * @throws UnsupportedOperationException if the provider does not support this operation
+     */
+    default Stream<Map.Entry<String, String>> getImportedUserIdsWithAttributeStream(RealmModel realm, String storageProviderId,
+            String attributeName, Integer firstResult, Integer maxResults) {
+        throw new UnsupportedOperationException("Listing imported users is not supported by " + getClass().getName());
+    }
 
     /* USER CONSENTS methods */
 
