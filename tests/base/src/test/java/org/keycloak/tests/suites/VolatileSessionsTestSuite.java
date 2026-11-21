@@ -11,6 +11,7 @@ import org.keycloak.tests.model.UserSessionProviderOfflineTest;
 import org.keycloak.tests.model.UserSessionProviderTest;
 import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
 import org.keycloak.tests.oidc.LightWeightAccessTokenTest;
+import org.keycloak.tests.oidc.UserInfoTest;
 import org.keycloak.tests.session.LastSessionRefreshUnitTest;
 import org.keycloak.tests.session.SessionTimeoutValidationTest;
 import org.keycloak.tests.sessionlimits.KcOidcUserSessionLimitsBrokerTest;
@@ -35,7 +36,8 @@ import org.junit.platform.suite.api.Suite;
         SessionTimeoutValidationTest.class,
         LastSessionRefreshUnitTest.class,
         KcAdmSessionTest.class,
-        LightWeightAccessTokenTest.class
+        LightWeightAccessTokenTest.class,
+        UserInfoTest.class
 })
 public class VolatileSessionsTestSuite {
 
