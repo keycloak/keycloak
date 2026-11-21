@@ -19,6 +19,7 @@ package org.keycloak.jose.jws;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.JOSE;
@@ -50,7 +51,7 @@ public class JWSInput implements JOSE {
             content = Base64Url.decode(encodedContent);
             if (parts.length > 2) {
                 encodedSignature = parts[2];
-                signature = Base64Url.decode(encodedSignature);
+                signature = decodeSignature(encodedSignature);
 
             }
             byte[] headerBytes = Base64Url.decode(encodedHeader);
@@ -58,6 +59,18 @@ public class JWSInput implements JOSE {
         } catch (Throwable t) {
             throw new JWSInputException(t);
         }
+    }
+
+    // The signing input is built from the raw header and payload strings, but the signature
+    // is compared as decoded bytes, so only accept the unpadded base64url form (RFC 7515
+    // section 2). Otherwise padding, '+'/'/', trailing garbage after '=' or non-zero unused
+    // bits would give a signed token any number of distinct accepted string forms.
+    private static byte[] decodeSignature(String encoded) {
+        byte[] decoded = Base64.getUrlDecoder().decode(encoded);
+        if (!Base64Url.encode(decoded).equals(encoded)) {
+            throw new IllegalArgumentException("Signature is not canonical base64url");
+        }
+        return decoded;
     }
 
     public String getWireString() {
