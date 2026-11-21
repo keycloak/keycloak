@@ -35,6 +35,7 @@ import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
@@ -42,6 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
 public class OrganizationSharedIdpBrokerTest {
@@ -91,8 +93,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("alice@" + ORG_A_DOMAIN);
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "Should be redirected to provider realm");
+        assertRedirectedToProviderRealm("Should be redirected to provider realm");
 
         loginPage.fillLogin("alice", "password");
         loginPage.submit();
@@ -120,8 +121,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("bob@" + ORG_B_DOMAIN);
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "Should be redirected to provider realm");
+        assertRedirectedToProviderRealm("Should be redirected to provider realm");
 
         loginPage.fillLogin("bob", "password");
         loginPage.submit();
@@ -151,8 +151,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("newuser@" + ORG_B_DOMAIN);
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "Should be redirected to provider realm via org-B's domain routing");
+        assertRedirectedToProviderRealm("Should be redirected to provider realm via org-B's domain routing");
 
         loginPage.fillLogin("alice", "password");
         loginPage.submit();
@@ -205,8 +204,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("alice@" + ORG_A_DOMAIN);
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "Should be redirected to provider realm");
+        assertRedirectedToProviderRealm("Should be redirected to provider realm");
 
         loginPage.fillLogin("alice", "password");
         loginPage.submit();
@@ -289,8 +287,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("carol@hr.acme.com");
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "Should be redirected to provider realm via IdP-Y");
+        assertRedirectedToProviderRealm("Should be redirected to provider realm via IdP-Y");
 
         loginPage.fillLogin("carol", "password");
         loginPage.submit();
@@ -320,8 +317,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("dave@sales.acme.com");
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "Should be redirected to provider realm via IdP-X");
+        assertRedirectedToProviderRealm("Should be redirected to provider realm via IdP-X");
 
         loginPage.fillLogin("dave", "password");
         loginPage.submit();
@@ -372,8 +368,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("alice@acme.com");
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "alice should be redirected to provider realm via IdP-X");
+        assertRedirectedToProviderRealm("alice should be redirected to provider realm via IdP-X");
 
         loginPage.fillLogin("alice", "password");
         loginPage.submit();
@@ -400,8 +395,7 @@ public class OrganizationSharedIdpBrokerTest {
         loginUsernamePage.fillLoginWithUsernameOnly("bob@partner.com");
         loginUsernamePage.submit();
 
-        assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + providerRealm.getName() + "/"),
-                "bob should be redirected to provider realm via IdP-Y");
+        assertRedirectedToProviderRealm("bob should be redirected to provider realm via IdP-Y");
 
         loginPage.fillLogin("bob", "password");
         loginPage.submit();
@@ -429,6 +423,16 @@ public class OrganizationSharedIdpBrokerTest {
 
         assertTrue(Objects.requireNonNull(driver.getCurrentUrl()).contains("/realms/" + consumerRealm.getName() + "/"),
                 "carol should stay on consumer realm (non-federated domain)");
+    }
+
+    // The submit returns before the browser has navigated, so wait for the redirect instead of reading the URL once
+    private void assertRedirectedToProviderRealm(String message) {
+        String realmPath = "/realms/" + providerRealm.getName() + "/";
+        try {
+            driver.waiting().until(d -> d.getCurrentUrl() != null && d.getCurrentUrl().contains(realmPath));
+        } catch (TimeoutException e) {
+            fail(message + ", but the URL is " + driver.getCurrentUrl());
+        }
     }
 
     private void createSharedIdpSetup() {
