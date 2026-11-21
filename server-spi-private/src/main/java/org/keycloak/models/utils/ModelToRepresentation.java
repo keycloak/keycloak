@@ -1573,6 +1573,7 @@ public class ModelToRepresentation {
         rep.setIssuedAt(model.getIssuedAt());
         rep.setExpiresAt(model.getExpiresAt());
         rep.setClientId(model.getClientId());
+        rep.setCompleted(model.isCompleted());
         return rep;
     }
 

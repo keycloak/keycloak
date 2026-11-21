@@ -50,6 +50,9 @@ public class IssuedVerifiableCredentialEntity {
     @Column(name="REVISION")
     protected String revision;
 
+    @Column(name="COMPLETED")
+    protected boolean completed;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -104,6 +107,14 @@ public class IssuedVerifiableCredentialEntity {
 
     public void setRevision(String revision) {
         this.revision = revision;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.completed = completed;
     }
 
     @Override

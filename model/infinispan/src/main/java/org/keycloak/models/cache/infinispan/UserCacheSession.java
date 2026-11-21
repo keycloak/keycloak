@@ -967,6 +967,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
+    public boolean markIssuedVerifiableCredentialCompleted(String credentialId) {
+        return getDelegate().markIssuedVerifiableCredentialCompleted(credentialId);
+    }
+
+    @Override
     public boolean removeIssuedVerifiableCredential(String credentialId) {
         return getDelegate().removeIssuedVerifiableCredential(credentialId);
     }

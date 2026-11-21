@@ -36,8 +36,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.oneOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 
@@ -392,6 +394,25 @@ public class IssuedVerifiableCredentialTest extends AbstractUserTest {
         runOnServer.run(session -> session.users().removeExpiredIssuedVerifiableCredentials());
         issuedCredentials = userResource.verifiableCredentials().getIssuedCredentials();
         assertThat(issuedCredentials, hasSize(0));
+    }
+
+    @Test
+    @DatabaseTest
+    public void testMarkIssuedCredentialCompleted() {
+        String userId = createUser();
+        createIssuedVcViaModelLayer(userId, CREDENTIAL_TYPE_1, "wallet-123", "rev-001");
+
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        IssuedVerifiableCredentialRepresentation issuedCred = userResource.verifiableCredentials().getIssuedCredentials().get(0);
+        assertFalse(issuedCred.isCompleted(), "Newly added issued credential must not be completed");
+
+        String issuedCredId = issuedCred.getId();
+        runOnServer.run(session -> assertTrue(session.users().markIssuedVerifiableCredentialCompleted(issuedCredId)));
+
+        List<IssuedVerifiableCredentialRepresentation> afterMark = userResource.verifiableCredentials().getIssuedCredentials();
+        assertTrue(afterMark.get(0).isCompleted(), "Completed flag should be exposed on the issued-credential list");
+
+        runOnServer.run(session -> assertFalse(session.users().markIssuedVerifiableCredentialCompleted("non-existent-id")));
     }
 
     // Helper methods
