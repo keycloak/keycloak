@@ -26,6 +26,7 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.client.Keycloak;
@@ -43,6 +44,7 @@ import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectCryptoHelper;
@@ -70,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  *
@@ -239,6 +242,77 @@ public class CredentialsTest {
         cert = certRsc.getKeyInfo();
         assertEquals(certificate2, cert.getCertificate(), "cert properly set");
         assertNull(cert.getPrivateKey(), "privateKey nullified");
+    }
+
+    @Test
+    @DatabaseTest
+    public void testUploadKeystoreWithoutKeyAlias() throws Exception {
+        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
+
+        KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
+
+        KeystoreInfo generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, preferredKeystoreType, "clientkey", "storepass", "keypass");
+        MultipartFormDataOutput form = new MultipartFormDataOutput();
+
+        form.addFormData("keystoreFormat", preferredKeystoreType.toString(), MediaType.TEXT_PLAIN_TYPE);
+        // intentionally no "keyAlias" part
+        form.addFormData("keyPassword", "keypass", MediaType.TEXT_PLAIN_TYPE);
+        form.addFormData("storePassword", "storepass", MediaType.TEXT_PLAIN_TYPE);
+
+        try (FileInputStream fs = new FileInputStream(generatedKeystore.getKeystoreFile())) {
+            form.addFormData("file", fs.readAllBytes(), MediaType.APPLICATION_OCTET_STREAM_TYPE);
+        }
+
+        // Missing keyAlias must be rejected with 400, not a 500 (NPE)
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> certRsc.uploadJksCertificate(form));
+        assertEquals("keyAlias cannot be null or empty", ex.getResponse().readEntity(OAuth2ErrorRepresentation.class).getError());
+    }
+
+    @Test
+    @DatabaseTest
+    public void testUploadKeystoreWithBlankKeyAlias() throws Exception {
+        assertInvalidKeyAliasKeepsCertificate("", "keyAlias cannot be null or empty");
+        assertInvalidKeyAliasKeepsCertificate("   ", "keyAlias cannot be null or empty");
+    }
+
+    @Test
+    @DatabaseTest
+    public void testUploadKeystoreWithUnknownKeyAlias() throws Exception {
+        assertInvalidKeyAliasKeepsCertificate("does-not-exist", "certificate-not-found");
+    }
+
+    private void assertInvalidKeyAliasKeepsCertificate(String keyAlias, String expectedError) throws Exception {
+        ClientAttributeCertificateResource certRsc = accountClient.getCertficateResource("jwt.credential");
+
+        KeystoreUtil.KeystoreFormat preferredKeystoreType = KeystoreUtil.KeystoreFormat.valueOf(adminClient.serverInfo().getInfo().getCryptoInfo().getSupportedKeystoreTypes().get(0));
+        KeystoreInfo generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, preferredKeystoreType, "clientkey", "storepass", "keypass");
+        byte[] content;
+        try (FileInputStream fs = new FileInputStream(generatedKeystore.getKeystoreFile())) {
+            content = fs.readAllBytes();
+        }
+
+        // Upload with a valid alias first, so there is a certificate that must not be removed
+        MultipartFormDataOutput validForm = new MultipartFormDataOutput();
+        validForm.addFormData("keystoreFormat", preferredKeystoreType.toString(), MediaType.TEXT_PLAIN_TYPE);
+        validForm.addFormData("keyAlias", "clientkey", MediaType.TEXT_PLAIN_TYPE);
+        validForm.addFormData("keyPassword", "keypass", MediaType.TEXT_PLAIN_TYPE);
+        validForm.addFormData("storePassword", "storepass", MediaType.TEXT_PLAIN_TYPE);
+        validForm.addFormData("file", content, MediaType.APPLICATION_OCTET_STREAM_TYPE);
+        certRsc.uploadJksCertificate(validForm);
+
+        MultipartFormDataOutput invalidForm = new MultipartFormDataOutput();
+        invalidForm.addFormData("keystoreFormat", preferredKeystoreType.toString(), MediaType.TEXT_PLAIN_TYPE);
+        invalidForm.addFormData("keyAlias", keyAlias, MediaType.TEXT_PLAIN_TYPE);
+        invalidForm.addFormData("keyPassword", "keypass", MediaType.TEXT_PLAIN_TYPE);
+        invalidForm.addFormData("storePassword", "storepass", MediaType.TEXT_PLAIN_TYPE);
+        invalidForm.addFormData("file", content, MediaType.APPLICATION_OCTET_STREAM_TYPE);
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> certRsc.uploadJksCertificate(invalidForm));
+        assertEquals(expectedError, ex.getResponse().readEntity(OAuth2ErrorRepresentation.class).getError());
+
+        // The previously stored certificate must be untouched
+        CertificateRepresentation cert = certRsc.getKeyInfo();
+        assertEquals(generatedKeystore.getCertificateInfo().getCertificate(), cert.getCertificate(), "cert must not be removed");
     }
 
     @Test
