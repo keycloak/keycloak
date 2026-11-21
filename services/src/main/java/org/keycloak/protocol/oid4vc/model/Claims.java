@@ -18,7 +18,6 @@ package org.keycloak.protocol.oid4vc.model;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Optional;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -31,10 +30,8 @@ public class Claims extends ArrayList<Claim> {
 
     public static Claims parse(KeycloakSession keycloakSession, CredentialScopeModel credentialScope) {
         Claims claims = new Claims();
-        credentialScope.getOid4vcProtocolMappersStream().forEach(protocolMapper -> {
-            Optional<Claim> claim = Claim.parse(keycloakSession, credentialScope.getFormat(), protocolMapper);
-            claim.ifPresent(claims::add);
-        });
+        credentialScope.getOid4vcProtocolMappersStream().forEach(protocolMapper ->
+                claims.addAll(Claim.parseAll(keycloakSession, credentialScope.getFormat(), protocolMapper)));
         return claims;
     }
 

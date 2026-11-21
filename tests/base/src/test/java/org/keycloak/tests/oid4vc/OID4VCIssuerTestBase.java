@@ -58,6 +58,7 @@ import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyExecutorF
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
+import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGraphQLClaimMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
@@ -1269,7 +1270,7 @@ public abstract class OID4VCIssuerTestBase {
             return protocolMapperRepresentation;
         }
 
-        static ProtocolMapperRepresentation getSubjectIdMapper(String subjectProperty, String attributeName) {
+        public static ProtocolMapperRepresentation getSubjectIdMapper(String subjectProperty, String attributeName) {
             ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
             protocolMapperRepresentation.setName(attributeName + "-mapper");
             protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
@@ -1320,6 +1321,27 @@ public abstract class OID4VCIssuerTestBase {
             protocolMapperRepresentation.setConfig(
                     Map.of("claim.name", "roles", "clientId", clientId)
             );
+            return protocolMapperRepresentation;
+        }
+
+        public static ProtocolMapperRepresentation getGraphQLClaimMapper(String claimName, String endpoint, String query,
+                                                                        String variableMapping, String responsePath) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+            protocolMapperRepresentation.setName(claimName + "-graphql-mapper");
+            protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+            protocolMapperRepresentation.setProtocolMapper(OID4VCGraphQLClaimMapper.MAPPER_ID);
+
+            Map<String, String> configMap = new HashMap<>();
+            configMap.put(OID4VCMapper.CLAIM_NAME, claimName);
+            configMap.put(OID4VCGraphQLClaimMapper.GRAPHQL_ENDPOINT, endpoint);
+            configMap.put(OID4VCGraphQLClaimMapper.GRAPHQL_QUERY, query);
+            Optional.ofNullable(variableMapping)
+                    .ifPresent(value -> configMap.put(OID4VCGraphQLClaimMapper.GRAPHQL_VARIABLE_MAPPING, value));
+            Optional.ofNullable(responsePath)
+                    .ifPresent(value -> configMap.put(OID4VCGraphQLClaimMapper.RESPONSE_PATH, value));
+
+            protocolMapperRepresentation.setConfig(configMap);
             return protocolMapperRepresentation;
         }
 
