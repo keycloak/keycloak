@@ -48,7 +48,6 @@ import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
@@ -57,7 +56,6 @@ import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.BaseResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SearchOptions;
 import org.keycloak.scim.resource.spi.SortField;
-import org.keycloak.services.RolesService;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientSortField;
 import org.keycloak.services.client.SimpleClientModel;
@@ -75,9 +73,9 @@ import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.AdminRoot;
-import org.keycloak.services.resources.admin.RoleContainerResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.roles.RoleService;
 import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
@@ -101,7 +99,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     private final AdminEventBuilder adminEventBuilder;
     private final RealmModel realm;
     private final JakartaValidatorProvider validator;
-    private final RolesService rolesService;
+    private final RoleService roleService;
     
     public ClientResourceTypeProvider(KeycloakSession session) {
         super(session, SCHEMAS.values().stream());
@@ -110,7 +108,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
         this.permissions = AdminPermissions.evaluator(session, realm, authInfo);
         this.adminEventBuilder = new AdminEventV2Builder(realm, permissions.adminAuth(), session, session.getContext().getConnection()).resource(ResourceType.CLIENT);
         this.validator = new HibernateValidatorProvider(new ValidationContext(session, realm));
-        this.rolesService = new RolesService(session, realm, permissions, adminEventBuilder);
+        this.roleService = new RoleService(session, realm, permissions);
     }
 
     public Map<String, BaseClientModelSchema<? extends BaseClientRepresentation>> getSchemaMap() {
@@ -234,8 +232,7 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
             }
                     
             // Setup roles
-            var clientRoles = rolesService.resource(model);
-            handleRoles(clientRoles, client.getRoles());
+            handleRoles(model, client.getRoles());
     
             // OIDC specific
             if (client instanceof OIDCClientRepresentation oidcClient) {
@@ -473,25 +470,25 @@ public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientM
     /**
      * Declaratively manage client roles - ensures the client has exactly the roles specified in 'rolesFromRep'
      * <p>
-     * Reuses API v1 logic
+     * Role events are intentionally not fired here, the client event carries the change.
      */
-    protected void handleRoles(RoleContainerResource clientRoles, Set<String> rolesFromRep) {
+    protected void handleRoles(ClientModel client, Set<String> rolesFromRep) {
         Set<String> desiredRoleNames = Optional.ofNullable(rolesFromRep)
                 .orElse(Collections.emptySet());
 
-        Set<String> currentRoleNames = clientRoles.getRoles(null, null, null, false)
-                .map(RoleRepresentation::getName)
+        Set<String> currentRoleNames = roleService.list(client, null, null, null)
+                .map(RoleModel::getName)
                 .collect(Collectors.toSet());
 
         // Add missing roles (in desiredRoleNames but not in currentRoleNames)
         desiredRoleNames.stream()
                 .filter(roleName -> !currentRoleNames.contains(roleName))
-                .forEach(roleName -> clientRoles.doCreateRole(new RoleRepresentation(roleName, "", false)));
+                .forEach(roleName -> roleService.create(client, roleName, "", null));
 
         // Remove extra roles (in currentRoleNames but not in desiredRoleNames)
         currentRoleNames.stream()
                 .filter(role -> !desiredRoleNames.contains(role))
-                .forEach(clientRoles::deleteRole);
+                .forEach(roleName -> roleService.delete(client, roleName));
     }
 
     /**
