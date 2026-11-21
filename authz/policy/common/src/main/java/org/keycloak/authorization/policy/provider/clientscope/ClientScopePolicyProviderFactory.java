@@ -259,8 +259,7 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                     continue;
                 }
                 String clientScopeName = definition.getId();
-                ClientScopeModel clientScope = realm.getClientScopesStream()
-                    .filter(scope -> scope.getName().equals(clientScopeName)).findAny().orElse(null);
+                ClientScopeModel clientScope = realm.getClientScopeByName(clientScopeName);
 
                 if (clientScope == null) {
                     clientScope = realm.getClientScopeById(clientScopeName);

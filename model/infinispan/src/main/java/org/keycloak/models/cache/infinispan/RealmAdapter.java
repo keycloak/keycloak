@@ -1631,6 +1631,12 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public ClientScopeModel getClientScopeByName(String name) {
+        if (isUpdated()) return updated.getClientScopeByName(name);
+        return cacheSession.getClientScopeByName(this, name);
+    }
+
+    @Override
     public ClientScopeModel addClientScope(String name) {
         RealmModel realm = getDelegateForUpdate();
         ClientScopeModel clientScope = updated.addClientScope(name);
