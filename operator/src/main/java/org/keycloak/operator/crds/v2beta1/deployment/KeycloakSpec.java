@@ -48,6 +48,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -106,6 +108,15 @@ public class KeycloakSpec {
 
     @JsonPropertyDescription("In this section you can configure Keycloak truststores.")
     private Map<String, Truststore> truststores = new LinkedHashMap<>();
+
+    @JsonPropertyDescription("Additional volumes to add to the Keycloak pods, for example a ConfigMap holding custom themes.\n" +
+            "Reference them by name from volumeMounts.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<Volume> volumes = new ArrayList<>();
+
+    @JsonPropertyDescription("Additional volume mounts for the Keycloak container, referencing entries in volumes.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<VolumeMount> volumeMounts = new ArrayList<>();
 
     @JsonProperty("cache")
     @JsonPropertyDescription("In this section you can configure Keycloak's cache")
@@ -299,6 +310,28 @@ public class KeycloakSpec {
             truststores = new LinkedHashMap<>();
         }
         this.truststores = truststores;
+    }
+
+    public List<Volume> getVolumes() {
+        return volumes;
+    }
+
+    public void setVolumes(List<Volume> volumes) {
+        if (volumes == null) {
+            volumes = new ArrayList<>();
+        }
+        this.volumes = volumes;
+    }
+
+    public List<VolumeMount> getVolumeMounts() {
+        return volumeMounts;
+    }
+
+    public void setVolumeMounts(List<VolumeMount> volumeMounts) {
+        if (volumeMounts == null) {
+            volumeMounts = new ArrayList<>();
+        }
+        this.volumeMounts = volumeMounts;
     }
 
     public CacheSpec getCacheSpec() {
