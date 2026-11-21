@@ -802,6 +802,9 @@ public class ClientIdMetadataDocumentTest {
         Map<String, String> m;
         List<String> optionalScopeList;
         if (expectedExpiry > 0) {
+            // move halfway through the expected lifetime so that a shorter actual cache time would fail the test
+            timeOffSet.set(expectedExpiry / 2);
+
             // do authorization code flow again, but registered client metadata is still effective
             code = loginUserAndGetCode(false);
             signedJwt = createSignedRequestToken();
@@ -857,7 +860,7 @@ public class ClientIdMetadataDocumentTest {
         updatePolicy(conditionConfig, executorConfig);
 
         // CIMD Executor's min cache time default value: 300 sec
-        // CIMD Executor's max cache time default value: 259200 sec
+        // CIMD Executor's max cache time default value: 2592000 sec
 
         // no Cache-Control header : cached in min cache time
         testClientIdMetadataDocumentExecutorCacheControl(null, CIMD_EXECUTOR_MIN_CACHE_TIME_SEC);
@@ -887,8 +890,8 @@ public class ClientIdMetadataDocumentTest {
         // under the min cache time : 5 -> 300
         testClientIdMetadataDocumentExecutorCacheControl("max-age=5", CIMD_EXECUTOR_MIN_CACHE_TIME_SEC);
 
-        // over the max cache time : 365000 -> 259200
-        testClientIdMetadataDocumentExecutorCacheControl("s-maxage=365000", 259200);
+        // over the max cache time : 3650000 -> 2592000
+        testClientIdMetadataDocumentExecutorCacheControl("s-maxage=3650000", 2592000);
     }
 
     @Test
