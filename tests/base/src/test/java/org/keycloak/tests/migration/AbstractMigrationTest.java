@@ -510,6 +510,28 @@ public abstract class AbstractMigrationTest {
         assertClientLoginTheme(migrationRealm, "migration-test-client", PREFERRED_DEFAULT_LOGIN_THEME);
         assertClientLoginTheme(migrationRealm, "broker", "keycloak-custom");
         assertClientLoginTheme(migrationRealm, "admin-cli", null);
+
+        assertConditional2faExecutionsMigrated(migrationRealm, DefaultAuthenticationFlows.BROWSER_FLOW);
+        assertConditional2faExecutionsMigrated(migrationRealm, DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
+    }
+
+    private void assertConditional2faExecutionsMigrated(RealmResource realm, String flowAlias) {
+        List<AuthenticationExecutionInfoRepresentation> executions = realm.flows().getExecutions(flowAlias);
+        AuthenticationExecutionInfoRepresentation otp = executions.stream()
+                .filter(e -> "auth-otp-form".equals(e.getProviderId()))
+                .findFirst()
+                .orElseThrow();
+        // The existing OTP requirement must not change
+        assertEquals(AuthenticationExecutionModel.Requirement.REQUIRED.name(), otp.getRequirement());
+
+        for (String providerId : List.of("conditional-credential", "webauthn-authenticator", "auth-recovery-authn-code-form")) {
+            List<AuthenticationExecutionInfoRepresentation> added = executions.stream()
+                    .filter(e -> providerId.equals(e.getProviderId()))
+                    .toList();
+            assertThat("Missing " + providerId + " in " + flowAlias, added, hasSize(1));
+            assertEquals(otp.getLevel(), added.get(0).getLevel());
+            assertEquals(AuthenticationExecutionModel.Requirement.DISABLED.name(), added.get(0).getRequirement());
+        }
     }
 
     private void testClientContainsExpectedClientScopes() {
