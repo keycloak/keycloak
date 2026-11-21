@@ -30,6 +30,7 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorM
 import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.WebAuthnSignatureAlgorithms;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -40,9 +41,9 @@ import org.keycloak.models.credential.dto.WebAuthnCredentialPresentationData;
 import org.keycloak.util.JsonSerialization;
 
 import com.webauthn4j.WebAuthnAuthenticationManager;
-import com.webauthn4j.authenticator.Authenticator;
-import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.credential.CredentialRecord;
+import com.webauthn4j.credential.CredentialRecordImpl;
 import com.webauthn4j.data.AuthenticationData;
 import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticatorTransport;
@@ -70,13 +71,11 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     private final KeycloakSession session;
     private final WebAuthnMetadataService metadataService;
     private final CredentialPublicKeyConverter credentialPublicKeyConverter;
-    private final AttestationStatementConverter attestationStatementConverter;
 
     public WebAuthnCredentialProvider(KeycloakSession session, WebAuthnMetadataService metadataService, ObjectConverter objectConverter) {
         this.session = session;
         this.metadataService = metadataService;
         this.credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
-        this.attestationStatementConverter = new AttestationStatementConverter(objectConverter);
     }
 
     @Override
@@ -198,20 +197,19 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return false;
-        return user.credentialManager().getStoredCredentialsByTypeStream(credentialType).count() > 0;
+        return user.credentialManager().getStoredCredentialsByTypeStream(credentialType).findAny().isPresent();
     }
 
 
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
-        if (!WebAuthnCredentialModelInput.class.isInstance(input)) return false;
+        if (!(input instanceof WebAuthnCredentialModelInput context)) return false;
 
-        WebAuthnCredentialModelInput context = WebAuthnCredentialModelInput.class.cast(input);
         List<CredentialModel> credentials = user.credentialManager().getStoredCredentialsByTypeStream(getType())
                 .collect(Collectors.toList());
 
         WebAuthnAuthenticationManager webAuthnAuthenticationManager = getWebAuthnAuthenticationManager();
-        AuthenticationData authenticationData = null;
+        AuthenticationData authenticationData;
 
         try {
             for (CredentialModel credModel : credentials) {
@@ -219,11 +217,24 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                 WebAuthnCredentialModelInput auth = getCredentialInputFromCredentialModel(webAuthnCredModel);
 
                 byte[] credentialId = auth.getAttestedCredentialData().getCredentialId();
+
                 if (Arrays.equals(credentialId, context.getAuthenticationRequest().getCredentialId())) {
-                    Authenticator authenticator = new AuthenticatorImpl(
-                            auth.getAttestedCredentialData(),
+                    if (!WebAuthnSignatureAlgorithms.isEnabled(auth.getAttestedCredentialData().getCOSEKey().getAlgorithm())) {
+                        logger.debug("WebAuthn credential signature algorithm is disabled");
+                        return false;
+                    }
+                    // Legacy storage does not include UV initialization or backup flags.
+                    CredentialRecord credentialRecord = new CredentialRecordImpl(
                             auth.getAttestationStatement(),
-                            auth.getCount()
+                            null,
+                            null,
+                            null,
+                            auth.getCount(),
+                            auth.getAttestedCredentialData(),
+                            null,
+                            null,
+                            null,
+                            auth.getTransports()
                     );
 
                     // parse
@@ -232,7 +243,8 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     // validate
                     AuthenticationParameters authenticationParameters = new AuthenticationParameters(
                             context.getAuthenticationParameters().getServerProperty(),
-                            authenticator,
+                            credentialRecord,
+                            List.of(credentialId),
                             context.getAuthenticationParameters().isUserVerificationRequired()
                     );
                     webAuthnAuthenticationManager.verify(authenticationData, authenticationParameters);
@@ -285,7 +297,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                 AssertUtil.notNull(collectedClientData, "collectedClientData must not be null");
                 AssertUtil.notNull(serverProperty, "serverProperty must not be null");
                 final Origin clientOrigin = collectedClientData.getOrigin();
-                if (serverProperty.getOrigins().contains(clientOrigin)) return;
+                if (serverProperty.getOriginPredicate().test(clientOrigin)) return;
                 // https://github.com/w3c/webauthn/issues/1297
                 if (origins.contains(clientOrigin)) return;
                 throw new BadOriginException("The collectedClientData '" + clientOrigin + "' origin doesn't match any of the preconfigured origins.");

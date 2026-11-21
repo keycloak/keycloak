@@ -29,22 +29,13 @@ import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelectorControl } from "../../components/time-selector/TimeSelectorControl";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 
 import { useAdminClient } from "../../admin-client";
 import "./webauthn-policy.css";
 
-const SIGNATURE_ALGORITHMS = [
-  "ES256",
-  "ES384",
-  "ES512",
-  "RS256",
-  "RS384",
-  "RS512",
-  "Ed25519",
-  "RS1",
-] as const;
 const ATTESTATION_PREFERENCE = [
   "not specified",
   "none",
@@ -129,6 +120,7 @@ export const WebauthnPolicy = ({
   isPasswordLess = false,
 }: WebauthnPolicyProps) => {
   const { adminClient } = useAdminClient();
+  const { cryptoInfo } = useServerInfo();
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -226,7 +218,7 @@ export const WebauthnPolicy = ({
             name={`${namePrefix}SignatureAlgorithms`}
             label={t("webAuthnPolicySignatureAlgorithms")}
             labelIcon={t("webAuthnPolicySignatureAlgorithmsHelp")}
-            options={SIGNATURE_ALGORITHMS}
+            options={cryptoInfo?.webAuthnSignatureAlgorithms ?? []}
             isMultiSelect
           />
           <TextControl
