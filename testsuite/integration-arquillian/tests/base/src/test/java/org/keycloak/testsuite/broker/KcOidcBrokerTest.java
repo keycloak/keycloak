@@ -422,6 +422,18 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     @Test
+    public void testUsernameSyncOnForceSync() {
+        checkUpdatedUserAttributesIdP(true, false, true, false);
+        checkUpdatedUserAttributesIdP(true, true, true, false);
+        checkUpdatedUserAttributesIdP(false, false, true, false);
+        checkUpdatedUserAttributesIdP(false, true, true, false);
+        checkUpdatedUserAttributesIdP(true, false, false, true);
+        checkUpdatedUserAttributesIdP(true, true, false, true);
+        checkUpdatedUserAttributesIdP(false, false, false, true);
+        checkUpdatedUserAttributesIdP(false, true, false, true);
+    }
+
+    @Test
     public void testTrustEmailBasedOnEmailVerifiedClaimSyncModeForce() {
         RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
         List<UserRepresentation> users = providerRealm.users().search(bc.getUserLogin());
@@ -742,6 +754,13 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
     }
 
     private void checkUpdatedUserAttributesIdP(boolean isForceSync, boolean isTrustEmail) {
+        checkUpdatedUserAttributesIdP(isForceSync, isTrustEmail, false, false);
+    }
+
+    private void checkUpdatedUserAttributesIdP(boolean isForceSync, boolean isTrustEmail, boolean editUsernameAllowed, boolean registrationEmailAsUsername) {
+        deleteAllCookiesForRealm(bc.consumerRealmName());
+        deleteAllCookiesForRealm(bc.providerRealmName());
+
         final String IDP_NAME = getBrokerConfiguration().getIDPAlias();
         final String USERNAME = "demo-user";
         final String PASSWORD = "demo-pwd";
@@ -758,12 +777,32 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         RealmResource providerRealmResource = realmsResouce().realm(bc.providerRealmName());
         allowUserEdit(providerRealmResource);
 
+        RealmResource consumerRealmResource = realmsResouce().realm(bc.consumerRealmName());
+        RealmRepresentation origRealm = consumerRealmResource.toRepresentation();
+        boolean origEdit = origRealm.isEditUsernameAllowed() != null && origRealm.isEditUsernameAllowed();
+        boolean origRegEmail = origRealm.isRegistrationEmailAsUsername() != null && origRealm.isRegistrationEmailAsUsername();
+
+        boolean changeEdit = editUsernameAllowed != origEdit;
+        boolean changeReg = registrationEmailAsUsername != origRegEmail;
+
+        if (changeEdit || changeReg) {
+            RealmRepresentation consumerRealm = consumerRealmResource.toRepresentation();
+            if (changeEdit) consumerRealm.setEditUsernameAllowed(editUsernameAllowed);
+            if (changeReg) consumerRealm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            consumerRealmResource.update(consumerRealm);
+        }
+
+        final String initialConsumerUsername = registrationEmailAsUsername ? EMAIL : USERNAME;
+        final String expectedFinalUsername = isForceSync && registrationEmailAsUsername ? NEW_EMAIL :
+                (isForceSync && editUsernameAllowed ? NEW_USERNAME : initialConsumerUsername);
+
         UsersResource providerUsersResource = providerRealmResource.users();
 
         String providerUserID = createUser(bc.providerRealmName(), USERNAME, PASSWORD, FIRST_NAME, LAST_NAME, EMAIL,
                 user -> user.setEmailVerified(true));
         UserResource providerUserResource = providerUsersResource.get(providerUserID);
 
+        String consumerUserID = null;
         try {
             IdentityProviderResource consumerIdentityResource = getIdentityProviderResource();
             IdentityProviderRepresentation idProvider = consumerIdentityResource.toRepresentation();
@@ -781,25 +820,26 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, USERNAME, PASSWORD);
 
-            UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.providerRealmName()), USERNAME);
+            UserRepresentation userRepresentation = providerUserResource.toRepresentation();
 
             assertThat(userRepresentation.getUsername(), Matchers.equalTo(USERNAME));
             assertThat(userRepresentation.getEmail(), Matchers.equalTo(EMAIL));
             assertThat(userRepresentation.getFirstName(), Matchers.equalTo(FIRST_NAME));
             assertThat(userRepresentation.getLastName(), Matchers.equalTo(LAST_NAME));
 
-            RealmResource consumerRealmResource = realmsResouce().realm(bc.consumerRealmName());
-            List<UserRepresentation> foundUsers = consumerRealmResource.users().searchByUsername(USERNAME, true);
+            List<UserRepresentation> foundUsers = registrationEmailAsUsername 
+                    ? consumerRealmResource.users().searchByEmail(EMAIL, true)
+                    : consumerRealmResource.users().searchByUsername(USERNAME, true);
             assertThat(foundUsers, Matchers.hasSize(1));
             UserRepresentation consumerUser = foundUsers.get(0);
             assertThat(consumerUser, Matchers.notNullValue());
-            String consumerUserID = consumerUser.getId();
+            consumerUserID = consumerUser.getId();
             UserResource consumerUserResource = consumerRealmResource.users().get(consumerUserID);
 
             checkFederatedIdentityLink(consumerUserResource, providerUserID, USERNAME);
             assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.equalTo(isTrustEmail));
 
-            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), USERNAME);
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), initialConsumerUsername);
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), USERNAME);
 
             // set email verified to true on the consumer resource
@@ -828,10 +868,10 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, NEW_USERNAME, PASSWORD);
 
-            userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.consumerRealmName()), USERNAME);
+            userRepresentation = consumerUserResource.toRepresentation();
 
-            // consumer username stays the same, even when sync mode is force
-            assertThat(userRepresentation.getUsername(), Matchers.equalTo(USERNAME));
+            // consumer username is updated when editUsernameAllowed or registrationEmailAsUsername is true and sync mode is force
+            assertThat(userRepresentation.getUsername(), Matchers.equalTo(expectedFinalUsername));
             // other consumer attributes are updated, when sync mode is force
             assertThat(userRepresentation.getEmail(), Matchers.equalTo(isForceSync ? NEW_EMAIL : EMAIL));
             assertThat(userRepresentation.getFirstName(), Matchers.equalTo(isForceSync ? NEW_FIRST_NAME : FIRST_NAME));
@@ -842,6 +882,29 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             // the email verified should be reverted to false if force-sync and not trust-email
             assertThat(consumerUserResource.toRepresentation().isEmailVerified(), Matchers.equalTo(!isForceSync || isTrustEmail));
         } finally {
+            try {
+                if (changeEdit || changeReg) {
+                    RealmRepresentation consumerRealm = consumerRealmResource.toRepresentation();
+                    if (changeEdit) consumerRealm.setEditUsernameAllowed(origEdit);
+                    if (changeReg) consumerRealm.setRegistrationEmailAsUsername(origRegEmail);
+                    consumerRealmResource.update(consumerRealm);
+                }
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+            try {
+                deleteAllCookiesForRealm(bc.consumerRealmName());
+                deleteAllCookiesForRealm(bc.providerRealmName());
+            } catch (Exception e) {
+                // Ignore cleanup errors
+            }
+            if (consumerUserID != null) {
+                try {
+                    consumerRealmResource.users().delete(consumerUserID).close();
+                } catch (Exception e) {
+                    // Ignore cleanup errors
+                }
+            }
             providerUsersResource.delete(providerUserID).close();
         }
     }
