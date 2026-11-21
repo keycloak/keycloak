@@ -106,24 +106,20 @@ the target user currently belongs to.
 
 [NOTE]
 ====
-This feature does not support enforcing access to federated resources.
-Partial evaluation decorates database queries, so a resource must be represented in {project_name}'s own
-database for the filtering to take it into account. Users from external storage providers (such as LDAP)
-with import disabled are never represented in the database and are therefore never visible in search
-results when access is controlled through fine-grained permissions.
+Partial evaluation applies filters directly to database queries. External user storage providers, such as LDAP,
+may not support this filtering. When partial evaluation is active, Keycloak queries providers that cannot apply
+these filters for candidate users and checks each candidate's `view` permission before returning it. As a result,
+federated users can appear in search results when the administrator is authorized to view them; users without
+permission are filtered out.
 
-Enabling user import on the federation provider is not enough on its own. Group membership has to be
-imported as well. If a group's LDAP mapper is configured with mode `LDAP_ONLY` or `READ_ONLY`, the
-membership itself is kept only in LDAP and is never written to the database, even for imported users. As
-a result, a federated user can still be invisible in a search that is scoped by group-based permissions,
-even though the user record itself was imported. Set the group's LDAP mapper mode to `IMPORT` so that
-memberships are persisted locally and can be taken into account by partial evaluation. The mapper must
-already be in `IMPORT` mode when the user is first created locally (for example, on first login), since
-switching an existing mapper to `IMPORT` later, or running a group sync, does not backfill memberships for
-users already imported.
+For group-based permissions, the user's group memberships must be available to the permission evaluation. How
+memberships are resolved depends on the federation provider and its group mapper configuration.
 
-To include federated users in search results regardless of their import or group mapper configuration,
-grant the administrator the `view-users` role instead of relying on fine-grained permissions.
+Checking permissions for candidates individually can require more work than filtering results in the database.
+To reduce provider round trips, Keycloak retrieves candidates in batches rather than querying once per user.
+Searches fetch additional batches only when needed to fill the requested page with authorized users; counts may
+need to evaluate all matching candidates. Actual latency depends on the provider and how many candidates are
+filtered out.
 ====
 
 ===== Groups Resource Type

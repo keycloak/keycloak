@@ -803,6 +803,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             return 0;
         }
 
+        if (AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS)) {
+            return getUsersCount(realm, (String) null, groupIds);
+        }
+
         TypedQuery<Long> query = em.createNamedQuery("userCountInGroups", Long.class);
         query.setParameter("realmId", realm.getId());
         query.setParameter("groupIds", groupIds);
@@ -843,6 +847,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         predicates.add(builder.equal(userJoin.get("realmId"), realm.getId()));
         addSearchPredicates(search, builder, userJoin, predicates);
         predicates.add(groupMembership.get("groupId").in(groupIds));
+
+        if (AdminPermissionsSchema.SCHEMA.isPartialEvaluationActive(session, AdminPermissionsSchema.USERS)) {
+            predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, userJoin));
+        }
 
         return em.createQuery(countQuery(queryBuilder, builder, userJoin, predicates)).getSingleResult().intValue();
     }

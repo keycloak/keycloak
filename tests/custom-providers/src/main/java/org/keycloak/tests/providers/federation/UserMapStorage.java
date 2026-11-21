@@ -114,9 +114,23 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     private UserModel createUser(RealmModel realm, String username) {
         UserModel user;
         if (isImportEnabled()) {
-            user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
-            user.setEnabled(true);
-            user.setFederationLink(model.getId());
+            UserModel importedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, username);
+            if (importedUser != null && model.getId().equals(importedUser.getFederationLink())) {
+                user = importedUser;
+            } else {
+                user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
+                user.setEnabled(true);
+                user.setFederationLink(model.getId());
+            }
+            if (Boolean.parseBoolean(model.getConfig().getFirst(UserMapStorageFactory.EXCLUDE_IMPORTED_GROUP_MEMBERS))) {
+                Set<String> groups = userGroups.get(getUserIdInMap(realm, username));
+                if (groups != null) {
+                    groups.stream()
+                            .map(realm::getGroupById)
+                            .filter(Objects::nonNull)
+                            .forEach(user::joinGroup);
+                }
+            }
         } else {
             user = new AbstractUserAdapterFederatedStorage.Streams(session, realm, model) {
                 @Override
@@ -133,12 +147,20 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
                 @Override
                 public void leaveGroup(GroupModel group) {
-                    UserMapStorage.this.leaveGroup(realm, getUsername(), group);
+                    if (usesFederatedStorageForGroupMemberships()) {
+                        super.leaveGroup(group);
+                    } else {
+                        UserMapStorage.this.leaveGroup(realm, getUsername(), group);
+                    }
                 }
 
                 @Override
                 public void joinGroup(GroupModel group) {
-                    UserMapStorage.this.joinGroup(realm, getUsername(), group);
+                    if (usesFederatedStorageForGroupMemberships()) {
+                        super.joinGroup(group);
+                    } else {
+                        UserMapStorage.this.joinGroup(realm, getUsername(), group);
+                    }
                 }
 
                 @Override
@@ -149,6 +171,10 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         }
 
         return user;
+    }
+
+    private boolean usesFederatedStorageForGroupMemberships() {
+        return Boolean.parseBoolean(model.getConfig().getFirst(UserMapStorageFactory.USE_FEDERATED_STORAGE_FOR_GROUP_MEMBERSHIPS));
     }
 
     @Override
@@ -357,8 +383,14 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
-        return getMembershipStream(realm, group, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults)
-          .map(userName -> createUser(realm, userName));
+        Stream<String> members = getMembershipStream(realm, group, null, null);
+        if (Boolean.parseBoolean(model.getConfig().getFirst(UserMapStorageFactory.EXCLUDE_IMPORTED_GROUP_MEMBERS))) {
+            members = members.filter(userName -> {
+                UserModel importedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, userName);
+                return importedUser == null || !model.getId().equals(importedUser.getFederationLink());
+            });
+        }
+        return paginatedStream(members, firstResult, maxResults).map(userName -> createUser(realm, userName));
     }
 
     @Override
@@ -396,13 +428,13 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
 
     @Override
     public Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max) {
-        Stream<String> userStream = paginatedStream(userGroups.entrySet().stream(), firstResult, max)
-          .filter(me -> me.getValue().contains(group.getId()))
-          .map(Map.Entry::getKey)
-          .filter(realmUser -> realmUser.startsWith(realm.getId()))
-          .map(realmUser -> realmUser.substring(realmUser.indexOf("/") + 1));
-
-        return userStream;
+        String realmUserPrefix = realm.getId() + "/";
+        return paginatedStream(userGroups.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(group.getId()))
+                .map(Map.Entry::getKey)
+                .filter(realmUser -> realmUser.startsWith(realmUserPrefix))
+                .sorted(), firstResult, max)
+                .map(realmUser -> realmUser.substring(realmUserPrefix.length()));
     }
 
     @Override
