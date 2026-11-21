@@ -771,8 +771,10 @@ public class DefaultAuthenticationFlows {
         KeycloakModelUtils.deepFindAuthenticationExecutions(realm, topLevel, executions);
 
         executions.stream()
-                .filter(AuthenticationExecutionModel::isAuthenticatorFlow)
-                .map(e -> realm.getAuthenticationFlowById(e.getFlowId()))
+                .map(AuthenticationExecutionModel::getParentFlow)
+                .distinct()
+                .filter(parentFlowId -> !Objects.equals(parentFlowId, topLevel.getId()))
+                .map(realm::getAuthenticationFlowById)
                 .filter(Objects::nonNull)
                 .filter(AuthenticationFlowModel::isBuiltIn)
                 .filter(f -> hasAuthenticator(realm, f, "conditional-user-configured") && hasAuthenticator(realm, f, "auth-otp-form"))
