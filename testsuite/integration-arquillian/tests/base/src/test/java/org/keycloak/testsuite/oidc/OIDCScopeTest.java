@@ -73,6 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Deprecated(forRemoval = true)
 public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
     private static String userId;
