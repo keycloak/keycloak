@@ -560,4 +560,88 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
         });
     }
 
+    @Test
+    public void test09_lazyImportReusesGroupCreatedConcurrently() {
+        // Another node or thread already created the group, but this node's lookup ran before that insert was visible
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            realm.updateComponent(mapperModel);
+            realm.createGroup("group11");
+        });
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+                RacingGroupMapper groupMapper = new RacingGroupMapper(mapperModel, LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel()));
+
+                GroupModel group11 = groupMapper.lazyImport(realm, groupMapper.loadLDAPGroupByName("group11"));
+
+                Assertions.assertEquals(KeycloakModelUtils.findGroupByPath(session, realm, "/group11").getId(), group11.getId());
+                Assertions.assertEquals(1, realm.getTopLevelGroupsStream().count());
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "groupsMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
+                ctx.getRealm().updateComponent(mapperModel);
+            });
+        }
+    }
+
+    @Test
+    public void test10_syncWithGroupInheritanceReusesGroupCreatedConcurrently() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "true");
+            realm.updateComponent(mapperModel);
+            realm.createGroup("group1");
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            String group1Id = KeycloakModelUtils.findGroupByPath(session, realm, "/group1").getId();
+
+            new RacingGroupMapper(mapperModel, LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel())).syncDataFromFederationProviderToKeycloak(realm);
+
+            Assertions.assertEquals(group1Id, KeycloakModelUtils.findGroupByPath(session, realm, "/group1").getId());
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group1/group11"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group1/group12"));
+            Assertions.assertEquals(1, realm.getTopLevelGroupsStream().count());
+        });
+    }
+
+    /**
+     * Never sees existing KC groups, as if another node or thread created them after this node looked them up.
+     */
+    public static class RacingGroupMapper extends GroupLDAPStorageMapper {
+
+        public RacingGroupMapper(ComponentModel mapperModel, LDAPStorageProvider ldapProvider) {
+            super(mapperModel, ldapProvider, new GroupLDAPStorageMapperFactory());
+        }
+
+        @Override
+        protected GroupModel findKcGroupByLDAPGroup(RealmModel realm, GroupModel parent, LDAPObject ldapGroup) {
+            return null;
+        }
+
+        @Override
+        protected Stream<GroupModel> getKcSubGroups(RealmModel realm, GroupModel parentGroup) {
+            return Stream.empty();
+        }
+
+        public GroupModel lazyImport(RealmModel realm, LDAPObject ldapGroup) {
+            return findKcGroupOrSyncFromLDAP(realm, null, ldapGroup, null);
+        }
+    }
+
 }
