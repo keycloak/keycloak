@@ -311,73 +311,66 @@ public class UsersResource {
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
 
-        Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
             SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
             if (prefix != null) {
-                userModels = Arrays.stream(prefix.splitTerms(search))
+                Stream<UserModel> userModels = Arrays.stream(prefix.splitTerms(search))
                         .map(term -> prefix.lookup(session.users(), realm, term))
                         .filter(Objects::nonNull);
                 if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
                     userModels = userModels.filter(userPermissionEvaluator::canView);
                 }
-            } else {
-                Map<String, String> attributes = new HashMap<>();
-                attributes.put(UserModel.SEARCH, search.trim());
-                if (enabled != null) {
-                    attributes.put(UserModel.ENABLED, enabled.toString());
-                }
-                if (emailVerified != null) {
-                    attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
-                }
-                addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
-
-                return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                        maxResults, false);
+                return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null
+        }
+
+        if (search != null || last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
                 || createdAfter != null || createdBefore != null) {
-                    Map<String, String> attributes = new HashMap<>();
-                    if (last != null) {
-                        attributes.put(UserModel.LAST_NAME, last);
-                    }
-                    if (first != null) {
-                        attributes.put(UserModel.FIRST_NAME, first);
-                    }
-                    if (email != null) {
-                        attributes.put(UserModel.EMAIL, email);
-                    }
-                    if (username != null) {
-                        attributes.put(UserModel.USERNAME, username);
-                    }
-                    if (emailVerified != null) {
-                        attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
-                    }
-                    if (idpAlias != null) {
-                        attributes.put(UserModel.IDP_ALIAS, idpAlias);
-                    }
-                    if (idpUserId != null) {
-                        attributes.put(UserModel.IDP_USER_ID, idpUserId);
-                    }
-                    if (enabled != null) {
-                        attributes.put(UserModel.ENABLED, enabled.toString());
-                    }
-                    if (exact != null) {
-                        attributes.put(UserModel.EXACT, exact.toString());
-                    }
-                    addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
+            Map<String, String> attributes = new HashMap<>();
+            if (search != null) {
+                attributes.put(UserModel.SEARCH, search.trim());
+            }
+            if (last != null) {
+                attributes.put(UserModel.LAST_NAME, last);
+            }
+            if (first != null) {
+                attributes.put(UserModel.FIRST_NAME, first);
+            }
+            if (email != null) {
+                attributes.put(UserModel.EMAIL, email);
+            }
+            if (username != null) {
+                attributes.put(UserModel.USERNAME, username);
+            }
+            if (emailVerified != null) {
+                attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
+            }
+            if (idpAlias != null) {
+                attributes.put(UserModel.IDP_ALIAS, idpAlias);
+            }
+            if (idpUserId != null) {
+                attributes.put(UserModel.IDP_USER_ID, idpUserId);
+            }
+            if (enabled != null) {
+                attributes.put(UserModel.ENABLED, enabled.toString());
+            }
+            if (exact != null) {
+                attributes.put(UserModel.EXACT, exact.toString());
+            }
+            addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
 
-                    attributes.putAll(searchAttributes);
+            attributes.putAll(searchAttributes);
 
-                    return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                            maxResults, true);
-                } else {
-                    return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
-                            firstResult, maxResults, false);
-                }
+            // Service accounts are excluded from full-text search, but included when filtering by explicit attributes.
+            boolean includeServiceAccounts = search == null;
 
-        return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
+            return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
+                    maxResults, includeServiceAccounts);
+        } else {
+            return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
+                    firstResult, maxResults, false);
+        }
     }
 
     /**
@@ -386,10 +379,10 @@ public class UsersResource {
      * 1. Don't specify any criteria and pass {@code null}. The number of all
      * users within that realm will be returned.
      * <p>
-     * 2. If {@code search} is specified other criteria such as {@code last} will
-     * be ignored even though you set them. The {@code search} string will be
+     * 2. If {@code search} is specified, the {@code search} string will be
      * matched against the first and last name, the username and the email of a
-     * user.
+     * user, and combined with any other criteria such as {@code last} with a
+     * logical and.
      * <p>
      * 3. If {@code search} is unspecified but any of {@code last}, {@code first},
      * {@code email} or {@code username} those criteria are matched against their
@@ -421,7 +414,7 @@ public class UsersResource {
             summary = "Returns the number of users that match the given criteria.",
             description = "It can be called in three different ways. " +
                     "1. Don’t specify any criteria and pass {@code null}. The number of all users within that realm will be returned. <p> " +
-                    "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
+                    "2. If {@code search} is specified, the {@code search} string will be matched against the first and last name, the username and the email of a user, and combined with any other criteria such as {@code last} with a logical and. <p> " +
                     "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
     public Integer getUsersCount(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
@@ -452,32 +445,15 @@ public class UsersResource {
                         .filter(userPermissionEvaluator::canView)
                         .count();
             }
+        }
 
-            Map<String, String> parameters = new HashMap<>();
-            parameters.put(UserModel.SEARCH, search.trim());
-
-            if (enabled != null) {
-                parameters.put(UserModel.ENABLED, enabled.toString());
-            }
-            if (emailVerified != null) {
-                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
-            }
-            addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
-            // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
-            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
-            if (userPermissionEvaluator.canView()) {
-                return session.users().getUsersCount(realm, parameters);
-            } else {
-                if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-                    return session.users().getUsersCount(realm, parameters, auth.groups().getGroupIdsWithViewPermission());
-                } else {
-                    return session.users().getUsersCount(realm, parameters);
-                }
-            }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null
+        if (search != null || last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
                 || createdAfter != null || createdBefore != null) {
             Map<String, String> parameters = new HashMap<>();
+            if (search != null) {
+                parameters.put(UserModel.SEARCH, search.trim());
+            }
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
             }
@@ -507,8 +483,9 @@ public class UsersResource {
             }
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             parameters.putAll(searchAttributes);
-            // search /users equivalent to this does include service-accounts so we should be explicit
-            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
+            // search /users equivalent to this excludes service-accounts for full-text search but includes them
+            // when filtering by explicit attributes, so we should be explicit
+            parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, String.valueOf(search == null));
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {
