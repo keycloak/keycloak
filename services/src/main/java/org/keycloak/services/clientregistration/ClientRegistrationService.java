@@ -38,7 +38,7 @@ public class ClientRegistrationService {
 
     private final KeycloakSession session;
 
-    private static final Set<String> DEPRECATED_PROVIDER_IDS = Set.of("default", "install", "saml2-entity-descriptor");
+    private static final Set<String> DEPRECATED_PROVIDER_IDS = Set.of("default", "saml2-entity-descriptor");
 
     public ClientRegistrationService(KeycloakSession session, EventBuilder event) {
         this.session = session;
