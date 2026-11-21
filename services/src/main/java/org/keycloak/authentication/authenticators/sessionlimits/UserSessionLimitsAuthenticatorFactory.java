@@ -17,8 +17,10 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
     public static final String BEHAVIOR = "behavior";
     public static final String DENY_NEW_SESSION = "Deny new session";
     public static final String TERMINATE_OLDEST_SESSION = "Terminate oldest session";
+    public static final String PROMPT_USER = "Prompt user to terminate oldest session";
     public static final String USER_SESSION_LIMITS = "user-session-limits";
     public static final String ERROR_MESSAGE = "errorMessage";
+    public static final String COUNT_SESSIONS_PER_FLOW = "countSessionsPerFlow";
 
     private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
@@ -71,12 +73,20 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
         userClientLimit.setType(ProviderConfigProperty.STRING_TYPE);
         userClientLimit.setDefaultValue("0");
         
+        ProviderConfigProperty countSessionsPerFlow = new ProviderConfigProperty();
+        countSessionsPerFlow.setName(COUNT_SESSIONS_PER_FLOW);
+        countSessionsPerFlow.setLabel("Count only sessions created by this flow");
+        countSessionsPerFlow.setHelpText("When enabled, only sessions created through this authentication flow are counted against the configured limits.");
+        countSessionsPerFlow.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        countSessionsPerFlow.setDefaultValue("false");
+
         ProviderConfigProperty behaviourProperty = new ProviderConfigProperty();
         behaviourProperty.setName(BEHAVIOR);
         behaviourProperty.setLabel("Behavior when user session limit is exceeded");
+        behaviourProperty.setHelpText("Action to take when user session limit is exceeded. 'Prompt user to terminate oldest session' displays an interactive confirmation page in browser flows; non-interactive flows will fall back to denying the session.");
         behaviourProperty.setType(ProviderConfigProperty.LIST_TYPE);
         behaviourProperty.setDefaultValue(DENY_NEW_SESSION);
-        behaviourProperty.setOptions(Arrays.asList(DENY_NEW_SESSION, TERMINATE_OLDEST_SESSION));
+        behaviourProperty.setOptions(Arrays.asList(DENY_NEW_SESSION, TERMINATE_OLDEST_SESSION, PROMPT_USER));
         
         ProviderConfigProperty customErrorMessage = new ProviderConfigProperty();
         customErrorMessage.setName(ERROR_MESSAGE);
@@ -84,7 +94,7 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
         customErrorMessage.setHelpText("If left empty a default error message is shown");
         customErrorMessage.setType(ProviderConfigProperty.STRING_TYPE);
 
-        return Arrays.asList(userRealmLimit, userClientLimit, behaviourProperty, customErrorMessage);
+        return Arrays.asList(userRealmLimit, userClientLimit, countSessionsPerFlow, behaviourProperty, customErrorMessage);
     }
 
     @Override
