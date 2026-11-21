@@ -58,6 +58,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 
@@ -145,6 +146,10 @@ public class GroupResource {
         }
 
         if (!Objects.equals(groupName, group.getName())) {
+            if (Validation.containsControlCharacters(groupName)) {
+                throw ErrorResponse.error("Group name contains control characters", Response.Status.BAD_REQUEST);
+            }
+
             boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
                     .anyMatch(s -> Objects.equals(s.getName(), groupName));
             if (exists) {
@@ -245,6 +250,13 @@ public class GroupResource {
         String groupName = rep.getName();
         if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
+        // validate the name only when a new subgroup is created; requests that move an
+        // existing group (rep.id present) do not apply the name, so the stored name
+        // of legacy groups must not be rejected here
+        if (rep.getId() == null && Validation.containsControlCharacters(groupName)) {
+            throw ErrorResponse.error("Group name contains control characters", Response.Status.BAD_REQUEST);
         }
 
         try {

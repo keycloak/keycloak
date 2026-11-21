@@ -384,6 +384,127 @@ public class GroupTest extends AbstractGroupTest {
         );
     }
 
+    // Issue #54721: Group names with control characters (e.g. NUL) are accepted without validation
+    @Test
+    public void createGroupWithControlCharacterNameShouldFail() {
+        GroupRepresentation group = new GroupRepresentation();
+
+        group.setName("a\u0000b");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Group name contains control characters", error.getErrorMessage());
+        }
+
+        group.setName("del\u007Fete");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        group.setName("c1\u0085control");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    // Issue #54721: Renaming a group to a name containing control characters is rejected
+    @Test
+    public void renamingGroupToControlCharacterNameShouldFail() {
+        RealmResource realm = managedRealm.admin();
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("cleanGroupName");
+
+        Response response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        group.setName("cleanGroupName\u0000");
+        assertThrows(BadRequestException.class,
+                () -> realm.groups().group(groupId).update(group),
+                "Renaming a group to a name with control characters should fail"
+        );
+    }
+
+    // Issue #54721: The subgroup creation path validates names as well
+    @Test
+    public void createSubGroupWithControlCharacterNameShouldFail() {
+        RealmResource realm = managedRealm.admin();
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("parentGroup");
+        String parentId = ApiUtil.getCreatedId(realm.groups().add(parent));
+        managedRealm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("childGroup\u0000");
+        try (Response response = realm.groups().group(parentId).subGroup(child)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    // Issue #54721: Visible special characters (accents, CJK, emoji) remain valid
+    @Test
+    public void createGroupWithVisibleSpecialCharactersNameSucceeds() {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("Gruppe M\u00FCnchen \u6771\u4EAC \uD83D\uDE80");
+
+        String groupId = ApiUtil.getCreatedId(managedRealm.admin().groups().add(group));
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+        assertEquals("Gruppe M\u00FCnchen \u6771\u4EAC \uD83D\uDE80",
+                managedRealm.admin().groups().group(groupId).toRepresentation().getName());
+    }
+
+    // Issue #54721: Legacy groups whose names already contain control characters can still be updated without renaming
+    @Test
+    public void updatingLegacyGroupWithControlCharactersInNameSucceeds() {
+        String realmName = managedRealm.getName();
+        final String groupId = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            GroupModel legacyGroup = realm.createGroup("legacy\u0000Group");
+            return legacyGroup.getId();
+        }, String.class);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setName("legacy\u0000Group");
+        managedRealm.admin().groups().group(groupId).update(rep);
+
+        assertEquals("legacy\u0000Group", managedRealm.admin().groups().group(groupId).toRepresentation().getName());
+    }
+
+    // Issue #54721: moving a legacy group whose unchanged name contains control
+    // characters must not be blocked (the move endpoints do not apply the name)
+    @Test
+    public void moveLegacyGroupWithControlCharactersInNameSucceeds() {
+        String realmName = managedRealm.getName();
+        final String groupId = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            GroupModel legacyGroup = realm.createGroup("legacy\u0000Group");
+            return legacyGroup.getId();
+        }, String.class);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("moveParentGroup");
+        String parentId = ApiUtil.getCreatedId(managedRealm.admin().groups().add(parent));
+        managedRealm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setId(groupId);
+        rep.setName("legacy\u0000Group");
+
+        // top-level move endpoint: unchanged legacy name must not be validated
+        try (Response response = managedRealm.admin().groups().add(rep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // subgroup move endpoint: same guarantee
+        try (Response response = managedRealm.admin().groups().group(parentId).subGroup(rep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
     @Test
     public void createAndTestGroups() throws IOException {
         RoleRepresentation topRole = createRealmRole(managedRealm, RoleBuilder.create().name("topRole").build());
