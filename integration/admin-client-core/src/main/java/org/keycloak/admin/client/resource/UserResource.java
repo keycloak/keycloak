@@ -182,24 +182,6 @@ public interface UserResource {
     void resetPassword(CredentialRepresentation credentialRepresentation);
 
     /**
-     * Use executeActionsEmail and pass in the UPDATE_PASSWORD required action
-     *
-     */
-    @PUT
-    @Path("reset-password-email")
-    @Deprecated
-    void resetPasswordEmail();
-
-    /**
-     * Use executeActionsEmail and pass in the UPDATE_PASSWORD required action
-     *
-     */
-    @PUT
-    @Path("reset-password-email")
-    @Deprecated
-    void resetPasswordEmail(@QueryParam("client_id") String clientId);
-
-    /**
      * Sends an email to the user with a link within it.  If they click on the link they will be asked to perform some actions
      * i.e. {@code VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS}, etc.
      *
