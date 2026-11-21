@@ -16,10 +16,8 @@
  */
 package org.keycloak.operator.controllers;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
@@ -121,15 +119,17 @@ public class KeycloakNetworkPolicyDependentResource extends CRUDKubernetesDepend
     private static void addIngress(NetworkPolicyFluent<NetworkPolicyBuilder>.SpecNested<NetworkPolicyBuilder> builder,
                                    int port,
                                    Optional<List<NetworkPolicyPeer>> networkPolicyPeers) {
+        if (networkPolicyPeers.map(List::isEmpty).orElse(false)) {
+            // An empty list allows no sources: with the Ingress policy type, a port without a rule is denied
+            return;
+        }
         var ingress = builder.addNewIngress();
         ingress.addNewPort()
                 .withPort(new IntOrString(port))
                 .withProtocol(KEYCLOAK_SERVICE_PROTOCOL)
                 .endPort();
 
-        networkPolicyPeers
-                .filter(Predicate.not(Collection::isEmpty))
-                .ifPresent(ingress::addAllToFrom);
+        networkPolicyPeers.ifPresent(ingress::addAllToFrom);
         ingress.endIngress();
     }
 

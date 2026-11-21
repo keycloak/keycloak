@@ -36,10 +36,11 @@ import io.sundr.builder.annotations.Buildable;
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class NetworkPolicySpec {
 
-    // Copied from Kubernetes Documentation
+    // Based on the Kubernetes Documentation, except that an empty list blocks all sources
     private static final String RULE_DESCRIPTION = "A list of sources which should be able to access this endpoint. " +
             "Items in this list are combined using a logical OR operation. " +
-            "If this field is empty or missing, this rule matches all sources (traffic not restricted by source). " +
+            "If this field is missing, this rule matches all sources (traffic not restricted by source). " +
+            "If this field is an empty list, no source can access this endpoint. " +
             "If this field is present and contains at least one item, this rule allows traffic only if the traffic matches at least one item in the from list.";
 
     @JsonProperty("enabled")

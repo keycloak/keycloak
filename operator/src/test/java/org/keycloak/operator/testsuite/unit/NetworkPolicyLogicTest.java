@@ -150,6 +150,16 @@ public class NetworkPolicyLogicTest {
     }
 
     @Test
+    public void testEmptyRulesBlockEndpoint() {
+        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        K8sUtils.enableNetworkPolicy(kc);
+        kc.getSpec().getNetworkPolicySpec().setHttpsRules(List.of());
+        var networkPolicy = assertEnabledAndGet(kc);
+        // empty https list: no rule for its port, so nothing can reach it; missing management list: open to all sources
+        CRAssert.assertIngressRules(networkPolicy, kc, -1, -1, Constants.KEYCLOAK_MANAGEMENT_PORT);
+    }
+
+    @Test
     public void testUpdate() {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
         K8sUtils.enableNetworkPolicy(kc);

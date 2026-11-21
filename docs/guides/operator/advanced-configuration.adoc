@@ -494,6 +494,10 @@ The rule syntax is the same as the one used by the Kubernetes Network Policy.
 It makes it easy to migrate your existing rules into your Keycloak CP.
 For more information, check the https://kubernetes.io/docs/concepts/services-networking/network-policies/#behavior-of-to-and-from-selectors[rule syntax].
 
+If the list for an endpoint is missing, traffic to that endpoint is allowed from all sources.
+If the list is empty (for example `https: []`), traffic to that endpoint is blocked from all sources.
+This differs from the `from` field of a Kubernetes NetworkPolicy, where an empty list allows all sources.
+
 ==== Example with OpenShift
 
 For a concrete example, let's imagine we have a {project_name} deployment running in a OpenShift cluster.
