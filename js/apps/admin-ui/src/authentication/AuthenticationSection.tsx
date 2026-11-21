@@ -88,6 +88,7 @@ export default function AuthenticationSection() {
         method: "GET",
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
       },
+      adminClient.getFetch(),
     );
     const flows = await flowsRequest.json();
 

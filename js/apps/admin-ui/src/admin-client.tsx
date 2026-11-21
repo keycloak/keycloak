@@ -1,5 +1,6 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import {
+  createKeycloakFetch,
   createNamedContext,
   KeycloakSpinner,
   useEnvironment,
@@ -24,9 +25,12 @@ export async function initAdminClient(
   keycloak: Keycloak,
   environment: Environment,
 ) {
-  const adminClient = new KeycloakAdminClient();
+  const adminClient = new KeycloakAdminClient({
+    fetch: createKeycloakFetch(keycloak),
+  });
 
   adminClient.setConfig({ realmName: environment.realm });
+
   adminClient.baseUrl = environment.adminBaseUrl;
   adminClient.registerTokenProvider({
     async getAccessToken() {
