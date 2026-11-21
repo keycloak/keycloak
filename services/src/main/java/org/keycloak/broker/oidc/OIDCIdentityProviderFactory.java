@@ -70,6 +70,7 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
         config.setAuthorizationUrl(rep.getAuthorizationEndpoint());
         config.setTokenUrl(rep.getTokenEndpoint());
         config.setUserInfoUrl(rep.getUserinfoEndpoint());
+        config.importMetadata(session, rep);
         if (rep.getJwksUri() != null) {
             config.setValidateSignature(true);
             config.setUseJwksUrl(true);

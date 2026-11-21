@@ -16,16 +16,27 @@
  */
 package org.keycloak.broker.oidc;
 
+import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.IDToken;
+import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.utils.KeycloakSessionUtil;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
@@ -42,6 +53,18 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
     public static final String JWT_X509_HEADERS_ENABLED = "jwtX509HeadersEnabled";
 
     public static final String REQUIRES_SHORT_STATE_PARAMETER = "requiresShortStateParameter";
+    public static final String PAR_ENABLED = "pushedAuthorizationRequestsEnabled";
+    public static final String PAR_URL = "pushedAuthorizationRequestUrl";
+    public static final String PAR_REQUIRED = "pushedAuthorizationRequestsRequired";
+    public static final String REQUEST_OBJECT_ENABLED = "requestObjectEnabled";
+    public static final String REQUEST_OBJECT_SIGNING_ALG = "requestObjectSigningAlg";
+    public static final String DPOP_ENABLED = "dpopEnabled";
+    public static final String DPOP_SIGNING_ALG = "dpopSigningAlg";
+    public static final String AUTHORIZATION_RESPONSE_ISSUER_REQUIRED = "authorizationResponseIssuerRequired";
+    public static final String VALIDATE_DISCOVERY_ISSUER = "validateDiscoveryIssuer";
+
+    private static final String OPENID_CONFIGURATION = "/.well-known/" + OIDCWellKnownProviderFactory.PROVIDER_ID;
+    private static final String OAUTH_AUTHORIZATION_SERVER = "/.well-known/" + OAuth2WellKnownProviderFactory.PROVIDER_ID;
 
     public OAuth2IdentityProviderConfig(IdentityProviderModel model) {
         super(model);
@@ -228,6 +251,114 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         return getConfig().getOrDefault("emailClaim", IDToken.EMAIL);
     }
 
+    public boolean isPushedAuthorizationRequestsEnabled() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(PAR_ENABLED, "false"));
+    }
+
+    public void setPushedAuthorizationRequestsEnabled(boolean enabled) {
+        getConfig().put(PAR_ENABLED, String.valueOf(enabled));
+    }
+
+    /**
+     * @return whether the identity provider metadata requires pushed authorization requests
+     */
+    public boolean isPushedAuthorizationRequestsRequired() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(PAR_REQUIRED, "false"));
+    }
+
+    public void setPushedAuthorizationRequestsRequired(boolean required) {
+        getConfig().put(PAR_REQUIRED, String.valueOf(required));
+    }
+
+    public String getPushedAuthorizationRequestUrl() {
+        return getConfig().get(PAR_URL);
+    }
+
+    public void setPushedAuthorizationRequestUrl(String url) {
+        getConfig().put(PAR_URL, url);
+    }
+
+    public boolean isRequestObjectEnabled() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(REQUEST_OBJECT_ENABLED, "false"));
+    }
+
+    public void setRequestObjectEnabled(boolean enabled) {
+        getConfig().put(REQUEST_OBJECT_ENABLED, String.valueOf(enabled));
+    }
+
+    public String getRequestObjectSigningAlg() {
+        return getConfig().getOrDefault(REQUEST_OBJECT_SIGNING_ALG, Algorithm.PS256);
+    }
+
+    public void setRequestObjectSigningAlg(String signingAlg) {
+        getConfig().put(REQUEST_OBJECT_SIGNING_ALG, signingAlg);
+    }
+
+    public boolean isDPoPEnabled() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(DPOP_ENABLED, "false"));
+    }
+
+    public void setDPoPEnabled(boolean enabled) {
+        getConfig().put(DPOP_ENABLED, String.valueOf(enabled));
+    }
+
+    public String getDPoPSigningAlg() {
+        return getConfig().getOrDefault(DPOP_SIGNING_ALG, Algorithm.ES256);
+    }
+
+    public void setDPoPSigningAlg(String signingAlg) {
+        getConfig().put(DPOP_SIGNING_ALG, signingAlg);
+    }
+
+    public boolean isAuthorizationResponseIssuerRequired() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(AUTHORIZATION_RESPONSE_ISSUER_REQUIRED, "false"));
+    }
+
+    public void setAuthorizationResponseIssuerRequired(boolean required) {
+        getConfig().put(AUTHORIZATION_RESPONSE_ISSUER_REQUIRED, String.valueOf(required));
+    }
+
+    public boolean isValidateDiscoveryIssuer() {
+        return Boolean.parseBoolean(getConfig().getOrDefault(VALIDATE_DISCOVERY_ISSUER, "false"));
+    }
+
+    public void setValidateDiscoveryIssuer(boolean validate) {
+        getConfig().put(VALIDATE_DISCOVERY_ISSUER, String.valueOf(validate));
+    }
+
+    public String getIssuer() {
+        return getConfig().get(ISSUER);
+    }
+
+    public void setIssuer(String issuer) {
+        getConfig().put(ISSUER, issuer);
+    }
+
+    /**
+     * Imports the PAR and DPoP settings and the {@code iss} support from the identity provider metadata.
+     */
+    public void importMetadata(KeycloakSession session, OIDCConfigurationRepresentation rep) {
+        if (rep.getPushedAuthorizationRequestEndpoint() != null) {
+            setPushedAuthorizationRequestUrl(rep.getPushedAuthorizationRequestEndpoint());
+        }
+        if (Boolean.TRUE.equals(rep.getRequirePushedAuthorizationRequests())) {
+            setPushedAuthorizationRequestsRequired(true);
+            setPushedAuthorizationRequestsEnabled(true);
+        }
+        if (Boolean.TRUE.equals(rep.getAuthorizationResponseIssParameterSupported())) {
+            setAuthorizationResponseIssuerRequired(true);
+        }
+        if (rep.getDpopSigningAlgValuesSupported() != null) {
+            // the first algorithm both sides support with ES256 and PS256 preferred
+            List<String> supported = DPoPUtil.getDPoPSupportedAlgorithms(session);
+            Stream.concat(Stream.of(Algorithm.ES256, Algorithm.PS256), rep.getDpopSigningAlgValuesSupported().stream())
+                    .filter(rep.getDpopSigningAlgValuesSupported()::contains)
+                    .filter(supported::contains)
+                    .findFirst()
+                    .ifPresent(this::setDPoPSigningAlg);
+        }
+    }
+
     @Override
     public void validate(RealmModel realm) {
         SslRequired sslRequired = realm.getSslRequired();
@@ -237,12 +368,73 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         checkUrl(sslRequired, getUserInfoUrl(), "userinfo_url");
         checkUrl(sslRequired, getTokenIntrospectionUrl(), "tokenIntrospection_url");
 
+        if (isPushedAuthorizationRequestsRequired() && !isPushedAuthorizationRequestsEnabled()) {
+            throw new IllegalArgumentException("The identity provider only accepts pushed authorization requests");
+        }
+
+        if (isPushedAuthorizationRequestsEnabled()) {
+            if (StringUtil.isBlank(getPushedAuthorizationRequestUrl())) {
+                throw new IllegalArgumentException("The pushed authorization request endpoint is required when pushed authorization requests are enabled");
+            }
+            checkUrl(sslRequired, getPushedAuthorizationRequestUrl(), "pushed_authorization_request_url");
+        }
+
+        if (isDPoPEnabled()) {
+            KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+            if (!DPoPUtil.getDPoPSupportedAlgorithms(session).contains(getDPoPSigningAlg())) {
+                throw new IllegalArgumentException("DPoP signing algorithm not supported: " + getDPoPSigningAlg());
+            }
+        }
+
+        if (isRequestObjectEnabled() && StringUtil.isBlank(getIssuer())) {
+            throw new IllegalArgumentException("The issuer is required as the audience of the request object");
+        }
+
+        if (isAuthorizationResponseIssuerRequired() && StringUtil.isBlank(getIssuer())) {
+            throw new IllegalArgumentException("The issuer is required to validate the issuer of the authorization response");
+        }
+
+        if (isValidateDiscoveryIssuer()) {
+            if (StringUtil.isBlank(getMetadataDescriptorUrl())) {
+                throw new IllegalArgumentException("The discovery endpoint is required to validate its issuer");
+            }
+            if (StringUtil.isBlank(getIssuer())) {
+                throw new IllegalArgumentException("The issuer is required to validate it against the discovery endpoint");
+            }
+            // https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfigurationValidation
+            // https://datatracker.ietf.org/doc/html/rfc8414#section-3.3
+            // the discovery endpoint drops the trailing slash of the issuer
+            if (!StringUtil.removeSuffix(getIssuer(), "/").equals(issuerOf(getMetadataDescriptorUrl()))) {
+                throw new IllegalArgumentException("The issuer does not match the discovery endpoint");
+            }
+        }
+
         if (isPkceEnabled()) {
             String pkceMethod = getPkceMethod();
             if (!Arrays.asList(OAuth2Constants.PKCE_METHOD_PLAIN, OAuth2Constants.PKCE_METHOD_S256).contains(pkceMethod)) {
                 throw new IllegalArgumentException("PKCE Method not supported: " + pkceMethod);
             }
         }
+    }
+
+    /**
+     * @return the issuer of an OpenID Connect Discovery or RFC 8414 metadata URL or {@code null}
+     */
+    private static String issuerOf(String discoveryUrl) {
+        // the two differ when the issuer has a path
+        // https://datatracker.ietf.org/doc/html/rfc8414#section-5
+        // OpenID Connect Discovery: https://idp.example.com/realms/test/.well-known/openid-configuration
+        if (discoveryUrl.endsWith(OPENID_CONFIGURATION)) {
+            return discoveryUrl.substring(0, discoveryUrl.length() - OPENID_CONFIGURATION.length());
+        }
+        // RFC 8414: https://idp.example.com/.well-known/oauth-authorization-server/realms/test
+        URI uri = URI.create(discoveryUrl);
+        String path = uri.getRawPath();
+        if (path != null && path.startsWith(OAUTH_AUTHORIZATION_SERVER) && uri.getRawQuery() == null && uri.getRawFragment() == null) {
+            String issuer = uri.getScheme() + "://" + uri.getRawAuthority();
+            return StringUtil.removeSuffix(issuer + path.substring(OAUTH_AUTHORIZATION_SERVER.length()), "/");
+        }
+        return null;
     }
 
     /**
@@ -255,6 +447,7 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
         return new String[] {
                 TOKEN_ENDPOINT_URL,
                 TOKEN_INTROSPECTION_URL,
+                PAR_URL,
                 "clientId",
                 "baseUrl"
         };

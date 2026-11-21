@@ -53,6 +53,9 @@ In the case of JWT signed with private key or Client secret as jwt, it is requir
 |{project_name} validates issuer claims, in responses from the IDP, against this value.
 Only a single issuer is supported. Configure a separate identity provider for each additional issuer.
 
+|Validate issuer against discovery endpoint
+|{project_name} only saves the identity provider if the `Issuer` matches the discovery endpoint it was imported from (https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfigurationValidation[OpenID Connect Discovery 4.3] and https://datatracker.ietf.org/doc/html/rfc8414#section-3.3[RFC 8414 section 3.3]). Turn it off for an IDP whose issuer differs on purpose, such as a multi-tenant endpoint.
+
 |Default Scopes
 |A list of OIDC scopes {project_name} sends with the authentication request. The default value is `openid`. A space separates each scope.
 
@@ -95,7 +98,48 @@ to forward are any non OpenID Connect/OAuth standard parameter or standard param
 |Allows Client ID as audience for assertions
 |If enabled, the Client ID configured in the Identity Provider is the only valid audience for assertions used in Federated client authentication and in JWT Authorization Grants (Client Assertions and JWT Authorization Grant). The client ID is used instead of the token-url/issuer-url defined in the respective specifications. Note this behavior is not covered by any standard.
 
+|Use pushed authorization requests
+|{project_name} pushes the authorization request to the IDP (https://datatracker.ietf.org/doc/html/rfc9126[RFC 9126]) with the same client authentication as the token endpoint. The user is then redirected with only the `request_uri` that the IDP returns instead of the request parameters. The switch is locked on when the IDP metadata sets `require_pushed_authorization_requests`.
+
+|Pushed authorization request URL
+|The pushed authorization request endpoint of the IDP. Importing the IDP metadata sets it from `pushed_authorization_request_endpoint`.
+
+|Use signed request objects
+|{project_name} sends the authorization request as a signed request object (https://datatracker.ietf.org/doc/html/rfc9101[RFC 9101]). The `Issuer` is the audience of the request object and must be set. With pushed authorization requests the request object is pushed instead of the request parameters. Otherwise it is passed by value and the `client_id`, `response_type` and `scope` are repeated as query parameters.
+
+|Request object signature algorithm
+|The algorithm of the request object. It is signed with the active realm key of this algorithm. The default is `PS256`, which is the default that the FAPI client profiles of {project_name} set for request objects.
+
+|Use DPoP
+|{project_name} sends https://datatracker.ietf.org/doc/html/rfc9449[DPoP] proofs to the pushed authorization request, token and user info endpoints so that the IDP binds its access tokens to a key. This includes token refresh. The proofs are signed with the active realm key of the DPoP signing algorithm. When the IDP asks for a nonce {project_name} retries once with it. The login fails if the IDP does not issue DPoP bound tokens.
+
+|DPoP signing algorithm
+|The algorithm of the DPoP proofs. The default is `ES256`. Importing IDP metadata with `dpop_signing_alg_values_supported` picks the first supported algorithm and prefers `ES256` and `PS256`.
+
+|Validate authorization response issuer
+|{project_name} rejects authorization responses without the `Issuer` of the IDP in the `iss` parameter (https://datatracker.ietf.org/doc/html/rfc9207[RFC 9207]). The `Issuer` must be set. Importing IDP metadata with `authorization_response_iss_parameter_supported` turns this switch on.
+
+|ID token signature algorithm
+|The algorithm that the IDP signs ID tokens and logout tokens with. {project_name} rejects tokens signed with another algorithm (https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation[OpenID Connect Core 3.1.3.7]). `Validate Signatures` must be *ON*. If not specified, any algorithm is accepted.
+
+|Reject other ID token audiences
+|{project_name} rejects ID tokens and logout tokens with an audience other than the `Client ID` (https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation[OpenID Connect Core 3.1.3.7]).
+
 |===
+
+For an IDP that follows the https://openid.net/specs/fapi-security-profile-2_0-final.html[FAPI 2.0 Security Profile] with DPoP, set the following.
+
+* `Use pushed authorization requests` *ON*.
+* PKCE with the `S256` method.
+* `JWT signed with private key` client authentication with a client assertion signature algorithm that the FAPI client profiles allow. See <<_client_policies,Client policies>>.
+* The `Issuer` as the `Client assertion audience`.
+* `Use DPoP` *ON* with a DPoP signing algorithm that the FAPI client profiles allow.
+* `Validate authorization response issuer` *ON*.
+* `Validate issuer against discovery endpoint` *ON*.
+* `Validate Signatures` *ON* with an `ID token signature algorithm` that the FAPI client profiles allow.
+* `Reject other ID token audiences` *ON*.
+
+For an IDP that also follows the https://openid.net/specs/fapi-message-signing-2_0-final.html[FAPI 2.0 Message Signing] profile for signed authorization requests, also turn `Use signed request objects` *ON* with a `Request object signature algorithm` that the FAPI client profiles allow.
 
 You can import all this configuration data by providing a URL or file that points to OpenID Provider Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>{kc_realms_path}/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.
 

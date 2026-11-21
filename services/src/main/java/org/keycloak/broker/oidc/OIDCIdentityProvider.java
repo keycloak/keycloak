@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.GET;
@@ -152,7 +153,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public String refreshTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
         String refreshToken = getFederatedRefreshToken(userSession);
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            return getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asString();
+            try (SimpleHttpResponse response = sendRequest(() -> getRefreshTokenRequest(session, refreshToken,
+                    getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())), null)) {
+                return response.asString();
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -342,9 +346,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
         String accessToken = verifyAccessToken(tokenResponse);
 
+        verifyTokenType(tokenResponse.getTokenType());
+
         String encodedIdToken = tokenResponse.getIdToken();
 
-        JsonWebToken idToken = validateToken(encodedIdToken);
+        JsonWebToken idToken = validateIdToken(encodedIdToken);
+
+        // reject an ID token of another request before the access token reaches the user info endpoint
+        verifyNonce((String) idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
 
         if (Booleans.isTrue(getConfig().isPassMaxAge())) {
             AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
@@ -463,7 +472,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (userInfoUrl != null && !userInfoUrl.isEmpty()) {
 
                 if (accessToken != null) {
-                    try (SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl).header("Authorization", "Bearer " + accessToken))) {
+                    try (SimpleHttpResponse response = executeRequest(userInfoUrl, () -> SimpleHttp.create(session).doGet(userInfoUrl), accessToken)) {
                         String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
                         MediaType contentMediaType;
                         try {
@@ -479,7 +488,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                         if (MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType)) {
                             userInfo = response.asJson();
                         } else if (APPLICATION_JWT_TYPE.isCompatible(contentMediaType)) {
-                            userInfo = JsonSerialization.readValue(parseTokenInput(response.asString(), false), JsonNode.class);
+                            userInfo = JsonSerialization.readValue(parseTokenInput(response.asString(), false, null), JsonNode.class);
                         } else {
                             throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
                         }
@@ -593,8 +602,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return getConfig().getUserInfoUrl();
     }
 
-    private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
-        SimpleHttpResponse response = request.asResponse();
+    private SimpleHttpResponse executeRequest(String url, Supplier<SimpleHttpRequest> requestSupplier, String accessToken) throws IOException {
+        SimpleHttpResponse response = sendRequest(requestSupplier, accessToken);
         try {
             if (response.getStatus() != 200) {
                 String msg = "failed to invoke url [" + url + "]";
@@ -675,9 +684,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
      * @param encodedToken The token in the encoded string format.
      * @param shouldBeSigned true if the token should be signed (id token),
      * false if the token can be only encrypted and not signed (user info).
+     * @param expectedAlgorithm The signature algorithm the token must use or {@code null} for any.
      * @return The content in string format.
      */
-    protected String parseTokenInput(String encodedToken, boolean shouldBeSigned) {
+    protected String parseTokenInput(String encodedToken, boolean shouldBeSigned, String expectedAlgorithm) {
         if (encodedToken == null) {
             throw new IdentityBrokerException("No token from server.");
         }
@@ -710,6 +720,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 jws = (JWSInput) joseToken;
             } else {
                 throw new IdentityBrokerException("Invalid token type");
+            }
+
+            // https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation
+            if (expectedAlgorithm != null && !expectedAlgorithm.equals(jws.getHeader().getRawAlgorithm())) {
+                throw new IdentityBrokerException("Unexpected token signature algorithm: " + jws.getHeader().getRawAlgorithm());
             }
 
             // verify signature of the JWS
@@ -768,14 +783,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    public JsonWebToken validateToken(String encodedToken) {
-        boolean ignoreAudience = false;
+    public JsonWebToken validateIdToken(String encodedToken) {
+        JsonWebToken token = validateToken(encodedToken, false);
 
-        return validateToken(encodedToken, ignoreAudience);
+        // https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation
+        if (token.getExp() == null || token.getExp() == 0) {
+            throw new IdentityBrokerException("Token has no expiration time");
+        }
+
+        return token;
     }
 
     public JsonWebToken validateLogoutToken(String encodedToken) {
-        JsonWebToken token = validateToken(encodedToken);
+        // https://openid.net/specs/openid-connect-backchannel-1_0.html#Validation
+        JsonWebToken token = validateIdToken(encodedToken);
 
         if (!verifySignature(parseSignedToken(encodedToken))) {
             if (!getConfig().isValidateSignature()) {
@@ -792,7 +813,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     protected JsonWebToken validateToken(String encodedToken, boolean ignoreAudience) {
         JsonWebToken token;
         try {
-            token = JsonSerialization.readValue(parseTokenInput(encodedToken, true), JsonWebToken.class);
+            // tokens validated by validateIdToken are the ones validated with the audience
+            String idTokenSigningAlg = getConfig().getIdTokenSigningAlg();
+            String expectedAlgorithm = ignoreAudience || Strings.isEmpty(idTokenSigningAlg) ? null : idTokenSigningAlg;
+            token = JsonSerialization.readValue(parseTokenInput(encodedToken, true, expectedAlgorithm), JsonWebToken.class);
         } catch (IOException e) {
             throw new IdentityBrokerException("Invalid token", e);
         }
@@ -805,6 +829,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         if (!ignoreAudience && !token.hasAudience(getConfig().getClientId())) {
             throw new IdentityBrokerException("Wrong audience from token.");
+        }
+
+        // https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation
+        if (!ignoreAudience && getConfig().isRejectOtherIdTokenAudiences()
+                && Arrays.stream(token.getAudience()).anyMatch(audience -> !getConfig().getClientId().equals(audience))) {
+            throw new IdentityBrokerException("Token has an audience that is not trusted.");
         }
 
         if (!ignoreAudience && (token.getIssuedFor() != null && !getConfig().getClientId().equals(token.getIssuedFor()))) {
@@ -1010,35 +1040,36 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
-    protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
-        UriBuilder uriBuilder = super.createAuthorizationUrl(request);
+    protected void addAuthorizationParameters(AuthenticationRequest request, Map<String, String> parameters) {
+        super.addAuthorizationParameters(request, parameters);
         AuthenticationSessionModel authenticationSession = request.getAuthenticationSession();
 
         if (!getConfig().isDisableNonce()) {
-            String nonce = Base64Url.encode(SecretGenerator.getInstance().randomBytes(16));
+            String nonce = Base64Url.encode(SecretGenerator.getInstance().randomBytes(32));
             authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
-            uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
+            parameters.put(OIDCLoginProtocol.NONCE_PARAM, nonce);
         }
 
         String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
 
         if (Booleans.isTrue(getConfig().isPassMaxAge()) && maxAge != null) {
-            uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
+            parameters.put(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
-
-        return uriBuilder;
     }
 
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context) {
+        // for subclasses that build the identity without getFederatedIdentity
+        verifyNonce((String) context.getContextData().get(BROKER_NONCE_PARAM));
+    }
+
+    private void verifyNonce(String nonce) {
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
 
         if (authenticationSession == null || getConfig().isDisableNonce()) {
-            // no interacting with the brokered OP, likely doing token exchanges or no nonce
+            // not a browser login such as token exchange or the nonce is disabled
             return;
         }
-
-        String nonce = (String) context.getContextData().get(BROKER_NONCE_PARAM);
 
         if (nonce == null) {
             throw new IdentityBrokerException("OpenID Provider [" + getConfig().getProviderId() + "] did not return a nonce");

@@ -18,15 +18,15 @@ package org.keycloak.broker.oidc;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.SecretKey;
@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
@@ -54,6 +53,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -71,9 +71,11 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
@@ -82,6 +84,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -89,6 +92,7 @@ import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
+import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
@@ -100,9 +104,11 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.Booleans;
+import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.JsonUtils;
 import org.keycloak.utils.StringUtil;
@@ -126,6 +132,13 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     public static final String FEDERATED_REFRESH_TOKEN = "FEDERATED_REFRESH_TOKEN";
     public static final String FEDERATED_TOKEN_EXPIRATION = "FEDERATED_TOKEN_EXPIRATION";
+
+    private static final String BROKER_STATE_PARAM = "BROKER_STATE";
+    private static final String DPOP_NONCE_KEY_PREFIX = "kc.brokering.dpop.nonce.";
+    private static final String DPOP_NONCE_NOTE = "nonce";
+    // limits exp to 60 minutes after nbf
+    // https://openid.net/specs/fapi-message-signing-2_0-final.html
+    private static final int REQUEST_OBJECT_MAX_LIFESPAN = 3600;
 
     protected String getFederatedRefreshTokenKey() {
         return FEDERATED_REFRESH_TOKEN + ":" + getConfig().getAlias();
@@ -209,12 +222,21 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     @Override
     public Response performLogin(AuthenticationRequest request) {
         try {
-            URI authorizationUrl = createAuthorizationUrl(request).build();
-
-            return Response.seeOther(authorizationUrl).build();
+            return Response.seeOther(createAuthorizationUrl(request)).build();
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not create authentication request.", e);
         }
+    }
+
+    protected URI createAuthorizationUrl(AuthenticationRequest request) throws IOException {
+        Map<String, String> parameters = new LinkedHashMap<>();
+        addAuthorizationParameters(request, parameters);
+
+        boolean par = getConfig().isPushedAuthorizationRequestsEnabled();
+        if (getConfig().isRequestObjectEnabled()) {
+            parameters = toRequestObjectParameters(parameters, par);
+        }
+        return par ? pushAuthorizationRequest(parameters) : authorizationUrlWith(parameters);
     }
 
     /**
@@ -302,6 +324,102 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     }
 
+    /**
+     * Replaces the parameters with a signed request object
+     * (<a href="https://datatracker.ietf.org/doc/html/rfc9101">RFC 9101</a>). With PAR only the client ID goes along
+     * with it (<a href="https://datatracker.ietf.org/doc/html/rfc9126#section-3">RFC 9126 section 3</a>). Without PAR
+     * the response type and scope are repeated for
+     * <a href="https://openid.net/specs/openid-connect-core-1_0.html#RequestObject">OIDC Core 6.1</a>.
+     */
+    private Map<String, String> toRequestObjectParameters(Map<String, String> parameters, boolean par) {
+        Map<String, String> requestObjectParameters = new LinkedHashMap<>();
+        requestObjectParameters.put(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId());
+        if (!par) {
+            requestObjectParameters.put(OAUTH2_PARAMETER_RESPONSE_TYPE, parameters.get(OAUTH2_PARAMETER_RESPONSE_TYPE));
+            requestObjectParameters.put(OAUTH2_PARAMETER_SCOPE, parameters.get(OAUTH2_PARAMETER_SCOPE));
+        }
+        requestObjectParameters.put(OIDCLoginProtocol.REQUEST_PARAM, createRequestObject(parameters));
+        return requestObjectParameters;
+    }
+
+    private String createRequestObject(Map<String, String> parameters) {
+        JsonWebToken requestObject = new JsonWebToken();
+        // RFC 9101 section 4 does not allow request and request_uri in a request object
+        parameters.entrySet().stream()
+                .filter(entry -> !OIDCLoginProtocol.REQUEST_PARAM.equals(entry.getKey())
+                        && !OIDCLoginProtocol.REQUEST_URI_PARAM.equals(entry.getKey()))
+                .forEach(entry -> requestObject.setOtherClaims(entry.getKey(), toRequestObjectClaim(entry.getKey(), entry.getValue())));
+        requestObject.id(SecretGenerator.getInstance().generateSecureID());
+        requestObject.issuer(getConfig().getClientId());
+        requestObject.audience(getConfig().getIssuer());
+        requestObject.issuedNow();
+        requestObject.nbf(requestObject.getIat());
+        int lifespan = Math.min(session.getContext().getRealm().getAccessCodeLifespan(), REQUEST_OBJECT_MAX_LIFESPAN);
+        requestObject.exp(requestObject.getIat() + lifespan);
+
+        String alg = getConfig().getRequestObjectSigningAlg();
+        return new JWSBuilder().type(OAuth2Constants.REQUEST_OBJECT_JWT_HEADER_TYPE).jsonContent(requestObject)
+                .sign(session.getProvider(SignatureProvider.class, alg).signer());
+    }
+
+    private URI authorizationUrlWith(Map<String, String> parameters) {
+        // jakarta UriBuilder#queryParam would read braces in values such as claims as template variables
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(getConfig().getAuthorizationUrl());
+        parameters.forEach(uriBuilder::queryParam);
+        return uriBuilder.build();
+    }
+
+    // OIDC Core defines max_age as a number and claims as a JSON object
+    // the other parameters are strings
+    // https://openid.net/specs/openid-connect-core-1_0.html#RequestObject
+    private static Object toRequestObjectClaim(String name, String value) {
+        try {
+            if (OIDCLoginProtocol.MAX_AGE_PARAM.equals(name)) {
+                return Long.valueOf(value);
+            }
+            if (OIDCLoginProtocol.CLAIMS_PARAM.equals(name)) {
+                return mapper.readTree(value);
+            }
+        } catch (IOException | NumberFormatException e) {
+            logger.debugf("Sending %s as a string as it is not valid: %s", name, e.getMessage());
+        }
+        return value;
+    }
+
+    /**
+     * Pushes the authorization request (<a href="https://datatracker.ietf.org/doc/html/rfc9126">RFC 9126</a>) and
+     * returns an authorization URL that references it.
+     */
+    protected URI pushAuthorizationRequest(Map<String, String> parameters) throws IOException {
+        String parUrl = getConfig().getPushedAuthorizationRequestUrl();
+        if (StringUtil.isBlank(parUrl)) {
+            throw new IdentityBrokerException("Pushed authorization requests are enabled but no pushed authorization request endpoint is configured");
+        }
+
+        // the DPoP proof binds the authorization code to the key
+        // https://datatracker.ietf.org/doc/html/rfc9449#section-10
+        try (SimpleHttpResponse response = sendRequest(() -> {
+            SimpleHttpRequest parRequest = SimpleHttp.create(session).doPost(parUrl);
+            parameters.forEach(parRequest::param);
+            return authenticateTokenRequest(parRequest);
+        }, null)) {
+            int status = response.getStatus();
+            String body = response.asString();
+            if (status != Response.Status.CREATED.getStatusCode() && status != Response.Status.OK.getStatusCode()) {
+                throw new IdentityBrokerException("Unexpected response from pushed authorization request endpoint " + parUrl
+                        + ". status=" + status + ", response=" + body);
+            }
+            JsonNode requestUri = asJsonNode(body).get(OIDCLoginProtocol.REQUEST_URI_PARAM);
+            if (requestUri == null || requestUri.asText().isBlank()) {
+                throw new IdentityBrokerException("The pushed authorization request endpoint " + parUrl + " did not return a request_uri");
+            }
+            Map<String, String> redirectParameters = new LinkedHashMap<>();
+            redirectParameters.put(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId());
+            redirectParameters.put(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri.asText());
+            return authorizationUrlWith(redirectParameters);
+        }
+    }
+
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
         try {
@@ -368,8 +486,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            SimpleHttpRequest refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
-            try (SimpleHttpResponse refreshTokenResponse = refreshTokenRequest.asResponse()) {
+            try (SimpleHttpResponse refreshTokenResponse = sendRequest(() -> getRefreshTokenRequest(session,
+                    previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())), null)) {
                 int status = refreshTokenResponse.getStatus();
                 String response = refreshTokenResponse.asString();
                 String errorCode = extractOAuthErrorCode(response);
@@ -397,6 +515,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     // No explicit error reported, so this doesn't prove the refresh token is invalid - treat as transient.
                     throw new IdentityBrokerException("Refresh token response from " + getConfig().getAlias() + " (HTTP status " + status + ") did not contain an access token");
                 }
+
+                verifyTokenType((String) newResponse.getOtherClaims().get(OAuth2Constants.TOKEN_TYPE));
 
                 if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
                     newResponse.setRefreshToken(previousResponse.getRefreshToken());
@@ -751,6 +871,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             throw new IdentityBrokerException("No access token available in OAuth server response: " + response);
         }
 
+        verifyTokenType(extractTokenFromResponse(response, OAuth2Constants.TOKEN_TYPE));
+
         BrokeredIdentityContext context = doGetFederatedIdentity(accessToken);
 
         if (response.startsWith("{")) {
@@ -793,22 +915,24 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
 
-    protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
-        final UriBuilder uriBuilder = UriBuilder.fromUri(getConfig().getAuthorizationUrl())
-                .queryParam(OAUTH2_PARAMETER_SCOPE, getConfig().getDefaultScope())
-                .queryParam(OAUTH2_PARAMETER_STATE, request.getState().getEncoded())
-                .queryParam(OAUTH2_PARAMETER_RESPONSE_TYPE, "code")
-                .queryParam(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId())
-                .queryParam(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri());
+    /**
+     * Adds the authorization request parameters. Subclasses override this to add their own.
+     */
+    protected void addAuthorizationParameters(AuthenticationRequest request, Map<String, String> parameters) {
+        parameters.put(OAUTH2_PARAMETER_SCOPE, getConfig().getDefaultScope());
+        parameters.put(OAUTH2_PARAMETER_STATE, request.getState().getEncoded());
+        parameters.put(OAUTH2_PARAMETER_RESPONSE_TYPE, "code");
+        parameters.put(OAUTH2_PARAMETER_CLIENT_ID, getConfig().getClientId());
+        parameters.put(OAUTH2_PARAMETER_REDIRECT_URI, request.getRedirectUri());
         AuthenticationSessionModel authenticationSession = request.getAuthenticationSession();
         String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
         if (Booleans.isTrue(getConfig().isLoginHint()) && loginHint != null) {
-            uriBuilder.queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
+            parameters.put(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint);
         }
 
         if (getConfig().isUiLocales()) {
-            uriBuilder.queryParam(OIDCLoginProtocol.UI_LOCALES_PARAM, session.getContext().resolveLocale(null).toLanguageTag());
+            parameters.put(OIDCLoginProtocol.UI_LOCALES_PARAM, session.getContext().resolveLocale(null).toLanguageTag());
         }
 
         boolean forwardedPassiveLogin = "true".equals(
@@ -818,8 +942,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             prompt = authenticationSession.getClientNote(OAuth2Constants.PROMPT);
         }
         if (prompt != null) {
-            uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
+            parameters.put(OAuth2Constants.PROMPT, prompt);
         }
+
+        authenticationSession.setClientNote(BROKER_STATE_PARAM, request.getState().getEncoded());
 
         if (getConfig().isPkceEnabled()) {
             String codeVerifier = PkceUtils.generateCodeVerifier();
@@ -828,20 +954,17 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             authenticationSession.setClientNote(BROKER_CODE_CHALLENGE_METHOD_PARAM, codeChallengeMethod);
 
             String codeChallenge = PkceUtils.encodeCodeChallenge(codeVerifier, codeChallengeMethod);
-            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
-            uriBuilder.queryParam(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
+            parameters.put(OAuth2Constants.CODE_CHALLENGE, codeChallenge);
+            parameters.put(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod);
         }
 
-        appendForwardedParameters(authenticationSession, uriBuilder);
-
-        return uriBuilder;
+        appendForwardedParameters(authenticationSession, parameters);
     }
 
-    private void appendForwardedParameters(AuthenticationSessionModel authenticationSession, UriBuilder uriBuilder) {
+    private void appendForwardedParameters(AuthenticationSessionModel authenticationSession, Map<String, String> parameters) {
         C config = getConfig();
         String forwardParameterConfig = config.getForwardParameters() != null ? config.getForwardParameters(): OAuth2Constants.ACR_VALUES;
         List<String> parameterNames = List.of(forwardParameterConfig.split("\\s*,\\s*"));
-        StringBuilder query = new StringBuilder(uriBuilder.build().getRawQuery());
 
         for (String name: parameterNames) {
             String noteKey = AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + name.trim();
@@ -853,14 +976,10 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             }
 
             if (value != null && !value.isEmpty()) {
-                if (!query.isEmpty()) {
-                    query.append("&");
-                }
-                query.append(name).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+                // RFC 6749 section 3.1 does not allow a parameter more than once
+                parameters.putIfAbsent(name, value);
             }
         }
-
-        uriBuilder.replaceQuery(query.toString());
     }
 
     /**
@@ -965,6 +1084,111 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return jwt;
     }
 
+    /**
+     * Sends a request with DPoP when enabled and retries once if the server asks for a nonce
+     * (<a href="https://datatracker.ietf.org/doc/html/rfc9449#section-8">RFC 9449 section 8</a> and
+     * <a href="https://datatracker.ietf.org/doc/html/rfc9449#section-9">section 9</a>).
+     *
+     * @param requestSupplier called again for the retry so the client assertion and the DPoP proof are new
+     * @param accessToken the access token to present or {@code null}
+     */
+    protected SimpleHttpResponse sendRequest(Supplier<SimpleHttpRequest> requestSupplier, String accessToken) throws IOException {
+        if (!getConfig().isDPoPEnabled()) {
+            SimpleHttpRequest request = requestSupplier.get();
+            return (accessToken == null ? request : request.auth(accessToken)).asResponse();
+        }
+
+        // requests with an access token go to the resource server and the others to the authorization server
+        // a nonce is only used at the server that issued it
+        // https://datatracker.ietf.org/doc/html/rfc9449#section-9
+        String nonceKey = getDPoPNonceKey(accessToken == null ? "authorization-server" : "resource-server");
+        String storedNonce = getStoredDPoPNonce(nonceKey);
+        SimpleHttpResponse response = withDPoP(requestSupplier.get(), accessToken, storedNonce).asResponse();
+        try {
+            String challenge = getDPoPNonceChallenge(response);
+            if (challenge != null) {
+                response.close();
+                response = withDPoP(requestSupplier.get(), accessToken, challenge).asResponse();
+            }
+
+            // the client uses the nonce until the server supplies a new one
+            // https://datatracker.ietf.org/doc/html/rfc9449#section-8.2
+            String suppliedNonce = response.getFirstHeader(OAuth2Constants.DPOP_NONCE_HEADER);
+            String latestNonce = suppliedNonce != null ? suppliedNonce : challenge;
+            if (latestNonce != null && !latestNonce.equals(storedNonce)) {
+                session.singleUseObjects().put(nonceKey, session.getContext().getRealm().getAccessCodeLifespan(),
+                        Map.of(DPOP_NONCE_NOTE, latestNonce));
+            }
+            return response;
+        } catch (IOException | RuntimeException e) {
+            response.close();
+            throw e;
+        }
+    }
+
+    private SimpleHttpRequest withDPoP(SimpleHttpRequest request, String accessToken, String nonce) {
+        if (accessToken != null) {
+            request.header(HttpHeaders.AUTHORIZATION, DPoPUtil.DPOP_SCHEME + " " + accessToken);
+        }
+        return request.header(OAuth2Constants.DPOP_HTTP_HEADER,
+                createDPoPProof(request.getMethod().name(), request.getUrl(), accessToken, nonce));
+    }
+
+    /**
+     * @param server the server that issues the nonce
+     */
+    private String getDPoPNonceKey(String server) {
+        return DPOP_NONCE_KEY_PREFIX + server + "." + session.getContext().getRealm().getId() + "." + getConfig().getAlias();
+    }
+
+    private String getStoredDPoPNonce(String nonceKey) {
+        Map<String, String> notes = session.singleUseObjects().get(nonceKey);
+        return notes == null ? null : notes.get(DPOP_NONCE_NOTE);
+    }
+
+    private String createDPoPProof(String method, String url, String accessToken, String nonce) {
+        String algorithm = getConfig().getDPoPSigningAlg();
+        KeyWrapper key = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, algorithm);
+        if (key == null || key.getPublicKey() == null || key.getPrivateKey() == null) {
+            throw new IdentityBrokerException("No realm key available to sign DPoP proofs with " + algorithm);
+        }
+
+        JWK jwk = JWKSServerUtils.toJwk(key);
+        if (jwk == null) {
+            throw new IdentityBrokerException("Unsupported key type for DPoP proofs: " + key.getType());
+        }
+
+        JWSHeader header = new JWSHeader(org.keycloak.jose.jws.Algorithm.valueOf(algorithm), OAuth2Constants.DPOP_JWT_HEADER_TYPE, key.getKid(), jwk);
+        SignatureSignerContext signer = session.getProvider(SignatureProvider.class, algorithm).signer(key);
+        return DPoPGenerator.generateSignedDPoPProof(KeycloakModelUtils.generateId(), method, toDPoPHttpTargetUri(url),
+                (long) Time.currentTime(), header, signer, accessToken, nonce);
+    }
+
+    protected void verifyTokenType(String tokenType) {
+        if (getConfig().isDPoPEnabled() && !DPoPUtil.DPOP_SCHEME.equalsIgnoreCase(tokenType)) {
+            throw new IdentityBrokerException("DPoP is enabled but the token type of the access token is " + tokenType);
+        }
+    }
+
+    // https://datatracker.ietf.org/doc/html/rfc9449#section-4.2
+    private static String toDPoPHttpTargetUri(String url) {
+        return KeycloakUriBuilder.fromUri(url).replaceQuery(null).fragment(null).build().toString();
+    }
+
+    private String getDPoPNonceChallenge(SimpleHttpResponse response) throws IOException {
+        int status = response.getStatus();
+        String nonce = response.getFirstHeader(OAuth2Constants.DPOP_NONCE_HEADER);
+        if (nonce == null || (status != Response.Status.BAD_REQUEST.getStatusCode() && status != Response.Status.UNAUTHORIZED.getStatusCode())) {
+            return null;
+        }
+        // an authorization server answers with an error response and a resource server with a challenge
+        String challenge = response.getFirstHeader(HttpHeaders.WWW_AUTHENTICATE);
+        if (challenge != null && challenge.contains(OAuthErrorException.USE_DPOP_NONCE)) {
+            return nonce;
+        }
+        return OAuthErrorException.USE_DPOP_NONCE.equals(extractOAuthErrorCode(response.asString())) ? nonce : null;
+    }
+
     protected SignatureSignerContext getSignatureContext() {
         if (getConfig().getClientAuthMethod().equals(OIDCLoginProtocol.CLIENT_SECRET_JWT)) {
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
@@ -1022,6 +1246,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 AuthenticationSessionModel authSession = this.callback.getAndVerifyAuthenticationSession(state);
                 session.getContext().setAuthenticationSession(authSession);
 
+                String rejectionReason = validateAuthorizationResponse(state, authSession);
+                if (rejectionReason != null) {
+                    logErroneousRedirectUrlError(rejectionReason, providerConfig);
+                    return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
+                }
+
                 if (error != null) {
                     logErroneousRedirectUrlError("Redirection URL contains an error", providerConfig);
                     if (error.equals(ACCESS_DENIED)) {
@@ -1041,16 +1271,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                     return errorIdentityProviderLogin(Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_MISSING_CODE_OR_ERROR_ERROR);
                 }
 
-                SimpleHttpRequest simpleHttp = generateTokenRequest(authorizationCode);
                 String response;
-                try (SimpleHttpResponse simpleResponse = simpleHttp.asResponse()) {
+                try (SimpleHttpResponse simpleResponse = provider.sendRequest(() -> generateTokenRequest(authorizationCode), null)) {
                     int status = simpleResponse.getStatus();
                     boolean success = status >= 200 && status < 400;
                     response = simpleResponse.asString();
 
                     if (!success) {
                         logger.errorf("Unexpected response from token endpoint %s. status=%s, response=%s",
-                                simpleHttp.getUrl(), status, response);
+                                providerConfig.getTokenUrl(), status, response);
                         return errorIdentityProviderLogin(Response.Status.BAD_GATEWAY, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
                     }
                 }
@@ -1079,6 +1308,30 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 logger.error("Failed to make identity provider oauth callback", e);
                 return errorIdentityProviderLogin(Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
             }
+        }
+
+        /**
+         * @return the rejection reason or {@code null} if the response is accepted
+         */
+        private String validateAuthorizationResponse(String state, AuthenticationSessionModel authSession) {
+            OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
+            // https://datatracker.ietf.org/doc/html/rfc6749#section-10.12
+            // no note when a subclass builds its own authorization URL
+            String sentState = authSession.getClientNote(BROKER_STATE_PARAM);
+            if (sentState != null && !state.equals(sentState)) {
+                return "Redirection URL contains a state that was not sent";
+            }
+            if (providerConfig.isAuthorizationResponseIssuerRequired()) {
+                // https://datatracker.ietf.org/doc/html/rfc9207#section-2.4
+                String issuer = session.getContext().getUri().getQueryParameters().getFirst(OAuth2Constants.ISSUER);
+                if (issuer == null) {
+                    return "Redirection URL does not contain the issuer (iss) parameter that is required";
+                }
+                if (!issuer.equals(providerConfig.getIssuer())) {
+                    return "Redirection URL contains an unexpected issuer (iss) parameter [" + issuer + "]";
+                }
+            }
+            return null;
         }
 
         private void logErroneousRedirectUrlError(String mainMessage, OAuth2IdentityProviderConfig providerConfig) {

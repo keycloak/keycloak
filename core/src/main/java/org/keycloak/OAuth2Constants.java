@@ -178,6 +178,9 @@ public interface OAuth2Constants {
     String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     String ALGS_ATTRIBUTE = "algs";
 
+    // JAR - https://datatracker.ietf.org/doc/html/rfc9101#section-10.8
+    String REQUEST_OBJECT_JWT_HEADER_TYPE = "oauth-authz-req+jwt";
+
     // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-5.1.3
     // Used to pass the issuer_state value back to the Credential Issuer.
     String ISSUER_STATE = "issuer_state";

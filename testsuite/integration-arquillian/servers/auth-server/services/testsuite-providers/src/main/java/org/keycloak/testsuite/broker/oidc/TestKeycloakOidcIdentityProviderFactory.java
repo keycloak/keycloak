@@ -19,9 +19,8 @@ package org.keycloak.testsuite.broker.oidc;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
-
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
@@ -86,7 +85,7 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
             }
 
             @Override
-            protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
+            protected void addAuthorizationParameters(AuthenticationRequest request, Map<String, String> parameters) {
                 AuthenticationSessionModel authSession = request.getAuthenticationSession();
                 String maxAge = authSession.getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
 
@@ -94,7 +93,7 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
                     if (isIgnoreMaxAgeParam()) {
                         authSession.removeClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
                     }
-                    return super.createAuthorizationUrl(request);
+                    super.addAuthorizationParameters(request, parameters);
                 } finally {
                     authSession.setClientNote(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
                 }

@@ -100,7 +100,7 @@ public class OID4VCConstants {
     public static final String ENCRYPTED_RESPONSE_ENC_VALUES_SUPPORTED = "encrypted_response_enc_values_supported";
     public static final String FORMAT_SD_JWT_VC = "dc+sd-jwt";
     public static final String SELF_ISSUED_V2 = "https://self-issued.me/v2";
-    public static final String REQUEST_OBJECT_TYPE = "oauth-authz-req+jwt";
+    public static final String REQUEST_OBJECT_TYPE = OAuth2Constants.REQUEST_OBJECT_JWT_HEADER_TYPE;
     public static final String REQUEST_OBJECT_MEDIA_TYPE = "application/oauth-authz-req+jwt";
 
     private OID4VCConstants() {

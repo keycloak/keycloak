@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import { JwksSettings } from "./JwksSettings";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 
 import "./discovery-settings.css";
 
@@ -16,17 +17,13 @@ type DiscoverySettingsProps = {
   isOIDC: boolean;
 };
 
-const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
+const MetadataFields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
   const { t } = useTranslation();
   const { control } = useFormContext<IdentityProviderRepresentation>();
 
   const validateSignature = useWatch({
     control,
     name: "config.validateSignature",
-  });
-  const isPkceEnabled = useWatch({
-    control,
-    name: "config.pkceEnabled",
   });
   const jwtAuthorizationGrantEnabled = useWatch({
     control,
@@ -35,6 +32,10 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
   const supportsClientAssertions = useWatch({
     control,
     name: "config.supportsClientAssertions",
+  });
+  const isParEnabled = useWatch({
+    control,
+    name: "config.pushedAuthorizationRequestsEnabled",
   });
 
   return (
@@ -78,13 +79,27 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
         type="url"
         readOnly={readOnly}
       />
-      {isOIDC && (
-        <TextControl
-          name="config.issuer"
-          label={t("issuer")}
-          readOnly={readOnly}
-        />
-      )}
+      <TextControl
+        name="config.pushedAuthorizationRequestUrl"
+        label={t("pushedAuthorizationRequestUrl")}
+        labelIcon={t("pushedAuthorizationRequestUrlHelp")}
+        type="url"
+        readOnly={readOnly}
+        rules={{
+          required: isParEnabled === "true" ? t("required") : "",
+        }}
+      />
+      <TextControl
+        name="config.issuer"
+        label={t("issuer")}
+        readOnly={readOnly}
+      />
+      <DefaultSwitchControl
+        name="config.validateDiscoveryIssuer"
+        label={t("validateDiscoveryIssuer")}
+        labelIcon={t("validateDiscoveryIssuerHelp")}
+        stringify
+      />
       {isOIDC && (
         <>
           <DefaultSwitchControl
@@ -101,10 +116,42 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
           )}
         </>
       )}
+    </div>
+  );
+};
+
+const ClientFields = ({ readOnly }: { readOnly: boolean }) => {
+  const { t } = useTranslation();
+  const { control } = useFormContext<IdentityProviderRepresentation>();
+
+  const isPkceEnabled = useWatch({
+    control,
+    name: "config.pkceEnabled",
+  });
+  const isParRequired = useWatch({
+    control,
+    name: "config.pushedAuthorizationRequestsRequired",
+  });
+  const parUrl = useWatch({
+    control,
+    name: "config.pushedAuthorizationRequestUrl",
+  });
+  const isRequestObjectEnabled = useWatch({
+    control,
+    name: "config.requestObjectEnabled",
+  });
+  const isDPoPEnabled = useWatch({
+    control,
+    name: "config.dpopEnabled",
+  });
+  const asymmetricSigningAlgs =
+    useServerInfo().cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [];
+
+  return (
+    <>
       <DefaultSwitchControl
         name="config.pkceEnabled"
         label={t("pkceEnabled")}
-        isDisabled={readOnly}
         stringify
       />
       {isPkceEnabled === "true" && (
@@ -121,7 +168,55 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
           }))}
         />
       )}
-    </div>
+      <DefaultSwitchControl
+        name="config.pushedAuthorizationRequestsEnabled"
+        label={t("pushedAuthorizationRequestsEnabled")}
+        labelIcon={t("pushedAuthorizationRequestsEnabledHelp")}
+        // locked when the metadata requires it or has no endpoint for it
+        isDisabled={isParRequired === "true" || (readOnly && !parUrl)}
+        stringify
+      />
+      <DefaultSwitchControl
+        name="config.requestObjectEnabled"
+        label={t("requestObjectEnabled")}
+        labelIcon={t("requestObjectEnabledHelp")}
+        stringify
+      />
+      {isRequestObjectEnabled === "true" && (
+        <SelectControl
+          name="config.requestObjectSigningAlg"
+          label={t("requestObjectSigningAlg")}
+          labelIcon={t("requestObjectSigningAlgHelp")}
+          controller={{
+            defaultValue: "PS256",
+          }}
+          options={asymmetricSigningAlgs.map((option) => ({
+            key: option,
+            value: option,
+          }))}
+        />
+      )}
+      <DefaultSwitchControl
+        name="config.dpopEnabled"
+        label={t("dpopEnabled")}
+        labelIcon={t("dpopEnabledHelp")}
+        stringify
+      />
+      {isDPoPEnabled === "true" && (
+        <SelectControl
+          name="config.dpopSigningAlg"
+          label={t("dpopSigningAlg")}
+          labelIcon={t("dpopSigningAlgHelp")}
+          controller={{
+            defaultValue: "ES256",
+          }}
+          options={asymmetricSigningAlgs.map((option) => ({
+            key: option,
+            value: option,
+          }))}
+        />
+      )}
+    </>
   );
 };
 
@@ -133,7 +228,7 @@ export const DiscoverySettings = ({
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <>
+    <div className="pf-v5-c-form pf-m-horizontal">
       {readOnly && (
         <ExpandableSection
           className="keycloak__discovery-settings__metadata"
@@ -141,10 +236,11 @@ export const DiscoverySettings = ({
           onToggle={() => setIsExpanded(!isExpanded)}
           isExpanded={isExpanded}
         >
-          <Fields readOnly={readOnly} isOIDC={isOIDC} />
+          <MetadataFields readOnly={readOnly} isOIDC={isOIDC} />
         </ExpandableSection>
       )}
-      {!readOnly && <Fields readOnly={readOnly} isOIDC={isOIDC} />}
-    </>
+      {!readOnly && <MetadataFields readOnly={readOnly} isOIDC={isOIDC} />}
+      <ClientFields readOnly={readOnly} />
+    </div>
   );
 };

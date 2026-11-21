@@ -17,9 +17,9 @@
 package org.keycloak.social.google;
 
 import java.util.List;
+import java.util.Map;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
@@ -108,20 +108,18 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     }
 
     @Override
-    protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
-        UriBuilder uriBuilder = super.createAuthorizationUrl(request);
+    protected void addAuthorizationParameters(AuthenticationRequest request, Map<String, String> parameters) {
+        super.addAuthorizationParameters(request, parameters);
         final GoogleIdentityProviderConfig googleConfig = (GoogleIdentityProviderConfig) getConfig();
         String hostedDomain = googleConfig.getHostedDomain();
 
         if (hostedDomain != null) {
-            uriBuilder.queryParam(OIDC_PARAMETER_HOSTED_DOMAINS, hostedDomain);
+            parameters.put(OIDC_PARAMETER_HOSTED_DOMAINS, hostedDomain);
         }
 
         if (googleConfig.isOfflineAccess()) {
-            uriBuilder.queryParam(OIDC_PARAMETER_ACCESS_TYPE, ACCESS_TYPE_OFFLINE);
+            parameters.put(OIDC_PARAMETER_ACCESS_TYPE, ACCESS_TYPE_OFFLINE);
         }
-
-        return uriBuilder;
     }
 
     @Override
