@@ -31,17 +31,23 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -49,6 +55,8 @@ import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.UserProfileProvider;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
@@ -63,6 +71,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -186,6 +195,79 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         userRepresentation.getAttributes().remove(UserModel.LOCALE);
         user.update(userRepresentation);
         assertNull(userRepresentation.getAttributes().get(UserModel.LOCALE));
+    }
+
+    @Test
+    public void testLocalAttributeWritesDoNotUnlockLdapAttributes() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            UserModel user = session.users().getUserByUsername(ctx.getRealm(), "johnkeycloak");
+            user.setSingleAttribute("localAttribute", "first");
+            assertEquals("first", user.getFirstAttribute("localAttribute"));
+            user.setAttribute("localAttribute", List.of("second", "third"));
+            assertEquals(List.of("second", "third"), user.getAttributeStream("localAttribute").toList());
+            user.removeAttribute("localAttribute");
+            assertNull(user.getFirstAttribute("localAttribute"));
+
+            for (String name : List.of(UserModel.USERNAME, UserModel.EMAIL, UserModel.FIRST_NAME,
+                    UserModel.LAST_NAME, "postal_code", LDAPConstants.LDAP_ID, LDAPConstants.LDAP_ENTRY_DN)) {
+                List<String> original = user.getAttributeStream(name).toList();
+                user.setAttribute(name, original);
+                assertThrows(ReadOnlyException.class, () -> user.setSingleAttribute(name, "changed"), name);
+                assertThrows(ReadOnlyException.class, () -> user.setAttribute(name, List.of("changed")), name);
+                assertThrows(ReadOnlyException.class, () -> user.removeAttribute(name), name);
+                assertEquals(original, user.getAttributeStream(name).toList());
+            }
+            assertThrows(ReadOnlyException.class, () -> user.setUsername("changed"));
+            assertThrows(ReadOnlyException.class, () -> user.setFirstName("changed"));
+            assertThrows(ReadOnlyException.class, () -> user.setLastName("changed"));
+            assertThrows(ReadOnlyException.class, () -> user.setEmail("changed@example.org"));
+            assertThrows(ReadOnlyException.class, () -> ctx.getLdapProvider().updateCredential(ctx.getRealm(), user,
+                    UserCredentialModel.password("ChangedPassword1")));
+        });
+    }
+
+    @Test
+    public void testMappedLocaleRemainsReadOnly() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            boolean internationalizationEnabled = realm.isInternationalizationEnabled();
+            ComponentModel mapper = KeycloakModelUtils.createComponentModel("fixed-locale", ctx.getLdapModel().getId(),
+                    HardcodedAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE, UserModel.LOCALE,
+                    HardcodedAttributeMapper.ATTRIBUTE_VALUE, "en");
+            realm.addComponentModel(mapper);
+            try {
+                realm.setInternationalizationEnabled(true);
+                UserModel user = session.users().getUserByUsername(realm, "johnkeycloak");
+                assertTrue(session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, user)
+                        .getAttributes().isReadOnly(UserModel.LOCALE));
+                assertThrows(ReadOnlyException.class, () -> user.setSingleAttribute(UserModel.LOCALE, "fr"));
+            } finally {
+                realm.removeComponent(mapper);
+                realm.setInternationalizationEnabled(internationalizationEnabled);
+            }
+        });
+    }
+
+    @Test
+    public void testMappedPropertiesAreCaseInsensitive() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel mapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "email");
+            String attribute = mapper.getConfig().getFirst(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE);
+            mapper.put(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, "EMAIL");
+            ctx.getRealm().updateComponent(mapper);
+            try {
+                UserModel user = session.users().getUserByUsername(ctx.getRealm(), "johnkeycloak");
+                assertThrows(ReadOnlyException.class, () -> user.setEmail("changed@example.org"));
+                assertThrows(ReadOnlyException.class, () -> user.setSingleAttribute("EMAIL", "changed@example.org"));
+            } finally {
+                mapper.put(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, attribute);
+                ctx.getRealm().updateComponent(mapper);
+            }
+        });
     }
 
     // KEYCLOAK-3365

@@ -19,6 +19,7 @@ package org.keycloak.storage.ldap;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.UserModel;
@@ -36,12 +37,23 @@ import static org.keycloak.storage.ldap.LDAPStorageProvider.INTERNAL_ATTRIBUTES;
  */
 public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
+    private final Predicate<String> readOnlyAttribute;
+
     public ReadonlyLDAPUserModelDelegate(UserModel delegate) {
+        this(delegate, name -> !INTERNAL_ATTRIBUTES.contains(name));
+    }
+
+    public ReadonlyLDAPUserModelDelegate(UserModel delegate, Predicate<String> readOnlyAttribute) {
         super(delegate);
+        this.readOnlyAttribute = readOnlyAttribute;
     }
 
     @Override
     public void setUsername(String username) {
+        if (!readOnlyAttribute.test(UserModel.USERNAME)) {
+            super.setUsername(username);
+            return;
+        }
         if (!Objects.equals(getUsername(), username)) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
@@ -49,6 +61,10 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setLastName(String lastName) {
+        if (!readOnlyAttribute.test(UserModel.LAST_NAME)) {
+            super.setLastName(lastName);
+            return;
+        }
         if (!Objects.equals(getLastName(), lastName)) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
@@ -56,6 +72,10 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setFirstName(String first) {
+        if (!readOnlyAttribute.test(UserModel.FIRST_NAME)) {
+            super.setFirstName(first);
+            return;
+        }
         if (!Objects.equals(getFirstName(), first)) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
@@ -63,6 +83,10 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setEmail(String email) {
+        if (!readOnlyAttribute.test(UserModel.EMAIL)) {
+            super.setEmail(email);
+            return;
+        }
         if (!Objects.equals(getEmail(), email)) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
@@ -75,7 +99,7 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void setAttribute(String name, List<String> values) {
-        if (INTERNAL_ATTRIBUTES.contains(name)) {
+        if (!readOnlyAttribute.test(name)) {
             super.setAttribute(name, values);
             return;
         }
@@ -86,7 +110,7 @@ public class ReadonlyLDAPUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void removeAttribute(String name) {
-        if (INTERNAL_ATTRIBUTES.contains(name)) {
+        if (!readOnlyAttribute.test(name)) {
             super.removeAttribute(name);
             return;
         }

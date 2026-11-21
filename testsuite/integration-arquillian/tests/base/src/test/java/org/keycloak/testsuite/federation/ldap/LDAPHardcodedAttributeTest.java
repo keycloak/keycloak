@@ -17,15 +17,18 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
@@ -64,9 +67,13 @@ public class LDAPHardcodedAttributeTest extends AbstractLDAPTest {
          ComponentModel emailVerifiedMapperModel = KeycloakModelUtils.createComponentModel("emailVerifiedMapper", ctx.getLdapModel().getId(), HardcodedAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
                 HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE, "emailVerified",
                 HardcodedAttributeMapper.ATTRIBUTE_VALUE, "true");
+         ComponentModel enabledMapperModel = KeycloakModelUtils.createComponentModel("enabledMapper", ctx.getLdapModel().getId(), HardcodedAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE, UserModel.ENABLED,
+                HardcodedAttributeMapper.ATTRIBUTE_VALUE, "true");
 
          appRealm.addComponentModel(localeMapperModel);
          appRealm.addComponentModel(emailVerifiedMapperModel);
+         appRealm.addComponentModel(enabledMapperModel);
 
           // Delete all LDAP users and add some new for testing
          LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
@@ -105,5 +112,41 @@ public class LDAPHardcodedAttributeTest extends AbstractLDAPTest {
                 HardcodedAttributeMapper.ATTRIBUTE_VALUE, "username");
          appRealm.addComponentModel(usernameMapperModel);
       });
+   }
+
+   @Test
+   public void testASearchByHardcodedEnabledAttribute() {
+      Assertions.assertTrue(managedRealm.admin().users().searchByAttributes("enabled:true").stream()
+              .anyMatch(user -> "johnkeycloak".equals(user.getUsername())));
+   }
+
+   @Test
+   public void testDuplicateMappedAttributes() {
+      String attributeName = "duplicateMappedAttribute";
+      UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
+
+      try {
+         testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+            ComponentModel hardcodedMapper = KeycloakModelUtils.createComponentModel("duplicateHardcodedMapper", ctx.getLdapModel().getId(), HardcodedAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedAttributeMapper.USER_MODEL_ATTRIBUTE, attributeName,
+                    HardcodedAttributeMapper.ATTRIBUTE_VALUE, "value");
+            realm.addComponentModel(hardcodedMapper);
+            LDAPTestUtils.addUserAttributeMapper(realm, ctx.getLdapModel(), "duplicateUserAttributeMapper", attributeName, "description");
+         });
+
+         UserRepresentation user = userResource.toRepresentation(true);
+         Assertions.assertEquals(1, user.getUserProfileMetadata().getAttributes().stream()
+                 .filter(attribute -> attributeName.equals(attribute.getName())).count());
+      } finally {
+         testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ctx.getRealm().getComponentsStream(ctx.getLdapModel().getId(), LDAPStorageMapper.class.getName())
+                    .filter(mapper -> "duplicateHardcodedMapper".equals(mapper.getName()) || "duplicateUserAttributeMapper".equals(mapper.getName()))
+                    .toList()
+                    .forEach(ctx.getRealm()::removeComponent);
+         });
+      }
    }
 }

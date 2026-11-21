@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -474,6 +475,57 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             }
 
         });
+    }
+
+    @Test
+    public void testEmailAsUsernameIsReadOnlyWhenLdapIsReadOnlyWithoutEmailMapper() {
+        String username = "johnkeycloak";
+        String email = "john@email.org";
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
+        RealmRepresentation originalRealm = managedRealm.admin().toRepresentation();
+        boolean initialEditUsernameAllowed = originalRealm.isEditUsernameAllowed();
+        boolean initialEmailUsernameEnabled = originalRealm.isRegistrationEmailAsUsername();
+        boolean initialDuplicateEmailsAllowed = originalRealm.isDuplicateEmailsAllowed();
+
+        try {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "email");
+                emailMapper.put(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, "unmappedEmail");
+                ctx.getRealm().updateComponent(emailMapper);
+            });
+            setLDAPReadOnly();
+
+            RealmRepresentation realm = managedRealm.admin().toRepresentation();
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            managedRealm.admin().update(realm);
+
+            UserRepresentation user = userResource.toRepresentation(true);
+            Assertions.assertTrue(user.getUserProfileMetadata().getAttributeMetadata(UserModel.EMAIL).isReadOnly());
+            user.setEmail("john@newemail.org");
+            Assertions.assertThrows(BadRequestException.class, () -> userResource.update(user));
+            Assertions.assertEquals(email, userResource.toRepresentation().getEmail());
+
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
+                UserModel userModel = session.users().getUserByUsername(ctx.getRealm(), username);
+                Assertions.assertThrows(ReadOnlyException.class, () -> userModel.setEmail("john@newemail.org"));
+            });
+        } finally {
+            setLDAPWritable();
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session, "test-ldap");
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ctx.getLdapModel(), "email");
+                emailMapper.put(UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE, UserModel.EMAIL);
+                ctx.getRealm().updateComponent(emailMapper);
+            });
+            RealmRepresentation realm = managedRealm.admin().toRepresentation();
+            realm.setEditUsernameAllowed(initialEditUsernameAllowed);
+            realm.setRegistrationEmailAsUsername(initialEmailUsernameEnabled);
+            realm.setDuplicateEmailsAllowed(initialDuplicateEmailsAllowed);
+            managedRealm.admin().update(realm);
+        }
     }
 
     @Test
