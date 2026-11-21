@@ -48,25 +48,24 @@ public class EmailValidationUtil {
         if ( value == null || value.length() == 0 ) {
             return false;
         }
-
+        String trimmedValue = value.toString().trim();
+        if (trimmedValue.isEmpty()) {
+            return false;
+        }
         // cannot split email string at @ as it can be a part of quoted local part of email.
         // so we need to split at a position of last @ present in the string:
-        String stringValue = value.toString();
-        int splitPosition = stringValue.lastIndexOf( '@' );
+        int splitPosition = trimmedValue.lastIndexOf( '@' );
 
         // need to check if
         if ( splitPosition < 0 ) {
             return false;
         }
 
-        String localPart = stringValue.substring( 0, splitPosition );
-        String domainPart = stringValue.substring( splitPosition + 1 );
+        String localPart = trimmedValue.substring( 0, splitPosition );
+        String domainPart = trimmedValue.substring( splitPosition + 1 );
 
-        if ( !isValidEmailLocalPart( localPart, maxEmailLocalPartLength ) ) {
-            return false;
-        }
-
-        return isValidEmailDomainAddress( domainPart );
+        return isValidEmailLocalPart(localPart, maxEmailLocalPartLength) 
+        && isValidEmailDomainAddress(domainPart);
     }
 
     private static boolean isValidEmailLocalPart(String localPart, int maxEmailLocalPartLength) {
