@@ -16,9 +16,7 @@
  *
  */
 
-package org.keycloak.testsuite.oidc;
-
-import java.util.List;
+package org.keycloak.tests.oidc;
 
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -26,21 +24,21 @@ import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.common.BasicRealmWithUserConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
-
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,53 +46,35 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCPublicClientTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class OIDCPublicClientTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm(config = BasicRealmWithUserConfig.class)
+    ManagedRealm managedRealm;
 
+    @InjectOAuthClient(config = TestClientConfig.class)
+    OAuthClient oauth;
 
-    @Override
-    public void beforeAbstractKeycloakTest() throws Exception {
-        super.beforeAbstractKeycloakTest();
-    }
-
-    @Before
-    public void clientConfiguration() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        /*
-         * Configure the default client ID. Seems like OAuthClient is keeping the state of clientID
-         * For example: If some test case configure oauth.clientId("sample-public-client"), other tests
-         * will faile and the clientID will always be "sample-public-client
-         * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
-         */
-        oauth.client("test-app", "password");
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realm);
-    }
-
+    @InjectEvents
+    Events events;
 
     // KEYCLOAK-18258
     @Test
-    public void accessTokenRequest() throws Exception {
+    public void accessTokenRequest() {
         // Update client to use custom client authenticator
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realms().realm("test"), "test-app");
+        ClientResource clientResource = oauth.clientResource();
         ClientRepresentation clientRep = clientResource.toRepresentation();
         clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
         clientResource.update(clientRep);
 
         // Switch client to public client now
         clientRep = clientResource.toRepresentation();
-        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
+        assertEquals(JWTClientAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
         clientRep.setPublicClient(true);
         clientResource.update(clientRep);
 
         // It should be possible to authenticate
-        oauth.doLogin("test-user@localhost", "password");
+        oauth.doLogin(BasicRealmWithUserConfig.USERNAME, BasicRealmWithUserConfig.PASSWORD);
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
@@ -111,6 +91,15 @@ public class OIDCPublicClientTest extends AbstractKeycloakTest {
                 .details(Details.CODE_ID, codeId)
                 .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                 .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
+    }
+
+    public static class TestClientConfig implements ClientConfig {
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("test-app")
+                    .secret("password")
+                    .directAccessGrantsEnabled(true);
+        }
     }
 
 }

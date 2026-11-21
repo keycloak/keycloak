@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc.flows;
+package org.keycloak.tests.oidc.flows;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,33 +24,20 @@ import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test for response_type=code
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest
 public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest {
-
-    @Before
-    public void clientConfiguration() {
-        clientManagerBuilder().standardFlow(true).implicitFlow(false);
-
-        oauth.client("test-app", "password");
-        oauth.responseType(OIDCResponseType.CODE);
-    }
-
-
-    @Override
-    protected boolean isFragment() {
-        return false;
-    }
 
     @Override
     protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
@@ -73,7 +60,6 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
 
         return Collections.singletonList(idToken2);
     }
-
 
     @Test
     public void nonceNotUsed() {

@@ -87,6 +87,7 @@ import static org.keycloak.utils.MediaType.APPLICATION_JWKS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Deprecated(forRemoval = true)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest {
 

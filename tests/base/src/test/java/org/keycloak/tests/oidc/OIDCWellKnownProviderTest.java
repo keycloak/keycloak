@@ -15,26 +15,27 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oidc;
+package org.keycloak.tests.oidc;
 
 import java.net.URI;
 
 import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 import org.keycloak.services.resources.ServerMetadataResource;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest
 public class OIDCWellKnownProviderTest extends AbstractWellKnownProviderTest {
 
     protected String getWellKnownProviderId() {
@@ -49,10 +50,10 @@ public class OIDCWellKnownProviderTest extends AbstractWellKnownProviderTest {
     @Test
     public void openIdConfigurationShouldNotBeExposedViaServerMetadataRoot() {
 
-        UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
-        URI serverMetadataWellKnownUri = ServerMetadataResource.wellKnownProviderUrl(builder).build(getWellKnownProviderId(), "test");
+        UriBuilder builder = UriBuilder.fromUri(urls.getBase());
+        URI serverMetadataWellKnownUri = ServerMetadataResource.wellKnownProviderUrl(builder).build(getWellKnownProviderId(), managedRealm.getName());
 
-        try (Client client = AdminClientUtil.createResteasyClient()) {
+        try (Client client = ClientBuilder.newClient()) {
             try (Response response = client.target(serverMetadataWellKnownUri).request().get()) {
                 assertEquals(404, response.getStatus());
             }
