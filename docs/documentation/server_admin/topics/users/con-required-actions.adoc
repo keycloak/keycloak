@@ -21,6 +21,7 @@ Configure OTP::
 
 Verify Email::
    The user must verify their email account. An email will be sent to the user with a validation link that they must click. Once this workflow is successfully completed, the user will be allowed to log in.
+   If verification is completed in a different browser session, the original sign-in ends. After completing any other required actions, the user must return to the application and sign in again.
 
 Update Profile::
    The user must update profile information, such as name, address, email, and phone number.

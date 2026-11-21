@@ -168,7 +168,7 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
                 return forms
                         .setAuthenticationSession(authSession)
                         .setAttribute("messageHeader", forms.getMessage(Messages.EMAIL_VERIFIED_HEADER, user.getEmail()))
-                        .setSuccess(Messages.EMAIL_VERIFIED)
+                        .setSuccess(Messages.EMAIL_VERIFIED_DIFFERENT_BROWSER)
                         .setUser(user)
                         .createInfoPage();
             } else {
