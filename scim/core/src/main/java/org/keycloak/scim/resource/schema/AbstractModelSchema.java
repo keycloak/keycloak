@@ -279,8 +279,17 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
                         // fallback to resolve the attribute from an extension schema
                         String name = property.getKey();
 
-                        if (!name.startsWith(getId())) {
-                            name = getId() + ":" + name;
+                        if (isExtensionSchema(name)) {
+                            // the property is an extension schema, e.g. the value of a pathless operation
+                            attributes.putAll(resolveAttributes(name, property.getValue()));
+                            continue;
+                        }
+
+                        // the path is not necessarily the id of this schema if it serves multiple extension schemas
+                        String schema = isExtensionSchema(path) ? path : getId();
+
+                        if (!name.startsWith(schema)) {
+                            name = schema + ":" + name;
                         }
 
                         attributes.putAll(resolveAttributes(name, property.getValue()));
@@ -307,6 +316,23 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
 
         return attributes;
+    }
+
+    /**
+     * Returns {@code true} if the given {@code name} is the URN of an extension schema with attributes from this schema.
+     */
+    private boolean isExtensionSchema(String name) {
+        if (isCore() || name == null) {
+            return false;
+        }
+
+        for (Attribute<M, R> attribute : getAttributes().values()) {
+            if (attribute.isExtension() && name.equalsIgnoreCase(attribute.getSchema())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected boolean hasPath(Attribute<M, R> attribute, String path) {

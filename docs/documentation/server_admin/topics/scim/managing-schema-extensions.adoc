@@ -5,9 +5,11 @@
 [role="_abstract"]
 
 In addition to the core SCIM user and group schemas, {project_name} supports schema extensions that allow you to expose
-additional attributes through the SCIM API. Extension schemas are configured using the same User Profile SCIM attribute
+additional attributes through the SCIM API. User extension schemas are configured using the same User Profile SCIM attribute
 mapping described in <<_scim_mapping_attributes_,Mapping user attributes to SCIM schemas>>, but with URN-prefixed
-values that identify which extension schema the attribute belongs to. All configured extension schemas are automatically discoverable through the `/Schemas` endpoint.
+values that identify which extension schema the attribute belongs to.
+Group extension schemas are configured through a realm attribute, as described in <<_scim_group_extension_attributes_,Group extension attributes>>.
+All configured extension schemas are automatically discoverable through the `/Schemas` endpoint.
 
 == Enterprise User extension
 
@@ -267,6 +269,109 @@ each schema is listed in the user's `schemas` array when the extension has data.
 that can be used as a convenience schema for realm-specific custom attributes. It works the same way as any other
 custom schema extension, but does not require you to define your own URN. If you need to expose attributes to
 multiple external systems that each expect their own schema URN, use custom extensions with distinct URNs instead.
+
+[[_scim_group_extension_attributes_]]
+== Group extension attributes
+
+Group attributes can be exposed as attributes of custom SCIM Group extension schemas.
+Groups have no profile configuration like users, so the mappings are configured in the realm attribute `scimGroupAttributeMappings`.
+The value is a JSON array where each element maps a group attribute to a fully qualified SCIM attribute:
+
+[cols="1,1,3",options="header"]
+|===
+| Property | Required | Description
+
+| `name`
+| Yes
+| The name of the group attribute.
+
+| `scimAttribute`
+| Yes
+| The SCIM attribute, prefixed with the URN of the extension schema, for example `urn:example:params:scim:schemas:extension:custom:1.0:Group:entryUUID`.
+
+| `readOnly`
+| No
+| If `true`, values sent by SCIM clients are ignored, and the attribute is advertised with the `readOnly` mutability.
+Use it for values managed by {project_name}, such as attributes synchronized from LDAP. Defaults to `false`.
+
+| `multivalued`
+| No
+| If `true`, the attribute holds a list of values. Defaults to `false`.
+|===
+
+For example, the following mappings expose the LDAP `entryUUID` imported by the *Mapped Group Attributes* option of a group LDAP mapper, and a `costCenter` attribute managed by SCIM clients:
+
+[source,json]
+----
+[
+  {
+    "name": "entryUUID",
+    "scimAttribute": "urn:example:params:scim:schemas:extension:custom:1.0:Group:entryUUID",
+    "readOnly": true
+  },
+  {
+    "name": "costCenter",
+    "scimAttribute": "urn:example:params:scim:schemas:extension:custom:1.0:Group:costCenter"
+  }
+]
+----
+
+To set the realm attribute, retrieve the realm representation through the admin REST API, set the mappings as a string value in its `attributes`, and send it back:
+
+[source,bash]
+----
+MAPPINGS='[{"name":"entryUUID","scimAttribute":"urn:example:params:scim:schemas:extension:custom:1.0:Group:entryUUID","readOnly":true},{"name":"costCenter","scimAttribute":"urn:example:params:scim:schemas:extension:custom:1.0:Group:costCenter"}]'
+
+curl -s http://localhost:8080/admin/realms/myrealm \
+  -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
+  | jq --arg mappings "$MAPPINGS" '.attributes.scimGroupAttributeMappings = $mappings' \
+  | curl -X PUT http://localhost:8080/admin/realms/myrealm \
+      -H "Authorization: Bearer $ADMIN_ACCESS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d @-
+----
+
+NOTE: Send back the full realm representation.
+When the `attributes` of a realm update omit existing realm attributes, those attributes are removed.
+
+The mappings are validated when the realm is updated or imported, and the request is rejected with a `400 Bad Request` response if:
+
+* The value is not a JSON array of mappings, or a mapping has an unknown property.
+* A group attribute or SCIM attribute is mapped more than once.
+* The SCIM attribute is not prefixed with a valid schema URN, such as `urn:example:params:scim:schemas:extension:custom:1.0:Group`, or the attribute name is not a simple attribute name. Sub-attributes are not supported.
+* The SCIM attribute belongs to a schema defined by RFC 7643, such as the core Group schema or the Enterprise User extension.
+* The group attribute is `externalId`, which is already mapped by the core Group schema, or a name reserved for built-in group fields, such as `name` or `description`.
+
+Once configured, group resources include the mapped attributes under the extension schema URN, and the URN is added to the `schemas` array of each group that has a value for at least one mapped attribute:
+
+[source,json]
+----
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Group",
+    "urn:example:params:scim:schemas:extension:custom:1.0:Group"
+  ],
+  "id": "6a4b...",
+  "displayName": "Engineering Team",
+  "urn:example:params:scim:schemas:extension:custom:1.0:Group": {
+    "entryUUID": "5f1a2b3c-...",
+    "costCenter": "CC-42"
+  }
+}
+----
+
+Group extension attributes can be set when creating or updating groups, patched, selected with the `attributes` and `excludedAttributes` parameters, and used in filters with the full schema URN prefix, in the same way as user extension attributes.
+PATCH operations can reference an attribute by its full name, use the schema URN as the path with an object holding the attributes as the value, or omit the path and key the value by the schema URN:
+
+[source,bash]
+----
+curl "http://localhost:8080/realms/myrealm/scim/v2/Groups?filter=urn:example:params:scim:schemas:extension:custom:1.0:Group:entryUUID+eq+\"5f1a2b3c-...\"" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Accept: application/scim+json"
+----
+
+Group attributes that are not mapped are not exposed through SCIM.
+{project_name} also provides the `urn:keycloak:params:scim:schemas:extension:realm:1.0:Group` schema URN as a convenience for realm-specific group attributes.
 
 == Schema discovery
 

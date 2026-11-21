@@ -2,7 +2,6 @@ package org.keycloak.scim.resource.group;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 
@@ -17,11 +16,6 @@ public class Group extends ResourceTypeRepresentation {
 
     @JsonProperty("members")
     private List<Member> members;
-
-    @Override
-    public Set<String> getSchemas() {
-        return Set.of(SCHEMA);
-    }
 
     public String getDisplayName() {
         return displayName;
