@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -123,14 +124,15 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
                     ClientRepresentation clientRep = ((ClientCRUDContext)context).getProposedClientRepresentation();
-                    validateClientUris(clientRep);
+                    validateClientUris(clientRep, null);
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    validateClientUris(((ClientCRUDContext)context).getProposedClientRepresentation());
+                    ClientCRUDContext crudContext = (ClientCRUDContext) context;
+                    validateClientUris(crudContext.getProposedClientRepresentation(), crudContext.getTargetClient());
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
@@ -139,13 +141,14 @@ public class SecureClientUrisPatternExecutor implements ClientPolicyExecutorProv
         }
     }
 
-    private void validateClientUris(ClientRepresentation clientRep) throws ClientPolicyException {
+    private void validateClientUris(ClientRepresentation clientRep, ClientModel storedClient) throws ClientPolicyException {
         //skip validation if empty
         if (clientUriFields == null || clientUriFields.isEmpty()) {
             return;
         }
 
-        ClientUriField.validate(clientRep, clientUriFields, (field, values) -> confirmSecureUris(values, field.getName()));
+        ClientUriField.validate(clientRep, storedClient, clientUriFields,
+                (field, values) -> confirmSecureUris(values, field.getName()));
     }
 
     private void confirmSecureUris(List<String> uris, String uriType) throws ClientPolicyException {

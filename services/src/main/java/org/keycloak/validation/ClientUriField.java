@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -241,19 +242,24 @@ public enum ClientUriField {
     }
 
     public static <E extends Exception> void validate(ClientRepresentation client, Validator<E> validator) throws E {
-        validate(client, List.of(values()), validator);
-    }
-
-    public static <E extends Exception> void validate(ClientRepresentation client, List<ClientUriField> fields,
-                                                     Validator<E> validator) throws E {
-        for (ClientUriField field : fields) {
-            validator.validate(field, field.getValues(client));
-        }
+        validate(client, null, validator);
     }
 
     public static <E extends Exception> void validate(ClientModel client, Validator<E> validator) throws E {
         for (ClientUriField field : values()) {
             validator.validate(field, field.getValues(client));
+        }
+    }
+
+    public static <E extends Exception> void validate(ClientRepresentation proposed, ClientModel stored,
+                                                      Validator<E> validator) throws E {
+        validate(proposed, stored, List.of(values()), validator);
+    }
+
+    public static <E extends Exception> void validate(ClientRepresentation proposed, ClientModel stored,
+                                                      List<ClientUriField> fields, Validator<E> validator) throws E {
+        for (ClientUriField field : fields) {
+            validator.validate(field, field.getValues(proposed, stored));
         }
     }
 
@@ -276,6 +282,34 @@ public enum ClientUriField {
             case REDIRECTS -> nonEmpty(client.getRedirectUris());
             case ORIGINS -> nonEmpty(client.getWebOrigins());
             case ATTRIBUTE, MULTIVALUED -> attributeValues(client.getAttribute(attribute));
+        };
+    }
+
+    /**
+     * Effective values after the request, mirroring {@code RepresentationToModel.updateClientProperties}.
+     * A field the request does not carry keeps the value of the stored client, which is null on registration.
+     */
+    public List<String> getValues(ClientRepresentation proposed, ClientModel stored) {
+        if (isSetIn(proposed)) {
+            return getValues(proposed);
+        }
+        List<String> values = stored == null ? List.of() : getValues(stored);
+        // persistence falls back to defaultWebOrigins, which derives origins from the effective redirect URIs
+        return this == WEB_ORIGINS && values.isEmpty() ? defaultWebOrigins(REDIRECT_URIS.getValues(proposed, stored)) : values;
+    }
+
+    private static List<String> defaultWebOrigins(List<String> redirectUris) {
+        return redirectUris.stream().filter(uri -> uri.startsWith("http")).map(UriUtils::getOrigin).distinct().toList();
+    }
+
+    private boolean isSetIn(ClientRepresentation client) {
+        return switch (source) {
+            case ROOT -> client.getRootUrl() != null;
+            case ADMIN -> client.getAdminUrl() != null;
+            case BASE -> client.getBaseUrl() != null;
+            case REDIRECTS -> client.getRedirectUris() != null;
+            case ORIGINS -> client.getWebOrigins() != null;
+            case ATTRIBUTE, MULTIVALUED -> client.getAttributes() != null && client.getAttributes().containsKey(attribute);
         };
     }
 

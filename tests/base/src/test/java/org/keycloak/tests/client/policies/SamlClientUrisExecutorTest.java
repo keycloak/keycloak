@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest
@@ -142,6 +143,31 @@ public class SamlClientUrisExecutorTest extends AbstractClientPoliciesTest {
                 assertEquals(protocol, resource.toRepresentation().getProtocol());
             }
         }
+    }
+
+    @Test
+    public void genericHttpsPolicyRevalidatesUrisStoredBeforeItWasEnabled() throws Exception {
+        String id = createClientByAdmin(realm, generateSuffixedName("pre-existing-uri"), OIDCLoginProtocol.LOGIN_PROTOCOL,
+                client -> {
+                    client.setRedirectUris(List.of("https://localhost/callback"));
+                    client.setAttributes(Map.of(OIDCConfigAttributes.JWKS_URL, "http://localhost/jwks"));
+                });
+        setupPolicy(realm, SecureClientUrisExecutorFactory.PROVIDER_ID, new SecureClientUrisExecutor.Configuration(),
+                AnyClientConditionFactory.PROVIDER_ID, new ClientPolicyConditionConfigurationRepresentation());
+
+        ClientRepresentation partial = new ClientRepresentation();
+        partial.setDescription("updated description");
+        ClientPolicyException error = assertThrows(ClientPolicyException.class,
+                () -> updateClientByAdminPartial(realm, id, partial));
+        assertEquals("Invalid jwksUri", error.getErrorDetail());
+
+        ClientResource resource = realm.admin().clients().get(id);
+        assertNull(resource.toRepresentation().getDescription());
+
+        ClientRepresentation replacement = new ClientRepresentation();
+        replacement.setAttributes(Map.of(OIDCConfigAttributes.JWKS_URL, "https://localhost/jwks"));
+        updateClientByAdminPartial(realm, id, replacement);
+        assertEquals("https://localhost/jwks", resource.toRepresentation().getAttributes().get(OIDCConfigAttributes.JWKS_URL));
     }
 
     private void setupPolicy(boolean allowWildcards) throws Exception {
