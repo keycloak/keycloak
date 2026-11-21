@@ -100,7 +100,44 @@ public class SchemaTest extends AbstractScimTest {
         assertNotNull(schema.getAttributes());
         assertFalse(schema.getAttributes().isEmpty());
 
-        // Verify ALL expected attributes are present (extracted from UserCoreModelSchema)
+        // Only attributes mapped by the default user profile configuration are advertised
+        Set<String> attributeNames = schema.getAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+
+        assertEquals(Set.of("userName", "emails", "name", "active", "groups"), attributeNames);
+
+        assertAttribute(findAttribute(schema, "userName"), "string", false, true, false, "readWrite", "server");
+        assertAttribute(findAttribute(schema, "emails"), "complex", true, false, false, "readWrite", "global");
+        assertAttribute(findAttribute(schema, "name"), "complex", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "active"), "boolean", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "groups"), "complex", true, false, false, "readWrite", "none");
+
+        Schema.Attribute name = findAttribute(schema, "name");
+        assertNotNull(name.getSubAttributes(), "name should have sub-attributes");
+        Set<String> nameSubAttrNames = name.getSubAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertEquals(Set.of("givenName", "familyName", "formatted"), nameSubAttrNames);
+        for (Schema.Attribute subAttr : name.getSubAttributes()) {
+            // name.formatted is derived from the other name sub-attributes when not mapped
+            assertSubAttribute(subAttr, "string", false, "formatted".equals(subAttr.getName()) ? "readOnly" : "readWrite");
+        }
+    }
+
+    @Test
+    public void testGetUserCoreSchemaWithMappedAttributes() {
+        realm.updateWithCleanup(r -> r.internationalizationEnabled(true));
+        UPConfig originalConfig = realm.admin().users().userProfile().getConfiguration();
+        realm.cleanup().add(r -> r.users().userProfile().update(originalConfig));
+
+        for (String scimName : List.of("displayName", "title", "externalId", "userType", "nickName", "timezone",
+                "preferredLanguage", "profileUrl", "name.middleName", "name.honorificPrefix", "name.honorificSuffix")) {
+            addOrReplaceUPAttribute(scimName);
+        }
+
+        Schema schema = client.schemas().get(Scim.USER_CORE_SCHEMA);
+
         Set<String> attributeNames = schema.getAttributes().stream()
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
@@ -122,20 +159,15 @@ public class SchemaTest extends AbstractScimTest {
         assertAttribute(findAttribute(schema, "active"), "boolean", false, false, false, "readWrite", "none");
         assertAttribute(findAttribute(schema, "groups"), "complex", true, false, false, "readWrite", "none");
 
-        // Verify name sub-attributes
         Schema.Attribute name = findAttribute(schema, "name");
         assertNotNull(name.getSubAttributes(), "name should have sub-attributes");
         Set<String> nameSubAttrNames = name.getSubAttributes().stream()
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
-        assertTrue(nameSubAttrNames.contains("givenName"));
-        assertTrue(nameSubAttrNames.contains("familyName"));
-        assertTrue(nameSubAttrNames.contains("middleName"));
-        assertTrue(nameSubAttrNames.contains("honorificPrefix"));
-        assertTrue(nameSubAttrNames.contains("honorificSuffix"));
-        assertTrue(nameSubAttrNames.contains("formatted"));
+        assertEquals(Set.of("givenName", "familyName", "middleName", "honorificPrefix", "honorificSuffix", "formatted"), nameSubAttrNames);
         for (Schema.Attribute subAttr : name.getSubAttributes()) {
-            assertSubAttribute(subAttr, "string", false, "readWrite");
+            // name.formatted is derived from the other name sub-attributes when not mapped
+            assertSubAttribute(subAttr, "string", false, "formatted".equals(subAttr.getName()) ? "readOnly" : "readWrite");
         }
     }
 
