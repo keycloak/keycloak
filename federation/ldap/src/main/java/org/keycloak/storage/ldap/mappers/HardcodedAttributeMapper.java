@@ -18,7 +18,9 @@
 package org.keycloak.storage.ldap.mappers;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.component.ComponentModel;
@@ -30,6 +32,7 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
+import org.keycloak.userprofile.UserProfileUtil;
 
 import org.jboss.logging.Logger;
 
@@ -64,6 +67,46 @@ public class HardcodedAttributeMapper extends AbstractLDAPStorageMapper {
     @Override
     public void onRegisterUserToLDAP(LDAPObject ldapUser, UserModel localUser, RealmModel realm) {
 
+    }
+
+    @Override
+    public Set<String> getUserProfileAttributes() {
+        // Not returned from getUserAttributes(): this attribute has no backing LDAP attribute - its value is
+        // never read from LDAP, only hardcoded on import - so it must never be searchable via searchLDAPByAttributes,
+        // which would otherwise build a filter against a non-existent (or unrelated) LDAP attribute.
+        String userModelAttrName = getUserModelAttribute();
+        if (userModelAttrName == null) {
+            return Collections.emptySet();
+        }
+
+        // This mapper can also target a UserModel bean property (e.g. "enabled", "emailVerified" - see
+        // setPropertyOnUserModel()) rather than a custom attribute, and that lookup is case-insensitive - a
+        // mapper configured as e.g. "FirstName" still updates the real firstName property on import. Canonicalize
+        // to the property's real name before deciding what to expose, or such a differently-cased root attribute
+        // would be exposed under its configured spelling as a separate attribute from the real one
+        // decorateUserProfile() already knows, defeating the read-only bypass override on the real attribute.
+        //
+        // Only expose it here if it is either a genuine custom attribute (not a model property at all) or one of
+        // the few model properties User Profile itself manages as a root attribute (username, email, firstName,
+        // lastName, locale). Any other model property has no corresponding User Profile attribute, so exposing it
+        // here would make decorateUserProfile() fabricate a bogus, disconnected attribute (e.g. an "enabled" field
+        // whose edits write a plain custom attribute instead of actually enabling/disabling the user) instead of
+        // leaving it alone.
+        Property<Object> userModelProperty = userModelProperties.get(userModelAttrName.toLowerCase());
+        if (userModelProperty == null) {
+            return Set.of(userModelAttrName);
+        }
+
+        String propertyName = userModelProperty.getName();
+        return UserProfileUtil.isRootAttribute(propertyName) ? Set.of(propertyName) : Collections.emptySet();
+    }
+
+    @Override
+    public boolean isUserAttributeReadOnly(String attrName) {
+        // onImportUserFromLDAP() unconditionally overwrites this attribute with the configured hardcoded value on
+        // every import, discarding any edit made through the User Profile in the meantime - the same
+        // never-actually-persisted behavior UserAttributeLDAPStorageMapper's read-only mappers have.
+        return true;
     }
 
     @Override
