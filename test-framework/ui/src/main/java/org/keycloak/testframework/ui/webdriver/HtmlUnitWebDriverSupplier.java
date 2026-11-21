@@ -31,7 +31,7 @@ public class HtmlUnitWebDriverSupplier extends AbstractWebDriverSupplier {
 
     @Override
     public WebDriver getWebDriver() {
-        return getWebDriver(null); // not used
+        return getWebDriver((ManagedCertificates) null); // not used
     }
 
     protected WebDriver getWebDriver(ManagedCertificates managedCerts) {
