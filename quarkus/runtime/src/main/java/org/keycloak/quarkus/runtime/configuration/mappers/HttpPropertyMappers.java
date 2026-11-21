@@ -458,6 +458,9 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         if (!FipsMode.STRICT.toString().equals(fipsMode)) {
             return;
         }
+        if (!isBouncyCastleFips()) {
+            return;
+        }
         if (Configuration.isSet(storeTypeOption)) {
             return;
         }
@@ -497,7 +500,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
 
     private static void validateNoFipsPem() {
         String fipsMode = getOptionalKcValue(SecurityOptions.FIPS_MODE.getKey()).orElse(null);
-        if (!FipsMode.STRICT.toString().equals(fipsMode)) {
+        if (!FipsMode.STRICT.toString().equals(fipsMode) || !isBouncyCastleFips()) {
             return;
         }
         if (getOptionalKcValue(HttpOptions.HTTPS_CERTIFICATE_FILE.getKey()).isPresent()) {
@@ -508,6 +511,10 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             throw new PropertyException(
                     "PEM certificates are not supported in strict FIPS mode. Use a BCFKS keystore with the 'https-management-key-store-file' option instead.");
         }
+    }
+
+    private static boolean isBouncyCastleFips() {
+        return !Profile.isFeatureEnabled(Profile.Feature.BRISBANE);
     }
 
     private static void validateStoreType(Option<File> storeFileOption, Option<String> storeTypeOption, StoreRole role) {
@@ -587,10 +594,10 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
 
     static String resolveKeyStoreType(String value,
             ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        if (FipsMode.STRICT.toString().equals(value)) {
-            return "BCFKS";
+        if (!FipsMode.STRICT.toString().equals(value)) {
+            return null;
         }
-        return null;
+        return isBouncyCastleFips() ? "BCFKS" : null;
     }
 
     private static String resolveMaxThreads(String value,
