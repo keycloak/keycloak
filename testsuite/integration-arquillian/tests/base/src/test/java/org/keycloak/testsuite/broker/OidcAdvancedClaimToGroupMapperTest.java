@@ -71,6 +71,34 @@ public class OidcAdvancedClaimToGroupMapperTest extends AbstractGroupBrokerMappe
     }
 
     @Test
+    public void allValuesMatchWithMultipleGroups() {
+        GroupRepresentation testTwoGroupRep = new GroupRepresentation();
+        testTwoGroupRep.setName("mapper-test-two");
+
+        final var mapperTestTwoId = CreatedResponseUtil.getCreatedId(realm.groups().add(testTwoGroupRep));
+        testTwoGroupRep = realm.groups().group(mapperTestTwoId).toRepresentation();
+        final var testTwoGroupPath = buildGroupPath(testTwoGroupRep.getName());
+
+        GroupRepresentation testTwoChildGroupRep = new GroupRepresentation();
+        testTwoChildGroupRep.setName("mapper-test-two-child");
+
+        final var mapperTestTwoChildId = CreatedResponseUtil.getCreatedId(realm.groups().add(testTwoChildGroupRep));
+        testTwoChildGroupRep = realm.groups().group(mapperTestTwoChildId).toRepresentation();
+        final var testTwoChildGroupPath = buildGroupPath(testTwoGroupRep.getName(),testTwoChildGroupRep.getName());
+
+        realm.groups().group(mapperTestTwoId).subGroup(testTwoChildGroupRep).close();
+
+        final var groupPathConfig = String.join(",", MAPPER_TEST_GROUP_PATH, testTwoGroupPath, testTwoChildGroupPath);
+        createAdvancedGroupMapper(CLAIMS_OR_ATTRIBUTES, false, groupPathConfig);
+        createUserInProviderRealm(createMatchingAttributes());
+
+        logInAsUserInIDPForFirstTimeAndAssertSuccess();
+
+        UserRepresentation user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
+        assertThatUserHasBeenAssignedToGroups(user, List.of(MAPPER_TEST_GROUP_PATH, testTwoGroupPath, testTwoChildGroupPath));
+    }
+
+    @Test
     public void valuesMismatch() {
         createAdvancedGroupMapper(CLAIMS_OR_ATTRIBUTES, false, MAPPER_TEST_GROUP_PATH);
         createUserInProviderRealm(ImmutableMap.<String, List<String>>builder()
