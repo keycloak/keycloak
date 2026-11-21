@@ -60,17 +60,24 @@ public class TotpUtils {
     }
 
     /**
+     * Builds the otpauth:// key URI. When a session is available, uses a locale-aware realm display name as issuer;
+     * otherwise uses the realm display name (or realm name if blank).
+     * This is the same URI that is encoded into the QR code, exposed directly so it can be offered as a deep link.
+     */
+    public static String keyUri(KeycloakSession session, String totpSecret, RealmModel realm, UserModel user) {
+        if (session != null) {
+            String issuerName = getIssuerName(session, realm, user);
+            return realm.getOTPPolicy().getKeyURI(issuerName, user.getUsername(), totpSecret);
+        }
+        return realm.getOTPPolicy().getKeyURI(realm, user, totpSecret);
+    }
+
+    /**
      * Generates a QR code using a locale-aware realm display name as issuer. Preferred when a session is available.
      */
     public static String qrCode(KeycloakSession session, String totpSecret, RealmModel realm, UserModel user) {
         try {
-            String keyUri;
-            if (session != null) {
-                String issuerName = getIssuerName(session, realm, user);
-                keyUri = realm.getOTPPolicy().getKeyURI(issuerName, user.getUsername(), totpSecret);
-            } else {
-                keyUri = realm.getOTPPolicy().getKeyURI(realm, user, totpSecret);
-            }
+            String keyUri = keyUri(session, totpSecret, realm, user);
 
             int width = 246;
             int height = 246;
