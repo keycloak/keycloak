@@ -7,6 +7,8 @@ import Mustache from "mustache";
 import { mkdtemp } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
+import { createInterface } from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 import { simpleGit } from "simple-git";
 import { fileURLToPath } from "url";
 
@@ -17,26 +19,57 @@ const packageJson = JSON.parse(
   ),
 );
 
+const TYPES = ["account", "admin"];
+
+function parseType(value) {
+  if (!TYPES.includes(value)) {
+    throw new InvalidArgumentError("It should be either account or admin");
+  }
+  return value;
+}
+
+async function promptType() {
+  const rl = createInterface({ input, output });
+  try {
+    for (;;) {
+      const answer = (
+        await rl.question(
+          `Select a type (${TYPES.map((t) => chalk.green(t)).join(" / ")}): `,
+        )
+      )
+        .trim()
+        .toLowerCase();
+
+      if (TYPES.includes(answer)) {
+        return answer;
+      }
+
+      console.log(
+        chalk.red(`Invalid type. Choose one of: ${TYPES.join(", ")}`),
+      );
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 function main() {
   new Command(packageJson.name)
     .version(packageJson.version)
     .description(packageJson.description)
-    .arguments("<name>")
-    .usage(`${chalk.green("<name>")} [options]`)
+    .argument("<name>", "name of the project")
+    // Optional positional type: `npm create` treats `-t` as its own `--tag`
+    // flag, so `npm create keycloak-theme my-theme -t admin` arrives here as
+    // `my-theme admin`.
+    .argument("[type]", "account or admin", parseType)
+    .usage(`${chalk.green("<name>")} ${chalk.green("[type]")} [options]`)
     .option(
-      "-t, --type <name>",
-      "the type of ui to be created either `account` or `admin` ",
-      (value) => {
-        if (value !== "account" && value !== "admin") {
-          throw new InvalidArgumentError(
-            "It should be either account or admin",
-          );
-        }
-        return value;
-      },
+      "-t, --type <type>",
+      "the type of ui to be created either `account` or `admin`",
+      parseType,
     )
-    .action(async (name, options) => {
-      const type = options.type || "account";
+    .action(async (name, typeArg, options) => {
+      const type = options.type || typeArg || (await promptType());
       console.log(
         `Creating a new ${chalk.green(name)} project of type ${chalk.green(type)}`,
       );
@@ -47,12 +80,25 @@ function main() {
     .on("--help", () => {
       console.log();
       console.log(`    Only ${chalk.green("<name>")} is required.`);
+      console.log(
+        `    If ${chalk.green("[type]")} / ${chalk.blue("--type")} is omitted, you will be prompted.`,
+      );
       console.log();
-      console.log(`    Type ${chalk.blue("--type")} can be one of:`);
+      console.log(
+        `    Type can be passed as ${chalk.green("[type]")} or ${chalk.blue("--type")}:`,
+      );
       console.log(
         `      - ${chalk.green("account")} for an account ui based ui`,
       );
       console.log(`      - ${chalk.green("admin")} for an admin ui based ui`);
+      console.log();
+      console.log("    Examples:");
+      console.log(
+        `      ${chalk.cyan("npm create keycloak-theme my-theme admin")}`,
+      );
+      console.log(
+        `      ${chalk.cyan("npm create keycloak-theme my-theme -- --type admin")}`,
+      );
       console.log();
     })
     .parse(process.argv);
@@ -67,9 +113,8 @@ function cloneQuickstart(type) {
           "--single-branch": undefined,
           "--branch": "main",
         })
-        .then(() =>
-          resolve(join(dir, `extension/extend-${type}-console-node`)),
-        );
+        .then(() => resolve(join(dir, `extension/extend-${type}-console-node`)))
+        .catch(reject);
     });
   });
 }
