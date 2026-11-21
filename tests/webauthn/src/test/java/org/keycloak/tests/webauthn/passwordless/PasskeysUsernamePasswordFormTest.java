@@ -22,6 +22,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -155,7 +156,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .userId(user.getId())
                     .hasCodeId()
                     .details(Details.USERNAME, USERNAME)
-                    .withoutDetails(Details.CREDENTIAL_TYPE);
+                    .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
             logout();
         }
@@ -355,7 +356,8 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .userId(testUser.getId())
                     .hasCodeId()
                     .details(Details.USERNAME, testUser.getUsername())
-                    .withoutDetails(Details.CREDENTIAL_TYPE, WebAuthnConstants.USER_VERIFICATION_CHECKED);
+                    .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                    .withoutDetails(WebAuthnConstants.USER_VERIFICATION_CHECKED);
 
             logout();
         }
@@ -467,7 +469,8 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
                     .userId(user.getId())
                     .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
-                    .withoutDetails(Details.CREDENTIAL_TYPE, WebAuthnConstants.USER_VERIFICATION_CHECKED);
+                    .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                    .withoutDetails(WebAuthnConstants.USER_VERIFICATION_CHECKED);
 
             logout();
         }

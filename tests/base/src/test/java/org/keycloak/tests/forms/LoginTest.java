@@ -36,6 +36,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -301,6 +302,7 @@ public class LoginTest {
                 .sessionId(null)
                 .error(Errors.INVALID_USER_CREDENTIALS)
                 .details(Details.USERNAME, "login-test")
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
                 .withoutDetails(Details.CONSENT);
     }
 

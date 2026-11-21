@@ -42,6 +42,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -338,6 +339,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .details(Details.TOKEN_ID, accessToken.getId())
                 .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .details(Details.USERNAME, login)
+                .details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
                 .withoutDetails(Details.CODE_ID)
                 .withoutDetails(Details.REDIRECT_URI)
                 .withoutDetails(Details.CONSENT);
