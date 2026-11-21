@@ -104,6 +104,7 @@ public class JpaUserLoginFailureProvider implements UserLoginFailureProvider {
         notInDatabaseCache.remove(key);
         // INSERT ON CONFLICT DO NOTHING does not lock the conflicting row, so a concurrent DELETE
         // could remove it between the INSERT and the subsequent find. Retry if this happens.
+        JpaUtils.lockForUpsert(em, LoginFailureEntity.class, realm.getId(), userId);
         // One retry should normally be sufficient for that race; allow five attempts as an extra safety
         // margin while ensuring an unexpected database behavior cannot retain resources until the transaction timeout.
         for (int attempt = 0; attempt < MAX_ADD_ATTEMPTS; attempt++) {

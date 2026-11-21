@@ -29,6 +29,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.support.EntityManagerProxy;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
@@ -83,6 +84,7 @@ public class JpaAuthenticationSessionProvider extends AbstractKeycloakTransactio
         // could remove it between the INSERT and the subsequent find. Retry if this happens.
         RootAuthenticationSessionEntity entity;
         long now = Time.currentTimeSeconds();
+        JpaUtils.lockForUpsert(em, RootAuthenticationSessionEntity.class, id);
         for (;;) {
             EntityManagerProxy.allowAsyncCommit(em, em.createNamedQuery("insertRootAuthSessionIfAbsent"))
                     .setParameter("id", id)
