@@ -478,7 +478,12 @@ export default function EditUser() {
                       eventKey="adminEvents"
                       title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                     >
-                      <AdminEvents resourcePath={`users/${user.id}*`} />
+                      <AdminEvents
+                        resourcePath={[
+                          `users/${user.id}`,
+                          `users/${user.id}/*`,
+                        ]}
+                      />
                     </Tab>
                   </Tabs>
                 </Tab>

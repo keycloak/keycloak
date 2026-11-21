@@ -827,7 +827,12 @@ export default function ClientDetails() {
                     eventKey="adminEvents"
                     title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                   >
-                    <AdminEvents resourcePath={`clients/${client.id}`} />
+                    <AdminEvents
+                      resourcePath={[
+                        `clients/${client.id}`,
+                        `clients/${client.id}/*`,
+                      ]}
+                    />
                   </Tab>
                 </Tabs>
               </Tab>

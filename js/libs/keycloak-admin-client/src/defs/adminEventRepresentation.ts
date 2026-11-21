@@ -1,6 +1,7 @@
 import type AuthDetailsRepresentation from "./authDetailsRepresentation.js";
 
 export default interface AdminEventRepresentation {
+  id?: string;
   authDetails?: AuthDetailsRepresentation;
   error?: string;
   operationType?: string;
