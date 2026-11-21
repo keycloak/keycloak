@@ -71,6 +71,7 @@ public class RealmRepresentation {
     protected Integer actionTokenGeneratedByUserLifespan;
     protected Integer oauth2DeviceCodeLifespan;
     protected Integer oauth2DevicePollingInterval;
+    protected Integer oauth2DeviceMaxFailedVerificationAttempts;
     protected Boolean enabled;
     protected String sslRequired;
     @Deprecated
@@ -536,6 +537,15 @@ public class RealmRepresentation {
     @Schema(name = "oauth2DevicePollingInterval")
     public Integer getOAuth2DevicePollingInterval() {
         return oauth2DevicePollingInterval;
+    }
+
+    public void setOAuth2DeviceMaxFailedVerificationAttempts(Integer oauth2DeviceMaxFailedVerificationAttempts) {
+        this.oauth2DeviceMaxFailedVerificationAttempts = oauth2DeviceMaxFailedVerificationAttempts;
+    }
+
+    @Schema(name = "oauth2DeviceMaxFailedVerificationAttempts")
+    public Integer getOAuth2DeviceMaxFailedVerificationAttempts() {
+        return oauth2DeviceMaxFailedVerificationAttempts;
     }
 
     public Integer getActionTokenGeneratedByUserLifespan() {
