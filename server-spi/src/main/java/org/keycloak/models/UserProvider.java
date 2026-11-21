@@ -374,6 +374,14 @@ public interface UserProvider extends Provider,
     Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId);
 
     /**
+     * Get an issued verifiable credential by its ID.
+     *
+     * @param credentialId the ID of the issued credential
+     * @return the issued credential, or {@code null} if it was not found
+     */
+    IssuedVerifiableCredentialModel getIssuedVerifiableCredentialById(String credentialId);
+
+    /**
      * Remove an issued verifiable credential by its ID.
      *
      * @param credentialId the ID of the issued credential to remove
@@ -395,5 +403,16 @@ public interface UserProvider extends Provider,
      * This is called periodically by the scheduled cleanup task.
      */
     void removeExpiredIssuedVerifiableCredentials();
+
+    /**
+     * Remove all expired issued verifiable credentials across all realms and return the number removed.
+     * Implementations that cannot provide the count retain the existing cleanup behavior and return {@code -1}.
+     *
+     * @return the number of removed issued credentials, or {@code -1} when it is unknown
+     */
+    default int removeExpiredIssuedVerifiableCredentialsWithCount() {
+        removeExpiredIssuedVerifiableCredentials();
+        return -1;
+    }
 
 }
