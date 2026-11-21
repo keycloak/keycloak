@@ -190,7 +190,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         }
 
         // check whether request object not expired
-        long exp = requestObject.get("exp").asLong();
+        long exp = getTimestampClaim(requestObject, "exp", context);
         if (Time.currentTime() > exp) { // TODO: Time.currentTime() is int while exp is long...
             logger.trace("request object expired.");
             throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request Expired");
@@ -207,15 +207,29 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
             }
 
             // check whether request object not yet being processed
-            long nbf = requestObject.get("nbf").asLong();
-            if (Time.currentTime() < nbf - configuration.getAllowedClockSkew().intValue()) { // TODO: Time.currentTime() is int while nbf is long...
+            // "currentTime + skew" is computed instead of "nbf - skew" so that a crafted nbf cannot overflow
+            long nbf = getTimestampClaim(requestObject, "nbf", context);
+            if ((long) Time.currentTime() + configuration.getAllowedClockSkew().intValue() < nbf) {
                 logger.trace("request object not yet being processed.");
                 throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request not yet being processed", context);
             }
 
+            // check whether request object expires before nbf
+            if (exp < nbf) {
+                logger.trace("request object request expires before the lower bound nbf.");
+                throwClientPolicyException(INVALID_REQUEST_OBJECT, "Invalid parameter in the 'request' object: exp is before nbf", context);
+            }
+
             // check whether request object's available period is short
             int availablePeriod = Optional.ofNullable(configuration.getAvailablePeriod()).orElse(DEFAULT_AVAILABLE_PERIOD).intValue();
-            if (exp - nbf > availablePeriod) {
+            long lifetime;
+            try {
+                lifetime = Math.subtractExact(exp, nbf);
+            } catch (ArithmeticException e) {
+                //does not even fit into a long, so defo longer than the available period
+                lifetime = Long.MAX_VALUE;
+            }
+            if (lifetime > availablePeriod) {
                 logger.trace("request object's available period is long.");
                 throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request's available period is long", context);
             }
@@ -223,9 +237,9 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
         // check "iat" with clock skew
         if (requestObject.get("iat") != null) {
-            long iat = requestObject.get("iat").asLong();
-            if (Time.currentTime() < iat - configuration.getAllowedClockSkew().intValue()) { // TODO: Time.currentTime() is int while nbf is long...
-                logger.trace("request object issed in the future.");
+            long iat = getTimestampClaim(requestObject, "iat", context);
+            if ((long) Time.currentTime() + configuration.getAllowedClockSkew().intValue() < iat) {
+                logger.trace("request object issued in the future.");
                 throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request issued in the future", context);
             }
         }
@@ -279,6 +293,21 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         if (param.equals(OIDCLoginProtocol.REQUEST_PARAM) || param.equals(OIDCLoginProtocol.REQUEST_URI_PARAM)) return true;
         if (requestObject.hasNonNull(param)) return requestObject.get(param).asText().equals(value);
         return false;
+    }
+
+    /**
+     * Reads a NumericDate claim strictly. Anything that is not a JSON number fitting into a {@code long} (strings,
+     * out-of-range integers, out-of-range or non-finite floating point values) is rejected instead of being silently
+     * coerced by {@link JsonNode#asLong()} into a boundary value.
+     */
+    private long getTimestampClaim(JsonNode requestObject, String claim,
+            AuthorizationRequestContext context) throws ClientPolicyException {
+        JsonNode value = requestObject.get(claim);
+        if (!value.isNumber() || !value.canConvertToLong()) {
+            logger.tracef("request object claim '%s' is not a valid timestamp.", claim);
+            throwClientPolicyException(INVALID_REQUEST_OBJECT, "Invalid parameter in the 'request' object: " + claim, context);
+        }
+        return value.asLong();
     }
 
     private void throwClientPolicyException(String error, String message,
