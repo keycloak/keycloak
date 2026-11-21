@@ -63,6 +63,11 @@ public abstract class KeycloakApplication extends Application {
     }
 
     protected void initTmpDirectory() {
+        if (System.getProperty(KC_TMPDIR) != null) {
+            logger.debugv("Using externally configured temp directory: {0}", System.getProperty(KC_TMPDIR));
+            return;
+        }
+
         String dataDir = getDataDir();
         if (dataDir != null) {
             File tmpDir = new File(dataDir, "tmp");
