@@ -39,6 +39,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.policy.PasswordPolicyContext;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PolicyError;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -95,7 +96,15 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
             errors.add(new FormMessage(RegistrationPage.FIELD_PASSWORD_CONFIRM, Messages.INVALID_PASSWORD_CONFIRM));
         }
         if (formData.getFirst(RegistrationPage.FIELD_PASSWORD) != null) {
-            PolicyError err = context.getSession().getProvider(PasswordPolicyManagerProvider.class).validate(context.getRealm().isRegistrationEmailAsUsername() ? formData.getFirst(RegistrationPage.FIELD_EMAIL) : formData.getFirst(RegistrationPage.FIELD_USERNAME), formData.getFirst(RegistrationPage.FIELD_PASSWORD));
+            String email = formData.getFirst(RegistrationPage.FIELD_EMAIL);
+            String username = context.getRealm().isRegistrationEmailAsUsername()
+                    ? email : formData.getFirst(RegistrationPage.FIELD_USERNAME);
+            PasswordPolicyContext policyContext = PasswordPolicyContext.builder()
+                    .username(username)
+                    .email(email)
+                    .build();
+            PolicyError err = context.getSession().getProvider(PasswordPolicyManagerProvider.class)
+                    .validate(policyContext, formData.getFirst(RegistrationPage.FIELD_PASSWORD));
             if (err != null)
                 errors.add(new FormMessage(RegistrationPage.FIELD_PASSWORD, err.getMessage(), err.getParameters()));
         }

@@ -49,8 +49,13 @@ public class DefaultPasswordPolicyManagerProvider implements PasswordPolicyManag
 
     @Override
     public PolicyError validate(String user, String password) {
+        return validate(PasswordPolicyContext.builder().username(user).build(), password);
+    }
+
+    @Override
+    public PolicyError validate(PasswordPolicyContext context, String password) {
         for (PasswordPolicyProvider p : getProviders(session)) {
-            PolicyError policyError = p.validate(user, password);
+            PolicyError policyError = p.validate(context, password);
             if (policyError != null) {
                 return policyError;
             }
