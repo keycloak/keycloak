@@ -250,7 +250,8 @@ public class LogoutEndpoint {
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
             userSession = authResult.session();
-            if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.session().getId())) {
+            // An id_token_hint without sid (e.g. issued for a transient session) cannot be bound to the browser session
+            if (idToken != null && !authResult.session().getId().equals(idToken.getSessionState())) {
                 forcedConfirmation = true;
             }
         } else if (idToken == null) {
