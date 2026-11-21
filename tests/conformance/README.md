@@ -7,7 +7,7 @@ Keycloak server, so a passing run is evidence of spec conformance, not just inte
 
 The conformance suite itself (its `mongodb`, `conformance` and `nginx` containers) is started automatically via
 Testcontainers; the suite version is pinned by the `conformance.version` property in the root `pom.xml`
-(currently `release-v5.2.2`). Keycloak is started by the test framework as a distribution server over HTTPS and
+(currently `release-v5.3.4`). Keycloak is started by the test framework as a distribution server over HTTPS and
 reached by the suite at `https://host.testcontainers.internal:8443`.
 
 ## What is covered
