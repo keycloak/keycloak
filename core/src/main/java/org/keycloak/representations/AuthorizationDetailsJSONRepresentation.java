@@ -139,7 +139,10 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
      * @param clazz Subtype of {@link AuthorizationDetailsJSONRepresentation}, which will be returned by calling this method
      * @return this authorizationDetails content cast to the class specified by clazz parameter as long as parser corresponding to the type returned by {@link #getType}
      * is able to parse this authorizationDetails and convert it to that subtype
+     * @deprecated Relies on the global {@link AuthorizationDetailsParser} registry. Use <em>AuthorizationDetailsProcessor.narrowRepresentation</em>
+     * of the processor handling the corresponding "type" instead
      */
+    @Deprecated
     public <T extends AuthorizationDetailsJSONRepresentation> T asSubtype(Class<T> clazz) {
         return AuthorizationDetailsParser.parseToSubtype(this, clazz);
     }

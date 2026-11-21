@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc.rar;
 
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.UserSessionModel;
@@ -40,15 +41,47 @@ public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsJ
     boolean isSupported();
 
     /**
-     * @return supported type of authorization_details "type" claim, which this processor is able to process. This should usually correspond with the "providerId" of
-     * the {@link AuthorizationDetailsProcessorFactory}, which created this processor
+     * @return supported type of authorization_details "type" claim, which this processor is able to process.
+     * @deprecated Use {@link #getSupportedTypes()} instead. Implementations must override at least one of {@link #getSupportedType()} or {@link #getSupportedTypes()}.
      */
-    String getSupportedType();
+    @Deprecated
+    default String getSupportedType() {
+        return getSupportedTypes().iterator().next();
+    }
+
+    /**
+     * @return supported types of authorization_details "type" claim, which this processor is able to process. A processor may support
+     * more than one type. Implementations must override at least one of {@link #getSupportedType()} or {@link #getSupportedTypes()}.
+     */
+    default Set<String> getSupportedTypes() {
+        return Set.of(getSupportedType());
+    }
+
+    /**
+     * @param type the value of the authorization_details "type" claim
+     * @return true if this processor is able to process authorization_details of the given type
+     */
+    default boolean isSupportedType(String type) {
+        return getSupportedTypes().contains(type);
+    }
 
     /**
      * @return supported Java type of {@link AuthorizationDetailsJSONRepresentation} subclass, which this processor can create in the token response
      */
     Class<ADR> getSupportedResponseJavaType();
+
+    /**
+     * Narrows the given generic authorization detail to the specific {@link AuthorizationDetailsJSONRepresentation} subclass handled by this processor.
+     * The default implementation delegates to {@link AuthorizationDetailsJSONRepresentation#asSubtype(Class)}, which requires a parser to be registered
+     * via the (deprecated) global parser registry. Implementations are encouraged to override this method and perform the conversion themselves.
+     *
+     * @param authzDetail the generic authorization detail. Its "type" is guaranteed to be one of {@link #getSupportedTypes()}
+     * @return the authorization detail converted to the specific subclass handled by this processor
+     */
+    @SuppressWarnings("deprecation")
+    default ADR narrowRepresentation(AuthorizationDetailsJSONRepresentation authzDetail) {
+        return authzDetail.asSubtype(getSupportedResponseJavaType());
+    }
 
     /**
      * Validates an authorization detail against supported credentials and other constraints.
@@ -125,8 +158,8 @@ public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsJ
             return null;
         }
         return authzDetailsResponse.stream()
-                .filter(authDetailsResponse -> getSupportedType().equals(authDetailsResponse.getType()))
-                .map(authDetailsResponse -> authDetailsResponse.asSubtype(getSupportedResponseJavaType()))
+                .filter(authDetailsResponse -> isSupportedType(authDetailsResponse.getType()))
+                .map(this::narrowRepresentation)
                 .toList();
     }
 }
