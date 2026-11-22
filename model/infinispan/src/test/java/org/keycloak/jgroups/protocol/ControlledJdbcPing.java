@@ -52,11 +52,11 @@ public class ControlledJdbcPing extends KEYCLOAK_JDBC_PING2 {
     }
 
     @Override
-    protected List<PingData> readFromDB(String cluster) throws Exception {
+    protected List<PingRow> readRowsFromDB(String cluster) throws Exception {
         if (exception != null) {
             throw exception;
         }
-        return pingData;
+        return pingData.stream().map(data -> new PingRow(data, Long.MAX_VALUE)).toList();
     }
 
     public void setPingData(List<Address> coordinators) {

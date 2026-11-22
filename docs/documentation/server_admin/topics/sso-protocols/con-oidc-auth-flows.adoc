@@ -80,7 +80,7 @@ By default, {project_name} returns refresh tokens in the token responses from mo
 Refresh token is tied to the user session of the SSO browser session and can be valid for the lifetime of the user session. However, that client should send a refresh-token request at least once per
 specified interval. Otherwise, the session can be considered "idle" and can expire. See the <<_timeouts,timeouts section>> for more information.
 
-{project_name} supports <<_offline-access,offline tokens>>, which can be used typically when client needs to use refresh token even if corresponding browser SSO session is already expired.
+{project_name} supports <<offline-access,offline tokens>>, which can be used typically when client needs to use refresh token even if corresponding browser SSO session is already expired.
 
 [[_refresh_token_rotation]]
 ====== Refresh token rotation
@@ -90,7 +90,7 @@ which were already used, would not be considered valid anymore by {project_name}
 
 {project_name} also supports the situation that no refresh token rotation exists. In this case, a refresh token is returned during login, but subsequent responses from refresh-token requests will not
 return new refresh tokens. This practice is recommended for instance in the *FAPI 2 draft specification* and *FAPI 2 final specification* in the link:{securing_apps_link}[securing apps] section.
-In {project_name}, it is possible to skip refresh token rotation with the use of <<_client_policies,client policies>>. You can add executor `suppress-refresh-token-rotation` to some client
+In {project_name}, it is possible to skip refresh token rotation with the use of <<client_policies,client policies>>. You can add executor `suppress-refresh-token-rotation` to some client
 profile and configure client policy to specify for which clients would be the profile triggered, which means that for those clients the refresh token rotation is going to be skipped.
 
 ===== Device authorization grant
@@ -383,6 +383,6 @@ requests are sent to a registered backchannel logout URLs at {project_name} and 
 
 When the client application supports backchannel logout, that logout is usually a better alternative than the front-channel logout as communication happens directly between the client and {project_name} without a web browser
 involved, which is usually more reliable. Also, when the {project_name} logout of specified user is triggered by the administrator from the <<viewing-user-sessions,Admin console>> (or other use of admin REST API)
-or by the actual user from <<_account-service,the Account console>>, then {project_name} can propagate a backchannel logout request to the client applications attached to the session being
+or by the actual user from <<account-service,the Account console>>, then {project_name} can propagate a backchannel logout request to the client applications attached to the session being
 logged out. This scenario is not supported in case of Front-Channel logout because {project_name} can propagate logout to the client by front-channel just when the logout is triggered in the same browser
 session, which is being logged out. That is not the case for example when session of the specific user is logged-out by the administrator from the admin console.

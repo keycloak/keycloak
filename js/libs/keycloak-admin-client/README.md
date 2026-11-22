@@ -395,7 +395,7 @@ Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin
 
 ### [Component]()
 
-Supported for [user federation](https://www.keycloak.org/docs/latest/server_admin/index.html#_user-storage-federation). Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin-client/test/components.spec.ts
+Supported for [user federation](https://www.keycloak.org/docs/latest/server_admin/index.html#user-storage-federation). Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin-client/test/components.spec.ts
 
 - Create (`POST /{realm}/components`)
 - List (`GET /{realm}/components`)

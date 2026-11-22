@@ -108,7 +108,7 @@ For more information, check the link:https://www.keycloak.org/server/management-
 = Dynamic Authentication Flow selection using Client Policies
 
 Introduced the ability to dynamically select authentication flows based on conditions such as requested scopes, ACR (Authentication Context Class Reference) and others.
-This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-policy-auth-flow[{adminguide_name}].
+This can be achieved using link:{adminguide_link}#client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-policy-auth-flow[{adminguide_name}].
 
 = JWT Client authentication aligned with the latest OIDC specification
 
@@ -163,7 +163,7 @@ endif::[]
 ifeval::[{project_community}==true]
 = OpenID for Verifiable Credential Issuance documentation
 
-The OpenID for Verifiable Credential Issuance (OID4VCI) remains an experimental feature in {project_name}, but it received further improvements and especially the link:{adminguide_link}#_oid4vci[The documentation],
+The OpenID for Verifiable Credential Issuance (OID4VCI) remains an experimental feature in {project_name}, but it received further improvements and especially the link:{adminguide_link}#oid4vci[The documentation],
 with the steps how to try this feature.
 
 You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join and provide the feedback.

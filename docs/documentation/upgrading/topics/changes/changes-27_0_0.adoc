@@ -84,13 +84,17 @@ The pattern executor continues to match literal configured values, including mar
 // https://github.com/keycloak/keycloak/issues/52342
 
 The built-in login experience now has a new versioned theme, `keycloak.v3`, based on PatternFly 6.
-The built-in welcome theme also uses PatternFly 6 for its markup and styles.
+The default welcome theme is also `keycloak.v3` and shares its layout and styles with login pages.
 
 For new realms, `keycloak.v3` is now the default login theme.
 Existing realms that explicitly use `keycloak.v2` are migrated to `keycloak.v3` during upgrade.
 
 The built-in `keycloak.v2` login theme has been removed. If you maintain a custom login theme that extends or copies `keycloak.v2`, migrate it to PatternFly 6 before switching to `keycloak.v3`.
 If you maintain a custom welcome theme that copies PatternFly 5 classes from the built-in welcome theme, update those classes to PatternFly 6.
+
+The standalone `keycloak` welcome theme has been removed.
+Replace `keycloak` with `keycloak.v3` in explicit `spi-theme--welcome-theme` settings and custom welcome theme parents, and review inherited styles and resources.
+Custom `welcome/index.ftl` templates remain supported.
 
 The `login:v2` feature value has also been removed. If you explicitly enable it (for example `--features=login:v2` or `KC_FEATURES=login:v2`), replace it with `login:v3`, or remove the entry because `login:v3` is enabled by default. Servers that still request `login:v2` fail feature validation at startup.
 
@@ -694,6 +698,12 @@ The emails are sent by the `email` executor. It has 4 threads by default and sta
 Custom email template providers, including ones that extend `FreeMarkerEmailTemplateProvider`, still send the email right away, so for them the response time still depends on the mail server.
 To send it in the background, a provider that extends `FreeMarkerEmailTemplateProvider` can override `supportsBackgroundDelivery()`. Other providers need to implement `EmailTemplateProvider.renderPasswordReset` and `send(RenderedEmail, int, EmailDeliveryListener)`.
 
+=== Reset password emails have a cooldown
+
+The *Forgot password* form now sends at most one email to the same user every 30 seconds. A request made during the cooldown gets the same response, but no email is sent, and a `SEND_RESET_PASSWORD_ERROR` event with the error `slow_down` is recorded. Before, every request sent an email, so anyone who knew a username or an email address could flood the inbox of that user.
+
+To change the cooldown, click the settings icon of the *Send Reset Email* step in the *Reset Credentials* flow and set *Cooldown between reset emails (seconds)*. The value `0` turns the cooldown off.
+
 === OIDC identity provider now respects `email_verified=false` from the ID token when Trust Email is enabled
 // https://github.com/keycloak/keycloak/issues/54245
 
@@ -730,6 +740,34 @@ keytool -importcert -alias <server-alias> -file server.crt \
 ----
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
+
+=== Hibernate second-level cache disabled
+// https://github.com/keycloak/keycloak/issues/55297
+
+{project_name} no longer enables the Hibernate second-level cache and query cache, which Quarkus enables by default.
+{project_name} does not use either cache, as it caches data in Infinispan.
+With the caches enabled, Hibernate's `SimpleTimestamper` kept every thread that opened a database session at 100% CPU after the system clock was moved backwards, until the clock caught up with the previously issued timestamp.
+
+This change has no effect on the data stored or cached by {project_name}.
+If you use a custom extension that relies on Hibernate's second-level or query cache, set `quarkus.hibernate-orm.second-level-caching-enabled=true` in `conf/quarkus.properties` and run `kc.sh build`.
+
+=== In template strings, a `$` that does not start a placeholder is no longer corrupted
+// https://github.com/keycloak/keycloak/issues/55326
+
+Placeholders such as `+${name}+` and `+${name:default}+` are replaced in workflow `notify-user` subjects and messages, theme properties, realm import files, SAML adapter configuration and authorization client configuration.
+A `$` that is not directly followed by `{` is kept as a literal character in these places.
+
+Previously, a `$` at the end of a value that also contained a placeholder, for example `+Total: ${amount} $+`, was followed by an invalid trailing character in the result.
+A `$` directly before the closing brace of a placeholder, for example `${name:5$}`, prevented the placeholder from being closed.
+Both cases are now handled correctly.
+
+Other uses of `$` are unchanged.
+In particular, how a `$` directly before a placeholder, such as `+$${name}+`, is handled does not change.
+
+There is currently no escape syntax for `$` or `+${+`.
+As a workaround, use the default value of a property that is not defined, for example `+${undefined:$}+` to write a `$`.
+This did not work before, as the `$` prevented the placeholder from being closed.
+It only works as long as the property is not defined.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

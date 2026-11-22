@@ -32,6 +32,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
@@ -78,6 +79,9 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     public static final String PROVIDER_ID = "reset-credential-email";
     public static final String FORCE_LOGIN = "force-login";
     public static final String FEDERATED_OPTION = "only-federated";
+    public static final String EMAIL_COOLDOWN_KEY_PREFIX = "reset-credential-email-cooldown-known-";
+    private static final String EMAIL_COOLDOWN_UNKNOWN_USER_KEY_PREFIX = "reset-credential-email-cooldown-unknown-";
+    private static final int EMAIL_COOLDOWN_UNKNOWN_USER_KEYS = 10000;
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -107,6 +111,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                     .error(Errors.INVALID_EMAIL);
         }
         UserModel recipient = deliverable ? user : dummyUser(context, username);
+        boolean inCooldown = !startEmailCooldown(context, user, username);
 
         int validityInSecs = context.getRealm().getActionTokenGeneratedByUserLifespan(ResetCredentialsActionToken.TOKEN_TYPE);
         int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
@@ -122,7 +127,9 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
         try {
             EmailTemplateProvider emailTemplateProvider = context.getSession().getProvider(EmailTemplateProvider.class).setRealm(context.getRealm()).setUser(recipient).setAuthenticationSession(authenticationSession);
             RenderedEmail email = emailTemplateProvider.renderPasswordReset(link, expirationInMinutes);
-            if (deliverable) {
+            if (deliverable && inCooldown) {
+                failedEvent(event, user, username).error(Errors.SLOW_DOWN);
+            } else if (deliverable) {
                 if (email == null) {
                     // this provider can only send right away
                     emailTemplateProvider.sendPasswordReset(link, expirationInMinutes);
@@ -138,6 +145,15 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
             }
         }
         context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+    }
+
+    // unknown users share a fixed number of entries, picked from the typed name, so a repeated request does the same work as for a known user
+    private static boolean startEmailCooldown(AuthenticationFlowContext context, UserModel user, String username) {
+        if (user != null) {
+            return EmailCooldownManager.addCooldownEntryIfAbsent(context, EMAIL_COOLDOWN_KEY_PREFIX, user.getId());
+        }
+        int entry = Math.floorMod(Objects.hashCode(KeycloakModelUtils.toLowerCaseSafe(username)), EMAIL_COOLDOWN_UNKNOWN_USER_KEYS);
+        return EmailCooldownManager.addCooldownEntryIfAbsent(context, EMAIL_COOLDOWN_UNKNOWN_USER_KEY_PREFIX, String.valueOf(entry));
     }
 
     private static UserModel dummyUser(AuthenticationFlowContext context, String username) {
@@ -256,6 +272,13 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString(), FEDERATED_OPTION))
                 .defaultValue(Boolean.TRUE.toString())
+                .add()
+                .property()
+                .name(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_SECONDS)
+                .label("Cooldown between reset emails (seconds)")
+                .helpText("Minimum delay in seconds before another reset email is sent to the same user. Set it to 0 to send an email for every request.")
+                .type(ProviderConfigProperty.INTEGER_TYPE)
+                .defaultValue(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS)
                 .add()
                 .build();
     }

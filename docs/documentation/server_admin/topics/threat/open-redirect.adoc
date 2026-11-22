@@ -7,4 +7,4 @@ An open redirector is an endpoint using a parameter to automatically redirect a 
 
 If an application requires a non http(s) custom scheme, it should be an explicit part of the validation pattern (for example `+custom:/app/*+`). For security reasons a general pattern like `+*+` does not cover non http(s) schemes.
 
-By using <<_client_policies, Client Policies>>, an administrator can make sure that clients cannot register open redirect URLs such as `+*+`.
+By using <<client_policies, Client Policies>>, an administrator can make sure that clients cannot register open redirect URLs such as `+*+`.

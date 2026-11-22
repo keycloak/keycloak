@@ -36,10 +36,10 @@ public class WelcomePage extends AuthServer {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "password-confirmation")
+    @FindBy(id = "passwordConfirmation")
     private WebElement passwordConfirmationInput;
 
-    @FindBy(tagName = "button")
+    @FindBy(id = "kc-create-user")
     private WebElement createButton;
 
     @FindBy(css = ".welcome-header h1")

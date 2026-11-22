@@ -41,14 +41,14 @@
                         document.getElementById("kc-register-form").requestSubmit();
                     }
                 </script>
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <@buttons.button id="kc-submit" label="doRegister" class=["kcButtonLargeClass"] className="g-recaptcha"
+                <@buttons.actionGroup id="kc-form-buttons">
+                    <@buttons.button id="kc-submit" label="doRegister" className="g-recaptcha"
                         attributes={"data-sitekey": recaptchaSiteKey, "data-callback": "onSubmitRecaptcha", "data-action": recaptchaAction} />
-                </div>
+                </@buttons.actionGroup>
             <#else>
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <@buttons.button label="doRegister" class=["kcButtonLargeClass"] value=msg("doRegister") />
-                </div>
+                <@buttons.actionGroup id="kc-form-buttons">
+                    <@buttons.button label="doRegister" value=msg("doRegister") />
+                </@buttons.actionGroup>
             </#if>
 
             <div class="${properties.kcFormGroupClass!} ${properties.kcLoginMainFooterBand!}">

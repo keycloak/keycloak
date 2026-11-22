@@ -30,10 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -78,6 +80,8 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     private JpaConnectionProviderFactory factory;
     private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
+    // address of a member that left the view -> time in seconds when it left
+    private final Map<Address, Long> leftMembers = new ConcurrentHashMap<>();
     private volatile int cyclesSinceLastLog = 0;
     private volatile Future<?> healthCheckTask;
     private volatile Runnable onHealthRestored;
@@ -154,12 +158,32 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
         super.handleView(new_view, old_view, coord_changed);
+        trackLeftMembers(new_view, old_view);
         if (coord_changed) {
             try {
                 removeStaleEntries();
             } catch (Exception e) {
                 log.error(String.format("%s: failed handling view change", local_addr), e);
             }
+        }
+    }
+
+    /**
+     * Remember when members left the view. Their row is allocated to themselves and stays in the table until it is stale,
+     * and could win the split-brain decision against this node.
+     * As only a member itself writes its coordinator row, a row updated after the member left shows that it is alive again.
+     */
+    private void trackLeftMembers(View new_view, View old_view) {
+        leftMembers.keySet().removeIf(new_view::containsMember);
+        if (old_view == null) {
+            return;
+        }
+        // rows older than the staleness timeout are ignored when reading, so there is no need to remember them
+        long cutoff = getStalenessCutoff();
+        leftMembers.values().removeIf(leftAt -> leftAt < cutoff);
+        long now = Time.currentTime();
+        for (Address addr : View.diff(old_view, new_view)[1]) {
+            leftMembers.put(addr, now);
         }
     }
 
@@ -204,6 +228,16 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     protected List<PingData> readFromDB(String cluster) throws Exception {
+        return readRowsFromDB(cluster).stream().map(PingRow::data).collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    /**
+     * A row from the table, with the time of its last update in seconds.
+     */
+    protected record PingRow(PingData data, long lastUpdate) {
+    }
+
+    protected List<PingRow> readRowsFromDB(String cluster) throws Exception {
         try(Connection conn=getConnection();
             PreparedStatement ps=prepare(conn, select_all_pingdata_sql, TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)) {
             ps.setString(1, cluster);
@@ -211,7 +245,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                 log.trace("%s: SQL for reading: %s", local_addr, ps);
             try(ResultSet resultSet=ps.executeQuery()) {
                 reads++;
-                List<PingData> retval=new LinkedList<>();
+                List<PingRow> retval=new LinkedList<>();
                 Map<Address, Set<Address>> members = new HashMap<>();
                 while(resultSet.next()) {
                     String uuid=resultSet.getString(1);
@@ -226,14 +260,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     Address addr=Util.addressFromString(uuid);
                     IpAddress ip_addr=new IpAddress(ip);
                     PingData data=new PingData(addr, true, name, ip_addr).coord(coord);
-                    retval.add(data);
+                    retval.add(new PingRow(data, last_update));
                     if (coordinated_by != null) {
                         Address coordinate_by_address = Util.addressFromString(coordinated_by);
                         members.computeIfAbsent(coordinate_by_address, address -> new HashSet<>())
                                 .add(addr);
                     }
                 }
-                retval.forEach(a -> a.mbrs(members.get(a.getAddress())));
+                retval.forEach(r -> r.data().mbrs(members.get(r.data().getAddress())));
                 return retval;
             }
         }
@@ -358,7 +392,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      * <ul>
      *     <li>Reads the data from the database</li>
      *     <li>If an error occurs fetching the data, it returns {@link HealthStatus#ERROR}</li>
-     *     <li>Filters out non coordinator members</li>
+     *     <li>Filters out non coordinator members, and members that left the view and did not write their row after that</li>
      *     <li>If no coordinator is found, it return {@link HealthStatus#NO_COORDINATOR}</li>
      *     <li>If multiple coordinators are found, it compares them and uses the coordinator with the lowest {@link UUID}</li>
      *     <li>Finally, it compares if the coordinator is the same as the current view coordinator. If so, it returns {@link HealthStatus#HEALTHY}, otherwise {@link HealthStatus#UNHEALTHY}</li>
@@ -369,9 +403,15 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      */
     public HealthStatus healthStatus() {
         try {
-            HealthStatus status = readFromDB(cluster_name)
+            HealthStatus status = readRowsFromDB(cluster_name)
                     .stream()
-                    .filter(PingData::isCoord)
+                    .filter(row -> row.data().isCoord())
+                    // ignore a member that left our view, until it writes its row again
+                    .filter(row -> {
+                        Long leftAt = leftMembers.get(row.data().getAddress());
+                        return leftAt == null || row.lastUpdate() > leftAt;
+                    })
+                    .map(PingRow::data)
                     .sorted(SPLIT_BRAIN_DECIDER)
                     .map(PingData::getAddress)
                     .findFirst()

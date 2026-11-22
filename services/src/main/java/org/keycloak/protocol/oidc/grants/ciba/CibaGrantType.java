@@ -315,7 +315,7 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         }
 
         ClientSessionContext context = AuthenticationProcessor
-                .attachSession(authSession, null, session, realm, session.getContext().getConnection(), event);
+                .attachSession(authSession, null, session, realm, session.getContext().getConnection(), event, false);
         UserSessionModel userSession = context.getClientSession().getUserSession();
 
         if (userSession == null) {
