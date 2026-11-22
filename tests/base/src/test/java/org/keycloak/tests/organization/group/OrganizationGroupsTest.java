@@ -198,6 +198,23 @@ public class OrganizationGroupsTest {
     }
 
     @Test
+    public void testCreateSubGroupWithDescriptionAndAttributes() {
+        String parentId = createGroup("parent-group");
+
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("child-group");
+        groupRep.setDescription("Child description");
+        groupRep.singleAttribute("department", "Engineering");
+        String childId = createSubGroup(parentId, groupRep);
+
+        GroupRepresentation retrieved = groups().group(childId).toRepresentation(false);
+        assertThat(retrieved.getDescription(), is("Child description"));
+        assertThat(retrieved.getAttributes(), notNullValue());
+        assertThat(retrieved.getAttributes().get("department"), hasSize(1));
+        assertThat(retrieved.getAttributes().get("department").get(0), is("Engineering"));
+    }
+
+    @Test
     public void testMemberJoinGroup() {
         addMember(member);
         String groupId = createGroup("test-group");
@@ -571,7 +588,10 @@ public class OrganizationGroupsTest {
     private String createSubGroup(String parentId, String name) {
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName(name);
+        return createSubGroup(parentId, groupRep);
+    }
 
+    private String createSubGroup(String parentId, GroupRepresentation groupRep) {
         String groupId;
         try (Response response = groups().group(parentId).addSubGroup(groupRep)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
