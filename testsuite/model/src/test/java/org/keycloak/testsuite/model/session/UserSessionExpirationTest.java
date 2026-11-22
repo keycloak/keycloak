@@ -141,6 +141,13 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
             // user session id -> user id
             Map<String, String> eventsData = events(session);
             Assert.assertEquals(sessionIdAndUsers, eventsData);
+            session.getProvider(EventStoreProvider.class).createQuery()
+                    .type(EventType.USER_SESSION_DELETED)
+                    .getResultStream()
+                    .filter(event -> Details.USER_SESSION_EXPIRED_REASON.equals(event.getDetails().get(Details.REASON)))
+                    .forEach(event -> Assert.assertEquals(
+                            session.users().getUserById(realm, event.getUserId()).getUsername(),
+                            event.getDetails().get(Details.USERNAME)));
         });
     }
 

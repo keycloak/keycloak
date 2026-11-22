@@ -108,6 +108,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
         boolean valid = context.getUser().credentialManager().isValid(new UserCredentialModel(credentialId, getCredentialProvider(context.getSession()).getType(), otp));
         if (!valid) {
             context.getEvent().user(userModel)
+                    .detail(Details.USERNAME, userModel.getUsername())
                     .error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = challenge(context, Messages.INVALID_TOTP, Validation.FIELD_OTP_CODE);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challengeResponse);

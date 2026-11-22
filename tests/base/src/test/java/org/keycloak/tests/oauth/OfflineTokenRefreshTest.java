@@ -417,6 +417,7 @@ public class OfflineTokenRefreshTest {
         EventRepresentation codeToTokenEvent = events.poll();
         EventAssertion.assertSuccess(codeToTokenEvent)
                 .type(EventType.CODE_TO_TOKEN)
+                .details(Details.USERNAME, "test-user@localhost")
                 .clientId("offline-client")
                 .sessionId(loginEvent.getSessionId())
                 .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
@@ -432,6 +433,7 @@ public class OfflineTokenRefreshTest {
         EventRepresentation refreshEvent = events.poll();
         EventAssertion.assertSuccess(refreshEvent)
                 .type(EventType.REFRESH_TOKEN)
+                .details(Details.USERNAME, "test-user@localhost")
                 .clientId("offline-client")
                 .userId(userId)
                 .sessionId(loginEvent.getSessionId())

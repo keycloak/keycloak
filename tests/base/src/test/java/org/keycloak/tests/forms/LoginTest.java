@@ -458,7 +458,7 @@ public class LoginTest {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .userId(userId)
-                .details(Details.USERNAME, "login@test.com");
+                .details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -727,7 +727,7 @@ public class LoginTest {
         String sessionId = EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .userId(userId)
-                .details(Details.USERNAME, "login@test.com")
+                .details(Details.USERNAME, "login-test")
                 .details(Details.REMEMBER_ME, "true")
                 .getEvent()
                 .getSessionId();
@@ -760,7 +760,7 @@ public class LoginTest {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
                 .userId(userId)
-                .details(Details.USERNAME, "login@test.com")
+                .details(Details.USERNAME, "login-test")
                 .details(Details.REMEMBER_ME, "true");
 
         AccessTokenResponse response = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
