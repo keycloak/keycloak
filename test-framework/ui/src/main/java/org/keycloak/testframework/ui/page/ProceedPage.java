@@ -27,7 +27,7 @@ import org.openqa.selenium.support.FindBy;
  */
 public class ProceedPage extends AbstractPage {
 
-    @FindBy(className = "instruction")
+    @FindBy(id = "kc-info-message")
     private WebElement infoMessage;
 
     @FindBy(linkText = "» Click here to proceed")
