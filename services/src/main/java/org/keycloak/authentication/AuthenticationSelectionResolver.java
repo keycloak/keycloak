@@ -29,6 +29,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 import org.jboss.logging.Logger;
 
@@ -78,13 +79,12 @@ class AuthenticationSelectionResolver {
             }
 
             //add credential authenticators in order
-            if (processor.getAuthenticationSession().getAuthenticatedUser() != null) {
-                authenticationSelectionList =
-                        Stream.concat(
-                            processor.getAuthenticationSession().getAuthenticatedUser().credentialManager().getStoredCredentialsStream()
-                                .map(CredentialModel::getType),
-                            processor.getAuthenticationSession().getAuthenticatedUser().credentialManager()
-                                .getConfiguredUserStorageCredentialTypesStream())
+            UserModel user = processor.getAuthenticationSession().getAuthenticatedUser();
+            if (user != null) {
+                authenticationSelectionList = Stream.concat(
+                                user.credentialManager().getStoredCredentialsStream().map(CredentialModel::getType),
+                                user.credentialManager().getConfiguredUserStorageCredentialTypesStream()
+                        )
                         .distinct()
                         .filter(typeAuthExecMap::containsKey)
                         .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
@@ -101,8 +101,21 @@ class AuthenticationSelectionResolver {
                 });
             }
 
-            //add all other authenticators
+            //add non credentials authenticators
             for (AuthenticationExecutionModel exec : nonCredentialExecutions) {
+                if (user != null) {
+                    AuthenticatorFactory factory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, exec.getAuthenticator());
+                    Authenticator authenticator = factory.create(processor.getSession());
+
+                    boolean isAvailable = exec.isRequired()
+                            || authenticator.configuredFor(processor.getSession(), processor.getRealm(), user)
+                            || (factory.isUserSetupAllowed() && authenticator.areRequiredActionsEnabled(processor.getSession(), processor.getRealm()));
+
+                    if (!isAvailable) {
+                        continue;
+                    }
+                }
+
                 authenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), exec));
             }
 
@@ -114,7 +127,6 @@ class AuthenticationSelectionResolver {
 
         return authenticationSelectionList;
     }
-
 
     /**
      * Return the flowId of the "highest" subflow, which we need to take into account when creating list of authentication mechanisms
