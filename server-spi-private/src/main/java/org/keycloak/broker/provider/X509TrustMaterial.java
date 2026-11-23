@@ -27,9 +27,16 @@ import java.util.Set;
  * @param trustAnchors              self signed CA roots for one trust domain
  * @param requiredExtendedKeyUsages extended key usage OIDs of which the end entity certificate must
  *                                  contain at least one, an empty list imposes no restriction
+ * @param rejectTrustAnchorInPresentedChain whether a presented {@code x5c} chain containing one of
+ *                                          the configured trust anchors must be rejected
  */
 public record X509TrustMaterial(Set<X509Certificate> trustAnchors,
-                                List<String> requiredExtendedKeyUsages) {
+                                List<String> requiredExtendedKeyUsages,
+                                boolean rejectTrustAnchorInPresentedChain) {
+
+    public X509TrustMaterial(Set<X509Certificate> trustAnchors, List<String> requiredExtendedKeyUsages) {
+        this(trustAnchors, requiredExtendedKeyUsages, false);
+    }
 
     public X509TrustMaterial {
         trustAnchors = Set.copyOf(trustAnchors);
