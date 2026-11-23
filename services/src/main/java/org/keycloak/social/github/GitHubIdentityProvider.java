@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
@@ -78,6 +79,8 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     public static final String EMAIL_URL = DEFAULT_EMAIL_URL;
 
     public static final String DEFAULT_SCOPE = "user:email";
+    /** Scope GitHub requires to check private organization membership. */
+    public static final String ORGANIZATIONS_SCOPE = "read:org";
 
     /** Base URL key in config map. */
     protected static final String BASE_URL_KEY = "baseUrl";
@@ -119,6 +122,28 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
         config.setUserInfoUrl(profileUrl);
         config.getConfig().put(EMAIL_URL_KEY, emailUrl);
         githubJsonFormat = Boolean.parseBoolean(config.getConfig().getOrDefault(GITHUB_JSON_FORMAT_KEY, "false"));
+
+        // The superclass only uses getDefaultScopes() when no scopes are configured: keep custom scopes, but make sure
+        // the organization check can see private memberships.
+        if (isOrganizationsConfigured()) {
+            config.setDefaultScope(addScope(config.getDefaultScope(), ORGANIZATIONS_SCOPE));
+        }
+    }
+
+    /**
+     * Add {@code scope} to a GitHub scope list unless it is already there, keeping the list's separator.
+     */
+    static String addScope(String scopes, String scope) {
+        if (scopes == null || scopes.trim().isEmpty()) {
+            return scope;
+        }
+        for (String existing : scopes.trim().split("[\\s,]+")) {
+            if (existing.equals(scope)) {
+                return scopes;
+            }
+        }
+        String separator = scopes.contains(",") && !scopes.trim().contains(" ") ? "," : " ";
+        return scopes.trim() + separator + scope;
     }
 
     /**
@@ -190,11 +215,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
                     logger.tracef("profile retrieved from github: %s", profile);
                     BrokeredIdentityContext user = extractIdentityFromProfile(null, profile);
 
-                    List<String> emailDomains = parseEmailDomains(getConfig().getConfig().get(EMAIL_DOMAINS_KEY));
-                    if (!emailDomains.isEmpty()) {
-                        // The public profile address may be personal: always choose from the verified list.
-                        user.setEmail(selectEmail(fetchEmails(accessToken), emailDomains));
-                    } else if (user.getEmail() == null) {
+                    if (!applyEmailDomains(accessToken, user) && user.getEmail() == null) {
                         user.setEmail(searchEmail(accessToken));
                     }
 
@@ -208,11 +229,31 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 		}
 	}
 
+	/**
+	 * If email domains are configured, replace the user's email with the address chosen from the verified list:
+	 * the public profile address may be personal.
+	 *
+	 * @return true if email domains are configured
+	 */
+	private boolean applyEmailDomains(String accessToken, BrokeredIdentityContext user) {
+		List<String> emailDomains = parseEmailDomains(getConfig().getConfig().get(EMAIL_DOMAINS_KEY));
+		if (emailDomains.isEmpty()) {
+			return false;
+		}
+		user.setEmail(selectEmail(fetchEmails(accessToken), emailDomains));
+		return true;
+	}
+
+	private boolean isOrganizationsConfigured() {
+		String orgs = getConfig().getConfig().get(ORGANIZATIONS_KEY);
+		return orgs != null && !orgs.trim().isEmpty();
+	}
+
 	private void checkOrganizationMembership(String accessToken, String username) {
-		String orgsConfig = getConfig().getConfig().get(ORGANIZATIONS_KEY);
-		if (orgsConfig == null || orgsConfig.trim().isEmpty()) {
+		if (!isOrganizationsConfigured()) {
 			return;
 		}
+		String orgsConfig = getConfig().getConfig().get(ORGANIZATIONS_KEY);
 
 		String[] allowedOrgs = orgsConfig.split(",");
 		for (String org : allowedOrgs) {
@@ -228,7 +269,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 				.withMessageCode(Messages.ACCESS_DENIED);
 	}
 
-	private boolean isUserInOrganization(String accessToken, String username, String org) {
+	boolean isUserInOrganization(String accessToken, String username, String org) {
 		String orgMemberUrl = apiUrl + "/orgs/" + org + "/members/" + username;
 		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(orgMemberUrl)
 				.header("Authorization", "Bearer " + accessToken)
@@ -359,6 +400,22 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     }
 
     @Override
+    @SuppressWarnings("rawtypes") // This class extends the raw AbstractOAuth2IdentityProvider type.
+    protected BrokeredIdentityContext exchangeExternalTokenV1Impl(EventBuilder event, MultivaluedMap params) {
+        // Legacy token exchange validates the token through the user info endpoint only and does not go through
+        // doGetFederatedIdentity(): apply the email domains and the organization check here too.
+        BrokeredIdentityContext user = super.exchangeExternalTokenV1Impl(event, params);
+        String subjectToken = (String) params.getFirst(OAuth2Constants.SUBJECT_TOKEN);
+        try {
+            applyEmailDomains(subjectToken, user);
+            checkOrganizationMembership(subjectToken, user.getUsername());
+        } catch (IdentityBrokerException e) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, e.getMessage(), Response.Status.BAD_REQUEST);
+        }
+        return user;
+    }
+
+    @Override
     protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
         String subjectToken = tokenExchangeContext.getFormParams().getFirst(OAuth2Constants.SUBJECT_TOKEN);
         if (subjectToken == null) {
@@ -375,10 +432,6 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
     @Override
 	protected String getDefaultScopes() {
-		String orgs = getConfig().getConfig().get(ORGANIZATIONS_KEY);
-		if (orgs != null && !orgs.trim().isEmpty()) {
-			return DEFAULT_SCOPE + " read:org";
-		}
-		return DEFAULT_SCOPE;
+		return isOrganizationsConfigured() ? DEFAULT_SCOPE + " " + ORGANIZATIONS_SCOPE : DEFAULT_SCOPE;
 	}
 }

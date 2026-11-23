@@ -16,9 +16,24 @@
  */
 package org.keycloak.social.github;
 
+import java.lang.reflect.Proxy;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
+import org.keycloak.broker.provider.AuthenticationRequest;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.util.IdentityBrokerState;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.services.ErrorResponseException;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,6 +41,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -97,6 +114,127 @@ public class GitHubIdentityProviderTest {
         GitHubIdentityProvider idp = new GitHubIdentityProvider(null, config);
 
         assertEquals(GitHubIdentityProvider.DEFAULT_SCOPE, idp.getDefaultScopes());
+    }
+
+    /**
+     * Test that read:org is added to explicitly configured scopes, which the superclass uses instead of
+     * getDefaultScopes(), and that it reaches the authorization request.
+     */
+    @Test
+    public void testOrganizationsScopeIsAddedToConfiguredScopes() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        config.setDefaultScope("user:email read:user");
+        config.getConfig().put(GitHubIdentityProvider.ORGANIZATIONS_KEY, "my-org");
+        assertEquals("user:email read:user read:org", authorizationScope(config));
+    }
+
+    @Test
+    public void testConfiguredScopesAreUnchangedWithoutOrganizations() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        config.setDefaultScope("user:email read:user");
+        assertEquals("user:email read:user", authorizationScope(config));
+    }
+
+    @Test
+    public void testAddScope() {
+        assertEquals("read:org", GitHubIdentityProvider.addScope(null, "read:org"));
+        assertEquals("read:org", GitHubIdentityProvider.addScope(" ", "read:org"));
+        assertEquals("user:email read:org", GitHubIdentityProvider.addScope("user:email", "read:org"));
+        assertEquals("user:email,repo,read:org", GitHubIdentityProvider.addScope("user:email,repo", "read:org"));
+        assertEquals("read:org user:email", GitHubIdentityProvider.addScope("read:org user:email", "read:org"));
+        assertEquals("user:email,read:org", GitHubIdentityProvider.addScope("user:email,read:org", "read:org"));
+    }
+
+    /**
+     * Test that legacy token exchange (V1), which validates the token through the user info endpoint and
+     * does not go through doGetFederatedIdentity(), still rejects users outside the configured organizations.
+     */
+    @Test
+    public void testTokenExchangeV1RejectsNonMember() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        config.getConfig().put(GitHubIdentityProvider.ORGANIZATIONS_KEY, "my-org, another-org");
+        StubbedGitHubIdentityProvider idp = new StubbedGitHubIdentityProvider(config, false);
+
+        assertThrows(ErrorResponseException.class, () -> idp.exchangeExternalTokenV1Impl(null, subjectToken("token")));
+        assertEquals(List.of("my-org", "another-org"), idp.checkedOrganizations);
+    }
+
+    @Test
+    public void testTokenExchangeV1AcceptsMember() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        config.getConfig().put(GitHubIdentityProvider.ORGANIZATIONS_KEY, "my-org");
+        StubbedGitHubIdentityProvider idp = new StubbedGitHubIdentityProvider(config, true);
+
+        BrokeredIdentityContext user = idp.exchangeExternalTokenV1Impl(null, subjectToken("token"));
+        assertSame(idp.user, user);
+        assertEquals(List.of("my-org"), idp.checkedOrganizations);
+    }
+
+    @Test
+    public void testTokenExchangeV1WithoutOrganizationsSkipsMembershipCheck() {
+        StubbedGitHubIdentityProvider idp = new StubbedGitHubIdentityProvider(new OAuth2IdentityProviderConfig(), false);
+
+        BrokeredIdentityContext user = idp.exchangeExternalTokenV1Impl(null, subjectToken("token"));
+        assertSame(idp.user, user);
+        assertEquals(List.of(), idp.checkedOrganizations);
+    }
+
+    private static MultivaluedMap<String, String> subjectToken(String token) {
+        MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
+        params.putSingle(OAuth2Constants.SUBJECT_TOKEN, token);
+        return params;
+    }
+
+    /**
+     * GitHub provider with the user info validation and the organization membership call stubbed out.
+     */
+    private static class StubbedGitHubIdentityProvider extends GitHubIdentityProvider {
+        private final boolean member;
+        final List<String> checkedOrganizations = new ArrayList<>();
+        BrokeredIdentityContext user;
+
+        StubbedGitHubIdentityProvider(OAuth2IdentityProviderConfig config, boolean member) {
+            super(null, config);
+            config.setEnabled(true);
+            this.member = member;
+        }
+
+        @Override
+        protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
+            user = new BrokeredIdentityContext("1", getConfig());
+            user.setUsername("octocat");
+            return user;
+        }
+
+        @Override
+        boolean isUserInOrganization(String accessToken, String username, String org) {
+            checkedOrganizations.add(org);
+            return member;
+        }
+    }
+
+    /**
+     * Build the authorization request of a GitHub provider with {@code config} and return its scope parameter.
+     */
+    private static String authorizationScope(OAuth2IdentityProviderConfig config) {
+        config.setClientId("client-id");
+        // No client notes: no login hint, prompt or forwarded parameters.
+        AuthenticationSessionModel authSession = (AuthenticationSessionModel) Proxy.newProxyInstance(
+                GitHubIdentityProviderTest.class.getClassLoader(), new Class<?>[] { AuthenticationSessionModel.class },
+                (proxy, method, args) -> null);
+        AuthenticationRequest request = new AuthenticationRequest(null, null, authSession, null, null,
+                IdentityBrokerState.decoded("state", null, "client", "tab", null), "https://keycloak.example.com/callback");
+        URI uri = new GitHubIdentityProvider(null, config) {
+            URI authorizationUrl() {
+                return createAuthorizationUrl(request).build();
+            }
+        }.authorizationUrl();
+        for (String param : uri.getRawQuery().split("&")) {
+            if (param.startsWith(OAuth2Constants.SCOPE + "=")) {
+                return URLDecoder.decode(param.substring(OAuth2Constants.SCOPE.length() + 1), StandardCharsets.UTF_8);
+            }
+        }
+        return null;
     }
 
     // --- Email domains: pick the verified work address, not the primary one
