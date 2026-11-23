@@ -52,8 +52,17 @@ export const RoutableTabs = ({
   const isFeatureEnabled = useIsFeatureEnabled();
   const { t } = useTranslation();
 
+  // Extract event keys from children
+  const eventKeys = Children.toArray(children)
+    .filter((child): child is ChildElement => isValidElement(child))
+    .map((child) => child.props.eventKey.toString());
+
   const matchedTabs = tabs
-    .filter((tab) => matchPath({ path: tab.metadata.path }, pathname))
+    .filter((tab) =>
+        eventKeys.some((eventKey) =>
+            matchPath({ path: tab.metadata.path }, eventKey),
+        ),
+    )
     .map((t) => ({
       ...t,
       pathname: generatePath(t.metadata.path, {
@@ -63,11 +72,6 @@ export const RoutableTabs = ({
     }));
   // Extract all keys from matchedTabs
   const matchedTabsKeys = matchedTabs.map((t) => t.pathname);
-
-  // Extract event keys from children
-  const eventKeys = Children.toArray(children)
-    .filter((child): child is ChildElement => isValidElement(child))
-    .map((child) => child.props.eventKey.toString());
 
   const allKeys = [...eventKeys, ...matchedTabsKeys];
 
