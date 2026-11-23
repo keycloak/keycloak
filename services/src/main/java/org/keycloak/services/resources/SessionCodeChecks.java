@@ -156,6 +156,12 @@ public class SessionCodeChecks {
             client = realm.getClientByClientId(clientId);
         }
         if (client != null) {
+            if (!client.isEnabled()) {
+                event.client(client);
+                event.error(Errors.CLIENT_DISABLED);
+                response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+                return null;
+            }
             session.getContext().setClient(client);
             setClientToEvent(client);
         }
@@ -190,7 +196,7 @@ public class SessionCodeChecks {
         AuthenticationSessionModel resolvedAuthSession = authSession != null ? authSession : authSessionCookie;
         if (resolvedAuthSession != null) {
             UserModel user = resolvedAuthSession.getAuthenticatedUser();
-            if (checkUserDisabled(user) && !AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(resolvedAuthSession.getAction())) {
+            if (isUserDisabled(user) && !AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(resolvedAuthSession.getAction())) {
                 event.user(user);
                 event.detail(Details.USERNAME, user.getUsername());
                 event.error(Errors.USER_DISABLED);
@@ -525,7 +531,7 @@ public class SessionCodeChecks {
         return !client.isEnabled();
     }
 
-    protected boolean checkUserDisabled(UserModel user) {
+    protected boolean isUserDisabled(UserModel user) {
         return user != null && !user.isEnabled();
     }
 }
