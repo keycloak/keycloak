@@ -164,7 +164,7 @@ fi
 SERVER_STATUS=""
 PID=""
 # trap the signals that should be forwarded to the java process
-trap 'SERVER_STATUS=143; target_pid="${PID:-$!}"; if [ -n "$target_pid" ]; then kill -TERM "$target_pid" 2>/dev/null; wait "$target_pid" 2>/dev/null; else exit 143; fi' TERM INT
+trap 'SERVER_STATUS=143; target_pid="${PID:-$!}"; if [ -n "$target_pid" ]; then kill -TERM "$target_pid" 2>/dev/null; wait "$target_pid" 2>/dev/null; else exit "$SERVER_STATUS"; fi' TERM INT
 # duplicate stdin to fd 3 so background job receives original stdin in dash/ksh93
 exec 3<&0
 # run the java process in the background using fd 3, and close fd 3 in the child
