@@ -21,7 +21,7 @@ public class SsfEventStatsRepresentation {
 
     /**
      * Per-status snapshot. Keys are the wire form of
-     * {@link org.keycloak.models.jpa.entities.OutboxEntryStatus} —
+     * {@link org.keycloak.events.outbox.OutboxEntryStatus} —
      * {@code PENDING}, {@code DELIVERED}, {@code DEAD_LETTER},
      * {@code HELD}.
      */
