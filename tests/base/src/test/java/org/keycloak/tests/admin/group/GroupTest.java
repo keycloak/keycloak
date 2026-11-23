@@ -461,16 +461,16 @@ public class GroupTest extends AbstractGroupTest {
         String realmName = managedRealm.getName();
         final String groupId = runOnServer.fetch(session -> {
             RealmModel realm = session.realms().getRealmByName(realmName);
-            GroupModel legacyGroup = realm.createGroup("legacy\u0000Group");
+            GroupModel legacyGroup = realm.createGroup("legacy\u007FGroup");
             return legacyGroup.getId();
         }, String.class);
         managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
 
         GroupRepresentation rep = new GroupRepresentation();
-        rep.setName("legacy\u0000Group");
+        rep.setName("legacy\u007FGroup");
         managedRealm.admin().groups().group(groupId).update(rep);
 
-        assertEquals("legacy\u0000Group", managedRealm.admin().groups().group(groupId).toRepresentation().getName());
+        assertEquals("legacy\u007FGroup", managedRealm.admin().groups().group(groupId).toRepresentation().getName());
     }
 
     // Issue #54721: moving a legacy group whose unchanged name contains control
@@ -480,7 +480,7 @@ public class GroupTest extends AbstractGroupTest {
         String realmName = managedRealm.getName();
         final String groupId = runOnServer.fetch(session -> {
             RealmModel realm = session.realms().getRealmByName(realmName);
-            GroupModel legacyGroup = realm.createGroup("legacy\u0000Group");
+            GroupModel legacyGroup = realm.createGroup("legacy\u007FGroup");
             return legacyGroup.getId();
         }, String.class);
         managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
@@ -492,7 +492,7 @@ public class GroupTest extends AbstractGroupTest {
 
         GroupRepresentation rep = new GroupRepresentation();
         rep.setId(groupId);
-        rep.setName("legacy\u0000Group");
+        rep.setName("legacy\u007FGroup");
 
         // top-level move endpoint: unchanged legacy name must not be validated
         try (Response response = managedRealm.admin().groups().add(rep)) {
