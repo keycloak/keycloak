@@ -190,7 +190,7 @@ public class SessionCodeChecks {
         AuthenticationSessionModel resolvedAuthSession = authSession != null ? authSession : authSessionCookie;
         if (resolvedAuthSession != null) {
             UserModel user = resolvedAuthSession.getAuthenticatedUser();
-            if (user != null && !user.isEnabled()) {
+            if (checkUserDisabled(user) && !AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(resolvedAuthSession.getAction())) {
                 event.user(user);
                 event.detail(Details.USERNAME, user.getUsername());
                 event.error(Errors.USER_DISABLED);
@@ -523,5 +523,9 @@ public class SessionCodeChecks {
 
     protected boolean checkClientDisabled(ClientModel client) {
         return !client.isEnabled();
+    }
+
+    protected boolean checkUserDisabled(UserModel user) {
+        return user != null && !user.isEnabled();
     }
 }
