@@ -1,6 +1,7 @@
 package org.keycloak.protocol.oidc;
 
 import java.util.Map;
+import java.util.function.Function;
 
 import org.keycloak.Config;
 import org.keycloak.cache.LocalCache;
@@ -281,6 +282,11 @@ public class OIDCProviderConfig {
         @Override
         public void invalidate(K key) {
             // no-op
+        }
+
+        @Override
+        public V computeIfAbsent(K key, Function<K, V> mapper) {
+            return mapper.apply(key);
         }
 
         @Override

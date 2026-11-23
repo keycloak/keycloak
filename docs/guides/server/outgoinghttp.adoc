@@ -44,6 +44,7 @@ Maximum time of inactivity between two data packets until a socket connection ti
 
 *connection-pool-size*::
 Size of the connection pool for outgoing connections. Default: 128.
+Identity providers that use mutual TLS client authentication get a separate pool per client certificate, each with this size.
 
 *max-pooled-per-route*::
 How many connections can be pooled per host. Default: 64.
@@ -64,6 +65,7 @@ It is recommended to be `false` to avoid redirects that could lead for example t
 
 *client-keystore*::
 File path to a Java keystore file. This keystore contains client certificates for mTLS.
+It is not used for identity providers that use mutual TLS client authentication which needs to be configured to present a selected certificate of a realm key provider.
 
 *client-keystore-password*::
 Password for the client keystore. REQUIRED, when `client-keystore` is set.

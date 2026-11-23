@@ -27,8 +27,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import org.keycloak.common.enums.HostnameVerificationPolicy;
@@ -79,6 +81,7 @@ public class HttpClientBuilder {
     protected KeyStore truststore;
     protected KeyStore clientKeyStore;
     protected String clientPrivateKeyPassword;
+    protected KeyManager[] keyManagers;
     protected boolean disableTrustManager;
     protected HostnameVerificationPolicy policy = HostnameVerificationPolicy.DEFAULT;
     protected SSLContext sslContext;
@@ -226,6 +229,15 @@ public class HttpClientBuilder {
         return this;
     }
 
+    /**
+     * Sets the key managers that provide the client certificate, taking precedence over the client keystore.
+     * Unlike {@link #sslContext(SSLContext)}, the truststore and {@link #disableTrustManager()} still apply.
+     */
+    public HttpClientBuilder keyManagers(KeyManager[] keyManagers) {
+        this.keyManagers = keyManagers;
+        return this;
+    }
+
     public HttpClientBuilder keyStore(KeyStore keyStore, String password) {
         this.clientKeyStore = keyStore;
         this.clientPrivateKeyPassword = password;
@@ -269,11 +281,19 @@ public class HttpClientBuilder {
             SSLContext theContext = sslContext;
             if (disableTrustManager) {
                 theContext = SSLContext.getInstance("TLS");
-                theContext.init(null, new TrustManager[]{new PassthroughTrustManager()},
+                // keep the key managers so that the client certificate is still presented
+                theContext.init(keyManagers, new TrustManager[]{new PassthroughTrustManager()},
                         new SecureRandom());
                 verifier = new NoopHostnameVerifier();
                 sslsf = new SSLConnectionSocketFactory(theContext, verifier);
             } else if (theContext != null) {
+                sslsf = new SSLConnectionSocketFactory(theContext, verifier);
+            } else if (keyManagers != null) {
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+                // a null truststore results in the default trust managers
+                trustManagerFactory.init(truststore);
+                theContext = SSLContext.getInstance("TLS");
+                theContext.init(keyManagers, trustManagerFactory.getTrustManagers(), new SecureRandom());
                 sslsf = new SSLConnectionSocketFactory(theContext, verifier);
             } else if (clientKeyStore != null || truststore != null) {
                 theContext = createSslContext("TLS", clientKeyStore, clientPrivateKeyPassword, truststore, null);

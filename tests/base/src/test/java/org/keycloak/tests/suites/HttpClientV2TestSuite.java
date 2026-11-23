@@ -13,6 +13,7 @@ import org.keycloak.tests.broker.oidc.KcOidcBrokerClientSecretJwtTest;
 import org.keycloak.tests.broker.oidc.KcOidcBrokerPkceTest;
 import org.keycloak.tests.broker.oidc.KcOidcBrokerPrivateKeyJwtTest;
 import org.keycloak.tests.broker.oidc.KcOidcBrokerTest;
+import org.keycloak.tests.broker.oidc.KcOidcBrokerTlsClientAuthTest;
 import org.keycloak.tests.broker.saml.KcSamlBrokerTest;
 import org.keycloak.tests.httpclient.VertxHttpClientTest;
 
@@ -29,6 +30,7 @@ import org.junit.platform.suite.api.Suite;
         KcOidcBrokerClientSecretJwtTest.class,
         KcOidcBrokerPrivateKeyJwtTest.class,
         KcOidcBrokerPkceTest.class,
+        KcOidcBrokerTlsClientAuthTest.class,
         // SAML broker — exercises SAML artifact resolution, metadata fetch
         KcSamlBrokerTest.class,
         // Token store — exercises token exchange, userinfo via outgoing HTTP
