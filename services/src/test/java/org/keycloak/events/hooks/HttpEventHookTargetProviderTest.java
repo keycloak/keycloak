@@ -161,6 +161,23 @@ public class HttpEventHookTargetProviderTest {
     }
 
     @Test
+    public void shouldRejectCustomBodyTemplateUsingNewBuiltin() throws Exception {
+        RecordingHandler handler = startServer(200, "accepted");
+
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpEventHookTargetProvider provider = new HttpEventHookTargetProvider(null, SimpleHttp.create(client));
+            EventHookDeliveryResult result = provider.deliver(target(handler.url(), Map.of(
+                    "customBodyMappingTemplate", "{\"value\": \"${'java.lang.StringBuilder'?new()('constructed')}\"}"
+            )), message("evt-new-builtin", Map.of("eventId", "evt-new-builtin")));
+
+            assertFalse(result.isSuccess());
+            assertFalse(result.isRetryable());
+            assertEquals("PARSE_FAILED", result.getStatusCode());
+            assertNull(handler.body);
+        }
+    }
+
+    @Test
     public void shouldParseRepresentationJsonForHttpDelivery() throws Exception {
         RecordingHandler handler = startServer(200, "accepted");
 

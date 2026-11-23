@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.FreemarkerUtils;
 
 import freemarker.cache.StringTemplateLoader;
 import freemarker.ext.util.WrapperTemplateModel;
@@ -158,7 +159,7 @@ final class EventHookBodyMappingSupport {
         StringTemplateLoader templateLoader = new StringTemplateLoader();
         templateLoader.putTemplate(TEMPLATE_NAME, template);
 
-        Configuration configuration = new Configuration(Configuration.VERSION_2_3_32);
+        Configuration configuration = FreemarkerUtils.createConfiguration();
         configuration.setTemplateLoader(templateLoader);
         configuration.setObjectWrapper(EventHookTemplateObjectWrapper.INSTANCE);
         configuration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);

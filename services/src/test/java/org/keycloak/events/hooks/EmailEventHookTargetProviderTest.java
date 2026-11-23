@@ -111,6 +111,36 @@ public class EmailEventHookTargetProviderTest {
     }
 
     @Test
+    public void shouldRejectNewBuiltinInAllEmailTemplates() throws Exception {
+        for (String templateSetting : List.of(
+                "recipientTemplate",
+                "localeTemplate",
+                "subjectTemplate",
+                "textBodyTemplate",
+                "htmlBodyTemplate")) {
+            RecordingDispatcher dispatcher = new RecordingDispatcher();
+            KeycloakSession session = session(
+                    realm("realm-1", "demo", Map.of("host", "smtp.example.org", "from", "noreply@example.org")),
+                    user("test-user", "test@example.org"));
+            EmailEventHookTargetProvider provider = new EmailEventHookTargetProvider(session, dispatcher);
+            Map<String, Object> settings = new HashMap<>(Map.of(
+                    "recipientTemplate", "test@example.org",
+                    "subjectTemplate", "Subject",
+                    "textBodyTemplate", "Body"
+            ));
+            settings.put(templateSetting, "${'java.lang.StringBuilder'?new()('constructed')}");
+
+            EventHookDeliveryResult result = provider.deliver(target(settings),
+                    message("evt-new-builtin", "test-user", Map.of("eventId", "evt-new-builtin")));
+
+            assertFalse(templateSetting, result.isSuccess());
+            assertFalse(templateSetting, result.isRetryable());
+            assertEquals(templateSetting, "PARSE_FAILED", result.getStatusCode());
+            assertEquals(templateSetting, null, dispatcher.recipient);
+        }
+    }
+
+    @Test
     public void shouldReturnSendFailedWhenDispatcherThrows() throws Exception {
         KeycloakSession session = session(realm("realm-1", "demo", Map.of("host", "smtp.example.org", "from", "noreply@example.org")), user("test-user", "test@example.org"));
         EmailEventHookTargetProvider provider = new EmailEventHookTargetProvider(session,

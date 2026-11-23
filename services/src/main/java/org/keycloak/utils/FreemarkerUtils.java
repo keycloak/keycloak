@@ -24,6 +24,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
 
+import freemarker.core.TemplateClassResolver;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
@@ -32,6 +33,13 @@ import freemarker.template.TemplateException;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class FreemarkerUtils {
+
+    public static Configuration createConfiguration() {
+        Configuration configuration = new Configuration(Configuration.VERSION_2_3_32);
+        configuration.setNewBuiltinClassResolver(TemplateClassResolver.ALLOWS_NOTHING_RESOLVER);
+        configuration.setAPIBuiltinEnabled(false);
+        return configuration;
+    }
 
     /**
      * Load the template from classpath
@@ -42,7 +50,7 @@ public class FreemarkerUtils {
      * @return template from classpath
      */
     public static String loadTemplateFromClasspath(Map<String, Object> contextMap, String templateFile, Class<?> clazz) throws TemplateException, IOException {
-        Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
+        Configuration freemarkerConfig = createConfiguration();
         freemarkerConfig.setClassForTemplateLoading(clazz, "");
         Template freemarkerTemplate = freemarkerConfig.getTemplate(templateFile);
 
