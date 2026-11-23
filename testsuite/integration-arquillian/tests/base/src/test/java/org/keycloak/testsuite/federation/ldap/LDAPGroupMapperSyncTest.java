@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import java.time.Duration;
 import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -575,37 +576,41 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             realm.updateComponent(mapperModel);
         });
 
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel realm = ctx.getRealm();
-            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+        try {
+            Assertions.assertTimeoutPreemptively(Duration.ofMillis(5000), () -> {
+                testingClient.server().run(session -> {
+                    LDAPTestContext ctx = LDAPTestContext.init(session);
+                    RealmModel realm = ctx.getRealm();
+                    ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
 
-            Assertions.assertEquals(ctx.getLdapModel().getConfig().getFirst(LDAPConstants.BATCH_SIZE_FOR_SYNC), "0");
+                    Assertions.assertEquals(ctx.getLdapModel().getConfig().getFirst(LDAPConstants.BATCH_SIZE_FOR_SYNC), "0");
 
-            LDAPStorageMapper groupMapper = new GroupLDAPStorageMapperFactory().create(session, mapperModel);
-            SynchronizationResult syncResult = groupMapper.syncDataFromFederationProviderToKeycloak(realm);
-            LDAPTestAsserts.assertSyncEquals(syncResult, 3, 0, 0, 0);
+                    LDAPStorageMapper groupMapper = new GroupLDAPStorageMapperFactory().create(session, mapperModel);
+                    SynchronizationResult syncResult = groupMapper.syncDataFromFederationProviderToKeycloak(realm);
+                    LDAPTestAsserts.assertSyncEquals(syncResult, 3, 0, 0, 0);
 
-            Stream.of("/group1", "/group11", "/group12").forEach(path -> {
-                GroupModel kcGroup = KeycloakModelUtils.findGroupByPath(session, realm, path);
-                Assertions.assertNotNull(kcGroup);
-                Assertions.assertEquals(0, kcGroup.getSubGroupsStream().count());
+                    Stream.of("/group1", "/group11", "/group12").forEach(path -> {
+                        GroupModel kcGroup = KeycloakModelUtils.findGroupByPath(session, realm, path);
+                        Assertions.assertNotNull(kcGroup);
+                        Assertions.assertEquals(0, kcGroup.getSubGroupsStream().count());
+                    });
+                });
+            }, "Flat group synchronization with batch size zero must complete within 5000 ms");
+        } finally {
+            // restore pagination, batch size and preserve inheritance configs.
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                RealmModel realm = ctx.getRealm();
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+                ldapModel.getConfig().putSingle(LDAPConstants.PAGINATION, "false");
+                ldapModel.getConfig().remove(LDAPConstants.BATCH_SIZE_FOR_SYNC);
+                realm.updateComponent(ldapModel);
+
+                ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "groupsMapper");
+                LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+                realm.updateComponent(mapperModel);
             });
-        });
-
-        // restore pagination, batch size and preserve inheritance configs.
-        testingClient.server().run(session -> {
-            LDAPTestContext ctx = LDAPTestContext.init(session);
-            RealmModel realm = ctx.getRealm();
-            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
-            ldapModel.getConfig().putSingle(LDAPConstants.PAGINATION, "false");
-            ldapModel.getConfig().remove(LDAPConstants.BATCH_SIZE_FOR_SYNC);
-            realm.updateComponent(ldapModel);
-
-            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "groupsMapper");
-            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
-            realm.updateComponent(mapperModel);
-        });
+        }
     }
 
 }
