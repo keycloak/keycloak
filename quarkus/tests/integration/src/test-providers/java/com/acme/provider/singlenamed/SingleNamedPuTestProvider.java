@@ -18,4 +18,18 @@ public class SingleNamedPuTestProvider implements TestProvider {
     public Map<String, String> getManifestResources() {
         return Map.of("persistence.xml", "persistence.xml", "orm.xml", "orm.xml");
     }
+
+    public static class CacheEnabled extends SingleNamedPuTestProvider {
+        @Override
+        public Map<String, String> getManifestResources() {
+            return Map.of("cached-persistence.xml", "persistence.xml", "orm.xml", "orm.xml");
+        }
+    }
+
+    public static class CacheDisabled extends SingleNamedPuTestProvider {
+        @Override
+        public Map<String, String> getManifestResources() {
+            return Map.of("uncached-persistence.xml", "persistence.xml", "orm.xml", "orm.xml");
+        }
+    }
 }

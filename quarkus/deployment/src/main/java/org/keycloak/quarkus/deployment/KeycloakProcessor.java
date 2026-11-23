@@ -145,6 +145,7 @@ import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LogHandlerBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigBuilderBuildItem;
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.JpaModelPersistenceUnitContributionBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationStaticConfiguredBuildItem;
@@ -516,7 +517,7 @@ class KeycloakProcessor {
     @BuildStep
     @Consume(CheckJdbcBuildStep.class)
     @Consume(CheckMultipleDatasourcesBuildStep.class)
-    void produceUserDefinedPersistenceUnits(BuildProducer<AdditionalPersistenceUnitBuildItem> producer) {
+    void produceUserDefinedPersistenceUnits(HibernateOrmConfig hibernateOrmConfig, BuildProducer<AdditionalPersistenceUnitBuildItem> producer) {
         PersistenceXmlParser parser = PersistenceXmlParser.create();
         List<URL> urls = parser.getClassLoaderService().locateResources("META-INF/persistence.xml");
         if (urls.isEmpty()) {
@@ -546,8 +547,11 @@ class KeycloakProcessor {
             }
 
             String datasourceName = getDatasourceNameFromPersistenceXml(descriptor);
+            String cachingEnabled = Boolean.toString(hibernateOrmConfig.defaultPersistenceUnit().secondLevelCachingEnabled());
             AdditionalPersistenceUnitBuildItem.Builder builder = AdditionalPersistenceUnitBuildItem.builder(puName)
-                    .dataSourceName(datasourceName);
+                    .dataSourceName(datasourceName)
+                    .property(AvailableSettings.USE_SECOND_LEVEL_CACHE, cachingEnabled)
+                    .property(AvailableSettings.USE_QUERY_CACHE, cachingEnabled);
             for (String className : descriptor.getManagedClassNames()) {
                 builder.managedClass(className);
             }
