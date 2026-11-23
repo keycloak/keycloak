@@ -25,6 +25,7 @@ import java.util.Map;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 
@@ -116,6 +117,19 @@ public class EmailDomainAliasMapperTest {
         FakeUser user = new FakeUser("1", "jane.doe@example.org");
         FakeUser other = new FakeUser("2", "jane.doe@example.com");
         new EmailDomainAliasMapper().updateBrokeredUser(session(user, other), null, user.model(), mapperModel(), null);
+        assertEquals("jane.doe@example.org", user.email);
+        assertEquals(0, user.emailChanges);
+    }
+
+    @Test
+    public void testUpdateSkipsAddressSharedByMultipleUsers() {
+        // Realms allowing duplicate emails: the lookup throws when several users have the address.
+        FakeUser user = new FakeUser("1", "jane.doe@example.org");
+        UserProvider userProvider = proxy(UserProvider.class, (method, args) -> {
+            throw new ModelDuplicateException("Multiple users with email '" + args[1] + "' exist in Keycloak.");
+        });
+        KeycloakSession session = proxy(KeycloakSession.class, (method, args) -> userProvider);
+        new EmailDomainAliasMapper().updateBrokeredUser(session, null, user.model(), mapperModel(), null);
         assertEquals("jane.doe@example.org", user.email);
         assertEquals(0, user.emailChanges);
     }

@@ -30,6 +30,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -122,7 +123,14 @@ public class EmailDomainAliasMapper extends AbstractIdentityProviderMapper {
         if (canonical == null || canonical.equalsIgnoreCase(current)) {
             return;
         }
-        UserModel existing = session.users().getUserByEmail(realm, canonical);
+        UserModel existing;
+        try {
+            existing = session.users().getUserByEmail(realm, canonical);
+        } catch (ModelDuplicateException e) {
+            // Several users already have the address (realm allows duplicate emails): leave this one as it is.
+            logger.warnf("Not changing the email of user '%s' to '%s': %s", user.getUsername(), canonical, e.getMessage());
+            return;
+        }
         if (existing != null && !existing.getId().equals(user.getId())) {
             logger.warnf("Not changing the email of user '%s' to '%s': it belongs to user '%s'",
                     user.getUsername(), canonical, existing.getUsername());
