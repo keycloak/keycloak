@@ -865,7 +865,14 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
             }
-
+            String logoutRequestIssuer = userSession.getNote(SamlProtocol.SAML_LOGOUT_ISSUER);
+            String responseIssuer = responseType.getIssuer() != null ? responseType.getIssuer().getValue() : null;
+            if (responseIssuer == null || !responseIssuer.equals(logoutRequestIssuer)) {
+                logger.errorf("LogoutResponse Issuer validation failed: response issuer %s does not match request issuer %s", responseIssuer, logoutRequestIssuer);
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+            }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
 
