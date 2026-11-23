@@ -857,6 +857,15 @@ public class SAMLEndpoint {
                 event.error(Errors.USER_SESSION_NOT_FOUND);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
             }
+            String userSessionIdp = userSession.getNote(Details.IDENTITY_PROVIDER);
+            String responseIdp = config.getAlias();
+            if (!responseIdp.equals(userSessionIdp)) {
+                logger.errorf("LogoutResponse provider mismatch: session from provider '%s' but response to provider '%s'", userSessionIdp, responseIdp);
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+            }
+
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
 
