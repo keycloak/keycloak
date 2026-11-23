@@ -338,6 +338,10 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
        } else {
             try {
                 LogoutRequestType logoutRequest = buildLogoutRequest(userSession, uriInfo, realm, singleLogoutServiceUrl);
+
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID_BROKER, logoutRequest.getID());
+                userSession.setNote(SamlProtocol.SAML_LOGOUT_ISSUER, getConfig().getIdpEntityId());
+
                 if (logoutRequest.getDestination() != null) {
                     singleLogoutServiceUrl = logoutRequest.getDestination().toString();
                 }
