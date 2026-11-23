@@ -25,10 +25,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.jboss.logging.Logger;
+
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
@@ -37,6 +40,8 @@ import org.keycloak.provider.ProviderConfigProperty;
  * Add it to every identity provider whose users should share accounts.
  */
 public class EmailDomainAliasMapper extends AbstractIdentityProviderMapper {
+
+    private static final Logger logger = Logger.getLogger(EmailDomainAliasMapper.class);
 
     public static final String PROVIDER_ID = "email-domain-alias-idp-mapper";
     public static final String CANONICAL_DOMAIN = "canonical.domain";
@@ -96,14 +101,37 @@ public class EmailDomainAliasMapper extends AbstractIdentityProviderMapper {
     @Override
     public String getHelpText() {
         return "Rewrite the email from an alias domain to the canonical domain, so one person logging in through "
-                + "different identity providers or addresses is matched to one user.";
+                + "different identity providers or addresses is matched to one user. With sync mode force, an existing "
+                + "user's address in an alias domain is also moved to the canonical domain.";
     }
 
     @Override
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        // Runs before the first broker login flow looks up existing users by email, and before the email is
-        // written to the user (new users, and existing ones with sync mode force).
-        String canonicalDomain = mapperModel.getConfig().get(CANONICAL_DOMAIN);
+        // Runs before the first broker login flow looks up existing users by email, so new users are created,
+        // and existing ones found, with the canonical address.
+        context.setEmail(canonicalize(context.getEmail(), mapperModel.getConfig().get(CANONICAL_DOMAIN), aliasDomains(mapperModel)));
+    }
+
+    @Override
+    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+        // Sync mode force: the broker does not write the email to existing users, so move the stored address from
+        // an alias domain to the canonical domain here. Only the domain changes, and the domains map one-to-one onto
+        // the same mailboxes, so the email verified flag is kept.
+        String current = user.getEmail();
+        String canonical = canonicalize(current, mapperModel.getConfig().get(CANONICAL_DOMAIN), aliasDomains(mapperModel));
+        if (canonical == null || canonical.equalsIgnoreCase(current)) {
+            return;
+        }
+        UserModel existing = session.users().getUserByEmail(realm, canonical);
+        if (existing != null && !existing.getId().equals(user.getId())) {
+            logger.warnf("Not changing the email of user '%s' to '%s': it belongs to user '%s'",
+                    user.getUsername(), canonical, existing.getUsername());
+            return;
+        }
+        user.setEmail(canonical);
+    }
+
+    private static List<String> aliasDomains(IdentityProviderMapperModel mapperModel) {
         List<String> aliasDomains = new ArrayList<>();
         String aliases = mapperModel.getConfig().get(ALIAS_DOMAINS);
         if (aliases != null) {
@@ -111,7 +139,7 @@ public class EmailDomainAliasMapper extends AbstractIdentityProviderMapper {
                 aliasDomains.add(alias.trim());
             }
         }
-        context.setEmail(canonicalize(context.getEmail(), canonicalDomain, aliasDomains));
+        return aliasDomains;
     }
 
     /**

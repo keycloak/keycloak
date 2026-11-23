@@ -123,8 +123,12 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
         config.getConfig().put(EMAIL_URL_KEY, emailUrl);
         githubJsonFormat = Boolean.parseBoolean(config.getConfig().getOrDefault(GITHUB_JSON_FORMAT_KEY, "false"));
 
-        // The superclass only uses getDefaultScopes() when no scopes are configured: keep custom scopes, but make sure
-        // the organization check can see private memberships.
+        // The superclass only uses getDefaultScopes() when no scopes are configured: keep custom scopes, but add the
+        // ones the configured features need. Email domains read /user/emails, and the organization check must see
+        // private memberships.
+        if (!parseEmailDomains(config.getConfig().get(EMAIL_DOMAINS_KEY)).isEmpty()) {
+            config.setDefaultScope(addScope(config.getDefaultScope(), DEFAULT_SCOPE));
+        }
         if (isOrganizationsConfigured()) {
             config.setDefaultScope(addScope(config.getDefaultScope(), ORGANIZATIONS_SCOPE));
         }

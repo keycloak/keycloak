@@ -128,6 +128,23 @@ public class GitHubIdentityProviderTest {
         assertEquals("user:email read:user read:org", authorizationScope(config));
     }
 
+    /**
+     * Test that user:email, needed to read /user/emails, is added to configured scopes when email domains are set.
+     */
+    @Test
+    public void testEmailScopeIsAddedToConfiguredScopesWithEmailDomains() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        config.setDefaultScope("read:user");
+        config.getConfig().put(GitHubIdentityProvider.EMAIL_DOMAINS_KEY, "example.com");
+        assertEquals("read:user user:email", authorizationScope(config));
+
+        config = new OAuth2IdentityProviderConfig();
+        config.setDefaultScope("read:user");
+        config.getConfig().put(GitHubIdentityProvider.EMAIL_DOMAINS_KEY, "example.com");
+        config.getConfig().put(GitHubIdentityProvider.ORGANIZATIONS_KEY, "my-org");
+        assertEquals("read:user user:email read:org", authorizationScope(config));
+    }
+
     @Test
     public void testConfiguredScopesAreUnchangedWithoutOrganizations() {
         OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
