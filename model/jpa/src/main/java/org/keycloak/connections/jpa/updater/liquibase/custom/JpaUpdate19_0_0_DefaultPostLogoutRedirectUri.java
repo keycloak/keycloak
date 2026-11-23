@@ -17,7 +17,7 @@
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.RawSqlStatement;
+import liquibase.statement.core.RawParameterizedSqlStatement;
 
 public class JpaUpdate19_0_0_DefaultPostLogoutRedirectUri extends CustomKeycloakTask {
 
@@ -27,7 +27,7 @@ public class JpaUpdate19_0_0_DefaultPostLogoutRedirectUri extends CustomKeycloak
     protected void generateStatementsImpl() throws CustomChangeException {
         final String clientAttributesTable = getTableName("CLIENT_ATTRIBUTES");
         final String redirectUrisTable = getTableName("REDIRECT_URIS");
-        statements.add(new RawSqlStatement(
+        statements.add(new RawParameterizedSqlStatement(
                 "INSERT INTO " + clientAttributesTable + " (CLIENT_ID,NAME,VALUE) " +
                 "SELECT DISTINCT CLIENT_ID, '" + POST_LOGOUT_REDIRECT_URIS + "', '+' FROM " + redirectUrisTable + " WHERE CLIENT_ID NOT IN " +
                 "(SELECT CLIENT_ID FROM " + clientAttributesTable + " WHERE NAME = '" + POST_LOGOUT_REDIRECT_URIS + "')"
