@@ -873,6 +873,14 @@ public class SAMLEndpoint {
                 event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
             }
+            String logoutRequestId = userSession.getNote(SamlProtocol.SAML_LOGOUT_REQUEST_ID_BROKER);
+            String responseInResponseTo = responseType.getInResponseTo();
+            if (responseInResponseTo == null || !responseInResponseTo.equals(logoutRequestId)) {
+                logger.errorf("LogoutResponse inResponseTo validation failed: inResponseTo %s does not match request ID %s", responseInResponseTo, logoutRequestId);
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+            }
             return AuthenticationManager.finishBrowserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
         }
 
