@@ -55,4 +55,18 @@ public class LDAPGroupMapperNoImportTest extends LDAPGroupMapperTest {
     public void test03_importGroupMappings() {
     }
 
+    // Leaving a purely local, non-LDAP-managed group requires a writable local user, which
+    // doesn't exist in no-import mode (joinGroup/leaveGroup on it would throw ReadOnlyException).
+    @Test
+    @Override
+    @Ignore
+    public void test10a_leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroupInLdapOnlyMode() {
+    }
+
+    @Test
+    @Override
+    @Ignore
+    public void test10b_leaveOutOfPathGroupDoesNotAffectSameNameLdapManagedGroupInReadOnlyMode() {
+    }
+
 }
