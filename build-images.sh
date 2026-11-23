@@ -4,7 +4,7 @@ set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
   echo "Usage: $0 <build-version>"
-  echo "Example: $0 25.0.12-GW"
+  echo "Example: $0 25.0.14-GW or $0 25.0.14-GW-RC1"
   exit 1
 fi
 
@@ -38,6 +38,21 @@ restore_versions() {
 }
 # Runs on success, on failure (set -e) and on Ctrl-C.
 trap restore_versions EXIT
+
+# Keycloak 25.x must be built with JDK 21. JDK 23+ no longer runs annotation
+# processors found on the classpath, so jboss-logging's *_$logger classes are not
+# generated and the build fails with "Invalid logger interface ...".
+java_major() { "$1/bin/java" -XshowSettings:properties -version 2>&1 \
+  | sed -n 's/^ *java.specification.version = //p'; }
+if [[ -z "${JAVA_HOME:-}" || "$(java_major "${JAVA_HOME}")" != "21" ]]; then
+  if [[ -x /usr/libexec/java_home ]] && JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null)"; then
+    export JAVA_HOME
+  else
+    echo "ERROR: JDK 21 is required; set JAVA_HOME to a JDK 21 installation." >&2
+    exit 1
+  fi
+fi
+echo "==> Using JDK ${JAVA_HOME}"
 
 echo "==> Setting Maven modules version to: ${VERSION}"
 
@@ -74,17 +89,6 @@ cp "../../quarkus/dist/target/${DIST_FILE}" .
 
 echo "==> Building linux/amd64 & linux/arm64 image"
 
-#docker buildx build \
-#  --platform linux/amd64 \
-#  --pull \
-#  --no-cache \
-#  --build-arg "KEYCLOAK_DIST=${DIST_FILE}" \
-#  -t "${IMAGE}:${VERSION}-amd64" \
-#  --load \
-#  .
-
-#echo "==> Building linux/arm64 image"
-
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --pull \
@@ -98,9 +102,3 @@ docker buildx build \
 echo
 echo "Build completed successfully:"
 echo "  ${IMAGE}:${VERSION}"
-#echo "  ${IMAGE}:${VERSION}-arm64"
-#
-#docker buildx imagetools create \
-#  -t ${IMAGE}:${VERSION} \
-#  ${IMAGE}:${VERSION}-amd64 \
-#  ${IMAGE}:${VERSION}-arm64

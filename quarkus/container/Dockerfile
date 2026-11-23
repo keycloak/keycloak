@@ -27,8 +27,9 @@ ADD ubi-null.sh /tmp/
 RUN bash /tmp/ubi-null.sh java-21-openjdk-headless glibc-langpack-en findutils
 
 # Fail the build if the repositories resolve an OpenJDK older than the latest
-# known release. Raise JAVA_MIN_VERSION once a build fixing CVE-2026-91403 ships.
-ARG JAVA_MIN_VERSION=21.0.13.0.9
+# known release. 21.0.13.1.2 fixes CVE-2026-114938 (RHSA-2026:100567).
+# Raise JAVA_MIN_VERSION again once a build fixing CVE-2026-91403 ships.
+ARG JAVA_MIN_VERSION=21.0.13.1.2
 RUN java_version="$(rpm -r /tmp/null/rootfs -q --qf '%{VERSION}' java-21-openjdk-headless)" && \
     echo "Installed java-21-openjdk-headless ${java_version} (minimum ${JAVA_MIN_VERSION})" && \
     [ "$(rpm --eval "%{lua: print(rpm.vercmp('${java_version}', '${JAVA_MIN_VERSION}'))}")" -ge 0 ] || \
