@@ -156,7 +156,7 @@ public class SessionCodeChecks {
             client = realm.getClientByClientId(clientId);
         }
         if (client != null) {
-            if (!client.isEnabled()) {
+            if (checkClientDisabled(client)) {
                 event.client(client);
                 event.error(Errors.CLIENT_DISABLED);
                 response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
