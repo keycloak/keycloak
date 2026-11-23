@@ -64,7 +64,7 @@ public class GitHubIdentityProviderFactory extends AbstractIdentityProviderFacto
                 .defaultValue(false).type(ProviderConfigProperty.BOOLEAN_TYPE).add().property()
                 .name(GitHubIdentityProvider.ORGANIZATIONS_KEY).label("Organizations").helpText("Comma-separated list of GitHub organization names. If specified, only members of at least one of these organizations will be allowed to log in. Requires the 'read:org' scope, which is automatically added when this field is set.")
                 .type(ProviderConfigProperty.STRING_TYPE).add().property()
-                .name(GitHubIdentityProvider.EMAIL_DOMAINS_KEY).label("Email domains").helpText("Comma-separated list of email domains, in order of preference. If specified, the user's first verified GitHub address in one of these domains is used, falling back to the verified primary address, instead of the public profile or primary address. Unverified addresses are never used.")
+                .name(GitHubIdentityProvider.EMAIL_DOMAINS_KEY).label("Email domains").helpText("Comma-separated list of email domains, in order of preference. If specified, the user's first verified GitHub address in one of these domains is used, falling back to the verified primary address, instead of the public profile or primary address. Unverified addresses are never used. Requires the 'user:email' scope, which is automatically added when this field is set.")
                 .type(ProviderConfigProperty.STRING_TYPE).add().build();
     }
 }

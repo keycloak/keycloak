@@ -34,6 +34,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.storage.ReadOnlyException;
 
 /**
  * Rewrites the brokered email from an alias domain to one canonical domain before the first broker login flow runs,
@@ -102,8 +103,9 @@ public class EmailDomainAliasMapper extends AbstractIdentityProviderMapper {
     @Override
     public String getHelpText() {
         return "Rewrite the email from an alias domain to the canonical domain, so one person logging in through "
-                + "different identity providers or addresses is matched to one user. With sync mode force, an existing "
-                + "user's address in an alias domain is also moved to the canonical domain.";
+                + "different identity providers or addresses is matched to one user. With sync mode force or legacy, an "
+                + "existing user's address in an alias domain is also moved to the canonical domain, and so is the "
+                + "username when email is used as username.";
     }
 
     @Override
@@ -115,9 +117,9 @@ public class EmailDomainAliasMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        // Sync mode force: the broker does not write the email to existing users, so move the stored address from
-        // an alias domain to the canonical domain here. Only the domain changes, and the domains map one-to-one onto
-        // the same mailboxes, so the email verified flag is kept.
+        // Sync mode force or legacy: the broker does not write the email to existing users, so move the stored
+        // address from an alias domain to the canonical domain here. Only the domain changes, and the domains map
+        // one-to-one onto the same mailboxes, so the email verified flag is kept.
         String current = user.getEmail();
         String canonical = canonicalize(current, mapperModel.getConfig().get(CANONICAL_DOMAIN), aliasDomains(mapperModel));
         if (canonical == null || canonical.equalsIgnoreCase(current)) {
@@ -136,7 +138,26 @@ public class EmailDomainAliasMapper extends AbstractIdentityProviderMapper {
                     user.getUsername(), canonical, existing.getUsername());
             return;
         }
-        user.setEmail(canonical);
+        // UserModel.setEmail() does not keep the username in step with the email: the user profile does that, and
+        // it is not used here. Rename the user too when email is used as username.
+        boolean rename = realm.isRegistrationEmailAsUsername() && current.equalsIgnoreCase(user.getUsername());
+        if (rename) {
+            existing = session.users().getUserByUsername(realm, canonical);
+            if (existing != null && !existing.getId().equals(user.getId())) {
+                logger.warnf("Not changing the email and username of user '%s' to '%s': the username belongs to user '%s'",
+                        user.getUsername(), canonical, existing.getUsername());
+                return;
+            }
+        }
+        try {
+            if (rename) {
+                user.setUsername(canonical);
+            }
+            user.setEmail(canonical);
+        } catch (ReadOnlyException e) {
+            // For example users of a read-only user federation provider.
+            logger.warnf("Not changing the email of user '%s' to '%s': the user is read-only", user.getUsername(), canonical);
+        }
     }
 
     private static List<String> aliasDomains(IdentityProviderMapperModel mapperModel) {

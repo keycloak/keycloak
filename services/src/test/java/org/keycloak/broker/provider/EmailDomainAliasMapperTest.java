@@ -19,15 +19,16 @@ package org.keycloak.broker.provider;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.storage.ReadOnlyException;
 
 import org.junit.Test;
 
@@ -92,63 +93,119 @@ public class EmailDomainAliasMapperTest {
         assertNull(context.getEmail());
     }
 
-    // --- Sync mode force: existing users
+    // --- Sync mode force or legacy: existing users
 
     @Test
     public void testUpdateMovesStoredAliasAddressToCanonicalDomain() {
-        FakeUser user = new FakeUser("1", "jane.doe@example.org");
-        new EmailDomainAliasMapper().updateBrokeredUser(session(user), null, user.model(), mapperModel(), null);
-        // Only setEmail is called: FakeUser rejects any other change, such as the email verified flag.
+        FakeUser user = new FakeUser("1", "jane", "jane.doe@example.org");
+        update(user, realm(false), user);
+        // FakeUser rejects any other change, such as the email verified flag.
         assertEquals("jane.doe@example.com", user.email);
+        assertEquals("jane", user.username);
     }
 
     @Test
     public void testUpdateLeavesOtherAddressesUnchanged() {
         for (String email : new String[] { "jane.doe@example.com", "jane@personal.example", null }) {
-            FakeUser user = new FakeUser("1", email);
-            new EmailDomainAliasMapper().updateBrokeredUser(session(user), null, user.model(), mapperModel(), null);
+            FakeUser user = new FakeUser("1", "jane", email);
+            update(user, realm(true), user);
             assertEquals(email, user.email);
-            assertEquals(0, user.emailChanges);
+            assertEquals(0, user.changes);
         }
     }
 
     @Test
     public void testUpdateDoesNotTakeAnotherUsersAddress() {
-        FakeUser user = new FakeUser("1", "jane.doe@example.org");
-        FakeUser other = new FakeUser("2", "jane.doe@example.com");
-        new EmailDomainAliasMapper().updateBrokeredUser(session(user, other), null, user.model(), mapperModel(), null);
+        FakeUser user = new FakeUser("1", "jane", "jane.doe@example.org");
+        FakeUser other = new FakeUser("2", "other", "jane.doe@example.com");
+        update(user, realm(false), user, other);
         assertEquals("jane.doe@example.org", user.email);
-        assertEquals(0, user.emailChanges);
+        assertEquals(0, user.changes);
     }
 
     @Test
     public void testUpdateSkipsAddressSharedByMultipleUsers() {
         // Realms allowing duplicate emails: the lookup throws when several users have the address.
-        FakeUser user = new FakeUser("1", "jane.doe@example.org");
+        FakeUser user = new FakeUser("1", "jane", "jane.doe@example.org");
         UserProvider userProvider = proxy(UserProvider.class, (method, args) -> {
             throw new ModelDuplicateException("Multiple users with email '" + args[1] + "' exist in Keycloak.");
         });
         KeycloakSession session = proxy(KeycloakSession.class, (method, args) -> userProvider);
-        new EmailDomainAliasMapper().updateBrokeredUser(session, null, user.model(), mapperModel(), null);
+        new EmailDomainAliasMapper().updateBrokeredUser(session, realm(false), user.model(), mapperModel(), null);
         assertEquals("jane.doe@example.org", user.email);
-        assertEquals(0, user.emailChanges);
+        assertEquals(0, user.changes);
+    }
+
+    @Test
+    public void testUpdateRenamesUserWhenEmailIsUsername() {
+        FakeUser user = new FakeUser("1", "jane.doe@example.org", "jane.doe@example.org");
+        update(user, realm(true), user);
+        assertEquals("jane.doe@example.com", user.email);
+        assertEquals("jane.doe@example.com", user.username);
+    }
+
+    @Test
+    public void testUpdateKeepsUsernameThatIsNotTheEmail() {
+        FakeUser user = new FakeUser("1", "jane", "jane.doe@example.org");
+        update(user, realm(true), user);
+        assertEquals("jane.doe@example.com", user.email);
+        assertEquals("jane", user.username);
+    }
+
+    @Test
+    public void testUpdateDoesNotTakeAnotherUsersUsername() {
+        FakeUser user = new FakeUser("1", "jane.doe@example.org", "jane.doe@example.org");
+        FakeUser other = new FakeUser("2", "jane.doe@example.com", null);
+        update(user, realm(true), user, other);
+        assertEquals("jane.doe@example.org", user.email);
+        assertEquals("jane.doe@example.org", user.username);
+        assertEquals(0, user.changes);
+    }
+
+    @Test
+    public void testUpdateLeavesReadOnlyUserUnchanged() {
+        FakeUser user = new FakeUser("1", "jane.doe@example.org", "jane.doe@example.org");
+        user.readOnly = true;
+        update(user, realm(true), user);
+        assertEquals("jane.doe@example.org", user.email);
+        assertEquals("jane.doe@example.org", user.username);
+    }
+
+    private static void update(FakeUser user, RealmModel realm, FakeUser... users) {
+        new EmailDomainAliasMapper().updateBrokeredUser(session(users), realm, user.model(), mapperModel(), null);
+    }
+
+    private static RealmModel realm(boolean emailAsUsername) {
+        return proxy(RealmModel.class, (method, args) -> {
+            if (method.equals("isRegistrationEmailAsUsername")) {
+                return emailAsUsername;
+            }
+            throw new UnsupportedOperationException(method);
+        });
     }
 
     /**
-     * Session whose user provider finds {@code users} by email.
+     * Session whose user provider finds {@code users} by email and by username.
      */
     private static KeycloakSession session(FakeUser... users) {
         UserProvider userProvider = proxy(UserProvider.class, (method, args) -> {
-            if (method.equals("getUserByEmail")) {
-                String email = ((String) args[1]).toLowerCase(Locale.ROOT);
-                for (FakeUser user : users) {
-                    if (user.email != null && user.email.toLowerCase(Locale.ROOT).equals(email)) {
-                        return user.model();
-                    }
+            for (FakeUser user : users) {
+                String field;
+                switch (method) {
+                    case "getUserByEmail":
+                        field = user.email;
+                        break;
+                    case "getUserByUsername":
+                        field = user.username;
+                        break;
+                    default:
+                        throw new UnsupportedOperationException(method);
                 }
-                return null;
+                if (field != null && field.equalsIgnoreCase((String) args[1])) {
+                    return user.model();
+                }
             }
-            throw new UnsupportedOperationException(method);
+            return null;
         });
         return proxy(KeycloakSession.class, (method, args) -> {
             if (method.equals("users")) {
@@ -160,11 +217,14 @@ public class EmailDomainAliasMapperTest {
 
     private static class FakeUser {
         final String id;
+        String username;
         String email;
-        int emailChanges;
+        boolean readOnly;
+        int changes;
 
-        FakeUser(String id, String email) {
+        FakeUser(String id, String username, String email) {
             this.id = id;
+            this.username = username;
             this.email = email;
         }
 
@@ -174,12 +234,20 @@ public class EmailDomainAliasMapperTest {
                     case "getId":
                         return id;
                     case "getUsername":
-                        return "user-" + id;
+                        return username;
                     case "getEmail":
                         return email;
+                    case "setUsername":
                     case "setEmail":
-                        email = (String) args[0];
-                        emailChanges++;
+                        if (readOnly) {
+                            throw new ReadOnlyException("user is read-only");
+                        }
+                        if (method.equals("setUsername")) {
+                            username = (String) args[0];
+                        } else {
+                            email = (String) args[0];
+                        }
+                        changes++;
                         return null;
                     default:
                         throw new UnsupportedOperationException(method);
