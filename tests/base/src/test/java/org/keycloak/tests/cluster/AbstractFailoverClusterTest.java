@@ -20,7 +20,7 @@ import org.openqa.selenium.Cookie;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ClusterFailoverServerConfig.class)
 public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
 
     @InjectWebDriver(lifecycle = LifeCycle.METHOD)

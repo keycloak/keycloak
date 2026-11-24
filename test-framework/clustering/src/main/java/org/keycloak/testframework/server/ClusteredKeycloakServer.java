@@ -259,9 +259,11 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     }
 
     private void configureNode(KeycloakServerConfigBuilder configBuilder, int id) {
-        configBuilder.option("cache-embedded-node-name", "node" + (id + 1));
+        // Use the SPI options so mixed-version clusters (pre-26.8 images) also accept the setting.
+        // --cache-embedded-node-name / --cache-embedded-cluster-name are 26.8+ first-class aliases.
+        configBuilder.spiOption("cache-embedded", "default", "node-name", "node" + (id + 1));
         if (stateless) {
-            configBuilder.option("cache-embedded-cluster-name", "cluster-" + id);
+            configBuilder.spiOption("cache-embedded", "default", "cluster-name", "cluster-" + id);
         }
     }
 

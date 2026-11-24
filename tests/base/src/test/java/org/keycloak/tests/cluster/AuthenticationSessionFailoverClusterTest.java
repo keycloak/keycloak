@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ClusterFailoverServerConfig.class)
 public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
     @InjectPage
@@ -23,7 +23,10 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
 
     @Test
     public void failoverDuringAuthentication() {
-        boolean expectSuccessfulFailover = SESSION_CACHE_OWNERS >= 2;
+        // Authentication-session caches are forced to at least two owners
+        // (CacheConfigurator.ensureMinimumOwners), so failover must succeed even when
+        // -Dsession.cache.owners=1.
+        boolean expectSuccessfulFailover = true;
 
         log.infof("AUTHENTICATION FAILOVER TEST: cluster size = %d, session-cache owners = %d --> testing for %sSUCCESSFUL session failover",
                 getClusterSize(), SESSION_CACHE_OWNERS, expectSuccessfulFailover ? "" : "UN");

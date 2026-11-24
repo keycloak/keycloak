@@ -83,6 +83,11 @@ public class LoadBalancer {
 
     public void refreshNode(int index) {
         urls.remove(index);
+        // Rebind the proxy when the restarted node is currently selected; otherwise it keeps
+        // targeting the previous mapped port after the container is recreated.
+        if (currentNodeIndex == index) {
+            node(index);
+        }
     }
 
     private Origin origin(int index) {

@@ -8,7 +8,7 @@ import org.openqa.selenium.Cookie;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = ClusterFailoverServerConfig.class)
 public class SessionFailoverClusterTest extends AbstractFailoverClusterTest {
 
     @BeforeEach

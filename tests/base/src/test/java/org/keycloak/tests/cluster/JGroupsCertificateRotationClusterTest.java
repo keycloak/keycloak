@@ -84,7 +84,7 @@ public class JGroupsCertificateRotationClusterTest extends AbstractClusterTest {
         killBackendNode(backendNode(coordinatorIdx));
 
         int survivorIdx = (coordinatorIdx + 1) % getClusterSize();
-        assertClusterSize(1, survivorIdx);
+        assertClusterSize(getClusterSize() - 1, survivorIdx);
         assertTrue(isCoordinator(survivorIdx));
         assertTrue(hasRotationTask(survivorIdx));
 

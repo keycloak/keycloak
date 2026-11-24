@@ -27,7 +27,9 @@ public final class ReadinessProbe {
     }
 
     public static void waitUntilNodeReady(IntFunction<String> baseUrlFunction, int nodeIndex, long timeout) {
-        waitUntilReady(baseUrlFunction.apply(nodeIndex), createTrustAllSslContext(), timeout);
+        // Use /realms/master rather than /: the welcome page redirects to the advertised hostname
+        // (the load balancer), which can report success from a different node.
+        waitUntilReady(baseUrlFunction.apply(nodeIndex) + "/realms/master", createTrustAllSslContext(), timeout);
     }
 
     public static void waitUntilReady(IntFunction<String> baseUrlFunction, int clusterSize, long timeout) {
