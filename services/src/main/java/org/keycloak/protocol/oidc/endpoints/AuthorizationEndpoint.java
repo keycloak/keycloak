@@ -47,6 +47,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -462,6 +463,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         AuthenticationProcessor processor = createProcessor(authenticationSession, flowId, LoginActionsService.REGISTRATION_PATH);
         authenticationSession.setClientNote(APP_INITIATED_FLOW, LoginActionsService.REGISTRATION_PATH);
+        // Same as for /auth, so the registration can restart if the authentication session is removed
+        RestartLoginCookie.setRestartCookie(session, authenticationSession);
         LocaleUtil.processLocaleParam(session, realm, authenticationSession);
 
         return processor.authenticate();

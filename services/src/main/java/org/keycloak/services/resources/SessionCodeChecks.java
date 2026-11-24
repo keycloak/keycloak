@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.authentication.requiredactions.VerifyEmail;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.Details;
@@ -36,6 +37,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
@@ -438,12 +441,23 @@ public class SessionCodeChecks {
 
         if (authSession != null) {
 
-            event.clone();
-            event.detail(Details.RESTART_AFTER_TIMEOUT, "true");
-            event.error(Errors.EXPIRED_CODE);
+            UserModel verifiedUser = VerifyEmail.getUserVerifiedAfterRegistrationRestart(session, realm, authSession);
+            if (verifiedUser != null) {
+                // Email verified in another browser, which removed the authentication session of the registration. Not a timeout.
+                if (VerifyEmail.isContinueAsRegisteredUser(realm)) {
+                    // Don't ask for the username again. The user still authenticates as the browser flow requires.
+                    authSession.setAuthenticatedUser(verifiedUser);
+                }
+                new AuthenticationProcessor().setAuthenticationSession(authSession)
+                        .setForwardedSuccessMessage(new FormMessage(null, Messages.EMAIL_VERIFIED));
+            } else {
+                event.clone();
+                event.detail(Details.RESTART_AFTER_TIMEOUT, "true");
+                event.error(Errors.EXPIRED_CODE);
 
-            String warningMessage = Messages.LOGIN_TIMEOUT;
-            authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, warningMessage);
+                String warningMessage = Messages.LOGIN_TIMEOUT;
+                authSession.setAuthNote(LoginActionsService.FORWARDED_ERROR_MESSAGE_NOTE, warningMessage);
+            }
 
             String flowPath = authSession.getClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW);
             if (flowPath == null) {
