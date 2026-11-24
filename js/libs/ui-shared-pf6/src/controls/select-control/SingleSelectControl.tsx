@@ -64,17 +64,7 @@ export const SingleSelectControl = <
             variant="default"
             onClick={() => setOpen(!open)}
             onOpenChange={() => setOpen(false)}
-            selected={
-              isSelectBasedOptions(options)
-                ? options
-                    .filter((o) =>
-                      Array.isArray(value)
-                        ? value.includes(o.key)
-                        : value === o.key,
-                    )
-                    .map((o) => o.value)
-                : value
-            }
+            selected={value}
             toggle={(ref) => (
               <MenuToggle
                 id={id || name}

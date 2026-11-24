@@ -54,7 +54,7 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
       )
       .map((option) => (
         <SelectOption
-          selected={
+          isSelected={
             Array.isArray(selected)
               ? selected.includes(option)
               : selected === option

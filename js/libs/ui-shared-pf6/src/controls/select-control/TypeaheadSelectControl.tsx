@@ -190,17 +190,7 @@ export const TypeaheadSelectControl = <
           <Select
             {...rest}
             onOpenChange={() => setOpen(false)}
-            selected={
-              isSelectBasedOptions(combinedOptions)
-                ? combinedOptions
-                    .filter((o) =>
-                      Array.isArray(field.value)
-                        ? field.value.includes(o.key)
-                        : field.value === o.key,
-                    )
-                    .map((o) => o.value)
-                : field.value
-            }
+            selected={field.value}
             shouldFocusFirstItemOnOpen={false}
             toggle={(ref) => (
               <MenuToggle
