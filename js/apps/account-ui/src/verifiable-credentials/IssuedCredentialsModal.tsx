@@ -255,7 +255,7 @@ export const IssuedCredentialsModal = ({
               }
               emptyState={
                 <div className="pf-v6-u-text-align-center pf-v6-u-py-md">
-                  <span className="pf-v6-u-color-200">
+                  <span className="pf-v6-u-text-color-subtle">
                     {t("noIssuedCredentials")}
                   </span>
                 </div>

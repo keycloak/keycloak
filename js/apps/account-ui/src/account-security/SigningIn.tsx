@@ -156,7 +156,7 @@ export const SigningIn = () => {
       >
         <div>{t(credential.userLabel) || t(credential.type as TFuncKey)}</div>
         {authenticatorProvider && (
-          <div className="pf-v6-u-color-200 pf-v6-u-font-size-sm">
+          <div className="pf-v6-u-text-color-subtle pf-v6-u-font-size-sm">
             {authenticatorProvider}
           </div>
         )}

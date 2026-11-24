@@ -114,17 +114,29 @@ async function resolveAppDir(appPath) {
 async function runCommand(command, args, cwd) {
   const startedAt = Date.now();
   const env = { ...process.env, NODE_OPTIONS: "--max-old-space-size=4096" };
+  // shell: true so Windows resolves npx.cmd; without it spawn fails with ENOENT.
+  const spawnOptions = { cwd, env, shell: true };
 
   return await new Promise((resolve) => {
-    const child = spawn(command, args, { cwd, env });
+    const child = spawn(command, args, spawnOptions);
     let stdout = "";
     let stderr = "";
 
-    child.stdout.on("data", (data) => {
+    child.stdout?.on("data", (data) => {
       stdout += data.toString();
     });
-    child.stderr.on("data", (data) => {
+    child.stderr?.on("data", (data) => {
       stderr += data.toString();
+    });
+
+    child.on("error", (error) => {
+      resolve({
+        command: [command, ...args].join(" "),
+        exitCode: 1,
+        stdout,
+        stderr: stderr + (stderr ? "\n" : "") + (error.message ?? String(error)),
+        elapsedMs: Date.now() - startedAt,
+      });
     });
 
     child.on("close", (code) => {
