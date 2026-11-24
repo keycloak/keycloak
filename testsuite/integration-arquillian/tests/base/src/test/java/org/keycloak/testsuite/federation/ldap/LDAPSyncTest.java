@@ -429,6 +429,11 @@ public class LDAPSyncTest extends AbstractLDAPTest {
                 ctx.getRealm().updateComponent(model);
                 LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
                 LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, ctx.getRealm(), ldapProvider.getLdapIdentityStore().getConfig(), "emptyscan1");
+                UserProvider localStorage = UserStoragePrivateUtil.userLocalStorage(session);
+                UserModel importedUser = localStorage.getUserByUsername(ctx.getRealm(), "emptyscan1");
+                if (importedUser != null) {
+                    localStorage.removeUser(ctx.getRealm(), importedUser);
+                }
             });
         }
     }
