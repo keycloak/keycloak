@@ -244,7 +244,7 @@ With this configuration, when an MCP client sends an authorization request with 
 
 ===== Requiring PKCE for clients registered by Client ID Metadata Documents
 
-The `client-id-uri` condition only matches the `PRE_AUTHORIZATION_REQUEST` event, which {project_name} triggers at the start of every authorization request, before it looks up the client. Executors added to `cimd-profile` therefore only run for that event, and executors that act on other events never run from it. For example, `pkce-enforcer` in `cimd-profile` has no effect, so authorization requests without PKCE are accepted.
+The `client-id-uri` condition only matches two events: `PRE_AUTHORIZATION_REQUEST`, which {project_name} triggers at the start of every authorization request, before it looks up the client, and `AUTHORIZATION_REQUEST_REDIRECT_URI`, which {project_name} triggers to validate the redirect URI before it redirects to it. Executors added to `cimd-profile` therefore only run for those two events, for example `secure-redirect-uris-enforcer`, which validates the redirect URI. Executors that act on other events never run from it. For example, `pkce-enforcer` checks requests on the `AUTHORIZATION_REQUEST` and `TOKEN_REQUEST` events, so in `cimd-profile` it has no effect, and authorization requests without PKCE are accepted.
 
 To require PKCE with the `S256` method, add `pkce-enforcer` to a separate policy that matches the registration of the client:
 
