@@ -312,7 +312,7 @@ public class ExportUtils {
             ComponentExportRepresentation compRep = new ComponentExportRepresentation();
             compRep.setId(component.getId());
             compRep.setProviderId(component.getProviderId());
-            compRep.setConfig(component.getConfig());
+            compRep.setConfig(new MultivaluedHashMap<>(component.getConfig()));
             compRep.setName(component.getName());
             compRep.setSubType(component.getSubType());
             compRep.setSubComponents(exportComponents(realm, component.getId()));
