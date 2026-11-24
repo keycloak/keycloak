@@ -788,7 +788,8 @@ If a listed user or group does not exist, the request now fails with `400 Bad Re
 For group members, this matches the filter form `members[value eq "<id>"]`.
 A `remove` that has both a filter in its `path` and a `value` is now rejected with `400 Bad Request` for every attribute of a user or a group; previously the `value` was ignored.
 An entry without a `value` is also rejected with `400 Bad Request`: a member in an `add` or a `remove` on a group, and a group in an `add`, a `remove` or a `PUT` on a user.
-In an `add` or a `remove` on a multi-valued attribute such as `members` or `groups`, an entry that is not an object, for example `null` or a bare id, and an entry whose fields cannot be read, for example `{"value": {}}`, are now rejected with `400 Bad Request` instead of failing with `500 Internal Server Error`.
+In an `add` or a `remove` on a multi-valued complex attribute such as `members` or `groups`, an entry that is not an object, for example `null` or a bare id, and an entry whose fields cannot be read, for example `{"value": {}}`, are now rejected with `400 Bad Request` instead of failing with `500 Internal Server Error`.
+Simple multi-valued attributes, such as a custom attribute that holds strings, still accept string entries.
 An `add` or a `remove` that spells such an attribute in another case, for example `"path": "Members"`, with a single object in `value` now works as the lowercase spelling does, instead of failing with `500 Internal Server Error`.
 
 === Hibernate second-level cache disabled
