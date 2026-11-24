@@ -26,7 +26,7 @@ bin/kc.[sh|bat] start --spi-authenticator--auth-x509-client-username-form--legac
   --spi-authenticator--direct-grant-auth-x509-username--legacy-critical-behavior true
 ----
 
-See link:{adminguide_link}#_x509[X.509 client certificate user authentication] for more information.
+See link:{adminguide_link}#x509[X.509 client certificate user authentication] for more information.
 
 === X.509 authenticators load CRL files only from the `conf` directory
 

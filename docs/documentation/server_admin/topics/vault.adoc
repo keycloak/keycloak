@@ -40,7 +40,7 @@ OIDC identity provider secret::
 In the _Client Secret_ inside identity provider <<_identity_broker_oidc,OpenID Connect Config>>
 
 OIDC client secret::
-In the _Client Secret_ inside confidential <<_client-credentials,OpenID Connect Client>>.
+In the _Client Secret_ inside confidential <<client-credentials,OpenID Connect Client>>.
 
 [[_vault-key-resolvers]]
 === Key resolvers

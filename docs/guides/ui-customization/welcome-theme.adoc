@@ -12,9 +12,27 @@ By default, the welcome theme is only used during the initial setup to create th
 
 Since the welcome theme is not associated with a realm, it cannot be selected in the admin console like other themes.
 
-To change the welcome theme, create and deploy a new welcome theme as described in <@links.uicustomization id="themes" anchor="_creating-a-theme" />. Then, start the {project_name} server using the `spi-theme--welcome-theme` option.
+The default welcome theme is `keycloak.v3`.
+The welcome theme selection is independent of the themes selected for a realm or client.
+
+To change the welcome theme, create and deploy a custom welcome theme as described in <@links.uicustomization id="themes" anchor="_creating-a-theme" />.
+Start the {project_name} server using the `spi-theme--welcome-theme` option.
 [source,bash]
 ----
 bin/kc.[sh|bat] start --spi-theme--welcome-theme=custom-theme
 ----
+
+Set `redirectToAdmin=false` in the selected theme's `theme.properties` file to disable the redirect to the Admin Console after an administrative user exists.
+
+Custom welcome themes can provide their own `welcome/index.ftl`, styles, and resources.
+To extend the built-in welcome page, set `parent=keycloak.v3` in `welcome/theme.properties` and override `welcome/welcome.ftl` or individual theme properties and resources.
+
+When a requested welcome theme is not available, {project_name} looks for a login theme with the same name.
+This fallback also applies when resolving a welcome theme's parent.
+For a welcome theme, {project_name} renders `index.ftl` if available, otherwise `welcome.ftl`.
+A login theme used through this fallback must provide or inherit `welcome.ftl`.
+When `spi-theme--welcome-theme` is set, {project_name} checks the theme and its entry template during server startup.
+
+Custom login themes are not automatically compatible with the welcome page.
+The welcome page is rendered without a realm, so overridden templates and macros must handle the absence of realm-specific attributes.
 </@tmpl.guide>

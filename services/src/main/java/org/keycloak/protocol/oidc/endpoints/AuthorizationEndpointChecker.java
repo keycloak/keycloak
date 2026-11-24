@@ -20,8 +20,6 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.Collections;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -46,6 +44,7 @@ import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorValidation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
@@ -83,9 +82,6 @@ public class AuthorizationEndpointChecker {
     private MultivaluedMap<String, String> params;
 
     private static final Logger logger = Logger.getLogger(AuthorizationEndpointChecker.class);
-
-    // https://tools.ietf.org/html/rfc7636#section-4.2
-    private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
 
     public AuthorizationEndpointChecker event(EventBuilder event) {
         this.event = event;
@@ -340,13 +336,11 @@ public class AuthorizationEndpointChecker {
         // Namely, flows using authorization code.
         if (parsedResponseType != null && parsedResponseType.isImplicitFlow()) return;
 
-        String pkceCodeChallengeMethod = OIDCAdvancedConfigWrapper.fromClientModel(client).getPkceCodeChallengeMethod();
-
-        if (pkceCodeChallengeMethod != null && !pkceCodeChallengeMethod.isEmpty()) {
-            checkParamsForPkceEnforcedClient(codeChallengeMethod, pkceCodeChallengeMethod, codeChallenge);
-        } else {
-            // if PKCE Activation is OFF, execute the codes implemented in KEYCLOAK-2604
-            checkParamsForPkceNotEnforcedClient(codeChallengeMethod, pkceCodeChallengeMethod, codeChallenge);
+        String errorDescription = PkceUtils.checkPKCEParams(client, codeChallengeMethod, codeChallenge);
+        if (errorDescription != null) {
+            event.detail(Details.REASON, errorDescription);
+            event.error(Errors.INVALID_REQUEST);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST, errorDescription);
         }
     }
 
@@ -385,91 +379,6 @@ public class AuthorizationEndpointChecker {
         Set<AuthorizationEndpointCheckProvider> additionalChecks = session.getAllProviders(AuthorizationEndpointCheckProvider.class);
         for (AuthorizationEndpointCheckProvider check : additionalChecks) {
             check.check(this);
-        }
-    }
-
-    // https://tools.ietf.org/html/rfc7636#section-4
-    private boolean isValidPkceCodeChallenge(String codeChallenge) {
-        if (codeChallenge.length() < OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MIN_LENGTH) {
-            logger.debugf("PKCE codeChallenge length under lower limit , codeChallenge = %s", codeChallenge);
-            return false;
-        }
-        if (codeChallenge.length() > OIDCLoginProtocol.PKCE_CODE_CHALLENGE_MAX_LENGTH) {
-            logger.debugf("PKCE codeChallenge length over upper limit , codeChallenge = %s", codeChallenge);
-            return false;
-        }
-        Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(codeChallenge);
-        return m.matches();
-    }
-
-    private void checkParamsForPkceEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) throws AuthorizationCheckException {
-        // check whether code challenge method is specified
-        if (codeChallengeMethod == null) {
-            logger.info("PKCE enforced Client without code challenge method.");
-            String errorMessage = "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM;
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
-        }
-        // check whether specified code challenge method is configured one in advance
-        if (!codeChallengeMethod.equals(pkceCodeChallengeMethod)) {
-            logger.info("PKCE enforced Client code challenge method is not matching the configured one.");
-            String errorMessage = "Invalid parameter: code challenge method is not matching the configured one";
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
-        }
-        // check whether code challenge is specified
-        if (codeChallenge == null) {
-            logger.info("PKCE supporting Client without code challenge");
-            String errorMessage = "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
-        }
-        // check whether code challenge is formatted along with the PKCE specification
-        if (!isValidPkceCodeChallenge(codeChallenge)) {
-            logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
-            String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
-        }
-    }
-
-    private void checkParamsForPkceNotEnforcedClient(String codeChallengeMethod, String pkceCodeChallengeMethod, String codeChallenge) throws AuthorizationCheckException {
-        if (codeChallenge == null && codeChallengeMethod != null) {
-            logger.info("PKCE supporting Client without code challenge");
-            String errorMessage = "Missing parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST,  OAuthErrorException.INVALID_REQUEST, errorMessage);
-        }
-
-        // based on code_challenge value decide whether this client(RP) supports PKCE
-        if (codeChallenge == null) {
-            logger.debug("PKCE non-supporting Client");
-            return;
-        }
-
-        if (codeChallengeMethod != null) {
-            // https://tools.ietf.org/html/rfc7636#section-4.2
-            // plain or S256
-            if (!codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_S256) && !codeChallengeMethod.equals(OIDCLoginProtocol.PKCE_METHOD_PLAIN)) {
-                logger.infof("PKCE supporting Client with invalid code challenge method not specified in PKCE, codeChallengeMethod = %s", codeChallengeMethod);
-                String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM;
-                event.detail(Details.REASON, errorMessage);
-                event.error(Errors.INVALID_REQUEST);
-                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
-            }
-        }
-
-        if (!isValidPkceCodeChallenge(codeChallenge)) {
-            logger.infof("PKCE supporting Client with invalid code challenge specified in PKCE, codeChallenge = %s", codeChallenge);
-            String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.CODE_CHALLENGE_PARAM;
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
     }
 

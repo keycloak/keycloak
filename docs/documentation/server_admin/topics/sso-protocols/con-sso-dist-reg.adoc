@@ -21,7 +21,7 @@ The authentication flow is described in the link:https://distribution.github.io/
 * The Docker client receives a bearer token from the JSON response and uses it in the authorization header to request the protected resource.
 * The Distribution registry receives the new request for the protected resource with the token from the {project_name} server. The registry validates the token and grants access to the requested resource (if appropriate).
 
-NOTE: {project_name} does not create a browser SSO session after successful authentication with the Docker protocol. The browser SSO session does not use the Docker protocol as it cannot refresh tokens or obtain the status of a token or session from the {project_name} server; therefore a browser SSO session is not necessary. For more details, see the <<_transient-session, transient session>> section.
+NOTE: {project_name} does not create a browser SSO session after successful authentication with the Docker protocol. The browser SSO session does not use the Docker protocol as it cannot refresh tokens or obtain the status of a token or session from the {project_name} server; therefore a browser SSO session is not necessary. For more details, see the <<transient-session, transient session>> section.
 
 ====  {project_name} Distribution registry v2 Authentication Server URI Endpoints
 

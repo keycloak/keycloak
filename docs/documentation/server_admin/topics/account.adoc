@@ -1,5 +1,5 @@
 
-[[_account-service]]
+[[account-service]]
 == Account Console
 
 {project_name} users can manage their accounts through the Account Console. They can configure their profiles, add two-factor authentication, include identity provider accounts, and oversee device activity.
@@ -101,7 +101,7 @@ image:images/account-console-device.png[Devices]
 
 === Adding an identity provider account
 
-You can link your account with an <<_identity_broker, identity broker>>. This option is often used to link social provider accounts.
+You can link your account with an <<identity_broker, identity broker>>. This option is often used to link social provider accounts.
 
 .Procedure
 

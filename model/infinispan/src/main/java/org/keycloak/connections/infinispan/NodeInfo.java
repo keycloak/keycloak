@@ -37,7 +37,7 @@ public record NodeInfo(String nodeName, String siteName, String clusterName) {
         var nodeName = transportConfig.nodeName();
         var clusterName = transportConfig.clusterName();
 
-        if (nodeName != null) {
+        if (nodeName != null && !nodeName.isBlank()) {
             return new NodeInfo(nodeName, transportConfig.siteId(), clusterName);
         }
 

@@ -20,7 +20,6 @@ package org.keycloak.client.registration;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -48,7 +47,6 @@ public class ClientRegistration {
     private final String XML = "application/xml";
 
     private final String DEFAULT = "default";
-    private final String INSTALLATION = "install";
     private final String OIDC = "openid-connect";
     private final String SAML = "saml2-entity-descriptor";
 
@@ -83,11 +81,6 @@ public class ClientRegistration {
     public ClientRepresentation get(String clientId) throws ClientRegistrationException {
         InputStream resultStream = httpUtil.doGet(JSON, DEFAULT, clientId);
         return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
-    }
-
-    public AdapterConfig getAdapterConfig(String clientId) throws ClientRegistrationException {
-        InputStream resultStream = httpUtil.doGet(JSON, INSTALLATION, clientId);
-        return resultStream != null ? deserialize(resultStream, AdapterConfig.class) : null;
     }
 
     public ClientRepresentation update(ClientRepresentation client) throws ClientRegistrationException {

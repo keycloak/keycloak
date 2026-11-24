@@ -1,6 +1,6 @@
-[[_user-storage-federation]]
-
-== Using external storage
+[[user-storage-federation]]
+// The underscore-prefixed anchor in the heading is deprecated and only kept for links from old versions of the Admin Console.
+== [[_user-storage-federation]]Using external storage
 
 [role="_abstract"]
 Organizations can have databases containing information, passwords, and other credentials. Typically, you cannot migrate existing data storage to a {project_name} deployment so {project_name} can federate existing external user databases. {project_name} supports LDAP and Active Directory, but you can also code extensions for any custom user database by using the {project_name} User Storage SPI.

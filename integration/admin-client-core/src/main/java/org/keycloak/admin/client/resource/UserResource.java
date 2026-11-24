@@ -34,6 +34,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityLinkRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -313,6 +314,11 @@ public interface UserResource {
     @Path("federated-identity/{provider}")
     @DELETE
     void removeFederatedIdentity(final @PathParam("provider") String provider);
+
+    @GET
+    @Path("federated-identity-links")
+    List<FederatedIdentityLinkRepresentation> getFederatedIdentityLinks(@QueryParam("linked") Boolean linked,
+            @QueryParam("search") String search, @QueryParam("first") Integer firstResult, @QueryParam("max") Integer maxResults);
 
     @Path("role-mappings")
     RoleMappingResource roles();

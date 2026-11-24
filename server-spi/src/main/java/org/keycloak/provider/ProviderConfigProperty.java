@@ -121,6 +121,15 @@ public class ProviderConfigProperty {
         this.options = Arrays.asList(options);
     }
 
+    public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, List<String> options) {
+        this.name = name;
+        this.label = label;
+        this.helpText = helpText;
+        this.type = type;
+        this.defaultValue = defaultValue;
+        this.options = options;
+    }
+
     public ProviderConfigProperty(String name, String label, String helpText, String type, Object defaultValue, boolean secret) {
         this(name, label, helpText, type, defaultValue);
         this.secret = secret;

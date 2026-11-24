@@ -41,6 +41,7 @@ import jakarta.persistence.criteria.Root;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
+import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -384,9 +385,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         query.select(from.get("id"));
 
-        Join<Object, Object> scope = from.join("scopes");
-        MapJoin<Object, Object, Object> config = from.joinMap("config");
-        Join<Object, Object> associatedPolicy = from.join("associatedPolicies");
+        Join<PolicyEntity, ScopeEntity> scope = from.join("scopes");
+        MapJoin<PolicyEntity, String, String> config = from.joinMap("config");
+        Join<PolicyEntity, PolicyEntity> associatedPolicy = from.join("associatedPolicies");
 
         List<Predicate> predicates = new LinkedList<>();
 
@@ -403,7 +404,7 @@ public class JPAPolicyStore implements PolicyStore {
         predicates.add(cb.equal(config.value(), resourceType));
 
         if (configKey != null) {
-            MapJoin<Object, Object, Object> associatedPolicyConfig = associatedPolicy.joinMap("config");
+            MapJoin<PolicyEntity, String, String> associatedPolicyConfig = associatedPolicy.joinMap("config");
             List<Predicate> configValuePredicates = new LinkedList<>();
 
             predicates.add(cb.equal(associatedPolicyConfig.key(), configKey));

@@ -22,10 +22,10 @@ public class WelcomePage extends AbstractPage {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "password-confirmation")
+    @FindBy(id = "passwordConfirmation")
     private WebElement passwordConfirmationInput;
 
-    @FindBy(xpath = "//button")
+    @FindBy(id = "kc-create-user")
     private WebElement submitButton;
 
     @FindBy(css = ".pf-v6-c-alert")
@@ -37,7 +37,7 @@ public class WelcomePage extends AbstractPage {
     @FindBy(css = ".pf-v6-c-login__main-header-desc")
     private WebElement welcomeDescription;
 
-    @FindBy(css = ".pf-v6-c-button")
+    @FindBy(id = "kc-open-admin-console")
     private WebElement openAdminConsoleLink;
 
     public WelcomePage(ManagedWebDriver driver) {

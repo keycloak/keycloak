@@ -27,10 +27,10 @@ bin/kc.[sh|bat] start --features=authzen
 
 AuthZEN exposes {project_name}'s existing authorization services. Before using AuthZEN, you must configure the following in your realm:
 
-. link:{authorizationguide_link}#_resource_server_enable_authorization[A client with authorization enabled]-- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
-. link:{authorizationguide_link}#_resource_create[Resources] -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
-. link:{authorizationguide_link}#_resource_create[Scopes] -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
-. link:{authorizationguide_link}#_policy_overview[Policies] and link:{authorizationguide_link}#_permissions_overview[Permissions] -- Create policies and permissions that associate resources and scopes with authorization decisions.
+. link:{authorizationguide_link}#resource_server_enable_authorization[A client with authorization enabled] -- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
+. link:{authorizationguide_link}#resource_create[Resources] -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
+. link:{authorizationguide_link}#resource_create[Scopes] -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
+. link:{authorizationguide_link}#policy_overview[Policies] and link:{authorizationguide_link}#permission_overview[Permissions] -- Create policies and permissions that associate resources and scopes with authorization decisions.
 
 == PDP discovery metadata
 
@@ -470,6 +470,10 @@ For example, a policy could use the request context to enforce time-based or loc
   }
 }
 ----
+
+Keys starting with `kc.` are reserved for attributes set by {project_name}, such as `kc.client.id` and `kc.realm.name`, and
+are ignored when sent in `resource.properties` or `context`. The `kc.client.id` attribute is always set to the client that
+authenticated the request, so client policies are evaluated against the caller.
 
 Subject properties specified in `subject.properties` are also merged into the subject's identity attributes for policy evaluation.
 

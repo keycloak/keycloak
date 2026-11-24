@@ -1,4 +1,4 @@
-[[_auth_spi]]
+[[auth_spi]]
 == Authentication SPI
 
 include::partial-private-spi.adoc[]

@@ -3,7 +3,7 @@
 === Fine grained admin permissions V1
 
 IMPORTANT: Preview feature fine-grained admin permissions V1 has been replaced by a new
-<<_fine_grained_permissions, supported version>>. Version 1 of the feature is still available, but it has been deprecated
+<<fine_grained_permissions, supported version>>. Version 1 of the feature is still available, but it has been deprecated
 and will be removed in future release. To enable it, start the server with `--features=admin-fine-grained-authz:v1`.
 
 Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create

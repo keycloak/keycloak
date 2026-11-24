@@ -66,7 +66,7 @@ You can now prevent this by disabling *Include in OpenID Provider Metadata*.
 {project_name} introduces a new preview feature called Workflows, which allows administrators to
 automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
 
-For more details, see the link:{adminguide_link}#_managing_workflows[{adminguide_name}].
+For more details, see the link:{adminguide_link}#managing_workflows[{adminguide_name}].
 
 == Federated client authentication (preview)
 

@@ -17,7 +17,6 @@
 
 package org.keycloak.sessions;
 
-import java.util.Map;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ModelException;
@@ -124,18 +123,6 @@ public interface AuthenticationSessionProvider extends Provider {
      */
     @Deprecated(since = "26.5", forRemoval = true)
     default void onClientRemoved(RealmModel realm, ClientModel client) {}
-
-    /**
-     * Requests update of authNotes of a root authentication session that is not owned
-     * by this instance but might exist somewhere in the cluster.
-     * 
-     * @param compoundId {@code AuthenticationSessionCompoundId} The method has no effect if {@code null}.
-     * @param authNotesFragment {@code Map<String, String>} Map with authNote values.
-     * Auth note is removed if the corresponding value in the map is {@code null}. Map itself can't be {@code null}.
-     * @deprecated For removal in Keycloak 27
-     */
-    @Deprecated(since = "26.3", forRemoval = true)
-    default void updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId compoundId, Map<String, String> authNotesFragment) {}
 
     default void migrate(String modelVersion) {
     }

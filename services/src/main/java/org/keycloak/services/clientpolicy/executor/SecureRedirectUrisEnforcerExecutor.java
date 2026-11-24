@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -41,12 +41,12 @@ import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationReprese
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestParametersContext;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
-import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.UriType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.netty.util.NetUtil;
 import org.jboss.logging.Logger;
 
 public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorProvider<SecureRedirectUrisEnforcerExecutor.Configuration> {
@@ -189,32 +189,20 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                     throw invalidRedirectUri(ERR_GENERAL);
                 }
                 return;
-            case PRE_AUTHORIZATION_REQUEST:{
-                String redirectUriParam = ((PreAuthorizationRequestContext)context).getRequestParameters()
-                        .getFirst(OAuth2Constants.REDIRECT_URI);
-                String clientId = ((PreAuthorizationRequestContext)context).getClientId();
-                ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
-                if (client == null) {
-                    throw invalidRedirectUri("Invalid parameter: clientId");
-                }
-                if (isAuthFlowWithRedirectEnabled(client)) {
-                    verifyRedirectUri(redirectUriParam, true);
-                }
+            case AUTHORIZATION_REQUEST_REDIRECT_URI:
+            case AUTHORIZATION_REQUEST:
+                validateAuthorizationRedirectUri((AuthorizationRequestParametersContext) context);
                 return;
-            }
-            case AUTHORIZATION_REQUEST:{
-                ClientModel client = ((AuthorizationRequestContext)context).getClient();
-                String redirectUriParam = ((AuthorizationRequestContext)context).getRedirectUri();
-                if (client == null) {
-                    throw invalidRedirectUri("Invalid parameter: clientId");
-                }
-                if (isAuthFlowWithRedirectEnabled(client)) {
-                    verifyRedirectUri(redirectUriParam, true);
-                }
-                return;
-            }
             default:
         }
+    }
+
+    private void validateAuthorizationRedirectUri(AuthorizationRequestParametersContext context) throws ClientPolicyException {
+        if (context.getClient() == null) {
+            throw invalidRedirectUri("Invalid parameter: clientId");
+        }
+        // Disabled flows can still redirect OAuth errors to the callback.
+        verifyRedirectUri(context.getRedirectUri(), true);
     }
 
     private void verifyRedirectUris(ClientCRUDContext context) throws ClientPolicyException {
@@ -228,10 +216,6 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         }
         // Always validate post-logout URIs — flows being disabled is irrelevant
         verifyPostLogoutRedirectUriUpdate(proposed, context.getTargetClient());
-    }
-
-    private static boolean isAuthFlowWithRedirectEnabled(ClientModel client) {
-        return client.isStandardFlowEnabled() || client.isImplicitFlowEnabled();
     }
 
     private static boolean isAuthFlowWithRedirectEnabled(ClientRepresentation client) {
@@ -368,13 +352,15 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         }
 
         boolean isLoopbackAddressRedirectUri(Predicate<InetAddress> p) {
-            if (uri.getHost() == null) {
+            String host = uri.getHost();
+            // A loopback exception applies to IP literals, never DNS names.
+            if (host == null || !(NetUtil.isValidIpV4Address(host) || NetUtil.isValidIpV6Address(host))) {
                 return false;
             }
 
             InetAddress addr;
             try {
-                addr = InetAddress.getByName(uri.getHost());
+                addr = InetAddress.getByName(host);
             } catch (UnknownHostException e) {
                 return false;
             }
@@ -446,11 +432,6 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             }
 
             if (config.isOAuth2_1Compliant()) {
-                if ("localhost".equalsIgnoreCase(uri.getHost())) {
-                    logger.debugv("Invalid LoopbackAddress: localhost not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
-                }
-
                 if (isRedirectUriParameter) {
                     if (uri.getPort() < 0 || uri.getPort() > 65535) {
                         logger.debugv("Invalid LoopbackAddress: invalid port number - OAuth 2.1 compliant - redirect_uri parameter - input = {0}", uri.toString());
@@ -545,6 +526,11 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             }
 
             if (config.isOAuth2_1Compliant()) {
+                if ("localhost".equalsIgnoreCase(uri.getHost())) {
+                    logger.debugv("Invalid NormalUri: localhost not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
+                    return false;
+                }
+
                 if (!isHttps()) {
                     logger.debugv("Invalid NormalUri: HTTP not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
                     return false;
@@ -593,6 +579,8 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
     }
 
     private static ClientPolicyException invalidRedirectUri(String errorDetail) {
-        return new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, errorDetail);
+        ClientPolicyException exception = new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, errorDetail);
+        exception.getDetails().put(Constants.ERROR_REDIRECT_ALLOWED, false);
+        return exception;
     }
 }
