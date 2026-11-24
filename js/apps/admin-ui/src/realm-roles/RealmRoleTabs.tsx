@@ -116,7 +116,11 @@ export default function RealmRoleTabs() {
   );
 
   useFetch(
-    async () => adminClient.clients.findOne({ id: clientId }),
+    // Only look up the client for client roles; looking up with an undefined
+    // id collapses the URI template to the clients list endpoint, which
+    // requires view-clients permission a realm role manager does not need.
+    async () =>
+      clientId ? adminClient.clients.findOne({ id: clientId }) : undefined,
     (client) => {
       if (clientId) setCanManageClientRole(client?.access?.manage as boolean);
     },
