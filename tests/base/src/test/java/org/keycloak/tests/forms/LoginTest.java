@@ -1147,7 +1147,7 @@ public class LoginTest {
     }
 
     @Test
-    public void disabledUserReceivesTokensViaConsentCompletion() {
+    public void testUserDisabledDuringGrantConsent() {
         managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.consentRequired(true));
 
         oauth.openLoginForm();
@@ -1160,6 +1160,22 @@ public class LoginTest {
 
         errorPage.assertCurrent();
         assertTrue(errorPage.getError().toLowerCase().contains("account is disabled"));
+    }
+
+    @Test
+    public void testClientDisabledDuringGrantConsent() {
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.consentRequired(true));
+
+        oauth.openLoginForm();
+        oauth.fillLoginForm("login-test", getPassword("login-test"));
+        grantPage.assertCurrent();
+
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), client -> client.enabled(false));
+
+        grantPage.accept();
+
+        errorPage.assertCurrent();
+        assertTrue(errorPage.getError().toLowerCase().contains("requester not enabled"));
     }
 
     @Test
