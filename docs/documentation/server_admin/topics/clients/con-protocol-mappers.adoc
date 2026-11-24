@@ -24,6 +24,12 @@ For clients managed through OpenID Connect Dynamic Client Registration (DCR), th
 See the link:{securing_apps_base_link}/client-registration#_client_registration_policies[Client Registration Policies] section in the
 {securing_apps_name} for details and security considerations that apply.
 
+WARNING: The **Allowed protocol mapper types for client administrators** option should be used with care. Allowing client administrators
+to create, update, or delete protocol mappers of the clients they manage is a powerful permission, which can be abused if a client
+administrator is a bad actor. Realm administrators should configure this option only if they trust the client administrators of the realm.
+If client administrators cannot be fully trusted, then it is highly recommended that the realm administrator manages the protocol mappers
+of individual clients instead of using this option.
+
 .Mappers tab
 image:images/mappers-oidc.png[]
 
