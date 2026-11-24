@@ -217,14 +217,12 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     public void startNode(int index) {
         if (!containers[index].isRunning()) {
-            int numServers = containers.length;
-            int expectedMembers = stateless ? 1 : numServers;
+            int expectedMembers = expectedClusterMembersAfterStart(index);
             var reunionLatch = new CountdownLatchLoggingConsumer(1, String.format(CLUSTER_VIEW_REGEX, expectedMembers));
             configureLogConsumers(containers[index], index, reunionLatch);
             containers[index].recreateContainer();
             try {
-                long perLatchTimeout = stateless ? DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS
-                        : (long) numServers * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
+                long perLatchTimeout = (long) Math.max(1, expectedMembers) * DockerKeycloakDistribution.STARTUP_TIMEOUT_SECONDS;
                 reunionLatch.await(perLatchTimeout, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -237,6 +235,23 @@ public class ClusteredKeycloakServer implements KeycloakServer {
                 loadBalancer.refreshNode(index);
             }
         }
+    }
+
+    /**
+     * When several nodes are down, restart them one-by-one: wait only for currently running members
+     * plus the node being started, not the full configured cluster size.
+     */
+    private int expectedClusterMembersAfterStart(int index) {
+        if (stateless) {
+            return 1;
+        }
+        int runningOthers = 0;
+        for (int i = 0; i < containers.length; i++) {
+            if (i != index && isNodeRunning(i)) {
+                runningOthers++;
+            }
+        }
+        return runningOthers + 1;
     }
 
     public LoadBalancer getLoadBalancer() {

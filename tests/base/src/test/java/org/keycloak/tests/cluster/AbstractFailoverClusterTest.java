@@ -95,16 +95,21 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
     }
 
     protected Cookie verifyLoggedIn(Cookie expectedSessionCookie) {
-        driver.driver().navigate().to(oauth.getBaseUrl() + "/realms/" + managedRealm.getName() + "/");
+        String realmRoot = oauth.getBaseUrl() + "/realms/" + managedRealm.getName() + "/";
+        driver.driver().navigate().to(realmRoot);
         Cookie realmPathSessionCookie = driver.driver().manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(realmPathSessionCookie);
-        Assertions.assertEquals(realmPathSessionCookie.getValue(), expectedSessionCookie.getValue());
+        Assertions.assertEquals(expectedSessionCookie.getValue(), realmPathSessionCookie.getValue());
 
-        // Use the realm app callback so KEYCLOAK_SESSION cookies are on the same origin as Keycloak
-        driver.driver().navigate().to(realmAppAuthUri());
+        // Fresh authorization request must complete via SSO without showing the login form
+        oauth.openLoginForm();
+        Assertions.assertFalse(isOnLoginPage(), "Expected SSO to reuse the existing session without login");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        driver.driver().navigate().to(realmRoot);
         Cookie sessionCookie = driver.driver().manage().getCookieNamed(KEYCLOAK_SESSION_COOKIE);
         assertNotNull(sessionCookie);
-        Assertions.assertEquals(sessionCookie.getValue(), expectedSessionCookie.getValue());
+        Assertions.assertEquals(expectedSessionCookie.getValue(), sessionCookie.getValue());
         return sessionCookie;
     }
 
@@ -123,9 +128,5 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         } catch (AssertionError e) {
             return false;
         }
-    }
-
-    private String realmAppAuthUri() {
-        return oauth.getBaseUrl() + "/realms/" + managedRealm.getName() + "/app/auth";
     }
 }
