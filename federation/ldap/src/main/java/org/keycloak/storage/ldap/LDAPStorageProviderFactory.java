@@ -888,6 +888,17 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 syncResult.increaseFailed();
             }
         }
+
+        if (syncResult.getRemoved() > 0) {
+            // Users were deleted from local storage only (bypassing UserCache.removeUser), so per-user eviction does not
+            // clear all cached lookups (e.g. by federated identity). Invalidate cached users of the realm once.
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                UserCache userCache = UserStorageUtil.userCache(session);
+                if (userCache != null) {
+                    userCache.evict(session.realms().getRealm(realmId));
+                }
+            });
+        }
     }
 
     private static void publishUserPreRemovedEvent(KeycloakSession session, RealmModel realm, UserModel user) {
