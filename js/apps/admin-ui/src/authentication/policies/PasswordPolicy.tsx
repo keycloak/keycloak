@@ -130,7 +130,7 @@ export const PasswordPolicy = ({
     if (realm) {
       setupForm(realm);
     }
-  }, []);
+  }, [realm]);
 
   const save = async (values: SubmittedValues) => {
     if (!realm) {
@@ -212,7 +212,7 @@ export const PasswordPolicy = ({
         <EmptyState
           headingLevel="h1"
           icon={PlusCircleIcon}
-          titleText={<>{t("noPasswordPolicies")}</>}
+          titleText={t("noPasswordPolicies")}
           data-testid="empty-state"
           variant="lg"
         >

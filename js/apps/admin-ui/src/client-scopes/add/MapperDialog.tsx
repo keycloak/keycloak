@@ -3,8 +3,6 @@ import { useTranslation } from "react-i18next";
 import {
   Button,
   ButtonVariant,
-  Content,
-  ContentVariants,
   DataList,
   DataListCell,
   DataListItem,
@@ -94,23 +92,16 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
       isOpen={props.open}
       onClose={props.toggleDialog}
     >
-      <ModalHeader>
-        <Content
-          role="dialog"
-          aria-label={
-            isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")
-          }
-        >
-          <Content component={ContentVariants.h1}>
-            {isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")}
-          </Content>
-          <Content component="p">
-            {isBuiltIn
-              ? t("predefinedMappingDescription")
-              : t("configureMappingDescription")}
-          </Content>
-        </Content>
-      </ModalHeader>
+      <ModalHeader
+        title={
+          isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")
+        }
+        description={
+          isBuiltIn
+            ? t("predefinedMappingDescription")
+            : t("configureMappingDescription")
+        }
+      />
       <ModalBody>
         {!isBuiltIn && (
           <DataList

@@ -117,6 +117,7 @@ export const MapperList = ({
                 ref={ref}
                 variant="primary"
                 id="mapperAction"
+                aria-label={t("addMapper")}
                 onClick={() => setMapperAction(!mapperAction)}
               >
                 {t("addMapper")}

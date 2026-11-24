@@ -174,21 +174,22 @@ test.describe("Authentication flow details", () => {
 
     const name = "Identity Provider Redirector";
     await openExecutionConfig(page, name);
-    await page.getByTestId("alias").fill("redirector-config");
-    await page.getByTestId("default.reference.value").fill("reference");
-    await page.getByTestId("save").click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByTestId("alias").fill("redirector-config");
+    await dialog.getByTestId("default.reference.value").fill("reference");
+    await dialog.getByTestId("save").click();
     await assertNotificationMessage(page, "Successfully saved the config");
 
     await openExecutionConfig(page, name);
-    await page.getByTestId("clear").click();
+    await dialog.getByTestId("clear").click();
     // Wait for the clear action to finish and close the modal before reopening.
-    await expect(page.getByTestId("alias")).toBeHidden();
+    await expect(dialog.getByTestId("alias")).toBeHidden();
 
     await openExecutionConfig(page, name);
-    await expect(page.getByTestId("alias")).toHaveValue("");
-    await expect(page.getByTestId("alias")).toBeEnabled();
-    await expect(page.getByTestId("default.reference.value")).toHaveValue("");
-    await expect(page.getByTestId("clear")).toBeHidden();
+    await expect(dialog.getByTestId("alias")).toHaveValue("");
+    await expect(dialog.getByTestId("alias")).toBeEnabled();
+    await expect(dialog.getByTestId("default.reference.value")).toHaveValue("");
+    await expect(dialog.getByTestId("clear")).toBeHidden();
   });
 
   test("sets as default in action menu", async ({ page }) => {

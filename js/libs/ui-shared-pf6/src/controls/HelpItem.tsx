@@ -21,34 +21,41 @@ export const HelpItem = ({
   const { enabled } = useHelp();
   const IconComponent = isRecommendation ? ExclamationTriangleIcon : HelpIcon;
 
-  return enabled ? (
+  if (!enabled) {
+    return null;
+  }
+
+  // PF6 Popover requires a single element child that can take a ref — no Fragment.
+  if (unWrap) {
+    return (
+      <Popover bodyContent={helpText}>
+        <Icon
+          isInline={noVerticalAlign}
+          status={isRecommendation ? "warning" : undefined}
+        >
+          <IconComponent />
+        </Icon>
+      </Popover>
+    );
+  }
+
+  return (
     <Popover bodyContent={helpText}>
-      <>
-        {!unWrap && (
-          <Button
-            variant="plain"
-            data-testid={`help-label-${fieldLabelId}`}
-            aria-label={fieldLabelId}
-            onClick={(e) => e.preventDefault()}
-            className="pf-v6-c-form__group-label-help"
-          >
-            <Icon
-              isInline={noVerticalAlign}
-              status={isRecommendation ? "warning" : undefined}
-            >
-              <IconComponent />
-            </Icon>
-          </Button>
-        )}
-        {unWrap && (
+      <Button
+        variant="plain"
+        data-testid={`help-label-${fieldLabelId}`}
+        aria-label={fieldLabelId}
+        onClick={(e) => e.preventDefault()}
+        className="pf-v6-c-form__group-label-help"
+        icon={
           <Icon
             isInline={noVerticalAlign}
             status={isRecommendation ? "warning" : undefined}
           >
             <IconComponent />
           </Icon>
-        )}
-      </>
+        }
+      />
     </Popover>
-  ) : null;
+  );
 };

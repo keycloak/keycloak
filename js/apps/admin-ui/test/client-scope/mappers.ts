@@ -21,7 +21,18 @@ export const ClaimJsonType = {
 };
 
 export async function goToMappersTab(page: Page) {
-  await page.getByTestId("mappers").click();
+  const byRole = page.getByRole("tab", { name: "Mappers", exact: true });
+  if (await byRole.count()) {
+    await byRole.click();
+  } else {
+    await page.getByTestId("mappers").click();
+  }
+  // Toolbar (or empty-state actions) appear after the mappers table loads.
+  await expect(
+    page
+      .getByRole("button", { name: "Add mapper" })
+      .or(page.getByTestId("empty-state")),
+  ).toBeVisible({ timeout: 15_000 });
 }
 
 async function clickAddMapperButton(page: Page) {
