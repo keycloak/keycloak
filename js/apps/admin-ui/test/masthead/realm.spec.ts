@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { DEFAULT_REALM } from "../utils/constants.ts";
@@ -70,6 +70,22 @@ test.describe.serial("Realm tests", () => {
     await clickCreateRealmForm(page);
 
     await assertNotificationMessage(page, "Realm created successfully");
+  });
+
+  test("should show an error for a resource file that is not valid JSON", async ({
+    page,
+  }) => {
+    const editor = page.locator(".w-tc-editor-text");
+    const error = page.getByText("The file is not valid JSON:");
+
+    await editor.fill('{"realm": "broken",');
+    await expect(error).toBeVisible();
+    await expect(page.getByTestId("create")).toBeDisabled();
+
+    await editor.fill('{"realm": "fixed"}');
+    await expect(error).toBeHidden();
+    await expect(page.getByTestId("realm")).toHaveValue("fixed");
+    await expect(page.getByTestId("create")).toBeEnabled();
   });
 
   test("CRUD test of Disabled realm", async ({ page }) => {
