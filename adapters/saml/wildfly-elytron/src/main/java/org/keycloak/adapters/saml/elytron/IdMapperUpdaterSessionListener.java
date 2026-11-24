@@ -110,9 +110,6 @@ public class IdMapperUpdaterSessionListener implements HttpSessionListener, Http
             return;
         }
 
-        SamlSession samlSession = (SamlSession) value;
-        if (samlSession.getSessionIndex() != null) {
-            idMapper.removeSession(sessionId);
-        }
+        idMapper.removeSession(sessionId);
     }
 }
