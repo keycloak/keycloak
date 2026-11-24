@@ -80,7 +80,9 @@ public final class AuthZen {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Action(String name, Map<String, Object> properties) {
+    public record Action(
+            @JsonProperty(required = true) String name,
+            Map<String, Object> properties) {
 
         public Action(String name) {
             this(name, null);

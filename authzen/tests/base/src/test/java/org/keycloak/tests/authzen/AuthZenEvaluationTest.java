@@ -568,6 +568,18 @@ public class AuthZenEvaluationTest {
     }
 
     @Test
+    public void testMissingActionNameReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .resource("endpoint", "/admin")
+                    .action(null)
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
     public void testUndefinedActionReturnsDenied() throws IOException {
         EvaluationResult result = authzenClient()
               .evaluate(AuthZenClient.evaluationRequest()
