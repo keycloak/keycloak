@@ -341,6 +341,9 @@ public class KeycloakServer {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            if (!tempDirectory.toFile().mkdirs() && !tempDirectory.toFile().isDirectory()) {
+                throw new RuntimeException("Could not create temporary directory: " + tempDirectory);
+            }
             return tempDirectory;
         }
     }
