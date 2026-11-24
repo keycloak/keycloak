@@ -82,7 +82,10 @@ export const AuthorizationEvaluateResourcePolicies = ({
                 <Content>
                   <Content component="ul">
                     {outerPolicy.associatedPolicies?.map((item) => (
-                      <Content component="li" key="policyDetails">
+                      <Content
+                        component="li"
+                        key={item.policy?.id ?? item.policy?.name}
+                      >
                         <Link
                           to={toPolicyDetails({
                             realm,

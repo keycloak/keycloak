@@ -151,18 +151,22 @@ export const TypeaheadSelectControl = <
       case "ArrowDown": {
         event.preventDefault();
 
+        if (filteredOptions.length === 0) {
+          break;
+        }
+
         let indexToFocus = 0;
 
         if (event.key === "ArrowUp") {
-          if (focusedItemIndex === 0) {
-            indexToFocus = options.length - 1;
+          if (focusedItemIndex <= 0) {
+            indexToFocus = filteredOptions.length - 1;
           } else {
             indexToFocus = focusedItemIndex - 1;
           }
         }
 
         if (event.key === "ArrowDown") {
-          if (focusedItemIndex === options.length - 1) {
+          if (focusedItemIndex >= filteredOptions.length - 1) {
             indexToFocus = 0;
           } else {
             indexToFocus = focusedItemIndex + 1;

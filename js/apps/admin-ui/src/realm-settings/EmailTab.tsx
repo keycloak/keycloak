@@ -103,7 +103,7 @@ export const RealmSettingsEmailTab = ({
   return (
     <PageSection hasBodyWrapper={false}>
       <FormProvider {...form}>
-        <FormPanel title={t("template")}>
+        <FormPanel title={t("template")} className="kc-email-template">
           <FormAccess
             isHorizontal
             role="manage-realm"
@@ -155,7 +155,10 @@ export const RealmSettingsEmailTab = ({
             />
           </FormAccess>
         </FormPanel>
-        <FormPanel title={t("connectionAndAuthentication")}>
+        <FormPanel
+          title={t("connectionAndAuthentication")}
+          className="kc-email-connection"
+        >
           <FormAccess
             isHorizontal
             role="manage-realm"

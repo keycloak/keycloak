@@ -191,7 +191,13 @@ export const RequiredActions = () => {
             cellRenderer: (row) => (
               <Switch
                 id={`default-${toKey(row.name || "")}`}
-                label={row.defaultAction ? t("on") : t("off")}
+                label={
+                  !row.enabled
+                    ? t("disabledOff")
+                    : row.defaultAction
+                      ? t("on")
+                      : t("off")
+                }
                 isDisabled={!row.enabled}
                 isChecked={row.defaultAction}
                 onChange={async () => {

@@ -102,23 +102,23 @@ div#offline-session-max-label > .pf-v6-c-form__group-label {
   width: 170px;
 }
 
-article.pf-v6-c-card.pf-m-flat.kc-sso-session-template
+article.pf-v6-c-card.pf-m-plain.kc-sso-session-template
   > .pf-v6-c-card__header.kc-form-panel__header,
-article.pf-v6-c-card.pf-m-flat.kc-sso-session-template
+article.pf-v6-c-card.pf-m-plain.kc-sso-session-template
   > .pf-v6-c-card__body.kc-form-panel__body,
-article.pf-v6-c-card.pf-m-flat.kc-client-session-template
+article.pf-v6-c-card.pf-m-plain.kc-client-session-template
   > .pf-v6-c-card__header.kc-form-panel__header,
-article.pf-v6-c-card.pf-m-flat.kc-client-session-template
+article.pf-v6-c-card.pf-m-plain.kc-client-session-template
   > .pf-v6-c-card__body.kc-form-panel__body,
-article.pf-v6-c-card.pf-m-flat.kc-offline-session-template
+article.pf-v6-c-card.pf-m-plain.kc-offline-session-template
   > .pf-v6-c-card__header.kc-form-panel__header,
-article.pf-v6-c-card.pf-m-flat.kc-offline-session-template
+article.pf-v6-c-card.pf-m-plain.kc-offline-session-template
   > .pf-v6-c-card__body.kc-form-panel__body,
-article.pf-v6-c-card.pf-m-flat.kc-login-settings-template
+article.pf-v6-c-card.pf-m-plain.kc-login-settings-template
   > .pf-v6-c-card__header.kc-form-panel__header,
-article.pf-v6-c-card.pf-m-flat.kc-login-settings-template
+article.pf-v6-c-card.pf-m-plain.kc-login-settings-template
   > .pf-v6-c-card__body.kc-form-panel__body,
-article.pf-v6-c-card.pf-m-flat.kc-email-connection
+article.pf-v6-c-card.pf-m-plain.kc-email-connection
   > .pf-v6-c-card__body.kc-form-panel__body {
   padding: 0px;
 }

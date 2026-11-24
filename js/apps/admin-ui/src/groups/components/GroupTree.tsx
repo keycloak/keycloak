@@ -286,6 +286,7 @@ export const GroupTree = ({
                       <Button
                         icon={<AngleRightIcon />}
                         variant="plain"
+                        aria-label={t("next")}
                         onClick={() => setFirstSub(firstSub + SUBGROUP_COUNT)}
                       />
                     ),

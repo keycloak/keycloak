@@ -35,7 +35,10 @@ export const RealmSettingsSessionsTab = ({
 
   return (
     <PageSection hasBodyWrapper={false}>
-      <FormPanel title={t("SSOSessionSettings")}>
+      <FormPanel
+        title={t("SSOSessionSettings")}
+        className="kc-sso-session-template"
+      >
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -146,7 +149,10 @@ export const RealmSettingsSessionsTab = ({
           )}
         </FormAccess>
       </FormPanel>
-      <FormPanel title={t("clientSessionSettings")}>
+      <FormPanel
+        title={t("clientSessionSettings")}
+        className="kc-client-session-template"
+      >
         <FormAccess
           isHorizontal
           role="manage-realm"

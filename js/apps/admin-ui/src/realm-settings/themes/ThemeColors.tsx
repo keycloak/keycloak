@@ -44,9 +44,16 @@ const switchTheme = (theme: ThemeType) => {
     document
       .querySelector('meta[name="color-scheme"]')!
       .setAttribute("content", "light");
-    document.documentElement.classList.remove("pf-v6-theme-dark");
+    document.documentElement.classList.remove(
+      "pf-v6-theme-dark",
+      "pf-v5-theme-dark",
+    );
   } else {
-    document.documentElement.classList.add("pf-v6-theme-dark");
+    // Generated login CSS still emits .pf-v5-theme-dark; toggle both.
+    document.documentElement.classList.add(
+      "pf-v6-theme-dark",
+      "pf-v5-theme-dark",
+    );
   }
 };
 

@@ -9,6 +9,7 @@ export const StringComponent = ({
   convertToName,
   required,
   isDisabled,
+  defaultValue,
 }: ComponentProps) => {
   const { t } = useTranslation();
 
@@ -20,6 +21,7 @@ export const StringComponent = ({
       data-testid={name}
       type="text"
       isDisabled={isDisabled}
+      defaultValue={defaultValue?.toString()}
       rules={{
         required: {
           value: !!required,

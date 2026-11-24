@@ -33,13 +33,15 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
         return;
       }
 
-      // Ignore clicks on portaled menus opened from within this panel.
-      const portaledMenu = target.closest(
-        '[role="listbox"], [role="menu"], .pf-v6-c-menu',
+      // Ignore clicks on this panel's own portaled menu (not every menu on the page).
+      const openToggle = dropdownRef.current?.querySelector(
+        '[aria-expanded="true"]',
       );
+      const controlsId = openToggle?.getAttribute("aria-controls");
       if (
-        portaledMenu &&
-        dropdownRef.current?.querySelector('[aria-expanded="true"]')
+        controlsId &&
+        (target.closest(`#${CSS.escape(controlsId)}`) ||
+          document.getElementById(controlsId)?.contains(target))
       ) {
         return;
       }

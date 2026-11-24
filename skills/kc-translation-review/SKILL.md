@@ -51,8 +51,8 @@ Analyze pull request $ARGUMENTS and list new or updated translations that signif
 Compare against the English source files (ground truth). Community translations live in parallel `-community` directories.
 
 **Admin UI** (React-based admin console):
-- English: `js/apps/admin-ui/maven-resources/theme/keycloak.v2/admin/messages/messages_en.properties`
-- Translations: `js/apps/admin-ui/maven-resources-community/theme/keycloak.v2/admin/messages/messages_<lang>.properties`
+- English: `js/apps/admin-ui/maven-resources/theme/keycloak.v3/admin/messages/messages_en.properties`
+- Translations: `js/apps/admin-ui/maven-resources-community/theme/keycloak.v3/admin/messages/messages_<lang>.properties`
 
 **Account UI** (React-based account console):
 - English: `js/apps/account-ui/maven-resources/theme/keycloak.v3/account/messages/messages_en.properties`
