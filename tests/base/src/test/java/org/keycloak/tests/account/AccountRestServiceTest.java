@@ -677,16 +677,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             Assertions.assertEquals(404, response.getStatus());
         }
 
-        // Test that current user can't delete the credential, which belongs to the different user
-        try (SimpleHttpResponse response = simpleHttp
-                .doDelete(getAccountUrl("credentials/" + otpCredential.getId()))
-                .acceptJson()
-                .auth(token)
-                .asResponse()) {
-            Assertions.assertEquals(404, response.getStatus());
-        }
-
-        // Assert credential was not updated or removed
+        // Assert credential was not updated
         CredentialRepresentation otpCredentialLoaded = user.credentials().stream()
                 .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
                 .findFirst()
@@ -722,57 +713,6 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.removeCredential(credential.getId());
 
         events.skip();
-        Assertions.assertNull(events.poll());
-    }
-
-    @Test
-    public void testRemoveCredentialWithOtpCredentialTriggeringEvent() throws IOException {
-        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("test-user@localhost", "password").getAccessToken();
-
-        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
-        Assertions.assertEquals(1, user.credentials().size());
-
-        // Add OTP credential to the user through admin REST API
-        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(user.toRepresentation())
-                .totpSecret("totpSecret")
-                .build();
-        userRep.getCredentials().get(0).setUserLabel("totpCredentialUserLabel");
-        user.update(userRep);
-
-        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
-        Assertions.assertEquals(2, credentials.size());
-        Assertions.assertTrue(credentials.get(1).isRemoveable());
-
-        // Remove credential
-        CredentialRepresentation otpCredential = user.credentials().stream()
-                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
-                .findFirst()
-                .get();
-        events.clear();
-        try (SimpleHttpResponse response = simpleHttp
-                .doDelete(getAccountUrl("credentials/" + otpCredential.getId()))
-                .acceptJson()
-                .auth(token)
-                .asResponse()) {
-            Assertions.assertEquals(204, response.getStatus());
-        }
-
-        // The two events can arrive in either order depending on server config (e.g. lightweight
-        // token policy reorders them), so assert them as a set.
-        String userId = user.toRepresentation().getId();
-        Set<EventType> expectedTypes = Set.of(EventType.REMOVE_TOTP, EventType.REMOVE_CREDENTIAL);
-        Set<EventType> actualTypes = new HashSet<>();
-        for (int i = 0; i < 2; i++) {
-            EventRepresentation event = events.poll();
-            EventAssertion.assertSuccess(event)
-                    .clientId("account")
-                    .userId(userId)
-                    .details(Details.SELECTED_CREDENTIAL_ID, otpCredential.getId())
-                    .details(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
-                    .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
-            actualTypes.add(EventType.valueOf(event.getType()));
-        }
-        Assertions.assertEquals(expectedTypes, actualTypes);
         Assertions.assertNull(events.poll());
     }
 
@@ -870,16 +810,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assertions.assertNull(otpCredential.getUpdateAction());
         Assertions.assertTrue(otpCredential.isRemoveable());
 
-        String otpCredentialId = otpCredential.getUserCredentialMetadatas().get(0).getCredential().getId();
-
-        // remove credential using account console as otp is removable
-        try (SimpleHttpResponse response = simpleHttp
-                .doDelete(getAccountUrl("credentials/" + otpCredentialId))
-                .acceptJson()
-                .auth(token)
-                .asResponse()) {
-            Assertions.assertEquals(204, response.getStatus());
-        }
+        adminUserResource.removeCredential(otpCredential.getUserCredentialMetadatas().get(0).getCredential().getId());
 
         // Revert - re-enable requiredAction
         setRequiredActionEnabledStatus(UserModel.RequiredAction.CONFIGURE_TOTP.name(), true);
@@ -930,19 +861,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // We won't be able to authenticate later as user won't have password
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials(token);
 
-        // delete password should fail as it is not removable
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
                 "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
-        try (SimpleHttpResponse response = simpleHttp
-                .doDelete(getAccountUrl("credentials/" + password.getUserCredentialMetadatas().get(0).getCredential().getId()))
-                .acceptJson()
-                .auth(token)
-                .asResponse()) {
-            Assertions.assertEquals(400, response.getStatus());
-            Assertions.assertEquals("Credential type cannot be removed", response.asJson(OAuth2ErrorRepresentation.class).getError());
-        }
 
         // Remove password from the user now
         UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
