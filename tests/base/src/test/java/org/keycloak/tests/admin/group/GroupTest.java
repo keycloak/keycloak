@@ -386,6 +386,7 @@ public class GroupTest extends AbstractGroupTest {
 
     // Issue #54721: Group names with control characters (e.g. NUL) are accepted without validation
     @Test
+    @DatabaseTest
     public void createGroupWithControlCharacterNameShouldFail() {
         GroupRepresentation group = new GroupRepresentation();
 
@@ -409,6 +410,7 @@ public class GroupTest extends AbstractGroupTest {
 
     // Issue #54721: Renaming a group to a name containing control characters is rejected
     @Test
+    @DatabaseTest
     public void renamingGroupToControlCharacterNameShouldFail() {
         RealmResource realm = managedRealm.admin();
 
@@ -428,6 +430,7 @@ public class GroupTest extends AbstractGroupTest {
 
     // Issue #54721: The subgroup creation path validates names as well
     @Test
+    @DatabaseTest
     public void createSubGroupWithControlCharacterNameShouldFail() {
         RealmResource realm = managedRealm.admin();
 
