@@ -399,6 +399,47 @@ public class LDAPSyncTest extends AbstractLDAPTest {
     }
 
     @Test
+    public void testFullSyncDoesNotRemoveUsersWhenLDAPReturnsNoUsers() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "emptyscan1", "Empty1", "Empty1", "emptyscan1@email.org", null, "");
+            UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), ctx.getLdapModel());
+
+            // enable the option (persisted, as the sync task reloads the provider model from the realm)
+            UserStorageProviderModel model = ctx.getLdapModel();
+            model.getConfig().putSingle(LDAPConstants.REMOVE_INVALID_USERS_ON_SYNC, "true");
+            ctx.getRealm().updateComponent(model);
+        });
+
+        try {
+            // the only LDAP user disappears, so the LDAP scan returns nothing (looks like a misconfiguration)
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                LDAPStorageProvider ldapProvider = ctx.getLdapProvider();
+                LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, ctx.getRealm(), ldapProvider.getLdapIdentityStore().getConfig(), "emptyscan1");
+            });
+
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                SynchronizationResult result = UserStoragePrivateUtil.runFullSync(session.getKeycloakSessionFactory(), ctx.getLdapModel());
+                Assertions.assertEquals(0, result.getRemoved());
+                Assertions.assertNotNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(ctx.getRealm(), "emptyscan1"));
+            });
+        } finally {
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                UserStorageProviderModel model = ctx.getLdapModel();
+                model.getConfig().remove(LDAPConstants.REMOVE_INVALID_USERS_ON_SYNC);
+                ctx.getRealm().updateComponent(model);
+                UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(ctx.getRealm(), "emptyscan1");
+                if (user != null) {
+                    UserStoragePrivateUtil.userLocalStorage(session).removeUser(ctx.getRealm(), user);
+                }
+            });
+        }
+    }
+
+    @Test
     public void test03LDAPSyncWhenUsernameChanged() {
 
         testingClient.server().run(session -> {

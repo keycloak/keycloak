@@ -855,30 +855,35 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             String userId = candidate.getKey();
             String ldapId = candidate.getValue();
             try {
-                KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                Boolean removed = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
                     RealmModel realm = session.realms().getRealm(realmId);
                     session.getContext().setRealm(realm);
                     UserProvider localStorage = UserStoragePrivateUtil.userLocalStorage(session);
                     UserModel user = localStorage.getUserById(realm, userId);
                     if (user == null) {
-                        return; // already removed concurrently
+                        return false; // already removed concurrently
                     }
                     // re-check the user was not unlinked or re-linked to a different LDAP entry since the snapshot
                     if (!model.getId().equals(user.getFederationLink()) || !ldapId.equals(user.getFirstAttribute(LDAPConstants.LDAP_ID))) {
                         logger.debugf("Skipping removal of user '%s' (id: %s) as it changed during sync", user.getUsername(), userId);
-                        return;
+                        return false;
                     }
                     UserCache userCache = UserStorageUtil.userCache(session);
                     if (userCache != null) {
                         userCache.evict(realm, user);
                     }
                     publishUserPreRemovedEvent(session, realm, user);
-                    if (new UserManager(session).removeUser(realm, user, localStorage)) {
-                        logger.debugf("Removed user '%s' (id: %s), which no longer exists in LDAP", user.getUsername(), userId);
-                        syncResult.increaseRemoved();
+                    boolean result = new UserManager(session).removeUser(realm, user, localStorage);
+                    if (result) {
+                        logger.debugf("Removing user '%s' (id: %s), which no longer exists in LDAP", user.getUsername(), userId);
                     }
+                    return result;
                 });
-            } catch (ModelException e) {
+                // count only after the transaction was committed successfully
+                if (Boolean.TRUE.equals(removed)) {
+                    syncResult.increaseRemoved();
+                }
+            } catch (RuntimeException e) {
                 logger.warnf(e, "Failed to remove user with id '%s', which no longer exists in LDAP", userId);
                 syncResult.increaseFailed();
             }
