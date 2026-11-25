@@ -312,6 +312,19 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         try (var response = getClientApi(queryClientsAdminClient, getRealmName(), "test-update-view").createOrUpdateClient(viewRep)) {
             assertEquals(403, response.getStatus(), "Expected 403 Forbidden when updating client without access");
         }
+        
+        try (var response = getClientApi(noAccessAdminClient, getRealmName(), "test-update-view").createOrUpdateClient(viewRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when updating client without access");
+        }
+        
+        // having a mismatched or non-existing client id should not change the response code
+        try (var response = getClientApi(noAccessAdminClient, getRealmName(), "does not exist").createOrUpdateClient(viewRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when updating client without access");
+        }
+        viewRep.setClientId("does not exist");
+        try (var response = getClientApi(noAccessAdminClient, getRealmName(), "test-update-view").createOrUpdateClient(viewRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when updating client without access");
+        }
     }
 
     /**
@@ -538,7 +551,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
             assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
         }
     }
-
+    
     private OIDCClientRepresentation createClientRep(String clientId, String... roles) {
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId(clientId);

@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -141,23 +140,9 @@ public class DefaultClientsApi implements ClientsApi {
         }
     }
 
-    /**
-     * When the path {@code clientId} does not resolve, return 403 if the caller
-     * cannot list clients
-     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for
-     * Admin API v1.
-     */
-    private void enforceAntiPhishingIfClientMissing(String clientId) {
-        // TODO: align with the scim anti-phishing check once https://github.com/keycloak/keycloak/issues/52147 is addressed
-        if (realm.getClientByClientId(clientId) == null && !typeProvider.getPermissions().clients().canList()) {
-            throw new ForbiddenException();
-        }
-    }
-
     @Path("{id}")
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
-        enforceAntiPhishingIfClientMissing(clientId);
         return new DefaultClientApi(session, clientId, typeProvider);
     }
 

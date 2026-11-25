@@ -79,10 +79,10 @@ public class DefaultClientApi implements ClientApi {
     @PUT
     @Override
     public Response createOrUpdateClient(BaseClientRepresentation client) {
-        assertSameClientIds(clientId, client.getClientId());
-
         try {
             var current = typeProvider.get(clientId);
+            
+            assertSameClientIds(clientId, client.getClientId());
             
             if (current == null) {
                 return Response.status(Response.Status.CREATED).entity(typeProvider.create(client)).build();
