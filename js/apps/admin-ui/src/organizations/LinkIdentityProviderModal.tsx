@@ -77,7 +77,7 @@ export const LinkIdentityProviderModal = ({
       if (!identityProvider) {
         await adminClient.organizations.linkIdp({
           orgId,
-          alias,
+          alias: JSON.stringify(alias),
         });
       }
 
