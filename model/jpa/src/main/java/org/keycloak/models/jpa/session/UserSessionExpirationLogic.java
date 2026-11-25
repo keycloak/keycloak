@@ -21,7 +21,9 @@ package org.keycloak.models.jpa.session;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -37,6 +39,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RealmExpiration;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 
@@ -241,13 +245,51 @@ final class UserSessionExpirationLogic {
         return sessionsWithRememberMeCollector.size() + sessionsWithoutRememberMeCollector.size() >= batchSize;
     }
 
-    private static void createUserSessionDeletedEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser data, String reason) {
-        new EventBuilder(realm, session)
+    private static void createUserSessionDeletedEvent(KeycloakSession session, RealmModel realm, UserSessionAndUser data, String reason, String username) {
+        EventBuilder event = new EventBuilder(realm, session)
                 .user(data.userId())
                 .session(data.userSessionId())
                 .event(EventType.USER_SESSION_DELETED)
-                .detail(Details.REASON, reason)
-                .success();
+                .detail(Details.REASON, reason);
+        if (username != null) {
+            event.detail(Details.USERNAME, username);
+        }
+        event.success();
+    }
+
+    private static Map<String, String> lookupUsernames(KeycloakSessionFactory factory, String realmId, Collection<UserSessionAndUser> expiredSessions) {
+        List<String> userIds = expiredSessions.stream()
+                .map(UserSessionAndUser::userId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        try {
+            return KeycloakModelUtils.runJobInTransactionWithResult(factory, lookupSession -> {
+                RealmModel lookupRealm = lookupSession.realms().getRealm(realmId);
+                if (lookupRealm == null) {
+                    return Map.<String, String>of();
+                }
+                lookupSession.getContext().setRealm(lookupRealm);
+                Map<String, String> usernames = new HashMap<>();
+                for (String userId : userIds) {
+                    try {
+                        UserModel user = lookupSession.users().getUserById(lookupRealm, userId);
+                        if (user != null) {
+                            usernames.put(userId, user.getUsername());
+                        }
+                    } catch (RuntimeException e) {
+                        logger.debugf(e, "Unable to resolve username for expired user session. userId=%s, realmId=%s", userId, realmId);
+                    }
+                }
+                return usernames;
+            });
+        } catch (RuntimeException e) {
+            logger.debugf(e, "Unable to resolve usernames for expired user sessions. realmId=%s", realmId);
+            return Map.of();
+        }
     }
 
     private static boolean findAndExpireSessionsByCoarseRefresh(KeycloakSession session, String realmId, int batchSize, boolean offline, int exactThreshold, String queryName, Consumer<TypedQuery<Object[]>> queryParameters, List<UserSessionAndUser> expiredSessions, List<String> nearMissSessions) {
@@ -313,9 +355,11 @@ final class UserSessionExpirationLogic {
         RealmModel realm = session.realms().getRealm(realmId);
         session.getContext().setRealm(realm);
 
+        Map<String, String> usernames = lookupUsernames(session.getKeycloakSessionFactory(), realmId, expiredSessions);
+
         // creates the expiration events and extracts the user session IDs for the delete statement.
         var sessionIds = expiredSessions.stream()
-                .peek(sessionAndUser -> createUserSessionDeletedEvent(session, realm, sessionAndUser, eventReason))
+                .peek(sessionAndUser -> createUserSessionDeletedEvent(session, realm, sessionAndUser, eventReason, usernames.get(sessionAndUser.userId())))
                 .map(UserSessionAndUser::userSessionId)
                 .toList();
 

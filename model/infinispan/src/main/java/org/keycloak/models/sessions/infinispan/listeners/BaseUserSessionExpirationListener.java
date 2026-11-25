@@ -24,6 +24,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import org.infinispan.util.concurrent.BlockingManager;
@@ -50,6 +51,7 @@ abstract class BaseUserSessionExpirationListener {
     }
 
     private void doSend(String userSessionId, String userId, String realmId) {
+        String username = lookupUsername(realmId, userId);
         KeycloakModelUtils.runJobInTransaction(factory, session -> {
             logger.debugf("User session expired. sessionId=%s, userId=%s, realmId=%s", userSessionId, userId, realmId);
 
@@ -58,13 +60,36 @@ abstract class BaseUserSessionExpirationListener {
                 return;
             }
             session.getContext().setRealm(realm);
-            new EventBuilder(realm, session)
+            EventBuilder event = new EventBuilder(realm, session)
                     .session(userSessionId)
                     .user(userId)
                     .event(EventType.USER_SESSION_DELETED)
-                    .detail(Details.REASON, Details.USER_SESSION_EXPIRED_REASON)
-                    .success();
+                    .detail(Details.REASON, Details.USER_SESSION_EXPIRED_REASON);
+            if (username != null) {
+                event.detail(Details.USERNAME, username);
+            }
+            event.success();
         });
+    }
+
+    private String lookupUsername(String realmId, String userId) {
+        if (userId == null) {
+            return null;
+        }
+        try {
+            return KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+                if (realm == null) {
+                    return null;
+                }
+                session.getContext().setRealm(realm);
+                UserModel user = session.users().getUserById(realm, userId);
+                return user == null ? null : user.getUsername();
+            });
+        } catch (RuntimeException e) {
+            logger.debugf(e, "Unable to resolve username for expired user session. userId=%s, realmId=%s", userId, realmId);
+            return null;
+        }
     }
 
 }

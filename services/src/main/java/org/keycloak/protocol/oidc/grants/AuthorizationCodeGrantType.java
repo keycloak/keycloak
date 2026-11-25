@@ -131,7 +131,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         event.session(userSession);
-        event.user(userSession.getUser());
+        event.user(user).detail(Details.USERNAME, user.getUsername());
 
         if (!user.isEnabled()) {
             event.error(Errors.USER_DISABLED);

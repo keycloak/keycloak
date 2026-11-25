@@ -148,7 +148,7 @@ public abstract class AbstractRefreshTokenProvider implements RefreshTokenProvid
 
         validateTokenReuseForRefresh(session, realm, oldRefreshToken, validation, tokenManager);
 
-        event.user(validation.userSession.getUser());
+        event.user(user).detail(Details.USERNAME, user.getUsername());
 
         if (oldRefreshToken.getAuthorization() != null) {
             newToken.setAuthorization(oldRefreshToken.getAuthorization());
