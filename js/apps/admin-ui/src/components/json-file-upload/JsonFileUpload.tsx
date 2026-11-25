@@ -31,15 +31,19 @@ export const JsonFileUpload = ({
       return;
     }
 
+    let parsed: object;
     try {
-      onChange(JSON.parse(value));
-      updateError(undefined);
+      parsed = JSON.parse(value);
     } catch (parseError) {
       onChange({});
       updateError(
         parseError instanceof Error ? parseError.message : String(parseError),
       );
+      return;
     }
+
+    updateError(undefined);
+    onChange(parsed);
   };
 
   return (
