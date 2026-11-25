@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
+import { toUserProfile } from "../../src/realm-settings/routes/UserProfile.tsx";
+import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.ts";
 import { assertFieldError, selectItem, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
@@ -10,6 +12,7 @@ import {
   assertRowExists,
   clickRowKebabItem,
   clickTableRowItem,
+  getRowByCellText,
 } from "../utils/table.ts";
 import { goToLoginTab } from "./login.ts";
 import {
@@ -26,6 +29,142 @@ import {
   goToUserProfileTab,
   switchOffIfOn,
 } from "./userprofile.ts";
+
+test("Reorders filtered attributes and preserves the positions of hidden attributes", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed();
+  const { realm } = testBed;
+  const group = "filtered-group";
+  const otherGroup = "other-group";
+  const first = "first-filtered";
+  const second = "second-filtered";
+  const before = "hidden-before";
+  const between = "hidden-between";
+  const after = "hidden-after";
+  await adminClient.addUserProfile(realm, {
+    attributes: [
+      { name: before },
+      { name: first, group },
+      { name: between, group: otherGroup },
+      { name: second, group },
+      { name: after },
+    ],
+    groups: [{ name: group }, { name: otherGroup }],
+  });
+  await login(page, { to: toUserProfile({ realm, tab: "attributes" }) });
+
+  const table = page.getByRole("grid", { name: "Draggable table" });
+  const attributeNames = table.getByRole("link");
+  await expect(attributeNames.nth(4)).toHaveText(after);
+  const originalOrder = await attributeNames.allTextContents();
+
+  await selectItem(
+    page,
+    page.getByRole("button", { name: "All groups" }),
+    group,
+  );
+  await expect(attributeNames).toHaveText([first, second]);
+  await getRowByCellText(page, first).dragTo(getRowByCellText(page, second));
+  await assertNotificationMessage(
+    page,
+    "User Profile configuration has been saved",
+  );
+  await expect(attributeNames).toHaveText([second, first]);
+
+  const { attributes } = await adminClient.getUserProfile(realm);
+  expect(attributes?.map((attribute) => attribute.name)).toEqual([
+    before,
+    second,
+    between,
+    first,
+    ...originalOrder.slice(4),
+  ]);
+});
+
+test("Preserves the saved order when deleting an attribute after a delayed reorder", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed();
+  const { realm } = testBed;
+  const group = "filtered-group";
+  const first = "first-filtered";
+  const second = "second-filtered";
+  const removed = "attribute-to-delete";
+  const added = "attribute-added-during-reorder";
+  await adminClient.addUserProfile(realm, {
+    attributes: [
+      { name: first, group },
+      { name: second, group },
+      { name: removed, group },
+    ],
+    groups: [{ name: group }],
+  });
+  await login(page, { to: toUserProfile({ realm, tab: "attributes" }) });
+  await selectItem(
+    page,
+    page.getByRole("button", { name: "All groups" }),
+    group,
+  );
+
+  const attributeNames = page
+    .getByRole("grid", { name: "Draggable table" })
+    .getByRole("link");
+  await expect(attributeNames).toHaveText([first, second, removed]);
+
+  const reorderSaved = Promise.withResolvers<boolean>();
+  const releaseReorderResponse = Promise.withResolvers<void>();
+  let holdReorderResponse = true;
+  await page.route(`**/admin/realms/${realm}/users/profile`, async (route) => {
+    if (holdReorderResponse && route.request().method() === "PUT") {
+      holdReorderResponse = false;
+      const response = await route.fetch();
+      reorderSaved.resolve(response.ok());
+      await releaseReorderResponse.promise;
+      await route.fulfill({ response });
+    } else {
+      await route.continue();
+    }
+  });
+
+  try {
+    await getRowByCellText(page, first).dragTo(getRowByCellText(page, second));
+    expect(await reorderSaved.promise).toBe(true);
+
+    const rowActions = getRowByCellText(page, removed).getByRole("button", {
+      name: "Kebab toggle",
+    });
+    await rowActions.click();
+    await expect(page.getByRole("menuitem", { name: "Delete" })).toBeDisabled();
+    await rowActions.click();
+
+    // A separate save reaches the server before the reorder response arrives.
+    await adminClient.addUserProfile(realm, {
+      attributes: [{ name: added, group }],
+    });
+
+    releaseReorderResponse.resolve();
+    await assertNotificationMessage(
+      page,
+      "User Profile configuration has been saved",
+    );
+    await expect(attributeNames).toHaveText([added, second, first, removed]);
+
+    await clickRowKebabItem(page, removed, "Delete");
+    await confirmModal(page);
+    await assertNotificationMessage(page, "Attribute deleted");
+    await expect(attributeNames).toHaveText([added, second, first]);
+
+    const { attributes } = await adminClient.getUserProfile(realm);
+    expect(
+      attributes
+        ?.filter((attribute) => attribute.group === group)
+        .map(({ name }) => name),
+    ).toEqual([added, second, first]);
+  } finally {
+    releaseReorderResponse.resolve();
+  }
+});
 
 test.describe.serial("User profile tabs", () => {
   const name = "Test";

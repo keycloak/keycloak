@@ -37,18 +37,21 @@ export const UserProfileProvider = ({ children }: PropsWithChildren) => {
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();
-  const [config, setConfig] = useState<UserProfileConfig | null>(null);
+  const [profile, setProfile] = useState<{
+    config: UserProfileConfig;
+    refreshCount: number;
+  }>();
   const [refreshCount, setRefreshCount] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
+  const [pendingSaves, setPendingSaves] = useState(0);
 
   useFetch(
     () => adminClient.users.getProfile({ realm }),
-    (config) => setConfig(config),
-    [refreshCount],
+    (config) => setProfile({ config, refreshCount }),
+    [realm, refreshCount],
   );
 
   const save: SaveCallback = async (updatedConfig, options) => {
-    setIsSaving(true);
+    setPendingSaves((count) => count + 1);
 
     try {
       await adminClient.users.updateProfile({
@@ -56,8 +59,8 @@ export const UserProfileProvider = ({ children }: PropsWithChildren) => {
         realm,
       });
 
-      setIsSaving(false);
-      setRefreshCount(refreshCount + 1);
+      // Reload the saved profile because PUT responses may arrive out of order.
+      setRefreshCount((count) => count + 1);
       addAlert(
         t(options?.successMessageKey ?? "userProfileSuccess"),
         AlertVariant.success,
@@ -65,12 +68,17 @@ export const UserProfileProvider = ({ children }: PropsWithChildren) => {
 
       return true;
     } catch (error) {
-      setIsSaving(false);
       addError(options?.errorMessageKey ?? "userProfileError", error);
 
       return false;
+    } finally {
+      setPendingSaves((count) => count - 1);
     }
   };
+
+  const config = profile?.config ?? null;
+  const isSaving =
+    pendingSaves > 0 || refreshCount !== (profile?.refreshCount ?? 0);
 
   return (
     <UserProfileContext.Provider value={{ config, save, isSaving }}>
