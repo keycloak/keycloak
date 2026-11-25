@@ -55,3 +55,8 @@ https://hosted.weblate.org/projects/keycloak/
 https://docs.redhat.com/*
 # Blocks automated HTTP requests from CI runners (returns 403), but loads fine in a browser.
 https://developer.linkedin.com*
+# Will fail until authorization services guide is published in 27
+https://www.keycloak.org/guides#authorization-services
+https://www.keycloak.org/authorization-services/policies
+https://www.keycloak.org/authorization-services/services#_obtaining_permissions
+https://www.keycloak.org/authorization-services/services#_discovering_authorization_services_endpoints_and_metadata
