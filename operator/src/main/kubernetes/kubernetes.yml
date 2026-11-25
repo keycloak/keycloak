@@ -25,3 +25,14 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: keycloak-operator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak-operator
+spec:
+  template:
+    spec:
+      affinity: {}
+      nodeSelector:
+        kubernetes.io/os: linux
