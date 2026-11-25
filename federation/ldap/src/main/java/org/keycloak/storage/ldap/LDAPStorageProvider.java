@@ -212,7 +212,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         // We need to avoid having CachedUserModel as cache is upper-layer then LDAP. Hence having CachedUserModel here may cause StackOverflowError
         if (local instanceof CachedUserModel) {
-            StoreManagers datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
+            StoreManagers datastoreProvider = session.getProvider(DatastoreProvider.class).unwrap(StoreManagers.class);
             local = datastoreProvider.userStorageManager().getUserById(realm, local.getId());
 
             existing = userManager.getManagedProxiedUser(local.getId());

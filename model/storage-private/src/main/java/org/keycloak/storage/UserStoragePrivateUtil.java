@@ -32,7 +32,7 @@ import org.keycloak.storage.user.SynchronizationResult;
 public class UserStoragePrivateUtil {
 
     public static UserProvider userLocalStorage(KeycloakSession session) {
-        return ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
+        return session.getProvider(DatastoreProvider.class).unwrap(DefaultDatastoreProvider.class).userLocalStorage();
     }
 
     public static SynchronizationResult runFullSync(KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider) {

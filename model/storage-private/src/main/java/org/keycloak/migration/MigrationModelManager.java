@@ -30,11 +30,11 @@ import org.keycloak.storage.datastore.DefaultDatastoreProvider;
 public class MigrationModelManager {
 
     public static void migrate(KeycloakSession session) {
-        ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).getMigrationManager().migrate();
+        session.getProvider(DatastoreProvider.class).unwrap(DefaultDatastoreProvider.class).getMigrationManager().migrate();
     }
 
     public static void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).getMigrationManager().migrate(realm, rep, skipUserDependent);
+        session.getProvider(DatastoreProvider.class).unwrap(DefaultDatastoreProvider.class).getMigrationManager().migrate(realm, rep, skipUserDependent);
     }
 
 }

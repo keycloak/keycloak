@@ -178,7 +178,7 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
 
             if (that != null && !that.getId().equals(user.getId())) {
                 // call getUserById to trigger validation - if user is federated from LDAP and no longer exists there, it is removed from the local DB.
-                that = ((StoreManagers) session.getProvider(DatastoreProvider.class)).userStorageManager().getUserById(realm, that.getId());
+                that = session.getProvider(DatastoreProvider.class).unwrap(StoreManagers.class).userStorageManager().getUserById(realm, that.getId());
                 if (that != null) {
                     session.getTransactionManager().setRollbackOnly();
                     String exceptionMessage = String.format("Can't import user '%s' from LDAP because email '%s' already exists in Keycloak. Existing user with this email is '%s'", user.getUsername(), email, that.getUsername());

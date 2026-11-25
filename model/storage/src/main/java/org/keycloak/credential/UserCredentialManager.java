@@ -331,11 +331,11 @@ public class UserCredentialManager extends AbstractStorageManager<UserStoragePro
     }
 
     private UserCredentialStore getStoreForUser(UserModel user) {
-        StoreManagers p = (StoreManagers) session.getProvider(DatastoreProvider.class);
+        StoreManagers p = session.getProvider(DatastoreProvider.class).unwrap(StoreManagers.class);
         if (StorageId.isLocalStorage(user.getId())) {
-            return (UserCredentialStore) p.userLocalStorage();
+            return p.userLocalStorage().unwrap(UserCredentialStore.class);
         } else {
-            return (UserCredentialStore) p.userFederatedStorage();
+            return p.userFederatedStorage().unwrap(UserCredentialStore.class);
         }
     }
 

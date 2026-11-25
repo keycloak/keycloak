@@ -178,7 +178,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
-        this.datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
+        this.datastoreProvider = session.getProvider(DatastoreProvider.class).unwrap(StoreManagers.class);
         session.getTransactionManager().enlistPrepare(getPrepareTransaction());
         session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
     }

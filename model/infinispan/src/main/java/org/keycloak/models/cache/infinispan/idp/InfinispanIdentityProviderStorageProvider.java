@@ -57,7 +57,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
     public InfinispanIdentityProviderStorageProvider(KeycloakSession session) {
         this.session = session;
         this.idpDelegate = session.getProvider(IdentityProviderStorageProvider.class, "jpa");
-        this.realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+        this.realmCache = session.getProvider(CacheRealmProvider.class).unwrap(RealmCacheSession.class);
         this.startupRevision = realmCache.getCache().getCurrentCounter();
     }
 
