@@ -110,11 +110,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public UserSessionProvider create(KeycloakSession session) {
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
             var tx = createPersistentTransaction(session);
-            return new PersistentUserSessionProvider(
+            var provider = new PersistentUserSessionProvider(
                     session,
                     tx.userTx,
                     tx.clientTx
             );
+            tx.userTx.setProvider(provider);
+            return provider;
         }
         var tx = createVolatileTransaction(session);
         return new InfinispanUserSessionProvider(
