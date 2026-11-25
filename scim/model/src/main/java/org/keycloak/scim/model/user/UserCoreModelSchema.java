@@ -2,6 +2,7 @@ package org.keycloak.scim.model.user;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,10 +20,12 @@ import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.scim.model.group.GroupOwnership;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.MembershipChange;
+import org.keycloak.scim.resource.spi.ScimMutabilityException;
 import org.keycloak.scim.resource.user.Email;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.Name;
@@ -168,6 +171,14 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                     RealmModel realm = session.getContext().getRealm();
                     checkUserMembershipPermission(session.getContext().getPermissions(), model);
+                    if (GroupOwnership.isEnabled(realm)) {
+                        Set<String> requested = groupIds(values);
+                        Set<String> direct = directGroupIds(model);
+                        Set<String> changed = new HashSet<>(requested);
+                        changed.removeAll(direct);
+                        direct.stream().filter(id -> !requested.contains(id)).forEach(changed::add);
+                        checkOwnedGroupsUnchanged(session, changed);
+                    }
                     List<GroupModel> remove = new ArrayList<>();
 
                     for (GroupUtils.GroupMembership membership : GroupUtils.getAllMemberships(session, model.getGroupsStream().toList())) {
@@ -214,6 +225,11 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                     RealmModel realm = session.getContext().getRealm();
                     checkUserMembershipPermission(session.getContext().getPermissions(), model);
+                    if (GroupOwnership.isEnabled(realm)) {
+                        Set<String> removed = groupIds(values);
+                        removed.retainAll(directGroupIds(model));
+                        checkOwnedGroupsUnchanged(session, removed);
+                    }
 
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
@@ -233,6 +249,11 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                     RealmModel realm = session.getContext().getRealm();
                     checkUserMembershipPermission(session.getContext().getPermissions(), model);
+                    if (GroupOwnership.isEnabled(realm)) {
+                        Set<String> added = groupIds(values);
+                        added.removeAll(directGroupIds(model));
+                        checkOwnedGroupsUnchanged(session, added);
+                    }
 
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
@@ -251,6 +272,41 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .build());
 
         return attributes.stream().collect(Collectors.toMap(Attribute::getName, Function.identity()));
+    }
+
+    private static Set<String> groupIds(Collection<?> values) {
+        Set<String> ids = new HashSet<>();
+
+        if (values != null) {
+            for (Object value : values) {
+                if (value instanceof GroupMembership membership) {
+                    ids.add(membership.getValue());
+                } else if (value != null) {
+                    ids.add(value.toString());
+                }
+            }
+        }
+
+        return ids;
+    }
+
+    private static Set<String> directGroupIds(UserModel model) {
+        return model.getGroupsStream().map(GroupModel::getId).collect(Collectors.toCollection(HashSet::new));
+    }
+
+    /**
+     * A group owned by a SCIM client takes its members from that client's writes to the Group resource. A membership
+     * changed through a User would go around the owner, and RFC 7643 section 4.1.2 makes a User's {@code groups}
+     * read-only anyway, so such a write is refused. A write that changes no membership of an owned group is accepted,
+     * and groups that no SCIM client owns behave as before. Callers check {@link GroupOwnership#isEnabled} first, so a
+     * realm without group ownership reads nothing more than before.
+     *
+     * @param changed the ids of the groups the write would add the user to or remove the user from
+     */
+    private static void checkOwnedGroupsUnchanged(KeycloakSession session, Set<String> changed) {
+        if (!GroupOwnership.ownedAmong(session, changed).isEmpty()) {
+            throw new ScimMutabilityException("Membership of a group owned by a SCIM client cannot be changed through the User resource. Use the Group resource instead.");
+        }
     }
 
     @Override

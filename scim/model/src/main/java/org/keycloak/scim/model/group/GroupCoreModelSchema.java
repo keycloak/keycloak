@@ -214,6 +214,29 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         membershipChanges.clear();
     }
 
+    void recordMembershipChange(MembershipChange change) {
+        membershipChanges.add(change);
+    }
+
+    /**
+     * The members of {@code model} as a read that asks for {@code members} returns them.
+     */
+    List<Member> readMembers(GroupModel model) {
+        @SuppressWarnings("unchecked")
+        List<UserModel> users = (List<UserModel>) getAttributeValue(model, "members");
+        List<Member> members = new ArrayList<>();
+
+        for (UserModel user : users) {
+            Member member = new Member();
+            member.setValue(user.getId());
+            member.setDisplay(user.getUsername());
+            member.setType("User");
+            members.add(member);
+        }
+
+        return members;
+    }
+
     private void setTimestamps(Group resource, GroupModel model) {
         Long createdTimestamp = model.getCreatedTimestamp();
         if (createdTimestamp != null) {
@@ -225,7 +248,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         }
     }
 
-    private static void checkGroupMembershipPermission(Permissions permissions, GroupModel group) {
+    static void checkGroupMembershipPermission(Permissions permissions, GroupModel group) {
         if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
             throw new ModelValidationException("Invalid group");
         }
@@ -237,7 +260,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
         }
     }
 
-    private void checkRequireManageGroupMembership(Permissions permissions, UserModel model) {
+    void checkRequireManageGroupMembership(Permissions permissions, UserModel model) {
         if (model.isServiceAccount()) {
             throw new ForbiddenException();
         }
@@ -261,7 +284,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                 .forEach(subGroup -> checkGroupHasNoServiceAccounts(realm, subGroup));
     }
 
-    private boolean canViewUser(UserModel u) {
+    boolean canViewUser(UserModel u) {
         if (u.isServiceAccount()) {
             return false;
         }

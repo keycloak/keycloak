@@ -338,6 +338,10 @@ All other comparison operators are not supported.
 You can manage a user's group memberships directly through the user resource. Group membership can also be managed
 from the group side using the `/Groups` endpoint. See <<_scim_managing_groups_,Managing groups>> for details.
 
+NOTE: In a realm where groups are owned by a SCIM client, a request in this section that would add a user to an
+owned group, or remove the user from one, is rejected with a `400 Bad Request` error and `scimType: "mutability"`.
+Groups that no SCIM client owns are not affected. See <<_scim_membership_claims_,Groups owned by a SCIM client>>.
+
 === Adding a user to groups on creation
 
 When creating a user, you can specify the groups the user should belong to:
