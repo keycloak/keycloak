@@ -452,6 +452,65 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
+    private String createOwnedResource(String name, boolean ownerManagedAccess, String... scopes) throws Exception {
+        ResourceRepresentation resource = new ResourceRepresentation();
+        resource.setOwnerManagedAccess(ownerManagedAccess);
+        resource.setOwner(JsonSerialization.readValue(new JWSInput(getToken()).getContent(), AccessToken.class).getSubject());
+        resource.setName(name);
+        resource.addScope(scopes);
+
+        try (Response response = getResourceServer().authorization().resources().create(resource)) {
+            return response.readEntity(ResourceRepresentation.class).getId();
+        }
+    }
+
+    private List<PermissionTicketRepresentation> findTickets(String resourceId) throws IOException {
+        return simpleHttp.doGet(getProtectionPermissionTicketUrl() + "?resourceId=" + resourceId)
+                .auth(getProtectionToken())
+                .asJson(new TypeReference<List<PermissionTicketRepresentation>>() {
+                });
+    }
+
+    @Test
+    public void testShareResourceRejectsScopeNotOnResource() throws Exception {
+        // "Scope C" exists on the resource server (other resources use it) but not on this resource
+        String resourceId = createOwnedResource("Resource Scope A only", true, "Scope A");
+        String permissionsUrl = getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions");
+
+        List<Permission> permissions = new ArrayList<>();
+        permissions.add(new Permission("jdoe", "Scope A", "Scope C"));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(),
+                simpleHttp.doPut(permissionsUrl).auth(getToken()).json(permissions).asStatus());
+        assertTrue(findTickets(resourceId).isEmpty(), "no ticket may be created when any scope is invalid");
+
+        permissions.clear();
+        permissions.add(new Permission("jdoe", "Unknown Scope"));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(),
+                simpleHttp.doPut(permissionsUrl).auth(getToken()).json(permissions).asStatus());
+        assertTrue(findTickets(resourceId).isEmpty());
+
+        // sharing a scope that belongs to the resource still works
+        permissions.clear();
+        permissions.add(new Permission("jdoe", "Scope A"));
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(),
+                simpleHttp.doPut(permissionsUrl).auth(getToken()).json(permissions).asStatus());
+        List<PermissionTicketRepresentation> tickets = findTickets(resourceId);
+        assertEquals(1, tickets.size());
+        assertTrue(tickets.get(0).isGranted());
+    }
+
+    @Test
+    public void testShareResourceRejectsWhenOwnerManagedAccessDisabled() throws Exception {
+        String resourceId = createOwnedResource("Resource without UMA", false, "Scope A");
+
+        List<Permission> permissions = new ArrayList<>();
+        permissions.add(new Permission("jdoe", "Scope A"));
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(),
+                simpleHttp.doPut(getAccountUrl("resources/" + encodePathAsIs(resourceId) + "/permissions"))
+                        .auth(getToken()).json(permissions).asStatus());
+        assertTrue(findTickets(resourceId).isEmpty());
+    }
+
     @Test
     public void failShareResourceInvalidPermissions() throws Exception {
         List<Permission> permissions = new ArrayList<>();
