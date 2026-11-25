@@ -47,8 +47,8 @@ public class EmailCooldownManager {
         }
         String expire = cooldownDetails.get(KEY_EXPIRE);
         if (expire == null) {
-            // A concurrent request has just claimed the cooldown slot but has not recorded the expiry yet;
-            // treat the user as being in cooldown for the full configured window.
+            // Entries created by the atomic claim (addCooldownEntryIfAbsent) record no expiry, since the
+            // putIfAbsent lifespan already bounds the cooldown; report the full configured window.
             return getCooldownInSeconds(context);
         }
         long remaining = (Long.parseLong(expire) - Time.currentTime());
@@ -63,7 +63,7 @@ public class EmailCooldownManager {
     }
 
     /**
-     * Atomically admits a single email send for the user in the given cooldown window and records the window's expiry.
+     * Atomically admits a single email send for the user in the given cooldown window.
      * The check and the insert happen in one {@link SingleUseObjectProvider#putIfAbsent} call, so of several
      * concurrent requests only one is admitted; the others get {@code false} and must not send an email.
      *
@@ -75,13 +75,11 @@ public class EmailCooldownManager {
             return true;
         }
         SingleUseObjectProvider cache = context.getSession().singleUseObjects();
-        String key = getCacheKey(context, keyPrefix);
-        if (!cache.putIfAbsent(key, cooldownSeconds)) {
-            return false;
-        }
-        // Record the expiry so a later request can show the remaining cooldown time.
-        cache.put(key, cooldownSeconds, Map.of(KEY_EXPIRE, Long.toString(Time.currentTime() + cooldownSeconds)));
-        return true;
+        // putIfAbsent is applied immediately and its lifespan bounds the cooldown window. We deliberately do not
+        // record the expiry as a second entry: put() is deferred to transaction commit, after the email is sent,
+        // which would re-anchor the key's TTL past the intended expiry and reject valid retries in that gap.
+        // retrieveCooldownEntry reports the full configured window when no expiry is recorded.
+        return cache.putIfAbsent(getCacheKey(context, keyPrefix), cooldownSeconds);
     }
 
     /**
