@@ -93,7 +93,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class ClientResourceTypeProvider extends BaseResourceTypeProvider<ClientModel, BaseClientRepresentation> implements ScimAttributeJpaExpressionResolver {
 
-    private final static Map<String, BaseClientModelSchema<? extends BaseClientRepresentation>> SCHEMAS = Map.of(
+    public final static Map<String, BaseClientModelSchema<? extends BaseClientRepresentation>> SCHEMAS = Map.of(
             OIDCClientRepresentation.PROTOCOL, OIDCClientModelSchema.INSTANCE,
             SAMLClientRepresentation.PROTOCOL, SAMLClientModelSchema.INSTANCE);
     
