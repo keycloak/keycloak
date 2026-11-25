@@ -92,4 +92,59 @@ test.describe("Resources", () => {
     const rowData = page2.getByTestId("row[0].name");
     await expect(rowData).toHaveText("one");
   });
+
+  test("shows an error and no success alert when sharing a resource fails", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed(
+      resourcesRealm as RealmRepresentation,
+    );
+    await waitForRealmReady();
+
+    await login(page, testBed.realm);
+    await page.getByTestId("resources").click();
+
+    await page.getByTestId("expand-one").click();
+    await expect(page.getByText("This resource is not shared.")).toBeVisible();
+
+    await page.getByTestId("share-one").click();
+    await page.getByTestId("users").click();
+    await page.getByTestId("users").fill("alice");
+    await page.getByTestId("add").click();
+
+    await page
+      .getByTestId("permissions")
+      .getByRole("button", { expanded: false })
+      .click();
+    await page.getByRole("option", { name: "album:view" }).click();
+    await page
+      .getByTestId("permissions")
+      .getByRole("button", { expanded: true })
+      .click();
+
+    // Make the share request fail so the console's error handling is exercised.
+    await page.route(
+      "**/realms/*/account/resources/*/permissions",
+      async (route) => {
+        if (route.request().method() !== "PUT") {
+          return route.continue();
+        }
+        await route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({
+            error: "access_denied",
+            error_description: "You are not allowed to share this resource.",
+          }),
+        });
+      },
+    );
+
+    await page.getByTestId("done").click();
+
+    await expect(
+      page.getByText("You are not allowed to share this resource."),
+    ).toBeVisible();
+    await expect(page.getByText("Resource successfully shared.")).toBeHidden();
+  });
 });
