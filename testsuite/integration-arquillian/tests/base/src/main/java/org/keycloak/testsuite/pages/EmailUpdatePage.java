@@ -44,6 +44,10 @@ public class EmailUpdatePage extends AbstractPage {
 		submitButton.click();
 	}
 
+	public String getEmail() {
+		return emailInput.getAttribute("value");
+	}
+
 	public void cancel() {
 		cancelAIAButton.click();
 	}
