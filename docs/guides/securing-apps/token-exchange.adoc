@@ -793,7 +793,8 @@ The *client-delegation* executor has a single option, *Allow chaining*, which is
 
 Nothing else about a chain is configurable: it never holds more than eight actors, an actor can never take part twice, and the first hop always needs a delegation the user consented to. Whether a client may delegate at all remains a question for the `delegate` permission, and whether a token may carry a `may_act` claim at all is the job of the *may-act* executor.
 
-The delegated token is issued with the scopes of the client performing the exchange, so each hop can already narrow what the next one receives. To make narrowing one-way, add the *downscope-assertion-grant-enforcer* executor to the same profile. It takes no configuration and rejects, with `invalid_scope`, any request asking for a scope the subject token does not carry. In a chain this compounds: once a hop drops a scope, no later hop can get it back.
+The delegated token is issued with the scopes of the client performing the exchange, so each hop can narrow what the next one receives.
+The *downscope-assertion-grant-enforcer* executor can reject requests for scopes absent from the subject token, but it can also reject a valid downstream audience when *Full scope allowed* is off.
 
 ==== Auditing a chain
 

@@ -23,6 +23,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.protocol.oidc.tokenexchange.DelegationChain;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -226,6 +227,30 @@ public class ClientDelegationChainTest {
 
         // agent-app is already part of the chain, so handing the token back to it is a loop
         assertExchangeRejected(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, hop2.getAccessToken(),
+                "Actor is already part of the delegation chain in the subject_token");
+
+        logout(loginRes.getRefreshToken());
+    }
+
+    @Test
+    public void actorRepetitionRejectedWithPairwiseSubject() {
+        mcpApp.updateWithCleanup(c -> c.redirectUris("https://localhost/pairwise-callback")
+                .protocolMappers(SHA256PairwiseSubMapper.createPairwiseMapper(null, "pairwise-test-salt")));
+        addChainPolicy(chainingEnabled());
+        allowTarget(downstreamApp.getId(), mcpApp);
+
+        String actorToken = clientCredentialsToken(MCP_CLIENT_ID, MCP_CLIENT_SECRET);
+        String actorTokenSubject = oauth.verifyToken(actorToken).getSubject();
+        Assertions.assertNotNull(actorTokenSubject);
+        Assertions.assertNotEquals(serviceAccountId(MCP_CLIENT_ID), actorTokenSubject);
+
+        AccessTokenResponse loginRes = login(AGENT_DELEGATION_SCOPE);
+        AccessTokenResponse hop1 = assertExchangeSucceeds(AGENT_CLIENT_ID, AGENT_CLIENT_SECRET, loginRes.getAccessToken(), MCP_CLIENT_ID, 1, null);
+        AccessTokenResponse hop2 = assertExchangeSucceeds(MCP_CLIENT_ID, MCP_CLIENT_SECRET, hop1.getAccessToken(), DOWNSTREAM_CLIENT_ID, 2, AGENT_MCP_CHAIN);
+        Assertions.assertEquals(actorTokenSubject, actClaim(oauth.verifyToken(hop2.getAccessToken())).get(SUBJECT));
+
+        AccessTokenResponse hop3 = assertExchangeSucceeds(DOWNSTREAM_CLIENT_ID, DOWNSTREAM_CLIENT_SECRET, hop2.getAccessToken(), MCP_CLIENT_ID, 3, AGENT_MCP_DOWNSTREAM_CHAIN);
+        assertExchangeRejected(MCP_CLIENT_ID, MCP_CLIENT_SECRET, hop3.getAccessToken(),
                 "Actor is already part of the delegation chain in the subject_token");
 
         logout(loginRes.getRefreshToken());
@@ -806,9 +831,9 @@ public class ClientDelegationChainTest {
 
     private String serviceAccountId(String clientId) {
         return switch (clientId) {
-            case AGENT_CLIENT_ID -> agentApp.admin().getServiceAccountUser().getId();
-            case MCP_CLIENT_ID -> mcpApp.admin().getServiceAccountUser().getId();
-            case DOWNSTREAM_CLIENT_ID -> downstreamApp.admin().getServiceAccountUser().getId();
+            case AGENT_CLIENT_ID -> agentApp.admin().toRepresentation().getServiceAccountUserId();
+            case MCP_CLIENT_ID -> mcpApp.admin().toRepresentation().getServiceAccountUserId();
+            case DOWNSTREAM_CLIENT_ID -> downstreamApp.admin().toRepresentation().getServiceAccountUserId();
             default -> throw new AssertionError("Unknown client " + clientId);
         };
     }

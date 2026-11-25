@@ -46,7 +46,9 @@ public final class DelegationChain {
         return actors.stream().allMatch(actor -> actor.getClientId() != null);
     }
 
-    public static boolean containsActor(List<DelegationActor> actors, String actorUserId) {
-        return actors.stream().anyMatch(actor -> actorUserId.equals(actor.getSubject()));
+    public static boolean containsActor(List<DelegationActor> actors, String actorUserId, String actorTokenSubject, String actorClientId) {
+        return actors.stream().anyMatch(actor -> actorUserId.equals(actor.getSubject())
+                || (actorTokenSubject != null && actorTokenSubject.equals(actor.getSubject()))
+                || (actorClientId != null && actorClientId.equals(actor.getClientId())));
     }
 }

@@ -231,8 +231,13 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
         if (!DelegationChain.allActorsHaveClientId(priorActors)) {
             throw delegationRejected("Only a token delegated to a client can be chained, this one was delegated to a user");
         }
-        // an actor taking part twice is a delegation loop
-        if (DelegationChain.containsActor(priorActors, actorUser.getId())) {
+
+        String actorClientId = null;
+        if (client.getClientId().equals(actorAccessToken.getIssuedFor()) && client.getId().equals(actorUser.getServiceAccountClientLink())) {
+            actorClientId = client.getClientId();
+        }
+        // The first hop records the user ID, while later hops can record a pairwise token subject.
+        if (DelegationChain.containsActor(priorActors, actorUser.getId(), actorAccessToken.getSubject(), actorClientId)) {
             throw delegationRejected("Actor is already part of the delegation chain in the subject_token");
         }
     }
