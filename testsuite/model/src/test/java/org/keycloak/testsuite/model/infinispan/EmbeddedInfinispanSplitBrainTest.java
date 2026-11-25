@@ -125,16 +125,24 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
       inIndependentFactories(numFactories, 60, () -> {
          var index = factoryIndex.getAndIncrement();
 
-         inComittedTransaction(session -> {
-            var cacheManager = session.getProvider(InfinispanConnectionProvider.class)
+         var cacheManager = inComittedTransaction(session -> {
+            var cm = session.getProvider(InfinispanConnectionProvider.class)
                   .getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE)
                   .getCacheManager();
-            partitionManager.addManager(index, cacheManager);
+            partitionManager.addManager(index, cm);
 
             if (index == 0) {
                session.revokedTokens().put(tokenId, 60);
             }
+            return cm;
          });
+         awaitBarrier(barrier);
+
+         // Splitting before both nodes have joined, or with a leaked node of a previous test in the cluster, would test nothing.
+         await("Cluster did not form with exactly the test nodes")
+               .atMost(Duration.ofSeconds(10))
+               .until(() -> cacheManager.getMembers().size() == numFactories);
+         // Neither node may split before both have confirmed the precondition.
          awaitBarrier(barrier);
 
          if (index == 0) {
