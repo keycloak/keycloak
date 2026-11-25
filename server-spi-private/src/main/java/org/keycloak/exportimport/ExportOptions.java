@@ -27,6 +27,7 @@ public class ExportOptions {
     private boolean groupsAndRolesIncluded = true;
     private boolean onlyServiceAccountsIncluded = false;
     private boolean partial;
+    private boolean workflowsIncluded = true;
 
     public ExportOptions() {
     }
@@ -73,5 +74,13 @@ public class ExportOptions {
 
     public boolean isPartial() {
         return partial;
+    }
+
+    public boolean isWorkflowsIncluded() {
+        return workflowsIncluded;
+    }
+
+    public void setWorkflowsIncluded(boolean workflowsIncluded) {
+        this.workflowsIncluded = workflowsIncluded;
     }
 }

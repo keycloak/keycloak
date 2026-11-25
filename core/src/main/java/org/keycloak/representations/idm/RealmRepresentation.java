@@ -28,6 +28,7 @@ import java.util.Set;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.json.KeycloakJsonMapperFactory;
 import org.keycloak.json.RawJsonValue;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -202,6 +203,7 @@ public class RealmRepresentation {
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
     private MultivaluedHashMap<String, ComponentExportRepresentation> components;
+    private List<WorkflowRepresentation> workflows;
     protected Boolean internationalizationEnabled;
     protected Set<String> supportedLocales;
     protected String defaultLocale;
@@ -1480,6 +1482,14 @@ public class RealmRepresentation {
 
     public void setComponents(MultivaluedHashMap<String, ComponentExportRepresentation> components) {
         this.components = components;
+    }
+
+    public List<WorkflowRepresentation> getWorkflows() {
+        return workflows;
+    }
+
+    public void setWorkflows(List<WorkflowRepresentation> workflows) {
+        this.workflows = workflows;
     }
 
     @JsonIgnore

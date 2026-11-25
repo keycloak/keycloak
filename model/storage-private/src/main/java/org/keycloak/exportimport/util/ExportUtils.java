@@ -48,6 +48,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
@@ -254,7 +255,19 @@ public class ExportUtils {
 
         // components
         MultivaluedHashMap<String, ComponentExportRepresentation> components = exportComponents(realm, realm.getId());
+        boolean keepLegacyComponents = !Profile.isFeatureEnabled(Feature.WORKFLOWS)
+                && !options.isPartial() && options.isWorkflowsIncluded();
+        if (!keepLegacyComponents) {
+            components.remove(WorkflowProvider.class.getName());
+        }
         rep.setComponents(components);
+
+        if (options.isWorkflowsIncluded() && Profile.isFeatureEnabled(Feature.WORKFLOWS)) {
+            var workflows = WorkflowExportImportUtils.exportWorkflows(session, realm);
+            if (!workflows.isEmpty()) {
+                rep.setWorkflows(workflows);
+            }
+        }
 
         // Message Bundle
         rep.setLocalizationTexts(realm.getRealmLocalizationTexts());

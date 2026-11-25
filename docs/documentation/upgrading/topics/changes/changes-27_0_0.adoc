@@ -58,6 +58,25 @@ Use the Admin REST API to manage realm default roles and full scope when the pol
 This migration installs a new client registration policy provider that earlier nodes do not know.
 A rolling upgrade is therefore not supported for this change; shut down the cluster and upgrade all nodes together (or use a recreate update) so that older nodes never process Dynamic Client Registration requests against the new policy components.
 
+=== Workflow definitions in realm exports
+// https://github.com/keycloak/keycloak/issues/50972
+
+With the workflows feature enabled, realm exports now include workflow definitions in a top-level `workflows` array instead of under `components` with the type `org.keycloak.models.workflow.WorkflowProvider`.
+The field is omitted when no workflows are exported.
+Update tools that read workflow definitions from realm JSON to use the new field.
+Administrative exports require the same realm-administrator permissions as the Workflows Admin API and mask declared workflow step secrets; command-line exports retain those secrets.
+
+Full realm imports restore definitions through the workflow provider and apply workflow creation validation.
+Complete legacy workflow components are still accepted, but must not be combined with definitions in the new `workflows` field.
+Legacy workflow components with missing or empty configuration, as produced by affected administrative exports, are skipped with a warning identifying the component.
+The lost configuration cannot be recovered.
+Other invalid workflow definitions cause the realm import to fail.
+
+The workflows feature must be enabled to restore workflow definitions.
+When it is disabled, command-line exports retain stored definitions as legacy components, while administrative exports omit them.
+Imports restore definitions only, not in-progress executions, and regenerate step identifiers.
+The partial-import and realm-update endpoints ignore the `workflows` field; use the Workflows Admin API to manage workflows in an existing realm.
+
 === PAR metadata omitted when PAR is disabled
 
 When the `par` feature is disabled, OpenID Connect discovery now omits `pushed_authorization_request_endpoint` from both the top-level metadata and `mtls_endpoint_aliases`, and omits `require_pushed_authorization_requests`.
