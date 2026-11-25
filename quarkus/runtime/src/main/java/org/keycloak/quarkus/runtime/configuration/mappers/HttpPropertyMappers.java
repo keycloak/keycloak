@@ -241,7 +241,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         mappers.add(
                 fromOption(HttpOptions.HTTPS_KEY_STORE_TYPE)
                         .mapFrom(HttpOptions.HTTPS_KEY_STORE_TYPE, (name, value, ctx) ->
-                                filterOtherStoreType(value, HttpOptions.HTTPS_KEY_STORE_FILE))
+                                filterOtherStoreType(value, HttpOptions.HTTPS_KEY_STORE_FILE, StoreRole.KEY_STORE))
                         .to(TLS_PREFIX + "key-store.other.type")
                         .paramLabel("type")
                         .build()
@@ -287,7 +287,7 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         mappers.add(
                 fromOption(HttpOptions.HTTPS_TRUST_STORE_TYPE)
                         .mapFrom(HttpOptions.HTTPS_TRUST_STORE_TYPE, (name, value, ctx) ->
-                                filterOtherStoreType(value, HttpOptions.HTTPS_TRUST_STORE_FILE))
+                                filterOtherStoreType(value, HttpOptions.HTTPS_TRUST_STORE_FILE, StoreRole.TRUST_STORE))
                         .to(TLS_PREFIX + "trust-store.other.type")
                         .paramLabel("type")
                         .build()
@@ -402,18 +402,19 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
         return StoreType.PKCS12;
     }
 
-    static String filterOtherStoreType(String value, Option<File> storeFileOption) {
-        return filterOtherStoreType(value, storeFileOption, HttpOptions.HTTPS_CERTIFICATE_FILE);
+    static String filterOtherStoreType(String value, Option<File> storeFileOption, StoreRole role) {
+        return filterOtherStoreType(value, storeFileOption, role, HttpOptions.HTTPS_CERTIFICATE_FILE);
     }
 
-    static String filterOtherStoreType(String value, Option<File> storeFileOption, Option<File> pemCertFileOption) {
+    static String filterOtherStoreType(String value, Option<File> storeFileOption, StoreRole role,
+            Option<File> pemCertFileOption) {
         if (value == null) {
             return null;
         }
         if (detectStoreType(value, null, null) != StoreType.OTHER) {
             return null;
         }
-        if (getOptionalKcValue(pemCertFileOption.getKey()).isPresent()) {
+        if (role == StoreRole.KEY_STORE && getOptionalKcValue(pemCertFileOption.getKey()).isPresent()) {
             return null;
         }
         // only set the type if the corresponding file is configured

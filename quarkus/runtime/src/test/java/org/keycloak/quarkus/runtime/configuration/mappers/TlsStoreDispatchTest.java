@@ -84,21 +84,21 @@ public class TlsStoreDispatchTest extends AbstractConfigurationTest {
 
     @Test
     public void filterOtherStoreTypeReturnsNullForKnownTypes() {
-        assertThat(HttpPropertyMappers.filterOtherStoreType("PKCS12", HttpOptions.HTTPS_KEY_STORE_FILE) == null, is(true));
-        assertThat(HttpPropertyMappers.filterOtherStoreType("P12", HttpOptions.HTTPS_KEY_STORE_FILE) == null, is(true));
-        assertThat(HttpPropertyMappers.filterOtherStoreType("JKS", HttpOptions.HTTPS_KEY_STORE_FILE) == null, is(true));
-        assertThat(HttpPropertyMappers.filterOtherStoreType("jks", HttpOptions.HTTPS_KEY_STORE_FILE) == null, is(true));
+        assertThat(HttpPropertyMappers.filterOtherStoreType("PKCS12", HttpOptions.HTTPS_KEY_STORE_FILE, HttpPropertyMappers.StoreRole.KEY_STORE) == null, is(true));
+        assertThat(HttpPropertyMappers.filterOtherStoreType("P12", HttpOptions.HTTPS_KEY_STORE_FILE, HttpPropertyMappers.StoreRole.KEY_STORE) == null, is(true));
+        assertThat(HttpPropertyMappers.filterOtherStoreType("JKS", HttpOptions.HTTPS_KEY_STORE_FILE, HttpPropertyMappers.StoreRole.KEY_STORE) == null, is(true));
+        assertThat(HttpPropertyMappers.filterOtherStoreType("jks", HttpOptions.HTTPS_KEY_STORE_FILE, HttpPropertyMappers.StoreRole.KEY_STORE) == null, is(true));
     }
 
     @Test
     public void filterOtherStoreTypeKeepsExoticTypesWhenFileSet() {
         createConfigFromCliArguments("--https-key-store-file=server.bcfks", "--https-key-store-type=BCFKS");
-        assertThat(HttpPropertyMappers.filterOtherStoreType("BCFKS", HttpOptions.HTTPS_KEY_STORE_FILE), is("BCFKS"));
+        assertThat(HttpPropertyMappers.filterOtherStoreType("BCFKS", HttpOptions.HTTPS_KEY_STORE_FILE, HttpPropertyMappers.StoreRole.KEY_STORE), is("BCFKS"));
     }
 
     @Test
     public void filterOtherStoreTypeReturnsNullWithoutFile() {
-        assertThat(HttpPropertyMappers.filterOtherStoreType("BCFKS", HttpOptions.HTTPS_KEY_STORE_FILE) == null, is(true));
+        assertThat(HttpPropertyMappers.filterOtherStoreType("BCFKS", HttpOptions.HTTPS_KEY_STORE_FILE, HttpPropertyMappers.StoreRole.KEY_STORE) == null, is(true));
     }
 
     @Test
@@ -212,6 +212,33 @@ public class TlsStoreDispatchTest extends AbstractConfigurationTest {
         assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.other.type");
         assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.other.path");
         assertExternalConfigNull(ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.other.password");
+    }
+
+    @Test
+    public void pemKeyStoreKeepsOtherTrustStoreType() {
+        createConfigFromCliArguments(
+                "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
+                "--https-trust-store-file=trust.jceks", "--https-trust-store-type=JCEKS", "--https-trust-store-password=pass");
+        assertExternalConfig(Map.of(
+                HttpPropertyMappers.TLS_PREFIX + "key-store.pem.default.cert", "/cert.pem",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.other.path", "trust.jceks",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.other.password", "pass",
+                HttpPropertyMappers.TLS_PREFIX + "trust-store.other.type", "JCEKS"
+        ));
+    }
+
+    @Test
+    public void managementPemKeyStoreKeepsInheritedOtherTrustStoreType() {
+        putEnvVar("KC_HEALTH_ENABLED", "true");
+        createConfigFromCliArguments(
+                "--https-certificate-file=/cert.pem", "--https-certificate-key-file=/key.pem",
+                "--https-trust-store-file=trust.jceks", "--https-trust-store-type=JCEKS", "--https-trust-store-password=pass");
+        assertExternalConfig(Map.of(
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "key-store.pem.default.cert", "/cert.pem",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.path", "trust.jceks",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.password", "pass",
+                ManagementPropertyMappers.MGMT_TLS_PREFIX + "trust-store.other.type", "JCEKS"
+        ));
     }
 
     @Test
