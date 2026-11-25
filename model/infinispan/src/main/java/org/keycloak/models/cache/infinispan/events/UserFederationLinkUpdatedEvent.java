@@ -16,12 +16,14 @@
  */
 package org.keycloak.models.cache.infinispan.events;
 
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.marshalling.Marshalling;
 import org.keycloak.models.cache.infinispan.UserCacheManager;
 
 import org.infinispan.protostream.annotations.ProtoFactory;
+import org.infinispan.protostream.annotations.ProtoField;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
@@ -30,23 +32,59 @@ import org.infinispan.protostream.annotations.ProtoTypeId;
 @ProtoTypeId(Marshalling.USER_FEDERATION_LINK_UPDATED_EVENT)
 public class UserFederationLinkUpdatedEvent extends InvalidationEvent implements UserCacheInvalidationEvent {
 
-    private UserFederationLinkUpdatedEvent(String id) {
+    final String realmId;
+    final String identityProviderId;
+    final String socialUserId;
+
+    private UserFederationLinkUpdatedEvent(String id, String realmId, String identityProviderId, String socialUserId) {
         super(id);
+        this.realmId = realmId;
+        this.identityProviderId = identityProviderId;
+        this.socialUserId = socialUserId;
     }
 
     @ProtoFactory
-    public static UserFederationLinkUpdatedEvent create(String id) {
-        return new UserFederationLinkUpdatedEvent(id);
+    public static UserFederationLinkUpdatedEvent create(String id, String realmId, String identityProviderId, String socialUserId) {
+        return new UserFederationLinkUpdatedEvent(id, realmId, identityProviderId, socialUserId);
+    }
+
+    @ProtoField(2)
+    public String getRealmId() {
+        return realmId;
+    }
+
+    @ProtoField(3)
+    public String getIdentityProviderId() {
+        return identityProviderId;
+    }
+
+    @ProtoField(4)
+    public String getSocialUserId() {
+        return socialUserId;
     }
 
     @Override
     public String toString() {
-        return String.format("UserFederationLinkUpdatedEvent [ userId=%s ]", getId());
+        return String.format("UserFederationLinkUpdatedEvent [ userId=%s, identityProviderId=%s, socialUserId=%s ]", getId(), identityProviderId, socialUserId);
     }
 
     @Override
     public void addInvalidations(UserCacheManager userCache, Set<String> invalidations) {
-        userCache.federatedIdentityLinkUpdatedInvalidation(getId(), invalidations);
+        userCache.federatedIdentityLinkUpdatedInvalidation(getId(), realmId, identityProviderId, socialUserId, invalidations);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        UserFederationLinkUpdatedEvent that = (UserFederationLinkUpdatedEvent) o;
+        return Objects.equals(realmId, that.realmId) && Objects.equals(identityProviderId, that.identityProviderId) && Objects.equals(socialUserId, that.socialUserId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), realmId, identityProviderId, socialUserId);
     }
 
 }
