@@ -150,4 +150,16 @@ public class IdentityProviderTest extends AbstractIdentityProviderTest {
         Assertions.assertEquals(GoogleIdentityProvider.ISSUER_URL, googleIdentityProvider.getConfig().get(OIDCIdentityProviderConfig.ISSUER));
     }
 
+    @Test
+    public void testOtherSocialProvidersKeepVerificationSettingsAbsent() {
+        for (String providerId : List.of("google", "linkedin-openid-connect", "microsoft")) {
+            create(createRep(providerId, providerId));
+
+            Map<String, String> config = managedRealm.admin().identityProviders().get(providerId).toRepresentation().getConfig();
+            Assertions.assertFalse(config.containsKey(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE), providerId);
+            Assertions.assertFalse(config.containsKey(OIDCIdentityProviderConfig.USE_JWKS_URL), providerId);
+            Assertions.assertFalse(config.containsKey(OIDCIdentityProviderConfig.JWKS_URL), providerId);
+        }
+    }
+
 }

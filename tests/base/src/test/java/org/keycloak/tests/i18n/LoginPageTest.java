@@ -529,6 +529,7 @@ public class LoginPageTest {
             realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("oidc")
                         .alias("myoidc")
+                        .attribute("validateSignature", "false")
                         .displayName("MyOIDC")
                         .build());
             realm.clients(ClientBuilder.create().clientId("third-party").secret("password").consentRequired(true).redirectUris("*"));

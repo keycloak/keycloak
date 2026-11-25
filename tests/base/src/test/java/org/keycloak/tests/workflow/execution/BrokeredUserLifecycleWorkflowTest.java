@@ -353,6 +353,8 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
         identityProviderRepresentation.setDisplayName(providerId);
         identityProviderRepresentation.setProviderId(providerId);
         identityProviderRepresentation.setEnabled(true);
+        identityProviderRepresentation.getConfig().put("jwksUrl", "http://localhost:8080/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs");
+        identityProviderRepresentation.getConfig().put("useJwksUrl", "true");
 
         return identityProviderRepresentation;
     }

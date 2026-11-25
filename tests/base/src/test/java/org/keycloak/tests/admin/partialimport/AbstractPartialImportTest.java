@@ -214,6 +214,7 @@ public class AbstractPartialImportTest {
             config.put("clientSecret", "secret");
             config.put("clientId", alias);
             idpRep.setConfig(config);
+            config.put("validateSignature", "false");
             providers.add(idpRep);
 
             if(withMappers) {

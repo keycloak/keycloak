@@ -18,6 +18,7 @@
 package org.keycloak.tests.organization.cache;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -412,6 +413,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             idpRep.setEnabled((i % 2) == 0); // half of the IDPs will be disabled and won't qualify for login.
             idpRep.setDisplayName("Broker " + i);
             idpRep.setProviderId("keycloak-oidc");
+            idpRep.setConfig(Map.of("validateSignature", "false"));
             realm.admin().identityProviders().create(idpRep).close();
             realm.cleanup().add(r -> r.identityProviders().findAll().forEach(idp -> r.identityProviders().get(idp.getAlias()).remove()));
         }
@@ -456,6 +458,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
         idpRep.setHideOnLogin(true); // this will make the new IDP not available for login.
         idpRep.setDisplayName("Broker " + 20);
         idpRep.setProviderId("keycloak-oidc");
+        idpRep.setConfig(Map.of("validateSignature", "false"));
         realm.admin().identityProviders().create(idpRep).close();
 
         // remove one IDP that was not available for login.

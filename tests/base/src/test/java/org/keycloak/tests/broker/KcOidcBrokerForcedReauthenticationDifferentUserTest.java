@@ -390,6 +390,7 @@ public class KcOidcBrokerForcedReauthenticationDifferentUserTest {
                     "tokenUrl", providerBase + "/protocol/openid-connect/token",
                     "userInfoUrl", providerBase + "/protocol/openid-connect/userinfo",
                     "jwksUrl", providerBase + "/protocol/openid-connect/certs",
+                    "useJwksUrl", "true",
                     "defaultScope", "openid email profile",
                     IdentityProviderModel.SYNC_MODE, "IMPORT"
             ));

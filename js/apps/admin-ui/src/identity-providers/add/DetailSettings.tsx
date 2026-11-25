@@ -302,6 +302,14 @@ export default function DetailSettings() {
       Object.entries(p.config).map(([key, value]) => [beerify(key), value]),
     );
 
+    if (
+      (p.providerId === "oidc" || p.providerId === "keycloak-oidc") &&
+      transformedConfig.useJwksUrl === undefined &&
+      transformedConfig.publicKeySignatureVerifier?.trim()
+    ) {
+      transformedConfig.useJwksUrl = "false";
+    }
+
     if (p.providerId?.includes("saml")) {
       // Header (outside the Controller) reads these to show Reload/Import keys,
       // and the server treats an absent value as true.

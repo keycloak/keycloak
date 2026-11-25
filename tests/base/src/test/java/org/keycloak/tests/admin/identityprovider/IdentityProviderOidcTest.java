@@ -98,6 +98,14 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     @InjectHttpServer
     HttpServer httpServer;
 
+    @Override
+    protected IdentityProviderRepresentation createRep(String alias, String displayName, String providerId, boolean enabled, Map<String, String> config) {
+        IdentityProviderRepresentation idp = super.createRep(alias, displayName, providerId, enabled, config);
+        idp.getConfig().putIfAbsent(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+        idp.getConfig().putIfAbsent(OIDCIdentityProviderConfig.JWKS_URL, "https://localhost/jwks");
+        return idp;
+    }
+
     @Test
     public void testCreateWithReservedCharacterForAlias() {
         IdentityProviderRepresentation newIdentityProvider = createRep("ne$&w-identity-provider", "oidc");
@@ -206,6 +214,31 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
             assertEquals("The url [userinfo_url] requires secure connections", error.getErrorMessage());
         }
+    }
+
+    @Test
+    public void failCreateWithoutValidateSignatureAndWithoutVerificationKey() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
+
+        // createRep() adds validateSignature=false, which would hide the secure default
+        newIdentityProvider.getConfig().remove(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE);
+        newIdentityProvider.getConfig().put(IdentityProviderModel.SYNC_MODE, "IMPORT");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+        newIdentityProvider.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, "false");
+
+        // An absent validateSignature means "validate", but there is no JWKS URL and no public key to validate with
+        try (Response response = this.managedRealm.admin().identityProviders().create(newIdentityProvider)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("The 'Validating public key' is required when 'Validate signatures' enabled and 'Use JWKS URL' disabled", error.getErrorMessage());
+        }
+        assertTrue(managedRealm.admin().identityProviders().findAll().stream().noneMatch(idp -> "new-identity-provider".equals(idp.getAlias())), "The rejected identity provider must not be persisted");
+
+        // Control: the only difference is explicitly disabling signature validation, so the rejection above is caused by the secure default
+        newIdentityProvider.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+        String id = create(newIdentityProvider);
+        managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
     }
 
     @Test
@@ -756,6 +789,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         }
 
         managedRealm.updateWithCleanup(r -> r.sslRequired(SslRequired.EXTERNAL.name()));
+        oidcConfig.setJwksUrl("https://localhost/jwks");
         resource.update(representation);
 
         managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
@@ -763,7 +797,11 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
     @Test
     public void testOIDCKeysRequiredForVariousConfigs() {
-        String id = create(createRep("keycloak-oidc", "keycloak-oidc"));
+        IdentityProviderRepresentation rep = createRep("keycloak-oidc", "keycloak-oidc");
+        rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+        rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, "false");
+        rep.getConfig().remove(OIDCIdentityProviderConfig.JWKS_URL);
+        String id = create(rep);
 
         IdentityProviderResource resource = this.managedRealm.admin().identityProviders().get("keycloak-oidc");
         IdentityProviderRepresentation representation = resource.toRepresentation();
@@ -891,6 +929,25 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     @Test
     public void importConfigShouldReportAUrlThatIsNotMetadata() {
         assertImportConfigFails(200, "<html>not metadata</html>", "Cannot parse identity provider metadata");
+    }
+
+    @Test
+    public void importConfigDefaultsSignatureValidationToEnabledWhenMetadataOmitsJwksUri() {
+        String path = "/oidc-metadata-without-jwks";
+        String metadata = "{\"issuer\":\"https://idp.example\",\"authorization_endpoint\":\"https://idp.example/auth\","
+                + "\"token_endpoint\":\"https://idp.example/token\"}";
+        httpServer.createContext(path, exchange -> HttpServerUtil.sendResponse(exchange, 200, null, metadata));
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("providerId", "oidc");
+            data.put("fromUrl", "http://127.0.0.1:" + httpServer.getAddress().getPort() + path);
+
+            Map<String, String> config = managedRealm.admin().identityProviders().importFrom(data);
+
+            assertEquals("true", config.get(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE));
+        } finally {
+            httpServer.removeContext(path);
+        }
     }
 
     private void assertImportConfigFails(int status, String body, String expectedMessage) {

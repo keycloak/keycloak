@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -399,6 +400,9 @@ public class ConsentsTest {
         identityProviderRepresentation.setDisplayName(providerId);
         identityProviderRepresentation.setProviderId(providerId);
         identityProviderRepresentation.setEnabled(true);
+        identityProviderRepresentation.setConfig(new HashMap<>(Map.of(
+                "jwksUrl", "http://localhost:8080/realms/" + REALM_PROV_NAME + "/protocol/openid-connect/certs",
+                "useJwksUrl", "true")));
 
         return identityProviderRepresentation;
     }
