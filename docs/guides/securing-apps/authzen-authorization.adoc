@@ -27,10 +27,10 @@ bin/kc.[sh|bat] start --features=authzen
 
 AuthZEN exposes {project_name}'s existing authorization services. Before using AuthZEN, you must configure the following in your realm:
 
-. link:{authorizationguide_resource_server_enable_authorization_link}[A client with authorization enabled] -- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
-. link:{authorizationguide_resource_create_link}[Resources] -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
-. link:{authorizationguide_resource_create_link}[Scopes] -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
-. link:{authorizationguide_policies_link}[Policies] and link:{authorizationguide_permissions_link}[Permissions] -- Create policies and permissions that associate resources and scopes with authorization decisions.
+. <@links.authorizationservices id="resource-server" anchor="_enabling_authorization_services" title="A client with authorization enabled"/> -- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
+. <@links.authorizationservices id="resources" anchor="_creating_resources" title="Resources"/> -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
+. <@links.authorizationservices id="resources" anchor="_creating_resources" title="Scopes"/> -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
+. <@links.authorizationservices id="policies" title="Policies"/> and <@links.authorizationservices id="permissions" title="Permissions"/> -- Create policies and permissions that associate resources and scopes with authorization decisions.
 
 == PDP discovery metadata
 
