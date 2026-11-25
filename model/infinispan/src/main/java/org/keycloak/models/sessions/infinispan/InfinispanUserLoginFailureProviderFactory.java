@@ -87,7 +87,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
         cluster.registerListener(REALM_REMOVED_SESSION_EVENT,
-                new AbstractUserSessionClusterListener<RealmRemovedSessionEvent, UserLoginFailureProvider>(sessionFactory, UserLoginFailureProvider.class) {
+                new AbstractUserSessionClusterListener<RealmRemovedSessionEvent, UserLoginFailureProvider>(sessionFactory, UserLoginFailureProvider.class, getId()) {
 
                     @Override
                     protected void eventReceived(UserLoginFailureProvider provider, RealmRemovedSessionEvent sessionEvent) {
@@ -98,7 +98,7 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
         });
 
         cluster.registerListener(REMOVE_ALL_LOGIN_FAILURES_EVENT,
-                new AbstractUserSessionClusterListener<RemoveAllUserLoginFailuresEvent, UserLoginFailureProvider>(sessionFactory, UserLoginFailureProvider.class) {
+                new AbstractUserSessionClusterListener<RemoveAllUserLoginFailuresEvent, UserLoginFailureProvider>(sessionFactory, UserLoginFailureProvider.class, getId()) {
 
             @Override
             protected void eventReceived(UserLoginFailureProvider provider, RemoveAllUserLoginFailuresEvent sessionEvent) {

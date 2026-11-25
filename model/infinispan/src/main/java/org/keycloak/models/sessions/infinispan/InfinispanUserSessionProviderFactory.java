@@ -248,7 +248,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
         cluster.registerListener(REALM_REMOVED_SESSION_EVENT,
-                new AbstractUserSessionClusterListener<RealmRemovedSessionEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class) {
+                new AbstractUserSessionClusterListener<RealmRemovedSessionEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class, getId()) {
 
             @Override
             protected void eventReceived(UserSessionProvider provider, RealmRemovedSessionEvent sessionEvent) {
@@ -262,7 +262,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         });
 
         cluster.registerListener(REMOVE_USER_SESSIONS_EVENT,
-                new AbstractUserSessionClusterListener<RemoveUserSessionsEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class) {
+                new AbstractUserSessionClusterListener<RemoveUserSessionsEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class, getId()) {
 
             @Override
             protected void eventReceived(UserSessionProvider provider, RemoveUserSessionsEvent sessionEvent) {
