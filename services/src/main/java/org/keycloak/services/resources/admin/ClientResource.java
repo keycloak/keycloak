@@ -38,7 +38,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.admin.AuthorizationService;
@@ -807,28 +806,23 @@ public class ClientResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
     @Operation( summary = "Invalidate the rotated secret for the client")
     public Response invalidateRotatedSecret() {
-        try{
-            auth.clients().requireConfigure(client);
+        auth.clients().requireConfigure(client);
 
-            logger.debug("delete rotated secret");
+        logger.debug("delete rotated secret");
 
-            // Always remove rotated secret attributes even when the feature is disabled,
-            // so stale secrets cannot become valid again if the feature is re-enabled.
-            OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
+        // Always remove rotated secret attributes even when the feature is disabled,
+        // so stale secrets cannot become valid again if the feature is re-enabled.
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
-            CredentialRepresentation rep = new CredentialRepresentation();
-            rep.setType(CredentialRepresentation.SECRET);
-            rep.setValue(wrapper.getClientRotatedSecret(session));
+        CredentialRepresentation rep = new CredentialRepresentation();
+        rep.setType(CredentialRepresentation.SECRET);
+        rep.setValue(wrapper.getClientRotatedSecret(session));
 
-            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(rep).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
-            wrapper.removeClientSecretRotated();
+        wrapper.removeClientSecretRotated();
 
-            return Response.noContent().build();
-        } catch (RuntimeException rte) {
-            throw new ErrorResponseException(rte.getCause().getMessage(), rte.getMessage(),
-                Status.INTERNAL_SERVER_ERROR);
-        }
+        return Response.noContent().build();
     }
 
     /**
