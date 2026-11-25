@@ -136,11 +136,15 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
 
         // Do not allow resending e-mail by simple page refresh, i.e. when e-mail sent, it should be resent properly via email-verification endpoint
         if (!Objects.equals(authSession.getAuthNote(Constants.VERIFY_EMAIL_KEY), email) && !(isCurrentActionTriggeredFromAIA(context) && isChallenge)) {
-            // Adding the cooldown entry first to prevent concurrent operations
-            EmailCooldownManager.addCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
-            authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
-            EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
-            challenge = sendVerifyEmail(context, event);
+            // Atomically claim the cooldown slot so that concurrent requests cannot each send a verification email
+            if (EmailCooldownManager.addCooldownEntryIfAbsent(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX)) {
+                authSession.setAuthNote(Constants.VERIFY_EMAIL_KEY, email);
+                EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, email);
+                challenge = sendVerifyEmail(context, event);
+            } else {
+                // A concurrent request already claimed the slot; re-render the page without sending another email
+                challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
+            }
         } else {
             challenge = loginFormsProvider.createResponse(UserModel.RequiredAction.VERIFY_EMAIL);
         }
