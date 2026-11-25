@@ -33,7 +33,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface ProviderFactory<T extends Provider> {
+public interface ProviderFactory<T extends Provider> extends Unwrappable {
 
     T create(KeycloakSession session);
 
