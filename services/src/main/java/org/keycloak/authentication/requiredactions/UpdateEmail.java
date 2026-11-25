@@ -110,7 +110,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     public static void forceEmailVerification(KeycloakSession session) {
-        session.setAttribute(FORCE_EMAIL_VERIFICATION, true);
+        session.setAttribute(FORCE_EMAIL_VERIFICATION, Boolean.TRUE);
     }
 
     private static boolean isVerifyEmailEnabled(RealmModel realm, RequiredActionConfigModel config) {
@@ -161,7 +161,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             MultivaluedMap<String, String> formData = new MultivaluedHashMap<>(context.getHttpRequest().getDecodedFormParameters());
             String newEmail = formData.getFirst(UserModel.EMAIL);
 
-            if (newEmail != null) {
+            if (newEmail != null && Boolean.TRUE.equals(context.getSession().removeAttribute(FORCE_EMAIL_VERIFICATION))) {
                 // Remove VERIFY_EMAIL to ensure UPDATE_EMAIL takes precedence when both realm verification and forced verification are enabled.
                 user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
                 sendEmailUpdateConfirmation(context, false);
