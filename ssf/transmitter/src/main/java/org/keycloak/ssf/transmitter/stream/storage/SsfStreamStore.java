@@ -76,6 +76,12 @@ public interface SsfStreamStore {
      *
      * <p>Used when there is no specific client context on the session, e.g.
      * when the event listener fans an event out to all receivers.
+     *
+     * <p>The lookup runs as the system, not as whoever triggered the event:
+     * it must not be narrowed by the fine-grained admin permissions of the
+     * admin whose request fired the event, otherwise receivers that admin
+     * cannot view would miss it. As a consequence, callers must not expose
+     * the result to the requesting admin without their own permission check.
      */
     List<StreamConfig> findStreamsForSsfReceiverClients();
 
