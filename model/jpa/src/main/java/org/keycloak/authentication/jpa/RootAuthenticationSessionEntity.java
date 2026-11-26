@@ -29,6 +29,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MapKey;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -40,17 +42,19 @@ import org.hibernate.annotations.DynamicUpdate;
 
 @NamedQueries({
         @NamedQuery(
-                name = "deleteRootAuthSessionByRealm",
-                query = "DELETE FROM RootAuthenticationSessionEntity sess" +
-                        " WHERE sess.realmId = :realmId"),
-        @NamedQuery(
                 name = "findExpiredRootAuthSessionIdsByRealm",
                 query = "SELECT sess.id, sess.timestamp FROM RootAuthenticationSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.sessionBucket = :sessionBucket AND sess.timestampCoarse < :timestampCoarse"
-        ),
-        @NamedQuery(
+        )
+})
+@NamedStatements({
+        @NamedStatement(
+                name = "deleteRootAuthSessionByRealm",
+                statement= "DELETE FROM RootAuthenticationSessionEntity sess" +
+                        " WHERE sess.realmId = :realmId"),
+        @NamedStatement(
             name = "deleteRootAuthSessionsByUser",
-            query = "DELETE FROM RootAuthenticationSessionEntity sess" +
+            statement= "DELETE FROM RootAuthenticationSessionEntity sess" +
                 " WHERE sess.realmId = :realmId" +
                 " AND (:rootSessionIdToKeep IS NULL OR sess.id <> :rootSessionIdToKeep)" +
                 " AND EXISTS (" +
@@ -58,19 +62,19 @@ import org.hibernate.annotations.DynamicUpdate;
                 " WHERE auth.rootAuthenticationSession = sess AND auth.authUserId = :userId" +
                 " )"
         ),
-        @NamedQuery(
+        @NamedStatement(
                 name = "deleteExpiredRootAuthSessionByIds",
-                query = "DELETE FROM RootAuthenticationSessionEntity e WHERE e.id IN :ids AND e.timestamp < :timestamp"
+                statement= "DELETE FROM RootAuthenticationSessionEntity e WHERE e.id IN :ids AND e.timestamp < :timestamp"
         ),
-        @NamedQuery(
+        @NamedStatement(
                 name = "insertRootAuthSessionIfAbsent",
-                query = "insert into RootAuthenticationSessionEntity (id, realmId, timestamp, createdOn, sessionBucket, timestampCoarse, version)" +
+                statement= "insert into RootAuthenticationSessionEntity (id, realmId, timestamp, createdOn, sessionBucket, timestampCoarse, version)" +
                         " values (:id, :realmId, :timestamp, :createdOn, :sessionBucket, :timestampCoarse, 0)" +
                         " on conflict (id) do nothing"
         ),
-        @NamedQuery(
+        @NamedStatement(
                 name = "setRootAuthSessionTimestampCoarseToExact",
-                query = "UPDATE RootAuthenticationSessionEntity sess" +
+                statement= "UPDATE RootAuthenticationSessionEntity sess" +
                         " SET sess.timestampCoarse = sess.timestamp" +
                         " WHERE sess.id IN :ids"
         )

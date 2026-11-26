@@ -24,43 +24,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
 
 @NamedQueries({
         @NamedQuery(
-                name = "insertOrOverwriteSingleUseObject",
-                query = "insert into SingleUseObjectEntity (id, notes, expire) values (:id, :notes, :expire)" +
-                        " on conflict (id) do update set notes = :notes, expire = :expire"
-        ),
-        @NamedQuery(
-                name = "insertIfAbsentOrExpiredSingleUseObject",
-                query = "insert into SingleUseObjectEntity (id, notes, expire) values (:id, :notes, :expire)" +
-                        " on conflict (id) do update set notes = :notes, expire = :expire" +
-                        " where expire <= :currentTime"
-        ),
-        @NamedQuery(
-                name = "deleteExpiredSingleUseObject",
-                query = "delete from SingleUseObjectEntity e where e.id = :id and e.expire <= :currentTime"
-        ),
-        @NamedQuery(
-                name = "insertIfAbsentSingleUseObject",
-                query = "insert into SingleUseObjectEntity (id, notes, expire) values (:id, :notes, :expire)" +
-                        " on conflict (id) do nothing"
-        ),
-        @NamedQuery(
-                name = "updateIfNotExpiredSingleUseObject",
-                query = "update SingleUseObjectEntity set notes = :notes" +
-                        " where id = :id and expire > :currentTime"
-        ),
-        @NamedQuery(
                 name = "findExpiredSingleUseObjectIds",
                 query = "select e.id from SingleUseObjectEntity e where e.expire <= :currentTime"
-        ),
-        @NamedQuery(
-                name = "deleteExpiredSingleUseObjectByIds",
-                query = "delete from SingleUseObjectEntity e where e.id in :ids and e.expire <= :currentTime"
         ),
         @NamedQuery(
                 name = "findSingleUseObjectExpireTime",
@@ -69,7 +42,38 @@ import org.keycloak.connections.jpa.AsynchronousCommitAllowed;
         @NamedQuery(
                 name = "findSingleUseObjectNotes",
                 query = "select e.notes from SingleUseObjectEntity e where e.id = :id and e.expire > :currentTime"
+        )
+})
+@NamedStatements({
+        @NamedStatement(
+                name = "insertOrOverwriteSingleUseObject",
+                statement= "insert into SingleUseObjectEntity (id, notes, expire) values (:id, :notes, :expire)" +
+                        " on conflict (id) do update set notes = :notes, expire = :expire"
         ),
+        @NamedStatement(
+                name = "insertIfAbsentOrExpiredSingleUseObject",
+                statement= "insert into SingleUseObjectEntity (id, notes, expire) values (:id, :notes, :expire)" +
+                        " on conflict (id) do update set notes = :notes, expire = :expire" +
+                        " where expire <= :currentTime"
+        ),
+        @NamedStatement(
+                name = "deleteExpiredSingleUseObject",
+                statement= "delete from SingleUseObjectEntity e where e.id = :id and e.expire <= :currentTime"
+        ),
+        @NamedStatement(
+                name = "insertIfAbsentSingleUseObject",
+                statement= "insert into SingleUseObjectEntity (id, notes, expire) values (:id, :notes, :expire)" +
+                        " on conflict (id) do nothing"
+        ),
+        @NamedStatement(
+                name = "updateIfNotExpiredSingleUseObject",
+                statement= "update SingleUseObjectEntity set notes = :notes" +
+                        " where id = :id and expire > :currentTime"
+        ),
+        @NamedStatement(
+                name = "deleteExpiredSingleUseObjectByIds",
+                statement= "delete from SingleUseObjectEntity e where e.id in :ids and e.expire <= :currentTime"
+        )
 })
 /**
  * JPA entity representing a single-use object stored in the {@code SINGLE_USE_OBJECT} table.

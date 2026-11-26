@@ -26,6 +26,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -39,17 +41,8 @@ import org.hibernate.annotations.DynamicUpdate;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="deleteUserSessionsByRealm", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
-        @NamedQuery(name="deleteUserSessionsByRealmSessionType", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId and sess.offline = :offline"),
-        @NamedQuery(name="deleteUserSessionsByUser", query="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
-        // The query "deleteExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
-        @NamedQuery(name="deleteExpiredUserSessions", query="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
-        @NamedQuery(name="deleteUserSessions", query="delete from PersistentUserSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         // The query "findExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
         @NamedQuery(name="findExpiredUserSessions", query="select sess.userSessionId, sess.userId from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
-        @NamedQuery(name="updateUserSessionLastSessionRefresh", query="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh," +
-                " lastSessionRefreshCoarse = FLOOR((:lastSessionRefresh - MOD(sess.createdOn, :granularity)) / :granularity) * :granularity + MOD(sess.createdOn, :granularity)" +
-                " where sess.realmId = :realmId AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name="findUserSessionsCount", query="select count(sess) from PersistentUserSessionEntity sess where sess.offline = :offline"),
         @NamedQuery(name="findUserSessionsOrderedById", query="select sess from PersistentUserSessionEntity sess, RealmEntity realm where realm.id = sess.realmId AND sess.offline = :offline" +
                 " AND sess.userSessionId > :lastSessionId" +
@@ -75,10 +68,6 @@ import org.hibernate.annotations.DynamicUpdate;
                 query = "SELECT sess.userSessionId, sess.userId, sess.data" +
                         " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '0' AND sess.rememberMe IS NULL AND sess.createdOn < :createdOn"),
-        @NamedQuery(name = "updateUserSessionRememberMeColumn",
-                query = "UPDATE PersistentUserSessionEntity sess" +
-                        " SET sess.rememberMe = :rememberMe" +
-                        " WHERE sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name = "findExpiredOfflineUserSessionsLastRefresh",
                 query = "SELECT sess.userSessionId, sess.userId, sess.lastSessionRefresh" +
                         " FROM PersistentUserSessionEntity sess" +
@@ -87,10 +76,6 @@ import org.hibernate.annotations.DynamicUpdate;
                 query = "SELECT sess.userSessionId, sess.userId" +
                         " FROM PersistentUserSessionEntity sess" +
                         " WHERE sess.realmId = :realmId AND sess.offline = '1' AND sess.sessionBucket = :sessionBucket AND sess.createdOn < :createdOn"),
-        @NamedQuery(name = "setLastSessionRefreshCoarseToExact",
-                query = "UPDATE PersistentUserSessionEntity sess" +
-                        " SET sess.lastSessionRefreshCoarse = sess.lastSessionRefresh" +
-                        " WHERE sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
         @NamedQuery(name = "findExpiredRegularUserSessionsLastRefresh",
                 query = "SELECT sess.userSessionId, sess.userId, sess.lastSessionRefresh" +
                         " FROM PersistentUserSessionEntity sess" +
@@ -120,7 +105,26 @@ import org.hibernate.annotations.DynamicUpdate;
                         " AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
         @NamedQuery(name="findUserAndClientSessionsByUserId", query="SELECT sess.userSessionId, cs.clientId, cs.clientStorageProvider, cs.externalClientId FROM PersistentUserSessionEntity sess" +
                 " LEFT JOIN PersistentClientSessionEntity cs ON cs.userSessionId = sess.userSessionId AND cs.offline = sess.offline" +
-                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.userId = :userId"),
+                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.userId = :userId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteUserSessionsByRealm", statement="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId"),
+        @NamedStatement(name="deleteUserSessionsByRealmSessionType", statement="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId and sess.offline = :offline"),
+        @NamedStatement(name="deleteUserSessionsByUser", statement="delete from PersistentUserSessionEntity sess where sess.userId = :userId"),
+        // The query "deleteExpiredUserSessions" is deprecated (since 26.5) and may be removed in the future.
+        @NamedStatement(name="deleteExpiredUserSessions", statement="delete from PersistentUserSessionEntity sess where sess.realmId = :realmId AND sess.offline = :offline AND sess.lastSessionRefresh < :lastSessionRefresh"),
+        @NamedStatement(name="deleteUserSessions", statement="delete from PersistentUserSessionEntity sess where sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
+        @NamedStatement(name="updateUserSessionLastSessionRefresh", statement="update PersistentUserSessionEntity sess set lastSessionRefresh = :lastSessionRefresh," +
+                " lastSessionRefreshCoarse = FLOOR((:lastSessionRefresh - MOD(sess.createdOn, :granularity)) / :granularity) * :granularity + MOD(sess.createdOn, :granularity)" +
+                " where sess.realmId = :realmId AND sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"),
+        @NamedStatement(name = "updateUserSessionRememberMeColumn",
+                statement= "UPDATE PersistentUserSessionEntity sess" +
+                        " SET sess.rememberMe = :rememberMe" +
+                        " WHERE sess.userSessionId IN (:userSessionIds)"),
+        @NamedStatement(name = "setLastSessionRefreshCoarseToExact",
+                statement= "UPDATE PersistentUserSessionEntity sess" +
+                        " SET sess.lastSessionRefreshCoarse = sess.lastSessionRefresh" +
+                        " WHERE sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)")
 })
 @Table(name="OFFLINE_USER_SESSION")
 @Entity

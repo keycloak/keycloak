@@ -27,6 +27,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -37,9 +39,11 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name="ORG_DOMAIN")
 @NamedQueries({
-        @NamedQuery(name = "getDomainByRealmAndName", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId and d.name = :name"),
-        @NamedQuery(name = "deleteOrganizationDomainsByRealm", query = "delete from OrganizationDomainEntity d where d.realmId = :realmId"),
-        @NamedQuery(name = "clearDomainIdpRouting", query = "update OrganizationDomainEntity d set d.identityProvider = null, d.autoRedirect = false where d.identityProvider.id = :idpId")
+        @NamedQuery(name = "getDomainByRealmAndName", query = "select d from OrganizationDomainEntity d where d.realmId = :realmId and d.name = :name")
+})
+@NamedStatements({
+        @NamedStatement(name = "deleteOrganizationDomainsByRealm", statement= "delete from OrganizationDomainEntity d where d.realmId = :realmId"),
+        @NamedStatement(name = "clearDomainIdpRouting", statement= "update OrganizationDomainEntity d set d.identityProvider = null, d.autoRedirect = false where d.identityProvider.id = :idpId")
 })
 public class OrganizationDomainEntity {
 

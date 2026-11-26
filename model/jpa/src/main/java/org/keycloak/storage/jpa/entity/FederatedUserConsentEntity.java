@@ -28,6 +28,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -42,13 +44,15 @@ import jakarta.persistence.UniqueConstraint;
 @NamedQueries({
         @NamedQuery(name="userFederatedConsentByUserAndClient", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId and consent.clientId = :clientId"),
         @NamedQuery(name="userFederatedConsentByUserAndExternalClient", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId and consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId"),
-        @NamedQuery(name="userFederatedConsentsByUser", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByRealm", query="delete from FederatedUserConsentEntity consent where consent.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByStorageProvider", query="delete from FederatedUserConsentEntity e where e.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByUser", query="delete from FederatedUserConsentEntity consent where consent.userId = :userId and consent.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByClient", query="delete from FederatedUserConsentEntity consent where consent.clientId = :clientId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByExternalClient", query="delete from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId"),
-        @NamedQuery(name="deleteFederatedUserConsentsByClientStorageProvider", query="delete from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider"),
+        @NamedQuery(name="userFederatedConsentsByUser", query="select consent from FederatedUserConsentEntity consent where consent.userId = :userId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedUserConsentsByRealm", statement="delete from FederatedUserConsentEntity consent where consent.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedUserConsentsByStorageProvider", statement="delete from FederatedUserConsentEntity e where e.storageProviderId=:storageProviderId"),
+        @NamedStatement(name="deleteFederatedUserConsentsByUser", statement="delete from FederatedUserConsentEntity consent where consent.userId = :userId and consent.realmId = :realmId"),
+        @NamedStatement(name="deleteFederatedUserConsentsByClient", statement="delete from FederatedUserConsentEntity consent where consent.clientId = :clientId"),
+        @NamedStatement(name="deleteFederatedUserConsentsByExternalClient", statement="delete from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider and consent.externalClientId = :externalClientId"),
+        @NamedStatement(name="deleteFederatedUserConsentsByClientStorageProvider", statement="delete from FederatedUserConsentEntity consent where consent.clientStorageProvider = :clientStorageProvider")
 })
 public class FederatedUserConsentEntity {
 

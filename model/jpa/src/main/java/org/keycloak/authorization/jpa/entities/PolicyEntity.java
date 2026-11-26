@@ -37,6 +37,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -56,8 +58,7 @@ import org.hibernate.annotations.Nationalized;
 @Table(name = "RESOURCE_SERVER_POLICY", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
 })
-@NamedQueries(
-        {
+@NamedQueries({
                 @NamedQuery(name="findPolicyIdByServerId", query="select p.id from PolicyEntity p where  p.resourceServer.id = :serverId "),
                 @NamedQuery(name="findPolicyIdByName", query="select p from PolicyEntity p left join fetch p.associatedPolicies a where  p.resourceServer.id = :serverId  and p.name = :name"),
                 @NamedQuery(name="findPolicyIdByResource", query="select p from PolicyEntity p inner join p.resources r where p.resourceServer.id = :serverId and (r.resourceServer = :serverId and r.id = :resourceId)"),
@@ -67,11 +68,12 @@ import org.hibernate.annotations.Nationalized;
                 @NamedQuery(name="findPolicyIdByType", query="select p.id from PolicyEntity p where p.resourceServer.id = :serverId and p.type = :type"),
                 @NamedQuery(name="findPolicyIdByResourceType", query="select p from PolicyEntity p inner join p.config c inner join fetch p.associatedPolicies a where p.resourceServer.id = :serverId and KEY(c) = 'defaultResourceType' and c like :type"),
                 @NamedQuery(name="findPolicyIdByDependentPolices", query="select p.id from PolicyEntity p inner join p.associatedPolicies ap where p.resourceServer.id = :serverId and (ap.resourceServer.id = :serverId and ap.id = :policyId)"),
-                @NamedQuery(name="deletePolicyByResourceServer", query="delete from PolicyEntity p where p.resourceServer.id = :serverId"),
                 @NamedQuery(name="findDependentPolicyByResourceTypeAndConfig", query="select p.id from PolicyEntity p inner join p.scopes s inner join p.config c inner join p.associatedPolicies ap inner join ap.config ac where p.resourceServer.id = :serverId and (s.name = :scopeName) and ap.resourceServer.id = :serverId and ap.type = :associatedPolicyType and (KEY(c) = 'defaultResourceType' and c like :resourceType) and (KEY(ac) = :configKey and ac like :configValue)"),
                 @NamedQuery(name="findDependentPolicyByResourceType", query="select p.id from PolicyEntity p inner join p.scopes s inner join p.config c inner join p.associatedPolicies ap where p.resourceServer.id = :serverId and (s.name = :scopeName) and ap.resourceServer.id = :serverId and ap.type = :associatedPolicyType and (KEY(c) = 'defaultResourceType' and c like :resourceType)")
-        }
-)
+})
+@NamedStatements({
+                @NamedStatement(name="deletePolicyByResourceServer", statement="delete from PolicyEntity p where p.resourceServer.id = :serverId")
+})
 
 public class PolicyEntity {
 

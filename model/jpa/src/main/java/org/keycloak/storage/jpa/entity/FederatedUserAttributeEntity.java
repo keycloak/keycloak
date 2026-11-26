@@ -24,6 +24,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.keycloak.storage.jpa.JpaHashUtils;
@@ -37,12 +39,14 @@ import org.hibernate.annotations.Nationalized;
 @NamedQueries({
         @NamedQuery(name="getFederatedAttributesByNameAndValue", query="select attr.userId from FederatedUserAttributeEntity attr where attr.name = :name and attr.value = :value and attr.realmId=:realmId"),
         @NamedQuery(name="getFederatedAttributesByNameAndLongValue", query="select attr.userId, attr.longValue from FederatedUserAttributeEntity attr where attr.name = :name and attr.longValueHash = :longValueHash and attr.realmId=:realmId"),
-        @NamedQuery(name="getFederatedAttributesByUser", query="select attr from FederatedUserAttributeEntity attr where attr.userId = :userId and attr.realmId=:realmId"),
-        @NamedQuery(name="deleteUserFederatedAttributesByUser", query="delete from  FederatedUserAttributeEntity attr where attr.userId = :userId and attr.realmId=:realmId"),
-        @NamedQuery(name="deleteUserFederatedAttributesByUserAndName", query="delete from  FederatedUserAttributeEntity attr where attr.userId = :userId and attr.name=:name and attr.realmId=:realmId"),
-        @NamedQuery(name="deleteUserFederatedAttributesByRealm", query="delete from  FederatedUserAttributeEntity attr where attr.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedAttributesByStorageProvider", query="delete from FederatedUserAttributeEntity e where e.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteUserFederatedAttributesByRealmAndLink", query="delete from  FederatedUserAttributeEntity attr where attr.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
+        @NamedQuery(name="getFederatedAttributesByUser", query="select attr from FederatedUserAttributeEntity attr where attr.userId = :userId and attr.realmId=:realmId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteUserFederatedAttributesByUser", statement="delete from  FederatedUserAttributeEntity attr where attr.userId = :userId and attr.realmId=:realmId"),
+        @NamedStatement(name="deleteUserFederatedAttributesByUserAndName", statement="delete from  FederatedUserAttributeEntity attr where attr.userId = :userId and attr.name=:name and attr.realmId=:realmId"),
+        @NamedStatement(name="deleteUserFederatedAttributesByRealm", statement="delete from  FederatedUserAttributeEntity attr where attr.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedAttributesByStorageProvider", statement="delete from FederatedUserAttributeEntity e where e.storageProviderId=:storageProviderId"),
+        @NamedStatement(name="deleteUserFederatedAttributesByRealmAndLink", statement="delete from  FederatedUserAttributeEntity attr where attr.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)")
 })
 @Table(name="FED_USER_ATTRIBUTE")
 @Entity

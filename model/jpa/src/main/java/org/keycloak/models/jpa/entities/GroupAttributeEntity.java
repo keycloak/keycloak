@@ -27,6 +27,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.Nationalized;
@@ -36,8 +38,10 @@ import org.hibernate.annotations.Nationalized;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-        @NamedQuery(name="getGroupAttributesByNameAndValue", query="select attr from GroupAttributeEntity attr where attr.name = :name and attr.value = :value"),
-        @NamedQuery(name="deleteGroupAttributesByRealm", query="delete from  GroupAttributeEntity a where a.group IN (select u from GroupEntity u where u.realm=:realm)")
+        @NamedQuery(name="getGroupAttributesByNameAndValue", query="select attr from GroupAttributeEntity attr where attr.name = :name and attr.value = :value")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteGroupAttributesByRealm", statement="delete from  GroupAttributeEntity a where a.group IN (select u from GroupEntity u where u.realm=:realm)")
 })
 @Table(name="GROUP_ATTRIBUTE")
 @Entity

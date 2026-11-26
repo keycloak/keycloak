@@ -25,17 +25,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@NamedQueries({
-        @NamedQuery(name="deleteClientScopeRoleMappingByRole", query="delete from ClientScopeRoleMappingEntity where role = :role"),
-        @NamedQuery(name="deleteClientScopeRoleMappingByClientScope", query="delete from ClientScopeRoleMappingEntity where clientScope = :clientScope")
+@NamedStatements({
+        @NamedStatement(name="deleteClientScopeRoleMappingByRole", statement="delete from ClientScopeRoleMappingEntity where role = :role"),
+        @NamedStatement(name="deleteClientScopeRoleMappingByClientScope", statement="delete from ClientScopeRoleMappingEntity where clientScope = :clientScope")
 })
 @Table(name="CLIENT_SCOPE_ROLE_MAPPING")
 @Entity

@@ -29,18 +29,22 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "ORG_IDENTITY_PROVIDER")
 @IdClass(OrganizationIdentityProviderEntity.Key.class)
 @NamedQueries({
-        @NamedQuery(name = "deleteOrgIdpByRealm",
-                query = "delete from OrganizationIdentityProviderEntity oip where oip.organization IN (select o from OrganizationEntity o where o.realmId = :realmId)"),
         @NamedQuery(name = "getOrganizationIdsByIdp",
                 query = "select oip.organization.id from OrganizationIdentityProviderEntity oip where oip.identityProviderId = :idpId"),
         @NamedQuery(name = "getLinksByIdpAndMembershipType",
                 query = "select oip from OrganizationIdentityProviderEntity oip where oip.identityProviderId = :idpId and oip.membershipType = :membershipType")
+})
+@NamedStatements({
+        @NamedStatement(name = "deleteOrgIdpByRealm",
+                statement= "delete from OrganizationIdentityProviderEntity oip where oip.organization IN (select o from OrganizationEntity o where o.realmId = :realmId)")
 })
 public class OrganizationIdentityProviderEntity {
 

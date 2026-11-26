@@ -28,6 +28,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -37,11 +39,12 @@ import jakarta.persistence.Table;
 @NamedQueries({
         @NamedQuery(name="groupHasRole", query="select m from GroupRoleMappingEntity m where m.group = :group and m.roleId = :roleId"),
         @NamedQuery(name="groupRoleMappings", query="select m from GroupRoleMappingEntity m where m.group = :group"),
-        @NamedQuery(name="groupRoleMappingIds", query="select m.roleId from GroupRoleMappingEntity m where m.group = :group"),
-        @NamedQuery(name="deleteGroupRoleMappingsByRealm", query="delete from  GroupRoleMappingEntity mapping where mapping.group IN (select u from GroupEntity u where u.realm=:realm)"),
-        @NamedQuery(name="deleteGroupRoleMappingsByRole", query="delete from GroupRoleMappingEntity m where m.roleId = :roleId"),
-        @NamedQuery(name="deleteGroupRoleMappingsByGroup", query="delete from GroupRoleMappingEntity m where m.group = :group")
-
+        @NamedQuery(name="groupRoleMappingIds", query="select m.roleId from GroupRoleMappingEntity m where m.group = :group")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteGroupRoleMappingsByRealm", statement="delete from  GroupRoleMappingEntity mapping where mapping.group IN (select u from GroupEntity u where u.realm=:realm)"),
+        @NamedStatement(name="deleteGroupRoleMappingsByRole", statement="delete from GroupRoleMappingEntity m where m.roleId = :roleId"),
+        @NamedStatement(name="deleteGroupRoleMappingsByGroup", statement="delete from GroupRoleMappingEntity m where m.group = :group")
 })
 @Table(name="GROUP_ROLE_MAPPING")
 @Entity

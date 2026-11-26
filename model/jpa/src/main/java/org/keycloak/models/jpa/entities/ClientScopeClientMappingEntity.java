@@ -25,6 +25,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -33,11 +35,13 @@ import jakarta.persistence.Table;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="clientScopeClientMappingIdsByClient", query="select m.clientScopeId from ClientScopeClientMappingEntity m where m.clientId = :clientId and m.defaultScope = :defaultScope"),
-        @NamedQuery(name="deleteClientScopeClientMapping", query="delete from ClientScopeClientMappingEntity where clientId = :clientId and clientScopeId = :clientScopeId"),
-        @NamedQuery(name="deleteClientScopeClientMappingByClient", query="delete from ClientScopeClientMappingEntity where clientId = :clientId"),
-        @NamedQuery(name="deleteClientScopeClientMappingByClientScope", query="delete from ClientScopeClientMappingEntity where clientScopeId = :clientScopeId"),
-        @NamedQuery(name="addClientScopeToAllClients", query="insert into ClientScopeClientMappingEntity (clientScopeId, defaultScope, clientId) select :clientScopeId, :defaultScope, client.id from ClientEntity client where client.realmId = :realmId and client.bearerOnly <> true and client.protocol = :clientProtocol")
+        @NamedQuery(name="clientScopeClientMappingIdsByClient", query="select m.clientScopeId from ClientScopeClientMappingEntity m where m.clientId = :clientId and m.defaultScope = :defaultScope")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteClientScopeClientMapping", statement="delete from ClientScopeClientMappingEntity where clientId = :clientId and clientScopeId = :clientScopeId"),
+        @NamedStatement(name="deleteClientScopeClientMappingByClient", statement="delete from ClientScopeClientMappingEntity where clientId = :clientId"),
+        @NamedStatement(name="deleteClientScopeClientMappingByClientScope", statement="delete from ClientScopeClientMappingEntity where clientScopeId = :clientScopeId"),
+        @NamedStatement(name="addClientScopeToAllClients", statement="insert into ClientScopeClientMappingEntity (clientScopeId, defaultScope, clientId) select :clientScopeId, :defaultScope, client.id from ClientEntity client where client.realmId = :realmId and client.bearerOnly <> true and client.protocol = :clientProtocol")
 })
 @Entity
 @Table(name="CLIENT_SCOPE_CLIENT")

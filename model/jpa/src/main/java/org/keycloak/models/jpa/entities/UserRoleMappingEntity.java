@@ -28,6 +28,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -37,13 +39,14 @@ import jakarta.persistence.Table;
 @NamedQueries({
         @NamedQuery(name="userHasRole", query="select m from UserRoleMappingEntity m where m.user = :user and m.roleId = :roleId"),
         @NamedQuery(name="userRoleMappings", query="select m from UserRoleMappingEntity m where m.user = :user"),
-        @NamedQuery(name="userRoleMappingIds", query="select m.roleId from UserRoleMappingEntity m where m.user = :user"),
-        @NamedQuery(name="deleteUserRoleMappingsByRealm", query="delete from  UserRoleMappingEntity mapping where mapping.user IN (select u from UserEntity u where u.realmId=:realmId)"),
-        @NamedQuery(name="deleteUserRoleMappingsByRealmAndLink", query="delete from  UserRoleMappingEntity mapping where mapping.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
-        @NamedQuery(name="deleteUserRoleMappingsByRole", query="delete from UserRoleMappingEntity m where m.roleId = :roleId"),
-        @NamedQuery(name="deleteUserRoleMappingsByUser", query="delete from UserRoleMappingEntity m where m.user = :user"),
-        @NamedQuery(name="grantRoleToAllUsers", query="insert into UserRoleMappingEntity (roleId, user) select :roleId, user from UserEntity user where user.realmId = :realmId")
-
+        @NamedQuery(name="userRoleMappingIds", query="select m.roleId from UserRoleMappingEntity m where m.user = :user")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteUserRoleMappingsByRealm", statement="delete from  UserRoleMappingEntity mapping where mapping.user IN (select u from UserEntity u where u.realmId=:realmId)"),
+        @NamedStatement(name="deleteUserRoleMappingsByRealmAndLink", statement="delete from  UserRoleMappingEntity mapping where mapping.user IN (select u from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
+        @NamedStatement(name="deleteUserRoleMappingsByRole", statement="delete from UserRoleMappingEntity m where m.roleId = :roleId"),
+        @NamedStatement(name="deleteUserRoleMappingsByUser", statement="delete from UserRoleMappingEntity m where m.user = :user"),
+        @NamedStatement(name="grantRoleToAllUsers", statement="insert into UserRoleMappingEntity (roleId, user) select :roleId, user from UserEntity user where user.realmId = :realmId")
 })
 @Table(name="USER_ROLE_MAPPING")
 @Entity

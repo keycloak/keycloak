@@ -25,6 +25,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 import org.keycloak.storage.jpa.KeyUtils;
@@ -36,12 +38,14 @@ import org.keycloak.storage.jpa.KeyUtils;
 @NamedQueries({
         @NamedQuery(name="feduserHasRole", query="select m from FederatedUserRoleMappingEntity m where m.userId = :userId and m.roleId = :roleId"),
         @NamedQuery(name="feduserRoleMappings", query="select m from FederatedUserRoleMappingEntity m where m.userId = :userId"),
-        @NamedQuery(name="deleteFederatedUserRoleMappingsByRealm", query="delete from  FederatedUserRoleMappingEntity mapping where mapping.realmId=:realmId"),
-        @NamedQuery(name="deleteFederatedUserRoleMappingsByStorageProvider", query="delete from FederatedUserRoleMappingEntity e where e.storageProviderId=:storageProviderId"),
-        @NamedQuery(name="deleteFederatedUserRoleMappingsByRealmAndLink", query="delete from  FederatedUserRoleMappingEntity mapping where mapping.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
-        @NamedQuery(name="deleteFederatedUserRoleMappingsByRole", query="delete from FederatedUserRoleMappingEntity m where m.roleId = :roleId"),
-        @NamedQuery(name="deleteFederatedUserRoleMappingsByUser", query="delete from FederatedUserRoleMappingEntity m where m.userId = :userId and m.realmId = :realmId"),
-        @NamedQuery(name="fedRoleMembership", query="select m.userId FROM FederatedUserRoleMappingEntity m where m.roleId = :roleId AND m.realmId = :realmId"),  
+        @NamedQuery(name="fedRoleMembership", query="select m.userId FROM FederatedUserRoleMappingEntity m where m.roleId = :roleId AND m.realmId = :realmId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedUserRoleMappingsByRealm", statement="delete from  FederatedUserRoleMappingEntity mapping where mapping.realmId=:realmId"),
+        @NamedStatement(name="deleteFederatedUserRoleMappingsByStorageProvider", statement="delete from FederatedUserRoleMappingEntity e where e.storageProviderId=:storageProviderId"),
+        @NamedStatement(name="deleteFederatedUserRoleMappingsByRealmAndLink", statement="delete from  FederatedUserRoleMappingEntity mapping where mapping.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
+        @NamedStatement(name="deleteFederatedUserRoleMappingsByRole", statement="delete from FederatedUserRoleMappingEntity m where m.roleId = :roleId"),
+        @NamedStatement(name="deleteFederatedUserRoleMappingsByUser", statement="delete from FederatedUserRoleMappingEntity m where m.userId = :userId and m.realmId = :realmId")
 })
 @Table(name="FED_USER_ROLE_MAPPING")
 @Entity

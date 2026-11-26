@@ -30,6 +30,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -44,8 +46,10 @@ import org.keycloak.utils.StringUtil;
         @NamedQuery(name="getByDomainName", query="select distinct o from OrganizationEntity o inner join o.domains d" +
                 " where o.realmId = :realmId and d.name in (:names)"),
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
-        @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
-        @NamedQuery(name="existsByRealm", query="select o.id from OrganizationEntity o where o.realmId = :realmId"),
+        @NamedQuery(name="existsByRealm", query="select o.id from OrganizationEntity o where o.realmId = :realmId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteOrganizationsByRealm", statement="delete from OrganizationEntity o where o.realmId = :realmId")
 })
 public class OrganizationEntity {
 

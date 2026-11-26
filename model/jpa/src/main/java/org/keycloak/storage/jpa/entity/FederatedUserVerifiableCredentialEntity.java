@@ -24,6 +24,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
@@ -34,11 +36,13 @@ import jakarta.persistence.Version;
         @UniqueConstraint(columnNames = {"USER_ID", "CLIENT_SCOPE_ID"})
 })
 @NamedQueries({
-        @NamedQuery(name="federatedVerifiableCredentialsByUser", query="select vc from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId"),
-        @NamedQuery(name="deleteFederatedVerifiableCredentialsByRealm", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedVerifiableCredentialsByClientScope", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.clientScopeId = :scopeId"),
-        @NamedQuery(name="deleteFederatedVerifiableCredentialsByUser", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId"),
-        @NamedQuery(name="deleteFederatedVerifiableCredentialsByStorageProvider", query="delete from FederatedUserVerifiableCredentialEntity vc where vc.storageProviderId = :storageProviderId"),
+        @NamedQuery(name="federatedVerifiableCredentialsByUser", query="select vc from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteFederatedVerifiableCredentialsByRealm", statement="delete from FederatedUserVerifiableCredentialEntity vc where vc.realmId = :realmId"),
+        @NamedStatement(name="deleteFederatedVerifiableCredentialsByClientScope", statement="delete from FederatedUserVerifiableCredentialEntity vc where vc.clientScopeId = :scopeId"),
+        @NamedStatement(name="deleteFederatedVerifiableCredentialsByUser", statement="delete from FederatedUserVerifiableCredentialEntity vc where vc.userId = :userId and vc.realmId = :realmId"),
+        @NamedStatement(name="deleteFederatedVerifiableCredentialsByStorageProvider", statement="delete from FederatedUserVerifiableCredentialEntity vc where vc.storageProviderId = :storageProviderId")
 })
 public class FederatedUserVerifiableCredentialEntity {
 

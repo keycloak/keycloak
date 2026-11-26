@@ -28,6 +28,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
+import jakarta.persistence.NamedStatement;
+import jakarta.persistence.NamedStatements;
 import jakarta.persistence.Table;
 
 /**
@@ -36,9 +38,11 @@ import jakarta.persistence.Table;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @NamedQueries({
-        @NamedQuery(name="defaultClientScopeRealmMappingIdsByRealm", query="select m.clientScopeId from DefaultClientScopeRealmMappingEntity m where m.realm = :realm and m.defaultScope = :defaultScope"),
-        @NamedQuery(name="deleteDefaultClientScopeRealmMapping", query="delete from DefaultClientScopeRealmMappingEntity where realm = :realm and clientScopeId = :clientScopeId"),
-        @NamedQuery(name="deleteDefaultClientScopeRealmMappingByRealm", query="delete from DefaultClientScopeRealmMappingEntity where realm = :realm")
+        @NamedQuery(name="defaultClientScopeRealmMappingIdsByRealm", query="select m.clientScopeId from DefaultClientScopeRealmMappingEntity m where m.realm = :realm and m.defaultScope = :defaultScope")
+})
+@NamedStatements({
+        @NamedStatement(name="deleteDefaultClientScopeRealmMapping", statement="delete from DefaultClientScopeRealmMappingEntity where realm = :realm and clientScopeId = :clientScopeId"),
+        @NamedStatement(name="deleteDefaultClientScopeRealmMappingByRealm", statement="delete from DefaultClientScopeRealmMappingEntity where realm = :realm")
 })
 @Entity
 @Table(name="DEFAULT_CLIENT_SCOPE")
