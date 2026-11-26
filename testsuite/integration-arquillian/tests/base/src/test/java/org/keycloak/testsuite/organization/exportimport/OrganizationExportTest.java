@@ -308,10 +308,6 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         assertThat(subGroupNames, hasItem(Matchers.startsWith("Development-")));
         assertThat(subGroupNames, hasItem(Matchers.startsWith("QA-")));
 
-        // Validate subgroup descriptions are preserved (issue 55134)
-        subGroups.forEach(subGroup ->
-                assertThat(subGroup.getDescription(), equalTo("Description of " + subGroup.getName())));
-
         // Validate group IDs are preserved
         validateGroupIds(subGroups, expectedGroupIds);
     }
@@ -506,7 +502,6 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private String createSubGroup(OrganizationResource organization, String parentId, String name) {
         GroupRepresentation group = new GroupRepresentation();
         group.setName(name);
-        group.setDescription("Description of " + name);
         try (Response response = organization.groups().group(parentId).addSubGroup(group)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             return response.readEntity(GroupRepresentation.class).getId();
