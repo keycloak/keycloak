@@ -16,6 +16,10 @@ If you are upgrading from a previous release, https://www.keycloak.org/docs/late
 
 = Security and Standards
 
+== Brisbane FIPS provider prototype
+
+The `--features=fips,brisbane` switch selects Project Brisbane's JipherJCE provider for FIPS mode. It requires Java 25 or later and a configured OpenSSL FIPS provider. BouncyCastle FIPS remains the default provider.
+
 == Verifiable Credential Issuance promoted to preview with credential management and revocation
 // https://github.com/keycloak/keycloak/issues/52813
 
