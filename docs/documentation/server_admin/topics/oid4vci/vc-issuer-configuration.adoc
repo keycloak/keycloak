@@ -115,7 +115,7 @@ Pre-authorized credential offers can be created through the {project_name} Admin
 .Pre-Authorized Code Flow — Credential Issuance
 image::images/oid4vci/pre-authorized-code-flow.drawio.svg[Sequence diagram of the Pre-Authorized Code Flow, width=700]
 
-An optional transaction code (`tx_code`) can add a second layer of security. The `tx_code` must be communicated through a separate channel from the pre-authorized code itself.
+An optional transaction code (`tx_code`) can add a second layer of security. Request one by passing `tx_code=true` to the `/protocol/oid4vc/create-credential-offer` endpoint; {project_name} then generates the code and returns it alongside the offer. The `tx_code` must be communicated through a separate channel from the pre-authorized code itself, so this option is not available for QR-only offers (`type=qr`), which have no second channel to deliver it.
 endif::[]
 
 === What This Chapter Covers
