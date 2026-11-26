@@ -19,6 +19,8 @@ package org.keycloak.testsuite.federation.storage;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.Calendar;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
@@ -27,10 +29,13 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.cache.infinispan.RoleAdapter;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.role.RoleStorageProvider;
+import org.keycloak.storage.role.RoleStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -133,133 +138,98 @@ public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    /* 
-        TODO review caching of roles, it behaves a little bit different than clients so following tests fails.
-        Tracked as KEYCLOAK-14938.
-    */
-//    @Test
-//    public void testDailyEviction() {
-//        testNotCached();
-//
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            Calendar eviction = Calendar.getInstance();
-//            eviction.add(Calendar.HOUR, 1);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
-//            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
-//            model.setEvictionMinute(eviction.get(MINUTE));
-//            realm.updateComponent(model);
-//        });
-//        testIsCached();
-//        setTimeOffset(2 * 60 * 60); // 2 hours in future
-//        testNotCached();
-//        testIsCached();
-//
-//        setDefaultCachePolicy();
-//        testIsCached();
-//
-//    }
-//
-//    @Test
-//    public void testWeeklyEviction() {
-//        testNotCached();
-//
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            Calendar eviction = Calendar.getInstance();
-//            eviction.add(Calendar.HOUR, 4 * 24);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY);
-//            model.setEvictionDay(eviction.get(DAY_OF_WEEK));
-//            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
-//            model.setEvictionMinute(eviction.get(MINUTE));
-//            realm.updateComponent(model);
-//        });
-//        testIsCached();
-//        setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
-//        testIsCached();
-//        setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
-//        testNotCached();
-//        testIsCached();
-//
-//        setDefaultCachePolicy();
-//        testIsCached();
-//
-//    }
-//
-//    @Test
-//    public void testMaxLifespan() {
-//        testNotCached();
-//
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN);
-//            model.setMaxLifespan(1 * 60 * 60 * 1000);
-//            realm.updateComponent(model);
-//        });
-//        testIsCached();
-//
-//        setTimeOffset(1/2 * 60 * 60); // 1/2 hour in future
-//
-//        testIsCached();
-//
-//        setTimeOffset(2 * 60 * 60); // 2 hours in future
-//
-//        testNotCached();
-//        testIsCached();
-//
-//        setDefaultCachePolicy();
-//        testIsCached();
-//
-//    }
-//
-//    private void testNotCached() {
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleModel hardcoded = realm.getRole("hardcoded-role");
-//            Assert.assertNotNull(hardcoded);
-//            Assert.assertThat(hardcoded, not(instanceOf(RoleAdapter.class)));
-//        });
-//    }
-//
-//    private void testIsCached() {
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleModel hardcoded = realm.getRole("hardcoded-role");
-//            Assert.assertNotNull(hardcoded);
-//            Assert.assertThat(hardcoded, instanceOf(RoleAdapter.class));
-//        });
-//    }
-//
-//    @Test
-//    public void testNoCache() {
-//        testNotCached();
-//
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
-//            realm.updateComponent(model);
-//        });
-//
-//        testNotCached();
-//
-//        // test twice because updating component should evict
-//        testNotCached();
-//
-//        // set it back
-//        setDefaultCachePolicy();
-//        testIsCached();
-//    }
-//
-//    private void setDefaultCachePolicy() {
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.DEFAULT);
-//            realm.updateComponent(model);
-//        });
-//    }
+    @Test
+    public void testNoCache() {
+        testIsCached();
+        try {
+            setCachePolicy(CachePolicy.NO_CACHE, null, -1);
+            testNotCached();
+            testNotCached();
+        } finally {
+            setDefaultCachePolicy();
+        }
+        testIsCached();
+    }
+    @Test
+    public void testDailyEviction() {
+        testEviction(CachePolicy.EVICT_DAILY, Duration.ofHours(1), null, Duration.ofHours(2));
+    }
+    @Test
+    public void testWeeklyEviction() {
+        testEviction(CachePolicy.EVICT_WEEKLY, Duration.ofDays(4), Duration.ofDays(2), Duration.ofDays(5));
+    }
+    @Test
+    public void testMaxLifespan() {
+        testIsCached();
+        try {
+            setCachePolicy(CachePolicy.MAX_LIFESPAN, null, Duration.ofHours(1).toMillis());
+            testIsCached();
+            assertCachedAt(Duration.ofMinutes(30));
+            assertNotCachedAt(Duration.ofHours(2));
+        } finally {
+            timeOffSet.set(0);
+            setDefaultCachePolicy();
+        }
+        testIsCached();
+    }
+    private void testEviction(CachePolicy policy, Duration evictionOffset, Duration cachedOffset, Duration expiredOffset) {
+        testIsCached();
+        try {
+            setCachePolicy(policy, evictionOffset, -1);
+            testIsCached();
+            if (cachedOffset != null) {
+                assertCachedAt(cachedOffset);
+            }
+            assertNotCachedAt(expiredOffset);
+        } finally {
+            timeOffSet.set(0);
+            setDefaultCachePolicy();
+        }
+        testIsCached();
+    }
+    private void assertCachedAt(Duration offset) {
+        timeOffSet.set(Math.toIntExact(offset.toSeconds())); testIsCached();
+    }
+    private void assertNotCachedAt(Duration offset) {
+        timeOffSet.set(Math.toIntExact(offset.toSeconds())); testNotCached(); testIsCached();
+    }
+    private void testNotCached() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            RoleModel hardcoded = realm.getRole("hardcoded-role");
+            assertNotNull(hardcoded);
+            org.junit.jupiter.api.Assertions.assertFalse(hardcoded instanceof RoleAdapter);
+        });
+    }
+    private void testIsCached() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            RoleModel hardcoded = realm.getRole("hardcoded-role");
+            assertNotNull(hardcoded);
+            org.junit.jupiter.api.Assertions.assertTrue(hardcoded instanceof RoleAdapter);
+        });
+    }
+    private void setDefaultCachePolicy() { setCachePolicy(CachePolicy.DEFAULT, null, -1); }
+    private void setCachePolicy(CachePolicy policy, Duration evictionOffset, long maxLifespan) {
+        String providerId = this.providerId;
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            RoleStorageProviderModel model = new RoleStorageProviderModel(realm.getComponent(providerId));
+            model.setCachePolicy(policy);
+            if (maxLifespan > 0) {
+                model.setMaxLifespan(maxLifespan);
+            }
+            if (evictionOffset != null) {
+                Calendar eviction = Calendar.getInstance();
+                eviction.add(Calendar.HOUR, Math.toIntExact(evictionOffset.toHours()));
+                if (policy == CachePolicy.EVICT_WEEKLY) {
+                    model.setEvictionDay(eviction.get(Calendar.DAY_OF_WEEK));
+                }
+                model.setEvictionHour(eviction.get(Calendar.HOUR_OF_DAY));
+                model.setEvictionMinute(eviction.get(Calendar.MINUTE));
+            }
+            realm.updateComponent(model);
+        });
+    }
+
 }
