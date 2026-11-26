@@ -27,8 +27,10 @@ import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfActivityTracker;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpServer;
@@ -43,6 +45,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -125,6 +129,9 @@ public class SsfTransmitterPollDeliveryTests {
 
     @InjectHttpServer
     HttpServer mockReceiverServer;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     private final BlockingQueue<String> pushes = new LinkedBlockingQueue<>();
 
@@ -450,6 +457,31 @@ public class SsfTransmitterPollDeliveryTests {
     }
 
     @Test
+    public void poll_pushStreamAtPollUrl_returns400AndDoesNotStamp() throws Exception {
+
+        // A PUSH stream has no poll endpoint. The URL is deterministic
+        // though, so the receiver could POST it anyway — that must be
+        // rejected (owner is authenticated → clear 400, not the silent
+        // 404 used for other clients' streams) and must not leave
+        // POLL-only state (lastPollCompletedAt) on the PUSH stream.
+        String pushToken = obtainReceiverToken(RECEIVER_PUSH_MIXED, RECEIVER_PUSH_MIXED_SECRET);
+        StreamConfig pushStream = createPushStream(pushToken, Set.of(CaepSessionRevoked.TYPE));
+
+        try (SimpleHttpResponse response = http.doPost(pollEndpoint(RECEIVER_PUSH_MIXED, pushStream.getStreamId()))
+                .json(pollBodyAsMap(null, true, List.of()))
+                .auth(pushToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "polling a PUSH stream must be rejected with 400");
+            Assertions.assertEquals("invalid_request", response.asJson().path("err").asText());
+        }
+
+        Assertions.assertFalse(getStreamViaAdmin(RECEIVER_PUSH_MIXED).has("lastPollCompletedAt"),
+                "a rejected poll against a PUSH stream must not stamp lastPollCompletedAt");
+    }
+
+    @Test
     public void poll_pathStreamIdMismatch_returns404() throws Exception {
 
         // Receiver A and receiver B both create streams. Receiver A
@@ -469,6 +501,225 @@ public class SsfTransmitterPollDeliveryTests {
             Assertions.assertEquals(404, response.getStatus(),
                     "stream id from another receiver in our own client path must collapse to 404");
         }
+    }
+
+    // --- last poll timestamp ------------------------------------------
+
+    @Test
+    public void poll_recordsLastPollCompletedAt() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        // Fresh stream — never polled, so the admin representation must
+        // not carry a lastPollCompletedAt at all (NON_NULL serialization).
+        JsonNode beforePoll = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertFalse(beforePoll.has("lastPollCompletedAt"),
+                "a never-polled stream must not report lastPollCompletedAt");
+
+        long beforeSeconds = System.currentTimeMillis() / 1000;
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        long afterSeconds = System.currentTimeMillis() / 1000;
+
+        JsonNode afterPoll = getStreamViaAdmin(RECEIVER_POLL);
+        JsonNode stamp = afterPoll.path("lastPollCompletedAt");
+        Assertions.assertTrue(stamp.isIntegralNumber(),
+                "a served poll must stamp lastPollCompletedAt (epoch seconds) on the stream; was " + stamp);
+        long stampSeconds = stamp.asLong();
+        Assertions.assertTrue(stampSeconds >= beforeSeconds - 1 && stampSeconds <= afterSeconds + 1,
+                "lastPollCompletedAt=" + stampSeconds + " should fall within the poll window ["
+                        + beforeSeconds + ", " + afterSeconds + "]");
+
+        // The stamp is write-coalesced to POLL_STAMP_GRANULARITY_SECONDS:
+        // a second poll inside that window must leave the stored value
+        // untouched (an implementation stamping every request would
+        // move it forward by the offset and fail here).
+        // The offset stays below the realm's access-token lifespan
+        // (300s) so the receiver token issued above is still valid.
+        // The clock is put back before the admin read so the admin
+        // token, whose age we don't control, is never checked against
+        // a shifted server clock.
+        int insideWindow = (int) SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS / 2;
+        timeOffSet.set(insideWindow);
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        timeOffSet.set(0);
+        JsonNode afterSecondPoll = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertEquals(stampSeconds, afterSecondPoll.path("lastPollCompletedAt").asLong(),
+                "a poll " + insideWindow + "s after the last stamp must be coalesced and not move lastPollCompletedAt");
+    }
+
+    @Test
+    public void poll_emptyPollAfterGranularityAdvancesLastPollCompletedAt() throws Exception {
+
+        // Regression guard: an empty poll (no pending events) outside the
+        // coalescing window must still advance the stamp — "last poll" is
+        // about the receiver polling, not about events being served.
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        long firstStamp = getStreamViaAdmin(RECEIVER_POLL).path("lastPollCompletedAt").asLong();
+        Assertions.assertTrue(firstStamp > 0, "precondition: first poll should stamp");
+
+        // Past the coalescing window — which is longer than the realm's
+        // access-token lifespan, so the receiver token is re-issued under
+        // the shifted clock. The admin read happens with the clock back
+        // at zero for the same reason (see poll_recordsLastPollCompletedAt).
+        int offsetSeconds = (int) SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS + 60;
+        timeOffSet.set(offsetSeconds);
+        String shiftedToken = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+
+        JsonNode emptyPoll = poll(shiftedToken, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        Assertions.assertTrue(emptyPoll.path("sets").isEmpty(), "precondition: nothing pending, poll must be empty");
+
+        timeOffSet.set(0);
+        long secondStamp = getStreamViaAdmin(RECEIVER_POLL).path("lastPollCompletedAt").asLong();
+        Assertions.assertTrue(secondStamp >= firstStamp + offsetSeconds - 1,
+                "empty poll after the coalescing window must advance lastPollCompletedAt; first=" + firstStamp
+                        + " second=" + secondStamp);
+    }
+
+    @Test
+    public void poll_futureDatedLastPollCompletedAtIsOverwritten() throws Exception {
+
+        // A stored stamp that lies in the future — backward clock step on
+        // the node, or a value written through the plain client-attributes
+        // API — must be treated as stale and overwritten. A guard with no
+        // lower bound would see a negative age on every poll and freeze
+        // "Last poll" until wall-clock time caught up with the stored
+        // value: a receiver polling perfectly fine would look dead.
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        // Poll under a clock well ahead of real time — the token is
+        // re-issued under that clock since the shift exceeds its lifespan.
+        int futureOffset = (int) (2 * SsfActivityTracker.POLL_STAMP_GRANULARITY_SECONDS);
+        timeOffSet.set(futureOffset);
+        String shiftedToken = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        poll(shiftedToken, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+
+        // Clock steps back: the stored stamp is now in the future.
+        timeOffSet.set(0);
+        long futureStamp = getStreamViaAdmin(RECEIVER_POLL).path("lastPollCompletedAt").asLong();
+        long nowSeconds = System.currentTimeMillis() / 1000;
+        Assertions.assertTrue(futureStamp > nowSeconds + futureOffset / 2,
+                "precondition: stamp " + futureStamp + " should be well ahead of now=" + nowSeconds);
+
+        // The original token was issued at real time and is still valid.
+        long beforeSeconds = System.currentTimeMillis() / 1000;
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        long afterSeconds = System.currentTimeMillis() / 1000;
+
+        long stamp = getStreamViaAdmin(RECEIVER_POLL).path("lastPollCompletedAt").asLong();
+        Assertions.assertTrue(stamp >= beforeSeconds - 1 && stamp <= afterSeconds + 1,
+                "a future-dated lastPollCompletedAt=" + futureStamp + " must be overwritten by the next poll; was "
+                        + stamp + ", expected within [" + beforeSeconds + ", " + afterSeconds + "]");
+    }
+
+    @Test
+    public void poll_rejectedPollDoesNotRecordLastPollCompletedAt() throws Exception {
+
+        // Receiver B polls receiver A's URL with B's token → silent 404.
+        // A rejected poll is not a "completed" poll: A's stream must
+        // stay un-stamped.
+        String aToken = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig aStream = createPollStream(aToken, Set.of(CaepSessionRevoked.TYPE));
+
+        String bToken = obtainReceiverToken(RECEIVER_POLL_OTHER, RECEIVER_POLL_OTHER_SECRET);
+
+        try (SimpleHttpResponse response = http.doPost(pollEndpoint(RECEIVER_POLL, aStream.getStreamId()))
+                .json(pollBodyAsMap(null, true, List.of()))
+                .auth(bToken)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+
+        JsonNode aStreamRep = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertFalse(aStreamRep.has("lastPollCompletedAt"),
+                "a rejected poll must not stamp lastPollCompletedAt on the targeted stream");
+    }
+
+    @Test
+    public void streamDelete_clearsLastPollCompletedAtAndLastVerifiedAt() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        verifyStreamViaAdmin(RECEIVER_POLL);
+
+        JsonNode stamped = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertTrue(stamped.has("lastPollCompletedAt"),
+                "precondition: the poll should have stamped lastPollCompletedAt");
+        Assertions.assertTrue(stamped.has("lastVerifiedAt"),
+                "precondition: the admin verification should have stamped lastVerifiedAt");
+
+        // Delete + re-create: both stamps are per-stream runtime state and
+        // must not leak onto the successor stream as a stale "last poll" /
+        // "last verified".
+        deleteStreamViaAdmin(RECEIVER_POLL);
+        createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        JsonNode recreated = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertFalse(recreated.has("lastPollCompletedAt"),
+                "re-created stream must not inherit lastPollCompletedAt from the deleted one");
+        Assertions.assertFalse(recreated.has("lastVerifiedAt"),
+                "re-created stream must not inherit lastVerifiedAt from the deleted one");
+    }
+
+    @Test
+    public void deliveryMethodChange_leavingPoll_clearsLastPollCompletedAt() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        StreamConfig stream = createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+        poll(token, RECEIVER_POLL, stream.getStreamId(), pollBody(null, true, List.of()));
+        Assertions.assertTrue(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
+                "precondition: the poll should have stamped lastPollCompletedAt");
+
+        // POLL → PUSH: the stamp belongs to the POLL era and goes with it.
+        StreamDeliveryConfig push = new StreamDeliveryConfig();
+        push.setMethod(Ssf.DELIVERY_METHOD_PUSH_URI);
+        push.setEndpointUrl(MOCK_PUSH_ENDPOINT);
+        push.setAuthorizationHeader(EXPECTED_PUSH_AUTH_HEADER);
+        patchStreamDelivery(token, stream.getStreamId(), push);
+
+        Assertions.assertFalse(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
+                "switching the stream away from POLL delivery must clear lastPollCompletedAt");
+
+        // Simulate a poll that raced the switch and committed its stamp
+        // onto the now-PUSH stream. The admin API must not surface it
+        // while the stream is on PUSH ...
+        setClientAttribute(RECEIVER_POLL, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY, "1760000000");
+        Assertions.assertFalse(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
+                "a PUSH stream must never report lastPollCompletedAt, even if the attribute is present");
+
+        // ... and PUSH → POLL must start the new POLL era at "never
+        // polled" rather than resurfacing the leaked stamp.
+        StreamDeliveryConfig pollAgain = new StreamDeliveryConfig();
+        pollAgain.setMethod(Ssf.DELIVERY_METHOD_POLL_URI);
+        patchStreamDelivery(token, stream.getStreamId(), pollAgain);
+
+        Assertions.assertFalse(getStreamViaAdmin(RECEIVER_POLL).has("lastPollCompletedAt"),
+                "a stream switched back to POLL must not resurface a stamp from before the switch");
+    }
+
+    @Test
+    public void streamCreate_clearsStaleRuntimeStamps() throws Exception {
+
+        // A poll (or verification) in flight while the previous stream
+        // was deleted can commit its stamp after the delete. The successor
+        // stream must not inherit either stamp, so create clears them.
+        setClientAttribute(RECEIVER_POLL, ClientStreamStore.SSF_STREAM_LAST_POLL_COMPLETED_AT_KEY, "1760000000");
+        setClientAttribute(RECEIVER_POLL, ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY, "1760000000");
+
+        String token = obtainReceiverToken(RECEIVER_POLL, RECEIVER_POLL_SECRET);
+        createPollStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        JsonNode created = getStreamViaAdmin(RECEIVER_POLL);
+        Assertions.assertFalse(created.has("lastPollCompletedAt"),
+                "a freshly created stream must not report a lastPollCompletedAt left behind on the client");
+        Assertions.assertFalse(created.has("lastVerifiedAt"),
+                "a freshly created stream must not report a lastVerifiedAt left behind on the client");
     }
 
     @Test
@@ -645,6 +896,18 @@ public class SsfTransmitterPollDeliveryTests {
         }
     }
 
+    /**
+     * Writes a client attribute directly through the admin clients API,
+     * bypassing the SSF stream APIs — used to plant server-owned runtime
+     * state the way a raced request or an import would.
+     */
+    protected void setClientAttribute(String clientId, String key, String value) {
+        ClientResource clientResource = realm.admin().clients().get(findClientByClientId(clientId).getId());
+        ClientRepresentation rep = clientResource.toRepresentation();
+        rep.getAttributes().put(key, value);
+        clientResource.update(rep);
+    }
+
     protected ClientRepresentation findClientByClientId(String clientId) {
         List<ClientRepresentation> clients = realm.admin().clients().findByClientId(clientId);
         if (clients.isEmpty()) {
@@ -689,6 +952,61 @@ public class SsfTransmitterPollDeliveryTests {
         ClientRepresentation client = findClientByClientId(clientId);
         Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to exist");
         deleteStreamViaAdminInternal(client.getClientId());
+    }
+
+    /**
+     * Reads the admin-side stream representation for the given receiver
+     * ({@code GET /admin/realms/{realm}/ssf/clients/{clientId}/stream}).
+     */
+    protected JsonNode getStreamViaAdmin(String clientOauthId) throws IOException {
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + clientOauthId + "/stream";
+        try (SimpleHttpResponse response = http.doGet(adminStreamUrl)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "admin stream GET should return 200; was " + response.getStatus());
+            return response.asJson();
+        }
+    }
+
+    /**
+     * Admin-initiated verification
+     * ({@code POST /admin/realms/{realm}/ssf/clients/{clientId}/stream/verify}).
+     * For a POLL stream the verification SET lands in the outbox; the
+     * call still records {@code ssf.stream.lastVerifiedAt}.
+     */
+    protected void verifyStreamViaAdmin(String clientOauthId) throws IOException {
+        String verifyUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + clientOauthId + "/stream/verify";
+        try (SimpleHttpResponse response = http.doPost(verifyUrl)
+                // The endpoint takes no body; SimpleHttp insists on one for POST.
+                .json(Map.of())
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus(),
+                    "admin stream verify should return 204; was " + response.getStatus());
+        }
+    }
+
+    /**
+     * Receiver-side {@code PATCH /streams} that only swaps the delivery
+     * config, leaving the rest of the stream untouched.
+     */
+    protected void patchStreamDelivery(String token, String streamId, StreamDeliveryConfig delivery) throws IOException {
+        StreamConfigUpdateRepresentation update = new StreamConfigUpdateRepresentation();
+        update.setStreamId(streamId);
+        update.setDelivery(delivery);
+        try (SimpleHttpResponse response = http.doPatch(streamsEndpoint())
+                .json(update)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "stream PATCH switching delivery to " + delivery.getMethod() + " should return 200; was "
+                            + response.getStatus());
+        }
     }
 
     protected void deleteStreamViaAdminInternal(String clientOauthId) {
