@@ -17,25 +17,66 @@
 
 package org.keycloak.tests.conformance.vci.nonhaip.issuer;
 
+import java.util.stream.Stream;
+
+import org.keycloak.common.Profile;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.conformance.runner.BrowserInteraction;
+import org.keycloak.testframework.conformance.runner.ConformanceModuleVariant;
+import org.keycloak.testframework.conformance.runner.ConformanceResult;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.conformance.vci.VciRestCredentialOffer;
+import org.keycloak.tests.conformance.vci.nonhaip.AbstractNonHaipVciConformanceTest;
+import org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig;
 import org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciServerConfig;
 
-import org.junit.jupiter.api.Disabled;
+import static org.keycloak.tests.conformance.vci.nonhaip.configs.NonHaipVciRealmConfig.NON_HAIP_PLAN;
 
-import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.REALM;
+/**
+ * Runs the issuer_initiated flow with an offer from the REST API instead of the application initiated action.
+ */
+@KeycloakIntegrationTest(config = IssuerInitiatedRestOfferTest.RestOfferServerConfig.class)
+public class IssuerInitiatedRestOfferTest extends AbstractNonHaipVciConformanceTest {
 
-// TODO: enable once https://github.com/keycloak/keycloak/issues/48188 is fixed. The REST endpoint binds the
-//  offer to the client of the access token used to create it, and redeeming an offer with a different client is
-//  rejected ("Unexpected login client"). The suite redeems with its own wallet client, so the offer must be
-//  created without a target client, which only the AIA path (see IssuerInitiatedHappyFlowTest) supports today.
-@Disabled("The create-credential-offer REST endpoint binds the offer to the creating client, see the TODO")
-@KeycloakIntegrationTest(config = NonHaipVciServerConfig.class)
-public class IssuerInitiatedRestOfferTest extends IssuerInitiatedHappyFlowTest {
+    @InjectRealm(config = RestOfferRealmConfig.class)
+    ManagedRealm realm;
+
+    @InjectOAuthClient(config = VciRestCredentialOffer.IssuerAppClient.class)
+    OAuthClient oauth;
+
+    @Override
+    protected Stream<ConformanceModuleVariant> moduleVariants() {
+        return discoverModuleVariants(
+                NON_HAIP_PLAN,
+                issuerInitiated(),
+                "oid4vci-1_0-issuer-happy-flow",
+                ConformanceResult.PASSED,
+                BrowserInteraction.LOGIN);
+    }
 
     @Override
     protected String createCredentialOfferUri() {
-        throw new UnsupportedOperationException(
-                "Create the offer via POST /realms/" + REALM
-                        + "/protocol/oid4vc/create-credential-offer once offers are no longer bound to the creating client");
+        return VciRestCredentialOffer.createOfferUri(oauth);
+    }
+
+    public static class RestOfferServerConfig extends NonHaipVciServerConfig {
+
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return super.configure(config).features(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER);
+        }
+    }
+
+    public static class RestOfferRealmConfig extends NonHaipVciRealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return VciRestCredentialOffer.allowHolderToCreateOffers(super.configure(realm));
+        }
     }
 }

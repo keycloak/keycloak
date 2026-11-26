@@ -27,6 +27,7 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormAccess } from "../components/form/FormAccess";
 import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
+import { ClientSelect } from "../components/client/ClientSelect";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 import { convertAttributeNameToForm } from "../util";
 import {
@@ -103,6 +104,17 @@ export const RealmSettingsTokensTab = ({
       "attributes.oid4vci.request.encryption.required",
     ),
     defaultValue: realm.attributes?.["oid4vci.request.encryption.required"],
+  });
+
+  const preAuthorizedGrantAnonymousAccess = useWatch({
+    control,
+    name: convertAttributeNameToForm(
+      "attributes.oid4vci.pre_authorized_grant_anonymous_access_supported",
+    ),
+    defaultValue:
+      realm.attributes?.[
+        "oid4vci.pre_authorized_grant_anonymous_access_supported"
+      ],
   });
 
   const strategy = useWatch({
@@ -746,6 +758,28 @@ export const RealmSettingsTokensTab = ({
             stringify
             data-testid="require-response-encryption-switch"
           />
+          {isFeatureEnabled(Feature.OpenId4VCIPreAuthCode) && (
+            <>
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm(
+                  "attributes.oid4vci.pre_authorized_grant_anonymous_access_supported",
+                )}
+                label={t("preAuthorizedGrantAnonymousAccess")}
+                labelIcon={t("preAuthorizedGrantAnonymousAccessHelp")}
+                stringify
+                data-testid="pre-authorized-grant-anonymous-access-switch"
+              />
+              {preAuthorizedGrantAnonymousAccess === "true" && (
+                <ClientSelect
+                  name={convertAttributeNameToForm(
+                    "attributes.oid4vci.pre_authorized_grant_anonymous_access_client",
+                  )}
+                  label="preAuthorizedGrantAnonymousAccessClient"
+                  helpText="preAuthorizedGrantAnonymousAccessClientHelp"
+                />
+              )}
+            </>
+          )}
           {requestEncryptionRequired === "true" && (
             <FormGroup
               hasNoPaddingTop

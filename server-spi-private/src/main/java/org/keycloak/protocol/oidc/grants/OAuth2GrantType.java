@@ -80,6 +80,13 @@ public interface OAuth2GrantType extends Provider {
     }
 
     /**
+     * @return true if the grant type accepts token requests without client authentication.
+     */
+    default boolean isAnonymousAccessAllowed() {
+        return false;
+    }
+
+    /**
      * Pre-process client policies for the given grant
      */
     default void preProcess(KeycloakSession session, MultivaluedMap<String, String> formParams) throws ClientPolicyException {

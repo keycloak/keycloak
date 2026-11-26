@@ -1,10 +1,12 @@
 package org.keycloak.tests.oid4vc.preauth;
 
 
+import org.keycloak.TokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
@@ -21,6 +23,7 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.OID4VCConstants.OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY;
 import static org.keycloak.events.Details.GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 import static org.keycloak.tests.oid4vc.OID4VCActionTest.getKcActionParameter;
@@ -163,5 +166,30 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
         oauth.client(client.getClientId(), client.getSecret());
         tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testCredentialOfferAIA_preAuthorizedCodeBoundToClientAnonymousAccess() throws Exception {
+
+        testRealm.updateWithCleanup(r -> r.attribute(OID4VCI_PRE_AUTH_ANONYMOUS_ACCESS_ATTRIBUTE_KEY, "true"));
+
+        oauth.loginForm()
+                .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, true))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
+        credentialOfferPage.assertCurrent();
+
+        String credentialOfferNonce = getNonceFromCredentialOfferUri(credentialOfferPage.getCredentialOfferUri());
+        String preAuthCode = oauth.oid4vc().credentialOfferRequest(credentialOfferNonce).send()
+                .getCredentialsOffer().getPreAuthorizedCode();
+        assertNotNull(preAuthCode);
+
+        // Anonymous requests act on behalf of the client the offer was issued to
+        //
+        oauth.client(null, null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+        assertEquals(client.getClientId(),
+                TokenVerifier.create(tokenResponse.getAccessToken(), AccessToken.class).getToken().getIssuedFor());
     }
 }

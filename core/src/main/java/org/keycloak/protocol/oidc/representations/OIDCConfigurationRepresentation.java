@@ -214,6 +214,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("client_id_metadata_document_supported")
     private Boolean clientIdMetadataDocumentSupported;
 
+    @JsonProperty("pre-authorized_grant_anonymous_access_supported")
+    private Boolean preAuthorizedGrantAnonymousAccessSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -708,5 +711,13 @@ public class OIDCConfigurationRepresentation {
 
     public void setClientIdMetadataDocumentSupported(Boolean clientIdMetadataDocumentSupported) {
         this.clientIdMetadataDocumentSupported = clientIdMetadataDocumentSupported;
+    }
+
+    public Boolean getPreAuthorizedGrantAnonymousAccessSupported() {
+        return preAuthorizedGrantAnonymousAccessSupported;
+    }
+
+    public void setPreAuthorizedGrantAnonymousAccessSupported(Boolean preAuthorizedGrantAnonymousAccessSupported) {
+        this.preAuthorizedGrantAnonymousAccessSupported = preAuthorizedGrantAnonymousAccessSupported;
     }
 }

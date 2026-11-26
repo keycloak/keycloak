@@ -35,8 +35,9 @@ import static org.keycloak.tests.conformance.vci.haip.configs.HaipVciRealmConfig
 @KeycloakIntegrationTest(config = HaipVciServerConfig.class)
 public class IssuerFapi2LoginTest extends AbstractVciConformanceTest {
 
+    private static final String HAPPY_FLOW = "fapi2-security-profile-final-happy-flow";
+
     private static final List<String> MODULES = List.of(
-            "fapi2-security-profile-final-happy-flow",
             "fapi2-security-profile-final-ensure-authorization-request-without-state-success",
             "fapi2-security-profile-final-ensure-authorization-request-with-long-state",
             "fapi2-security-profile-final-access-token-type-header-case-sensitivity",
@@ -67,7 +68,12 @@ public class IssuerFapi2LoginTest extends AbstractVciConformanceTest {
 
     @Override
     protected Stream<ConformanceModuleVariant> moduleVariants() {
-        return discoverModuleVariants(HAIP_PLAN, walletInitiated(), MODULES,
-                ConformanceResult.PASSED, BrowserInteraction.LOGIN);
+        // Keycloak lists only OIDC client scopes in scopes_supported, so the suite warns that the requested
+        // credential scope is not advertised
+        return Stream.concat(
+                discoverModuleVariants(HAIP_PLAN, walletInitiated(), HAPPY_FLOW,
+                        ConformanceResult.WARNING, BrowserInteraction.LOGIN),
+                discoverModuleVariants(HAIP_PLAN, walletInitiated(), MODULES,
+                        ConformanceResult.PASSED, BrowserInteraction.LOGIN));
     }
 }

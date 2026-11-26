@@ -19,6 +19,8 @@ package org.keycloak.tests.conformance.vci;
 
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
@@ -38,10 +40,12 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.def.DefaultCryptoProvider;
 import org.keycloak.tests.conformance.ConformanceSigningKey;
 
+import com.sun.net.httpserver.HttpServer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.CRLNumber;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
@@ -50,12 +54,14 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.testcontainers.Testcontainers;
 
 import static org.keycloak.tests.conformance.vci.VciConformanceRealmUtil.REALM;
 
@@ -66,6 +72,8 @@ final class VciTestSigningKey {
 
     static final String KEY_ALIAS = "oid4vci-conformance-signing";
     static final String PASSWORD = "password";
+
+    private static final String CRL_PATH = "/oid4vci-conformance.crl";
 
     private static final String KEY_STORE_PATH;
     private static final String CA_CERTIFICATE_PEM;
@@ -89,11 +97,28 @@ final class VciTestSigningKey {
             KeyPair caKeyPair = keyGenerator.generateKeyPair();
             KeyPair leafKeyPair = keyGenerator.generateKeyPair();
 
+            // The suite fetches the CRL named by the document signer certificate, so the test serves it
+            HttpServer crlServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+            int crlPort = crlServer.getAddress().getPort();
+            Testcontainers.exposeHostPorts(crlPort);
+            String crlUri = "http://host.testcontainers.internal:" + crlPort + CRL_PATH;
+
             // ISO 18013-5 Table B.3 requires the DS certificate countryName to match the credential's
             // issuing_country data element (see VciConformanceRealmUtil issuing-country-mapper -> US)
             X500Name caName = new X500Name("C=US,CN=OID4VCI Conformance CA");
-            X509Certificate caCertificate = generateCaCertificate(caName, caKeyPair);
-            X509Certificate leafCertificate = generateLeafCertificate(caName, leafKeyPair, caKeyPair, caCertificate);
+            X509Certificate caCertificate = generateCaCertificate(caName, caKeyPair, crlUri);
+            X509Certificate leafCertificate = generateLeafCertificate(caName, leafKeyPair, caKeyPair, caCertificate,
+                    crlUri);
+
+            byte[] crl = generateCrl(caName, caKeyPair, caCertificate);
+            crlServer.createContext(CRL_PATH, exchange -> {
+                exchange.getResponseHeaders().set("Content-Type", "application/pkix-crl");
+                exchange.sendResponseHeaders(200, crl.length);
+                try (OutputStream output = exchange.getResponseBody()) {
+                    output.write(crl);
+                }
+            });
+            crlServer.start();
 
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
             keyStore.load(null, null);
@@ -126,7 +151,8 @@ final class VciTestSigningKey {
         return CA_CERTIFICATE_PEM;
     }
 
-    private static X509Certificate generateCaCertificate(X500Name caName, KeyPair caKeyPair) throws Exception {
+    private static X509Certificate generateCaCertificate(X500Name caName, KeyPair caKeyPair, String crlUri)
+            throws Exception {
         X509v3CertificateBuilder builder = certificateBuilder(caName, caName, caKeyPair.getPublic());
         JcaX509ExtensionUtils extensionUtils = new JcaX509ExtensionUtils();
         builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
@@ -134,12 +160,12 @@ final class VciTestSigningKey {
         builder.addExtension(Extension.subjectKeyIdentifier, false,
                 extensionUtils.createSubjectKeyIdentifier(caKeyPair.getPublic()));
         builder.addExtension(Extension.issuerAlternativeName, false, ISSUER_CONTACT);
-        builder.addExtension(Extension.cRLDistributionPoints, false, crlDistributionPoints());
+        builder.addExtension(Extension.cRLDistributionPoints, false, crlDistributionPoints(crlUri));
         return sign(builder, caKeyPair);
     }
 
     private static X509Certificate generateLeafCertificate(X500Name caName, KeyPair leafKeyPair, KeyPair caKeyPair,
-            X509Certificate caCertificate) throws Exception {
+            X509Certificate caCertificate, String crlUri) throws Exception {
         X500Name leafName = new X500Name("C=US,CN=OID4VCI Conformance Issuer");
         X509v3CertificateBuilder builder = certificateBuilder(caName, leafName, leafKeyPair.getPublic());
         JcaX509ExtensionUtils extensionUtils = new JcaX509ExtensionUtils();
@@ -150,15 +176,27 @@ final class VciTestSigningKey {
         builder.addExtension(Extension.authorityKeyIdentifier, false,
                 extensionUtils.createAuthorityKeyIdentifier(caCertificate));
         builder.addExtension(Extension.issuerAlternativeName, false, ISSUER_CONTACT);
-        builder.addExtension(Extension.cRLDistributionPoints, false, crlDistributionPoints());
+        builder.addExtension(Extension.cRLDistributionPoints, false, crlDistributionPoints(crlUri));
         return sign(builder, caKeyPair);
     }
 
-    private static CRLDistPoint crlDistributionPoints() {
-        GeneralNames crlUri = new GeneralNames(new GeneralName(
-                GeneralName.uniformResourceIdentifier, "https://example.com/oid4vci-conformance.crl"));
+    // An empty CRL following the ISO/IEC 18013 part 5 CRL profile
+    private static byte[] generateCrl(X500Name caName, KeyPair caKeyPair, X509Certificate caCertificate)
+            throws Exception {
+        Instant now = Instant.now();
+        X509v2CRLBuilder builder = new X509v2CRLBuilder(caName, Date.from(now.minus(1, ChronoUnit.HOURS)));
+        builder.setNextUpdate(Date.from(now.plus(30, ChronoUnit.DAYS)));
+        builder.addExtension(Extension.authorityKeyIdentifier, false,
+                new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(caCertificate));
+        builder.addExtension(Extension.cRLNumber, false, new CRLNumber(BigInteger.ONE));
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withECDSA").build(caKeyPair.getPrivate());
+        return builder.build(signer).getEncoded();
+    }
+
+    private static CRLDistPoint crlDistributionPoints(String crlUri) {
+        GeneralNames crlNames = new GeneralNames(new GeneralName(GeneralName.uniformResourceIdentifier, crlUri));
         return new CRLDistPoint(new DistributionPoint[] {
-                new DistributionPoint(new DistributionPointName(crlUri), null, null) });
+                new DistributionPoint(new DistributionPointName(crlNames), null, null) });
     }
 
     private static X509v3CertificateBuilder certificateBuilder(X500Name issuer, X500Name subject, PublicKey publicKey) {
