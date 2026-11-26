@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.clientregistration.oidc;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,11 +62,19 @@ import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.clientregistration.ErrorCodes;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class OIDCClientRegistrationProvider extends AbstractClientRegistrationProvider {
+
+    private static final ObjectMapper CLIENT_METADATA_MAPPER = JsonSerialization.mapper.copy()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     public OIDCClientRegistrationProvider(KeycloakSession session) {
         super(session);
@@ -85,7 +94,8 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createOIDC(OIDCClientRepresentation clientOIDC) {
+    public Response createOIDC(JsonNode clientMetadata) {
+        OIDCClientRepresentation clientOIDC = parseClientMetadata(clientMetadata);
         event.event(EventType.CLIENT_REGISTER);
         Cors cors = cors();
         if (clientOIDC.getClientId() != null) {
@@ -132,7 +142,8 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Path("{clientId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
+    public Response updateOIDC(@PathParam("clientId") String clientId, JsonNode clientMetadata) {
+        OIDCClientRepresentation clientOIDC = parseClientMetadata(clientMetadata);
         event.event(EventType.CLIENT_UPDATE);
         Cors cors = cors();
         try {
@@ -190,6 +201,18 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
     private Cors cors() {
         return Cors.builder().auth().checkAllowedOrigins(getAllowedOrigins());
+    }
+
+    private OIDCClientRepresentation parseClientMetadata(JsonNode clientMetadata) {
+        if (clientMetadata == null || !clientMetadata.isObject()) {
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
+        }
+
+        try {
+            return CLIENT_METADATA_MAPPER.treeToValue(clientMetadata, OIDCClientRepresentation.class);
+        } catch (IOException e) {
+            throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
+        }
     }
 
     private void updatePairwiseSubMappers(ClientModel clientModel, SubjectType subjectType, String sectorIdentifierUri) {
