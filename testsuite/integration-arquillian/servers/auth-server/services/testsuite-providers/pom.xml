@@ -31,6 +31,10 @@
     <name>Auth Server Services - Testsuite Providers</name>
 
     <dependencies>
+        <dependency>
+            <groupId>org.hibernate.accessor</groupId>
+            <artifactId>hibernate-accessor-bytebuddy</artifactId>
+        </dependency>
 
         <!-- Keycloak deps for tests -->
 
