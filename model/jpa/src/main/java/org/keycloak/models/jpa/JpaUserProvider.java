@@ -121,6 +121,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
+        if (StringUtil.isBlank(username)) {
+            throw new ModelException("Cannot create a user without a username");
+        }
+
         if (id == null) {
             id = KeycloakModelUtils.generateId();
         }
@@ -158,6 +162,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
+        if (StringUtil.isBlank(username)) {
+            throw new ModelException("Cannot create a user without a username");
+        }
+
         return addUser(realm, KeycloakModelUtils.generateId(), username.toLowerCase(), true, true);
     }
 
@@ -717,6 +725,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
+        if (username == null) {
+            return null;
+        }
+
         TypedQuery<UserEntity> query = em.createNamedQuery("getRealmUserByUsername", UserEntity.class);
         query.setParameter("username", username.toLowerCase());
         query.setParameter("realmId", realm.getId());
