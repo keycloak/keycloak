@@ -74,7 +74,20 @@ public class IdpUsernamePasswordForm extends UsernamePasswordForm {
                 form.setError(error);
             }
         }
-        return createLoginForm(form);
+        return createLoginForm(context, form);
+    }
+
+    /**
+     * Keeps the username of the existing user and the hidden registration link also on pages created without
+     * {@link #setupForm}, for example after a failed passkey authentication.
+     */
+    @Override
+    protected Response createLoginForm(AuthenticationFlowContext context, LoginFormsProvider form) {
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
+        getExistingUser(context).ifPresent(u -> formData.putSingle(AuthenticationManager.FORM_USERNAME, u.getUsername()));
+        return form.setFormData(formData)
+                .setAttribute(LoginFormsProvider.REGISTRATION_DISABLED, true)
+                .createLoginUsernamePassword();
     }
 
     @Override
