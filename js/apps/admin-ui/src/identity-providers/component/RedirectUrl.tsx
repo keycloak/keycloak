@@ -2,16 +2,19 @@ import { ClipboardCopy, FormGroup } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HelpItem, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { addTrailingSlash } from "../../util";
+import { identityProviderRedirectUrl } from "../../utils/identity-provider-redirect-url";
 
 export const RedirectUrl = ({ id }: { id: string }) => {
   const { environment } = useEnvironment();
   const { t } = useTranslation();
 
-  const { realm } = useRealm();
-  const callbackUrl = `${addTrailingSlash(
+  const { realm, realmRepresentation } = useRealm();
+  const callbackUrl = identityProviderRedirectUrl(
+    id,
+    realm,
     environment.serverBaseUrl,
-  )}realms/${realm}/broker`;
+    realmRepresentation.attributes?.frontendUrl,
+  );
 
   return (
     <FormGroup
@@ -21,9 +24,7 @@ export const RedirectUrl = ({ id }: { id: string }) => {
       }
       fieldId="kc-redirect-uri"
     >
-      <ClipboardCopy
-        isReadOnly
-      >{`${callbackUrl}/${id}/endpoint`}</ClipboardCopy>
+      <ClipboardCopy isReadOnly>{callbackUrl}</ClipboardCopy>
     </FormGroup>
   );
 };
