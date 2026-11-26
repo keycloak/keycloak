@@ -33,6 +33,7 @@ import org.keycloak.testframework.infinispan.CacheType;
 import org.keycloak.testframework.logging.JBossContainerLogConsumer;
 
 import org.jboss.logging.Logger;
+import org.testcontainers.Testcontainers;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
@@ -43,6 +44,8 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     private static final int REQUEST_PORT = 8080;
     private static final int MANAGEMENT_PORT = 9000;
     public static final String SNAPSHOT_IMAGE = "-";
+    private static final int TEST_CLASS_SERVER_PORT = 8500;
+    private static final String TEST_CLASS_URL = "http://host.testcontainers.internal:%d/test-classes/".formatted(TEST_CLASS_SERVER_PORT);
 
     private final DockerKeycloakDistribution[] containers;
     private final String images;
@@ -68,6 +71,10 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         String[] imagePeServer = null;
         Supplier<CountdownLatchLoggingConsumer> latchSupplier;
         List<CountdownLatchLoggingConsumer> consumers = new ArrayList<>(numServers);
+
+        // Let the containers load the classes of run-on-server tests from the test class server running on the host.
+        Testcontainers.exposeHostPorts(TEST_CLASS_SERVER_PORT);
+        configBuilder.option("spi-realm-restapi-extension--testing-run-on-server--test-class-url", TEST_CLASS_URL);
 
         // Infinispan clustered cache
         configBuilder.cache(CacheType.ISPN);
@@ -198,6 +205,20 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     public String getManagementBaseUrl(int index) {
         return "http://localhost:%d".formatted(containers[index].getMappedPort(MANAGEMENT_PORT));
+    }
+
+    /**
+     * Stops a single node, for example to test the failover of the cluster. The node can't be started again.
+     */
+    public void stopNode(int index) {
+        containers[index].stop();
+    }
+
+    /**
+     * @return {@code true} if each node forms its own cluster.
+     */
+    public boolean isStateless() {
+        return stateless;
     }
 
     public int clusterSize() {

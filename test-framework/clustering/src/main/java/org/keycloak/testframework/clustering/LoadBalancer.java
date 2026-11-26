@@ -61,6 +61,17 @@ public class LoadBalancer {
         return server.clusterSize();
     }
 
+    /**
+     * Stops a single node, for example to test the failover of the cluster. The node can't be started again.
+     */
+    public void stopNode(int index) {
+        server.stopNode(index);
+    }
+
+    public boolean isStateless() {
+        return server.isStateless();
+    }
+
     public void nextNode() {
         node((currentNodeIndex + 1) % nodeCount());
     }

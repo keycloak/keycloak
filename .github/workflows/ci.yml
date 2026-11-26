@@ -924,7 +924,7 @@ jobs:
     name: Clustering IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     env:
       MAVEN_OPTS: -Xmx1536m
     steps:
@@ -933,10 +933,15 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+        with:
+          download-dist: true
 
       - name: Run cluster tests
         run: |
           ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus,db-postgres "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+
+      - name: Run clustering tests of the new test framework
+        run: ./mvnw verify -pl tests/clustering -Dtest=ClusterTestSuite
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -1325,12 +1330,12 @@ jobs:
           download-dist: true
 
       - name: Run tests
-        run: ./mvnw verify -pl tests/clustering
+        run: ./mvnw verify -pl tests/clustering -Dtest=MixedClusterTestSuite
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
 
       - name: Run tests with stateless
-        run: ./mvnw verify -pl tests/clustering -Dsurefire.reportNameSuffix=stateless
+        run: ./mvnw verify -pl tests/clustering -Dtest=MixedClusterTestSuite -Dsurefire.reportNameSuffix=stateless
         env:
           KC_TEST_SERVER_IMAGES: "quay.io/keycloak/keycloak:${{ matrix.version }},-"
           KC_TEST_SERVER_STATELESS: "true"

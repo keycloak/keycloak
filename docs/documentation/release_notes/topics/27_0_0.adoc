@@ -40,6 +40,14 @@ See the upgrading guide for details.
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
 
+== Stronger certificate for cache transport between nodes
+// https://github.com/keycloak/keycloak/issues/54496
+
+The automatically generated certificate that secures the communication between {project_name} nodes now uses a 3072-bit RSA key and is signed using RSASSA-PSS, aligning with recommendations such as BSI TR-02102-2.
+Using the new provider options `key-size`, `algorithm` and `curve` of the `jgroups-mtls` SPI, administrators can choose a different RSA key size or switch to ECDSA.
+When the stored certificate no longer matches the configuration, a node regenerates it after it has joined the cluster.
+See the upgrading guide and the caching guide for details.
+
 = Themes
 
 == Login and welcome UI upgraded to PatternFly 6

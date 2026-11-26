@@ -6,9 +6,13 @@ import java.net.URLClassLoader;
 
 public class TestClassLoader extends URLClassLoader {
 
-    private static final String testClassUrl = "http://localhost:8500/test-classes/";
+    public static final String DEFAULT_TEST_CLASS_URL = "http://localhost:8500/test-classes/";
 
     public TestClassLoader() throws MalformedURLException {
+        this(DEFAULT_TEST_CLASS_URL);
+    }
+
+    public TestClassLoader(String testClassUrl) throws MalformedURLException {
         super(new URL[] { new URL(testClassUrl)}, TestClassLoader.class.getClassLoader());
     }
 

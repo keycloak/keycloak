@@ -31,6 +31,8 @@ class ReloadingX509ExtendedTrustManager extends X509ExtendedTrustManager {
 
     private volatile X509ExtendedTrustManager delegate;
     private volatile Runnable onException;
+    private volatile Runnable onAcceptedIssuers = () -> {
+    };
 
     public ReloadingX509ExtendedTrustManager() {
         this.onException = () -> {
@@ -102,11 +104,23 @@ class ReloadingX509ExtendedTrustManager extends X509ExtendedTrustManager {
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {
+        onAcceptedIssuers.run();
         return delegate.getAcceptedIssuers();
     }
 
     public void setExceptionHandler(Runnable runnable) {
         this.onException = Objects.requireNonNullElse(runnable, () -> {
+        });
+    }
+
+    /**
+     * Invoked when the accepted issuers are requested, which the JDK does for each incoming handshake of a server that requires a client certificate.
+     * A connecting peer that rejects the certificate of this node aborts the handshake before it presents its own,
+     * so this is the only signal on this node that its certificate might be outdated.
+     * The handler must not block.
+     */
+    public void setAcceptedIssuersHandler(Runnable runnable) {
+        this.onAcceptedIssuers = Objects.requireNonNullElse(runnable, () -> {
         });
     }
 

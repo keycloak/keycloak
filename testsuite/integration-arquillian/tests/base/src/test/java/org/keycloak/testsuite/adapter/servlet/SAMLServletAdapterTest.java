@@ -125,6 +125,7 @@ import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.adapter.page.AdapterLogoutPage;
 import org.keycloak.testsuite.adapter.page.BadAssertionSalesPostSig;
@@ -1964,7 +1965,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(DEMO);
                 session.getContext().setRealm(realm);
-                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId);
+                // the cookie contains a route when caches are clustered
+                String sessionIdWithoutRoute = session.getProvider(StickySessionEncoderProvider.class).decodeSessionIdAndRoute(authSessionId).sessionId();
+                String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(sessionIdWithoutRoute);
                 RootAuthenticationSessionModel root = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
                 session.authenticationSessions().removeRootAuthenticationSession(realm, root);
             });

@@ -134,6 +134,36 @@ public class CertificateReloadManager implements Lifecycle {
     }
 
     /**
+     * Replaces a stored certificate that does not match the configuration, and notifies the nodes to reload it.
+     * The provider ensures that it happens only once after the start of this node.
+     */
+    private void migrateCertificate() {
+        lock.lock();
+        try (lock) {
+            if (!KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, CertificateReloadManager::migrateCertificateInTransaction)) {
+                return;
+            }
+            logger.info("Replaced the JGroups certificate to match the configured key");
+        } catch (RuntimeException e) {
+            // the migration stays pending, so retry until it succeeds
+            logger.warn("Failed to replace the JGroups certificate", e);
+            retry(this::migrateCertificate, "retry-migrate");
+            return;
+        }
+        notifyAfterMigration();
+    }
+
+    // the replacement is committed at this point, so retry only the notification
+    private void notifyAfterMigration() {
+        try {
+            sendReloadNotification();
+        } catch (RuntimeException e) {
+            logger.warn("Failed to notify the nodes about the replaced JGroups certificate", e);
+            retry(this::notifyAfterMigration, "retry-migrate-notification");
+        }
+    }
+
+    /**
      * Reloads the certificate from storage.
      */
     public void reloadCertificate() {
@@ -158,7 +188,10 @@ public class CertificateReloadManager implements Lifecycle {
     public void onViewChanged(ViewChangedEvent event) {
         logger.debug("On view changed");
         // probably a waste to reload, but if we have a partition, we reload the most recent certificate stored.
-        runBlocking(this::reloadCertificate, "on-view-changed");
+        runBlocking(() -> {
+            migrateCertificate();
+            reloadCertificate();
+        }, "on-view-changed");
     }
 
     // testing purpose
@@ -213,6 +246,10 @@ public class CertificateReloadManager implements Lifecycle {
 
     private static void replaceCertificateInTransaction(KeycloakSession session) {
         session.getProvider(JGroupsCertificateProvider.class).rotateCertificate();
+    }
+
+    private static boolean migrateCertificateInTransaction(KeycloakSession session) {
+        return session.getProvider(JGroupsCertificateProvider.class).migrateCertificate();
     }
 
     private static void loadCertificateInTransaction(KeycloakSession session) {
