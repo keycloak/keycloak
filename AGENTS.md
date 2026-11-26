@@ -46,3 +46,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, testing,
   Disclose AI agent usage in a single short sentence, as required by [CONTRIBUTING.md](CONTRIBUTING.md#use-of-generative-ai), instead of a promotional footer.
   Mention testing only if something is non-obvious.
 * Run `./mvnw -Pspotless spotless:apply` before committing (see [CONTRIBUTING.md](CONTRIBUTING.md#spotless)); CI fails on formatting violations.
+* Use the Maven Wrapper (`./mvnw`), not system Maven. Build setup and toolchain versions are in [docs/building.md](docs/building.md).
+* Prefer targeted module builds over full-repo runs, which can take hours: `./mvnw install -DskipTests -pl <module> -am` to install a module and its upstream modules, and `./mvnw test -pl <module>` to test only that module.
+* New integration tests go in `tests/` (see [tests/docs/README.md](tests/docs/README.md)), never in `testsuite/`. Do not introduce new test frameworks or mocking frameworks (see [docs/tests-development.md](docs/tests-development.md)).
+* For UI changes in `js/`, see [js/apps/admin-ui/CONTRIBUTING.md](js/apps/admin-ui/CONTRIBUTING.md) and [js/CODING_GUIDELINES.md](js/CODING_GUIDELINES.md).
