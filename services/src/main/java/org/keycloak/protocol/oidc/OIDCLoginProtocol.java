@@ -296,7 +296,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.DPOP_JKT),
-                userSession.getId());
+                userSession.getId(),
+                userSession.getUser().getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
             redirectUri.addParam(OAuth2Constants.CODE, code);

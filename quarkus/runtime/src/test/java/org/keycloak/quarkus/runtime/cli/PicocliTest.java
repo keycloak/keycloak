@@ -2165,8 +2165,8 @@ Environment.setHomeDir(tmp);
     }
 
     @Test
-    public void failPoolMaxSizeTooLowForExplicitJdbcPingStack() {
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=jdbc-ping");
+    public void failPoolMaxSizeTooLowForJdbcPingStack() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn");
         assertError(nonRunningPicocli, "db-pool-max-size");
     }
 

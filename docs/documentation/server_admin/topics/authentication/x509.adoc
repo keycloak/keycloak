@@ -1,5 +1,5 @@
 
-[[_x509]]
+[[x509]]
 === X.509 client certificate user authentication
 
 {project_name} supports logging in with an X.509 client certificate if you have configured the server to use mutual SSL authentication.

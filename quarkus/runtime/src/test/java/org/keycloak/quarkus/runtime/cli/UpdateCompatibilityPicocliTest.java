@@ -30,7 +30,6 @@ import static org.keycloak.infinispan.compatibility.CachingEmbeddedMetadataProvi
 import static org.keycloak.infinispan.compatibility.CachingEmbeddedMetadataProvider.majorMinorOf;
 import static org.keycloak.quarkus.runtime.configuration.compatibility.DatabaseCompatibilityMetadataProvider.UNSUPPORTED_CHANGES_HASH_KEY;
 import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.CONFIG;
-import static org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory.STACK;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -98,7 +97,6 @@ public class UpdateCompatibilityPicocliTest extends AbstractConfigurationTest {
 
         var cacheMeta = info.get(CacheEmbeddedConfigProviderSpi.SPI_NAME);
         assertEquals(CONFIG_FILE_NOT_FOUND, cacheMeta.get(CONFIG));
-        assertNull(cacheMeta.get(STACK));
 
         var jgroupsMeta = info.get(JGroupsCertificateProviderSpi.SPI_NAME);
         assertEquals("true", jgroupsMeta.get(DefaultJGroupsCertificateProviderFactory.ENABLED));
@@ -219,22 +217,6 @@ public class UpdateCompatibilityPicocliTest extends AbstractConfigurationTest {
         assertThat(result.getErrString(), containsString("[%1$s] Rolling Update is not available. '%1$s.configFile' is incompatible:".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME)));
         assertThat(result.getErrString(), containsString("[%1$s] Rolling Update is not available. '%1$s.jgroupsVersion' is incompatible:".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME)));
         assertThat(result.getErrString(), containsString("[%1$s] Rolling Update is not available. '%1$s.version' is incompatible:".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME)));
-    }
-
-    @Test
-    public void testChangeCacheStack() throws IOException {
-        var jsonFile = createTempFile("compatible", ".json");
-        var result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityMetadata.NAME, UpdateCompatibilityMetadata.OUTPUT_OPTION_NAME, jsonFile.getAbsolutePath());
-        assertThat(result.getOutString(), containsString("Metadata:"));
-        assertEquals(0, result.exitCode);
-
-        var info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
-        info.remove(FeatureCompatibilityMetadataProvider.ID);
-        assertEquals(defaultMeta(), info);
-
-        result = pseudoLaunch(UpdateCompatibility.NAME, UpdateCompatibilityCheck.NAME, UpdateCompatibilityCheck.INPUT_OPTION_NAME, jsonFile.getAbsolutePath(), "--cache-stack", "kubernetes");
-        assertEquals(CompatibilityResult.ExitCode.RECREATE.value(), result.exitCode);
-        assertThat(result.getErrString(), containsString("[%1$s] Rolling Update is not available. '%1$s.stack' is incompatible: null -> kubernetes".formatted(CacheEmbeddedConfigProviderSpi.SPI_NAME)));
     }
 
     @Test

@@ -33,6 +33,7 @@ import org.jboss.logging.Logger;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.PhysicalAddress;
+import org.jgroups.View;
 import org.jgroups.conf.ClassConfigurator;
 import org.jgroups.logging.Log;
 import org.jgroups.protocols.PingData;
@@ -64,7 +65,8 @@ public class JdbcPing2Test {
     public static final String PROTOCOL_STACK = "jdbc-h2.xml";
 
     static {
-        ClassConfigurator.addProtocol((short) 1026, KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
+        // must not clash with the IDs registered in JGroupsConfigurator (1025, 1026), as tests share a JVM
+        ClassConfigurator.addProtocol((short) 1099, KEYCLOAK_JDBC_PING2_FOR_TESTING.class);
     }
 
     /**
@@ -243,6 +245,53 @@ public class JdbcPing2Test {
             }
         } finally {
             Time.setOffset(0);
+        }
+    }
+
+    @Test
+    public void testLeftCoordinatorIgnoredUntilItWritesAgain() throws Exception {
+        JChannel channel = createChannel("0");
+        try (channel) {
+            channel.connect("ISPN");
+            KEYCLOAK_JDBC_PING2_FOR_TESTING jdbcPing = (KEYCLOAK_JDBC_PING2_FOR_TESTING) channel.getProtocolStack().getProtocols().stream().filter(protocol -> protocol instanceof KEYCLOAK_JDBC_PING2).findFirst().orElseThrow(() -> new RuntimeException("Didn't find JDBC_PING"));
+            jdbcPing.writeAll();
+            UUID left = UUID.randomUUID();
+            List<UUID> members = List.of(left, UUID.randomUUID(), UUID.randomUUID());
+            try (Connection con = jdbcPing.getConnection()) {
+                // A coordinator of a larger partition, that would win the split-brain decision against this node
+                for (UUID address : members) {
+                    try (PreparedStatement ps = con.prepareStatement(jdbcPing.getInsertSingleSql())) {
+                        ps.setString(1, Util.addressToString(address));
+                        ps.setString(2, "x");
+                        ps.setString(3, jdbcPing.getClusterName());
+                        ps.setString(4, "127.0.0.1:9999");
+                        ps.setBoolean(5, address.equals(left));
+                        ps.setLong(6, Time.currentTime());
+                        ps.setString(7, Util.addressToString(left));
+                        ps.executeUpdate();
+                    }
+                }
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, jdbcPing.healthStatus());
+
+                // The coordinator leaves the view, and is ignored
+                jdbcPing.handleView(channel.view(), View.create(left, 1, left, channel.getAddress()), true);
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, jdbcPing.healthStatus());
+
+                // It writes its row again, so it is alive and counted again
+                try (PreparedStatement ps = con.prepareStatement("UPDATE jgroups SET last_update = ? WHERE address = ?")) {
+                    ps.setLong(1, Time.currentTime() + 1);
+                    ps.setString(2, Util.addressToString(left));
+                    ps.executeUpdate();
+                }
+                assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, jdbcPing.healthStatus());
+            } finally {
+                try (Connection con = jdbcPing.getConnection(); PreparedStatement ps = con.prepareStatement("DELETE FROM jgroups WHERE address = ?")) {
+                    for (UUID address : members) {
+                        ps.setString(1, Util.addressToString(address));
+                        ps.executeUpdate();
+                    }
+                }
+            }
         }
     }
 

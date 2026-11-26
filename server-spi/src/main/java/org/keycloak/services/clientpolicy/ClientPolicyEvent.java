@@ -67,4 +67,11 @@ public enum ClientPolicyEvent {
     REGISTER_PROTOCOL_MAPPER,
     UPDATE_PROTOCOL_MAPPER,
     UNREGISTER_PROTOCOL_MAPPER,
+
+    /**
+     * Validate the effective authorization redirect URI before any response can redirect to it.
+     * Conditions and executors receive this event normally. Executors unrelated to redirect URI
+     * validation should ignore it and perform their checks during the regular authorization event.
+     */
+    AUTHORIZATION_REQUEST_REDIRECT_URI,
 }

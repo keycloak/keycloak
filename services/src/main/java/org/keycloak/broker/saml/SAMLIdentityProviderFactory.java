@@ -114,7 +114,7 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                 samlIdentityProviderConfig.setSingleSignOnServiceUrl(singleSignOnServiceUrl);
                 samlIdentityProviderConfig.setWantAuthnRequestsSigned(idpDescriptor.isWantAuthnRequestsSigned());
                 samlIdentityProviderConfig.setAddExtensionsElementWithKeyInfo(false);
-                samlIdentityProviderConfig.setValidateSignature(idpDescriptor.isWantAuthnRequestsSigned());
+                samlIdentityProviderConfig.setValidateSignature(true);
                 samlIdentityProviderConfig.setPostBindingResponse(postBindingResponse);
                 samlIdentityProviderConfig.setArtifactBindingResponse(artifactBindingResponse);
                 samlIdentityProviderConfig.setPostBindingAuthnRequest(postBindingResponse);

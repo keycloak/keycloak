@@ -48,6 +48,8 @@ public class LoginConfigTotpPage extends AbstractLoginPage {
     @FindBy(id = "mode-manual")
     private WebElement manualLink;
 
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
+    private WebElement loginAlertErrorMessage;
     @FindBy(id = "input-error-otp-code")
     private WebElement totpInputCodeError;
 

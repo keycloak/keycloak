@@ -167,6 +167,15 @@ Adding a query parameter named `login_hint` to this URL adds the parameter's val
 
 Enable the "Pass subject" option to send the subject in SAML requests.
 
+[[_identity_broker_saml_subject_confirmation]]
+==== Support for subject confirmation methods
+
+When brokering a SAML v2.0 Identity Provider, {project_name} implements the SAML V2.0 Web Browser SSO Profile, which requires the assertion to carry at least one `<SubjectConfirmation>` using the `bearer` method.
+{project_name} accepts the assertion only if a bearer confirmation is present and contains a `<SubjectConfirmationData>` element that validates, including the recipient, the `InResponseTo` value, and the validity window.
+
+{project_name} does not support a subject confirmation method other than `bearer`.
+Any other unsupported method is rejected and the login fails.
+
 [[_identity_broker_saml_proxy_restriction]]
 ==== Support for the ProxyRestriction condition
 

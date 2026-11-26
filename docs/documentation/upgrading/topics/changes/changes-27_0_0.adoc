@@ -4,6 +4,66 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Authorization policies with deleted references
+
+Role policies with a missing required role and negative role, group, user, client, or client scope policies with unresolved references now evaluate as invalid.
+Deleting the last client scope referenced by a client scope policy leaves the policy attached to its dependent permissions.
+Update the affected policies to restore their intended authorization rules.
+
+=== Allow UTF-8 email setting requires SMTPUTF8 server support
+// https://github.com/keycloak/keycloak/issues/55267
+
+When *Allow UTF-8* is enabled in a realm's email settings, {project_name} now checks whether the connected SMTP server advertises the `SMTPUTF8` extension before sending an email with an internationalized sender, recipient, reply-to, or envelope sender address.
+This enforces https://www.rfc-editor.org/rfc/rfc6531.html#section-3.2[RFC 6531 section 3.2], which requires SMTP clients to avoid transmitting internationalized email addresses or headers to servers that do not offer `SMTPUTF8`.
+If the server does not advertise `SMTPUTF8`, the send fails before the SMTP envelope is transmitted.
+Messages with ASCII-only addresses can still be sent without this extension.
+The *Test connection* action checks `SMTPUTF8` whenever *Allow UTF-8* is enabled, even if the test message uses only ASCII addresses, to validate that the configured server supports this mode.
+
+Configure an SMTP server or relay that advertises `SMTPUTF8` if you need to send email with internationalized addresses.
+If all email addresses are ASCII-only, you can disable *Allow UTF-8* instead.
+
+=== Client scope policy checks legacy client templates
+// https://github.com/keycloak/keycloak/issues/54456
+
+The *Allowed Client Scopes* client registration policy now checks scopes requested through the deprecated `clientTemplate` field using the same allowlist as `defaultClientScopes` and `optionalClientScopes`.
+Legacy template names are checked after converting spaces to underscores, matching the scope name used during client creation.
+Requests for a disallowed scope are rejected with HTTP `403 Forbidden`.
+
+Existing client scope assignments are not removed by this change.
+Administrators should review dynamically registered clients for unintended scope assignments and remove them through the Admin Console or Admin REST API.
+All nodes handling client registration requests must be upgraded for the check to apply consistently.
+
+=== Redirect URI loopback exceptions require literal IP addresses
+// https://github.com/keycloak/keycloak/issues/54413
+
+The *Allow IPv4 loopback address* and *Allow IPv6 loopback address* options of the *Secure Redirect URIs Enforcer* client policy executor now apply only to literal IP addresses.
+Hostnames, including `localhost`, are evaluated using the ordinary scheme and permitted-domain rules, regardless of the addresses they resolve to.
+The executor continues to reject `localhost` when *OAuth 2.1 Compliant* is enabled.
+
+The executor also validates the effective redirect URI during authorization, so previously registered callbacks can now be rejected.
+When a redirect URI is rejected, {project_name} displays an error page instead of redirecting to that URI.
+Review affected client configurations and use literal loopback addresses where appropriate, or ensure that legitimate hostnames satisfy the configured scheme and permitted-domain rules.
+Existing registrations are not automatically rewritten or removed.
+
+=== Client registration policies restrict default roles and full scope (CVE-2026-109081)
+// https://github.com/keycloak/keycloak/issues/54702
+
+Dynamic Client Registration can no longer change the realm-wide default-role composite through the deprecated `defaultRoles` field, and authenticated registration can no longer enable `fullScopeAllowed`, unless a realm administrator removes the corresponding client registration policies.
+
+Starting with this release:
+
+* A *Default Roles Disabled* client registration policy is added to both the anonymous and authenticated client registration policies (including during migration of existing realms).
+While this policy is present, create or update requests that would add, change, or remove roles in the realm `default-roles-<realm>` composite through `defaultRoles` are rejected with HTTP `403 Forbidden`.
+* The existing *Full Scope Disabled* policy (`scope`) is also added to the authenticated client registration policies (it was already present for anonymous registration).
+Newly registered clients through authenticated Dynamic Client Registration have `fullScopeAllowed` disabled, and updates that try to enable it are rejected with HTTP `403 Forbidden`.
+
+Realm administrators who intentionally want Dynamic Client Registration to manage these settings can remove the corresponding policies under *Clients* -> *Client registration* -> *Client registration policies*.
+Removing them restores the previous behavior and should be done only when the security implications are understood.
+Use the Admin REST API to manage realm default roles and full scope when the policies remain in place.
+
+This migration installs a new client registration policy provider that earlier nodes do not know.
+A rolling upgrade is therefore not supported for this change; shut down the cluster and upgrade all nodes together (or use a recreate update) so that older nodes never process Dynamic Client Registration requests against the new policy components.
+
 === PAR metadata omitted when PAR is disabled
 
 When the `par` feature is disabled, OpenID Connect discovery now omits `pushed_authorization_request_endpoint` from both the top-level metadata and `mtls_endpoint_aliases`, and omits `require_pushed_authorization_requests`.
@@ -25,6 +85,36 @@ Relative URLs, embedded `data:` logos, and web origin markers `+`, `*`, and `nul
 General validation also preserves the legacy web origin literals `${authAdminUrl}`, `${authBaseUrl}`, and `file://`. These values remain subject to the host, HTTPS, and pattern restrictions of any enabled client policies.
 Trusted Hosts resolves relative logo URLs against the {project_name} frontend URL and checks that host against its allowlist. The client's root URL does not determine where the browser loads a logo.
 The pattern executor continues to match literal configured values, including markers and relative URLs, and respects an explicit field selection. Sector identifier URLs in pairwise protocol mappers remain subject to their separate validation.
+
+=== Login theme moved to `keycloak.v3` and PatternFly 6
+// https://github.com/keycloak/keycloak/issues/52342
+
+The built-in login experience now has a new versioned theme, `keycloak.v3`, based on PatternFly 6.
+The default welcome theme is also `keycloak.v3` and shares its layout and styles with login pages.
+
+For new realms, `keycloak.v3` is now the default login theme.
+Existing realms that explicitly use `keycloak.v2` are migrated to `keycloak.v3` during upgrade.
+
+The built-in `keycloak.v2` login theme has been removed. If you maintain a custom login theme that extends or copies `keycloak.v2`, migrate it to PatternFly 6 before switching to `keycloak.v3`.
+If you maintain a custom welcome theme that copies PatternFly 5 classes from the built-in welcome theme, update those classes to PatternFly 6.
+
+The standalone `keycloak` welcome theme has been removed.
+Replace `keycloak` with `keycloak.v3` in explicit `spi-theme--welcome-theme` settings and custom welcome theme parents, and review inherited styles and resources.
+Custom `welcome/index.ftl` templates remain supported.
+
+The `login:v2` feature value has also been removed. If you explicitly enable it (for example `--features=login:v2` or `KC_FEATURES=login:v2`), replace it with `login:v3`, or remove the entry because `login:v3` is enabled by default. Servers that still request `login:v2` fail feature validation at startup.
+
+Login pages and macros live in the Base login theme, with CSS classes supplied by theme properties. `keycloak.v3` provides PatternFly 6 styling through `theme.properties` and resources, without duplicating templates. Custom themes can restyle fields and buttons by overriding individual Base macros or a few properties, instead of copying whole pages such as `login.ftl` or `register.ftl`.
+
+To assist with migration, use the new script:
+
+[source,bash]
+----
+node misc/scripts/migrate-login-theme-pf5-to-pf6.mjs --theme-path /path/to/your/theme
+----
+
+Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
+After migration, validate your customizations manually for light and dark mode, social provider buttons, and custom CSS overrides.
 
 === OIDC identity providers accept a single issuer
 // https://github.com/keycloak/keycloak/issues/54458
@@ -129,6 +219,7 @@ The following conditions are now enforced:
 
 * The assertion's `Subject` must contain a `SubjectConfirmation` with `Method` set to Bearer, and it must carry a `SubjectConfirmationData` element. A missing `SubjectConfirmation`, or one without `SubjectConfirmationData`, is now rejected; previously it was silently ignored. If the assertion carries multiple Bearer confirmations, they are treated as alternatives and only one of them needs to validate.
 * `SubjectConfirmationData` must carry a `NotOnOrAfter` attribute.
+* Other subject confirmation methods, including holder-of-key, are not supported; an assertion without a valid bearer confirmation is rejected.
 * `SubjectConfirmationData` must carry a `Recipient` attribute matching the response's `Destination`, whenever the response specifies one.
 * For broker logins only, `SubjectConfirmationData` must carry an `InResponseTo` attribute matching the expected request ID, for SP-initiated logins.
 
@@ -243,10 +334,11 @@ Providers extending `OAuth2IdentityProviderConfig` can instead override `getClie
 The legacy Login v1 theme (`keycloak`) and the `login:v1` feature have been removed.
 PatternFly 3 and PatternFly 4 vendor resources that only served that theme are also removed.
 
-Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v2` on upgrade.
-Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v2` or `base` instead.
+Realms and clients that still had the login theme set to `keycloak` are migrated to `keycloak.v3` on upgrade.
+Custom themes that extended `keycloak` for the login type must be updated to extend `keycloak.v3` or `base` instead.
 The `--features=login:v1` and `--features-disabled=login:v1` options are no longer valid.
-The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v2` login theme.
+The `login` feature itself can no longer be disabled; `{project_name}` always provides the `keycloak.v3` login theme.
+See also the earlier note about the login theme move to `keycloak.v3` and PatternFly 6 for the related `keycloak.v2` removal.
 
 === CIBA requires client authentication (CVE-2026-109082)
 // https://github.com/keycloak/keycloak/issues/53937
@@ -291,6 +383,40 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
+
+=== Client registration `install` provider removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The `install` client registration provider, which was deprecated in {project_name} 26.8, has been removed.
+Requests to `/realms/<realm>/clients-registrations/install/<clientId>` now return a `404 Not Found` response.
+
+The following related APIs have also been removed:
+
+* The `getAdapterConfig()` method of the `ClientRegistration` class in the Java client registration library (`keycloak-client-registration-api`).
+* The `install` endpoint type (`-e install` or `-e adapter`) of the `kcreg get` command.
+
+Retrieve the adapter configuration of a client with the Admin REST API instead, using `GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`, for example with the `keycloak-oidc-keycloak-json` provider.
+The same configuration is available from `kcadm.sh get clients/<client-uuid>/installation/providers/keycloak-oidc-keycloak-json`.
+
+The removed endpoint accepted client credentials or a registration access token, and it did not require authentication for public clients.
+The Admin REST API endpoint requires an access token with permission to view the client.
+Applications that loaded their `keycloak.json` anonymously from the removed endpoint, such as JavaScript applications, must bundle the configuration with the application or fetch it with an authenticated call.
+
+The `default` client registration provider remains deprecated and is not affected by this change.
+
+=== SAML Entity Descriptor client registration endpoint removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The deprecated client registration provider `saml2-entity-descriptor` has been removed.
+Requests to `/realms/<realm>/clients-registrations/saml2-entity-descriptor` now return an HTTP 404 status.
+
+The following related APIs have also been removed:
+
+* The `ClientRegistration.saml()` method and the `ClientRegistration.SAMLClientRegistration` class in the Java client registration API.
+* The `saml2` endpoint type of the `kcreg` command-line tool. `kcreg create -e saml2` is no longer accepted, and `kcreg create` no longer treats an XML input document as a SAML entity descriptor. Use JSON input, or the `default` and `oidc` endpoint types.
+
+To create a client from a SAML entity descriptor, convert the descriptor with the Admin REST API (`POST /admin/realms/<realm>/client-description-converter`), then create the returned client representation (`POST /admin/realms/<realm>/clients`).
+The conversion endpoint itself is not affected by this change.
 
 === Kerberos password authentication accepts only allowed realms
 // https://github.com/keycloak/keycloak/issues/54271
@@ -362,17 +488,45 @@ See the link:{securing_apps_token_exchange_link}#_standard-token-exchange-expira
 
 The new Base login theme provides reusable templates and components for current and future login themes, with styling configurable through theme properties.
 Custom themes can override individual macros or properties instead of copying complete pages, reducing maintenance and helping them inherit validation, accessibility, and authentication improvements.
-The `keycloak.v2` login theme now inherits these shared templates and retains its styling through theme properties.
+The `keycloak.v3` login theme inherits these shared templates and supplies PatternFly 6 styling through theme properties.
 
 The previous Base login templates are no longer provided.
 Custom login themes with `parent=base` now inherit the new markup.
 Review and update their template overrides and CSS to match the new structure.
+
+=== Auto-linking requires a trusted email (CVE-2026-97175)
+
+Identity provider auto-linking now blocks the link when the IdP email is not verified and *Trust Email* is not enabled on the identity provider.
+This prevents an attacker who controls a brokered account with an unverified email from being automatically linked to a victim's existing consumer account.
+
+If you use auto-link flows with a SAML or custom identity provider that does not set the `email_verified` claim, enable *Trust Email* on that identity provider to preserve the previous behavior.
+
+=== SAML identity provider signature validation defaults to enabled
+
+When signature settings are absent from a SAML identity provider's configuration, {project_name} now treats them as enabled.
+This applies to *Validate Signature* (`validateSignature`) and *Want Assertions Signed* (`wantAssertionsSigned`).
+Assertions are also verified when *Want Assertions Signed* is enabled and *Validate Signature* is explicitly disabled, which requires a trusted signing key.
+
+After upgrading, logins may fail for providers that send unsigned assertions, or whose signatures {project_name} cannot verify.
+Configure the provider to sign its assertions and configure the corresponding signing certificates in {project_name}, either in *Validating X509 Certificates* or through *Use metadata descriptor URL*.
+
+If unsigned responses are required for compatibility, explicitly disable the relevant setting.
+Disable *Want Assertions Signed* if the provider does not sign assertions; if signatures are not to be verified, also disable *Validate Signature*.
+Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remain respected.
+
+Disabling signature validation reduces protection against forged identity-provider responses.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== Existing AES key sizes are recorded during migration
+
+When upgrading, existing `aes-generated` key providers without an explicit `secretSize` are updated to record the size of their stored key, including databases already running 26.8.x.
+This ensures the Admin Console displays the actual key size and saving a provider without changes preserves its key and key ID.
+Providers with an explicitly configured size are preserved.
 
 === SAML assertions with a OneTimeUse condition are no longer replayable
 // https://github.com/keycloak/keycloak/issues/46325
@@ -468,6 +622,14 @@ The Redirect URL configured on an organization is now validated against the vali
 Previously, the Redirect URL was used without validation, which could allow an open redirect. After upgrading, if your organization has a custom Redirect URL pointing to your application, you must add that URL to the `account` client's *Valid Redirect URIs*. Otherwise, the redirect will silently fall back to the account console. This does not apply to invitations sent with a custom client, which always use the client's own base URL.
 
 The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
+
+=== Admin events for the creation of organization groups include the group ID
+// https://github.com/keycloak/keycloak/issues/55123
+
+The admin event recorded when a top-level organization group is created now has the resource path `organizations/\{orgId}/groups/\{groupId}`, the same way the creation of a realm group is recorded as `groups/\{groupId}`.
+Previously, the event was recorded as `organizations/\{orgId}/groups` without the ID of the new group, so it was not listed in the *Admin events* tab of the group.
+Events recorded before the upgrade keep their original resource path.
+If you filter admin events by this path, update your filter accordingly.
 
 === The `admin-permissions` client is treated as an internal client
 // https://github.com/keycloak/keycloak/issues/51630
@@ -573,6 +735,127 @@ Log parsers that interpret backslash escapes still read the original value and n
 Log parsers that match on the exact logged text must be updated to expect the doubled backslash.
 The change does not apply when the listener is configured with `--spi-events-listener--jboss-logging--quotes=none` or `--spi-events-listener--jboss-logging--sanitize=false`.
 
+=== Reset password emails are sent in the background
+
+The *Forgot password* form no longer waits for the mail server. It responds right away and sends the email in the background. Before, the form was slower for users that exist and have an email, so someone could find out which usernames exist. Now every username takes the same path, whether an email is sent or not.
+
+The `SEND_RESET_PASSWORD` event is still recorded during the request. It now means the email was accepted for sending. If sending fails later, a `SEND_RESET_PASSWORD_ERROR` event is recorded too, from a background thread without the HTTP request context. The email is also not sent, and an error event is recorded, if the link expired or the user was deleted or disabled before it could be sent.
+
+The emails are sent by the `email` executor. It has 4 threads by default and starts more, up to 64, once 128 emails are waiting. If even more are waiting, the email is not sent and the request records a `SEND_RESET_PASSWORD_ERROR` event instead of `SEND_RESET_PASSWORD`. Emails still waiting when the server shuts down are not sent, which is only logged. You can change these numbers with `spi-executors--default--email-min`, `spi-executors--default--email-max` and `spi-executors--default--email-queue`. The `queue` option is new and also available for the other executors, which keep an unbounded queue unless you set it.
+
+Custom email template providers, including ones that extend `FreeMarkerEmailTemplateProvider`, still send the email right away, so for them the response time still depends on the mail server.
+To send it in the background, a provider that extends `FreeMarkerEmailTemplateProvider` can override `supportsBackgroundDelivery()`. Other providers need to implement `EmailTemplateProvider.renderPasswordReset` and `send(RenderedEmail, int, EmailDeliveryListener)`.
+
+=== Reset password emails have a cooldown
+
+The *Forgot password* form now sends at most one email to the same user every 30 seconds. A request made during the cooldown gets the same response, but no email is sent, and a `SEND_RESET_PASSWORD_ERROR` event with the error `slow_down` is recorded. Before, every request sent an email, so anyone who knew a username or an email address could flood the inbox of that user.
+
+To change the cooldown, click the settings icon of the *Send Reset Email* step in the *Reset Credentials* flow and set *Cooldown between reset emails (seconds)*. The value `0` turns the cooldown off.
+
+=== OIDC identity provider now respects `email_verified=false` from the ID token when Trust Email is enabled
+// https://github.com/keycloak/keycloak/issues/54245
+
+When brokering through an OpenID Connect identity provider with *Trust Email* enabled, {project_name} now correctly honors an `email_verified=false` claim in the ID token, even when the UserInfo endpoint does not include an `email_verified` field.
+
+Previously, if a provider such as GitLab supplied `email_verified=false` in the ID token but omitted the claim from UserInfo, {project_name} ignored the token value and fell back to the `trustEmail` setting, marking the email as verified despite the IdP explicitly stating otherwise.
+
+After upgrading, the following behavior applies when *Trust Email* is enabled:
+
+* If UserInfo includes `email_verified`, that value is used and the ID token value is ignored.
+* If UserInfo provides an email but omits `email_verified`, the ID token's `email_verified` value is used, provided the two emails match.
+* If UserInfo returns a different email than the ID token, the ID token's `email_verified` claim is discarded because it does not apply to the email that was actually selected. {project_name} falls back to the default trust-email behavior for that email.
+* If a custom provider stores the validated ID token under `VALIDATED_ID_TOKEN` in the brokered identity context but does not explicitly set an `EMAIL_VERIFIED` context entry, {project_name} reads `email_verified` directly from the token as a fallback, again only when the token and context emails match.
+
+The change affects existing users under FORCE synchronization mode. When UserInfo provides the user's email but omits `email_verified`, {project_name} now applies the ID token's `email_verified` value, whether `true` or `false`, on every login, even if the user's email address has not changed since the last login.
+For example, if an administrator marked the user's email as not verified, a later login whose ID token carries `email_verified=true` sets the flag back to `true`. Conversely, a token carrying `email_verified=false` sets it to `false` even if the administrator marked the email as verified.
+Previously, the flag was left unchanged for existing users with an unchanged address in this situation.
+If this behavior is not desired, set *Trust Email* to *OFF* for that identity provider. {project_name} then leaves the flag unchanged for existing users whose email address has not changed, and sets it to `false` for new users until the email is verified locally.
+
+=== Custom truststore in `kcadm` and `kcreg` now rejects self-signed certificates not present in the truststore
+
+When `kcadm` or `kcreg` is configured with a custom truststore (via `--truststore` or `config truststore`), a self-signed server certificate is now only accepted if it has been explicitly imported into that truststore.
+Previously, any self-signed certificate was accepted regardless of the truststore contents.
+
+If you use a custom truststore and connect to a {project_name} server with a self-signed certificate, ensure that certificate is imported into your truststore:
+
+[source,bash]
+----
+keytool -exportcert -alias <server-alias> -keystore <server-keystore.p12> \
+  -storepass <password> -file server.crt -rfc
+
+keytool -importcert -alias <server-alias> -file server.crt \
+  -keystore <truststore.p12> -storepass <password> -noprompt
+----
+
+Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
+
+=== SCIM PATCH removes the members or groups listed in the operation value
+// https://github.com/keycloak/keycloak/issues/55307
+
+A SCIM `PATCH` with `"op": "remove"` and a list in `value` now removes the listed entries.
+On a group, `"path": "members"` removes the listed members; on a user, `"path": "groups"` removes the user from the listed groups.
+Previously, {project_name} answered `200 OK` and changed nothing.
+Microsoft Entra ID uses this form to remove a member from a provisioned group, so groups it manages may still hold members it already recorded as removed.
+The upgrade does not remove them; review the membership of such groups after upgrading.
+
+If a listed user or group does not exist, the request now fails with `400 Bad Request` and removes nothing.
+For group members, this matches the filter form `members[value eq "<id>"]`.
+A `remove` that has both a filter in its `path` and a `value` is now rejected with `400 Bad Request` for every attribute of a user or a group; previously the `value` was ignored.
+An entry without a `value` is also rejected with `400 Bad Request`: a member in an `add` or a `remove` on a group, and a group in an `add`, a `remove` or a `PUT` on a user.
+In an `add` or a `remove` on a multi-valued complex attribute such as `members` or `groups`, an entry that is not an object, for example `null` or a bare id, and an entry whose fields cannot be read, for example `{"value": {}}`, are now rejected with `400 Bad Request` instead of failing with `500 Internal Server Error`.
+Simple multi-valued attributes, such as a custom attribute that holds strings, still accept string entries.
+An `add` or a `remove` that spells such an attribute in another case, for example `"path": "Members"`, with a single object in `value` now works as the lowercase spelling does, instead of failing with `500 Internal Server Error`.
+
+=== Hibernate second-level cache disabled
+// https://github.com/keycloak/keycloak/issues/55297
+
+{project_name} no longer enables the Hibernate second-level cache and query cache, which Quarkus enables by default.
+{project_name} does not use either cache, as it caches data in Infinispan.
+With the caches enabled, Hibernate's `SimpleTimestamper` kept every thread that opened a database session at 100% CPU after the system clock was moved backwards, until the clock caught up with the previously issued timestamp.
+
+This change has no effect on the data stored or cached by {project_name}.
+If you use a custom extension that relies on Hibernate's second-level or query cache, set `quarkus.hibernate-orm.second-level-caching-enabled=true` in `conf/quarkus.properties` and run `kc.sh build`.
+
+=== In template strings, a `$` that does not start a placeholder is no longer corrupted
+// https://github.com/keycloak/keycloak/issues/55326
+
+Placeholders such as `+${name}+` and `+${name:default}+` are replaced in workflow `notify-user` subjects and messages, theme properties, realm import files, SAML adapter configuration and authorization client configuration.
+A `$` that is not directly followed by `{` is kept as a literal character in these places.
+
+Previously, a `$` at the end of a value that also contained a placeholder, for example `+Total: ${amount} $+`, was followed by an invalid trailing character in the result.
+A `$` directly before the closing brace of a placeholder, for example `${name:5$}`, prevented the placeholder from being closed.
+Both cases are now handled correctly.
+
+Other uses of `$` are unchanged.
+In particular, how a `$` directly before a placeholder, such as `+$${name}+`, is handled does not change.
+
+There is currently no escape syntax for `$` or `+${+`.
+As a workaround, use the default value of a property that is not defined, for example `+${undefined:$}+` to write a `$`.
+This did not work before, as the `$` prevented the placeholder from being closed.
+It only works as long as the property is not defined.
+
+=== Client ID Metadata Document executor verifies the back-channel URLs of the client metadata
+// https://github.com/keycloak/keycloak/issues/55378
+
+The `client-id-metadata-document` client policy executor of the experimental Client ID Metadata Document feature now verifies the `backchannel_logout_uri` and `backchannel_client_notification_endpoint` properties of a client metadata document in the same way as the other URLs that {project_name} sends a request to, such as the `jwks_uri` property.
+Their host must match one of the *Trusted domains* of the executor.
+Their scheme must be `https` unless *Allow http scheme* is `ON`.
+Their host must not resolve to a loopback, private, link-local, unique local or multicast address unless *Allow private-use addresses* is `ON`.
+If *Restrict same domain* is `ON`, they must also be under the same trusted domain as the Client ID URL and the Redirect URI.
+
+An authorization request of a client whose metadata does not pass these checks is rejected.
+This also applies to a client that was registered before the upgrade, because the URLs that {project_name} stored for it are checked on every authorization request.
+If such a client is legitimate, add the host of these URLs to *Trusted domains*.
+
+{project_name} does not remove the URLs that it stored for a client before the upgrade, and it keeps sending back-channel logout requests and CIBA client notifications to them.
+Therefore, review the clients that were registered through a Client ID Metadata Document before the upgrade, which are the clients whose client ID is the URL of the document.
+Delete a client whose back-channel logout URL or CIBA client notification endpoint is a destination that {project_name} should not send requests to.
+A deleted client is registered again from its client metadata document on its next authorization request.
+
+=== New index for searching users by attribute
+
+A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -591,22 +874,76 @@ The `invite-user` and `invite-existing-user` admin client overloads that do not 
 
 End of Life features have been previously deprecated and are removed in this release.
 
-=== Deprecated cache stacks no longer supported
+=== Cache stack CLI option removed
 // https://github.com/keycloak/keycloak/issues/53461
 
-The following cache transport stacks are no longer supported:
-
-* `azure`
-* `ec2`
-* `google`
-* `jdbc-ping-udp`
-* `kubernetes`
-* `tcp`
-* `udp`
-
+The `--cache-stack` CLI option has been completely removed.
 The only supported transport stack is `jdbc-ping`, which uses TCP for transport and the database for node discovery.
 Communication between nodes is encrypted using TLS by default.
 
-Remove the `cache-stack` setting from your configuration to use the default `jdbc-ping` stack.
-If your cache configuration XML explicitly selects another transport stack, remove that selection as well.
-Remove any discovery settings specific to the previous stack, such as `jgroups.dns.query`.
+If you were using the `--cache-stack` option in your configuration, remove it.
+To use a custom JGroups stack, configure it directly in your cache configuration XML file using the `--cache-config-file` option.
+Remove any discovery settings specific to previously deprecated stacks, such as `jgroups.dns.query`.
+
+=== Credential update methods without default implementation
+// https://github.com/keycloak/keycloak/issues/55034
+
+The default implementations of the following methods were removed, and the methods are now abstract:
+
+* `SubjectCredentialManager.updateStoredCredential(CredentialModel oldCred, CredentialModel newCred)`
+* `UserCredentialStore.updateCredential(RealmModel realm, UserModel user, CredentialModel oldCred, CredentialModel newCred)`
+* `UserFederatedUserCredentialStore.updateCredential(RealmModel realm, String userId, CredentialModel oldCred, CredentialModel newCred)`
+
+The removed default implementations were not atomic, and a credential that was changed concurrently could be overwritten.
+Custom implementations of these interfaces must implement the methods.
+They must replace the credential only if the stored credential still has the content of `oldCred`, return `false` otherwise, and perform the comparison and the update atomically, for example by locking the stored credential.
+
+=== Offline session cache entry lifespan override options removed
+// https://github.com/keycloak/keycloak/issues/40981
+
+The following configuration options have been removed:
+
+* `--spi-user-sessions--infinispan--offline-session-cache-entry-lifespan-override`
+* `--spi-user-sessions--infinispan--offline-client-session-cache-entry-lifespan-override`
+
+These options were deprecated and were only relevant when using volatile user sessions (disabled persistent sessions).
+With persistent user sessions enabled (the default since Keycloak 26), offline sessions are managed in the database and these lifespan override options have no effect.
+
+If you have these options in your configuration, remove them before upgrading to Keycloak 27.
+
+=== ClusterProvider cross-DC notification API removed
+// https://github.com/keycloak/keycloak/issues/39047
+
+The deprecated cross-datacenter notification API in `ClusterProvider` has been removed.
+These APIs were deprecated in Keycloak 26.3 when the `cache-embedded-remote-store` feature was removed.
+
+The following have been removed:
+
+* `ClusterProvider.DCNotify` enum
+* `ClusterProvider.notify(String, ClusterEvent, boolean, DCNotify)` method
+* `ClusterProvider.notify(String, Collection<? extends ClusterEvent>, boolean, DCNotify)` method
+* `AuthenticationSessionProvider.updateNonlocalSessionAuthNotes(AuthenticationSessionCompoundId, Map<String, String>)` method
+
+The remaining `notify()` methods in `ClusterProvider` are now abstract and notify all datacenters (`ALL_DCS` semantics).
+Third-party `ClusterProvider` implementations in `server-spi-private`, if any exist, must implement these methods directly instead of implementing the deprecated `DCNotify` variants.
+
+Multi-site deployments using external Infinispan are unaffected, as they never used the `DCNotify` parameter.
+All current callers already use the non-deprecated `notify()` methods which default to `ALL_DCS` semantics.
+
+The internal Infinispan classes that only supported this API have been removed as well.
+This includes the `AuthenticationSessionAuthNoteUpdateEvent` cluster event, the site-related fields of `WrapperClusterEvent`, and the `siteId` field of `SessionClusterEvent`.
+These classes are not part of the supported SPI.
+
+=== Deprecated single-token refresh-token methods removed from `AuthenticatedClientSessionModel`
+// https://github.com/keycloak/keycloak/issues/55096
+
+The deprecated single-token refresh-token methods have been removed from `AuthenticatedClientSessionModel`.
+These methods were deprecated in favor of keyed methods that support refresh token reuse detection:
+
+* `getCurrentRefreshToken()` - replaced by `getRefreshToken(String reuseId)`
+* `setCurrentRefreshToken(String)` - replaced by `setRefreshToken(String reuseId, String refreshTokenId)`
+* `getCurrentRefreshTokenUseCount()` - replaced by `getRefreshTokenUseCount(String reuseId)`
+* `setCurrentRefreshTokenUseCount(int)` - replaced by `setRefreshTokenUseCount(String reuseId, int refreshTokenUseCount)`
+
+The removed methods were default no-op implementations that returned `null` or `0` and had no production callers.
+Custom implementations of `AuthenticatedClientSessionModel` that override these methods must remove the overrides and use the keyed replacement methods instead.

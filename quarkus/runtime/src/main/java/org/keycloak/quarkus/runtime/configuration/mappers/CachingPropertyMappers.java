@@ -31,7 +31,6 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
     private static final String MULTI_SITE_OR_EMBEDDED_REMOTE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
     private static final String MULTI_SITE_FEATURE_SET = "feature '%s' or '%s' is set".formatted(Profile.Feature.MULTI_SITE.getKey(), Profile.Feature.CLUSTERLESS.getKey());
 
-    private static final String CACHE_STACK_SET_TO_ISPN = "'cache' type is set to '" + CachingOptions.Mechanism.ispn.name() + "'";
     private static final String STATELESS_FEATURE_SET = "feature '%s' is set".formatted(Profile.Feature.STATELESS.getKey());
 
     @Override
@@ -43,11 +42,6 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                                         ? Mechanism.local.name()
                                         : Optional.ofNullable(value).orElse(Mechanism.ispn.name()))
                         .paramLabel("type")
-                        .build(),
-                fromOption(CachingOptions.CACHE_STACK)
-                        .isEnabled(CachingPropertyMappers::cacheSetToInfinispan, CACHE_STACK_SET_TO_ISPN)
-                        .to("kc.spi-cache--embedded--default-stack")
-                        .paramLabel("stack")
                         .build(),
                 fromOption(CachingOptions.CACHE_CONFIG_FILE)
                         .mapFrom(CachingOptions.CACHE, (value, context) -> {
@@ -77,7 +71,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
                         .to("kc.spi-jgroups-mtls--default--activated")
-                        .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "a TCP based cache-stack is used")
+                        .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "the embedded cache uses TCP transport")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getConfPathValue("cache-mtls-keystore.p12")))
                         .paramLabel("file")

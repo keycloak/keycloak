@@ -284,7 +284,7 @@ public class PolicyEvaluationService {
 
         public void close() {
             if (userSession != null) {
-                keycloakSession.sessions().removeUserSession(realm, userSession);
+                AuthenticationManager.removeUserSessionAndRootAuthSession(keycloakSession, realm, userSession);
             }
 
         }

@@ -150,7 +150,7 @@ export const UserForm = ({
 
   const onFormReset = () => {
     if (user?.id) {
-      reset(toUserFormFields(user));
+      reset(toUserFormFields(user, userProfileMetadata));
     } else {
       void navigate(toUsers({ realm: realm.realm! }));
     }

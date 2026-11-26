@@ -61,5 +61,21 @@
             </snapshots>
         </repository>
     </repositories>
-    
+
+    <profiles>
+        <profile>
+            <id>checkerframework</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <!-- Excluded from ResourceLeakChecker until keycloak/keycloak#54332; keep their other annotation processors enabled. -->
+                            <compilerArgs combine.self="override" />
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

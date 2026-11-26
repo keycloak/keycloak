@@ -349,6 +349,11 @@ public class RealmBuilder extends Builder<RealmRepresentation> {
         return this;
     }
 
+    public RealmBuilder accessCodeLifespanLogin(int accessCodeLifespanLogin) {
+        rep.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
+        return this;
+    }
+
     public RealmBuilder actionTokenGeneratedByUserLifespan(int actionTokenGeneratedByUserLifespan) {
         rep.setActionTokenGeneratedByUserLifespan(actionTokenGeneratedByUserLifespan);
         return this;

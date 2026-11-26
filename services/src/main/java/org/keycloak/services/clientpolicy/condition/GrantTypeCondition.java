@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
-import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestParametersContext;
 import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -72,8 +72,9 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
 
         switch (context.getEvent()) {
+            case AUTHORIZATION_REQUEST_REDIRECT_URI:
             case AUTHORIZATION_REQUEST:
-                if (isGrantMatching((AuthorizationRequestContext)context)) return ClientPolicyVote.YES;
+                if (isGrantMatching((AuthorizationRequestParametersContext)context)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case TOKEN_REFRESH:
             case TOKEN_REFRESH_RESPONSE:
@@ -115,7 +116,7 @@ public class GrantTypeCondition extends AbstractClientPolicyConditionProvider<Gr
         }
     }
 
-    private boolean isGrantMatching(AuthorizationRequestContext request) {
+    private boolean isGrantMatching(AuthorizationRequestParametersContext request) {
         if (request == null) return false;
         return isGrantMatchingResponseType(request.getAuthorizationEndpointRequest().getResponseType());
     }

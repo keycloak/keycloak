@@ -453,6 +453,39 @@ public class AdminGroupProtectionTest {
     }
 
     @Test
+    public void testRemoveMemberByValueKeepsServiceAccount() {
+        String serviceAccountUserId = createServiceAccountUser("sa-remove-by-value-client");
+        String regularUserId = getUserId(REGULAR_USER);
+        String groupId = createScimGroup();
+        realm.admin().users().get(serviceAccountUserId).joinGroup(groupId);
+        realm.admin().users().get(regularUserId).joinGroup(groupId);
+
+        client.groups().patch(groupId, PatchRequest.create()
+                .remove("members", "[{\"value\":\"" + regularUserId + "\"}]")
+                .build());
+
+        assertEquals(List.of(serviceAccountUserId), getAllMemberIds(groupId));
+    }
+
+    @Test
+    public void testCannotRemoveServiceAccountByValue() {
+        String serviceAccountUserId = createServiceAccountUser("sa-remove-sa-by-value-client");
+        String groupId = createScimGroup();
+        realm.admin().users().get(serviceAccountUserId).joinGroup(groupId);
+
+        try {
+            client.groups().patch(groupId, PatchRequest.create()
+                    .remove("members", "[{\"value\":\"" + serviceAccountUserId + "\"}]")
+                    .build());
+            fail("Should not be able to remove a service account from a group via SCIM PATCH");
+        } catch (ScimClientException sce) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), sce.getError().getStatusInt());
+        }
+
+        assertEquals(List.of(serviceAccountUserId), getAllMemberIds(groupId));
+    }
+
+    @Test
     public void testServiceAccountNotDiscoverableViaGroupMembersFilter() {
         ClientRepresentation confidentialClient = ClientBuilder.create()
                 .clientId("sa-filter-test-client")
@@ -505,6 +538,46 @@ public class AdminGroupProtectionTest {
     private void assertGroupMatched(String groupId, String filter, String message) {
         ListResponse<Group> response = client.groups().getAll(filter);
         assertTrue(response.getResources().stream().anyMatch(g -> groupId.equals(g.getId())), message);
+    }
+
+    /**
+     * Creates a confidential client with a service account, removed after the test, and returns the service
+     * account's user id.
+     */
+    private String createServiceAccountUser(String clientId) {
+        ClientRepresentation confidentialClient = ClientBuilder.create()
+                .clientId(clientId)
+                .secret("secret")
+                .serviceAccountsEnabled(true)
+                .enabled(true)
+                .build();
+        String clientDbId;
+        try (Response response = realm.admin().clients().create(confidentialClient)) {
+            clientDbId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.clients().get(clientDbId).remove());
+        return realm.admin().clients().get(clientDbId).toRepresentation().getServiceAccountUserId();
+    }
+
+    /**
+     * Creates an empty group through SCIM, removed after the test, and returns its id.
+     */
+    private String createScimGroup() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        String groupId = client.groups().create(group).getId();
+        realm.cleanup().add(r -> r.groups().group(groupId).remove());
+        return groupId;
+    }
+
+    /**
+     * The ids of every direct member of the group, service accounts included, read through the admin API, sorted.
+     */
+    private List<String> getAllMemberIds(String groupId) {
+        return realm.admin().groups().group(groupId).members(0, Integer.MAX_VALUE).stream()
+                .map(UserRepresentation::getId)
+                .sorted()
+                .toList();
     }
 
     private String getUserId(String username) {

@@ -22,22 +22,22 @@ public class WelcomePage extends AbstractPage {
     @FindBy(id = "password")
     private WebElement passwordInput;
 
-    @FindBy(id = "password-confirmation")
+    @FindBy(id = "passwordConfirmation")
     private WebElement passwordConfirmationInput;
 
-    @FindBy(xpath = "//button")
+    @FindBy(id = "kc-create-user")
     private WebElement submitButton;
 
-    @FindBy(css = ".pf-v5-c-alert")
+    @FindBy(css = ".pf-v6-c-alert")
     private WebElement pageAlert;
 
-    @FindBy(css = ".pf-v5-c-title")
+    @FindBy(css = ".pf-v6-c-title")
     private WebElement welcomeMessage;
 
-    @FindBy(css = ".pf-v5-c-login__main-header-desc")
+    @FindBy(css = ".pf-v6-c-login__main-header-desc")
     private WebElement welcomeDescription;
 
-    @FindBy(css = ".pf-v5-c-button")
+    @FindBy(id = "kc-open-admin-console")
     private WebElement openAdminConsoleLink;
 
     public WelcomePage(ManagedWebDriver driver) {

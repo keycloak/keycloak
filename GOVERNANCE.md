@@ -2,7 +2,7 @@
 
 * [Vision](#vision) 
 * [Maintainers](#maintainers) 
-* [Contributing](#contributing)
+* [Contributing](#contributing-changes)
 
 ## Vision
 

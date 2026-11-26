@@ -80,7 +80,6 @@ public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedC
     public static final String CONFIG_MUTATE = "configMutate";
     public static final String TRACING = "tracingEnabled";
     private static final String HISTOGRAMS = "metricsHistogramsEnabled";
-    public static final String STACK = "stack";
     public static final String NODE_NAME = "nodeName";
     public static final String SITE_NAME = "siteName";
     public static final String MACHINE_NAME = "machineName";

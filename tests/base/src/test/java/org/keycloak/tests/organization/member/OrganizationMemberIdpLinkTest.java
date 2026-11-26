@@ -2,12 +2,15 @@ package org.keycloak.tests.organization.member;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.representations.account.LinkedAccountRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityLinkRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
@@ -121,6 +124,22 @@ public class OrganizationMemberIdpLinkTest {
     }
 
     @Test
+    public void testAdminFederatedIdentityLinksReturnsEmptyAvailableForManagedMember() {
+        OrganizationRepresentation org = createOrganization();
+        String managedUserId = loginViaBrokerAndGetUserId();
+
+        verifyManagedMember(org.getId(), managedUserId);
+
+        addSecondIdp();
+
+        List<FederatedIdentityLinkRepresentation> available = consumerRealm.admin().users().get(managedUserId)
+                .getFederatedIdentityLinks(false, null, null, null);
+
+        assertTrue(available.isEmpty(),
+                "Managed organization member should not see any providers available for linking via the admin endpoint");
+    }
+
+    @Test
     public void testUnmanagedMemberCanLinkAdditionalIdp() {
         OrganizationRepresentation org = createOrganization();
         OrganizationResource orgResource = consumerRealm.admin().organizations().get(org.getId());
@@ -142,6 +161,12 @@ public class OrganizationMemberIdpLinkTest {
 
         addSecondIdp();
 
+        // the organization's own broker is never offered for linking, even to an unmanaged member
+        List<FederatedIdentityLinkRepresentation> available = consumerRealm.admin().users().get(userId)
+                .getFederatedIdentityLinks(false, null, null, null);
+        assertTrue(available.stream().anyMatch(idp -> SECOND_IDP_ALIAS.equals(idp.getIdentityProvider())));
+        assertTrue(available.stream().noneMatch(idp -> IDP_ALIAS.equals(idp.getIdentityProvider())));
+
         FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
         link.setUserId("external-user-id");
         link.setUserName("external-username");
@@ -152,6 +177,110 @@ public class OrganizationMemberIdpLinkTest {
 
         // cleanup
         consumerRealm.admin().users().get(userId).removeFederatedIdentity(SECOND_IDP_ALIAS);
+    }
+
+    @Test
+    public void testAdminAndAccountConsoleReturnSameIdpSets() throws Exception {
+        OrganizationRepresentation org = createOrganization();
+        addSecondIdp();
+        String secondOrgIdpAlias = "second-org-identity-provider";
+        createOrganizationWithDummyIdp("testorg2", secondOrgIdpAlias);
+
+        // managed member: linked only to the org's own broker, nothing available
+        String managedUserId = loginViaBrokerAndGetUserId();
+        verifyManagedMember(org.getId(), managedUserId);
+        consumerRealm.admin().users().get(managedUserId)
+                .resetPassword(CredentialBuilder.password("password").build());
+        assertSameLinkedAndAvailableIdps(managedUserId, aliceFromProviderRealm.getUsername(), "password");
+
+        // unmanaged member: can see and link the non-org idp, but never the org-scoped ones (from either org)
+        String unmanagedUserId = createUser("unmanaged-member@testorg.org", "password");
+        try (Response response = consumerRealm.admin().organizations().get(org.getId()).members().addMember(unmanagedUserId)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        assertSameLinkedAndAvailableIdps(unmanagedUserId, "unmanaged-member@testorg.org", "password");
+
+        FederatedIdentityRepresentation link = new FederatedIdentityRepresentation();
+        link.setUserId("external-user-id");
+        link.setUserName("external-username");
+        consumerRealm.admin().users().get(unmanagedUserId).addFederatedIdentity(SECOND_IDP_ALIAS, link).close();
+        assertSameLinkedAndAvailableIdps(unmanagedUserId, "unmanaged-member@testorg.org", "password");
+
+        // plain user, unrelated to any organization: same "available" set as the unmanaged member before linking
+        String plainUserId = createUser("plain-user@example.com", "password");
+        assertSameLinkedAndAvailableIdps(plainUserId, "plain-user@example.com", "password");
+    }
+
+    private void assertSameLinkedAndAvailableIdps(String userId, String username, String password) throws Exception {
+        AccessTokenResponse tokenResponse = consumerOAuth.doPasswordGrantRequest(username, password);
+        assertNotNull(tokenResponse.getAccessToken(), "Expected a valid access token for " + username);
+
+        for (boolean linked : new boolean[] {true, false}) {
+            Set<String> adminAliases = consumerRealm.admin().users().get(userId)
+                    .getFederatedIdentityLinks(linked, null, null, null).stream()
+                    .map(FederatedIdentityLinkRepresentation::getIdentityProvider)
+                    .collect(Collectors.toSet());
+
+            String accountUrl = consumerRealm.getBaseUrl() + "/account/linked-accounts?linked=" + linked;
+            List<LinkedAccountRepresentation> accountLinks = simpleHttp.doGet(accountUrl)
+                    .auth(tokenResponse.getAccessToken())
+                    .acceptJson()
+                    .asJson(new TypeReference<>() {});
+            Set<String> accountAliases = accountLinks.stream()
+                    .map(LinkedAccountRepresentation::getProviderAlias)
+                    .collect(Collectors.toSet());
+
+            assertEquals(accountAliases, adminAliases, "Admin and account consoles should agree on the "
+                    + (linked ? "linked" : "available") + " IdP set for " + username);
+        }
+    }
+
+    private String createUser(String username, String password) {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setEmail(username);
+        user.setFirstName(username);
+        user.setLastName(username);
+        user.setEnabled(true);
+        String userId;
+        try (Response response = consumerRealm.admin().users().create(user)) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+        consumerRealm.cleanup().add(r -> r.users().get(userId).remove());
+        consumerRealm.admin().users().get(userId).resetPassword(CredentialBuilder.password(password).build());
+        return userId;
+    }
+
+    private void createOrganizationWithDummyIdp(String orgName, String idpAlias) {
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias(idpAlias);
+        idp.setProviderId("oidc");
+        idp.setEnabled(true);
+        idp.setConfig(Map.of("clientId", "dummy2", "clientSecret", "dummy2",
+                "authorizationUrl", "http://localhost/dummy2/auth",
+                "tokenUrl", "http://localhost/dummy2/token"));
+        consumerRealm.admin().identityProviders().create(idp).close();
+        consumerRealm.cleanup().add(r -> {
+            try {
+                r.identityProviders().get(idpAlias).remove();
+            } catch (Exception ignored) {}
+        });
+
+        OrganizationRepresentation org = new OrganizationRepresentation();
+        org.setName(orgName);
+        org.setAlias(orgName);
+        String orgId;
+        try (Response response = consumerRealm.admin().organizations().create(org)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            orgId = ApiUtil.getCreatedId(response);
+        }
+        consumerRealm.cleanup().add(r -> {
+            try {
+                r.organizations().get(orgId).delete().close();
+            } catch (Exception ignored) {}
+        });
+
+        consumerRealm.admin().organizations().get(orgId).identityProviders().addIdentityProvider(idpAlias).close();
     }
 
     private OrganizationRepresentation createOrganization() {

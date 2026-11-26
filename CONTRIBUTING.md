@@ -135,14 +135,17 @@ If you use generative AI to assist with your contribution, all of the following 
 Spotless is used to check and apply code formatting. To check your code locally before sending a PR run:
 
 ```
-./mvnw spotless:check
+./mvnw -Pspotless spotless:check
 ```
 
 You can either use your IDE to fix these issues; or Spotless can fix them for you by running:
 
 ```
-./mvnw spotless:apply
+./mvnw -Pspotless spotless:apply
 ```
+
+The `spotless` profile includes modules that are not part of the default build (`docs`, `distribution` and `operator`),
+which is what CI checks.
 
 A good practice is to create a commit with your changes prior to running `spotless:apply` then you can see and
 review what changes Spotless has applied, for example by using a diff tool. Finally, if you are happy with the changes
@@ -154,7 +157,7 @@ git commit --amend
 ```
 
 Note: If you get the error `Could not find goal 'verify' in plugin com.diffplug.spotless:spotless-maven-plugin` you are
-probably running `mvn spotless:check` instead of `./mvnw spotless:check`. This is most likely a bug in Maven or the 
+probably running `mvn -Pspotless spotless:check` instead of `./mvnw -Pspotless spotless:check`. This is most likely a bug in Maven or the
 Spotless plugin.
  
 ### Commit messages and issue linking

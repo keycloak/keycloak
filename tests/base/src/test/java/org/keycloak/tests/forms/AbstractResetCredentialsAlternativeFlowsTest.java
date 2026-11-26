@@ -2,6 +2,8 @@ package org.keycloak.tests.forms;
 
 import java.util.List;
 
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -18,6 +20,8 @@ import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.tests.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.tests.common.TestRealmUserConfig;
 import org.keycloak.testsuite.util.FlowUtil;
+
+import org.junit.jupiter.api.BeforeEach;
 
 @KeycloakIntegrationTest
 public abstract class AbstractResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedActionTest {
@@ -39,6 +43,13 @@ public abstract class AbstractResetCredentialsAlternativeFlowsTest extends Abstr
 
     @InjectPage
     protected LoginPasswordResetPage resetPasswordPage;
+
+    // the user is shared, so a reset email requested by the test before would stop the next one
+    @BeforeEach
+    public void clearEmailCooldown() {
+        String cooldownKey = EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, managedUser.getId());
+        runOnServer.run(session -> session.singleUseObjects().remove(cooldownKey));
+    }
 
     void revertResetCredentialsFlows() {
         runOnServer.run(session -> {

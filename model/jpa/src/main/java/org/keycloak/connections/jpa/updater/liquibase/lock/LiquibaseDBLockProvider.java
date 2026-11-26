@@ -63,7 +63,10 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
             LiquibaseConnectionProvider liquibaseProvider = session.getProvider(LiquibaseConnectionProvider.class);
             JpaConnectionProviderFactory jpaProviderFactory = (JpaConnectionProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(JpaConnectionProvider.class);
 
-            this.dbConnection = jpaProviderFactory.getConnection();
+            // Ownership transfers to dbConnection; close(), restart(), and LiquibaseException cleanup call safeCloseConnection().
+            @SuppressWarnings("required.method.not.called")
+            Connection connection = jpaProviderFactory.getConnection();
+            this.dbConnection = connection;
             String defaultSchema = jpaProviderFactory.getSchema();
 
             try {

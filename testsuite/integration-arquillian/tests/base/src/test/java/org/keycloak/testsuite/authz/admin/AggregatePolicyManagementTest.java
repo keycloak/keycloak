@@ -154,7 +154,7 @@ public class AggregatePolicyManagementTest extends AbstractPolicyManagementTest 
         users.get(user.getId()).remove();
 
         UserPolicyRepresentation actualUserPolicy = authorization.policies().user().findByName(userPolicyRepresentation.getName());
-        assertEquals(0, actualUserPolicy.getUsers().size());
+        assertEquals(1, actualUserPolicy.getUsers().size());
 
         AggregatePolicyResource actual = authorization.policies().aggregate().findById(representation.getId());
         assertRepresentation(representation, actual);

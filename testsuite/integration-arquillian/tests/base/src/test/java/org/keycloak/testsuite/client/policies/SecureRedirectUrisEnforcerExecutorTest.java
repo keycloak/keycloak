@@ -722,7 +722,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
 
         // authorization request - fail
         // The redirect_uri matches the registered redirect URI, but HTTP scheme should be rejected
-        // by secure-redirect-uris-enforcer when AUTHORIZATION_REQUEST is enforced.
+        // before response type validation or an error redirect can occur.
         testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequestWithRedirectUriToClient(alphaClientId, "http://oauth.redirect/some");
     }
 
@@ -837,9 +837,9 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         oauth.client(clientId);
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
+        errorPage.assertCurrent();
         EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST)
                 .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
-                .details(Details.RESPONSE_TYPE, "code")
                 .details(Details.REDIRECT_URI, redirectUri)
                 .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST);
     }

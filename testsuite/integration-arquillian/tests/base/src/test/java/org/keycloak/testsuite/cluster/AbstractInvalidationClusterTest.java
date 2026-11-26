@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
@@ -28,6 +29,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * @param <TR> entity resource
  */
 public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClusterTest {
+
+    /**
+     * Maximum time to wait for cluster cache synchronization (ms).
+     */
+    private static final long CLUSTER_SYNC_TIMEOUT_MS = 10000;
+
+    /**
+     * Polling interval for checking cluster synchronization (ms).
+     */
+    private static final long CLUSTER_SYNC_POLL_INTERVAL_MS = 100;
 
     protected RealmRepresentation createTestRealmRepresentation() {
         RealmRepresentation testRealm = new RealmRepresentation();
@@ -132,6 +143,88 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
 
     protected abstract T testEntityUpdates(T testEntity, boolean backendFailover);
 
+    /**
+     * Waits for cluster cache synchronization by polling all backend nodes until all have
+     * consistent state or timeout is reached. This prevents flaky failures due to cache
+     * invalidation events not being fully propagated during split-brain recovery.
+     *
+     * Unlike getCurrentSurvivorNodes(), this checks ALL backend nodes including the one
+     * just restarted by failback(), ensuring the restarted node has rejoined the cluster
+     * and received cache invalidation events before proceeding.
+     *
+     * @param testEntity the entity to verify across all nodes
+     * @throws AssertionError if cache consistency is not achieved within the timeout
+     */
+    protected void waitForClusterSync(T testEntity) {
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + CLUSTER_SYNC_TIMEOUT_MS;
+
+        log.info(String.format("Waiting for cluster cache synchronization (timeout: %dms, poll interval: %dms)",
+                CLUSTER_SYNC_TIMEOUT_MS, CLUSTER_SYNC_POLL_INTERVAL_MS));
+
+        while (System.currentTimeMillis() < endTime) {
+            boolean allNodesConsistent = true;
+
+            // Check ALL backend nodes, including the one just restarted by failback()
+            for (int i = 0; i < getClusterSize(); i++) {
+                ContainerInfo node = backendNode(i);
+                T testEntityOnNode = readEntity(testEntity, node);
+
+                if (!EqualsBuilder.reflectionEquals(sortFields(testEntityOnNode), sortFields(testEntity), excludedComparisonFields)) {
+                    allNodesConsistent = false;
+                    log.debug(String.format("Cache not yet synchronized on %s, retrying...", node));
+                    break;
+                }
+            }
+
+            if (allNodesConsistent) {
+                long elapsed = System.currentTimeMillis() - startTime;
+                log.info(String.format("Cluster cache synchronized successfully across all %d nodes after %dms",
+                        getClusterSize(), elapsed));
+                return;
+            }
+
+            try {
+                TimeUnit.MILLISECONDS.sleep(CLUSTER_SYNC_POLL_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while waiting for cluster synchronization", e);
+            }
+        }
+
+        // Timeout reached - perform final assertion on all nodes that will show the differences
+        log.error(String.format("Cluster cache synchronization timeout after %dms", CLUSTER_SYNC_TIMEOUT_MS));
+        assertEntityOnAllNodes(testEntity);
+    }
+
+    /**
+     * Asserts that the entity is consistent across all backend nodes.
+     * Unlike assertEntityOnSurvivorNodesEqualsTo(), this checks ALL nodes.
+     */
+    private void assertEntityOnAllNodes(T testEntityOnFailNode) {
+        boolean entityDiffers = false;
+        for (int i = 0; i < getClusterSize(); i++) {
+            ContainerInfo node = backendNode(i);
+            log.debug(String.format("Attempt to verify %s on node %s (%s)", getEntityType(testEntityOnFailNode), node, node.getContextRoot()));
+            T testEntityOnNode = readEntity(testEntityOnFailNode, node);
+
+            if (EqualsBuilder.reflectionEquals(sortFields(testEntityOnNode), sortFields(testEntityOnFailNode), excludedComparisonFields)) {
+                log.info(String.format("Verification of %s on node %s PASSED", getEntityType(testEntityOnFailNode), node));
+            } else {
+                entityDiffers = true;
+                log.error(String.format("Verification of %s on node %s FAILED", getEntityType(testEntityOnFailNode), node));
+                String tf = ReflectionToStringBuilder.reflectionToString(testEntityOnFailNode, ToStringStyle.SHORT_PREFIX_STYLE);
+                String ts = ReflectionToStringBuilder.reflectionToString(testEntityOnNode, ToStringStyle.SHORT_PREFIX_STYLE);
+                log.error(String.format(
+                        "\nEntity on fail node: \n%s\n"
+                        + "\nEntity on node %s: \n%s\n"
+                        + "\nDifference: \n%s\n",
+                        tf, node, ts, StringUtils.difference(tf, ts)));
+            }
+        }
+        assertFalse(entityDiffers);
+    }
+
     protected void verifyEntityUpdateDuringFailover(T testEntity, boolean backendFailover) {
         if (backendFailover) {
             failure();
@@ -140,6 +233,8 @@ public abstract class AbstractInvalidationClusterTest<T, TR> extends AbstractClu
         assertEntityOnSurvivorNodesEqualsTo(testEntity);
 
         failback();
+        // Wait for cluster rebalancing to complete after failback
+        waitForClusterSync(testEntity);
         iterateCurrentFailNode();
     }
 

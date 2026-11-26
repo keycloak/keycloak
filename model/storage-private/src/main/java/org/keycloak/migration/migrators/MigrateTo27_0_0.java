@@ -22,42 +22,50 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
- * Migrates imported realms and clients that still use the removed Login v1 theme (`keycloak`)
- * to the Login v2 theme (`keycloak.v2`).
+ * Migrates login themes from Login v1 (`keycloak`) and Login v2 (`keycloak.v2`)
+ * to Login v3 / PatternFly 6 (`keycloak.v3`).
  */
-public class MigrateTo27_0_0 implements Migration {
+public class MigrateTo27_0_0 extends RealmMigration {
 
     public static final ModelVersion VERSION = new ModelVersion("27.0.0");
 
     private static final String LOGIN_THEME_ATTRIBUTE = "login_theme";
-    private static final String LEGACY_LOGIN_THEME = "keycloak";
-    private static final String LOGIN_V2_THEME = "keycloak.v2";
+    private static final String LOGIN_V3_THEME = "keycloak.v3";
+
+    @Override
+    public ModelVersion getVersion() {
+        return VERSION;
+    }
 
     @Override
     public void migrate(KeycloakSession session) {
-        // Persisted themes are migrated by Liquibase.
+        // Liquibase migrates persisted themes; Java migration is only needed for imports.
+    }
+
+    @Override
+    public void migrateRealm(KeycloakSession session, RealmModel realm) {
+        updateLoginTheme(realm);
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         updateLoginTheme(realm);
-        updateClientLoginThemes(realm);
     }
 
     private void updateLoginTheme(RealmModel realm) {
-        if (LEGACY_LOGIN_THEME.equals(realm.getLoginTheme())) {
-            realm.setLoginTheme(LOGIN_V2_THEME);
+        String loginTheme = realm.getLoginTheme();
+        if (isLegacyLoginTheme(loginTheme)) {
+            realm.setLoginTheme(LOGIN_V3_THEME);
         }
-    }
 
-    private void updateClientLoginThemes(RealmModel realm) {
         realm.getClientsStream()
-                .filter(client -> LEGACY_LOGIN_THEME.equals(client.getAttribute(LOGIN_THEME_ATTRIBUTE)))
-                .forEach(client -> client.setAttribute(LOGIN_THEME_ATTRIBUTE, LOGIN_V2_THEME));
+                .filter(client -> isLegacyLoginTheme(client.getAttribute(LOGIN_THEME_ATTRIBUTE)))
+                .forEach(client -> client.setAttribute(LOGIN_THEME_ATTRIBUTE, LOGIN_V3_THEME));
     }
 
-    @Override
-    public ModelVersion getVersion() {
-        return VERSION;
+    private static boolean isLegacyLoginTheme(String theme) {
+        return "keycloak".equals(theme)
+                || "keycloak.v2".equals(theme)
+                || "rh-sso.v2".equals(theme);
     }
 }

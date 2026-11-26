@@ -36,6 +36,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
@@ -155,6 +156,12 @@ public class SessionCodeChecks {
             client = realm.getClientByClientId(clientId);
         }
         if (client != null) {
+            if (checkClientDisabled(client)) {
+                event.client(client);
+                event.error(Errors.CLIENT_DISABLED);
+                response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+                return null;
+            }
             session.getContext().setClient(client);
             setClientToEvent(client);
         }
@@ -186,15 +193,19 @@ public class SessionCodeChecks {
             return null;
         }
 
-        if (authSession != null) {
-            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession);
-            return authSession;
-        }
+        AuthenticationSessionModel resolvedAuthSession = authSession != null ? authSession : authSessionCookie;
+        if (resolvedAuthSession != null) {
+            UserModel user = resolvedAuthSession.getAuthenticatedUser();
+            if (isUserDisabled(user) && !AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(resolvedAuthSession.getAction())) {
+                event.user(user);
+                event.detail(Details.USERNAME, user.getUsername());
+                event.error(Errors.USER_DISABLED);
+                response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
+                return null;
+            }
 
-        if (authSessionCookie != null) {
-            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSessionCookie);
-            return authSessionCookie;
-
+            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(resolvedAuthSession);
+            return resolvedAuthSession;
         }
 
         // Otherwise just try to restart from the cookie
@@ -518,5 +529,9 @@ public class SessionCodeChecks {
 
     protected boolean checkClientDisabled(ClientModel client) {
         return !client.isEnabled();
+    }
+
+    protected boolean isUserDisabled(UserModel user) {
+        return user != null && !user.isEnabled();
     }
 }

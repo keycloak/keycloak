@@ -15,19 +15,17 @@
                     <form id="kc-form-login" class="${properties.kcFormClass!}" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
                           method="post">
                         <#if !usernameHidden??>
-                            <div class="${properties.kcFormGroupClass!}">
-                                <#assign label>
-                                    <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
-                                </#assign>
-                                <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}" />
-                            </div>
+                            <#assign label>
+                                <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
+                            </#assign>
+                            <@field.input name="username" label=label value=login.username!'' autofocus=true autocomplete="${(enableWebAuthnConditionalUI?has_content)?then('username webauthn', 'username')}" />
                         </#if>
 
-                        <div class="${properties.kcFormGroupClass!}">
-                            <#if realm.rememberMe && !usernameHidden??>
+                        <#if realm.rememberMe && !usernameHidden??>
+                            <div class="${properties.kcFormGroupClass!}">
                                 <@field.checkbox name="rememberMe" label=msg("rememberMe") value=login.rememberMe?? />
-                            </#if>
-                        </div>
+                            </div>
+                        </#if>
 
                         <@buttons.loginButton />
                     </form>

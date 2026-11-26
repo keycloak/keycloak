@@ -12,6 +12,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
+import { MissingPolicyReference } from "../MissingPolicyReference";
 import type { ComponentProps } from "../dynamic/components";
 import { ClientSelectModal } from "./ClientSelectModal";
 
@@ -23,6 +24,7 @@ type ClientSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: `${SelectVariant}`;
   isRequired?: boolean;
   clientKey?: ClientKey;
+  showMissing?: boolean;
 };
 
 export const ClientSelect = ({
@@ -35,6 +37,7 @@ export const ClientSelect = ({
   isRequired = required,
   variant = "typeahead",
   clientKey = "clientId",
+  showMissing = false,
 }: ClientSelectProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
@@ -63,7 +66,11 @@ export const ClientSelect = ({
               });
               return clients[0];
             }
-            return adminClient.clients.findOne({ id: val });
+            const client = await adminClient.clients.findOne({ id: val });
+            return (
+              client ??
+              (showMissing ? { id: val, clientId: undefined } : undefined)
+            );
           }),
         );
       }
@@ -147,7 +154,15 @@ export const ClientSelect = ({
           <Tbody>
             {selectedClients.map((client) => (
               <Tr key={client.id}>
-                <Td>{client.clientId}</Td>
+                <Td>
+                  {client.clientId ??
+                    (showMissing && (
+                      <MissingPolicyReference
+                        id={client.id}
+                        label={t("missingClient")}
+                      />
+                    ))}
+                </Td>
                 <Td>
                   <Button
                     variant="link"

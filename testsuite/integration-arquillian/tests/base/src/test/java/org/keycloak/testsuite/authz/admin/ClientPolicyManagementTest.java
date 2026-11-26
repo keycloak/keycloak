@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.authz.admin;
 
 import java.util.Collections;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
@@ -36,7 +37,6 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -149,31 +149,14 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
 
         assertCreated(authorization, representation);
 
+        ClientPolicyResource policy = authorization.policies().client().findById(representation.getId());
+        Set<String> clientIds = policy.toRepresentation().getClients();
         ClientsResource clients = getRealm().clients();
-        ClientRepresentation client = clients.findByClientId("Client D").get(0);
 
-        clients.get(client.getId()).remove();
-
-        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
-
-        Assertions.assertEquals(2, representation.getClients().size());
-        Assertions.assertFalse(representation.getClients().contains(client.getId()));
-
-        client = clients.findByClientId("Client E").get(0);
-        clients.get(client.getId()).remove();
-
-        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
-
-        Assertions.assertEquals(1, representation.getClients().size());
-        Assertions.assertFalse(representation.getClients().contains(client.getId()));
-
-        client = clients.findByClientId("Client F").get(0);
-        clients.get(client.getId()).remove();
-
-        representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
-
-        Assertions.assertEquals(0, representation.getClients().size());
-        Assertions.assertFalse(representation.getClients().contains(client.getId()));
+        for (String clientId : clientIds) {
+            clients.get(clientId).remove();
+            assertEquals(clientIds, policy.toRepresentation().getClients());
+        }
     }
 
     @Test

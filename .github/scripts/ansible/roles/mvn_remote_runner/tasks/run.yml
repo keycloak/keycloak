@@ -17,7 +17,7 @@
     set -o pipefail
     cd {{ kc_home }}
     {% if lookup('env', 'JAVA_VERSION') != "" %}
-    {% if ansible_os_family == 'Debian' %}
+    {% if ansible_facts['os_family'] == 'Debian' %}
     export JAVA_HOME=/usr/lib/jvm/java-{{ lookup('env', 'JAVA_VERSION') }}-openjdk-amd64
     {% else %}
     export JAVA_HOME=/usr/lib/jvm/java-{{ lookup('env', 'JAVA_VERSION') }}-openjdk

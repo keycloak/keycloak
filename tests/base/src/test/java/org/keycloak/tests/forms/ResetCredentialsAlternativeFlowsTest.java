@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for the various alternatives of reset-credentials flow or browser flow (non-default setup of the  flows)
@@ -146,6 +147,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractResetCredentia
         assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage().orElse(null));
 
         // Assert email was sent
+        // the email is sent in the background
+        assertTrue(mail.waitForIncomingEmail(1));
         assertEquals(1, mail.getReceivedMessages().length);
     }
 
@@ -180,6 +183,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractResetCredentia
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage().orElse(null));
 
             // Assert email was sent
+            // the email is sent in the background
+            assertTrue(mail.waitForIncomingEmail(1));
             assertEquals(1, mail.getReceivedMessages().length);
 
             // Successfully reset password

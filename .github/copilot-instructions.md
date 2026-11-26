@@ -22,8 +22,8 @@
 ## High-value commands
 
 ### Formatting / lint checks
-- `./mvnw -Pdocs,distribution,operator spotless:check`
-- `./mvnw -Pdocs,distribution,operator spotless:apply` (only when you intentionally want automatic formatting changes)
+- `./mvnw -Pspotless spotless:check`
+- `./mvnw -Pspotless spotless:apply` (only when you intentionally want automatic formatting changes)
 
 ### Fast focused Maven build/test pattern
 - Build a focused module with required profile(s):

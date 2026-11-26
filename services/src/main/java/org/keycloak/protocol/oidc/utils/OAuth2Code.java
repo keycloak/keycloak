@@ -42,6 +42,7 @@ public class OAuth2Code {
     private static final String CODE_CHALLENGE_METHOD_NOTE = "code_challenge_method";
     private static final String DPOP_JKT_NOTE = "dpop_jkt";
     public static final String USER_SESSION_ID_NOTE = "user_session_id";
+    public static final String USER_ID_NOTE = "user_id";
 
     private final String id;
 
@@ -63,8 +64,10 @@ public class OAuth2Code {
 
     private final String userSessionId;
 
+    private final String userId;
+
     public OAuth2Code(String id, String clientUUID, int expiration, String nonce, String scope, String resource, String redirectUriParam,
-                      String codeChallenge, String codeChallengeMethod, String dpopJkt, String userSessionId) {
+                      String codeChallenge, String codeChallengeMethod, String dpopJkt, String userSessionId, String userId) {
         this.id = id;
         this.clientUUID = clientUUID;
         this.expiration = expiration;
@@ -76,6 +79,7 @@ public class OAuth2Code {
         this.codeChallengeMethod = codeChallengeMethod;
         this.dpopJkt = dpopJkt;
         this.userSessionId = userSessionId;
+        this.userId = userId;
     }
 
     private OAuth2Code(Map<String, String> data) {
@@ -90,6 +94,7 @@ public class OAuth2Code {
         codeChallengeMethod = data.get(CODE_CHALLENGE_METHOD_NOTE);
         dpopJkt = data.get(DPOP_JKT_NOTE);
         userSessionId = data.get(USER_SESSION_ID_NOTE);
+        userId = data.get(USER_ID_NOTE);
     }
 
 
@@ -112,6 +117,7 @@ public class OAuth2Code {
         result.put(CODE_CHALLENGE_METHOD_NOTE, codeChallengeMethod);
         result.put(DPOP_JKT_NOTE, dpopJkt);
         result.put(USER_SESSION_ID_NOTE, userSessionId);
+        result.put(USER_ID_NOTE, userId);
 
         return result;
     }
@@ -158,5 +164,9 @@ public class OAuth2Code {
 
     public String getUserSessionId() {
         return userSessionId;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 }

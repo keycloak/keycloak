@@ -1,5 +1,5 @@
 
-[[_transient-session]]
+[[transient-session]]
 
 === Transient sessions
 

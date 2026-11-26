@@ -289,7 +289,7 @@ In that ambiguous case, the top-level group name takes precedence.
 // https://github.com/keycloak/keycloak/issues/51481
 
 The experimental token exchange delegation feature no longer uses the `impersonation` role from the `realm-management` client to authorize delegation.
-Instead, delegation is controlled exclusively through link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2) using the new `delegate` scope on the Users resource type and the `delegate-members` scope on the Groups resource type.
+Instead, delegation is controlled exclusively through link:{adminguide_link}#fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP V2) using the new `delegate` scope on the Users resource type and the `delegate-members` scope on the Groups resource type.
 
 If you were previously using delegation with the `impersonation` role, you need to:
 
@@ -627,7 +627,7 @@ If you prefer to disable it for the built-in clients, you may need additional st
 
 . For each client that triggers the deprecation warning in the log, open the client in the Admin Console, navigate to *Client scopes* → the dedicated client scope → *Scope*, and disable *Full Scope Allowed*.
 . Explicitly add the role scope mappings that the client requires under the same *Scope* tab or on the linked client scopes.
-. Use the *Client scopes* → *Evaluate* tool (See details link:{adminguide_link}#_client_scopes_evaluate[here]) to verify that the resulting token contains exactly the roles the client needs.
+. Use the *Client scopes* → *Evaluate* tool (See details link:{adminguide_link}#client_scopes_evaluate[here]) to verify that the resulting token contains exactly the roles the client needs.
 
 To enforce that all newly created or updated clients in a realm have *Full Scope Allowed* disabled automatically, configure a client policy with the `full-scope-disabled` executor.
 See link:{adminguide_link}#_full_scope_disabled_policy[Enforcing Full Scope Allowed to be disabled] in the {adminguide_name} for step-by-step instructions, including how to exclude built-in clients from the policy.

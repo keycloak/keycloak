@@ -13,14 +13,15 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.context.AuthorizationRequestRedirectUriContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 
 /**
- * The class is a condition of client policies. On {@code PRE_AUTHORIZATION_REQUEST} event,
- * it checks if the value of {@code client_id} parameter is URI and
+ * The class is a condition of client policies. On {@code PRE_AUTHORIZATION_REQUEST} and
+ * {@code AUTHORIZATION_REQUEST_REDIRECT_URI} events, it checks if the client ID is a URI and
  * the scheme part of the URI is the one defined in its configuration.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -69,26 +70,30 @@ public class ClientIdUriSchemeCondition extends AbstractClientPolicyConditionPro
 
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
+        String clientId;
         switch (context.getEvent()) {
             case PRE_AUTHORIZATION_REQUEST:
-                PreAuthorizationRequestContext paContext = (PreAuthorizationRequestContext) context;
-                String clientId = paContext.getRequestParameters().getFirst(OAuth2Constants.CLIENT_ID);
-                if (clientId == null || configuration.getClientIdUriSchemes() == null || configuration.getClientIdUriSchemes().isEmpty()) {
-                    return ClientPolicyVote.NO;
-                }
-                final URI uri;
-                try {
-                    uri = new URI(clientId);
-                } catch (URISyntaxException e) {
-                    logger.debugv("not URL: clientId = {0}", clientId);
-                    return ClientPolicyVote.NO;
-                }
-                if (isUriSchemeMatched(uri) && isTrustedDomainMatched(uri)) return ClientPolicyVote.YES;
-
-                return ClientPolicyVote.NO;
+                clientId = ((PreAuthorizationRequestContext) context).getRequestParameters().getFirst(OAuth2Constants.CLIENT_ID);
+                break;
+            case AUTHORIZATION_REQUEST_REDIRECT_URI:
+                clientId = ((AuthorizationRequestRedirectUriContext) context).getClient().getClientId();
+                break;
             default:
                 return ClientPolicyVote.ABSTAIN;
         }
+        if (clientId == null || configuration.getClientIdUriSchemes() == null || configuration.getClientIdUriSchemes().isEmpty()) {
+            return ClientPolicyVote.NO;
+        }
+        final URI uri;
+        try {
+            uri = new URI(clientId);
+        } catch (URISyntaxException e) {
+            logger.debugv("not URL: clientId = {0}", clientId);
+            return ClientPolicyVote.NO;
+        }
+        if (isUriSchemeMatched(uri) && isTrustedDomainMatched(uri)) return ClientPolicyVote.YES;
+
+        return ClientPolicyVote.NO;
     }
 
     private boolean isUriSchemeMatched(URI uri) {

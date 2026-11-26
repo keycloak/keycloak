@@ -115,6 +115,10 @@ public abstract class AbstractClientRegistrationTest {
         reg.auth(Auth.token(getToken("manage-clients", "password")));
     }
 
+    void authManageRealm() {
+        reg.auth(Auth.token(getToken("manage-realm", "password")));
+    }
+
     void authNoAccess() {
         reg.auth(Auth.token(getToken("no-access", "password")));
     }
@@ -184,6 +188,14 @@ public abstract class AbstractClientRegistrationTest {
                     .emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS);
 
+            UserBuilder manageRealmUser = UserBuilder.create()
+                    .username("manage-realm")
+                    .name("manage", "realm")
+                    .password("password")
+                    .email("manage-realm@test.com")
+                    .emailVerified(true)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS, AdminRoles.MANAGE_REALM);
+
             UserBuilder noAccessUser = UserBuilder.create()
                     .username("no-access")
                     .name("no", "access")
@@ -191,7 +203,7 @@ public abstract class AbstractClientRegistrationTest {
                     .email("no-access@test.com")
                     .emailVerified(true);
 
-            realm.users(manageClientUser, createClientUser, viewClientUser, noAccessUser);
+            realm.users(manageClientUser, createClientUser, viewClientUser, manageRealmUser, noAccessUser);
 
             return realm;
         }

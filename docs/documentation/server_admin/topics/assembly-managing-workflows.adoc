@@ -1,7 +1,8 @@
 
 [id="assembly-managing-workflows_{context}"]
-[[_managing_workflows]]
-==  Managing workflows
+[[managing_workflows]]
+// The underscore-prefixed anchor in the heading is deprecated and only kept for links from old versions of the Admin Console.
+== [[_managing_workflows]]Managing workflows
 
 include::workflows/intro.adoc[leveloffset=+2]
 include::workflows/understanding-workflow.adoc[leveloffset=+2]

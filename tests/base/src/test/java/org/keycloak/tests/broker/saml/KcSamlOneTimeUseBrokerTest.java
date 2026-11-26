@@ -75,7 +75,6 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
     void configureConsumerRealm() {
         // error events of the broker endpoint are not saved by default, so they are invisible to the test events otherwise
         consumerRealm.updateWithCleanup(realm -> realm.enabledEventTypes(EventType.IDENTITY_PROVIDER_RESPONSE_ERROR.name()));
-        updateIdp(idp -> idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false"));
     }
 
     @Test
@@ -104,10 +103,11 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
                     PemUtils.encodeCertificate(signingCertificate));
         });
 
-        Document samlResponse = buildResponse(true);
+        Document samlResponse = SAML2Response.convert(buildResponseModel(true));
         BaseSAML2BindingBuilder<?> bindingBuilder = new BaseSAML2BindingBuilder<>()
                 .signatureAlgorithm(SignatureAlgorithm.RSA_SHA256)
                 .signWith("test-idp", signingKeyPair, signingCertificate);
+        bindingBuilder.signAssertions().signAssertion(samlResponse);
         bindingBuilder.signDocument(samlResponse);
 
         assertAccepted(samlResponse, "First use of signed OneTimeUse assertion should be accepted");
@@ -134,7 +134,7 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
         ConditionsType conditions = responseType.getAssertions().get(0).getAssertion().getConditions();
         conditions.setNotOnOrAfter(conditions.getNotBefore());
 
-        assertRejected(SAML2Response.convert(responseType), "Expired OneTimeUse assertion should be rejected");
+        assertRejected(signSamlResponse(SAML2Response.convert(responseType)), "Expired OneTimeUse assertion should be rejected");
     }
 
     @Test
@@ -177,7 +177,7 @@ public class KcSamlOneTimeUseBrokerTest extends AbstractKcSamlBrokerTest {
     }
 
     private Document buildResponse(boolean includeOneTimeUse) throws Exception {
-        return SAML2Response.convert(buildResponseModel(includeOneTimeUse));
+        return signSamlResponse(SAML2Response.convert(buildResponseModel(includeOneTimeUse)));
     }
 
     private ResponseType buildResponseModel(boolean includeOneTimeUse) throws Exception {

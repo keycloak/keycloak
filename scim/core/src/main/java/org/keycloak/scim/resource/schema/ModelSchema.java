@@ -100,6 +100,21 @@ public interface ModelSchema<M extends Model, R> {
     }
 
     /**
+     * Performs a PATCH {@code remove} operation on the given {@code model} for the attribute defined by the given {@code path},
+     * using the operation's {@code value}, if any, to select the values to remove from a multi-valued attribute when the
+     * path has no filter. For example, Microsoft Entra ID removes a group member with {@code "path": "members"} and a
+     * {@code "value"} listing the members to remove.
+     *
+     * @param resource the resource to perform the operation on
+     * @param model the model to perform the operation on
+     * @param path the path of the attribute to perform the operation on
+     * @param value the value of the operation, or {@code null} if the operation has no value
+     */
+    default void remove(R resource, M model, String path, JsonNode value) {
+        remove(resource, model, path);
+    }
+
+    /**
      * Performs a PATCH {@code replace} operation on the given {@code model} for the attribute defined by the given {@code path}.
      *
      * @param resource the resource to perform the operation on

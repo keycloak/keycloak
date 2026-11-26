@@ -1633,6 +1633,23 @@
         }
       },
       {
+        "id": "ff2c4bb4-563e-483b-87b9-a9c24594ea23",
+        "name": "aes-generated-256",
+        "providerId": "aes-generated",
+        "subComponents": {},
+        "config": {
+          "kid": [
+            "cb0a1c3d-902f-4e5d-905b-581bda97f090"
+          ],
+          "secret": [
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          ],
+          "priority": [
+            "-100"
+          ]
+        }
+      },
+      {
         "id": "51cbfea7-ca8b-479d-aa9c-9df7df9ccb26",
         "name": "rsa-enc-generated",
         "providerId": "rsa-generated",

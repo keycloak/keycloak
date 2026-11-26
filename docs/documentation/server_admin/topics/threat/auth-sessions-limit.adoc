@@ -2,7 +2,7 @@
 [[_limit-authentication-sessions]]
 === Limit Authentication Sessions
 
-<<_authentication-sessions, Authentication sessions>> track the state of the authentication. The text below is applicable regardless of the source flow.
+<<authentication-sessions, Authentication sessions>> track the state of the authentication. The text below is applicable regardless of the source flow.
 
 NOTE: This section describes deployments that use the {jdgserver_name} provider for authentication sessions.
 
