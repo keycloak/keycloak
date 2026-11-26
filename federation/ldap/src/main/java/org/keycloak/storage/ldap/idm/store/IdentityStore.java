@@ -20,6 +20,7 @@ package org.keycloak.storage.ldap.idm.store;
 import java.util.List;
 import java.util.Set;
 import javax.naming.AuthenticationException;
+import javax.naming.NamingException;
 import javax.naming.ldap.LdapName;
 
 import org.keycloak.models.ModelException;
@@ -117,7 +118,7 @@ public interface IdentityStore {
      * @param password Ldap password
      * @throws AuthenticationException if authentication is not successful
      */
-    void validatePassword(LDAPObject user, String password) throws AuthenticationException;
+    void validatePassword(LDAPObject user, String password) throws NamingException;
 
     /**
      * Updates the specified credential value.

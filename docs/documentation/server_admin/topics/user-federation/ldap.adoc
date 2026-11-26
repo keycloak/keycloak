@@ -194,6 +194,10 @@ The `LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY` value of the *User Groups Retr
 The same applies to the `LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY` strategy of the Role Mapper.
 ====
 
+[[_freeipa_mapper]]
+FreeIPA User Account Mapper::
+This mapper is specific to FreeIPA. It can integrate the FreeIPA user account state into the {project_name} account state, such as enabled account or expired password. This mapper uses the `krbPasswordExpiration`, and `nsAccountLock` LDAP attributes, specific to FreeIPA and are not the LDAP standard. For example, if the value of `krbPasswordExpiration` have passed, the {project_name} user must update their password. The result is an UPDATE_PASSWORD required action added to the user. If the value of `nsAccountLock` is `TRUE` (disabled account), the {project_name} user is disabled.
+
 [[_msad_mapper]]
 MSAD User Account Mapper::
 This mapper is specific to Microsoft Active Directory (MSAD). It can integrate the MSAD user account state into the {project_name} account state, such as enabled account or  expired password. This mapper uses the `userAccountControl`, and `pwdLastSet` LDAP attributes, specific to MSAD and are not the LDAP standard. For example, if the value of `pwdLastSet` is `0`, the {project_name} user must update their password. The result is an UPDATE_PASSWORD required action added to the user. If the value of  `userAccountControl` is `514` (disabled account), the {project_name} user is disabled.
