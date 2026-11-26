@@ -317,22 +317,6 @@ You can override this behavior by setting your own value for `targetServerType` 
 The `targetServerType` is only applied automatically to the primary datasource, as requirements might be different for additional datasources.
 ====
 
-==== Using PgBouncer
-
-When {project_name} connects to PostgreSQL through PgBouncer, connections can fail after a failover or switchover.
-PgBouncer caches the `in_hot_standby` value it reports to new client connections, and it can keep reporting `in_hot_standby=on` after the switch.
-Because `targetServerType` is set to `primary`, the PostgreSQL JDBC driver then treats the connection as a reader instance and refuses it with the error `Could not find a server with specified targetServerType: primary`.
-
-This is a known PgBouncer issue, tracked in https://github.com/pgbouncer/pgbouncer/issues/859[pgbouncer/pgbouncer#859].
-Reloading PgBouncer after a failover or switchover makes it report the current value again.
-
-Setting `targetServerType` to `any` avoids the error, but it also removes the protection described above, so {project_name} might connect to a reader instance.
-Only use it if your routing in PgBouncer sends database connections exclusively to the writable primary database.
-
-Set `targetServerType=any` via `db-url-properties`:
-
-<@kc.start parameters="--db postgres --db-url-properties='?targetServerType=any'"/>
-
 === Permissions of the database user
 
 Ensure that the database user has `SELECT` permissions to the following tables to ensure an efficient upgrade: `pg_class`, `pg_namespace`.
@@ -357,6 +341,56 @@ Secure the connection by adding the options:
 
 * `db-tls-mode=verify-server`: Forces TLS and verifies the server's identity against the trusted certificate.
 * `db-tls-trust-store-file=/path/to/certificate`: The path to the server's public certificate file on the client machine.
+
+=== Using PgBouncer
+
+[WARNING]
+====
+{project_name} has its own database connection pool, so it does not need a database proxy like PgBouncer.
+Do not use PgBouncer.
+Connect {project_name} directly to PostgreSQL.
+====
+
+A proxy adds an additional network hop to every query and makes the setup harder to operate.
+As described in this section, it also causes failures during failover and during upgrades that are hard to diagnose.
+Use PgBouncer only if you cannot avoid it, and test it with your workload and with an upgrade of {project_name} before using it in production.
+
+==== Prepared statements
+
+The PostgreSQL JDBC driver switches to server-side prepared statements for statements that are executed repeatedly.
+After the number of executions configured in `prepareThreshold` (default: `5`), the driver names the statement on the database connection and from then on sends only the name and the parameters.
+
+In PgBouncer's `transaction` pool mode, each transaction can be served by a different database connection.
+If PgBouncer does not track prepared statements, the named statement does not exist on the other connection.
+{project_name} then fails with errors like `prepared statement "S_1" does not exist` or `prepared statement "S_1" already exists`.
+These errors can appear randomly at runtime, and they can abort for example a database migration.
+
+To use PgBouncer in `transaction` pool mode, choose one of the following options:
+
+* Use PgBouncer 1.21 or later and set `max_prepared_statements` to a value greater than `0`.
+PgBouncer then tracks the prepared statements of each client and prepares them again on the database connection it assigns.
+If the value is too low, PgBouncer evicts and prepares statements repeatedly, which increases the CPU usage of PostgreSQL but does not cause errors.
+* Disable server-side prepared statements by adding `prepareThreshold=0` to the JDBC URL.
+PostgreSQL then needs to parse and plan every statement again, which increases its CPU usage.
+* Use the `session` pool mode, where a client keeps its database connection.
+
+<@kc.start parameters="--db postgres --db-url-properties='?prepareThreshold=0'"/>
+
+==== Failover and switchover
+
+When {project_name} connects to PostgreSQL through PgBouncer, connections can fail after a failover or switchover.
+PgBouncer caches the `in_hot_standby` value it reports to new client connections, and it can keep reporting `in_hot_standby=on` after the switch.
+Because `targetServerType` is set to `primary`, the PostgreSQL JDBC driver then treats the connection as a reader instance and refuses it with the error `Could not find a server with specified targetServerType: primary`.
+
+This is a known PgBouncer issue, tracked in https://github.com/pgbouncer/pgbouncer/issues/859[pgbouncer/pgbouncer#859].
+Reloading PgBouncer after a failover or switchover makes it report the current value again.
+
+Setting `targetServerType` to `any` avoids the error, but it also removes the protection described above, so {project_name} might connect to a reader instance.
+Only use it if your routing in PgBouncer sends database connections exclusively to the writable primary database.
+
+Set `targetServerType=any` via `db-url-properties`:
+
+<@kc.start parameters="--db postgres --db-url-properties='?targetServerType=any'"/>
 
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL

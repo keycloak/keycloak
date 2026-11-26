@@ -150,6 +150,8 @@
         <mysql-jdbc.version>9.7.0</mysql-jdbc.version>
         <postgresql.version>18</postgresql.version>
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
+        <pgbouncer.version>v1.23.1-p2</pgbouncer.version>
+        <pgbouncer.container>mirror.gcr.io/edoburu/pgbouncer:${pgbouncer.version}</pgbouncer.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>4.0.1</aws-jdbc-wrapper.version>
         <cnpg.major-minor-version>1.29</cnpg.major-minor-version>

@@ -186,6 +186,7 @@
                                 <kc.test.storage.database>true</kc.test.storage.database>
                                 <!--DB Container -->
                                 <kc.db.postgresql.container.image>${postgresql.container}</kc.db.postgresql.container.image>
+                                <kc.db.pgbouncer.container.image>${pgbouncer.container}</kc.db.pgbouncer.container.image>
                                 <kc.db.mariadb.container.image>${mariadb.container}</kc.db.mariadb.container.image>
                                 <kc.db.mysql.container.image>${mysql.container}</kc.db.mysql.container.image>
                                 <kc.infinispan.container.image>${infinispan.container}</kc.infinispan.container.image>

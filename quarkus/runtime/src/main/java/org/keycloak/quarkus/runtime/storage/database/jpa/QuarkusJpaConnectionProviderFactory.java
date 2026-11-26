@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.storage.database.jpa;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -57,6 +58,8 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import io.quarkus.arc.Arc;
 import io.quarkus.runtime.configuration.DurationConverter;
 import org.jboss.logging.Logger;
+import org.postgresql.PGConnection;
+import org.postgresql.PGStatement;
 
 import static org.keycloak.config.TransactionOptions.MIGRATION_TRANSACTION_TIMEOUT;
 import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
@@ -71,6 +74,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
     private static final String SQL_GET_LATEST_VERSION = "SELECT ID, VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
+    private static final String PSQL_INVALID_SQL_STATEMENT_NAME = "26000";
+    private static final String PSQL_DUPLICATE_PREPARED_STATEMENT = "42P05";
     private static final String MIGRATION_TRANSACTION_TIMEOUT_KEY = "migrationTransactionTimeout";
 
     enum MigrationStrategy {
@@ -113,6 +118,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         checkGaleraSyncWait();
         checkMSSQLIsolationLevel();
         checkUtf8Encoding();
+        checkPostgreSQLPreparedStatements();
 
         String id = null;
         String version = null;
@@ -335,6 +341,64 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             updater.export(connection, schema, databaseUpdateFile);
         } finally {
             dbLock2.releaseLock();
+        }
+    }
+
+    /**
+     * Verifies that server-side prepared statements survive a change of the server connection behind a database proxy.
+     * Proxies like PgBouncer in transaction mode without prepared statement support (PgBouncer before 1.21 or
+     * {@code max_prepared_statements=0}) hand out a different server connection per transaction. Then the statements
+     * named by the JDBC driver are missing, which fails randomly at runtime and, for example, aborts a database migration halfway.
+     * <p>
+     * The check needs two concurrent connections to the database: one is held busy in an open transaction while the other
+     * runs the probe. This is no additional requirement, as the database migration holds the lock in an open transaction on
+     * one connection while it uses a second one. If the proxy offers only a single server connection, the probe waits until
+     * its query timeout expires and the result is treated as inconclusive.
+     */
+    private void checkPostgreSQLPreparedStatements() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        if (Database.Vendor.POSTGRES != Database.getVendor(db).orElseThrow()) {
+            return;
+        }
+
+        try (Connection probe = getConnection(); Connection blocker = getConnection()) {
+            if (!probe.isWrapperFor(PGConnection.class)) {
+                return;
+            }
+            int prepareThreshold = probe.unwrap(PGConnection.class).getPrepareThreshold();
+            if (prepareThreshold <= 0) {
+                // the driver doesn't use named statements, nothing to verify
+                return;
+            }
+
+            try (PreparedStatement statement = probe.prepareStatement("SELECT 1")) {
+                statement.unwrap(PGStatement.class).setPrepareThreshold(prepareThreshold);
+                // The driver switches to a named server-side statement after the threshold is reached.
+                for (int i = 0; i <= prepareThreshold; i++) {
+                    statement.executeQuery().close();
+                }
+
+                // Keep the server connection that was just used busy in an open transaction. A proxy in transaction
+                // mode needs to serve the probe from a different server connection, where the named statement doesn't exist.
+                blocker.setAutoCommit(false);
+                try (Statement blockerStatement = blocker.createStatement()) {
+                    blockerStatement.execute("SELECT 1");
+                }
+                statement.setQueryTimeout(10);
+                statement.executeQuery().close();
+            } finally {
+                blocker.rollback();
+            }
+        } catch (SQLException e) {
+            if (PSQL_INVALID_SQL_STATEMENT_NAME.equals(e.getSQLState()) || PSQL_DUPLICATE_PREPARED_STATEMENT.equals(e.getSQLState())) {
+                throw new ServerStartupError("The database connection doesn't support server-side prepared statements, which is typical for a database proxy like PgBouncer in transaction mode. "
+                        + "Keycloak's connection pool doesn't need a database proxy, so connect directly to the database. "
+                        + "If you can't avoid the proxy, use PgBouncer 1.21 or later with 'max_prepared_statements' set to a value greater than 0, "
+                        + "use the session pool mode, or disable server-side prepared statements by adding 'prepareThreshold=0' to the JDBC URL. "
+                        + "See the 'Configuring the database' guide for details. "
+                        + "Failure: " + e.getMessage(), false);
+            }
+            logger.debugf(e, "Unable to verify prepared statement support due to database exception");
         }
     }
 
