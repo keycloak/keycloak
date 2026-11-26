@@ -119,7 +119,7 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
                   .addToMatchNames(meta.getNamespace())
                 .endNamespaceSelector()
                 .withNewSelector()
-                  .addToMatchLabels(Utils.allInstanceLabels(primary))
+                  .addToMatchLabels(Utils.allInstanceLabels(primary, false))
                 .endSelector()
                 .withScrapeProtocols(OPEN_METRICS_PROTOCOL)
                 .addNewEndpoint()

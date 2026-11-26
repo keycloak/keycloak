@@ -142,10 +142,10 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
         CRAssert.assertIngressRules(networkPolicy(kc), kc, -1, Constants.KEYCLOAK_HTTPS_PORT, Constants.KEYCLOAK_MANAGEMENT_PORT);
 
         var namespace = namespaceOf(kc);
-        var podIp = k8sclient.pods().inNamespace(namespace).list().getItems().get(0).getStatus().getPodIP();
+        var podIp = k8sclient.pods().inNamespace(namespace).withLabel(Constants.COMPONENT_LABEL, Constants.SERVER_COMPONENT).list().getItems().get(0).getStatus().getPodIP();
 
         // pod in the same namespace, labels match: able to connect.
-        CRAssert.assertJGroupsConnection(k8sclient, podIp, namespace, Utils.allInstanceLabels(kc), true);
+        CRAssert.assertJGroupsConnection(k8sclient, podIp, namespace, Utils.serverSelectorLabels(kc), true);
 
         // pod in the same namespace, labels do not match: fail to connect.
         CRAssert.assertJGroupsConnection(k8sclient, podIp, namespace, Map.of(), false);
@@ -154,7 +154,7 @@ public class KeycloakNetworkPolicyTest extends BaseOperatorTest {
         try {
             k8sclient.resource(new NamespaceBuilder().withNewMetadata().withName(otherNamespace).endMetadata().build()).create();
             // pod in a different namespace: fail to connect
-            CRAssert.assertJGroupsConnection(k8sclient, podIp, otherNamespace, Utils.allInstanceLabels(kc), false);
+            CRAssert.assertJGroupsConnection(k8sclient, podIp, otherNamespace, Utils.serverSelectorLabels(kc), false);
             CRAssert.assertJGroupsConnection(k8sclient, podIp, otherNamespace, Map.of(), false);
         } finally {
             k8sclient.namespaces().withName(otherNamespace).delete();
