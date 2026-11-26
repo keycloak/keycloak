@@ -1,7 +1,10 @@
 package org.keycloak.tests.client.policies;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -9,6 +12,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAttributesCondition;
+import org.keycloak.services.clientpolicy.condition.ClientAttributesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolCondition;
 import org.keycloak.services.clientpolicy.condition.ClientProtocolConditionFactory;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
@@ -22,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
+import static org.keycloak.tests.utils.ClientPoliciesUtil.createClientAttributesConditionConfig;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createClientProtocolConditionConfig;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
 import static org.keycloak.tests.utils.ClientPoliciesUtil.createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig;
@@ -152,6 +158,61 @@ public class ClientPoliciesClientCRUDTest extends AbstractClientPoliciesTest {
         // Verify client is now confidential
         foundRep = realm.admin().clients().get(publicClientUUID).toRepresentation();
         assertFalse(foundRep.isPublicClient());
+    }
+
+    @Test
+    public void testClientAttributesConditionClientCRUD() throws Exception {
+        // Setup policy: condition = client attribute "policy-group" is "restricted", executor = reject resource owner password credentials grant
+        RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration rejectResourceOwnerConfig =
+                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(false);
+        MultivaluedHashMap<String, String> attributes = new MultivaluedHashMap<>();
+        attributes.putSingle("policy-group", "restricted");
+        ClientAttributesCondition.Configuration attributesConditionConfig = createClientAttributesConditionConfig(attributes);
+        setupPolicy(realm, RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID, rejectResourceOwnerConfig,
+                ClientAttributesConditionFactory.PROVIDER_ID, attributesConditionConfig);
+
+        // Attempt to create a client with the attribute and directAccessGrants enabled. Should fail because condition matches.
+        try {
+            createClientByAdmin(realm, "restricted-client", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+                clientRep.setAttributes(new HashMap<>(Map.of("policy-group", "restricted")));
+                clientRep.setDirectAccessGrantsEnabled(true);
+            });
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Invalid client metadata: resource owner password credentials grant enabled", cpe.getErrorDetail());
+        }
+
+        // Create a client with another value of the attribute and directAccessGrants enabled. Should succeed because condition does not match.
+        String clientUUID = createClientByAdmin(realm, "other-client", OIDCLoginProtocol.LOGIN_PROTOCOL, clientRep -> {
+            clientRep.setAttributes(new HashMap<>(Map.of("policy-group", "other")));
+            clientRep.setDirectAccessGrantsEnabled(true);
+        });
+
+        // Attempt to update the client to the matching value of the attribute while keeping directAccessGrants enabled.
+        // Should fail because updating TO the matching attribute must also trigger the condition.
+        try {
+            updateClientByAdmin(realm, clientUUID, clientRep -> {
+                clientRep.getAttributes().put("policy-group", "restricted");
+                clientRep.setDirectAccessGrantsEnabled(true);
+            });
+            fail();
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Invalid client metadata: resource owner password credentials grant enabled", cpe.getErrorDetail());
+        }
+
+        // Verify the attribute is unchanged (update was rolled back)
+        ClientRepresentation foundRep = realm.admin().clients().get(clientUUID).toRepresentation();
+        assertEquals("other", foundRep.getAttributes().get("policy-group"));
+
+        // Update the client to the matching value of the attribute WITHOUT directAccessGrants. Should succeed.
+        updateClientByAdmin(realm, clientUUID, clientRep -> {
+            clientRep.getAttributes().put("policy-group", "restricted");
+            clientRep.setDirectAccessGrantsEnabled(false);
+        });
+
+        // Verify the attribute is now set
+        foundRep = realm.admin().clients().get(clientUUID).toRepresentation();
+        assertEquals("restricted", foundRep.getAttributes().get("policy-group"));
     }
 
     @Test

@@ -24,15 +24,18 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientModelContext;
 import org.keycloak.services.clientpolicy.context.PreAuthorizationRequestContext;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.services.clientpolicy.ClientPolicyEvent.PRE_AUTHORIZATION_REQUEST;
+import static org.keycloak.services.clientpolicy.ClientPolicyEvent.REGISTER;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -75,9 +78,15 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
             ClientModel client = session.getContext().getRealm().getClientByClientId(parc.getClientId());
             if (isAttributesMatched(client)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
+        } else if (context.getEvent() == REGISTER && context instanceof ClientCRUDContext clientCRUDContext) {
+            // The client does not exist yet, so the attributes of the proposed client are the only ones available
+            if (isProposedAttributesMatched(clientCRUDContext)) return ClientPolicyVote.YES;
+            return ClientPolicyVote.NO;
         } else if (context instanceof ClientModelContext clientModelContext) {
             ClientModel client = clientModelContext.getClient();
             if (isAttributesMatched(client)) return ClientPolicyVote.YES;
+            // In case that there is an attempt to update the client to the matching attributes, condition should be also evaluated to success
+            if (context instanceof ClientCRUDContext clientCRUDContext && isProposedAttributesMatched(clientCRUDContext)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         } else {
             return ClientPolicyVote.ABSTAIN;
@@ -86,11 +95,20 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
 
     private boolean isAttributesMatched(ClientModel client) {
         if (client == null) return false;
+        return isAttributesMatched(client.getAttributes());
+    }
+
+    private boolean isProposedAttributesMatched(ClientCRUDContext context) {
+        ClientRepresentation clientRep = context.getProposedClientRepresentation();
+        if (clientRep == null) return false;
+        return isAttributesMatched(clientRep.getAttributes());
+    }
+
+    private boolean isAttributesMatched(Map<String, String> clientAttributes) {
+        if (clientAttributes == null) return false;
 
         Map<String, List<String>> attributesForMatching = getAttributesForMatching();
         if (attributesForMatching == null) return false;
-
-        Map<String, String> clientAttributes = client.getAttributes();
 
         if (logger.isTraceEnabled()) {
             clientAttributes.forEach((i, j) -> logger.tracev("client attribute assigned = {0}: {1}", i, j));
@@ -113,7 +131,7 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
                         return false;
                     }
                     String value = entry.getValue().get(0);
-                    return clientAttributes.containsKey(key) && clientAttributes.get(key).equals(value);
+                    return value.equals(clientAttributes.get(key));
                 });
     }
 
