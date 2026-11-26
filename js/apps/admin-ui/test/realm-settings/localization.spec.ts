@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
+import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.ts";
 import { selectItem } from "../utils/form.ts";
@@ -182,6 +183,66 @@ test.describe.serial("Go to localization tab", () => {
         });
     });
   });
+});
+
+test("Preserves independent drafts through a failed translation save and retry", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed();
+  const { realm } = testBed;
+  const firstKey = "first-draft";
+  const secondKey = "second-draft";
+  const firstDraft = "First edited";
+  const secondDraft = "Second edited";
+  await adminClient.addLocalizationText(
+    "en",
+    firstKey,
+    "First original",
+    realm,
+  );
+  await adminClient.addLocalizationText(
+    "en",
+    secondKey,
+    "Second original",
+    realm,
+  );
+  await login(page, { to: toRealmSettings({ realm, tab: "localization" }) });
+  await goToRealmOverridesSubTab(page);
+
+  const firstRow = getRowByCellText(page, firstKey);
+  const secondRow = getRowByCellText(page, secondKey);
+  const firstInput = firstRow.getByRole("textbox", {
+    name: "Edit translation value",
+  });
+  const secondInput = secondRow.getByRole("textbox", {
+    name: "Edit translation value",
+  });
+  await editBundle(firstRow, firstDraft);
+  await editBundle(secondRow, secondDraft);
+
+  await page.route(
+    `**/admin/realms/${realm}/localization/en/${firstKey}`,
+    (route) => route.fulfill({ status: 503 }),
+    { times: 1 },
+  );
+
+  await clickConfirmEditButton(firstRow);
+  await assertNotificationMessage(page, /Error updating translation/);
+  await expect(firstInput).toBeEnabled();
+  await expect(firstInput).toHaveValue(firstDraft);
+  await expect(secondInput).toBeEnabled();
+  await expect(secondInput).toHaveValue(secondDraft);
+
+  await clickConfirmEditButton(firstRow);
+  await assertNotificationMessage(page, "Success! Translation updated.");
+  await expect(firstRow.getByText(firstDraft, { exact: true })).toBeVisible();
+  await expect(secondInput).toHaveValue(secondDraft);
+  await expect
+    .poll(() => adminClient.getLocalizationTexts("en", realm))
+    .toMatchObject({
+      [firstKey]: firstDraft,
+      [secondKey]: "Second original",
+    });
 });
 
 test("Keeps translation drafts and selection scoped to each locale", async ({
