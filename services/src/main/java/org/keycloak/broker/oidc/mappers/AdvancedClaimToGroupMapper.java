@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.social.google.GoogleIdentityProviderFactory;
 
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
 
@@ -36,7 +37,11 @@ public class AdvancedClaimToGroupMapper extends AbstractClaimToGroupMapper {
     public static final String CLAIM_PROPERTY_NAME = "claims";
     public static final String ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME = "are.claim.values.regex";
 
-    public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
+    public static final String[] COMPATIBLE_PROVIDERS = {
+            KeycloakOIDCIdentityProviderFactory.PROVIDER_ID,
+            OIDCIdentityProviderFactory.PROVIDER_ID,
+            GoogleIdentityProviderFactory.PROVIDER_ID
+    };
 
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
