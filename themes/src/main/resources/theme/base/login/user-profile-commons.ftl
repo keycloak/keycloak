@@ -88,7 +88,7 @@
 </#macro>
 
 <#macro inputTag attribute value>
-	<span class="${properties.kcInputClass!} <#if messagesPerField.existsError(attribute.name)>${properties.kcError!}</#if>">
+	<span class="${properties.kcInputClass!}<#if messagesPerField.existsError(attribute.name)> ${properties.kcError!}</#if><#if attribute.readOnly> ${properties.kcFormDisabledClass!}</#if>">
 		<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}"
 			<#if messagesPerField.existsError(attribute.name)>aria-invalid="true" aria-describedby="input-error-${attribute.name}"</#if>
 			data-kc-multivalued-action-class="${properties.kcMultivaluedActionClass!}"
@@ -127,7 +127,7 @@
 </#macro>
 
 <#macro textareaTag attribute>
-	<span class="${properties.kcInputClass!} ${properties.kcInputTextareaClass!} <#if messagesPerField.existsError(attribute.name)>${properties.kcError!}</#if>">
+	<span class="${properties.kcInputClass!} ${properties.kcInputTextareaClass!}<#if messagesPerField.existsError(attribute.name)> ${properties.kcError!}</#if><#if attribute.readOnly> ${properties.kcFormDisabledClass!}</#if>">
 	<textarea id="${attribute.name}" name="${attribute.name}"
 		<#if messagesPerField.existsError(attribute.name)>aria-invalid="true" aria-describedby="input-error-${attribute.name}"</#if>
 		<#if attribute.readOnly>disabled</#if>
@@ -140,7 +140,7 @@
 </#macro>
 
 <#macro selectTag attribute>
-	<div class="${properties.kcInputClass!} <#if messagesPerField.existsError(attribute.name)>${properties.kcError!}</#if>">
+	<div class="${properties.kcInputClass!}<#if messagesPerField.existsError(attribute.name)> ${properties.kcError!}</#if><#if attribute.readOnly> ${properties.kcFormDisabledClass!}</#if>">
 		<select id="${attribute.name}" name="${attribute.name}"
 			<#if messagesPerField.existsError(attribute.name)>aria-invalid="true" aria-describedby="input-error-${attribute.name}"</#if>
 			<#if attribute.readOnly>disabled</#if>
