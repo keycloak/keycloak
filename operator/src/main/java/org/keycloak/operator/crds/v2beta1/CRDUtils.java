@@ -30,7 +30,6 @@ import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodSpec;
@@ -38,6 +37,7 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import tools.jackson.databind.JsonNode;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

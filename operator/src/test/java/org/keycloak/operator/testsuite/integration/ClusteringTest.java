@@ -31,7 +31,6 @@ import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -46,6 +45,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.JsonNode;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -326,7 +326,7 @@ public class ClusteringTest extends BaseOperatorTest {
                     Log.info("Curl Output with token: " + tokenOutput);
                     JsonNode tokenAnswer = Serialization.jsonMapper().readTree(tokenOutput);
                     assertThat(tokenAnswer.hasNonNull("access_token")).isTrue();
-                    token2 = tokenAnswer.get("access_token").asText();
+                    token2 = tokenAnswer.get("access_token").asString();
                 }
 
                 String url = "https://" + serviceName + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/userinfo";
@@ -337,7 +337,7 @@ public class ClusteringTest extends BaseOperatorTest {
 
                 JsonNode answer = Serialization.jsonMapper().readTree(curlOutput);
                 assertThat(answer.hasNonNull("preferred_username")).isTrue();
-                assertThat(answer.get("preferred_username").asText()).isEqualTo("test");
+                assertThat(answer.get("preferred_username").asString()).isEqualTo("test");
             }
         });
     }
