@@ -130,6 +130,16 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
+    public Long getLastSuccessfulAuthentication() {
+        return user.getLastSuccessfulAuthentication();
+    }
+
+    @Override
+    public void setLastSuccessfulAuthentication(Long timestamp) {
+        user.setLastSuccessfulAuthentication(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }

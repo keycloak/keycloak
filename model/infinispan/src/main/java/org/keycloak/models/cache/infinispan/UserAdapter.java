@@ -179,6 +179,24 @@ public class UserAdapter implements CachedUserModel {
     }
 
     @Override
+    public Long getLastSuccessfulAuthentication() {
+        if (updated != null) return updated.getLastSuccessfulAuthentication();
+        return cached.getLastSuccessfulAuthentication();
+    }
+
+    @Override
+    public void setLastSuccessfulAuthentication(Long timestamp) {
+        // NOTE: this is written on every successful login, so going through getDelegateForUpdate()
+        // invalidates this user's cache entry cluster-wide on every login. Worth revisiting
+        // (e.g. a write-through path that bypasses cache invalidation) before this feature is stabilized.
+        if (updated == null && Objects.equals(cached.getLastSuccessfulAuthentication(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setLastSuccessfulAuthentication(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         if (updated != null) return updated.isEnabled();
         return cached.isEnabled();

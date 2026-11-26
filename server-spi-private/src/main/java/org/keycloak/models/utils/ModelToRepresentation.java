@@ -317,6 +317,7 @@ public class ModelToRepresentation {
             rep.setUsername(user.getUsername());
         }
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
+        rep.setLastSuccessfulAuthentication(user.getLastSuccessfulAuthentication());
         if (setUserAttributes) {
             rep.setLastName(user.getLastName());
         }
@@ -382,6 +383,7 @@ public class ModelToRepresentation {
             rep.setUsername(user.getUsername());
         }
         rep.setCreatedTimestamp(user.getCreatedTimestamp());
+        rep.setLastSuccessfulAuthentication(user.getLastSuccessfulAuthentication());
         if (setUserAttributes) {
             rep.setLastName(user.getLastName());
         }

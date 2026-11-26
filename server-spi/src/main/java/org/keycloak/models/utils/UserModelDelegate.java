@@ -230,6 +230,16 @@ public class UserModelDelegate implements UserModel {
     }
 
     @Override
+    public Long getLastSuccessfulAuthentication() {
+        return delegate.getLastSuccessfulAuthentication();
+    }
+
+    @Override
+    public void setLastSuccessfulAuthentication(Long timestamp) {
+        delegate.setLastSuccessfulAuthentication(timestamp);
+    }
+
+    @Override
     public Stream<GroupModel> getGroupsStream() {
         return delegate.getGroupsStream();
     }

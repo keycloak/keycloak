@@ -130,6 +130,8 @@ public class Profile {
 
         TRANSIENT_USERS("Transient users for brokering", Type.EXPERIMENTAL),
 
+        USER_LAST_SUCCESSFUL_AUTHENTICATION("Track last successful authentication per user", Type.EXPERIMENTAL),
+
         LOGIN_FAILURES_V1("In-memory login failures", Type.DEPRECATED, 1, FeatureUpdatePolicy.SHUTDOWN),
         LOGIN_FAILURES_V2("Persistent login failures", Type.DEFAULT, 2, FeatureUpdatePolicy.SHUTDOWN),
 

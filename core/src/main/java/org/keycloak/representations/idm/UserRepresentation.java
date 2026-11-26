@@ -33,6 +33,7 @@ public class UserRepresentation extends AbstractUserRepresentation{
     protected String self; // link
     protected String origin;
     protected Long createdTimestamp;
+    protected Long lastSuccessfulAuthentication;
     protected Boolean totp;
     protected String federationLink;
     protected String serviceAccountClientId; // For rep, it points to clientId (not DB ID)
@@ -73,6 +74,7 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
         this.self = rep.getSelf();
         this.createdTimestamp = rep.getCreatedTimestamp();
+        this.lastSuccessfulAuthentication = rep.getLastSuccessfulAuthentication();
         this.enabled = rep.isEnabled();
         this.totp = rep.isTotp();
         this.federationLink = rep.getFederationLink();
@@ -109,6 +111,19 @@ public class UserRepresentation extends AbstractUserRepresentation{
 
     public void setCreatedTimestamp(Long createdTimestamp) {
         this.createdTimestamp = createdTimestamp;
+    }
+
+    /**
+     * Timestamp of the user's last successful authentication, or {@code null} if the user has
+     * never authenticated since this feature was introduced. System-managed; this field is
+     * ignored on create/update requests.
+     */
+    public Long getLastSuccessfulAuthentication() {
+        return lastSuccessfulAuthentication;
+    }
+
+    public void setLastSuccessfulAuthentication(Long lastSuccessfulAuthentication) {
+        this.lastSuccessfulAuthentication = lastSuccessfulAuthentication;
     }
 
     @Deprecated

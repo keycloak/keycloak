@@ -25,4 +25,15 @@
         <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate27_0_0_OidcIssuerMigration"/>
     </changeSet>
 
+    <changeSet author="keycloak" id="27.0.0-52319-user-last-successful-auth">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="USER_ENTITY" columnName="LAST_SUCCESSFUL_AUTH"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="USER_ENTITY">
+            <column name="LAST_SUCCESSFUL_AUTH" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

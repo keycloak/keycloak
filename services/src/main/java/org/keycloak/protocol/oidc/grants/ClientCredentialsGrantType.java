@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Set;
 
@@ -24,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -44,6 +48,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.userprofile.LoginActivityAttributeRegistrar;
 
 import org.jboss.logging.Logger;
 
@@ -153,6 +158,7 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
         // client credentials grant always removes the online session
         clientSessionCtx.getClientSession().setNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
+        recordClientLastLogin();
         return createTokenResponse(clientUser, userSession, clientSessionCtx, scope, true,
                 responseBuilder -> new ServiceAccountTokenResponseContext(formParams, clientSessionCtx, responseBuilder));
     }
@@ -170,6 +176,21 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     @Override
     protected boolean useRefreshToken() {
         return clientConfig.isUseRefreshTokenForClientCredentialsGrant();
+    }
+
+    /**
+     * Records this client's last successful client-credentials (service account) login as a
+     * {@value LoginActivityAttributeRegistrar#CLIENT_LAST_LOGIN_ATTRIBUTE} attribute, in the same
+     * format previously written by the community keycloak-auditor SPI plugin on {@code CLIENT_LOGIN}
+     * events, so deployments already using that plugin keep continuity when they switch to this
+     * native implementation. Gated behind {@link Profile.Feature#USER_LAST_SUCCESSFUL_AUTHENTICATION}.
+     */
+    private void recordClientLastLogin() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.USER_LAST_SUCCESSFUL_AUTHENTICATION)) {
+            return;
+        }
+        String loginTime = DateTimeFormatter.ISO_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC));
+        client.setAttribute(LoginActivityAttributeRegistrar.CLIENT_LAST_LOGIN_ATTRIBUTE, loginTime);
     }
 
     /**

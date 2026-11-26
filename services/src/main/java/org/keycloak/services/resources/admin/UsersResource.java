@@ -16,6 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,6 +71,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 import org.keycloak.services.util.DateUtil;
+import org.keycloak.userprofile.LoginActivityAttributeRegistrar;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.GroupUtils;
@@ -299,7 +303,9 @@ public class UsersResource {
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
-            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore,
+            @Parameter(description = "Only return users who last successfully authenticated after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("lastSuccessfulAuthenticationAfter") String lastSuccessfulAuthenticationAfter,
+            @Parameter(description = "Only return users who last successfully authenticated before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("lastSuccessfulAuthenticationBefore") String lastSuccessfulAuthenticationBefore) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -331,13 +337,15 @@ public class UsersResource {
                     attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
                 }
                 addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
+                addLastSuccessfulAuthenticationConditions(attributes, lastSuccessfulAuthenticationAfter, lastSuccessfulAuthenticationBefore);
 
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                         maxResults, false);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
-                || createdAfter != null || createdBefore != null) {
+                || createdAfter != null || createdBefore != null
+                || lastSuccessfulAuthenticationAfter != null || lastSuccessfulAuthenticationBefore != null) {
                     Map<String, String> attributes = new HashMap<>();
                     if (last != null) {
                         attributes.put(UserModel.LAST_NAME, last);
@@ -367,6 +375,7 @@ public class UsersResource {
                         attributes.put(UserModel.EXACT, exact.toString());
                     }
                     addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
+                    addLastSuccessfulAuthenticationConditions(attributes, lastSuccessfulAuthenticationAfter, lastSuccessfulAuthenticationBefore);
 
                     attributes.putAll(searchAttributes);
 
@@ -436,7 +445,9 @@ public class UsersResource {
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
-            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore,
+            @Parameter(description = "Only return users who last successfully authenticated after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("lastSuccessfulAuthenticationAfter") String lastSuccessfulAuthenticationAfter,
+            @Parameter(description = "Only return users who last successfully authenticated before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("lastSuccessfulAuthenticationBefore") String lastSuccessfulAuthenticationBefore) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -463,6 +474,7 @@ public class UsersResource {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
+            addLastSuccessfulAuthenticationConditions(parameters, lastSuccessfulAuthenticationAfter, lastSuccessfulAuthenticationBefore);
             // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
             parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
             if (userPermissionEvaluator.canView()) {
@@ -476,7 +488,8 @@ public class UsersResource {
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
-                || createdAfter != null || createdBefore != null) {
+                || createdAfter != null || createdBefore != null
+                || lastSuccessfulAuthenticationAfter != null || lastSuccessfulAuthenticationBefore != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -506,6 +519,7 @@ public class UsersResource {
                 parameters.put(UserModel.EXACT, exact.toString());
             }
             addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
+            addLastSuccessfulAuthenticationConditions(parameters, lastSuccessfulAuthenticationAfter, lastSuccessfulAuthenticationBefore);
             parameters.putAll(searchAttributes);
             // search /users equivalent to this does include service-accounts so we should be explicit
             parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
@@ -545,6 +559,63 @@ public class UsersResource {
         return new UserProfileResource(session, auth, adminEvent);
     }
 
+    /**
+     * One-shot, idempotent migration helper for deployments previously using the community
+     * keycloak-auditor SPI plugin. For every user in the realm with a non-null
+     * {@code aud_usr_last-login} attribute (an ISO-8601 {@link OffsetDateTime} string, as written
+     * by that plugin) and no {@code lastSuccessfulAuthentication} value yet, parses that attribute
+     * and populates the native field. Never overwrites an already-set value, so it's safe to run
+     * again after native tracking has started. Does not remove the legacy attribute.
+     */
+    @Path("migrate-last-login")
+    @POST
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Backfill lastSuccessfulAuthentication from the keycloak-auditor plugin's aud_usr_last-login attribute",
+               description = "One-shot, idempotent migration helper for deployments previously using the community keycloak-auditor SPI plugin.")
+    public LastSuccessfulAuthenticationMigrationResult migrateLastLoginAttribute() {
+        auth.users().requireManage();
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.USER_LAST_SUCCESSFUL_AUTHENTICATION)) {
+            throw new BadRequestException("The 'user-last-successful-authentication' feature is not enabled");
+        }
+
+        int migrated = 0;
+        int skipped = 0;
+
+        try (Stream<UserModel> users = session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "true"))) {
+            for (UserModel user : users.toList()) {
+                if (user.getLastSuccessfulAuthentication() != null) {
+                    continue;
+                }
+                String legacyValue = user.getFirstAttribute(LoginActivityAttributeRegistrar.LEGACY_GLOBAL_LAST_LOGIN_ATTRIBUTE);
+                if (legacyValue == null || legacyValue.isBlank()) {
+                    continue;
+                }
+                try {
+                    long millis = OffsetDateTime.parse(legacyValue, DateTimeFormatter.ISO_DATE_TIME).toInstant().toEpochMilli();
+                    user.setLastSuccessfulAuthentication(millis);
+                    migrated++;
+                } catch (DateTimeParseException e) {
+                    logger.warnf("Could not parse legacy '%s' attribute value '%s' for user '%s': %s",
+                            LoginActivityAttributeRegistrar.LEGACY_GLOBAL_LAST_LOGIN_ATTRIBUTE, legacyValue, user.getId(), e.getMessage());
+                    skipped++;
+                }
+            }
+        }
+
+        return new LastSuccessfulAuthenticationMigrationResult(migrated, skipped);
+    }
+
+    public record LastSuccessfulAuthenticationMigrationResult(int migratedUsers, int skippedUsers) {
+    }
+
     private static void addCreatedTimestampConditions(Map<String, String> attributes, String createdAfter, String createdBefore) {
         if (createdAfter != null) {
             try {
@@ -558,6 +629,23 @@ public class UsersResource {
                 attributes.put(UserModel.CREATED_BEFORE, String.valueOf(DateUtil.toEndOfDay(createdBefore)));
             } catch (Throwable t) {
                 throw new BadRequestException("Invalid value for 'createdBefore', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+    }
+
+    private static void addLastSuccessfulAuthenticationConditions(Map<String, String> attributes, String lastSuccessfulAuthenticationAfter, String lastSuccessfulAuthenticationBefore) {
+        if (lastSuccessfulAuthenticationAfter != null) {
+            try {
+                attributes.put(UserModel.LAST_SUCCESSFUL_AUTHENTICATION_AFTER, String.valueOf(DateUtil.toStartOfDay(lastSuccessfulAuthenticationAfter)));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'lastSuccessfulAuthenticationAfter', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+        if (lastSuccessfulAuthenticationBefore != null) {
+            try {
+                attributes.put(UserModel.LAST_SUCCESSFUL_AUTHENTICATION_BEFORE, String.valueOf(DateUtil.toEndOfDay(lastSuccessfulAuthenticationBefore)));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'lastSuccessfulAuthenticationBefore', expected format is yyyy-MM-dd or an Epoch timestamp");
             }
         }
     }

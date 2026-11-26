@@ -48,10 +48,13 @@ public interface UserModel extends RoleMapperModel, Model {
     String EXACT = "keycloak.session.realm.users.query.exact";
     String CREATED_AFTER = "keycloak.session.realm.users.query.created_after";
     String CREATED_BEFORE = "keycloak.session.realm.users.query.created_before";
+    String LAST_SUCCESSFUL_AUTHENTICATION_AFTER = "keycloak.session.realm.users.query.last_successful_authentication_after";
+    String LAST_SUCCESSFUL_AUTHENTICATION_BEFORE = "keycloak.session.realm.users.query.last_successful_authentication_before";
     String DISABLED_REASON = "disabledReason";
     //attribute name used to mark a temporary admin user/service account as temporary
     String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
     String CREATED_TIMESTAMP = "createdTimestamp";
+    String LAST_SUCCESSFUL_AUTHENTICATION = "lastSuccessfulAuthentication";
 
     Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);
 
@@ -95,6 +98,17 @@ public interface UserModel extends RoleMapperModel, Model {
     }
 
     default void setLastModifiedTimestamp(Long timestamp) {
+    }
+
+    /**
+     * Get timestamp of the user's last successful authentication. May be null if the user has never
+     * authenticated since this feature was introduced.
+     */
+    default Long getLastSuccessfulAuthentication() {
+        return null;
+    }
+
+    default void setLastSuccessfulAuthentication(Long timestamp) {
     }
 
     boolean isEnabled();

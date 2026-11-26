@@ -20,6 +20,9 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -126,6 +129,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.userprofile.LoginActivityAttributeRegistrar;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.RoleResolveUtil;
 
@@ -1082,7 +1086,27 @@ public class AuthenticationManager {
         // The user has successfully logged in and we can clear his/her previous login failure attempts.
         logSuccess(session, authSession);
 
+        recordLastSuccessfulAuthentication(session, realm, userSession.getUser(), clientSession.getClient());
+
         return protocol.authenticated(authSession, userSession, clientSessionCtx);
+    }
+
+    /**
+     * Records the user's last successful authentication, both as a durable per-user timestamp and
+     * as a per-client "last login" attribute compatible with the one written by the community
+     * keycloak-auditor plugin, so existing deployments of that plugin can migrate without losing
+     * continuity. Gated behind {@link Profile.Feature#USER_LAST_SUCCESSFUL_AUTHENTICATION} since it
+     * writes to the user on every successful login.
+     */
+    private static void recordLastSuccessfulAuthentication(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.USER_LAST_SUCCESSFUL_AUTHENTICATION)) {
+            return;
+        }
+        user.setLastSuccessfulAuthentication(Time.currentTimeMillis());
+
+        String loginTime = DateTimeFormatter.ISO_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC));
+        LoginActivityAttributeRegistrar.registerClientLoginAttribute(session, realm, client.getClientId());
+        user.setSingleAttribute(LoginActivityAttributeRegistrar.perClientAttributeName(client.getClientId()), loginTime);
     }
 
     /**

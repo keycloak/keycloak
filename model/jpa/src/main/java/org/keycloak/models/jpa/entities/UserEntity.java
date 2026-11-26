@@ -78,6 +78,8 @@ public class UserEntity {
     protected Long createdTimestamp;
     @Column(name = "LAST_MODIFIED_TIMESTAMP")
     protected Long lastModifiedTimestamp;
+    @Column(name = "LAST_SUCCESSFUL_AUTH")
+    protected Long lastSuccessfulAuthentication;
     @Nationalized
     @Column(name = "LAST_NAME")
     protected String lastName;
@@ -157,6 +159,14 @@ public class UserEntity {
 
     public void setLastModifiedTimestamp(Long timestamp) {
         lastModifiedTimestamp = timestamp;
+    }
+
+    public Long getLastSuccessfulAuthentication() {
+        return lastSuccessfulAuthentication;
+    }
+
+    public void setLastSuccessfulAuthentication(Long timestamp) {
+        lastSuccessfulAuthentication = timestamp;
     }
 
     public String getFirstName() {
