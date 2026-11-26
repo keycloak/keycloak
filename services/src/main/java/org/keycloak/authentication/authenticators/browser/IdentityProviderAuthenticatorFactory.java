@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication.authenticators.browser;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config;
@@ -28,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
 /**
@@ -40,6 +40,7 @@ public class IdentityProviderAuthenticatorFactory implements AuthenticatorFactor
 
     public static final String PROVIDER_ID = "identity-provider-redirector";
     public static final String DEFAULT_PROVIDER = "defaultProvider";
+    public static final String FALLBACK_TO_DEFAULT_PROVIDER = "fallbackToDefaultProvider";
 
     @Override
     public String getDisplayType() {
@@ -73,8 +74,11 @@ public class IdentityProviderAuthenticatorFactory implements AuthenticatorFactor
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        ProviderConfigProperty rep = new ProviderConfigProperty(DEFAULT_PROVIDER, "Default Identity Provider", "To automatically redirect to an identity provider set to the alias of the identity provider", STRING_TYPE, null);
-        return Collections.singletonList(rep);
+        ProviderConfigProperty defaultProvider = new ProviderConfigProperty(DEFAULT_PROVIDER, "Default Identity Provider", "To automatically redirect to an identity provider set to the alias of the identity provider", STRING_TYPE, null);
+        ProviderConfigProperty fallbackToDefaultProvider = new ProviderConfigProperty(FALLBACK_TO_DEFAULT_PROVIDER, "Fall back to default provider",
+                "If enabled, redirects to the default identity provider when the kc_idp_hint parameter references an identity provider that does not exist or is disabled. Otherwise, the redirector is skipped in that case.",
+                BOOLEAN_TYPE, Boolean.FALSE);
+        return List.of(defaultProvider, fallbackToDefaultProvider);
     }
 
     @Override

@@ -32,3 +32,4 @@ await keycloak.createLoginUrl({
 ----
 
 With the `kc_idp_hint` query parameter, the client can override the default identity provider if you configure one for the `Identity Provider Redirector` authenticator. The client can  disable the automatic redirecting by setting the `kc_idp_hint` query parameter to an empty value.
+If the `kc_idp_hint` query parameter references an identity provider that does not exist or is disabled, the authenticator can fall back to the default identity provider. See the <<default_identity_provider, Default Identity Provider>> section for more information.
