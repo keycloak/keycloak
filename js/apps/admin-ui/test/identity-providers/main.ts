@@ -21,7 +21,7 @@ async function clickAddButton(page: Page) {
   await page.getByTestId("createProvider").click();
 }
 
-export async function createOIDCProvider(
+export async function fillOIDCProvider(
   page: Page,
   providerName: string,
   secret: string,
@@ -31,6 +31,14 @@ export async function createOIDCProvider(
   await page.getByTestId("displayName").fill(providerName);
   await page.getByTestId("config.clientId").fill(providerName);
   await page.getByTestId("config.clientSecret").fill(secret);
+}
+
+export async function createOIDCProvider(
+  page: Page,
+  providerName: string,
+  secret: string,
+) {
+  await fillOIDCProvider(page, providerName, secret);
   await clickAddButton(page);
 }
 

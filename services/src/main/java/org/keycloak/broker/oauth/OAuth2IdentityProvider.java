@@ -17,6 +17,7 @@
 package org.keycloak.broker.oauth;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -99,9 +100,8 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
     private JsonNode fetchUserProfile(String accessToken) {
         String userInfoUrl = getConfig().getUserInfoUrl();
 
-        try (SimpleHttpResponse response = executeRequest(userInfoUrl, SimpleHttp.create(session).doGet(userInfoUrl)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
-                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON))) {
+        try (SimpleHttpResponse response = executeRequest(userInfoUrl, () -> SimpleHttp.create(session).doGet(userInfoUrl)
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON), accessToken)) {
             String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE);
             MediaType contentMediaType;
 
@@ -125,8 +125,8 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
         }
     }
 
-    private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
-        SimpleHttpResponse response = request.asResponse();
+    private SimpleHttpResponse executeRequest(String url, Supplier<SimpleHttpRequest> requestSupplier, String accessToken) throws IOException {
+        SimpleHttpResponse response = sendRequest(requestSupplier, accessToken);
         try {
             int status = response.getStatus();
             if (Response.Status.fromStatusCode(status).getFamily() != Response.Status.Family.SUCCESSFUL) {

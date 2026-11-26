@@ -59,6 +59,7 @@ public class OAuthErrorException extends Exception {
 
     // DPoP
     public static final String INVALID_DPOP_PROOF = "invalid_dpop_proof";
+    public static final String USE_DPOP_NONCE = "use_dpop_nonce";
 
     // Resource Indicators
     public static final String INVALID_TARGET =  "invalid_target";
