@@ -276,6 +276,10 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         assertThat(topLevelGroupNames, hasItem(Matchers.startsWith("Department-")));
         assertThat(topLevelGroupNames, hasItem(Matchers.startsWith("Team-")));
 
+        // Validate top-level group descriptions are preserved (issue 55134)
+        topLevelGroups.forEach(group ->
+                assertThat(group.getDescription(), equalTo("Description of " + group.getName())));
+
         // Validate group IDs are preserved
         validateGroupIds(topLevelGroups, expectedGroupIds);
 
@@ -303,6 +307,10 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         List<String> subGroupNames = subGroups.stream().map(GroupRepresentation::getName).toList();
         assertThat(subGroupNames, hasItem(Matchers.startsWith("Development-")));
         assertThat(subGroupNames, hasItem(Matchers.startsWith("QA-")));
+
+        // Validate subgroup descriptions are preserved (issue 55134)
+        subGroups.forEach(subGroup ->
+                assertThat(subGroup.getDescription(), equalTo("Description of " + subGroup.getName())));
 
         // Validate group IDs are preserved
         validateGroupIds(subGroups, expectedGroupIds);
@@ -475,6 +483,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         assertThat(exportedLink.getMembershipType(), equalTo(expectedLink.getMembershipType()));
 
         assertThat(exported.getGroups().stream().map(GroupRepresentation::getName).toList(), containsInAnyOrder("Department"));
+        assertThat(exported.getGroups().get(0).getDescription(), equalTo("Description of Department"));
         assertThat(Optional.ofNullable(exported.getMembers()).orElse(List.of()), empty());
         assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> idp.getOrganizationLinks() != null && !idp.getOrganizationLinks().isEmpty()));
 
@@ -487,6 +496,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private String createTopLevelGroup(OrganizationResource organization, String name) {
         GroupRepresentation group = new GroupRepresentation();
         group.setName(name);
+        group.setDescription("Description of " + name);
         try (Response response = organization.groups().addTopLevelGroup(group)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             return ApiUtil.getCreatedId(response);
@@ -496,6 +506,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     private String createSubGroup(OrganizationResource organization, String parentId, String name) {
         GroupRepresentation group = new GroupRepresentation();
         group.setName(name);
+        group.setDescription("Description of " + name);
         try (Response response = organization.groups().group(parentId).addSubGroup(group)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             return response.readEntity(GroupRepresentation.class).getId();
