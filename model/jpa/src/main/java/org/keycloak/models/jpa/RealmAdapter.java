@@ -2076,6 +2076,11 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public ClientScopeModel getClientScopeByName(String name) {
+        return session.clientScopes().getClientScopeByName(this, name);
+    }
+
+    @Override
     public ClientScopeModel addClientScope(String name) {
         return session.clientScopes().addClientScope(this, name);
     }
