@@ -1,10 +1,13 @@
 package org.keycloak.broker.kubernetes;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.util.Strings;
 
 import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
@@ -67,5 +70,38 @@ final class KubernetesUtils {
             logger.warn("Failed to read service account token file", e);
         }
         return null;
+    }
+
+    static boolean isTrustedKubernetesEndpoint(String uri) {
+        return isTrustedKubernetesEndpoint(uri, System.getenv("KUBERNETES_SERVICE_HOST"), System.getenv("KUBERNETES_SERVICE_PORT_HTTPS"));
+    }
+
+    static boolean isTrustedKubernetesEndpoint(String uri, String serviceHost, String servicePort) {
+        if (Strings.isEmpty(uri)) {
+            return false;
+        }
+        try {
+            URI parsed = URI.create(uri);
+            if (!"https".equalsIgnoreCase(parsed.getScheme())) {
+                return false;
+            }
+            String host = parsed.getHost();
+            if (host == null) {
+                return false;
+            }
+            host = host.toLowerCase(Locale.ROOT);
+            int port = parsed.getPort() == -1 ? 443 : parsed.getPort();
+            boolean standardApiHost = host.equals("kubernetes.default.svc")
+                    || host.equals("kubernetes.default.svc.cluster.local")
+                    || host.equals("kubernetes.default");
+            if (standardApiHost && port == 443) {
+                return true;
+            }
+            return !Strings.isEmpty(serviceHost) && !Strings.isEmpty(servicePort)
+                    && host.equalsIgnoreCase(serviceHost)
+                    && port == Integer.parseInt(servicePort);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
