@@ -27,24 +27,33 @@ import org.keycloak.client.cli.util.HttpUtil;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public enum EndpointType {
-    DEFAULT("default", "default"),
     OIDC("openid-connect", "oidc", "oidc");
 
-    private String endpoint;
-    private String preferredName;
-    private Set<String> alternativeNames;
+    private static final Set<String> REMOVED = Set.of(
+            "default",
+            "saml2",
+            "saml2-entity-descriptor",
+            "install",
+            "adapter");
+
+    private final String endpoint;
+    private final String preferredName;
+    private final Set<String> alternativeNames;
 
     private EndpointType(String endpoint, String preferredName, String ... alternativeNames) {
         this.endpoint = endpoint;
         this.preferredName = preferredName;
-        this.alternativeNames = new HashSet(Arrays.asList(alternativeNames));
+        this.alternativeNames = new HashSet<>(Arrays.asList(alternativeNames));
     }
 
     public static EndpointType of(String name) {
-        if (DEFAULT.endpoint.equals(name) || DEFAULT.alternativeNames.contains(name)) {
-            return DEFAULT;
-        } else if (OIDC.endpoint.equals(name) || OIDC.alternativeNames.contains(name)) {
+        if (OIDC.endpoint.equals(name) || OIDC.alternativeNames.contains(name)) {
             return OIDC;
+        }
+        if (REMOVED.contains(name)) {
+            throw new IllegalArgumentException(
+                    "Endpoint '" + name + "' is no longer supported by kcreg. Use 'oidc' (OpenID Connect dynamic client registration). "
+                            + "For Keycloak JSON or SAML metadata, use the Admin REST API or kcadm instead.");
         }
         throw new IllegalArgumentException("Endpoint not supported: " + name);
     }
@@ -58,12 +67,9 @@ public enum EndpointType {
     }
 
     public static String getExpectedContentType(EndpointType type) {
-        switch (type) {
-            case DEFAULT:
-            case OIDC:
-                return HttpUtil.APPLICATION_JSON;
-            default:
-                throw new RuntimeException("Unsupported endpoint type: " + type);
+        if (type == OIDC) {
+            return HttpUtil.APPLICATION_JSON;
         }
+        throw new RuntimeException("Unsupported endpoint type: " + type);
     }
 }

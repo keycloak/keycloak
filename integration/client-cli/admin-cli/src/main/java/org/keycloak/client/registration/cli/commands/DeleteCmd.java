@@ -56,7 +56,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
             warnfErr(CmdStdinContext.CLIENT_OPTION_WARN, clientId);
         }
 
-        String regType = "default";
+        String regType = "openid-connect";
 
         ConfigData config = loadConfig();
         config = copyWithServerInfo(config);

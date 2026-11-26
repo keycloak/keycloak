@@ -31,7 +31,6 @@ import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.client.registration.cli.EndpointType;
 import org.keycloak.client.registration.cli.EndpointTypeConverter;
 import org.keycloak.client.registration.cli.ReflectionUtil;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -57,7 +56,6 @@ import static org.keycloak.client.cli.util.IoUtil.readFully;
 import static org.keycloak.client.cli.util.IoUtil.warnfErr;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
-import static org.keycloak.client.registration.cli.EndpointType.DEFAULT;
 import static org.keycloak.client.registration.cli.EndpointType.OIDC;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 
@@ -67,7 +65,7 @@ import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 @Command(name = "update", description = "CLIENT_ID [ARGUMENTS]")
 public class UpdateCmd extends AbstractAuthOptionsCmd {
 
-    @Option(names = {"-e", "--endpoint"}, description = "Endpoint type to use - one of: 'default', 'oidc'", converter = EndpointTypeConverter.class)
+    @Option(names = {"-e", "--endpoint"}, description = "Endpoint type to use - currently only 'oidc'", converter = EndpointTypeConverter.class)
     private EndpointType regType = null;
 
     @Option(names = {"-f", "--file"}, description = "Use the file or standard input if '-' is specified")
@@ -162,9 +160,9 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         }
 
         if (regType == null) {
-            regType = DEFAULT;
+            regType = OIDC;
             ctx.setEndpointType(regType);
-        } else if (regType != DEFAULT && regType != OIDC) {
+        } else if (regType != OIDC) {
             throw new RuntimeException("Update not supported for endpoint type: " + regType.getEndpoint());
         }
 
@@ -182,7 +180,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
             // but first see if it's overridden by --set, or maybe deliberately muted via -d registrationAccessToken
             boolean processed = false;
             for (AttributeOperation op: attrs) {
-                if ("registrationAccessToken".equals(op.getKey().toString())) {
+                if ("registration_access_token".equals(op.getKey().toString()) || "registrationAccessToken".equals(op.getKey().toString())) {
                     processed = true;
                     if (op.getType() == AttributeOperation.Type.SET) {
                         externalToken = op.getValue();
@@ -225,14 +223,8 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
             ctxremote.setContent(json);
             ctxremote.setEndpointType(regType);
             try {
-
-                if (regType == DEFAULT) {
-                    ctxremote.setClient(JsonSerialization.readValue(json, ClientRepresentation.class));
-                    externalToken = ctxremote.getClient().getRegistrationAccessToken();
-                } else if (regType == OIDC) {
-                    ctxremote.setOidcClient(JsonSerialization.readValue(json, OIDCClientRepresentation.class));
-                    externalToken = ctxremote.getOidcClient().getRegistrationAccessToken();
-                }
+                ctxremote.setOidcClient(JsonSerialization.readValue(json, OIDCClientRepresentation.class));
+                externalToken = ctxremote.getOidcClient().getRegistrationAccessToken();
             } catch (JsonParseException e) {
                 throw new RuntimeException("Not a valid JSON document. " + e.getMessage(), e);
             } catch (IOException e) {
@@ -253,9 +245,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
             }
 
             // merge local representation over remote one
-            if (ctx.getClient() != null) {
-                ReflectionUtil.merge(ctx.getClient(), ctxremote.getClient());
-            } else if (ctx.getOidcClient() != null) {
+            if (ctx.getOidcClient() != null) {
                 ReflectionUtil.merge(ctx.getOidcClient(), ctxremote.getOidcClient());
             }
             ctx = ctxremote;
@@ -269,15 +259,9 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         InputStream response = doPut(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
                 APPLICATION_JSON, APPLICATION_JSON, ctx.getContent(), auth);
         try {
-            if (regType == DEFAULT) {
-                ClientRepresentation clirep = JsonSerialization.readValue(response, ClientRepresentation.class);
-                outputResult(clirep);
-                externalToken = clirep.getRegistrationAccessToken();
-            } else if (regType == OIDC) {
-                OIDCClientRepresentation clirep = JsonSerialization.readValue(response, OIDCClientRepresentation.class);
-                outputResult(clirep);
-                externalToken = clirep.getRegistrationAccessToken();
-            }
+            OIDCClientRepresentation clirep = JsonSerialization.readValue(response, OIDCClientRepresentation.class);
+            outputResult(clirep);
+            externalToken = clirep.getRegistrationAccessToken();
 
             String newToken = externalToken;
             String clientToUpdate = clientId;
@@ -322,7 +306,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println("    -s, --set KEY=VALUE   Set specific attribute to a specified value");
         out.println("              KEY+=VALUE  Add item to an array");
         out.println("    -d, --delete NAME     Delete the specific attribute, or array item");
-        out.println("    -e, --endpoint TYPE   Endpoint type to use - one of: 'default', 'oidc'");
+        out.println("    -e, --endpoint TYPE   Endpoint type to use - currently only 'oidc'");
         out.println("    -f, --file FILENAME   Use the file or standard input if '-' is specified");
         out.println("    -m, --merge           Merge new values with existing configuration on the server");
         out.println("                          Merge is automatically enabled unless --file is specified");
@@ -349,18 +333,18 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         out.println("Examples:");
         out.println();
         out.println("Update a client by fetching current configuration from server, and applying specified changes.");
-        out.println("  " + PROMPT + " " + CMD + " update my_client -s enabled=true -s 'redirectUris=[\"http://localhost:8080/myapp/*\"]'");
+        out.println("  " + PROMPT + " " + CMD + " update my_client -s 'redirect_uris=[\"http://localhost:8080/myapp/*\"]'");
         out.println();
         out.println("Update a client by overwriting existing configuration on the server with a new one:");
         out.println("  " + PROMPT + " " + CMD + " update my_client -f new_my_client.json");
         out.println();
         out.println("Update a client by overwriting existing configuration using local file as a template:");
-        out.println("  " + PROMPT + " " + CMD + " update my_client -f new_my_client.json -s enabled=true");
+        out.println("  " + PROMPT + " " + CMD + " update my_client -f new_my_client.json -s client_name=my_client2");
         out.println();
         out.println("Update client by fetching current configuration from server and merging with specified changes:");
-        out.println("  " + PROMPT + " " + CMD + " update my_client -f new_my_client.json -s enabled=true --merge");
+        out.println("  " + PROMPT + " " + CMD + " update my_client -f new_my_client.json -s client_name=my_client2 --merge");
         out.println();
-        out.println("Update a client using 'oidc' endpoint:");
+        out.println("Update a client (explicit -e oidc is optional):");
         out.println("  " + PROMPT + " " + CMD + " update my_client -e oidc -s 'redirect_uris=[\"http://localhost:8080/myapp/*\"]'");
         out.println();
         out.println();

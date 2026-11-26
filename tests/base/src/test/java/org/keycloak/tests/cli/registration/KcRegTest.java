@@ -10,7 +10,7 @@ import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.common.util.KeystoreUtil;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.cli.KcRegExec;
 import org.keycloak.tests.cli.TempFileResource;
@@ -101,7 +101,7 @@ public class KcRegTest extends AbstractRegCliTest {
         exe = execute("attrs");
         Assertions.assertEquals(0, exe.exitCode(), "exit code");
         Assertions.assertTrue(exe.stdoutLines().size() > 10, "stdout has response");
-        Assertions.assertEquals("Attributes for default format:", exe.stdoutLines().get(0), "first line");
+        Assertions.assertEquals("Attributes for openid-connect format:", exe.stdoutLines().get(0), "first line");
 
         exe = execute("update-token");
         assertExitCodeAndStdErrSize(exe, 2, 0);
@@ -421,7 +421,7 @@ public class KcRegTest extends AbstractRegCliTest {
 
 
 
-            exe = execute("create --config '" + configFile.getName() + "' -s clientId=test-client -o");
+            exe = execute("create --config '" + configFile.getName() + "' -s client_id=test-client -o");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
@@ -433,7 +433,7 @@ public class KcRegTest extends AbstractRegCliTest {
             Assertions.assertNotNull(config2.sessionRealmConfigData().getClients().get("test-client"));
 
 
-            ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
             Assertions.assertEquals("test-client", client.getClientId(), "clientId");
             Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
             Assertions.assertEquals(config2.sessionRealmConfigData().getClients().get("test-client"), client.getRegistrationAccessToken(), "registrationAccessToken in returned json same as in config");
@@ -614,12 +614,12 @@ public class KcRegTest extends AbstractRegCliTest {
             final String realm = "master";
 
             KcRegExec exe = execute("create " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
-                    + " --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " -s clientId=test-client2 -o -t " + token);
+                    + " --insecure --server " + keycloakUrls.getBase() + " --realm " + realm + " -s client_id=test-client2 -o -t " + token);
 
             Assertions.assertEquals(0, exe.exitCode(), "exitCode == 0");
 
 
-            ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
             Assertions.assertEquals("test-client2", client.getClientId(), "clientId");
             Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
@@ -661,11 +661,11 @@ public class KcRegTest extends AbstractRegCliTest {
 
         try (TempFileResource configFile = new TempFileResource(handler.getConfigFile())) {
             KcRegExec exe = execute("create " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
-                    + " --server " + serverUrl + " --realm " + realm + " -s clientId=test-client -o");
+                    + " --server " + serverUrl + " --realm " + realm + " -s client_id=test-client -o");
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
             Assertions.assertEquals("test-client", client.getClientId(), "clientId");
             Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");

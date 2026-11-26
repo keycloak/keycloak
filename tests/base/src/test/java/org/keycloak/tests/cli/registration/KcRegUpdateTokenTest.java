@@ -6,7 +6,7 @@ import org.keycloak.client.cli.config.ConfigData;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.client.cli.util.ConfigUtil;
-import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.cli.KcRegExec;
 import org.keycloak.tests.cli.TempFileResource;
@@ -64,7 +64,7 @@ class KcRegUpdateTokenTest extends AbstractRegCliTest {
 
             assertExitCodeAndStdErrSize(exe, 0, 0);
 
-            ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
             Assertions.assertEquals("reg-cli-secret-direct", client.getClientId(), "client representation returned");
         }
     }
