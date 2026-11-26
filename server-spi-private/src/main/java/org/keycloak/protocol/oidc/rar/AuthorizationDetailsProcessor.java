@@ -104,6 +104,16 @@ public interface AuthorizationDetailsProcessor<ADR extends AuthorizationDetailsJ
                                             ClientSessionContext clientSessionCtx,
                                             ADR authorizationDetailsResponse);
 
+    /**
+     * Hook method called after the token response has been built successfully.
+     *
+     * @param clientSessionCtx the client session context
+     * @param authorizationDetailsResponse the authorization detail included in the token response
+     */
+    default void afterTokenResponseCreated(ClientSessionContext clientSessionCtx,
+                                           ADR authorizationDetailsResponse) {
+    }
+
 
     /**
      * Sanitize authorization details before they are sent as part of the Token Response
