@@ -65,6 +65,7 @@ test.describe.serial("User Fed LDAP mapper tests", () => {
       name: roleName,
     });
   });
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

@@ -77,8 +77,8 @@ export const TimeSelector = ({
   const [open, setOpen] = useState(false);
 
   const times = useMemo(() => {
-    const filteredUnits = units.map(
-      (unit) => allTimes.find((time) => time.unit === unit)!,
+    const filteredUnits = units.map((unit) =>
+      allTimes.find((time) => time.unit === unit)!,
     );
     if (
       !filteredUnits.every((u) => u.multiplier === multiplier) &&

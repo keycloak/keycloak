@@ -61,8 +61,7 @@ const Domains = (org: OrganizationRepresentation) => {
 
 export type OrganizationTableProps = PropsWithChildren & {
   loader:
-    | LoaderFunction<OrganizationRepresentation>
-    | OrganizationRepresentation[];
+    LoaderFunction<OrganizationRepresentation> | OrganizationRepresentation[];
   link: FunctionComponent<
     PropsWithChildren<{ organization: OrganizationRepresentation }>
   >;

@@ -51,6 +51,7 @@ test.describe.serial("User profile tabs", () => {
       ],
     });
   });
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

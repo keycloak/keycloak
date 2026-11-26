@@ -100,8 +100,7 @@ function collectEndpointExamples(
 
         const remainder = currentChain.slice(wrapper.chainPrefix.length);
         const contentType = reqMeta.requestBodyContentType as
-          | string
-          | undefined;
+          string | undefined;
         // Kiota metadata does not expose method parameter count;
         // if a method ever has more than one argument, this needs updating
         const bodyArg = contentType ? "requestBody" : "";

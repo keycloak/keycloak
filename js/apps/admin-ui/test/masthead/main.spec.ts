@@ -102,6 +102,7 @@ test.describe.serial("Masthead tests", () => {
     test.beforeEach(async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 640 });
     });
+
     test("Mobile menu is shown when in mobile view", async ({ page }) => {
       await assertIsMobileView(page);
     });

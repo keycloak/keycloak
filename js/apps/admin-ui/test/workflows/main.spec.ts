@@ -66,6 +66,7 @@ test.describe.serial("Workflow CRUD", () => {
   const realmName = `workflow-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {

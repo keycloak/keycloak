@@ -63,12 +63,12 @@ test.describe("Scope tab", () => {
 
     // Initially, only directly assigned roles are shown (inherited roles are hidden by default)
     const directRolesOnly = await getTableData(page, tableName);
-    expect(directRolesOnly.length).toBe(1); // Only composite-role is directly assigned
+    expect(directRolesOnly).toHaveLength(1); // Only composite-role is directly assigned
 
     // Click to show inherited roles (the toggle reveals inherited roles from composite)
     await clickHideInheritedRoles(page);
     const allRoles = await getTableData(page, tableName);
-    expect(allRoles.length).toBe(2); // composite-role + offline_access (inherited from composite)
+    expect(allRoles).toHaveLength(2); // composite-role + offline_access (inherited from composite)
 
     // Click again to hide inherited roles
     await clickHideInheritedRoles(page);

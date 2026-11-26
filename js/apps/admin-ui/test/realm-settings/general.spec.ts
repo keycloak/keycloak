@@ -28,6 +28,7 @@ test.describe.serial("Realm settings general tab tests", () => {
   const realmName = `general-realm-settings-${uuid()}`;
 
   test.beforeAll(() => adminClient.createRealm(realmName));
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
@@ -176,6 +177,7 @@ test.describe("Realm settings delete", () => {
   test.beforeAll(() =>
     adminClient.createRealm(realmName, { displayName: "Display name only" }),
   );
+
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test("deletes the realm by its name when a display name is set", async ({
