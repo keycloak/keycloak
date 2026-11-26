@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -46,6 +47,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        context.getEvent().detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         String password = retrievePassword(context);
         boolean valid = context.getUser().credentialManager().isValid(UserCredentialModel.password(password));
         if (!valid) {
