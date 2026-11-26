@@ -286,6 +286,39 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testSearchByAlias() {
+        // create some organizations whose alias differs from both the name and the domains
+        for (String[] nameAndAlias : List.of(new String[] {"acme", "acme-corp"}, new String[] {"Gotham-Bank", "gtb"},
+                new String[] {"wayne-industries", "WayneCorp"})) {
+            OrganizationRepresentation org = createRepresentation(nameAndAlias[0], nameAndAlias[0] + ".org");
+            org.setAlias(nameAndAlias[1]);
+            try (Response response = realm.admin().organizations().create(org)) {
+                assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+            }
+        }
+
+        // exact search by alias
+        List<OrganizationRepresentation> existing = realm.admin().organizations().search("gtb", true, 0, 10);
+        long count = realm.admin().organizations().count("gtb", true);
+        assertThat(existing, hasSize(1));
+        assertThat(existing, hasSize((int) count));
+        assertThat(existing.get(0).getName(), is(equalTo("Gotham-Bank")));
+        assertThat(existing.get(0).getAlias(), is(equalTo("gtb")));
+
+        // exact search must not match a partial alias
+        existing = realm.admin().organizations().search("gt", true, 0, 10);
+        assertThat(existing, is(empty()));
+
+        // partial, case-insensitive search by alias (e.g. 'corp' matching 'acme-corp' and 'WayneCorp')
+        existing = realm.admin().organizations().search("corp", false, 0, 10);
+        count = realm.admin().organizations().count("corp", false);
+        assertThat(existing, hasSize(2));
+        assertThat(existing, hasSize((int) count));
+        List<String> orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
+        assertThat(orgNames, containsInAnyOrder("acme", "wayne-industries"));
+    }
+
+    @Test
     @DatabaseTest
     public void testSearchByAttributes() {
         List<OrganizationRepresentation> expected = new ArrayList<>();
