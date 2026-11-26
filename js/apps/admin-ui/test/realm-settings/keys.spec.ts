@@ -1,5 +1,7 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
+import { toKeysTab } from "../../src/realm-settings/routes/KeysTab.tsx";
+import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.ts";
 import { switchToggle } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
@@ -9,6 +11,7 @@ import { goToRealm, goToRealmSettings } from "../utils/sidebar.ts";
 import {
   assertRowExists,
   clickRowKebabItem,
+  getRowByCellText,
   searchItem,
 } from "../utils/table.ts";
 import {
@@ -18,6 +21,48 @@ import {
   goToKeys,
   switchToFilter,
 } from "./keys.ts";
+
+test("Reorders key providers again while the first refresh is pending", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed();
+  const { realm } = testBed;
+  await login(page, { to: toKeysTab({ realm, tab: "providers" }) });
+
+  const names = page.getByTestId("provider-name-link");
+  await expect(names.nth(2)).toBeVisible();
+  const [first, second, third, ...remaining] = await names.allTextContents();
+  const expectedOrder = [third, second, first, ...remaining];
+  const refreshStarted = Promise.withResolvers<boolean>();
+  const releaseRefresh = Promise.withResolvers<void>();
+  const providersUrl = `**/admin/realms/${realm}/components/?type=org.keycloak.keys.KeyProvider`;
+  await page.route(
+    providersUrl,
+    async (route) => {
+      const response = await route.fetch();
+      refreshStarted.resolve(response.ok());
+      await releaseRefresh.promise;
+      await route.fulfill({ response });
+    },
+    { times: 1 },
+  );
+
+  try {
+    await getRowByCellText(page, first).dragTo(getRowByCellText(page, third));
+    expect(await refreshStarted.promise).toBe(true);
+    await expect(names).toHaveText([second, third, first, ...remaining]);
+
+    const secondRefresh = page.waitForResponse(providersUrl);
+    await getRowByCellText(page, third).dragTo(getRowByCellText(page, second));
+    expect((await secondRefresh).ok()).toBe(true);
+    await expect(names).toHaveText(expectedOrder);
+  } finally {
+    releaseRefresh.resolve();
+  }
+
+  await page.reload();
+  await expect(names).toHaveText(expectedOrder);
+});
 
 test.describe.serial("Realm Settings - Keys", () => {
   const realmName = `events-realm-settings-${uuid()}`;

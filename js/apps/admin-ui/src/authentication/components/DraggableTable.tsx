@@ -61,7 +61,7 @@ export function DraggableTable<T>({
 
   const itemOrder: string[] = useMemo(
     () => data.map((d) => get(d, keyField)),
-    [data],
+    [data, keyField],
   );
 
   const onDragStart = (evt: ReactDragEvent) => {
@@ -163,8 +163,9 @@ export function DraggableTable<T>({
         bodyRef.current?.children || [],
       ).findIndex((item) => item.id === dragId);
       if (draggingToItemIndex !== state.draggingToItemIndex) {
+        // Tables that keep the dropped order use it for the next drag.
         const tempItemOrder = moveItem(
-          [...itemOrder],
+          restoreOrderOnDrop ? [...itemOrder] : itemOrder,
           state.draggedItemId,
           draggingToItemIndex,
         );
