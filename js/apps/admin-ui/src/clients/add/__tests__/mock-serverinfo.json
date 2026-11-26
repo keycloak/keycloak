@@ -4440,7 +4440,7 @@
               {
                  "name":"searchScope",
                  "type":"String",
-                 "defaultValue":"1",
+                 "defaultValue":"2",
                  "secret":false
               },
               {
