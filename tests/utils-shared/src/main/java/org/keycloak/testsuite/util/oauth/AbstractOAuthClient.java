@@ -190,6 +190,14 @@ public abstract class AbstractOAuthClient<T> {
         return userInfoRequest(accessToken).send();
     }
 
+    public AccountRequest accountRequest(String accessToken) {
+        return new AccountRequest(accessToken, this);
+    }
+
+    public AccountResponse doAccountRequest(String accessToken) {
+        return accountRequest(accessToken).send();
+    }
+
     public IntrospectionRequest introspectionRequest(String tokenToIntrospect) {
         return new IntrospectionRequest(tokenToIntrospect, this);
     }
