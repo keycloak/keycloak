@@ -1,4 +1,4 @@
-<#-- Keep synchronized with the other theme-resources.ftl copies under themes/. -->
+<#-- Shared FreeMarker macros for stylesheets, scripts, and favicons. Loaded via ThemeResourceProvider for all theme types. -->
 <#macro renderStyles resources pathPrefix>
     <#list resources as resource>
         <link href="${pathPrefix}/${resource.path}" rel="stylesheet"<#if resource.media?has_content> media="${resource.media}"</#if><#if resource.integrity?has_content> integrity="${resource.integrity}"</#if><#if resource.crossorigin?has_content> crossorigin="${resource.crossorigin}"</#if> />
