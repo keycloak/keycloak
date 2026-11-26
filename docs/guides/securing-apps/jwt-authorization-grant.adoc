@@ -50,7 +50,7 @@ Only confidential clients can request a JWT authorization grant. In order to all
 .Client configuration for JWT Authorization Grant
 image::jwt-authorization-grant-client-config.png[Client configuration for JWT Authorization Grant]
 
-NOTE: In the **Advanced** tab, section **OpenID Connect Compatibility Modes**, the configuration option **Custom audience mapping** allows to configure specific custom valid audiences for individual Identity Providers. The map key is the Identity Provider alias, and the value is the custom audience that will be accepted for that provider. Note this behavior is not covered by the standard and can have major security implications.
+NOTE: In the **Advanced** tab, section **OpenID Connect Compatibility Modes**, the configuration option **Custom audience mapping** allows to configure specific custom valid audiences for individual Identity Providers. The map key is the Identity Provider alias, and the value is the custom audience that will be accepted for that provider. Note this behavior is not covered by the standard and can have major security implications. In deployments where client administrators should not be allowed to edit this option, see the **jwt-authorization-grant-settings-disabled** executor below.
 
 The Identity Provider (both types commented in the introduction) needs to also be configured to establish the relationship that will validate the assertion. In **Identity providers** -> select your OIDC or JWT provider -> **Settings** tab -> **Authorization Grant Settings** section.
 
@@ -157,6 +157,13 @@ The enforcer can be used for any request that uses an assertion parameter. Curre
 * Executor **jwt-claim-enforcer**. This executor allows to configure extra requirements for claims in the JWT assertion token. For example, if we want the assertion to contain an `iat` claim or a custom claim with a specific value. The configuration allows us to set any claim name and any claim value (using a java regex). If the claim in the JWT assertion does not match the regex, the request does not proceed and an error is returned.
 +
 As the previous executor, for the moment this enforcer can be used for JWT Authorization Grant and the Standard Token exchange.
+* Executor **jwt-authorization-grant-settings-disabled**. This executor rejects any request that sets or changes the JWT Authorization Grant settings of a client, which are the **Allowed Identity Providers for JWT Authorization Grant** and the **Custom audience mapping** options. Those options decide which assertions the grant accepts for the client, so the executor is intended for deployments where client administrators should not be allowed to edit them. It applies to client creation and update, so it covers both the admin REST API and dynamic client registration.
++
+Enabling the grant on a client that already exists is rejected as well, because the allow lists configured earlier are still on the client and the flag on its own would be enough to make the grant work again. Turning the grant off stays permitted.
++
+Only a change is rejected. A request that carries the value a client already has is permitted, so applying the executor preserves the existing configuration of a client and leaves the rest of the client editable.
++
+The executor applies to whoever the policy matches. To allow administrators to keep configuring these settings while refusing the clients themselves, combine it with the **client-updater-context** condition and select the `ByRegistrationAccessToken`, `ByInitialAccessToken` and `ByAnonymous` sources.
 
 == JWT Authorization Grant for Google Identity Provider
 
