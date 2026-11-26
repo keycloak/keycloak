@@ -172,16 +172,25 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
             return;
         }
 
-        Set<TrustAnchor> anchors = new HashSet<>();
+        // The topmost certificate is the trust anchor; it must itself be valid (e.g. not expired).
+        X509Certificate top = certificates.get(certificates.size() - 1);
+        top.checkValidity();
 
-        // consider the last certificate in the chain as the most trusted cert
-        anchors.add(new TrustAnchor(certificates.get(certificates.size() - 1), null));
+        // A single certificate is not a chain; there is nothing further to validate.
+        if (certificates.size() == 1) {
+            return;
+        }
+
+        Set<TrustAnchor> anchors = new HashSet<>();
+        anchors.add(new TrustAnchor(top, null));
 
         PKIXParameters params = new PKIXParameters(anchors);
 
         params.setRevocationEnabled(false);
 
-        CertPath certPath = CertificateFactory.getInstance("X.509").generateCertPath(certificates);
+        // Validate the path from the leaf up to (but excluding) the trust anchor.
+        List<X509Certificate> path = certificates.subList(0, certificates.size() - 1);
+        CertPath certPath = CertificateFactory.getInstance("X.509").generateCertPath(path);
         CertPathValidator validator = CertPathValidator.getInstance(CertPathValidator.getDefaultType());
 
         validator.validate(certPath, params);
