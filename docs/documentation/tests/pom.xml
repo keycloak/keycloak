@@ -79,12 +79,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
-            <artifactId>authorization-services</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.documentation</groupId>
             <artifactId>server-admin</artifactId>
             <version>${project.version}</version>
             <type>pom</type>

@@ -24,12 +24,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
-            <artifactId>authorization-services</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.documentation</groupId>
             <artifactId>server-admin</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -66,22 +60,6 @@
                             <resources>
                                 <resource>
                                     <directory>../api_documentation/target/generated-docs</directory>
-                                    <include>**/**</include>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-authorization_services</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/authorization_services/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../authorization_services/target/generated-docs</directory>
                                     <include>**/**</include>
                                 </resource>
                             </resources>

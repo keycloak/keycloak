@@ -10,7 +10,6 @@ public class Guides {
         boolean product = System.getProperties().containsKey("product");
 
         List<String> g = new LinkedList<>();
-        g.add("authorization_services");
         g.add("release_notes");
         g.add("server_admin");
         g.add("server_development");

@@ -47,3 +47,6 @@
 :ui_customization_guide_name: UI Customization Guide
 :ui_customization_guide_link: {project_doc_base_url}/ui-customization/
 :server_providers: {developerguide_link}#_providers
+:developerguide_jsproviders_link: {developerguide_link}#_script_providers
+:developerguide_jsproviders_name: JavaScript Providers
+:apidocs_link: https://www.keycloak.org/docs-api/{version}/javadocs/
