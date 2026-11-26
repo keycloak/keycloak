@@ -14,6 +14,10 @@
     <artifactId>keycloak-quarkus-server</artifactId>
     <description>Keycloak Server</description>
     <dependencies>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk18on</artifactId>
+        </dependency>
         <!-- Quarkus -->
         <dependency>
             <groupId>io.quarkus</groupId>
