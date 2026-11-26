@@ -7,6 +7,7 @@ import { ClaimDisplayComponent } from "./ClaimDisplayComponent";
 import { IdentityProviderMultiSelectComponent } from "./IdentityProviderMultiSelectComponent";
 import { FileComponent } from "./FileComponent";
 import { GroupComponent } from "./GroupComponent";
+import { GroupListComponent } from "./GroupListComponent";
 import { ListComponent } from "./ListComponent";
 import { MapComponent } from "./MapComponent";
 import { MultiValuedListComponent } from "./MultivaluedListComponent";
@@ -46,6 +47,7 @@ type ComponentType =
   | "Script"
   | "Map"
   | "Group"
+  | "GroupList"
   | "MultivaluedList"
   | "ClientList"
   | "IdentityProviderMultiList"
@@ -70,6 +72,7 @@ export const COMPONENTS: {
   Script: ScriptComponent,
   Map: MapComponent,
   Group: GroupComponent,
+  GroupList: GroupListComponent,
   ClientList: ClientSelectComponent,
   IdentityProviderMultiList: IdentityProviderMultiSelectComponent,
   UserProfileAttributeList: UserProfileAttributeListComponent,
