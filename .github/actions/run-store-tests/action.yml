@@ -5,6 +5,9 @@ inputs:
   db:
     description: The database to use for tests
     required: true
+  server-start-timeout:
+    description: Seconds to wait for the Keycloak server to start, which includes creating the schema
+    default: "360"
 
 runs:
   using: composite
@@ -16,12 +19,12 @@ runs:
     - name: Run new base tests
       shell: bash
       run: |
-        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkc.test.server.start.timeout=360
+        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite -Dkc.test.server.start.timeout=${{ inputs.server-start-timeout }}
 
     - name: Run stateless tests
       shell: bash
       run: |
-        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=StatelessTestSuite -Dkc.test.server.start.timeout=360
+        KC_TEST_DATABASE=${{ inputs.db }} KC_TEST_DATABASE_REUSE=true TESTCONTAINERS_REUSE_ENABLE=true ./mvnw package -f tests/pom.xml -Dtest=StatelessTestSuite -Dkc.test.server.start.timeout=${{ inputs.server-start-timeout }}
 
     - uses: ./.github/actions/upload-flaky-tests
       name: Upload flaky tests

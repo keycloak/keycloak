@@ -159,6 +159,7 @@
             <and>
                 <or>
                     <dbms type="postgresql"/>
+                    <dbms type="cockroachdb"/>
                     <dbms type="mssql"/>
                 </or>
                 <or>
@@ -180,6 +181,7 @@
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <or>
                 <dbms type="postgresql"/>
+                <dbms type="cockroachdb"/>
                 <dbms type="mssql"/>
             </or>
         </preConditions>
@@ -187,7 +189,7 @@
             <column name="BROKER_SESSION_ID"/>
             <column name="REALM_ID"/>
         </createIndex>
-        <modifySql dbms="postgresql">
+        <modifySql dbms="postgresql,cockroachdb">
             <append value=" WHERE BROKER_SESSION_ID IS NOT NULL"/>
         </modifySql>
         <modifySql dbms="mssql">
