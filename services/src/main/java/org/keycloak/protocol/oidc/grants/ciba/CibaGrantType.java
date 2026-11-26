@@ -218,6 +218,8 @@ public class CibaGrantType extends OAuth2GrantTypeBase {
         int authTime = Time.currentTime();
         userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));
 
+        AuthenticationManager.recordLastSuccessfulAuthentication(session, realm, user, client);
+
         return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true,s -> {return new BackchannelTokenResponseContext(request, formParams, clientSessionCtx, s);});
 
     }

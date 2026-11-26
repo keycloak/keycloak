@@ -55,6 +55,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     public static String EMAIL_VERIFIED_ATTRIBUTE = "EMAIL_VERIFIED";
     public static String CREATED_TIMESTAMP_ATTRIBUTE = "CREATED_TIMESTAMP";
     public static String ENABLED_ATTRIBUTE = "ENABLED";
+    public static String LAST_SUCCESSFUL_AUTHENTICATION_ATTRIBUTE = "LAST_SUCCESSFUL_AUTHENTICATION";
 
 
     protected KeycloakSession session;
@@ -309,6 +310,22 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
             setSingleAttribute(CREATED_TIMESTAMP_ATTRIBUTE, Long.toString(timestamp));
         }
 
+    }
+
+    @Override
+    public Long getLastSuccessfulAuthentication() {
+        String val = getFirstAttribute(LAST_SUCCESSFUL_AUTHENTICATION_ATTRIBUTE);
+        if (val == null) return null;
+        else return Long.valueOf(val);
+    }
+
+    @Override
+    public void setLastSuccessfulAuthentication(Long timestamp) {
+        if (timestamp == null) {
+            setSingleAttribute(LAST_SUCCESSFUL_AUTHENTICATION_ATTRIBUTE, null);
+        } else {
+            setSingleAttribute(LAST_SUCCESSFUL_AUTHENTICATION_ATTRIBUTE, Long.toString(timestamp));
+        }
     }
 
     @Override

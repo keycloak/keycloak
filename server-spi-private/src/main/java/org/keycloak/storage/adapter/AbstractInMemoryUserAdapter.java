@@ -43,6 +43,7 @@ import org.keycloak.storage.StorageId;
  */
 public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethods {
     private Long createdTimestamp = Time.currentTimeMillis();
+    private Long lastSuccessfulAuthentication;
     private boolean emailVerified;
     private boolean enabled;
 
@@ -107,6 +108,19 @@ public abstract class AbstractInMemoryUserAdapter extends UserModelDefaultMethod
     public void setCreatedTimestamp(Long timestamp) {
         checkReadonly();
         this.createdTimestamp = timestamp;
+    }
+
+    // Not durable across requests for non-imported providers backed by this adapter (e.g. non-imported
+    // LDAP) - there's no writable backing store to persist to, only this request-scoped instance.
+    @Override
+    public Long getLastSuccessfulAuthentication() {
+        return lastSuccessfulAuthentication;
+    }
+
+    @Override
+    public void setLastSuccessfulAuthentication(Long timestamp) {
+        checkReadonly();
+        this.lastSuccessfulAuthentication = timestamp;
     }
 
     @Override

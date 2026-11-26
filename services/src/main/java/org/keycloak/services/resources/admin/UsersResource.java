@@ -598,13 +598,23 @@ public class UsersResource {
         int first = firstResult != null ? firstResult : 0;
         int max = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
+        if (first < 0) {
+            throw new BadRequestException("'first' must not be negative");
+        }
+        if (max <= 0) {
+            // max <= 0 is treated by the underlying query as "unlimited" (negative) or as a non-advancing
+            // continuation (zero), either of which breaks the endpoint's bounded-page guarantee.
+            throw new BadRequestException("'max' must be a positive number");
+        }
+
+        Map<String, String> searchParams = Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
+        int totalUsers = session.users().getUsersCount(realm, true);
+
         int migrated = 0;
         int skipped = 0;
-        int processed = 0;
 
-        try (Stream<UserModel> users = session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "true"), first, max)) {
+        try (Stream<UserModel> users = session.users().searchForUserStream(realm, searchParams, first, max)) {
             for (UserModel user : users.toList()) {
-                processed++;
                 if (user.getLastSuccessfulAuthentication() != null) {
                     continue;
                 }
@@ -624,8 +634,10 @@ public class UsersResource {
             }
         }
 
-        // A full page suggests there may be more users after it; a partial (or empty) page means we reached the end.
-        int nextFirstResult = processed == max ? first + processed : -1;
+        // Based on the underlying page's position against the total user count, not on how many users
+        // the (filtered, nulls-dropped) result stream actually resolved to - a page that's filtered down
+        // to fewer/zero visible users doesn't mean the underlying query had no more pages after it.
+        int nextFirstResult = first + max < totalUsers ? first + max : -1;
 
         return new LastSuccessfulAuthenticationMigrationResult(migrated, skipped, nextFirstResult);
     }

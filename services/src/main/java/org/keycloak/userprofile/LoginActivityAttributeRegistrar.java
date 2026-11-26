@@ -23,10 +23,13 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -70,6 +73,20 @@ public class LoginActivityAttributeRegistrar {
     private static final Pattern SAFE_ATTRIBUTE_NAME_CHARS = Pattern.compile("[a-zA-Z0-9._-]+");
     private static final Pattern UNSAFE_CHAR = Pattern.compile("[^a-zA-Z0-9._-]");
 
+    /** {@code USER_ATTRIBUTE.NAME} is a {@code VARCHAR(255)} column. */
+    private static final int MAX_ATTRIBUTE_NAME_LENGTH = 255;
+
+    /**
+     * Per-realm locks serializing the read-merge-write of {@link UserProfileProvider#getConfiguration()}
+     * done by {@link #registerClientLoginAttribute}. That call happens on every client's first login - far
+     * more often than the rare manual admin edit this config otherwise sees - so without serialization,
+     * concurrent first logins for different clients on the same node can race and silently drop each
+     * other's group/attribute registration (last write wins on the whole config blob). This only protects
+     * against races on the same node; a genuinely concurrent write from another cluster node can still be
+     * overwritten, same as any other concurrent {@code UserProfileProvider#setConfiguration} caller today.
+     */
+    private static final Map<String, Object> realmLocks = new ConcurrentHashMap<>();
+
     /**
      * The global last-login attribute written by the community keycloak-auditor SPI plugin
      * ({@code aud_usr_last-login}, an ISO-8601 {@link java.time.OffsetDateTime} string). Core no
@@ -82,11 +99,34 @@ public class LoginActivityAttributeRegistrar {
     private LoginActivityAttributeRegistrar() {
     }
 
-    public static String perClientAttributeName(String clientId) {
+    public static String perClientAttributeName(ClientModel client) {
+        String clientId = client.getClientId();
+        String prefix = PER_CLIENT_ATTRIBUTE_PREFIX + "_";
+
         if (SAFE_ATTRIBUTE_NAME_CHARS.matcher(clientId).matches()) {
-            return PER_CLIENT_ATTRIBUTE_PREFIX + "_" + clientId;
+            String candidate = prefix + clientId;
+            if (candidate.length() <= MAX_ATTRIBUTE_NAME_LENGTH) {
+                return candidate;
+            }
+            // Falls through to the hashed/bounded form below; a client ID this long can't be embedded
+            // as-is within the 255-character attribute name limit regardless of its characters.
         }
-        return PER_CLIENT_ATTRIBUTE_PREFIX + "_" + UNSAFE_CHAR.matcher(clientId).replaceAll("_") + "_" + sha256Hex8(clientId);
+
+        // Hashing client.getId() (the realm-unique internal ID, immutable and not attacker-chosen) rather
+        // than the human-chosen clientId string means a different client can't forge this exact name by
+        // simply naming itself "<sanitized prefix>_<hash>" - it would need that *other* client's internal
+        // ID, which it doesn't control. This only disambiguates the hashed branch from itself; an
+        // adversarial realm admin with "manage clients" could still name a client exactly the same as the
+        // computed hashed name below, but that's no worse than any other free-form client naming already
+        // available to that same privileged role.
+        String hash = sha256Hex8(client.getId());
+        String suffix = "_" + hash;
+        String sanitized = UNSAFE_CHAR.matcher(clientId).replaceAll("_");
+        int sanitizedBudget = MAX_ATTRIBUTE_NAME_LENGTH - prefix.length() - suffix.length();
+        if (sanitized.length() > sanitizedBudget) {
+            sanitized = sanitized.substring(0, Math.max(sanitizedBudget, 0));
+        }
+        return prefix + sanitized + suffix;
     }
 
     private static String sha256Hex8(String value) {
@@ -106,18 +146,24 @@ public class LoginActivityAttributeRegistrar {
      * Ensures a per-client last-login attribute exists in the user profile configuration for the
      * given realm. Idempotent; only writes the configuration back if something actually changed.
      */
-    public static void registerClientLoginAttribute(KeycloakSession session, RealmModel realm, String clientId) {
+    public static void registerClientLoginAttribute(KeycloakSession session, RealmModel realm, ClientModel client) {
         session.getContext().setRealm(realm);
         UserProfileProvider upp = session.getProvider(UserProfileProvider.class);
-        UPConfig config = upp.getConfiguration();
+        String attrName = perClientAttributeName(client);
 
-        String attrName = perClientAttributeName(clientId);
-        boolean modified = ensureGroup(config);
-        modified |= ensureAttribute(config, attrName, "Last Login (" + clientId + ")");
+        Object lock = realmLocks.computeIfAbsent(realm.getId(), id -> new Object());
+        synchronized (lock) {
+            // Re-fetch under the lock rather than reusing a config read before it was acquired, so a
+            // concurrent registration for a different client (already serialized by this same lock)
+            // isn't clobbered by us writing back a copy that predates it.
+            UPConfig config = upp.getConfiguration();
+            boolean modified = ensureGroup(config);
+            modified |= ensureAttribute(config, attrName, "Last Login (" + client.getClientId() + ")");
 
-        if (modified) {
-            logger.infof("Registered last-login user profile attribute '%s' for realm '%s'", attrName, realm.getName());
-            upp.setConfiguration(config);
+            if (modified) {
+                logger.infof("Registered last-login user profile attribute '%s' for realm '%s'", attrName, realm.getName());
+                upp.setConfiguration(config);
+            }
         }
     }
 

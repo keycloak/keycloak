@@ -1109,8 +1109,8 @@ public class AuthenticationManager {
 
         try {
             String loginTime = DateTimeFormatter.ISO_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC));
-            LoginActivityAttributeRegistrar.registerClientLoginAttribute(session, realm, client.getClientId());
-            user.setSingleAttribute(LoginActivityAttributeRegistrar.perClientAttributeName(client.getClientId()), loginTime);
+            LoginActivityAttributeRegistrar.registerClientLoginAttribute(session, realm, client);
+            user.setSingleAttribute(LoginActivityAttributeRegistrar.perClientAttributeName(client), loginTime);
         } catch (ReadOnlyException e) {
             // Federated users backed by a read-only storage provider (e.g. LDAP without writable attribute
             // mapping) reject attribute writes outright. Don't let that fail an otherwise valid login - the

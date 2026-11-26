@@ -10,6 +10,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -43,7 +44,9 @@ public class LastSuccessfulAuthenticationTest {
     @InjectOAuthClient
     OAuthClient oauth;
 
-    @InjectUser(config = LastSuccessfulAuthenticationUserConfig.class)
+    // METHOD lifecycle so each test gets a fresh, never-logged-in user - otherwise the password-grant
+    // test would leave the user's lastSuccessfulAuthentication set for whichever test runs next.
+    @InjectUser(lifecycle = LifeCycle.METHOD, config = LastSuccessfulAuthenticationUserConfig.class)
     ManagedUser user;
 
     @Test
