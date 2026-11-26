@@ -25,12 +25,12 @@ import java.util.Set;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -44,6 +44,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
@@ -53,6 +54,7 @@ import org.keycloak.services.clientpolicy.context.DynamicClientViewContext;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.util.TokenUtil;
@@ -87,39 +89,38 @@ public class ClientRegistrationAuth {
         if (initialized) {
             return;
         }
-        initialized = true;
         realm = session.getContext().getRealm();
 
-        String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authorizationHeader == null) {
+        HttpHeaders headers = session.getContext().getRequestHeaders();
+        AppAuthManager.AuthHeader authHeader = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+        if (authHeader == null) {
+            String authorization = headers.getHeaderString(HttpHeaders.AUTHORIZATION);
+            if (authorization != null && !("install".equals(endpoint) && authorization.regionMatches(true, 0, "Basic ", 0, 6))) {
+                throw unauthorized("Invalid authorization header");
+            }
+            initialized = true;
             return;
         }
+        token = authHeader.getToken();
 
-        int indexOfSpace = authorizationHeader.indexOf(' ');
-
-        if (indexOfSpace <= 0) {
-            return;
-        }
-
-        String typeString = authorizationHeader.substring(0, indexOfSpace);
-        String tokenString = authorizationHeader.substring(indexOfSpace + 1);
-
-        if (!typeString.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_BEARER)) {
-            return;
-        }
-
-        if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
-            return;
-        }
-
-        token = tokenString;
-
-        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, token);
+        ClientRegistrationTokenUtils.TokenVerification tokenVerification = ClientRegistrationTokenUtils.verifyToken(session, realm, token, authHeader.getScheme());
         if (tokenVerification.getError() != null) {
-            throw unauthorized(tokenVerification.getError().getMessage());
+            String description = tokenVerification.getError().getMessage();
+            if (TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(authHeader.getScheme())) {
+                event.detail(Details.REASON, description).error(Errors.INVALID_TOKEN);
+                throw new ErrorResponseException(Response.status(Response.Status.UNAUTHORIZED)
+                        .header(HttpHeaders.WWW_AUTHENTICATE, "DPoP error=\"invalid_token\"")
+                        .type(MediaType.APPLICATION_JSON_TYPE)
+                        .entity(new OAuth2ErrorRepresentation(OAuthErrorException.INVALID_TOKEN, description)).build());
+            }
+            throw unauthorized(description);
         }
         kid = tokenVerification.getKid();
         jwt = tokenVerification.getJwt();
+
+        if (!ClientRegistrationTokenUtils.isAccessToken(jwt) && !TokenUtil.TOKEN_TYPE_BEARER.equalsIgnoreCase(authHeader.getScheme())) {
+            throw unauthorized("Invalid authorization scheme");
+        }
 
         if (isInitialAccessToken()) {
             initialAccessModel = session.realms().getClientInitialAccessModel(session.getContext().getRealm(), jwt.getId());
@@ -127,6 +128,7 @@ public class ClientRegistrationAuth {
                 throw unauthorized("Initial Access Token not found");
             }
         }
+        initialized = true;
     }
 
     public String getToken() {
@@ -141,8 +143,8 @@ public class ClientRegistrationAuth {
         return jwt;
     }
 
-    boolean isBearerToken() {
-        return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
+    boolean isAccessToken() {
+        return jwt != null && ClientRegistrationTokenUtils.isAccessToken(jwt);
     }
 
     public boolean isInitialAccessToken() {
@@ -154,7 +156,7 @@ public class ClientRegistrationAuth {
     }
 
     public boolean isViewOnly() {
-        return isBearerToken()
+        return isAccessToken()
                 && hasRole(AdminRoles.VIEW_CLIENTS)
                 && !hasRole(AdminRoles.MANAGE_CLIENTS);
     }
@@ -164,7 +166,7 @@ public class ClientRegistrationAuth {
 
         RegistrationAuth registrationAuth = RegistrationAuth.ANONYMOUS;
 
-        if (isBearerToken()) {
+        if (isAccessToken()) {
 
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.CREATE_CLIENT)) {
                 registrationAuth = RegistrationAuth.AUTHENTICATED;
@@ -209,7 +211,7 @@ public class ClientRegistrationAuth {
 
         init();
 
-        if (isBearerToken()) {
+        if (isAccessToken()) {
             checkClientProtocol();
 
             if (hasRole(AdminRoles.MANAGE_CLIENTS, AdminRoles.VIEW_CLIENTS)) {
@@ -322,7 +324,7 @@ public class ClientRegistrationAuth {
     private RegistrationAuth requireUpdateAuth(ClientModel client) {
         init();
 
-        if (isBearerToken()) {
+        if (isAccessToken()) {
             checkClientProtocol();
 
             if (hasRole(AdminRoles.MANAGE_CLIENTS)) {
@@ -354,7 +356,7 @@ public class ClientRegistrationAuth {
 
             if (!lightweight) {
                 // For lightweight access token, the roles are already considered just for those, which are present on UserModel
-                if (isBearerToken()) {
+                if (isAccessToken()) {
                     String clientId = getMgmtClientId();
                     AccessToken.Access mgmtClientAccess = jwt.getResourceAccess(clientId);
                     if (mgmtClientAccess != null) {

@@ -1,1 +1,3 @@
 org.keycloak.protocol.oid4vc.verifier.OID4VCITokenVerifierProviderFactory
+org.keycloak.protocol.oidc.verifier.DPoPTokenVerifierProviderFactory
+org.keycloak.protocol.oidc.verifier.MtlsTokenVerifierProviderFactory

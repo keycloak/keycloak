@@ -20,23 +20,27 @@ package org.keycloak.protocol.oidc.grants;
 import java.util.List;
 import java.util.Set;
 
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.authorization.AuthorizationTokenService;
 import org.keycloak.authorization.util.Tokens;
+import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.verifier.TokenVerificationContext;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
 
 /**
  * User-Managed Access (UMA) 2.0 Grant for OAuth 2.0 Authorization
@@ -52,19 +56,15 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
 
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
 
-        String accessTokenString = null;
-        String authorizationHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        AppAuthManager.AuthHeader authHeader = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+        String accessTokenString = authHeader == null ? null : authHeader.getToken();
+        AccessToken verifiedAccessToken = null;
 
-        if (authorizationHeader != null && authorizationHeader.toLowerCase().startsWith("bearer")) {
-            accessTokenString = new AppAuthManager().extractAuthorizationHeaderToken(headers);
-        }
-
-        // we allow public clients to authenticate using a bearer token, where the token should be a valid access token.
-        // public clients don't have secret and should be able to obtain a RPT by providing an access token previously issued by the server
+        // Public clients can obtain an RPT using an access token instead of client credentials.
         if (accessTokenString != null) {
-            AccessToken accessToken = Tokens.getAccessToken(session);
+            verifiedAccessToken = Tokens.getAccessToken(session);
 
-            if (accessToken == null) {
+            if (verifiedAccessToken == null) {
                 // This allows SPA clients to receive CORS headers on error responses (e.g. expired tokens, disabled users)
                 AccessToken signatureVerifiedToken = session.tokens().decode(accessTokenString, AccessToken.class);
                 if (signatureVerifiedToken != null) {
@@ -76,7 +76,7 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid bearer token", Response.Status.BAD_REQUEST);
             }
 
-            ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
+            ClientModel client = realm.getClientByClientId(verifiedAccessToken.getIssuedFor());
 
             session.getContext().setClient(client);
 
@@ -100,22 +100,21 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
         String subjectToken = formParams.getFirst("subject_token");
 
         if (accessTokenString == null) {
-            // in case no bearer token is provided, we force client authentication
-            checkClient();
-
             // if a claim token is provided, we check if the format is a OpenID Connect IDToken and assume the token represents the identity asking for permissions
             if (AuthorizationTokenService.CLAIM_TOKEN_FORMAT_ID_TOKEN.equalsIgnoreCase(claimTokenFormat)) {
                 accessTokenString = claimToken;
             } else if (subjectToken != null) {
                 accessTokenString = subjectToken;
             } else {
-                // Clients need to authenticate in order to obtain a RPT from the server.
-                // In order to support cases where the client is obtaining permissions on its on behalf, we issue a temporary access token
+                // Issue a temporary token for clients requesting permissions on their own behalf.
                 OAuth2GrantType clientCredentialsGrant = session.getProvider(OAuth2GrantType.class, OAuth2Constants.CLIENT_CREDENTIALS);
-                context.setClient(client);
-                context.setClientConfig(clientConfig);
-                context.setClientAuthAttributes(clientAuthAttributes);
                 accessTokenString = AccessTokenResponse.class.cast(clientCredentialsGrant.process(context).getEntity()).getToken();
+                AuthenticationManager.AuthResult result = AuthenticationManager.verifyAccessToken(session, accessTokenString);
+                if (result == null) {
+                    event.error(Errors.INVALID_TOKEN);
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid client credentials access token", Response.Status.BAD_REQUEST);
+                }
+                verifiedAccessToken = result.token();
             }
         }
 
@@ -130,15 +129,8 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
         String rpt = formParams.getFirst("rpt");
 
         if (rpt != null) {
-            AccessToken accessToken = session.tokens().decode(rpt, AccessToken.class);
-            if (accessToken == null) {
-                String errorMessage = "RPT signature is invalid";
-                event.detail(Details.REASON, errorMessage);
-                event.error(Errors.INVALID_REQUEST);
-                throw new CorsErrorResponseException(cors, "invalid_rpt", errorMessage, Response.Status.FORBIDDEN);
-            }
-
-            authorizationRequest.setRpt(accessToken);
+            authorizationRequest.setRpt(authHeader != null && rpt.equals(authHeader.getToken())
+                    ? verifiedAccessToken : verifyPreviousRpt(rpt));
         }
 
         authorizationRequest.setScope(formParams.getFirst("scope"));
@@ -180,11 +172,26 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
 
         authorizationRequest.setMetadata(metadata);
 
-        Response authorizationResponse = AuthorizationTokenService.instance().authorize(authorizationRequest);
+        Response authorizationResponse = AuthorizationTokenService.instance().authorize(authorizationRequest, verifiedAccessToken);
 
         event.success();
 
         return authorizationResponse;
+    }
+
+    private AccessToken verifyPreviousRpt(String rpt) {
+        try {
+            AccessToken token = session.tokens().decode(rpt, AccessToken.class);
+            if (token == null) {
+                throw new VerificationException("RPT signature is invalid");
+            }
+            TokenVerifier<AccessToken> verifier = TokenVerifier.createWithoutSignature(token);
+            new TokenVerifierProviderManager().addResourceAccessChecks(verifier, TokenVerificationContext.forResourceParameter(session, rpt));
+            return verifier.verify().getToken();
+        } catch (VerificationException e) {
+            event.detail(Details.REASON, e.getMessage()).error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, "invalid_rpt", e.getMessage(), Response.Status.FORBIDDEN);
+        }
     }
 
     @Override
@@ -194,7 +201,7 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
 
     @Override
     public Set<String> getTokenParameterNames() {
-        return Set.of("claim_token", "subject_token");
+        return Set.of("claim_token", "subject_token", "rpt");
     }
 
 }

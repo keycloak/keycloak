@@ -154,6 +154,20 @@ Existing V1 clients without this configuration receive an HTTP 403 response when
 
 While V1 is enabled, these settings are also shown in the Admin Console for public clients. V2 hides them for public clients because it only supports confidential clients.
 
+=== Holder-of-key access token validation
+// https://github.com/keycloak/keycloak/issues/54277
+
+{project_name} now validates mTLS certificate bindings when access tokens are used with the Admin REST, Account REST, client registration, identity brokering, Authorization Services, and credential endpoints, in addition to UserInfo.
+Applications using certificate-bound tokens must present the matching client certificate when calling these endpoints.
+Disabling the client's certificate-bound token setting does not remove the binding from tokens already issued.
+
+DPoP-bound access tokens are now supported for client registration and UMA permission grants.
+When sent in the `Authorization` header, these tokens require the `DPoP` scheme.
+A request presenting a DPoP-bound access token requires a proof containing the access token hash, including when the token is sent in the UMA `claim_token`, `subject_token`, or `rpt` parameter.
+Omit the `Authorization` header for anonymous client registration.
+Malformed credentials produce an authentication error.
+Token introspection continues to work without proof of possession from the token holder.
+
 === Realm-level default client scopes require `manage-realm`
 // https://github.com/keycloak/keycloak/issues/50588
 

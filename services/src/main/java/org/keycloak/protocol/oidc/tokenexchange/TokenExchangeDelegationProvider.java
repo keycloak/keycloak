@@ -90,8 +90,7 @@ public class TokenExchangeDelegationProvider extends StandardTokenExchangeProvid
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid actor token type", Response.Status.BAD_REQUEST);
         }
 
-        AuthenticationManager.AuthResult actorAuthResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null,
-                false, actorToken, context.getHeaders(), verifier -> {});
+        AuthenticationManager.AuthResult actorAuthResult = AuthenticationManager.verifyAccessToken(session, actorToken);
         if (actorAuthResult == null) {
             event.detail(Details.REASON, "actor_token validation failure");
             event.error(Errors.INVALID_TOKEN);

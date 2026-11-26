@@ -936,7 +936,7 @@ public class TokenManager {
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        AccessToken accessToken = ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper)
+        AccessToken accessToken = ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper, token.getIssuedFor())
                 .collect(new TokenCollector<AccessToken>(token) {
                     @Override
                     protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
@@ -1328,6 +1328,21 @@ public class TokenManager {
             return this;
         }
 
+        /** Apply the requesting client's certificate binding to the tokens being issued. */
+        public AccessTokenResponseBuilder bindForClient(boolean bindRefreshToken) {
+            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+                AccessToken.Confirmation confirmation = MtlsHoKTokenUtil.bindTokenWithClientCertificate(session.getContext().getHttpRequest(), session);
+                if (confirmation == null) {
+                    throw new IllegalArgumentException("Client Certification missing for MTLS HoK Token Binding");
+                }
+                accessToken.setConfirmation(confirmation);
+                if (bindRefreshToken) {
+                    refreshToken.setConfirmation(confirmation);
+                }
+            }
+            return this;
+        }
+
         public AccessTokenResponseBuilder generateRefreshToken() {
             if (accessToken == null) {
                 throw new IllegalStateException("accessToken not set");
@@ -1368,8 +1383,7 @@ public class TokenManager {
         }
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
-            AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            AccessToken.Confirmation cnf = getRefreshTokenConfirmation(clientSession, accessToken);
+            AccessToken.Confirmation cnf = getRefreshTokenConfirmation();
 
             InitialRefreshTokenContext initialRefreshTokenContext = new InitialRefreshTokenContext(clientSessionCtx, this, event, offlineTokenRequested, cnf);
 
@@ -1411,14 +1425,11 @@ public class TokenManager {
             sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
         }
 
-        private AccessToken.Confirmation getRefreshTokenConfirmation(AuthenticatedClientSessionModel clientSession, AccessToken accessToken) {
-
-            // RFC9449 chapter 5
-            // Refresh tokens issued to confidential clients are not bound to the DPoP proof public key because
-            // they are already sender-constrained with a different existing mechanism.
-            if (clientSession.getClient().isPublicClient()) {
-                AccessToken.Confirmation cnf = accessToken.getConfirmation();
-                return cnf;
+        private AccessToken.Confirmation getRefreshTokenConfirmation() {
+            // In UMA the client session belongs to the resource server. The requesting client owns the refresh token.
+            AccessToken.Confirmation confirmation = accessToken.getConfirmation();
+            if (client.isPublicClient()) {
+                return confirmation; // RFC 9449 section 5
             }
 
             // Authorization servers issuing a refresh token in response to a token request using the client attestation
@@ -1431,6 +1442,9 @@ public class TokenManager {
                 cnf.setKeyThumbprint(JWKSUtils.computeThumbprint(jwk));
                 cnf.setJktType(ABCA_JKT_TYPE);
                 return cnf;
+            }
+            if (confirmation != null && confirmation.getCertThumbprint() != null && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+                return confirmation;
             }
             return null;
         }

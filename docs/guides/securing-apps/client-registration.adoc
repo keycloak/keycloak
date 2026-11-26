@@ -35,6 +35,11 @@ The bearer token can be issued on behalf of a user or a Service Account. The fol
 
 If you are using a bearer token to create clients it's recommend to use a token from a Service Account with only the `create-client` role (see link:{adminguide_link}[{adminguide_name}] for more details).
 
+DPoP-bound access tokens are also supported. Send the token using the `DPoP` authorization scheme and include a valid `DPoP` proof header for the request.
+For mTLS-bound access tokens, present the client certificate to which the token is bound. The same permissions apply to these tokens.
+Initial access tokens and registration access tokens continue to use the `Bearer` authorization scheme.
+Omit the `Authorization` header when registering anonymously.
+
 [[_initial_access_token]]
 === Initial Access Token
 

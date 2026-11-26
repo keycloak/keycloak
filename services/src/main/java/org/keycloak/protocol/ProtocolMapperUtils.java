@@ -169,6 +169,10 @@ public class ProtocolMapperUtils {
     }
 
     public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter) {
+        return getSortedProtocolMappers(session, ctx, filter, null);
+    }
+
+    public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter, String issuedFor) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
 
         Stream<Entry<ProtocolMapperModel, ProtocolMapper>> protocolMapperStream = //
@@ -187,7 +191,9 @@ public class ProtocolMapperUtils {
         if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
             protocolMapperStream = Stream.concat(protocolMapperStream, DPoPUtil.getTransientProtocolMapper());
 
-            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
+            // UMA applies the resource server's claim mappers to a token issued for the requesting client.
+            ClientModel holder = issuedFor == null || issuedFor.equals(client.getClientId()) ? client : session.getContext().getRealm().getClientByClientId(issuedFor);
+            if (holder != null && OIDCAdvancedConfigWrapper.fromClientModel(holder).isUseMtlsHokToken()) {
                 protocolMapperStream = Stream.concat(protocolMapperStream, MtlsHoKTokenUtil.getTransientProtocolMapper());
             }
         }

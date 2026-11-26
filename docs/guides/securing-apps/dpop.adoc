@@ -171,6 +171,16 @@ When {project_name} acts as a Resource Server, it strictly enforces DPoP checks 
 * **UserInfo Endpoint:** Requires a valid DPoP proof matching the access token.
 * **Logout Endpoint:** For public clients, the logout request (using a refresh token) requires a DPoP proof.
 * **Admin & Account APIs:** Any request to {project_name}'s internal REST APIs using a DPoP token must include a valid proof.
+* **Client Registration:** DPoP-bound access tokens require the `DPoP` authorization scheme and a matching proof. Initial access tokens and registration access tokens continue to use `Bearer`.
+* **Authorization Services:** Requests authenticated with a DPoP access token, including UMA permission grants, require a matching proof containing the access token hash (`ath`). This also applies to DPoP access tokens passed as `subject_token`, `claim_token`, or a previous `rpt`.
+A single proof covers one access token hash.
+* **Identity Brokering:** Retrieving stored identity provider tokens requires a matching proof. With the V2 API, the access token is sent in the `token` form parameter; the `Authorization` header can be used for client authentication.
+* **Credential Endpoint:** Requests authenticated with a DPoP access token require a matching proof.
+
+Token introspection does not require a DPoP proof. Standard Token Exchange validates the token binding as described below.
+
+For UMA permission grants using only client authentication, a DPoP proof is required if the requesting client requires DPoP-bound access tokens.
+A valid proof binds the issued RPT to the client's key and does not require an `ath` claim for this issuance request.
 
 === Client Policies
 

@@ -94,6 +94,35 @@ public class ClientRegistrationAuthTest {
         testInvalidToken(HttpMethod.DELETE, EventType.CLIENT_DELETE_ERROR);
     }
 
+    @Test
+    public void testDPoPSchemeRejectedForRegistrationTokens() throws IOException {
+        String initialToken = createInitialAccessToken();
+        OIDCClientRepresentation client = new OIDCClientRepresentation();
+        client.setClientName("test-dpop-registration");
+        assertUnauthorizedRegistrationToken(simpleHttp.doPost(getOidcUrl()).json(client), initialToken);
+
+        OIDCClientRepresentation registered;
+        try (SimpleHttpResponse response = simpleHttp.doPost(getOidcUrl()).json(client).auth(initialToken).asResponse()) {
+            Assertions.assertEquals(201, response.getStatus());
+            registered = response.asJson(OIDCClientRepresentation.class);
+        }
+        String clientId = realm.admin().clients().findByClientId(registered.getClientId()).get(0).getId();
+        try {
+            String url = getOidcUrl() + "/" + registered.getClientId();
+            assertUnauthorizedRegistrationToken(simpleHttp.doGet(url), registered.getRegistrationAccessToken());
+            Assertions.assertEquals(200, simpleHttp.doGet(url).auth(registered.getRegistrationAccessToken()).asStatus());
+        } finally {
+            realm.admin().clients().get(clientId).remove();
+        }
+    }
+
+    private void assertUnauthorizedRegistrationToken(SimpleHttpRequest request, String token) throws IOException {
+        try (SimpleHttpResponse response = request.header("Authorization", "DPoP " + token).asResponse()) {
+            Assertions.assertEquals(401, response.getStatus());
+            Assertions.assertEquals("Invalid authorization scheme", response.asJson(OAuth2ErrorRepresentation.class).getErrorDescription());
+        }
+    }
+
     private void test(String authPrefix, boolean success) throws IOException {
         String token = createInitialAccessToken();
         OIDCClientRepresentation client = new OIDCClientRepresentation();
@@ -105,7 +134,7 @@ public class ClientRegistrationAuthTest {
                 .asResponse()) {
             int expectedStatus = success
                 ? Response.Status.CREATED.getStatusCode()
-                : Response.Status.FORBIDDEN.getStatusCode();
+                : Response.Status.UNAUTHORIZED.getStatusCode();
             Assertions.assertEquals(expectedStatus, response.getStatus());
 
             if (success) {

@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -103,7 +104,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
-import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerificationContext;
 import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
@@ -1638,27 +1639,57 @@ public class AuthenticationManager {
 
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                  String checkAudience, boolean isCookie, String tokenString, HttpHeaders headers, Consumer<TokenVerifier<AccessToken>> verifierConsumer) {
+        TokenVerificationContext verification = new TokenVerificationContext(session, realm, uriInfo, session.getContext().getHttpRequest(), tokenString, null);
+        TokenVerifier<AccessToken> verifier = createVerifier(verification, checkActive, checkTokenType, checkAudience, verifierConsumer);
+        if (checkTokenType) {
+            new TokenVerifierProviderManager().addEndpointChecks(verifier, verification);
+        }
+        return verifyIdentityToken(verification, connection, checkActive, isCookie, headers, verifier);
+    }
+
+    public static AuthResult verifyAccessTokenParameter(KeycloakSession session, String token) {
+        KeycloakContext context = session.getContext();
+        return verifyAccessToken(TokenVerificationContext.forResourceParameter(session, token), context.getConnection(), null, context.getRequestHeaders(),
+                new TokenVerifierProviderManager()::addResourceAccessChecks);
+    }
+
+    /** Validates the access token. A grant accepting a sender-constrained token must verify its binding separately. */
+    public static AuthResult verifyAccessToken(KeycloakSession session, String token) {
+        KeycloakContext context = session.getContext();
+        return verifyAccessToken(new TokenVerificationContext(session, token), context.getConnection(), null, context.getRequestHeaders(),
+                new TokenVerifierProviderManager()::addAccessTokenChecks);
+    }
+
+    static AuthResult verifyAccessToken(TokenVerificationContext verification, ClientConnection connection, String audience, HttpHeaders headers,
+                                        BiConsumer<TokenVerifier<AccessToken>, TokenVerificationContext> addChecks) {
+        TokenVerifier<AccessToken> verifier = createVerifier(verification, true, true, audience, v -> {});
+        addChecks.accept(verifier, verification);
+        return verifyIdentityToken(verification, connection, true, false, headers, verifier);
+    }
+
+    private static TokenVerifier<AccessToken> createVerifier(TokenVerificationContext verification, boolean checkActive, boolean checkTokenType,
+                                                             String audience, Consumer<TokenVerifier<AccessToken>> verifierConsumer) {
+        TokenVerifier<AccessToken> verifier = TokenVerifier.create(verification.tokenString(), AccessToken.class)
+                .withDefaultChecks()
+                .realmUrl(Urls.realmIssuer(verification.uriInfo().getBaseUri(), verification.realm().getName()))
+                .checkActive(checkActive)
+                .checkTokenType(checkTokenType);
+        verifierConsumer.accept(verifier);
+        if (audience != null) {
+            verifier.audience(audience);
+        }
+        if (checkTokenType) {
+            verifier.withChecks(new TokenManager.TokenRevocationCheck(verification.session()));
+        }
+        return verifier;
+    }
+
+    private static AuthResult verifyIdentityToken(TokenVerificationContext verification, ClientConnection connection, boolean checkActive,
+                                                  boolean isCookie, HttpHeaders headers, TokenVerifier<AccessToken> verifier) {
+        KeycloakSession session = verification.session();
+        RealmModel realm = verification.realm();
+        UriInfo uriInfo = verification.uriInfo();
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
-              .withDefaultChecks()
-              .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
-              .checkActive(checkActive)
-              .checkTokenType(checkTokenType);
-
-            verifierConsumer.accept(verifier);
-
-            if (checkAudience != null) {
-                verifier.audience(checkAudience);
-            }
-
-            // Check token revocation and additional verifiers in case of access token
-            if (checkTokenType) {
-                verifier.withChecks(new TokenManager.TokenRevocationCheck(session));
-
-                TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(verifier, session, realm, uriInfo);
-                new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
-            }
-
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 

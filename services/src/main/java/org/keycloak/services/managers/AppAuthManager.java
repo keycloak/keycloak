@@ -29,7 +29,8 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.services.util.DPoPUtil;
+import org.keycloak.protocol.oidc.verifier.TokenVerificationContext;
+import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 
 import org.jboss.logging.Logger;
 
@@ -120,14 +121,17 @@ public class AppAuthManager extends AuthenticationManager {
      */
     public static String extractAuthorizationHeaderToken(HttpHeaders headers) {
         String authHeader = headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null) {
-            return null;
+        return requireSupportedToken(headers, extractTokenStringFromAuthHeader(authHeader));
+    }
+
+    private static String requireSupportedToken(HttpHeaders headers, AuthHeader parsedHeader) {
+        if (parsedHeader != null) {
+            return parsedHeader.getToken();
         }
-        AuthHeader parsedHeader = extractTokenStringFromAuthHeader(authHeader);
-        if (parsedHeader == null ){
+        if (headers.getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION) != null) {
             throw new NotAuthorizedException(TOKEN_TYPE_BEARER);
         }
-        return parsedHeader.getToken();
+        return null;
     }
 
     public static class BearerTokenAuthenticator {
@@ -193,13 +197,14 @@ public class AppAuthManager extends AuthenticationManager {
             if (connection == null) connection = ctx.getConnection();
             if (headers == null) headers = ctx.getRequestHeaders();
             if (request == null) request = ctx.getHttpRequest();
-            if (tokenString == null) tokenString = extractAuthorizationHeaderToken(headers);
-            // audience can be null
+            AuthHeader header = extractAuthorizationHeaderTokenOrReturnNull(headers);
+            if (tokenString == null) {
+                tokenString = requireSupportedToken(headers, header);
+            }
 
-            return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
-                    verifier -> {
-                        DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
-                    });
+            TokenVerificationContext verification = TokenVerificationContext.forResource(session, realm, uriInfo, request, tokenString,
+                    header == null ? null : header.getScheme());
+            return verifyAccessToken(verification, connection, audience, headers, new TokenVerifierProviderManager()::addResourceAccessChecks);
         }
     }
 

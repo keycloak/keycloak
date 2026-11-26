@@ -35,12 +35,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager.TokenRevocationCheck;
-import org.keycloak.protocol.oidc.verifier.TokenVerifierProvider;
+import org.keycloak.protocol.oidc.verifier.TokenVerificationContext;
 import org.keycloak.protocol.oidc.verifier.TokenVerifierProviderManager;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
+import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.util.TokenUtil;
 
 /**
@@ -91,6 +92,12 @@ public class ClientRegistrationTokenUtils {
     }
 
     public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, String token) {
+        AppAuthManager.AuthHeader header = AppAuthManager
+                .extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
+        return verifyToken(session, realm, token, header == null ? null : header.getScheme());
+    }
+
+    public static TokenVerification verifyToken(KeycloakSession session, RealmModel realm, String token, String authorizationScheme) {
         if (token == null) {
             return TokenVerification.error(new RuntimeException("Missing token"));
         }
@@ -101,9 +108,10 @@ public class ClientRegistrationTokenUtils {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(token, AccessToken.class)
                     .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
 
-            if (TokenUtil.TOKEN_TYPE_BEARER.equals(verifier.getToken().getType())) {
-                TokenVerifierProvider.TokenVerifierProviderContext ctx = new TokenVerifierProvider.TokenVerifierProviderContext(verifier, session, realm, session.getContext().getUri());
-                new TokenVerifierProviderManager().additionalAccessTokenVerifications(ctx);
+            if (isAccessToken(verifier.getToken())) {
+                new TokenVerifierProviderManager().addResourceAccessChecks(verifier,
+                        TokenVerificationContext.forResource(session, realm, session.getContext().getUri(), session.getContext().getHttpRequest(),
+                                token, authorizationScheme));
             }
 
             SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
@@ -118,13 +126,19 @@ public class ClientRegistrationTokenUtils {
             return TokenVerification.error(new RuntimeException("Failed decode token", e));
         }
 
-        if (!(TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType()) ||
+        if (!(isAccessToken(jwt) ||
                 TYPE_INITIAL_ACCESS_TOKEN.equals(jwt.getType()) ||
                 TYPE_REGISTRATION_ACCESS_TOKEN.equals(jwt.getType()))) {
             return TokenVerification.error(new RuntimeException("Invalid type of token"));
         }
 
         return TokenVerification.success(kid, jwt);
+    }
+
+    /** Identifies OAuth access tokens, excluding initial and registration access tokens. */
+    public static boolean isAccessToken(JsonWebToken token) {
+        return TokenUtil.TOKEN_TYPE_BEARER.equals(token.getType()) ||
+                TokenUtil.TOKEN_TYPE_DPOP.equals(token.getType());
     }
 
     private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration, List<String> webOrigins) {
