@@ -64,7 +64,8 @@ Authorization: Bearer <access-token>
 Content-Type: application/json
 ----
 
-If no valid token is provided, the server returns a `401 Unauthorized` response.
+If no valid token is provided, the server returns a `401 Unauthorized` response with a `WWW-Authenticate` challenge, as described in RFC 6750.
+If the request includes a token that is invalid or was not issued to a client through the client credentials grant, the challenge contains `error="invalid_token"`.
 
 == Evaluation API
 

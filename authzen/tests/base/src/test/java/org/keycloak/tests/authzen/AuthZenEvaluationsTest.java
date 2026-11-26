@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -63,6 +64,7 @@ import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.access
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -186,6 +188,7 @@ public class AuthZenEvaluationsTest {
               .build());
 
         assertEquals(401, result.statusCode());
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), null);
     }
 
     @Test
@@ -204,6 +207,7 @@ public class AuthZenEvaluationsTest {
                     .build());
 
         assertEquals(401, result.statusCode());
+        assertChallenge(result.header(HttpHeaders.WWW_AUTHENTICATE), "invalid_token");
     }
 
     @Test
@@ -424,6 +428,17 @@ public class AuthZenEvaluationsTest {
 
         assertEquals(200, result.statusCode());
         assertEquals(2, result.evaluations().size());
+    }
+
+    private void assertChallenge(String header, String expectedError) {
+        assertNotNull(header, "401 without a WWW-Authenticate header");
+        assertTrue(header.startsWith("Bearer "), header);
+        assertTrue(header.contains("realm=\"" + realm.getName() + "\""), header);
+        if (expectedError == null) {
+            assertFalse(header.contains("error="), header);
+        } else {
+            assertTrue(header.contains("error=\"" + expectedError + "\""), header);
+        }
     }
 
     private AuthZenClient.Authenticated authzenClient() {
