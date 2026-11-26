@@ -58,6 +58,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
     public static final String CONFIG_MIN_CACHE_TIME = "min-cache-time";
     public static final String CONFIG_MAX_CACHE_TIME = "max-cache-time";
     public static final String CONFIG_UPPER_LIMIT_METADATA_BYTES = "upper-limit-metadata-bytes";
+    public static final String CONFIG_MAX_CLIENTS = "max-clients";
 
     protected ClientIdMetadataDocumentExecutorFactoryProviderConfig providerConfig;
 
@@ -180,6 +181,16 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 .type("int")
                 .helpText("Client metadata upper limit in byte for the CIMD.")
                 .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_UPPER_LIMIT_METADATA_BYTES)
+                .add()
+
+                .property()
+                .name(CONFIG_MAX_CLIENTS)
+                .type("int")
+                .helpText("Max number of clients per realm for the CIMD. When the number of existing clients in a realm reaches this limit, " +
+                        "an authorization request with a CIMD client_id that would create a new client is rejected. " +
+                        "The limit is checked before a client is created, so concurrent requests can exceed it by the number of clients that are being created at the same time. " +
+                        "0 means unlimited.")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_MAX_CLIENTS)
                 .add()
 
                 .build();
