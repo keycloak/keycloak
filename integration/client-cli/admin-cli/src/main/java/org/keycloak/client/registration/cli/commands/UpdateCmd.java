@@ -51,7 +51,7 @@ import static org.keycloak.client.cli.util.ConfigUtil.setRegistrationToken;
 import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
 import static org.keycloak.client.cli.util.HttpUtil.doGet;
 import static org.keycloak.client.cli.util.HttpUtil.doPut;
-import static org.keycloak.client.cli.util.HttpUtil.urlencode;
+import static org.keycloak.client.cli.util.HttpUtil.urlencodePathSegment;
 import static org.keycloak.client.cli.util.IoUtil.printOut;
 import static org.keycloak.client.cli.util.IoUtil.readFully;
 import static org.keycloak.client.cli.util.IoUtil.warnfErr;
@@ -216,7 +216,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
 
 
         if (mergeMode) {
-            InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
+            InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencodePathSegment(clientId),
                     APPLICATION_JSON, auth);
 
             String json = readFully(response);
@@ -266,7 +266,7 @@ public class UpdateCmd extends AbstractAuthOptionsCmd {
         }
 
         // now update
-        InputStream response = doPut(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
+        InputStream response = doPut(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencodePathSegment(clientId),
                 APPLICATION_JSON, APPLICATION_JSON, ctx.getContent(), auth);
         try {
             if (regType == DEFAULT) {

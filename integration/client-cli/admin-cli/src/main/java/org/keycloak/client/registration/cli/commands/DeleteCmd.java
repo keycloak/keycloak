@@ -31,7 +31,7 @@ import static org.keycloak.client.cli.util.ConfigUtil.getRegistrationToken;
 import static org.keycloak.client.cli.util.ConfigUtil.loadConfig;
 import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
 import static org.keycloak.client.cli.util.HttpUtil.doDelete;
-import static org.keycloak.client.cli.util.HttpUtil.urlencode;
+import static org.keycloak.client.cli.util.HttpUtil.urlencodePathSegment;
 import static org.keycloak.client.cli.util.IoUtil.warnfErr;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
@@ -83,7 +83,7 @@ public class DeleteCmd extends AbstractAuthOptionsCmd {
         final String server = config.getServerUrl();
         final String realm = config.getRealm();
 
-        doDelete(server + "/realms/" + realm + "/clients-registrations/" + regType + "/" + urlencode(clientId), auth);
+        doDelete(server + "/realms/" + realm + "/clients-registrations/" + regType + "/" + urlencodePathSegment(clientId), auth);
 
         saveMergeConfig(cfg -> {
             cfg.ensureRealmConfigData(server, realm).getClients().remove(clientId);

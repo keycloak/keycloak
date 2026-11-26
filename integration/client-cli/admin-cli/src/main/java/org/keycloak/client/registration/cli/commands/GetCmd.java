@@ -40,7 +40,7 @@ import static org.keycloak.client.cli.util.ConfigUtil.saveMergeConfig;
 import static org.keycloak.client.cli.util.ConfigUtil.setRegistrationToken;
 import static org.keycloak.client.cli.util.HttpUtil.APPLICATION_JSON;
 import static org.keycloak.client.cli.util.HttpUtil.doGet;
-import static org.keycloak.client.cli.util.HttpUtil.urlencode;
+import static org.keycloak.client.cli.util.HttpUtil.urlencodePathSegment;
 import static org.keycloak.client.cli.util.IoUtil.printOut;
 import static org.keycloak.client.cli.util.IoUtil.readFully;
 import static org.keycloak.client.cli.util.IoUtil.warnfErr;
@@ -100,7 +100,7 @@ public class GetCmd extends AbstractAuthOptionsCmd {
         final String server = config.getServerUrl();
         final String realm = config.getRealm();
 
-        InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencode(clientId),
+        InputStream response = doGet(server + "/realms/" + realm + "/clients-registrations/" + regType.getEndpoint() + "/" + urlencodePathSegment(clientId),
                 APPLICATION_JSON, auth);
 
         try {
