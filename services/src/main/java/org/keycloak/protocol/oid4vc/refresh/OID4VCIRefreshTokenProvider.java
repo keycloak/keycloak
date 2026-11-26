@@ -308,7 +308,9 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
         pendingRotationKey = null;
         pendingRotationRecord = null;
 
-        if (!realm.isRevokeRefreshToken()) {
+        // Use the effective (client-level override or realm) settings, consistent with the lock handling in the base class
+        ClientModel client = validation.clientSessionCtx.getClientSession().getClient();
+        if (!TokenManager.isRevokeRefreshToken(realm, client)) {
             return;
         }
 
@@ -336,7 +338,7 @@ public class OID4VCIRefreshTokenProvider extends AbstractRefreshTokenProvider im
             useCount = 0;
         }
 
-        if (useCount > realm.getRefreshTokenMaxReuse()) {
+        if (useCount > TokenManager.getRefreshTokenMaxReuse(realm, client)) {
             logger.debugf("Rejecting oid4vci refresh token %s due to exceeding max reuse count. Realm: %s, client: %s",
                     refreshToken.getId(), realm.getName(), session.getContext().getClient().getClientId());
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
