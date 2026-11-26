@@ -1472,6 +1472,7 @@ public class RepresentationToModel {
         updateResources(representation, model, authorization);
         updateScopes(representation, model, storeFactory);
         validateScopesAssociatedWithResources(representation, model, authorization);
+        validateSingleResourceForUmaPolicy(representation, model);
         updateAssociatedPolicies(representation, model, storeFactory);
 
         PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
@@ -1585,6 +1586,15 @@ public class RepresentationToModel {
             if (!resourceScopeIds.contains(scope.getId())) {
                 throw new ModelValidationException("Scope [" + scope.getName() + "] is not associated with any of the resources set to the permission");
             }
+        }
+    }
+
+    private static void validateSingleResourceForUmaPolicy(AbstractPolicyRepresentation representation, Policy policy) {
+        // a user-managed permission (type "uma") is only ever created through the Protection API with a single
+        // resource attached; multiple resources are only reachable by an administrator wiring a policy up
+        // directly through the full admin API, which is not the expected shape for this policy type
+        if ("uma".equals(policy.getType()) && policy.getResources().size() > 1) {
+            throw new ModelValidationException("A user-managed permission can only be associated with a single resource");
         }
     }
 
