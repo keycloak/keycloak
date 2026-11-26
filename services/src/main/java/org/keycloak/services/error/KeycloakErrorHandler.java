@@ -63,10 +63,26 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     }
 
     public static Response getResponse(KeycloakSession session, Throwable throwable) {
+        Response.Status responseStatus = getResponseStatus(throwable);
+        OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
+        error.setError(getErrorCode(throwable));
+        if (throwable instanceof ModelValidationException || throwable.getCause() instanceof ModelException) {
+            error.setErrorDescription(throwable.getMessage());
+        } if (throwable instanceof ModelDuplicateException) {
+            error.setErrorDescription(throwable.getMessage());
+        } else if (throwable instanceof JsonProcessingException || throwable.getCause() instanceof JsonProcessingException) {
+            error.setErrorDescription("Cannot parse the JSON");
+        } else if (responseStatus.getFamily().equals(Response.Status.Family.SERVER_ERROR)) {
+            error.setErrorDescription("For more on this error consult the server log.");
+        }
+        return getResponse(session, throwable, responseStatus, error);
+    }
+
+    public static Response getResponse(KeycloakSession session, Throwable throwable, Response.Status responseStatus,
+            OAuth2ErrorRepresentation error) {
         KeycloakTransaction tx = session.getTransactionManager();
         tx.setRollbackOnly();
 
-        Response.Status responseStatus = getResponseStatus(throwable);
         boolean isServerError = responseStatus.getFamily().equals(Response.Status.Family.SERVER_ERROR);
 
         if (isServerError) {
@@ -78,19 +94,6 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
         HttpHeaders headers = session.getContext().getRequestHeaders();
 
         if (!MediaTypeMatcher.isHtmlRequest(headers)) {
-            OAuth2ErrorRepresentation error = new OAuth2ErrorRepresentation();
-
-            error.setError(getErrorCode(throwable));
-            if (throwable instanceof ModelValidationException || throwable.getCause() instanceof ModelException) {
-                error.setErrorDescription(throwable.getMessage());
-            } if (throwable instanceof ModelDuplicateException) {
-                error.setErrorDescription(throwable.getMessage());
-            } else if (throwable instanceof JsonProcessingException || throwable.getCause() instanceof JsonProcessingException) {
-                error.setErrorDescription("Cannot parse the JSON");
-            } else if (isServerError) {
-                error.setErrorDescription("For more on this error consult the server log.");
-            }
-
             return Response.status(responseStatus)
                     .type(MediaType.APPLICATION_JSON_TYPE)
                     .entity(error)

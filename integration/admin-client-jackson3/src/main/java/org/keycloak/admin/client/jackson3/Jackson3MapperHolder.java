@@ -1,5 +1,7 @@
 package org.keycloak.admin.client.jackson3;
 
+import org.keycloak.json.jackson3.KeycloakAnnotationIntrospector3;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import tools.jackson.databind.AnnotationIntrospector;
 import tools.jackson.databind.DeserializationFeature;
