@@ -38,6 +38,7 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
+import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.models.utils.RealmModelDelegate;
 import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.models.utils.UserSessionModelDelegate;
@@ -376,15 +377,24 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                         // Still, this check would help us to identify if such a problem exists, so this is why we keep it here.
                         throw new ModelIllegalStateException("User ID of the session does not match, the user ID should not change");
                     }
-                    if (Math.abs(userSessionModel.getStarted() - entity.getStarted()) > 10) {
+                    if (isAgedBeyondLifespan(realm, userSessionModel)) {
+                        // If the already persisted session is older than its lifespan it is only hidden and not removed,
+                        // e.g. when the maximum lifespan (SSO session max) has already passed. In such a case a re-login
+                        // with the same session ID must be allowed to replace the aged session instead of failing the login.
+                        // This mirrors the expiry check performed in PersistentUserSessionProvider.importUserSession()
+                        LOG.debugf("Session %s has expired, removing the aged session and recreating it", entry.getKey());
+                        userSessionPersister.removeUserSession(entry.getKey().toString(), entity.isOffline());
+                        createUserSession(userSessionPersister, entity, realm);
+                    } else if (Math.abs(userSessionModel.getStarted() - entity.getStarted()) > 10) {
                         // The only valid situation where a session is created with an already existing ID is that there are concurrent requests.
                         // For example, an authentication flow is triggered in two different tabs of a browser, and processed concurrently.
                         // In such a case, it is valid and this code will then update the first one created.
                         // In all other cases, if such a request for an authentication session would come in later, this should be handled in other places.
                         // Due to this, this is limited to the first 10 seconds of a user session to handle only the current login case.
                         throw new ModelIllegalStateException("Session has already aged, concurrent requests to create it should not happen");
+                    } else {
+                        mergeUserSession(session, entry, userSessionModel, realm, sessionUpdates, userSessionPersister, entity);
                     }
-                    mergeUserSession(session, entry, userSessionModel, realm, sessionUpdates, userSessionPersister, entity);
                 } else {
                     createUserSession(userSessionPersister, entity, realm);
                 }
@@ -398,6 +408,15 @@ public class JpaChangesPerformer<K, V extends SessionEntity> {
                 }
             }
         }
+    }
+
+    /**
+     * Returns true if the already persisted session has aged beyond its lifespan. Expired sessions are only hidden and
+     * not removed from the persister, so they need to be detected here to allow a re-login with the same session ID.
+     */
+    private static boolean isAgedBeyondLifespan(RealmModel realm, PersistentUserSessionAdapter userSessionModel) {
+        long lifespan = SessionTimeouts.getUserSessionLifespanMs(realm, userSessionModel.isOffline(), userSessionModel.isRememberMe(), userSessionModel.getStarted());
+        return lifespan == SessionTimeouts.ENTRY_EXPIRED_FLAG;
     }
 
     private static void createUserSession(UserSessionPersisterProvider userSessionPersister, UserSessionEntity entity, RealmModel realm) {
