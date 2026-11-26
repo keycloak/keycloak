@@ -30,6 +30,8 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.representations.idm.authorization.Permission;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -121,6 +123,11 @@ public class AccessToken extends IDToken {
         @JsonProperty("kc-jkt-type")
         protected String jktType;
 
+        /**
+         * Other confirmation methods (RFC 7800, section 3.1), e.g. added by a custom {@code TokenPostProcessor}
+         */
+        protected Map<String, Object> otherClaims = new HashMap<>();
+
         public String getCertThumbprint() {
             return certThumbprint;
         }
@@ -143,6 +150,16 @@ public class AccessToken extends IDToken {
 
         public void setJktType(String jktType) {
             this.jktType = jktType;
+        }
+
+        @JsonAnyGetter
+        public Map<String, Object> getOtherClaims() {
+            return otherClaims;
+        }
+
+        @JsonAnySetter
+        public void setOtherClaims(String name, Object value) {
+            otherClaims.put(name, value);
         }
     }
 
