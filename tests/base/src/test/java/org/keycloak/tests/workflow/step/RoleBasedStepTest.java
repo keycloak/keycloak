@@ -88,6 +88,35 @@ public class RoleBasedStepTest extends AbstractWorkflowTest {
     }
 
     @Test
+    public void testGrantRoleWithSlashInClientRoleName() {
+        ClientsResource clients = managedRealm.admin().clients();
+        clients.create(ClientBuilder.create().clientId("role-collision-client").build()).close();
+        ClientRepresentation client = clients.findByClientId("role-collision-client").get(0);
+        RolesResource clientRoles = clients.get(client.getId()).roles();
+        clientRoles.create(RoleBuilder.create().name("admin").build());
+        clientRoles.create(RoleBuilder.create().name("admin/child").build());
+        clientRoles.create(RoleBuilder.create().name("admin/child/grandchild").build());
+
+        create(WorkflowRepresentation.withName("grant-role-with-slash")
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(GrantRoleStepProviderFactory.ID)
+                                .withConfig(GrantRoleStepProvider.CONFIG_ROLE,
+                                        "role-collision-client/admin/child",
+                                        "role-collision-client/admin/child/grandchild")
+                                .build()
+                ).build());
+
+        UserResource user = getUserResource(UserBuilder.create().username("slash-role-user").build());
+
+        var assigned = user.roles().getAll().getClientMappings().get("role-collision-client").getMappings().stream()
+                .map(RoleRepresentation::getName).toList();
+        assertThat(assigned, hasItems("admin/child", "admin/child/grandchild"));
+        assertThat(assigned, not(hasItems("admin")));
+    }
+
+    @Test
     public void testRevokeRole() {
         UserResource user = getUserResource(UserBuilder.create()
                 .username("myuser")
