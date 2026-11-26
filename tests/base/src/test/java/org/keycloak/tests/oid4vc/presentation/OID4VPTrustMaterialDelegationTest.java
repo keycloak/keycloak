@@ -35,6 +35,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
+import org.keycloak.broker.oid4vp.RequestedCredentials;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -61,6 +62,7 @@ import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpDirectPostResponse;
 import org.keycloak.util.JsonSerialization;
@@ -107,8 +109,7 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
         createX509TrustIdp(X509_TRUST_IDP_ALIAS, CHAIN.caCertificatePem());
         createX509TrustIdp(UNRELATED_X509_TRUST_IDP_ALIAS, CHAIN.unrelatedCaCertificatePem());
         createVerifierIdp(Map.of(
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email",
-                OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, TRUST_IDP_ALIAS));
+                OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, requestedCredentials("email", TRUST_IDP_ALIAS)));
     }
 
     @Test
@@ -123,11 +124,37 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
     }
 
     @Test
-    public void keyMismatchedTrustIdpRejectsThePresentationEvenWithMatchingInlineJwks() throws Exception {
-        // The delegated trust material takes precedence, a matching inline JWKS must not rescue a
-        // presentation the delegated keys cannot verify.
-        updateIdpConfig(OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks());
-        updateIdpConfig(OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, WRONG_KEYS_TRUST_IDP_ALIAS);
+    public void keyMismatchedTrustIdpRejectsThePresentation() throws Exception {
+        updateTrustMaterialIdps(WRONG_KEYS_TRUST_IDP_ALIAS);
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = requestObject();
+
+        Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals("access_denied", response.getError());
+    }
+
+    @Test
+    public void anyOfSeveralTrustIdpsVerifiesThePresentation() throws Exception {
+        updateTrustMaterialIdps(WRONG_KEYS_TRUST_IDP_ALIAS, TRUST_IDP_ALIAS);
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = requestObject();
+
+        Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
+
+        driver.open(response.getRedirectUri());
+        assertLoginContinued();
+    }
+
+    @Test
+    public void trustMaterialOfAnotherCredentialDoesNotVerifyThePresentation() throws Exception {
+        // The second credential trusts the realm keys, but they must not verify the first one.
+        updateRequestedCredentials(requestedCredentials(new RequestedCredentials(
+                List.of(credential(CREDENTIAL_ID, WRONG_KEYS_TRUST_IDP_ALIAS), credential("membership", TRUST_IDP_ALIAS)),
+                List.of(new RequestedCredentials.CredentialSet(List.of(List.of(CREDENTIAL_ID)), null),
+                        new RequestedCredentials.CredentialSet(List.of(List.of("membership")), false)),
+                new RequestedCredentials.Principal(CREDENTIAL_ID, "email"))));
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
@@ -151,7 +178,7 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
 
     @Test
     public void delegatedX509TrustAnchorValidatesTheCredentialChain() throws Exception {
-        updateIdpConfig(OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, X509_TRUST_IDP_ALIAS);
+        updateTrustMaterialIdps(X509_TRUST_IDP_ALIAS);
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
@@ -163,7 +190,7 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
 
     @Test
     public void unanchoredCredentialChainRejectsThePresentation() throws Exception {
-        updateIdpConfig(OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, UNRELATED_X509_TRUST_IDP_ALIAS);
+        updateTrustMaterialIdps(UNRELATED_X509_TRUST_IDP_ALIAS);
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
@@ -181,12 +208,11 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
         KeyWrapper issuerKey = ecKey();
         KeyWrapper holderKey = ecKey();
         createTrustIdp(EXTERNAL_TRUST_IDP_ALIAS, jwksOf(issuerKey));
-        updateIdpConfig(OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS,
-                EXTERNAL_TRUST_IDP_ALIAS + "," + X509_TRUST_IDP_ALIAS);
+        updateTrustMaterialIdps(EXTERNAL_TRUST_IDP_ALIAS, X509_TRUST_IDP_ALIAS);
         JsonNode request = requestObject();
 
-        String vpToken = wallet.present(chainlessSdJwtVc(issuerKey, holderKey), holderKey,
-                request.path("client_id").asText(), request.path("nonce").asText());
+        String vpToken = OID4VCBasicWallet.vpToken(request, wallet.present(chainlessSdJwtVc(issuerKey, holderKey),
+                holderKey, request.path("client_id").asText(), request.path("nonce").asText()));
         Oid4vpDirectPostResponse response = wallet.directPost(request, vpToken);
 
         assertEquals(400, response.getStatusCode());
@@ -194,29 +220,16 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
     }
 
     @Test
-    public void verifierIdpRequiresTrustedJwksOrTrustIdps() {
+    public void verifierIdpRequiresTrustMaterialIdps() {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
         idp.setAlias("oid4vp-without-trust");
         idp.setProviderId(OID4VPIdentityProviderFactory.PROVIDER_ID);
         idp.setEnabled(true);
-        idp.setConfig(Map.of(
-                OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, sdJwtTypeCredentialVct,
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
+        idp.setConfig(Map.of(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, requestedCredentials("email")));
 
         try (Response response = testRealm.admin().identityProviders().create(idp)) {
             assertEquals(400, response.getStatus(),
-                    "An oid4vp idp without trusted issuer JWKS and without trust material idps must be rejected");
-        }
-    }
-
-    private void createTrustIdp(String alias, String trustedJwks) {
-        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
-        idp.setAlias(alias);
-        idp.setProviderId(DefaultTrustIdentityProviderFactory.PROVIDER_ID);
-        idp.setEnabled(true);
-        idp.setConfig(Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, trustedJwks));
-        try (Response response = testRealm.admin().identityProviders().create(idp)) {
-            assertEquals(201, response.getStatus(), "Failed to create the trust material identity provider " + alias);
+                    "An oid4vp idp with a credential without trust material idps must be rejected");
         }
     }
 

@@ -18,6 +18,7 @@
 package org.keycloak.tests.oid4vc.presentation;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -33,8 +34,13 @@ import java.util.regex.Pattern;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OID4VCConstants;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
+import org.keycloak.broker.oid4vp.RequestedCredentials;
+import org.keycloak.broker.oid4vp.mappers.AbstractOID4VPClaimMapper;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
+import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
 import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -53,12 +59,15 @@ import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
@@ -92,6 +101,9 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
     protected static final String USER_SESSION_ATTRIBUTE_MAPPER_ID = "oid4vp-sd-jwt-user-session-attribute-idp-mapper";
     protected static final String VCT_SESSION_NOTE = "credential_vct";
     protected static final String VCT_TOKEN_CLAIM = "credential_vct";
+
+    protected static final String CREDENTIAL_ID = "pid";
+    protected static final String ISSUER_TRUST_IDP_ALIAS = "oid4vp-issuer-trust";
 
     @InjectHttpClient
     protected CloseableHttpClient httpClient;
@@ -164,7 +176,11 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
     }
 
     protected OID4VCTestContext issueCredential(String holder) {
-        OID4VCTestContext ctx = new OID4VCTestContext(client, sdJwtTypeCredentialScope);
+        return issueCredential(holder, sdJwtTypeCredentialScope);
+    }
+
+    protected OID4VCTestContext issueCredential(String holder, CredentialScopeRepresentation credentialScope) {
+        OID4VCTestContext ctx = new OID4VCTestContext(client, credentialScope);
         if (holder != null) {
             ctx.setHolder(holder);
         }
@@ -177,14 +193,20 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
         return ctx;
     }
 
+    // Without requested credentials of its own, the identity provider requests the issued credential
+    // from the realm issuer, trusted through a trust material identity provider holding the realm keys.
     protected void createVerifierIdp(Map<String, String> config) {
+        if (!config.containsKey(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS)) {
+            createTrustIdp(ISSUER_TRUST_IDP_ALIAS, realmSigningJwks());
+        }
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
         idp.setAlias(IDP_ALIAS);
         idp.setProviderId(OID4VPIdentityProviderFactory.PROVIDER_ID);
         idp.setEnabled(true);
         Map<String, String> effective = new HashMap<>(config);
         effective.putIfAbsent(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
-        effective.putIfAbsent(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, sdJwtTypeCredentialVct);
+        effective.putIfAbsent(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS,
+                requestedCredentials("email", ISSUER_TRUST_IDP_ALIAS));
         idp.setConfig(effective);
         try (Response response = testRealm.admin().identityProviders().create(idp)) {
             assertEquals(201, response.getStatus(), "Failed to create OID4VP identity provider");
@@ -223,6 +245,7 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
         // updates the user on every login regardless of the sync mode of the identity provider.
         Map<String, String> effective = new HashMap<>(config);
         effective.putIfAbsent(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.INHERIT.name());
+        effective.putIfAbsent(AbstractOID4VPClaimMapper.CREDENTIAL, CREDENTIAL_ID);
         mapper.setConfig(effective);
         try (Response response = testRealm.admin().identityProviders().get(IDP_ALIAS).addMapper(mapper)) {
             assertEquals(201, response.getStatus(), "Failed to create the identity provider mapper " + name);
@@ -413,8 +436,87 @@ public abstract class OID4VPVerifierTestBase extends OID4VCIssuerTestBase {
         }
     }
 
-    protected void updatePrincipalAttribute(String attribute) {
-        updateIdpConfig(OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, attribute);
+    // Dedicated credential holder per completed login test: completing a broker login for a
+    // holder changes how every later wallet login of that holder behaves, so the shared users stay
+    // untouched and the tests are order independent. Same profile shape as the shared users.
+    protected void createCompletionHolder(String username) {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(username);
+        user.setEnabled(true);
+        user.setEmail(username + "@email.cz");
+        user.setEmailVerified(true);
+        user.setFirstName("Bob");
+        user.setLastName("Baumeister");
+        user.setAttributes(Map.of(
+                "address_street_address", List.of("221B Baker Street"),
+                "address_locality", List.of("London")));
+        CredentialRepresentation password = new CredentialRepresentation();
+        password.setType(CredentialRepresentation.PASSWORD);
+        password.setValue(TEST_PASSWORD);
+        password.setTemporary(false);
+        user.setCredentials(List.of(password));
+        String id;
+        try (Response response = testRealm.admin().users().create(user)) {
+            assertEquals(201, response.getStatus(), "Failed to create the completion holder");
+            String location = response.getHeaderString("Location");
+            id = location.substring(location.lastIndexOf('/') + 1);
+        }
+        UserVerifiableCredentialRepresentation grant = new UserVerifiableCredentialRepresentation();
+        grant.setCredentialScopeName(sdJwtTypeCredentialScopeName);
+        testRealm.admin().users().get(id).verifiableCredentials().createCredential(grant);
+    }
+
+    // The mapped claims originate from the holder user, so its representation is kept as the
+    // expectation. The holder is deleted because the first broker login would otherwise stop at
+    // the duplicate user check instead of creating the account.
+    protected UserRepresentation deleteHolder(String username) {
+        UserRepresentation holder = testRealm.admin().users()
+                .get(requireExistingUser(username).getId()).toRepresentation();
+        deleteRealmUser(holder);
+        return holder;
+    }
+
+    protected void createTrustIdp(String alias, String trustedJwks) {
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias(alias);
+        idp.setProviderId(DefaultTrustIdentityProviderFactory.PROVIDER_ID);
+        idp.setEnabled(true);
+        idp.setConfig(Map.of(DefaultTrustIdentityProviderConfig.TRUSTED_JWKS, trustedJwks));
+        try (Response response = testRealm.admin().identityProviders().create(idp)) {
+            assertEquals(201, response.getStatus(), "Failed to create the trust material identity provider " + alias);
+        }
+    }
+
+    // Requests the issued credential under CREDENTIAL_ID, with the principal in the given claim of it.
+    protected String requestedCredentials(String principalClaim, String... trustMaterialIdps) {
+        return requestedCredentials(new RequestedCredentials(
+                List.of(credential(CREDENTIAL_ID, trustMaterialIdps)), null,
+                new RequestedCredentials.Principal(CREDENTIAL_ID, principalClaim)));
+    }
+
+    protected RequestedCredentials.Credential credential(String id, String... trustMaterialIdps) {
+        return new RequestedCredentials.Credential(id, OID4VCConstants.FORMAT_SD_JWT_VC,
+                List.of(sdJwtTypeCredentialVct), List.of(trustMaterialIdps));
+    }
+
+    protected static String requestedCredentials(RequestedCredentials requested) {
+        try {
+            return JsonSerialization.writeValueAsString(requested);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    protected void updateRequestedCredentials(String requestedCredentials) {
+        updateIdpConfig(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, requestedCredentials);
+    }
+
+    protected void updatePrincipalClaim(String claim) {
+        updateRequestedCredentials(requestedCredentials(claim, ISSUER_TRUST_IDP_ALIAS));
+    }
+
+    protected void updateTrustMaterialIdps(String... trustMaterialIdps) {
+        updateRequestedCredentials(requestedCredentials("email", trustMaterialIdps));
     }
 
     protected void updateIdpConfig(String key, String value) {

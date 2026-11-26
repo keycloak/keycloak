@@ -18,8 +18,6 @@
 package org.keycloak.broker.oid4vp;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
 
 import org.keycloak.models.IdentityProviderModel;
@@ -28,11 +26,7 @@ import org.keycloak.utils.StringUtil;
 
 public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
-    public static final String DEFAULT_CREDENTIAL_TYPES = "defaultCredentialTypes";
-    public static final String DCQL_QUERY = "dcqlQuery";
-    public static final String TRUSTED_ISSUER_JWKS = "trustedIssuerJwks";
-    public static final String TRUST_MATERIAL_IDPS = "trustMaterialIdps";
-    public static final String PRINCIPAL_ATTRIBUTE = "principalAttribute";
+    public static final String REQUESTED_CREDENTIALS = "requestedCredentials";
     public static final String WALLET_SCHEME = "walletScheme";
     public static final String SIGNING_KEY_ID = "signingKeyId";
     public static final String RESPONSE_MODE = "responseMode";
@@ -46,52 +40,11 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
         super(model);
     }
 
-    public List<String> getDefaultCredentialTypes() {
-        String credentialTypes = getConfig().get(DEFAULT_CREDENTIAL_TYPES);
-        if (StringUtil.isBlank(credentialTypes)) {
-            return List.of();
-        }
-        return Arrays.stream(credentialTypes.split(","))
-                .map(String::trim)
-                .filter(StringUtil::isNotBlank)
-                .distinct()
-                .toList();
-    }
-
-    public void setDefaultCredentialTypes(List<String> credentialTypes) {
-        getConfig().put(DEFAULT_CREDENTIAL_TYPES, String.join(",", credentialTypes));
-    }
-
-    public String getDcqlQuery() {
-        return getConfig().get(DCQL_QUERY);
-    }
-
-    public void setDcqlQuery(String dcqlQuery) {
-        getConfig().put(DCQL_QUERY, dcqlQuery);
-    }
-
-    public String getTrustedIssuerJwks() {
-        return getConfig().get(TRUSTED_ISSUER_JWKS);
-    }
-
-    public void setTrustedIssuerJwks(String trustedIssuerJwks) {
-        getConfig().put(TRUSTED_ISSUER_JWKS, trustedIssuerJwks);
-    }
-
-    public String getTrustMaterialIdps() {
-        return getConfig().get(TRUST_MATERIAL_IDPS);
-    }
-
-    public void setTrustMaterialIdps(String trustMaterialIdps) {
-        getConfig().put(TRUST_MATERIAL_IDPS, trustMaterialIdps);
-    }
-
-    public String getPrincipalAttribute() {
-        return getConfig().get(PRINCIPAL_ATTRIBUTE);
-    }
-
-    public void setPrincipalAttribute(String principalAttribute) {
-        getConfig().put(PRINCIPAL_ATTRIBUTE, principalAttribute);
+    /**
+     * @throws IllegalArgumentException if the requested credentials are missing or invalid
+     */
+    public RequestedCredentials getRequestedCredentials() {
+        return RequestedCredentials.parse(getConfig().get(REQUESTED_CREDENTIALS));
     }
 
     public String getSigningKeyId() {
@@ -126,15 +79,17 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
         if (StringUtil.isNotBlank(responseMode)) {
             ResponseMode.from(responseMode);
         }
-        if (StringUtil.isNotBlank(getDcqlQuery())) {
-            DcqlQuery.parse(getDcqlQuery());
-        } else if (getDefaultCredentialTypes().isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Default credential types are required unless a DCQL query is configured");
-        }
-        if (StringUtil.isBlank(getTrustedIssuerJwks()) && StringUtil.isBlank(getTrustMaterialIdps())) {
-            throw new IllegalArgumentException(
-                    "Either a trusted issuer JWKS or trust material identity provider aliases are required");
+        validateRequestedCredentials(getRequestedCredentials());
+    }
+
+    /**
+     * Requires the principal credential in every presentation that satisfies the query. An extension
+     * that establishes the principal during the login when its credential is absent can relax this.
+     */
+    protected void validateRequestedCredentials(RequestedCredentials requested) {
+        if (!requested.isPrincipalAlwaysPresented()) {
+            throw new IllegalArgumentException("The principal credential '" + requested.principal().credential()
+                    + "' must be part of every option of at least one required credential set");
         }
     }
 
