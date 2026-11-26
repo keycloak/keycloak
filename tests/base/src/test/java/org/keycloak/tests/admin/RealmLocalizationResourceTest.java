@@ -17,18 +17,33 @@
 
 package org.keycloak.tests.admin;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import jakarta.ws.rs.NotFoundException;
 
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
@@ -43,6 +58,15 @@ public class RealmLocalizationResourceTest {
 
     @InjectRealm(config = RealmLocaleConfig.class)
     private ManagedRealm realm;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     private static class RealmLocaleConfig implements RealmConfig {
 
@@ -110,6 +134,7 @@ public class RealmLocalizationResourceTest {
         realm.cleanup().add(r -> r.localization().deleteRealmLocalizationText("en", "key-c"));
 
         realm.admin().localization().saveRealmLocalizationText("en", "key-c", "text-c");
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, "localization/en/key-c", Map.of("key-c", "text-c"), ResourceType.REALM);
 
         String localizationText = realm.admin().localization().getRealmLocalizationText("en", "key-c");
 
@@ -122,6 +147,7 @@ public class RealmLocalizationResourceTest {
         realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-b", "text-b_en"));
 
         realm.admin().localization().saveRealmLocalizationText("en", "key-b", "text-b-new");
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, "localization/en/key-b", Map.of("key-b", "text-b-new"), ResourceType.REALM);
 
         String localizationText = realm.admin().localization().getRealmLocalizationText("en", "key-b");
 
@@ -134,6 +160,7 @@ public class RealmLocalizationResourceTest {
         realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-a", "text-a_en"));
 
         realm.admin().localization().deleteRealmLocalizationText("en", "key-a");
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, "localization/en/key-a", ResourceType.REALM);
 
         Map<String, String> localizations = realm.admin().localization().getRealmLocalizationTexts("en");
         assertEquals(1, localizations.size());
@@ -153,6 +180,7 @@ public class RealmLocalizationResourceTest {
         realm.cleanup().add(r -> r.localization().saveRealmLocalizationText("en", "key-b", "text-b_en"));
 
         realm.admin().localization().deleteRealmLocalizationTexts("en");
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, "localization/en", ResourceType.REALM);
         
         List<String> localizations = realm.admin().localization().getRealmSpecificLocales();
         assertEquals(1, localizations.size());
@@ -169,6 +197,7 @@ public class RealmLocalizationResourceTest {
         newLocalizationTexts.put("key-b", "text-b_es");
 
         realm.admin().localization().createOrUpdateRealmLocalizationTexts("es", newLocalizationTexts);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, "localization/es", newLocalizationTexts, ResourceType.REALM);
 
         final Map<String, String> persistedLocalizationTexts = realm.admin().localization().getRealmLocalizationTexts("es");
         assertEquals(newLocalizationTexts, persistedLocalizationTexts);
@@ -189,5 +218,31 @@ public class RealmLocalizationResourceTest {
         expectedLocalizationTexts.putAll(newLocalizationTexts);
         final Map<String, String> persistedLocalizationTexts = realm.admin().localization().getRealmLocalizationTexts("en");
         assertEquals(expectedLocalizationTexts, persistedLocalizationTexts);
+    }
+
+    @Test
+    public void importRealmLocalizationTextsFromFile() throws Exception {
+        realm.cleanup().add(r -> r.localization().deleteRealmLocalizationTexts("fr"));
+
+        final Map<String, String> importedTexts = Map.of("key-a", "text-a_fr", "key-b", "text-b_fr");
+
+        // the admin client has no method for the multipart import endpoint, so send the request directly
+        String boundary = "kc-" + UUID.randomUUID();
+        String body = "--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"file\"; filename=\"fr.json\"\r\n"
+                + "Content-Type: application/json\r\n\r\n"
+                + JsonSerialization.writeValueAsString(importedTexts) + "\r\n"
+                + "--" + boundary + "--\r\n";
+        HttpRequest request = HttpRequest.newBuilder(URI.create(keycloakUrls.getBase() + "/admin/realms/" + realm.getName() + "/localization/fr"))
+                .header("Authorization", "Bearer " + adminClient.tokenManager().getAccessTokenString())
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+
+        HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(204, response.statusCode());
+
+        assertEquals(importedTexts, realm.admin().localization().getRealmLocalizationTexts("fr"));
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, "localization/fr", importedTexts, ResourceType.REALM);
     }
 }

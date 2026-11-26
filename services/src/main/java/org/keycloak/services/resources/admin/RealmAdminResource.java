@@ -238,7 +238,7 @@ public class RealmAdminResource {
      */
     @Path("localization")
     public RealmLocalizationResource getLocalization() {
-        return new RealmLocalizationResource(session, auth);
+        return new RealmLocalizationResource(session, auth, adminEvent);
     }
 
     /**
