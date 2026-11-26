@@ -473,6 +473,12 @@ public class AuthorizationTokenService {
             throw disabledClientException;
         }
 
+        if (clientModel.getProtocol() != null && !OIDCLoginProtocol.LOGIN_PROTOCOL.equals(clientModel.getProtocol())) {
+            CorsErrorResponseException invalidProtocolException = new CorsErrorResponseException(request.getCors(), OAuthErrorException.INVALID_REQUEST, "Resource server client does not use the OpenID Connect protocol: [" + issuedFor + "]", Status.BAD_REQUEST);
+            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidProtocolException);
+            throw invalidProtocolException;
+        }
+
         ResourceServer resourceServer = resourceServerStore.findByClient(clientModel);
 
         if (resourceServer == null) {
