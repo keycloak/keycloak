@@ -970,6 +970,34 @@ Environment.setHomeDir(tmp);
     }
 
     @Test
+    public void awsJdbcWrapperPluginsWithoutFailover() {
+        String warning = "does not include the 'failover' or 'failover2' plugin";
+        String awsUrl = "--db-url=jdbc:aws-wrapper:postgresql://localhost/keycloak";
+        String awsDriver = "--db-driver=software.amazon.jdbc.Driver";
+
+        for (String params : new String[] {"?wrapperPlugins=iam", "?ssl=true&wrapperPlugins=iam%2Cefm2", "?wrapperPlugins=", "?wrapperPlugins",
+                "?wrapperPlugins=failover2&wrapperPlugins=iam", "?wrapperPlugins=efm2%"}) {
+            NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db=postgres", awsDriver, awsUrl + params);
+            assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+            assertThat(params, nonRunningPicocli.getOutString(), containsString(warning));
+            onAfter();
+        }
+
+        for (String params : new String[] {"", "?ssl=true", "?wrapperPlugins=iam,failover2", "?wrapperPlugins=iam%2Cfailover", "?wrapperPlugins=gdbFailover",
+                "?wrapperPlugins=iam&wrapperPlugins=failover2", "?wrapperplugins=iam"}) {
+            NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db=postgres", awsDriver, awsUrl + params);
+            assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+            assertThat(params, nonRunningPicocli.getOutString(), not(containsString(warning)));
+            onAfter();
+        }
+
+        // only the AWS JDBC Wrapper knows this parameter
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db=postgres", "--db-url=jdbc:postgresql://localhost/keycloak?wrapperPlugins=iam");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(), not(containsString(warning)));
+    }
+
+    @Test
     public void quarkusPropertyInQuarkusPropertiesWarning() {
         putEnvVar("QUARKUS_HTTP_PORT", "9090");
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
