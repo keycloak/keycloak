@@ -37,6 +37,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Nationalized;
 
 /**
@@ -46,7 +47,7 @@ import org.hibernate.annotations.Nationalized;
 @Entity
 @Table(name="CLIENT_SCOPE", uniqueConstraints = {@UniqueConstraint(columnNames = {"REALM_ID", "NAME"})})
 @NamedQueries({
-        @NamedQuery(name="getClientScopeIds", query="select scope.id from ClientScopeEntity scope where scope.realmId = :realm"),
+        @NamedQuery(name="getClientScopes", query="select scope from ClientScopeEntity scope where scope.realmId = :realm"),
         @NamedQuery(name = "getClientScopesByProtocol",
                     query = "select S from ClientScopeEntity S " +
                             "where S.realmId = :realm and S.protocol = :protocol")
@@ -72,9 +73,11 @@ public class ClientScopeEntity {
     private String protocol;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
+    @BatchSize(size = 100)
     protected Collection<ClientScopeAttributeEntity> attributes = new LinkedList<>();
 
     @ElementCollection
+    @BatchSize(size = 100)
     @Column(name="ROLE_ID")
     @CollectionTable(name="CLIENT_SCOPE_ROLE_MAPPING", joinColumns = { @JoinColumn(name="SCOPE_ID")})
     private Set<String> scopeMappingIds = new HashSet<>();
