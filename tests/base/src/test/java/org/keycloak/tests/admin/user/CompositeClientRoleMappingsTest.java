@@ -25,11 +25,13 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -76,6 +78,10 @@ public class CompositeClientRoleMappingsTest {
     private static String user1Id;
     private static String user2Id;
     private static String user3Id;
+
+    // Parent group holds A_LEAF_1; child group inherits it via parent-group traversal
+    private static String parentGroupId;
+    private static String childGroupId;
 
     @TestSetup
     public void setup() {
@@ -150,6 +156,19 @@ public class CompositeClientRoleMappingsTest {
                 realm.clients().get(clientBId).roles().get("B_COMPOSITE").toRepresentation()));
 
         // User 3 gets no roles
+
+        // --- Groups: parent gets A_LEAF_1, child inherits it via parent-group traversal ---
+        GroupRepresentation parent = GroupBuilder.create().name("PARENT_GROUP").build();
+        try (Response r = realm.groups().add(parent)) {
+            parentGroupId = ApiUtil.getCreatedId(r);
+        }
+        realm.groups().group(parentGroupId).roles().clientLevel(clientAId).add(Collections.singletonList(
+                realm.clients().get(clientAId).roles().get("A_LEAF_1").toRepresentation()));
+
+        GroupRepresentation child = GroupBuilder.create().name("CHILD_GROUP").build();
+        try (Response r = realm.groups().group(parentGroupId).subGroup(child)) {
+            childGroupId = ApiUtil.getCreatedId(r);
+        }
     }
 
     // --- User 1 + Client A: nested composite expands to all A roles ---
@@ -294,5 +313,28 @@ public class CompositeClientRoleMappingsTest {
                 .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
 
         assertThat("Brief and full representations should return the same roles", briefNames, is(fullNames));
+    }
+
+    // --- Group composite mappings include roles inherited from parent groups (GH #52046) ---
+
+    @Test
+    public void testGroupCompositeIncludesParentGroupRoles() {
+        List<RoleRepresentation> effective = managedRealm.admin().groups().group(childGroupId)
+                .roles().clientLevel(clientAId).listEffective();
+        Set<String> roleNames = effective.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+
+        // A_LEAF_1 is assigned to PARENT_GROUP and must be inherited by CHILD_GROUP
+        assertThat(roleNames, containsInAnyOrder("A_LEAF_1"));
+        assertThat(effective, hasSize(1));
+    }
+
+    @Test
+    public void testGroupWithoutParentHasNoExtraRoles() {
+        List<RoleRepresentation> effective = managedRealm.admin().groups().group(parentGroupId)
+                .roles().clientLevel(clientAId).listEffective();
+        Set<String> roleNames = effective.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+
+        assertThat(roleNames, containsInAnyOrder("A_LEAF_1"));
+        assertThat(effective, hasSize(1));
     }
 }

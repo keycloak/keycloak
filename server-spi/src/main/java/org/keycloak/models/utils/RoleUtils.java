@@ -219,13 +219,17 @@ public class RoleUtils {
      */
     public static Set<RoleModel> getDeepRoleMappings(RoleMapperModel roleMapper) {
         // RoleMapperModel has exactly two implementations: UserModel and GroupModel.
-        // UserModel.hasRole() considers group-inherited roles, so we must include them
-        // here too — otherwise the effective role set would be incomplete for users
-        // who receive roles through group membership.
-        // GroupModel has no parent-group role inheritance at this level, so a plain
-        // composite expansion of its direct mappings is sufficient.
+        // Both UserModel.hasRole() and GroupModel role inheritance consider
+        // parent-group roles, so we must include them here too — otherwise the
+        // effective role set would be incomplete for groups that receive roles
+        // through membership in a parent group.
         if (roleMapper instanceof UserModel) {
             return getDeepUserRoleMappings((UserModel) roleMapper);
+        }
+        if (roleMapper instanceof GroupModel group) {
+            Set<RoleModel> roleMappings = new HashSet<>();
+            addGroupRoles(group, roleMappings);
+            return expandCompositeRoles(roleMappings);
         }
         return expandCompositeRoles(roleMapper.getRoleMappingsStream().collect(Collectors.toSet()));
     }
