@@ -1,5 +1,9 @@
 package org.keycloak.storage;
 
+import javax.naming.AuthenticationException;
+import javax.naming.CommunicationException;
+import javax.naming.ServiceUnavailableException;
+
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Time;
@@ -18,6 +22,8 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProvider.TimerTaskContext;
 
 import org.jboss.logging.Logger;
+
+import static org.keycloak.common.util.Throwables.isCausedBy;
 
 final class UserStorageSyncTask implements ScheduledTask {
 
@@ -71,7 +77,25 @@ final class UserStorageSyncTask implements ScheduledTask {
                 case CHANGED -> runIncrementalSync(session);
             };
         } catch (Throwable t) {
-            logger.errorf(t, "Error occurred during %s users-sync in realm %s and user provider %s",  syncMode, realmId, providerId);
+            String providerName = getStorageModel(session).getName();
+
+            // If already StorageUnavailableException (e.g., from LDAPQuery.getResultList()), rethrow it
+            if (t instanceof StorageUnavailableException) {
+                logger.errorf(t, "LDAP storage unavailable during %s users-sync in realm %s and user provider id %s",
+                        syncMode, realmId, providerId);
+                throw (StorageUnavailableException) t;
+            }
+
+            // Check if this is a critical LDAP error (caused by JNDI exceptions)
+            if (isCausedBy(t, AuthenticationException.class, CommunicationException.class, ServiceUnavailableException.class)) {
+                logger.errorf(t, "LDAP authentication or connection failure during %s users-sync in realm %s and user provider id %s",
+                        syncMode, realmId, providerId);
+                throw new StorageUnavailableException("LDAP authentication or connection failure for provider [" + providerName + "]", t);
+            }
+
+            // For non-critical errors, log and return empty result
+            logger.errorf(t, "Error occurred during %s users-sync in realm %s and user provider id %s (provider name %s)",
+                    syncMode, realmId, providerId, providerName);
         }
 
         return SynchronizationResult.empty();
