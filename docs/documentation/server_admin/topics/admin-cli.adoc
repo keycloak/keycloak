@@ -369,7 +369,7 @@ For example:
 ----
 $ kcadm.sh get realms/demorealm --fields id --format csv --noquotes
 ----
-. Add a new key provider with a higher priority than the existing providers as revealed by `kcadm.sh get keys -r demorealm`.
+. Add a new key provider with a lower priority than the existing providers as revealed by `kcadm.sh get keys -r demorealm`.
 +
 For example:
 +
@@ -377,17 +377,34 @@ For example:
 +
 [options="nowrap"]
 ----
-$ kcadm.sh create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["101"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keySize=["2048"]'
+$ kcadm.sh create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s 'config.priority=["99"]' -s 'config.enabled=["true"]' -s 'config.active=["true"]' -s 'config.keySize=["2048"]'
 ----
 * Windows:
 +
 [options="nowrap"]
 ----
-c:\> kcadm create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"101\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keySize=[\"2048\"]"
+c:\> kcadm create components -r demorealm -s name=rsa-generated -s providerId=rsa-generated -s providerType=org.keycloak.keys.KeyProvider -s parentId=959844c1-d149-41d7-8359-6aa527fca0b0 -s "config.priority=[\"99\"]" -s "config.enabled=[\"true\"]" -s "config.active=[\"true\"]" -s "config.keySize=[\"2048\"]"
 ----
 . Set the `parentId` attribute to the value of the target realm's ID.
+. Wait until OpenID Connect clients have refreshed their cached public keys from `/realms/{realm-name}/protocol/openid-connect/certs`, and SAML service providers have refreshed `/realms/{realm-name}/protocol/saml/descriptor` or received the new certificate manually.
+. Use the new key's `providerId` to raise its priority above the existing providers.
 +
-The newly added key is now the active key, as revealed by `kcadm.sh get keys -r demorealm`.
+For example:
++
+* Linux:
++
+[options="nowrap"]
+----
+$ kcadm.sh update components/PROVIDER_ID -r demorealm -s 'config.priority=["101"]'
+----
+* Windows:
++
+[options="nowrap"]
+----
+c:\> kcadm update components/PROVIDER_ID -r demorealm -s "config.priority=[\"101\"]"
+----
++
+The newly added key is now the key used for signing, as revealed by `kcadm.sh get keys -r demorealm`.
 
 [discrete]
 ==== Adding new realm keys from a Java Key Store file
