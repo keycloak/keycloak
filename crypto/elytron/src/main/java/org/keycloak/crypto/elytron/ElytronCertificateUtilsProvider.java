@@ -96,7 +96,7 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
             ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
                     ZoneId.systemDefault());
             // Serial Number
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+            SecureRandom random = new SecureRandom();
             BigInteger serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
             // Extended Key Usage
             ArrayList<String> ekuList = new ArrayList<String>();
