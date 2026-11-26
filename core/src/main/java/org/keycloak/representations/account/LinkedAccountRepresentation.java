@@ -16,7 +16,6 @@
  */
 package org.keycloak.representations.account;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  *
@@ -29,8 +28,6 @@ public class LinkedAccountRepresentation implements Comparable<LinkedAccountRepr
     private String providerName;
     private String displayName;
     private String linkedUsername;
-
-    @JsonIgnore
     private String guiOrder;
 
     public String getLinkedUsername() {
