@@ -719,8 +719,13 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         public Stream<GroupModel> getGroupsStream() {
             Stream<GroupModel> ldapGroupMappings = getLDAPGroupMappingsConverted();
             if (config.isTopLevelGroupsPath() && config.getMode() == LDAPGroupMapperMode.LDAP_ONLY) {
-                // Use just group mappings from LDAP
-                return ldapGroupMappings;
+                // Include other LDAP group mappers without exposing memberships stored only in the local DB.
+                Stream<GroupModel> delegateLDAPGroupMappings = Stream.iterate(getDelegate(), UserModelDelegate.class::isInstance,
+                                user -> ((UserModelDelegate) user).getDelegate())
+                        .filter(LDAPGroupMappingsUserDelegate.class::isInstance)
+                        .map(LDAPGroupMappingsUserDelegate.class::cast)
+                        .flatMap(LDAPGroupMappingsUserDelegate::getLDAPGroupMappingsConverted);
+                return Stream.concat(ldapGroupMappings, delegateLDAPGroupMappings).distinct();
             } else {
                 // Merge mappings from both DB and LDAP (including groups assigned from other group mappers)
                 return Stream.concat(ldapGroupMappings, super.getGroupsStream());
