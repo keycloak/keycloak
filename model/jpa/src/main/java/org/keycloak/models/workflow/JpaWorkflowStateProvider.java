@@ -152,11 +152,24 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
-    public void removeByResource(String resourceId) {
+    public void removeByResource(String resourceId, String realmId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaDelete<WorkflowStateEntity> delete = cb.createCriteriaDelete(WorkflowStateEntity.class);
         Root<WorkflowStateEntity> root = delete.from(WorkflowStateEntity.class);
-        delete.where(cb.equal(root.get("resourceId"), resourceId));
+
+        // WORKFLOW_STATE has no realm column, so scope the delete to workflows (COMPONENT records)
+        // that belong to the given realm, to avoid deleting state for a resource with the same id
+        // in a different realm.
+        Subquery<String> workflowIdsInRealm = delete.subquery(String.class);
+        Root<ComponentEntity> component = workflowIdsInRealm.from(ComponentEntity.class);
+        workflowIdsInRealm.select(component.get("id"))
+                .where(cb.and(
+                        cb.equal(component.get("providerType"), WorkflowProvider.class.getName()),
+                        cb.equal(component.get("realm").get("id"), realmId)));
+
+        delete.where(cb.and(
+                cb.equal(root.get("resourceId"), resourceId),
+                root.get("workflowId").in(workflowIdsInRealm)));
         int deletedCount = em.createQuery(delete).executeUpdate();
 
         if (LOGGER.isTraceEnabled()) {

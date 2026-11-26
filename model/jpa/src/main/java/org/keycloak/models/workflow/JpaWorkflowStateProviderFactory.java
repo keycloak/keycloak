@@ -65,6 +65,6 @@ public class JpaWorkflowStateProviderFactory implements WorkflowStateProviderFac
     private void onUserRemovedEvent(UserRemovedEvent event) {
         KeycloakSession session = event.getKeycloakSession();
         WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-        provider.removeByResource(event.getUser().getId());
+        provider.removeByResource(event.getUser().getId(), event.getRealm().getId());
     }
 }
