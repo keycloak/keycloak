@@ -130,6 +130,12 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
         }
 
         String requestedSubject = context.getFormParams().getFirst(OAuth2Constants.REQUESTED_SUBJECT);
+        if (subjectToken == null && requestedSubject == null) {
+            // without a subject token or a requested subject there is no user to exchange
+            event.detail(Details.REASON, "subject_token or requested_subject is required");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Parameter 'subject_token' or 'requested_subject' is required", Response.Status.BAD_REQUEST);
+        }
         boolean disallowOnHolderOfTokenMismatch = true;
 
         if (requestedSubject != null) {
