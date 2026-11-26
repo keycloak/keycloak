@@ -110,7 +110,8 @@ public class UserManagedPermissionService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Failed to parse representation", Status.BAD_REQUEST);
         }
 
-        String resourceId = getAssociatedResourceId(policyId);
+        Policy policy = getOwnedPolicy(policyId);
+        String resourceId = getAssociatedResourceId(policy);
         Set<String> resources = Optional.ofNullable(representation.getResources()).orElse(Set.of());
 
         if (resources.isEmpty() || (resources.size() == 1 && resources.contains(resourceId))) {
@@ -125,7 +126,7 @@ public class UserManagedPermissionService {
     @Path("{policyId}")
     @DELETE
     public Response delete(@PathParam("policyId") String policyId) {
-        checkRequest(getAssociatedResourceId(policyId), null);
+        checkRequest(getAssociatedResourceId(getOwnedPolicy(policyId)), null);
         PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).delete();
         return Response.noContent().build();
     }
@@ -134,7 +135,7 @@ public class UserManagedPermissionService {
     @GET
     @Produces("application/json")
     public Response findById(@PathParam("policyId") String policyId) {
-        checkRequest(getAssociatedResourceId(policyId), null);
+        checkRequest(getAssociatedResourceId(getOwnedPolicy(policyId)), null);
         return PolicyTypeResourceService.class.cast(delegate.getResource(policyId)).findById(null);
     }
 
@@ -204,7 +205,23 @@ public class UserManagedPermissionService {
         }
     }
 
-    private String getAssociatedResourceId(String policyId) {
-        return getPolicy(policyId).getResources().iterator().next().getId();
+    private String getAssociatedResourceId(Policy policy) {
+        return policy.getResources().iterator().next().getId();
+    }
+
+    private Policy getOwnedPolicy(String policyId) {
+        Policy policy = getPolicy(policyId);
+
+        // the by-id endpoints otherwise have no way to tell an administrator-authored permission (any policy
+        // type, any owner) from one created through this self-service API; the resource ownership check in
+        // checkRequest() is not enough on its own, since the caller may happen to own the resource an
+        // admin-authored permission of a different type governs. A policy with more than one resource is
+        // also rejected here, since checkRequest() only ever validates ownership of the first one, and such
+        // a policy may also govern a resource owned by someone else
+        if (!"uma".equals(policy.getType()) || !identity.getId().equals(policy.getOwner()) || policy.getResources().size() != 1) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Policy with [" + policyId + "] does not exist", Status.NOT_FOUND);
+        }
+
+        return policy;
     }
 }
