@@ -38,6 +38,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.validators.DestinationValidator;
 
+import org.jboss.logging.Logger;
 import org.w3c.dom.Element;
 
 import static org.keycloak.models.IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR;
@@ -51,7 +52,8 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
 
     private static final String MACEDIR_ENTITY_CATEGORY = "http://macedir.org/entity-category";
     private static final String REFEDS_HIDE_FROM_DISCOVERY = "http://refeds.org/category/hide-from-discovery";
-
+    private static final Logger logger =
+            Logger.getLogger(SAMLIdentityProviderFactory.class);
     private DestinationValidator destinationValidator;
 
     @Override
@@ -133,6 +135,10 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
                     for (KeyDescriptorType keyDescriptorType : keyDescriptor) {
                         Element keyInfo = keyDescriptorType.getKeyInfo();
                         Element x509KeyInfo = DocumentUtil.getChildElement(keyInfo, new QName("dsig", "X509Certificate"));
+                        if (x509KeyInfo == null) {
+                            logger.warn("Skipping SAML key descriptor without X509Certificate");
+                            continue;
+                        }
 
                         if (KeyTypes.SIGNING.equals(keyDescriptorType.getUse())) {
                             samlIdentityProviderConfig.addSigningCertificate(x509KeyInfo.getTextContent());
