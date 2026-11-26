@@ -290,6 +290,15 @@ public class OrganizationGroupResource {
             } else {
                 // CREATE new subgroup
                 child = organizationProvider.createGroup(organization, groupName, group);
+
+                // set description and attributes
+                if (rep.getDescription() != null) {
+                    child.setDescription(rep.getDescription());
+                }
+                if (rep.getAttributes() != null) {
+                    rep.getAttributes().forEach(child::setAttribute);
+                }
+
                 URI uri = session.getContext().getUri().getAbsolutePathBuilder()
                         .path(child.getId()).build();
                 builder.status(201).location(uri);
