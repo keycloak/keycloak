@@ -41,6 +41,7 @@ import javax.naming.directory.SearchControls;
 
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.connections.jpa.support.EntityManagerClearListeners;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
@@ -152,6 +153,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
         this.editMode = ldapIdentityStore.getConfig().getEditMode();
         this.mapperManager = new LDAPStorageMapperManager(this);
         this.userManager = new LDAPStorageUserManager(this);
+        if (session != null) {
+            // mapper-level unit tests construct this provider without a session
+            EntityManagerClearListeners.onClear(session, userManager::invalidateManagedProxiedUsers);
+        }
 
         supportedCredentialTypes.add(PasswordCredentialModel.TYPE);
         if (kerberosConfig.isAllowKerberosAuthentication()) {
@@ -221,9 +226,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
             }
         }
 
+        // A managed entry may already exist for this user id with its proxy invalidated (see
+        // LDAPStorageUserManager#invalidateManagedProxiedUsers) - rebuild around the LDAPObject it already
+        // enlisted rather than a freshly loaded one, so its already-enlisted LDAPTransaction keeps targeting
+        // the same instance mappers write to below, instead of silently committing stale data.
+        LDAPObject managedLdapObject = userManager.getManagedLDAPObject(local.getId());
+        final LDAPObject resolvedLdapObject = managedLdapObject != null ? managedLdapObject : ldapObject;
+
         UserModel proxied = local;
 
-        checkDNChanged(realm, local, ldapObject);
+        checkDNChanged(realm, local, resolvedLdapObject);
 
         switch (editMode) {
             case READ_ONLY:
@@ -249,7 +261,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                 .sorted(ldapMappersComparator.sortAsc())
                 .forEachOrdered(mapperModel -> {
                     LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
-                    proxy.set(ldapMapper.proxy(ldapObject, proxy.get(), realm));
+                    proxy.set(ldapMapper.proxy(resolvedLdapObject, proxy.get(), realm));
                 });
         proxied = proxy.get();
 
@@ -257,7 +269,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             proxied = new UpdateOnlyChangeUserModelDelegate(proxied);
         }
 
-        userManager.setManagedProxiedUser(proxied, ldapObject);
+        userManager.setManagedProxiedUser(proxied, resolvedLdapObject);
 
         return proxied;
     }
