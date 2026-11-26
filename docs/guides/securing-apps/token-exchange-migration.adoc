@@ -4,12 +4,30 @@
 <@tmpl.guide
 title="Migrating from Token Exchange v1 to v2"
 priority=121
-summary="A guide to migrate your token exchange clients from the legacy version 1 to the standard version 2.">
+summary="Migrate legacy token exchange clients to Standard Token Exchange V2 and other supported features in Keycloak 27.">
 
-This guide helps you migrate internal-internal token exchange from the deprecated legacy version 1 (V1) to the standard version 2 (V2). While V1 is still available for backward compatibility, it is deprecated and will be removed in a future Keycloak version. V2 is the officially supported, standards-compliant implementation aligned with link:https://datatracker.ietf.org/doc/html/rfc8693[RFC 8693].
+Legacy Token Exchange version 1 (V1) was removed in {project_name} 27.
+This guide describes how to migrate applications that used V1 in earlier versions to Standard Token Exchange version 2 (V2) or other supported features in {project_name} 27.
+The V1 examples and configuration descriptions are historical references for applications upgrading from earlier versions.
+V2 is the officially supported token exchange implementation aligned with link:https://datatracker.ietf.org/doc/html/rfc8693[RFC 8693].
+
+[[_migration-paths]]
+The migration path depends on the legacy token exchange scenario:
+
+* **Internal-internal exchange**: Follow <<_migration-internal-internal,Migrating internal-internal Token Exchange V1 to V2>> below.
+* **Internal-external exchange**: See link:{developerguide_link}#identity-brokering-apis[Identity Brokering APIs] for retrieving external provider tokens.
+* **External-internal exchange**: See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for using Standard Token Exchange V2 with JWT Authorization Grant.
+* **Subject impersonation**: V2 does not support the `requested_subject` parameter. For a separate flow based on user consent, see the preview delegation feature in <@links.securingapps id="token-exchange" anchor="_token-exchange-delegation" />.
+
+Delegation is not a direct replacement for `requested_subject`. It requires the `token-exchange-delegation` and `parameterized-scopes` features, FGAP V2 delegation permissions, user consent, and an `actor_token` in the exchange request. Follow the complete delegation flow in the linked documentation.
+
+[[_migration-internal-internal]]
+== Migrating internal-internal Token Exchange V1 to V2
+
+This chapter covers exchanges where the subject token and the exchanged token are issued by the same realm.
 
 [[_migration-overview]]
-== Migration Overview
+=== Migration Overview
 
 Token Exchange V2 is a more secure and standards-compliant implementation than V1. The migration involves several key changes:
 
@@ -18,12 +36,10 @@ Token Exchange V2 is a more secure and standards-compliant implementation than V
 * **Authorization model changed** - V2 checks the subject token audience and supports optional client policies instead of fine-grained admin permissions
 * **Request parameters changed** - V2 requires an explicit `subject_token_type` and defaults to returning an access token without a refresh token
 
-If your use case is not supported by V2, you can run both V1 and V2 simultaneously during migration. However, the roadmap is to eventually sunset V1 entirely.
-
 [[_before-you-start]]
-== Before You Start
+=== Before You Start
 
-Before migrating, assess your current token exchange usage:
+Review the application's previous V1 token exchange configuration:
 
 . Document all clients that use token exchange
 . Confirm that the clients use internal-internal exchange, where both tokens are issued by the same realm. For other scenarios, see <<_migration-paths,Migration Paths>>.
@@ -31,40 +47,30 @@ Before migrating, assess your current token exchange usage:
 . Review your current scope and audience configuration
 
 [[_key-differences]]
-== Key Differences Between V1 and V2
+=== Key Differences Between V1 and V2
 
-=== Confidential Client Requirement
+==== Confidential Client Requirement
 
 V2 requires the requester client, which sends the token exchange request, to be confidential. This requirement does not apply to every client involved in the exchange.
 
 [cols="2,1,1", options="header"]
 |===
-|Aspect |V1 |V2
+|Aspect |V1 (before {project_name} 27) |V2
 |Public clients allowed |Yes (with limitations) |No
 |Confidential clients required |No |Yes
 |Client authentication required |Not always |Yes
 |===
 
-**Migration step**: If you have public clients using token exchange, choose the appropriate approach:
+**Migration step**: If public clients previously used V1 token exchange, choose the appropriate approach:
 
-* If a public client exchanges its own token only to obtain fewer scopes, replace that exchange with the refresh token grant. The client can remain public.
+* If a public client used V1 only to obtain fewer scopes for its own token, replace that exchange with the refresh token grant. The client can remain public.
 * For V2 token exchange, convert the requester client to a confidential client.
-* Keep clients on V1 temporarily while migrating their token exchange usage.
 
-To make a client confidential in the Admin Console:
+For details on configuring a confidential client, see link:{adminguide_link}#_access-type[Client authentication] in the {adminguide_name}.
 
-. Navigate to *Clients* and select your client
-. Go to the *Capability config* section
-. Toggle *Client authentication* to *On* (enabled)
-. Configure a client authentication method in the *Credentials* tab (e.g., *Client secret*, *Signed JWT*)
-. Generate and securely store the client credential
+==== Scope Parameter Behavior
 
-.Converting a Client to Confidential
-image::migration-client-access-type.png[Set Access Type to Confidential]
-
-=== Scope Parameter Behavior
-
-V1 and V2 interpret the `scope` parameter differently.
+V2 interprets the `scope` parameter differently from V1.
 
 **V2 behavior** (RFC 8693 - Standard Token Exchange):
 
@@ -78,16 +84,14 @@ For the V2 scope and audience behavior, see <@links.securingapps id="token-excha
 
 **V1 behavior** (Legacy Token Exchange):
 
-The legacy V1 documentation is less specific, stating that `scope` represents "the target set of OAuth and OpenID Connect scopes" with the returned scope being "the Cartesian product of scope parameter and access token scope."
-
-This vague wording has led to confusion about whether V1 scope is target-client-centric or requester-client-centric.
+In V1, the effective client scopes were based on the target client specified by the `audience` parameter.
 
 **Migration step**: Review all token exchange requests and update scope parameters:
 
 **V1 behavior** (old):
 
-- `scope` parameter specifies scopes the **target client** should receive
-- Scope is filtered based on what the target client is configured for
+- `scope` parameter specified scopes the **target client** should receive
+- Scope was filtered based on the target client's configuration
 - Primarily used for downscoping
 
 **V2 behavior** (new):
@@ -98,7 +102,7 @@ This vague wording has led to confusion about whether V1 scope is target-client-
 
 **Example migration**:
 
-V1: When exchanging to `target-client`, you might use scopes the target client understands
+Before {project_name} 27, a V1 request exchanging to `target-client` used scopes configured on that target client:
 [source,bash]
 ----
 scope=read write
@@ -112,13 +116,13 @@ scope=optional-scope1 optional-scope2
 
 For strict downscoping only in V2, enable the `downscope-assertion-grant-enforcer` policy on the requester client. See link:{adminguide_link}#downscoping[Downscoping] in the Admin Console guide for details.
 
-=== Audience Parameter Behavior
+==== Audience Parameter Behavior
 
-Both V1 and V2 support the `audience` parameter, but with significantly different semantics. For the comparison of standard and legacy token exchange, see <@links.securingapps id="token-exchange" anchor="_standard-token-exchange-comparison" />.
+V2 supports the `audience` parameter with different semantics from V1. For the comparison of standard and legacy token exchange, see <@links.securingapps id="token-exchange" anchor="_standard-token-exchange-comparison" />.
 
 [cols="1,1,1", options="header"]
 |===
-|Aspect |V1 (Legacy) |V2 (Standard)
+|Aspect |V1 (before {project_name} 27) |V2 (Standard)
 |Multiple audiences |Single value only |Multiple values allowed
 |Purpose |Specifies target client |Narrows down available audiences
 |Token issued to |Target client specified by audience |Requesting client
@@ -129,14 +133,14 @@ Both V1 and V2 support the `audience` parameter, but with significantly differen
 
 According to the official documentation:
 
-* "Support for **single audience value**"
+* "Support for **single audience value**"†
 * "**Token effectively issued to the client requested by the audience parameter** and using the scopes of that client"
 
 In practice:
 
-* `audience` parameter specifies the single client the token should be issued to
-* Access token uses the target client's scope configuration and includes that client as an audience, but `azp` remains the requester client
-* Only single value supported
+* `audience` parameter specified the single target client
+* Access token used the target client's scope configuration and included that client as an audience, but `azp` remained the requester client
+* Only a single value was supported
 
 **V2 behavior** (from official comparison):
 
@@ -155,7 +159,7 @@ In practice:
 **Migration step**: Update your token exchange requests:
 
 [source,bash]
-.V1: Single audience (target client)
+.Before {project_name} 27 (V1): Single audience (target client)
 ----
 audience=target-client
 ----
@@ -168,25 +172,18 @@ audience=target-client1&audience=target-client2
 
 In V2, the token still contains the audiences, but you can use multiple values to request multiple audiences in one exchange.
 
-=== Authorization and Permissions
+==== Authorization and Permissions
 
-**Key change**: V1 and V2 use fundamentally different authorization models.
+**Key change**: V2 uses a different authorization model from V1.
 
-* **V1**: Requires Fine-grained admin permissions version 1 (FGAP:v1) with complex per-client permission configuration
+* **V1**: Used Fine-grained admin permissions version 1 (FGAP:v1) with per-client permission configuration
 * **V2**: The subject token must contain the requester client in its `aud` claim, unless the requester is exchanging a token issued to itself. Fine-grained admin permissions are not needed. Client policies can optionally enforce additional restrictions.
 
-Important note: "Fine-grained admin permissions version 2 (FGAP:v2) does not have support for token exchange permissions... there is no plan to add token exchange permissions to FGAP:v2."
+NOTE: Fine-grained admin permissions version 2 (FGAP:v2) does not support token exchange permissions. There is no plan to add token exchange permissions to FGAP:v2.
 
 **Migration action**: See <<_configuring-v2-token-exchange,Configuring V2 Token Exchange>> below for how to set up authorization for V2.
 
-[[_migration-paths]]
-== Migration Paths
-
-This guide covers internal-internal exchange. For the supported use cases, see <@links.securingapps id="token-exchange" anchor="_standard-token-exchange-comparison" />.
-
-=== Internal-Internal Exchange
-
-Internal-internal exchange is supported by V2.
+=== Update Token Exchange Requests
 
 **Setup**:
 
@@ -196,16 +193,18 @@ Internal-internal exchange is supported by V2.
 . Configure client policies if you need advanced authorization
 . Test thoroughly
 
-==== Update Request Parameters
+==== Request Parameters
 
-V1 permits omitting `subject_token_type` for a realm access token. V2 requires `subject_token_type=urn:ietf:params:oauth:token-type:access_token`. If this parameter is omitted, a request can fail or continue to use V1 when both features are enabled.
+V1 permitted omitting `subject_token_type` for a realm access token. V2 requires `subject_token_type=urn:ietf:params:oauth:token-type:access_token`. Include this parameter explicitly so that the request can be handled by V2.
 
-V1 defaults `requested_token_type` to `urn:ietf:params:oauth:token-type:refresh_token`, returning both an access token and a refresh token. V2 defaults to `urn:ietf:params:oauth:token-type:access_token`, returning no refresh token. If the application needs a refresh token, request it explicitly and configure the requester client as described in <<_migration-refresh-tokens,Refresh Tokens>>.
+V1 defaulted `requested_token_type` to `urn:ietf:params:oauth:token-type:refresh_token`, returning both an access token and a refresh token. V2 defaults to `urn:ietf:params:oauth:token-type:access_token`, returning no refresh token. If the application needs a refresh token, request it explicitly and configure the requester client as described in <<_migration-refresh-tokens,Refresh Tokens>>.
 
-The following examples use a confidential `requester-client` to exchange a subject token for a token with `target-client` as its audience. Assume the subject token contains `requester-client` in its `aud` claim and includes the `api-read` scope. For V1, `api-read` is configured on `target-client` and the required token exchange permission is granted. For V2, configure `api-read` as an optional scope on `requester-client`, with audience mappings that make `target-client` available.
+The following examples use a confidential `requester-client` to exchange a subject token for a token with `target-client` as its audience. Assume the subject token contains `requester-client` in its `aud` claim and includes the `api-read` scope. In the V1 configuration, `api-read` was configured on `target-client` and the required token exchange permission was granted. For V2, configure `api-read` as an optional scope on `requester-client`, with audience mappings that make `target-client` available.
+
+The V1 request illustrates the application's behavior before upgrading. Use the V2 request with {project_name} 27.
 
 [source,bash]
-.V1: Token types omitted, returning an access token and a refresh token
+.Before {project_name} 27 (V1): Token types omitted, returning an access token and a refresh token
 ----
 curl --request POST \
   'https://keycloak.example.com/realms/myrealm/protocol/openid-connect/token' \
@@ -232,20 +231,10 @@ curl --request POST \
 
 For the complete V2 request and response parameters, see <@links.securingapps id="token-exchange" anchor="_standard-token-exchange-request" />.
 
-=== Other Exchange Scenarios
-
-The following scenarios are outside the internal-internal migration described in this guide:
-
-* **Internal-external exchange**: See link:{developerguide_link}#identity-brokering-apis[Identity Brokering APIs] for retrieving external provider tokens.
-* **External-internal exchange**: See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for using Standard Token Exchange V2 with JWT Authorization Grant.
-* **Subject impersonation**: V2 does not support the `requested_subject` parameter. For a separate flow based on user consent, see the preview delegation feature in <@links.securingapps id="token-exchange" anchor="_token-exchange-delegation" />.
-
-Delegation is not a direct replacement for `requested_subject`. It requires the `token-exchange-delegation` and `parameterized-scopes` features, FGAP V2 delegation permissions, user consent, and an `actor_token` in the exchange request. Follow the complete delegation flow in the linked documentation.
-
 [[_configuring-v2-token-exchange]]
-== Configuring V2 Token Exchange
+=== Configuring V2 Token Exchange
 
-=== Enable the Feature
+==== Enable the Feature
 
 Standard Token Exchange V2 is enabled by default. If it was disabled, enable it:
 
@@ -254,7 +243,7 @@ Standard Token Exchange V2 is enabled by default. If it was disabled, enable it:
 bin/kc.[sh|bat] start --features=token-exchange-standard
 ----
 
-=== Configure Requester Client
+==== Configure Requester Client
 
 For each client that sends token exchange requests:
 
@@ -275,7 +264,7 @@ The optional token expiration and refresh token settings are in the *Advanced* t
 * *Allow refresh token in Standard Token Exchange*: Configure this only if the application needs a refresh token, as described below.
 
 [[_migration-refresh-tokens]]
-==== Refresh Tokens
+===== Refresh Tokens
 
 V2 returns a refresh token only when the request includes `requested_token_type=urn:ietf:params:oauth:token-type:refresh_token` and the requester client allows it. Enabling refresh tokens on the client alone does not cause V2 to return one.
 
@@ -293,7 +282,7 @@ WARNING: A refresh token allows the requester to obtain tokens beyond the subjec
 
 For the complete refresh token restrictions, see <@links.securingapps id="token-exchange" anchor="_standard-token-exchange-details" />.
 
-=== Configure Client Scopes
+==== Configure Client Scopes
 
 Configure scopes on the requester client. This is a **key behavioral difference** between V1 and V2:
 
@@ -314,7 +303,7 @@ Steps:
 
 For detailed information on client scopes, see link:{adminguide_link}#_client_scopes[Client Scopes] in the Admin Console guide.
 
-=== Configure Client Policies (Optional)
+==== Configure Client Policies (Optional)
 
 According to the official documentation: "**Fine-grained admin permissions (FGAP) are not needed for the standard token exchange.**" Client policies are **optional** and only needed if you want to enforce specific authorization rules.
 
@@ -337,11 +326,11 @@ If you do need them, configure a client profile and attach it to a policy:
 For detailed information, see link:{adminguide_link}#client_policies[Client Policies] in the Admin Console guide and <@links.securingapps id="token-exchange" anchor="_standard-token-exchange-details" />.
 
 [[_step-by-step-migration]]
-== Step-by-Step Migration Checklist
+=== Step-by-Step Migration Checklist
 
 Follow this checklist to migrate each client:
 
-=== Phase 1: Assessment (Before Migration)
+==== Phase 1: Assessment (Before Migration)
 
 * [ ] Document current client configuration:
 ** Client ID and name
@@ -349,12 +338,12 @@ Follow this checklist to migrate each client:
 ** What token exchange flows does it use?
 ** Current scope configuration
 ** Current audience configuration
-** Current V1 fine-grain permissions
+** V1 fine-grained permissions from the application's previous configuration
 * [ ] Confirm that the migration covers internal-internal exchange. For other scenarios, see <<_migration-paths,Migration Paths>>.
 
-=== Phase 2: Preparation (Pre-Production)
+==== Phase 2: Preparation (Pre-Production)
 
-* [ ] Create a test realm or test client for validation
+* [ ] Create a test realm or test client in {project_name} 27 for validation
 * [ ] Enable Standard Token Exchange V2 in the test environment and on the test requester client
 * [ ] Convert test client to confidential:
 ** Go to the *Settings* tab and find *Capability config*
@@ -375,13 +364,13 @@ Follow this checklist to migrate each client:
 ** Verify exchanged token has expected scopes and audiences
 ** Verify expiration behavior
 
-=== Phase 3: Configuration (Production)
+==== Phase 3: Configuration (Production)
 
-* [ ] Convert production client to confidential:
-** Go to the *Settings* tab and find *Capability config*
+* [ ] Configure a confidential production requester. For browser or native applications that cannot protect credentials, keep their clients public and use a separate confidential backend requester:
+** Select the confidential requester in *Clients*, open *Settings*, and find *Capability config*
 ** Toggle *Client authentication* to *On*
 ** Generate and rotate client credentials in the *Credentials* tab securely
-** Update all systems that use the client with new credentials
+** Deploy credentials only to trusted server-side applications; never embed them in public applications
 * [ ] Enable the *Standard Token Exchange* checkbox in *Settings* -> *Capability config*
 * [ ] Configure client scopes in production
 * [ ] Deploy client policy rules if needed
@@ -389,13 +378,13 @@ Follow this checklist to migrate each client:
 ** Update token exchange requests with new parameters
 ** Add error handling for new error codes
 ** Test with new V2 behavior
-* [ ] Remove V1 fine-grain permissions for the client
+* [ ] Verify the requester uses V2 authorization checks rather than legacy token exchange permissions
 * [ ] Monitor logs and metrics:
 ** Watch for token exchange failures
 ** Verify requester clients are confidential
 ** Confirm scopes and audiences match expectations
 
-=== Phase 4: Validation (Post-Migration)
+==== Phase 4: Validation (Post-Migration)
 
 * [ ] Test all internal-internal token exchange scenarios:
 ** Basic subject token exchange
@@ -409,15 +398,15 @@ Follow this checklist to migrate each client:
 ** Consent validation
 * [ ] Performance testing:
 ** Measure token exchange latency
-** Verify no degradation compared to V1
-* [ ] Remove V1 fallback once confident in V2
+** Compare latency with measurements taken before the upgrade, if available
+* [ ] Confirm migrated applications no longer send V1-specific requests
 
 [[_common-migration-issues]]
-== Common Migration Issues and Solutions
+=== Common Migration Issues and Solutions
 
 These issues are based on the documented differences between V1 and V2 token exchange behavior.
 
-=== Issue 1: Public Client Rejected
+==== Issue 1: Public Client Rejected
 
 **Problem**: Token exchange fails with error indicating client is public
 
@@ -431,7 +420,7 @@ If the public client exchanges its own token only to obtain fewer scopes, use th
 2. Configure client credentials in the *Credentials* tab
 3. Update all systems with the new client credentials
 
-=== Issue 2: Scope Not Working as Expected
+==== Issue 2: Scope Not Working as Expected
 
 **Problem**: Token doesn't have expected scopes after exchange
 
@@ -442,9 +431,9 @@ If the public client exchanges its own token only to obtain fewer scopes, use th
 1. Review the scope parameter - it should reference requester client's scopes (not target client's)
 2. Configure optional client scopes on the requester client
 3. Use Client scopes evaluate tab to test scope resolution
-4. For strict downscoping, enable the downscope-assertion-grant-enforcer policy
+4. For strict downscoping, enable the  `downscope-assertion-grant-enforcer` client policy
 
-=== Issue 3: Audience Filtering Not Working
+==== Issue 3: Audience Filtering Not Working
 
 **Problem**: Token contains different audiences than requested
 
@@ -458,7 +447,7 @@ If the public client exchanges its own token only to obtain fewer scopes, use th
 4. Use multiple `audience` parameters if requesting multiple audiences: `audience=client1&audience=client2`
 
 [[_getting-help]]
-== Getting Help
+=== Getting Help
 
 For issues during migration:
 
