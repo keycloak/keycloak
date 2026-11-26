@@ -72,8 +72,27 @@ class SerializerProvider {
     @NotOwning JsonGenerator getGenerator();
 }
 
+package tools.jackson.core;
+
+// Jackson 3 write methods return the same generator without transferring ownership.
+abstract class JsonGenerator {
+    @NotOwning JsonGenerator writeEndObject();
+    @NotOwning JsonGenerator writeName(String name);
+    @NotOwning JsonGenerator writeNumber(int value);
+    @NotOwning JsonGenerator writePOJO(Object value);
+}
+
 package tools.jackson.databind;
 
 class ValueSerializer<T> {
     void serialize(T value, @NotOwning JsonGenerator gen, SerializationContext ctxt);
+}
+
+package tools.jackson.dataformat.cbor;
+
+// Qualify JsonGenerator here because this stub also references Jackson 2's JsonGenerator.
+class CBORGenerator {
+    @NotOwning tools.jackson.core.JsonGenerator writePropertyId(long id);
+    @NotOwning tools.jackson.core.JsonGenerator writeStartObject(Object value, int size);
+    @NotOwning tools.jackson.core.JsonGenerator writeTag(int tag);
 }
