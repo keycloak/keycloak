@@ -39,6 +39,13 @@ public class CibaConfig extends AbstractConfig {
     public static final String CIBA_INTERVAL = "cibaInterval";
     public static final String CIBA_AUTH_REQUESTED_USER_HINT = "cibaAuthRequestedUserHint";
 
+    /**
+     * Realm attribute overriding the server-wide {@code httpAuthenticationChannelUri} of the
+     * {@code ciba-http-auth-channel} provider. Only honoured if the provider is configured with
+     * {@code allowRealmOverride=true}.
+     */
+    public static final String CIBA_HTTP_AUTHENTICATION_CHANNEL_URI = "cibaHttpAuthenticationChannelUri";
+
     // default value
     public static final String DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE = CIBA_POLL_MODE;
     public static final int DEFAULT_CIBA_POLICY_EXPIRES_IN = 120;
