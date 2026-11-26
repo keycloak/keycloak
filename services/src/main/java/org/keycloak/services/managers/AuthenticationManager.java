@@ -129,6 +129,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.LoginActivityAttributeRegistrar;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.RoleResolveUtil;
@@ -1096,17 +1097,26 @@ public class AuthenticationManager {
      * as a per-client "last login" attribute compatible with the one written by the community
      * keycloak-auditor plugin, so existing deployments of that plugin can migrate without losing
      * continuity. Gated behind {@link Profile.Feature#USER_LAST_SUCCESSFUL_AUTHENTICATION} since it
-     * writes to the user on every successful login.
+     * writes to the user on every successful login. Also called from non-browser grant flows (e.g.
+     * {@code ResourceOwnerPasswordCredentialsGrantType}) that issue tokens without going through
+     * {@link #redirectAfterSuccessfulFlow}.
      */
-    private static void recordLastSuccessfulAuthentication(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client) {
+    public static void recordLastSuccessfulAuthentication(KeycloakSession session, RealmModel realm, UserModel user, ClientModel client) {
         if (!Profile.isFeatureEnabled(Profile.Feature.USER_LAST_SUCCESSFUL_AUTHENTICATION)) {
             return;
         }
         user.setLastSuccessfulAuthentication(Time.currentTimeMillis());
 
-        String loginTime = DateTimeFormatter.ISO_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC));
-        LoginActivityAttributeRegistrar.registerClientLoginAttribute(session, realm, client.getClientId());
-        user.setSingleAttribute(LoginActivityAttributeRegistrar.perClientAttributeName(client.getClientId()), loginTime);
+        try {
+            String loginTime = DateTimeFormatter.ISO_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC));
+            LoginActivityAttributeRegistrar.registerClientLoginAttribute(session, realm, client.getClientId());
+            user.setSingleAttribute(LoginActivityAttributeRegistrar.perClientAttributeName(client.getClientId()), loginTime);
+        } catch (ReadOnlyException e) {
+            // Federated users backed by a read-only storage provider (e.g. LDAP without writable attribute
+            // mapping) reject attribute writes outright. Don't let that fail an otherwise valid login - the
+            // durable lastSuccessfulAuthentication field above is JPA-local and already recorded regardless.
+            logger.debugf("Skipping per-client last-login attribute for read-only user '%s': %s", user.getUsername(), e.getMessage());
+        }
     }
 
     /**

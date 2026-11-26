@@ -179,6 +179,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
 
         event.success();
         AuthenticationManager.logSuccess(session, authSession);
+        AuthenticationManager.recordLastSuccessfulAuthentication(session, realm, user, client);
 
         return cors.add(Response.ok(res, MediaType.APPLICATION_JSON_TYPE));
     }

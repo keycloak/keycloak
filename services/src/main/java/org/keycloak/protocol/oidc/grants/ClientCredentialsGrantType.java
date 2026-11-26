@@ -17,9 +17,11 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.Set;
 
@@ -179,6 +181,14 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
     }
 
     /**
+     * Minimum spacing between writes of {@value LoginActivityAttributeRegistrar#CLIENT_LAST_LOGIN_ATTRIBUTE}.
+     * {@code ClientModel#setAttribute} triggers cluster-wide invalidation of that client's cache entry, so
+     * writing on every single client-credentials request would make high-volume service accounts evict
+     * shared client configuration continuously. A per-minute resolution is enough for "last login" auditing.
+     */
+    private static final Duration MIN_CLIENT_LAST_LOGIN_UPDATE_INTERVAL = Duration.ofMinutes(1);
+
+    /**
      * Records this client's last successful client-credentials (service account) login as a
      * {@value LoginActivityAttributeRegistrar#CLIENT_LAST_LOGIN_ATTRIBUTE} attribute, in the same
      * format previously written by the community keycloak-auditor SPI plugin on {@code CLIENT_LOGIN}
@@ -189,8 +199,19 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         if (!Profile.isFeatureEnabled(Profile.Feature.USER_LAST_SUCCESSFUL_AUTHENTICATION)) {
             return;
         }
-        String loginTime = DateTimeFormatter.ISO_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC));
-        client.setAttribute(LoginActivityAttributeRegistrar.CLIENT_LAST_LOGIN_ATTRIBUTE, loginTime);
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        String existing = client.getAttribute(LoginActivityAttributeRegistrar.CLIENT_LAST_LOGIN_ATTRIBUTE);
+        if (existing != null) {
+            try {
+                OffsetDateTime last = OffsetDateTime.parse(existing, DateTimeFormatter.ISO_DATE_TIME);
+                if (Duration.between(last, now).compareTo(MIN_CLIENT_LAST_LOGIN_UPDATE_INTERVAL) < 0) {
+                    return;
+                }
+            } catch (DateTimeParseException e) {
+                // Malformed value (shouldn't normally happen) - fall through and overwrite it.
+            }
+        }
+        client.setAttribute(LoginActivityAttributeRegistrar.CLIENT_LAST_LOGIN_ATTRIBUTE, DateTimeFormatter.ISO_DATE_TIME.format(now));
     }
 
     /**

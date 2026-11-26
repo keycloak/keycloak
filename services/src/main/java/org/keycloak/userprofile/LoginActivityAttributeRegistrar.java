@@ -17,10 +17,14 @@
 
 package org.keycloak.userprofile;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
@@ -55,6 +59,18 @@ public class LoginActivityAttributeRegistrar {
     public static final String CLIENT_LAST_LOGIN_ATTRIBUTE = "aud_cls_last-login";
 
     /**
+     * Matches {@code UPConfigUtils.ATTRIBUTE_NAME_PATTERN} ({@code [a-zA-Z0-9._-]+}). Client IDs that
+     * are themselves valid user-profile attribute name characters (the common case) are embedded
+     * as-is, preserving exact attribute-key compatibility with the community keycloak-auditor plugin.
+     * Client IDs that aren't (e.g. SAML entity IDs/URLs containing ':' or '/') would otherwise produce
+     * an invalid attribute name and make {@code UPConfigUtils.validate} reject the whole user profile
+     * configuration, breaking logins for every client in the realm; those are sanitized and given a
+     * collision-safe hash suffix instead.
+     */
+    private static final Pattern SAFE_ATTRIBUTE_NAME_CHARS = Pattern.compile("[a-zA-Z0-9._-]+");
+    private static final Pattern UNSAFE_CHAR = Pattern.compile("[^a-zA-Z0-9._-]");
+
+    /**
      * The global last-login attribute written by the community keycloak-auditor SPI plugin
      * ({@code aud_usr_last-login}, an ISO-8601 {@link java.time.OffsetDateTime} string). Core no
      * longer writes this attribute — the equivalent data lives in
@@ -67,7 +83,23 @@ public class LoginActivityAttributeRegistrar {
     }
 
     public static String perClientAttributeName(String clientId) {
-        return PER_CLIENT_ATTRIBUTE_PREFIX + "_" + clientId;
+        if (SAFE_ATTRIBUTE_NAME_CHARS.matcher(clientId).matches()) {
+            return PER_CLIENT_ATTRIBUTE_PREFIX + "_" + clientId;
+        }
+        return PER_CLIENT_ATTRIBUTE_PREFIX + "_" + UNSAFE_CHAR.matcher(clientId).replaceAll("_") + "_" + sha256Hex8(clientId);
+    }
+
+    private static String sha256Hex8(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (int i = 0; i < 4; i++) {
+                hex.append(String.format("%02x", digest[i]));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**

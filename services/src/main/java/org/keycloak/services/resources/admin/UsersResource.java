@@ -560,12 +560,18 @@ public class UsersResource {
     }
 
     /**
-     * One-shot, idempotent migration helper for deployments previously using the community
-     * keycloak-auditor SPI plugin. For every user in the realm with a non-null
-     * {@code aud_usr_last-login} attribute (an ISO-8601 {@link OffsetDateTime} string, as written
-     * by that plugin) and no {@code lastSuccessfulAuthentication} value yet, parses that attribute
-     * and populates the native field. Never overwrites an already-set value, so it's safe to run
-     * again after native tracking has started. Does not remove the legacy attribute.
+     * Idempotent migration helper for deployments previously using the community keycloak-auditor
+     * SPI plugin. For every user in the given page with a non-null {@code aud_usr_last-login}
+     * attribute (an ISO-8601 {@link OffsetDateTime} string, as written by that plugin) and no
+     * {@code lastSuccessfulAuthentication} value yet, parses that attribute and populates the
+     * native field. Never overwrites an already-set value, so it's safe to run again after native
+     * tracking has started. Does not remove the legacy attribute.
+     * <p>
+     * Processes one bounded page at a time (default {@value Constants#DEFAULT_MAX_RESULTS} users)
+     * rather than the whole realm, so it doesn't materialize every user into memory or hold a single
+     * transaction open for the entire realm on large deployments. Callers migrating a large realm
+     * should repeatedly call this with {@code first} advanced to the returned {@code nextFirstResult}
+     * until it comes back {@code -1}.
      */
     @Path("migrate-last-login")
     @POST
@@ -578,19 +584,27 @@ public class UsersResource {
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation(summary = "Backfill lastSuccessfulAuthentication from the keycloak-auditor plugin's aud_usr_last-login attribute",
-               description = "One-shot, idempotent migration helper for deployments previously using the community keycloak-auditor SPI plugin.")
-    public LastSuccessfulAuthenticationMigrationResult migrateLastLoginAttribute() {
+               description = "Idempotent, paginated migration helper for deployments previously using the community keycloak-auditor SPI plugin. " +
+                       "Call repeatedly with 'first' set to the previous response's 'nextFirstResult' until that comes back -1.")
+    public LastSuccessfulAuthenticationMigrationResult migrateLastLoginAttribute(
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum users to migrate in this call (defaults to " + Constants.DEFAULT_MAX_RESULTS + ")") @QueryParam("max") Integer maxResults) {
         auth.users().requireManage();
 
         if (!Profile.isFeatureEnabled(Profile.Feature.USER_LAST_SUCCESSFUL_AUTHENTICATION)) {
             throw new BadRequestException("The 'user-last-successful-authentication' feature is not enabled");
         }
 
+        int first = firstResult != null ? firstResult : 0;
+        int max = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+
         int migrated = 0;
         int skipped = 0;
+        int processed = 0;
 
-        try (Stream<UserModel> users = session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "true"))) {
+        try (Stream<UserModel> users = session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "true"), first, max)) {
             for (UserModel user : users.toList()) {
+                processed++;
                 if (user.getLastSuccessfulAuthentication() != null) {
                     continue;
                 }
@@ -610,10 +624,13 @@ public class UsersResource {
             }
         }
 
-        return new LastSuccessfulAuthenticationMigrationResult(migrated, skipped);
+        // A full page suggests there may be more users after it; a partial (or empty) page means we reached the end.
+        int nextFirstResult = processed == max ? first + processed : -1;
+
+        return new LastSuccessfulAuthenticationMigrationResult(migrated, skipped, nextFirstResult);
     }
 
-    public record LastSuccessfulAuthenticationMigrationResult(int migratedUsers, int skippedUsers) {
+    public record LastSuccessfulAuthenticationMigrationResult(int migratedUsers, int skippedUsers, int nextFirstResult) {
     }
 
     private static void addCreatedTimestampConditions(Map<String, String> attributes, String createdAfter, String createdBefore) {

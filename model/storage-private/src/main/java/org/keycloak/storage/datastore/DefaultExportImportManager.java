@@ -1048,6 +1048,9 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (userRep.getCreatedTimestamp() != null) {
             user.setCreatedTimestamp(userRep.getCreatedTimestamp());
         }
+        if (userRep.getLastSuccessfulAuthentication() != null) {
+            user.setLastSuccessfulAuthentication(userRep.getLastSuccessfulAuthentication());
+        }
         user.setEmail(userRep.getEmail());
         if (userRep.isEmailVerified() != null) user.setEmailVerified(userRep.isEmailVerified());
         user.setFirstName(userRep.getFirstName());
