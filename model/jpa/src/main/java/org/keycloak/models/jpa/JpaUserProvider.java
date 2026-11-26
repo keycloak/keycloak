@@ -1001,7 +1001,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
-        queryBuilder.distinct(true).where(predicates).orderBy(builder.asc(root.get(UserModel.USERNAME)));
+        queryBuilder.distinct(!root.getJoins().isEmpty()).where(predicates).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
         TypedQuery<UserEntity> query = em.createQuery(queryBuilder);
 

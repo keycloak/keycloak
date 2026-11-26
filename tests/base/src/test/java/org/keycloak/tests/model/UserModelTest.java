@@ -424,6 +424,7 @@ public class UserModelTest {
 
                 user1.setSingleAttribute("key1", "value1");
                 user1.setSingleAttribute("key2", "value21");
+                user1.setAttribute("key3", List.of("value31", "value32"));
 
                 user2.setSingleAttribute("key1", "value1");
                 user2.setSingleAttribute("key2", "value22");
@@ -461,6 +462,11 @@ public class UserModelTest {
                 users = currentSession.users().searchForUserByUserAttributeStream(realm, "key3", "value3")
                         .collect(Collectors.toList());
                 assertThat(users, empty());
+
+                users = currentSession.users().searchForUserStream(realm,
+                                Map.of("key3", "value3", UserModel.EXACT, Boolean.FALSE.toString()))
+                        .collect(Collectors.toList());
+                assertThat(users, contains(user1));
             });
         } finally {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession cleanupSession) -> {
