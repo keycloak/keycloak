@@ -23,6 +23,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.provider.Provider;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.RequiredActionHelper;
@@ -113,18 +114,37 @@ public interface RequiredActionProvider extends Provider {
 
         // try required action config
         AuthenticationSessionModel authSession = keycloakContext.getAuthenticationSession();
-        if (authSession != null) {
+        if (authSession != null && realm != null) {
 
             // we need to figure out the alias for the current required action
-            String providerId = authSession.getClientNote(Constants.KC_ACTION);
-            RequiredActionProviderModel requiredAction = RequiredActionHelper.getRequiredActionByProviderId(realm, providerId);
+            String action = authSession.getClientNote(Constants.KC_ACTION);
+            if (action != null) {
+                String resolvedAction = DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively(action);
+                RequiredActionProviderModel requiredAction = realm.getRequiredActionProviderByAlias(resolvedAction);
+                if (requiredAction == null) {
+                    requiredAction = RequiredActionHelper.getRequiredActionByProviderId(realm, resolvedAction);
+                }
 
-            if (requiredAction != null) {
-                RequiredActionConfigModel configModel = realm.getRequiredActionConfigByAlias(requiredAction.getAlias());
-                if (configModel != null && configModel.containsConfigKey(Constants.MAX_AUTH_AGE_KEY)) {
-                    maxAge = RequiredActionFactory.parseMaxAuthAge(configModel);
-                    if (maxAge >= 0) {
-                        return maxAge;
+                if (requiredAction != null) {
+                    if (requiredAction.getConfig() != null && requiredAction.getConfig().containsKey(Constants.MAX_AUTH_AGE_KEY)) {
+                        try {
+                            maxAge = Integer.parseInt(requiredAction.getConfig().get(Constants.MAX_AUTH_AGE_KEY));
+                            if (maxAge >= 0) {
+                                return maxAge;
+                            }
+                        } catch (NumberFormatException e) {
+                            // ignore
+                        }
+                    }
+                    RequiredActionConfigModel configModel = realm.getRequiredActionConfigByAlias(requiredAction.getAlias());
+                    if (configModel == null) {
+                        configModel = realm.getRequiredActionConfigByAlias(requiredAction.getProviderId());
+                    }
+                    if (configModel != null && configModel.containsConfigKey(Constants.MAX_AUTH_AGE_KEY)) {
+                        maxAge = RequiredActionFactory.parseMaxAuthAge(configModel);
+                        if (maxAge >= 0) {
+                            return maxAge;
+                        }
                     }
                 }
             }

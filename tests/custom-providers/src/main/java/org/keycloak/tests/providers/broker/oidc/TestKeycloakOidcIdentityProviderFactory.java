@@ -15,6 +15,8 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
@@ -23,11 +25,23 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
 
     public static final String ID = "test-keycloak-oidc";
     public static final String IGNORE_MAX_AGE_PARAM = "ignore-max-age-param";
+    public static final String IGNORE_PROMPT_PARAM = "ignore-prompt-param";
+    public static final String OMIT_AUTH_TIME = "omit-auth-time";
     public static final String USE_SINGLE_REFRESH_TOKEN = "use-single-refresh-token";
     public static final String PREFERRED_USERNAME = "preferred-username";
 
     public static void setIgnoreMaxAgeParam(IdentityProviderRepresentation rep) {
         rep.getConfig().put(IGNORE_MAX_AGE_PARAM, Boolean.TRUE.toString());
+    }
+
+    // Simulates an upstream IdP that ignores prompt and max_age and answers from its existing SSO session
+    public static void setIgnorePromptParam(IdentityProviderRepresentation rep) {
+        rep.getConfig().put(IGNORE_PROMPT_PARAM, Boolean.TRUE.toString());
+    }
+
+    // Simulates an upstream IdP that does not return the auth_time claim in the ID token
+    public static void setOmitAuthTime(IdentityProviderRepresentation rep) {
+        rep.getConfig().put(OMIT_AUTH_TIME, Boolean.TRUE.toString());
     }
 
     @Override
@@ -64,6 +78,15 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
             }
 
             @Override
+            public JsonWebToken validateToken(String encodedToken) {
+                JsonWebToken token = super.validateToken(encodedToken);
+                if (Boolean.parseBoolean(model.getConfig().get(OMIT_AUTH_TIME))) {
+                    token.getOtherClaims().remove(IDToken.AUTH_TIME);
+                }
+                return token;
+            }
+
+            @Override
             protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
                 AuthenticationSessionModel authSession = request.getAuthenticationSession();
                 String maxAge = authSession.getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
@@ -72,7 +95,12 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
                     if (isIgnoreMaxAgeParam()) {
                         authSession.removeClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
                     }
-                    return super.createAuthorizationUrl(request);
+                    UriBuilder uriBuilder = super.createAuthorizationUrl(request);
+                    if (Boolean.parseBoolean(model.getConfig().get(IGNORE_PROMPT_PARAM))) {
+                        uriBuilder.replaceQueryParam(OIDCLoginProtocol.PROMPT_PARAM);
+                        uriBuilder.replaceQueryParam(OIDCLoginProtocol.MAX_AGE_PARAM);
+                    }
+                    return uriBuilder;
                 } finally {
                     authSession.setClientNote(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
                 }
