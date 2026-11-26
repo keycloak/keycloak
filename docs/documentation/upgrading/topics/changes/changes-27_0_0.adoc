@@ -4,18 +4,6 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== SD-JWT verification rejects critical JOSE header extensions
-// https://github.com/keycloak/keycloak/issues/55380
-
-The SD-JWT verifier now rejects an issuer-signed JWT or a holder's key-binding JWT if its protected JOSE header contains `crit`.
-Earlier versions ignored this header, so credentials and presentations that previously verified can now fail.
-{project_name} currently supports no critical JOSE header extensions for SD-JWT verification.
-
-Before upgrading, check the protected headers produced by your credential issuer and wallet.
-If an extension is optional for your application, omit it from `crit` and omit the `crit` header entirely when no critical extensions remain.
-Reissue affected credentials or generate a new key-binding JWT with the corrected header.
-If your application relies on a critical extension, it requires a verifier that implements that extension.
-
 === Allow UTF-8 email setting requires SMTPUTF8 server support
 // https://github.com/keycloak/keycloak/issues/55267
 
