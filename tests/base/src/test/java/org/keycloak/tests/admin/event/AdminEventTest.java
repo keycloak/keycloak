@@ -18,16 +18,23 @@
 package org.keycloak.tests.admin.event;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.Encode;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -42,15 +49,19 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.injection.Extensions;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.util.JsonSerialization;
@@ -75,6 +86,9 @@ import static org.hamcrest.Matchers.is;
 @DatabaseTest
 public class AdminEventTest {
 
+    // Databases whose default collation compares the realm name case-insensitively.
+    private static final Set<String> CASE_INSENSITIVE_DATABASES = Set.of("mariadb", "mysql", "mssql");
+
     @InjectRealm(attachTo = "master", ref = "master")
     ManagedRealm masterRealm;
 
@@ -83,6 +97,9 @@ public class AdminEventTest {
 
     @InjectAdminClient(mode = InjectAdminClient.Mode.BOOTSTRAP)
     Keycloak adminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @InjectRunOnServer(realmRef = "default")
     RunOnServerClient runOnServerClient;
@@ -161,6 +178,50 @@ public class AdminEventTest {
                 .resourceType(ResourceType.ORGANIZATION_MEMBERSHIP);
         Assertions.assertEquals(managedRealm.getId(), event.getRealmId());
         assertThat(event.getDetails(), is(equalTo(Map.of(UserModel.USERNAME, userRep.getUsername(), UserModel.EMAIL, userRep.getEmail()))));
+    }
+
+    @Test
+    public void resourcePathWithExactRealmName() throws Exception {
+        String userId = createUser("resource-path-user");
+        managedRealm.admin().clearAdminEvents();
+
+        assertThat(updateUser(managedRealm.getName(), userId), is(204));
+        assertUserUpdateEvent(userId);
+    }
+
+    @Test
+    public void resourcePathWithUpperCaseRealmName() throws Exception {
+        String userId = createUser("resource-path-user");
+        managedRealm.admin().clearAdminEvents();
+        String database = Extensions.getInstance().findSupplierByType(TestDatabase.class).getAlias();
+        if ("remote".equals(database)) {
+            database = org.keycloak.testframework.config.Config.getValueTypeConfig(TestDatabase.class, "vendor", null, String.class);
+        }
+
+        int status = updateUser(managedRealm.getName().toUpperCase(Locale.ROOT), userId);
+        if (CASE_INSENSITIVE_DATABASES.contains(database)) {
+            assertThat(database, status, is(204));
+            assertUserUpdateEvent(userId);
+        } else {
+            assertThat(database, status, is(404));
+            assertThat(events().size(), is(0));
+        }
+    }
+
+    private int updateUser(String realmName, String userId) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder(URI.create(keycloakUrls.getAdmin() + "/realms/" + Encode.encodePathSegment(realmName) + "/users/" + userId))
+                .header("Authorization", "Bearer " + adminClient.tokenManager().getAccessTokenString())
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString("{\"firstName\":\"updated\"}"))
+                .build();
+        return HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+    }
+
+    private void assertUserUpdateEvent(String userId) {
+        List<AdminEventRepresentation> events = events();
+        assertThat(events.size(), is(1));
+        AdminEventAssertion.assertSuccess(events.get(0)).operationType(OperationType.UPDATE);
+        assertThat(events.get(0).getResourcePath(), is("users/" + userId));
     }
 
     @Test
