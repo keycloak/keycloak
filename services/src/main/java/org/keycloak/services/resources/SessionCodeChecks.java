@@ -507,7 +507,7 @@ public class SessionCodeChecks {
     }
 
 
-    private Response showPageExpired(AuthenticationSessionModel authSession) {
+    protected Response showPageExpired(AuthenticationSessionModel authSession) {
         return new AuthenticationFlowURLHelper(session, realm, uriInfo)
                 .showPageExpired(authSession);
     }
