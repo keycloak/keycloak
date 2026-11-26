@@ -1,8 +1,12 @@
 package org.keycloak.tests.authz.services.uma;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
@@ -20,6 +24,8 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.authz.services.Authz;
@@ -28,6 +34,7 @@ import org.keycloak.tests.authz.services.config.DefaultAuthzServicesServerConfig
 import org.keycloak.tests.authz.services.config.DefaultResourceServerConfig;
 import org.keycloak.tests.common.BasicUserConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.PermissionGrantRequest;
 
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +52,9 @@ public class UmaGrantTypeTest {
 
     @InjectUser(config = BasicUserConfig.class)
     ManagedUser user;
+
+    @InjectUser(ref = "other-user", config = OtherUserConfig.class)
+    ManagedUser otherUser;
 
     @InjectClient(config = DefaultResourceServerConfig.class, ref = "resource-server-foo")
     ManagedClient rs1;
@@ -205,5 +215,100 @@ public class UmaGrantTypeTest {
         assertNull(accessToken);
         assertEquals("invalid_claim_token", tokenResponse.getError());
         assertEquals("Expired token", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testUnknownResourceDoesNotDependOnPermissionOrder() {
+        String idToken = getIdToken();
+
+        Permission.create(rs1)
+                .resource("resource")
+                .grant();
+
+        assertEquals(List.of("resource"), grantedResources(requestPermissions(idToken, "resource", "unknown-resource")));
+        assertEquals(List.of("resource"), grantedResources(requestPermissions(idToken, "unknown-resource", "resource")));
+    }
+
+    @Test
+    public void testResourceOwnedByAnotherUserDoesNotDependOnPermissionOrder() {
+        String idToken = getIdToken();
+
+        Permission.create(rs1)
+                .resource("resource")
+                .grant();
+
+        ResourceRepresentation otherResource = ResourceRepresentation.create().name("other-user-resource").build();
+        otherResource.setOwner(otherUser.getId());
+        try (Response response = rs1.admin().authorization().resources().create(otherResource)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        assertEquals(List.of("resource"), grantedResources(requestPermissions(idToken, "resource", "other-user-resource")));
+        assertEquals(List.of("resource"), grantedResources(requestPermissions(idToken, "other-user-resource", "resource")));
+    }
+
+    @Test
+    public void testInvalidResourceWhenNoRequestedResourceCanBeResolved() {
+        String idToken = getIdToken();
+
+        AccessTokenResponse tokenResponse = requestPermissions(idToken, "unknown-resource");
+        assertNull(tokenResponse.getAccessToken());
+        assertEquals("invalid_resource", tokenResponse.getError());
+        assertEquals("Resource with id [unknown-resource] does not exist.", tokenResponse.getErrorDescription());
+
+        tokenResponse = requestPermissions(idToken, "unknown-resource", "another-unknown-resource");
+        assertNull(tokenResponse.getAccessToken());
+        assertEquals("invalid_resource", tokenResponse.getError());
+        assertEquals("Resource with id [unknown-resource] does not exist.", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testInvalidScopeDoesNotDependOnPermissionOrder() {
+        String idToken = getIdToken();
+
+        Permission.create(rs1)
+                .resource("resource")
+                .grant();
+
+        for (AccessTokenResponse tokenResponse : List.of(
+                requestPermissions(idToken, "unknown-resource", "resource#unknown-scope"),
+                requestPermissions(idToken, "resource#unknown-scope", "unknown-resource"))) {
+            assertNull(tokenResponse.getAccessToken());
+            assertEquals("invalid_scope", tokenResponse.getError());
+            assertEquals("One of the given scopes [unknown-scope] is invalid", tokenResponse.getErrorDescription());
+        }
+    }
+
+    private String getIdToken() {
+        String idToken = oauth.client(rs1.getClientId(), rs1.getSecret())
+                .doPasswordGrantRequest(user.getUsername(), user.getPassword())
+                .getIdToken();
+        assertNotNull(idToken);
+        return idToken;
+    }
+
+    private AccessTokenResponse requestPermissions(String idToken, String... resources) {
+        PermissionGrantRequest request = oauth.client(rs1.getClientId(), rs1.getSecret())
+                .permissionGrantRequest()
+                .claimToken(idToken);
+        for (String resource : resources) {
+            request.param("permission", resource);
+        }
+        return request.send();
+    }
+
+    private List<String> grantedResources(AccessTokenResponse tokenResponse) {
+        assertNull(tokenResponse.getError(), tokenResponse.getErrorDescription());
+        assertNotNull(tokenResponse.getAccessToken());
+        AccessToken rpt = oauth.parseToken(tokenResponse.getAccessToken(), AccessToken.class);
+        return rpt.getAuthorization().getPermissions().stream().map(p -> p.getResourceName()).toList();
+    }
+
+    public static class OtherUserConfig implements UserConfig {
+
+        @Override
+        public UserBuilder configure(UserBuilder user) {
+            return user.username("other-user").password("password").email("other@localhost").name("Other", "User");
+        }
     }
 }

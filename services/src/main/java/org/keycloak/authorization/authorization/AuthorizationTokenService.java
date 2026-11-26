@@ -512,6 +512,7 @@ public class AuthorizationTokenService {
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Metadata metadata = request.getMetadata();
         final AtomicInteger limit = metadata != null && metadata.getLimit() != null ? new AtomicInteger(metadata.getLimit()) : null;
+        String unresolvedResourceId = null;
 
         for (Permission permission : ticket.getPermissions()) {
             if (limit != null && limit.get() <= 0) {
@@ -522,13 +523,24 @@ public class AuthorizationTokenService {
             String resourceId = permission.getResourceId();
 
             if (resourceId != null) {
-                resolveResourcePermission(request, resourceServer, identity, authorization, storeFactory, permissionsToEvaluate,
+                boolean resolved = resolveResourcePermission(request, resourceServer, identity, authorization, storeFactory, permissionsToEvaluate,
                         resourceStore,
                         limit, permission, requestedScopesModel, resourceId);
+
+                if (!resolved && unresolvedResourceId == null) {
+                    unresolvedResourceId = resourceId;
+                }
             } else {
                 resolveScopePermissions(request, resourceServer, authorization, permissionsToEvaluate, resourceStore, limit,
                         requestedScopesModel);
             }
+        }
+
+        // unresolved resources are skipped as long as any other permission was resolved, regardless of their order in the request
+        if (unresolvedResourceId != null && permissionsToEvaluate.isEmpty()) {
+            CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + unresolvedResourceId + "] does not exist.", Status.BAD_REQUEST);
+            fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
+            throw invalidResourceException;
         }
 
         resolvePreviousGrantedPermissions(request, resourceServer, permissionsToEvaluate, resourceStore, scopeStore, limit);
@@ -630,7 +642,12 @@ public class AuthorizationTokenService {
         }
     }
 
-    private void resolveResourcePermission(KeycloakAuthorizationRequest request,
+    /**
+     * Resolves the permissions for the given resource.
+     *
+     * @return {@code false} if the resource was looked up by name but no permission could be resolved for it, {@code true} otherwise
+     */
+    private boolean resolveResourcePermission(KeycloakAuthorizationRequest request,
             ResourceServer resourceServer, KeycloakIdentity identity, AuthorizationProvider authorization,
             StoreFactory storeFactory, Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore,
             AtomicInteger limit, Permission permission, Set<Scope> requestedScopesModel, String resourceId) {
@@ -665,11 +682,14 @@ public class AuthorizationTokenService {
             resourceStore.findByType(resourceServer, resourceType, identity.getId(),
                     resource14 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource14));
         } else {
+            boolean resolved = false;
             Resource ownerResource = resourceStore.findByName(resourceServer, resourceId, identity.getId());
 
             if (ownerResource != null) {
                 permission.setResourceId(ownerResource.getId());
-                addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, ownerResource);
+                if (addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, ownerResource) != null) {
+                    resolved = true;
+                }
             }
 
             if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getClientId())) {
@@ -708,6 +728,7 @@ public class AuthorizationTokenService {
                                 permissionsToEvaluate, limit,
                                 grantedScopesModel, grantedResource);
                         if (resourcePermission != null) {
+                            resolved = true;
                             Collection<Scope> permissionScopes = resourcePermission.getScopes();
                             if (permissionScopes != null) {
                                 permissionScopes.retainAll(scopes);
@@ -722,16 +743,16 @@ public class AuthorizationTokenService {
 
                 if (serverResource != null) {
                     permission.setResourceId(serverResource.getId());
-                    addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, serverResource);
+                    if (addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, serverResource) != null) {
+                        resolved = true;
+                    }
                 }
 
-                if (permissionsToEvaluate.isEmpty()) {
-                    CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(request.getCors(), "invalid_resource", "Resource with id [" + resourceId + "] does not exist.", Status.BAD_REQUEST);
-                    fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
-                    throw invalidResourceException;
-                }
+                return resolved;
             }
         }
+
+        return true;
     }
 
     private Set<Scope> resolveRequestedScopes(KeycloakAuthorizationRequest request,
