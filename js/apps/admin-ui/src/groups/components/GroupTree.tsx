@@ -213,7 +213,7 @@ export const GroupTree = ({
                 : undefined
             }
           >
-            {group.name}
+            <span className="keycloak-admin--groups__name">{group.name}</span>
           </span>
         </Tooltip>
       ),

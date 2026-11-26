@@ -15,3 +15,13 @@
   flex: 1 1 0%;
   height: 100vh;
 }
+
+.keycloak-admin--groups__name,
+.keycloak-admin--groups__section [data-testid="view-header"],
+.keycloak-admin--groups__section .pf-v5-c-breadcrumb__item {
+  white-space: pre-wrap;
+}
+
+.keycloak_groups_treeview .keycloak-admin--groups__name {
+  white-space: pre;
+}
