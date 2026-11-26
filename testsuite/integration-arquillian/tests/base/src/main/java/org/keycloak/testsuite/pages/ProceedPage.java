@@ -35,8 +35,9 @@ public class ProceedPage extends AbstractPage {
         return infoMessage.getText();
     }
 
-    public boolean isCurrent() {
-        return driver.getPageSource().contains("kc-info-message") && proceedLink.isDisplayed();
+    @Override
+    public String getExpectedPageId() {
+        return "login-info";
     }
 
     public void clickProceedLink() {

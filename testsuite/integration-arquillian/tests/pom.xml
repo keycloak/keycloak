@@ -210,7 +210,7 @@
         <browser.strict.cookies>false</browser.strict.cookies>
         <webdriverDownloadBinaries>true</webdriverDownloadBinaries>
         <droneInstantiationTimeoutInSeconds>60</droneInstantiationTimeoutInSeconds>
-        <login.theme.default>keycloak.v2</login.theme.default>
+        <login.theme.default>keycloak.v3</login.theme.default>
         <github.username/>
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>
@@ -1587,7 +1587,7 @@
 
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-client-tests</artifactId>
+                    <artifactId>keycloak-admin-client-internal</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>

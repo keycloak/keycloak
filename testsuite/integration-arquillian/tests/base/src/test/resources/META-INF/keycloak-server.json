@@ -10,7 +10,8 @@
     },
 
     "admin": {
-        "realm": "master"
+        "realm": "master",
+        "audienceCheckEnabled": "false"
     },
 
     "eventsStore": {
@@ -72,7 +73,7 @@
     },
 
     "loginFailure": {
-        "provider": "${keycloak.loginFailure.provider:infinispan}"
+        "provider": "${keycloak.loginFailure.provider:jpa}"
     },
 
     "singleUseObject": {

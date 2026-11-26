@@ -106,7 +106,7 @@ export default function AttributesGroupForm() {
     const success = await save({ ...config, groups });
 
     if (success) {
-      if (realm?.internationalizationEnabled) {
+      if (realm.internationalizationEnabled) {
         try {
           await saveTranslations({
             adminClient,
@@ -118,7 +118,9 @@ export default function AttributesGroupForm() {
           addError(t("errorSavingTranslations"), error);
         }
       }
-      navigate(toUserProfile({ realm: realmName, tab: "attributes-group" }));
+      void navigate(
+        toUserProfile({ realm: realmName, tab: "attributes-group" }),
+      );
     }
   };
 

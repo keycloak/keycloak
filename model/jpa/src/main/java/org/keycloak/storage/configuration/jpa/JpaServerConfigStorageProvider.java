@@ -21,12 +21,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 import org.keycloak.storage.configuration.jpa.entity.ServerConfigEntity;
+import org.keycloak.utils.StreamsUtil;
+
+import org.hibernate.jpa.HibernateHints;
 
 /**
  * A {@link ServerConfigStorageProvider} that stores its data in the database, using the {@link EntityManager}.
@@ -92,6 +96,14 @@ public class JpaServerConfigStorageProvider implements ServerConfigStorageProvid
         entity.setValue(valueGenerator.get());
         entityManager.merge(entity);
         return true;
+    }
+
+    @Override
+    public Stream<String> keys() {
+        var stream = entityManager.createNamedQuery("findServerConfigKeys", String.class)
+                .setHint(HibernateHints.HINT_READ_ONLY, true)
+                .getResultStream();
+        return StreamsUtil.closing(stream);
     }
 
     @Override

@@ -19,15 +19,16 @@
 package org.keycloak.authorization.fgap.evaluation.partial;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -76,37 +77,61 @@ public final class UserResourceTypePolicyEvaluator implements ResourceTypePolicy
     }
 
     private void evaluateGroupMembershipPermissions(ResourcePermission permission, UserModel user, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        PolicyStore policyStore = storeFactory.getPolicyStore();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        ResourceServer resourceServer = permission.getResourceServer();
+        List<GroupModel> groupsStream = user.getGroupsStream().toList();
 
-        evaluateHierarchy(user, group -> {
-            Resource groupResource = resourceStore.findByName(resourceServer, group.getId());
+        for (GroupModel directGroup : groupsStream) {
+            // Scopes claimed by the user's direct group. Ancestor policies are only
+            // inherited for uncovered scopes — per-scope "most specific wins".
+            Set<Scope> evaluatedScopes = new HashSet<>();
 
-            if (groupResource != null) {
-                policyStore.findByResource(resourceServer, groupResource, policyConsumer);
+            // evaluate, if any, policies associated with the direct group and collect the scopes evaluated
+            evaluateGroupPolicies(permission, authorization, directGroup, policy -> {
+                policyConsumer.accept(policy);
+                evaluatedScopes.addAll(policy.getScopes());
+            });
+
+            Set<GroupModel> visited = new HashSet<>();
+
+            visited.add(directGroup);
+
+            GroupModel ancestor = directGroup.getParent();
+
+            // Walk ancestors, skipping policies whose scopes the direct group already covers.
+            // evaluatedScopes is never updated here — ancestor policies do not claim scopes.
+            while (ancestor != null && visited.add(ancestor)) {
+                evaluateGroupPolicies(permission, authorization, ancestor, policy -> {
+                    Set<Scope> policyScopes = policy.getScopes();
+
+                    // evaluate, if any, policies associated with the ancestor group and only evaluate those whose scopes are not already evaluated by the direct group
+                    // the expected outcome is that the direct group policies will take precedence over ancestor group policies for the same scopes
+                    if (policyScopes.stream().anyMatch(s -> !evaluatedScopes.contains(s))) {
+                        policyConsumer.accept(policy);
+                    }
+                });
+
+                ancestor = ancestor.getParent();
             }
-        });
+        }
 
-        Stream<GroupModel> groups = user.getGroupsStream();
-
-        if (groups.findAny().isPresent()) {
+        if (!groupsStream.isEmpty()) {
             KeycloakSession session = authorization.getKeycloakSession();
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            PolicyStore policyStore = storeFactory.getPolicyStore();
+            ResourceServer resourceServer = permission.getResourceServer();
             Resource resourceTypeResource = AdminPermissionsSchema.SCHEMA.getResourceTypeResource(session, resourceServer, GROUPS_RESOURCE_TYPE);
             policyStore.findByResource(resourceServer, resourceTypeResource, policyConsumer);
         }
     }
 
-    private void evaluateHierarchy(UserModel user, Consumer<GroupModel> eval) {
-        user.getGroupsStream().forEach(group -> evaluateHierarchy(eval, group, new HashSet<>()));
-    }
+    private void evaluateGroupPolicies(ResourcePermission permission, AuthorizationProvider authorization, GroupModel group, Consumer<Policy> consumer) {
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        ResourceServer resourceServer = permission.getResourceServer();
+        Resource resource = resourceStore.findByName(resourceServer, group.getId());
 
-    private void evaluateHierarchy(Consumer<GroupModel> eval, GroupModel group, Set<GroupModel> visited) {
-        if (visited.contains(group)) return;
-        eval.accept(group);
-        visited.add(group);
-        if (group.getParent() == null) return;
-        evaluateHierarchy(eval, group.getParent(), visited);
+        if (resource != null) {
+            policyStore.findByResource(resourceServer, resource, consumer);
+        }
     }
 }

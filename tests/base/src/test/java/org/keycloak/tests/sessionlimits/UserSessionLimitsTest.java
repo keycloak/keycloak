@@ -17,12 +17,16 @@
 package org.keycloak.tests.sessionlimits;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.mail.internet.MimeMessage;
 
 import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -32,6 +36,7 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -41,6 +46,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -60,6 +66,7 @@ import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.MailUtils;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -72,8 +79,10 @@ import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertClien
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class UserSessionLimitsTest {
@@ -87,7 +96,7 @@ public class UserSessionLimitsTest {
     @InjectWebDriver
     ManagedWebDriver driver;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
     OAuthClient oauth;
 
     @InjectEvents
@@ -113,7 +122,8 @@ public class UserSessionLimitsTest {
     private static final String password = "password";
     private static final String directGrant1 = "direct-grant-1";
     private static final String directGrant2 = "direct-grant-2";
-    private static String defaultRedirectUri = null;
+    private static final int BRUTE_FORCE_FAILURE_FACTOR = 3;
+    private static final String testUsername2 = "test-user-2@localhost";
 
     @BeforeEach
     public void setup() {
@@ -126,14 +136,12 @@ public class UserSessionLimitsTest {
             session.sessions().removeUserSessions(realm);
 
              // Reset password
-            org.keycloak.models.UserModel user = session.users().getUserByUsername(realm, username);
+            UserModel user = session.users().getUserByUsername(realm, username);
             user.credentialManager().updateCredential(UserCredentialModel.password(password));
-        });
 
-        if (defaultRedirectUri == null) {
-            defaultRedirectUri = oauth.getRedirectUri();
-        }
-        oauth.redirectUri(defaultRedirectUri);
+            // a reset email requested by the test before would stop the next one
+            session.singleUseObjects().remove(EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, user.getId()));
+        });
 
         events.clear();
     }
@@ -402,6 +410,7 @@ public class UserSessionLimitsTest {
         }
     }
 
+    @Test
     public void testRealmSessionCountAndClientSessionCountExceededAndDecreaseLimitsAfterActiveSessionsAreCreated() throws Exception {
         try {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
@@ -534,7 +543,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword("test-user@localhost");
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
 
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
@@ -587,7 +596,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword("test-user@localhost");
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
@@ -598,12 +607,16 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.open(changePasswordUrl.trim());
             updatePasswordPage.assertCurrent();
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+            // changing a password requires relogin
+            oauth.doLogin(username, "resetPassword");
 
             runOnServer.run(assertSessionCount(realmName, username, 1));
         } finally {
@@ -634,7 +647,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword(username);
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
@@ -645,6 +658,7 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
@@ -684,7 +698,7 @@ public class UserSessionLimitsTest {
             resetPasswordPage.assertCurrent();
             resetPasswordPage.changePassword(username);
             loginPage.assertCurrent();
-            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage().orElse(null));
             EventRepresentation resetEvent = events.poll();
             EventAssertion.assertSuccess(resetEvent)
                     .type(EventType.SEND_RESET_PASSWORD)
@@ -695,12 +709,16 @@ public class UserSessionLimitsTest {
                     .details(Details.EMAIL, username)
                     .sessionId(null)
                     .withoutDetails(Details.CONSENT);
+            assertTrue(mailServer.waitForIncomingEmail(1));
 
             MimeMessage message = mailServer.getLastReceivedMessage();
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
             driver.open(changePasswordUrl.trim());
             updatePasswordPage.assertCurrent();
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+            // changing a password requires relogin
+            oauth.doLogin(username, "resetPassword");
 
             runOnServer.run(assertSessionCount(realmName, username, 1));
         } finally {
@@ -775,6 +793,55 @@ public class UserSessionLimitsTest {
         }
     }
 
+    @Test
+    public void testSessionLimitDenialDoesNotTriggerBruteForceLockout() throws Exception {
+        managedRealm.updateWithCleanup(r -> r.bruteForceProtected(true)
+                .failureFactor(BRUTE_FORCE_FAILURE_FACTOR));
+
+        String userId = managedRealm.admin().users().search(username).get(0).getId();
+        runOnServer.run(assertSessionCount(realmName, username, 0));
+        events.clear();
+
+        oauth.doLogin(username, password);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).userId(userId);
+
+        // verifying session count is 1
+        runOnServer.run(assertSessionCount(realmName, username, 1));
+
+        for (int i = 0; i <= BRUTE_FORCE_FAILURE_FACTOR + 3; i++) {
+            deleteAllCookiesForRealm(driver);
+            oauth.openLoginForm();
+            oauth.fillLoginForm(username, password);
+            errorPage.assertCurrent();
+            assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null)
+                    .error(Errors.GENERIC_AUTHENTICATION_ERROR);
+        }
+
+        // Force one real failure for a different user and wait for it to be recorded.
+        // As Brute-force processing is async, so this confirms the queue has caught up
+        // with the LOGIN_ERROR events from the loop above before we check `userId`.
+        String testUsername2UserId = managedRealm.admin().users().search(testUsername2).get(0).getId();
+        oauth.doPasswordGrantRequest(testUsername2, "wrong-password");
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(testUsername2UserId);
+        await().atMost(5, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    Map<String, Object> markerStatus =
+                            managedRealm.admin().attackDetection().bruteForceUserStatus(testUsername2UserId);
+                    assertEquals(1, markerStatus.get("numFailures"), "Waiting for brute-force queue to drain");
+                });
+
+        // Check If the user got locked out or not.
+        assertUserNotBruteForceLocked(userId);
+
+        // logout all sessions of test user
+        AccountHelper.logout(managedRealm.admin(), username);
+
+        // Test login of the same user again
+        oauth.doLogin(username, password);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+    }
 
     private void restoreAndRemoveFlow(String realmName) {
         // Cleanup: restore original browser flow and remove custom flow
@@ -808,6 +875,12 @@ public class UserSessionLimitsTest {
         });
     }
 
+    private void assertUserNotBruteForceLocked(String userId){
+        Map<String, Object> status = managedRealm.admin().attackDetection().bruteForceUserStatus(userId);
+        assertEquals(Boolean.FALSE, status.get("disabled"), "User should not be brute force locked out");
+        assertEquals(0, status.get("numFailures"), "No Failures should be recorded");
+    }
+
     private void deleteAllCookiesForRealm(ManagedWebDriver driver) {
         // Navigate to a blank page in the realm to ensure cookies are properly scoped
         driver.driver().navigate().to(managedRealm.getBaseUrl());
@@ -820,6 +893,12 @@ public class UserSessionLimitsTest {
             realm.users(UserBuilder.create(username)
                     .email(username)
                     .name("Test", "User")
+                    .emailVerified(true)
+                    .password(password)
+                    .enabled(true));
+            realm.users(UserBuilder.create(testUsername2)
+                    .email(testUsername2)
+                    .name("Test", "User2")
                     .emailVerified(true)
                     .password(password)
                     .enabled(true));

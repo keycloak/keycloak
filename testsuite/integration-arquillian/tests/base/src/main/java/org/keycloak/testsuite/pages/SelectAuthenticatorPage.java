@@ -3,10 +3,7 @@ package org.keycloak.testsuite.pages;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.keycloak.testsuite.util.DroneUtils;
-
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 
 /**
@@ -81,18 +78,8 @@ public class SelectAuthenticatorPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        // Check the title
-        if (!DroneUtils.getCurrentDriver().getTitle().startsWith("Sign in to ") && !DroneUtils.getCurrentDriver().getTitle().startsWith("Anmeldung bei ")) {
-            return false;
-        }
-        // Check the authenticators-choice available
-        try {
-            driver.findElement(By.id("kc-select-credential-form"));
-        } catch (NoSuchElementException nfe) {
-            return false;
-        }
-        return true;
+    public String getExpectedPageId() {
+        return "login-select-authenticator";
     }
 
 }

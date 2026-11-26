@@ -1,0 +1,217 @@
+package org.keycloak.ssf.transmitter.support;
+
+import java.util.List;
+import java.util.regex.Pattern;
+
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.managers.AppAuthManager;
+import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.logging.Logger;
+
+public class SsfAuthUtil {
+
+    private static final Logger log = Logger.getLogger(SsfAuthUtil.class);
+
+    public static final String AUTH_KEY = "auth";
+
+    private static final Pattern SCOPE_DELIMITER = Pattern.compile(" ");
+
+    public static AuthenticationManager.AuthResult authenticate() {
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        var authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+        var auth = authenticator.authenticate();
+        if (auth == null) {
+            throw new WebApplicationException(Response.Status.UNAUTHORIZED);
+        }
+        SsfAuthUtil.setAuth(session, auth);
+        return auth;
+    }
+
+    private static void setAuth(KeycloakSession session, AuthenticationManager.AuthResult auth) {
+        session.setAttribute(AUTH_KEY, auth);
+    }
+
+    private static AuthenticationManager.AuthResult getAuthResult() {
+        return (AuthenticationManager.AuthResult) KeycloakSessionUtil.getKeycloakSession().getAttribute(AUTH_KEY);
+    }
+
+    public static boolean canManage() {
+        return checkScopePermission(Ssf.SCOPE_SSF_MANAGE);
+    }
+
+    public static boolean canRead() {
+        return checkScopePermission(Ssf.SCOPE_SSF_READ);
+    }
+
+    public static boolean checkScopePermission(String scope) {
+
+        // 0. Token must be valid
+        var authResult = getAuthResult();
+        if (authResult == null) {
+            log.trace("SSF auth denied: no authentication result available");
+            return false;
+        }
+
+        ClientModel client = authResult.client();
+        if (client == null) {
+            log.trace("SSF auth denied: authentication result carries no client");
+            return false;
+        }
+
+        // 1. Client must be configured as an SSF receiver.
+        if (!SsfUtil.isReceiverClient(client)) {
+            log.tracef("SSF auth denied: client %s is not configured as an SSF receiver", client.getClientId());
+            return false;
+        }
+
+        // ...and the client itself must be enabled.
+        if (!client.isEnabled()) {
+            log.tracef("SSF auth denied: SSF receiver client %s is disabled", client.getClientId());
+            return false;
+        }
+
+        // 2. Service account check (default: required when attribute is
+        //    absent or any value other than "false")
+        String requireSaValue = client.getAttribute(ClientStreamStore.SSF_REQUIRE_SERVICE_ACCOUNT_KEY);
+        boolean requireServiceAccount = !"false".equalsIgnoreCase(requireSaValue);
+        if (requireServiceAccount) {
+            if (!client.isServiceAccountsEnabled()) {
+                log.tracef("SSF auth denied: service account required but not enabled for client %s", client.getClientId());
+                return false;
+            }
+            // getServiceAccountClientLink() returns the internal client UUID
+            // (see UserModel.setServiceAccountClientLink(String clientInternalId)
+            // and ClientManager.enableServiceAccount which calls
+            // user.setServiceAccountClientLink(client.getId())) — NOT the
+            // public clientId. Compare against client.getId() so the gate
+            // correctly accepts the receiver's own service-account bearer
+            // (link == client.getId()) and rejects anything else: regular
+            // users (link == null) and SAs of other clients (link == some
+            // other UUID).
+            if (!client.getId().equals(authResult.user().getServiceAccountClientLink())) {
+                log.tracef("SSF auth denied: token user is not the service account for client %s", client.getClientId());
+                return false;
+            }
+        }
+
+        // 3. Role check (only when configured)
+        String requiredRole = client.getAttribute(ClientStreamStore.SSF_REQUIRED_ROLE_KEY);
+        if (requiredRole != null && !requiredRole.isBlank()) {
+            if (!hasRole(authResult, requiredRole)) {
+                log.tracef("SSF auth denied: caller does not hold required role '%s' for client %s", requiredRole, client.getClientId());
+                return false;
+            }
+        }
+
+        // 4. Scope check
+        String tokenScope = authResult.token().getScope();
+        if (tokenScope == null) {
+            log.tracef("SSF auth denied: token has no scope claim for client %s", client.getClientId());
+            return false;
+        }
+
+        boolean containsScope = List.of(SCOPE_DELIMITER.split(tokenScope)).contains(scope);
+        if (!containsScope) {
+            log.tracef("SSF auth denied: token missing required scope '%s' for client %s", scope, client.getClientId());
+            return false;
+        }
+
+        // SSF 1.0 §8.1.1 inactivity_timeout: any authenticated hit
+        // on a stream-management or poll endpoint counts as eligible
+        // receiver activity and MUST restart the inactivity clock.
+        // Stamping here covers every receiver-facing path in one
+        // place — individual resource handlers don't have to
+        // remember.
+        SsfActivityTracker.stamp(client);
+
+        return true;
+    }
+
+    /**
+     * Checks whether the authenticated user holds the given role. See
+     * {@link #hasRole(RealmModel, UserModel, ClientModel, String)}.
+     */
+    public static boolean hasRole(AuthenticationManager.AuthResult authResult, String roleValue) {
+        ClientModel client = authResult.client();
+        return client != null && hasRole(client.getRealm(), authResult.user(), client, roleValue);
+    }
+
+    /**
+     * Checks whether {@code user} actually holds the given role and
+     * {@code client} has it in scope — the same check
+     * {@code AdminAuth.hasAppRole}/{@code hasRealmRole} perform. Role
+     * claims in the access token are deliberately ignored: protocol
+     * mappers (e.g. a Hardcoded Role mapper) can inject arbitrary roles
+     * into {@code realm_access}/{@code resource_access} without a
+     * corresponding role grant.
+     *
+     * <p>The role value follows the same format the admin UI role
+     * picker produces — {@code roleName} for a realm role,
+     * {@code clientId.roleName} for a client role — and is resolved with
+     * {@link #resolveUnambiguousRole(RealmModel, String)}.
+     */
+    public static boolean hasRole(RealmModel realm, UserModel user, ClientModel client, String roleValue) {
+        if (realm == null || user == null || client == null || roleValue == null || roleValue.isBlank()) {
+            return false;
+        }
+        RoleModel role = resolveUnambiguousRole(realm, roleValue);
+        return role != null && user.hasRole(role) && client.hasScope(role);
+    }
+
+    /**
+     * Resolves a {@code roleName} / {@code clientId.roleName} value to
+     * the single role it can denote, or {@code null} if it denotes none
+     * or more than one.
+     *
+     * <p>Client IDs and role names may both contain dots, so a value
+     * such as {@code a.b.c} can mean role {@code c} on client {@code a.b},
+     * role {@code b.c} on client {@code a}, or realm role {@code a.b.c}.
+     * {@link KeycloakModelUtils#getRoleFromString(KeycloakSession, RealmModel, String)}
+     * picks the longest matching client prefix, so creating a client
+     * with a colliding ID would silently redirect the gate to a role on
+     * that client. An authorization gate must not depend on which
+     * clients happen to exist, so every candidate is collected and an
+     * ambiguous value is denied.
+     */
+    static RoleModel resolveUnambiguousRole(RealmModel realm, String roleValue) {
+        RoleModel match = realm.getRole(roleValue);
+        int candidates = match != null ? 1 : 0;
+
+        int lookups = 0;
+        int dot = roleValue.lastIndexOf(KeycloakModelUtils.CLIENT_ROLE_SEPARATOR);
+        while (dot >= 0) {
+            if (++lookups > KeycloakModelUtils.MAX_CLIENT_LOOKUPS_DURING_ROLE_RESOLVE) {
+                log.warnf("SSF role value '%s' has too many '.' separators to resolve; denying", roleValue);
+                return null;
+            }
+            ClientModel roleClient = realm.getClientByClientId(roleValue.substring(0, dot));
+            if (roleClient != null) {
+                RoleModel clientRole = roleClient.getRole(roleValue.substring(dot + 1));
+                if (clientRole != null) {
+                    match = clientRole;
+                    candidates++;
+                }
+            }
+            dot = dot > 0 ? roleValue.lastIndexOf(KeycloakModelUtils.CLIENT_ROLE_SEPARATOR, dot - 1) : -1;
+        }
+
+        if (candidates > 1) {
+            log.warnf("SSF role value '%s' matches %d roles because client IDs or role names contain '.'; denying."
+                    + " Rename the colliding client or role so the value is unambiguous.", roleValue, candidates);
+            return null;
+        }
+        return match;
+    }
+}

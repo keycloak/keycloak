@@ -6,6 +6,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
@@ -62,6 +64,29 @@ public class PostClientValidationTest extends AbstractClientValidationTest {
 
             var rep = mapper.createParser(response.getEntity().getContent()).readValueAs(BaseClientRepresentation.class);
             assertThat(rep.getUuid(), not(is(uuid)));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void testClientIdMaxLength(String protocol) throws Exception {
+        var request = getRequest(protocol.equals(OIDCClientRepresentation.PROTOCOL));
+        setAuthHeader(request);
+
+        String longClientId = "a".repeat(256);
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s",
+                    "enabled": true
+                }
+                """.formatted(protocol, longClientId)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("clientId: size must be between 1 and 255"));
         }
     }
 

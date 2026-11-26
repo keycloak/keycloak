@@ -15,7 +15,7 @@ export const WorkflowDetailRoute: AppRouteObject = {
   path: "/:realm/workflows/:mode/:id",
   element: <WorkflowDetailForm />,
   handle: {
-    access: "manage-realm",
+    access: ({ hasAny }) => hasAny("realm-admin", "admin"),
     breadcrumb: (t) => t("workflowDetails"),
   },
 };

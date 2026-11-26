@@ -13,14 +13,14 @@ BUG_VALID=true
 
 echo "Checking: $TEAMS"
 for AREA in "${GH_AREAS[@]}"; do
-    if ! ( echo "${LOCAL_AREAS[@]}" | grep -q -F -w "$AREA" ); then
+    if ! grep -q -F -w "$AREA" <<<"${LOCAL_AREAS[@]}"; then
         echo "[$AREA] missing in $TEAMS"
         TEAMS_VALID=false
     fi
 done
 
 for AREA in "${LOCAL_AREAS[@]}"; do
-    if ! ( echo "${GH_AREAS[@]}" | grep -q -F -w "$AREA" ); then
+    if ! grep -q -F -w "$AREA" <<<"${GH_AREAS[@]}"; then
         echo "[$AREA] missing in GitHub"
         TEAMS_VALID=false
     fi
@@ -35,7 +35,7 @@ echo ""
 echo "Checking: $BUG"
 for AREA in "${GH_AREAS[@]}"; do
     AREA_SHORT=$(echo $AREA | sed 's|area/||g')
-    if ! ( echo "${BUG_TEMPLATE_AREAS[@]}" | grep -q -F -w "$AREA_SHORT" ); then
+    if ! grep -q -F -w "$AREA_SHORT" <<<"${BUG_TEMPLATE_AREAS[@]}"; then
         echo "[$AREA] missing in $BUG"
         BUG_VALID=false
     fi
@@ -43,7 +43,7 @@ done
 
 for AREA in "${BUG_TEMPLATE_AREAS[@]}"; do
     AREA_LONG="area/$AREA"
-    if ! ( echo "${GH_AREAS[@]}" | grep -q -F -w "$AREA_LONG" ); then
+    if ! grep -q -F -w "$AREA_LONG" <<<"${GH_AREAS[@]}"; then
         echo "[$AREA_LONG] missing in GitHub"
         BUG_VALID=false
     fi

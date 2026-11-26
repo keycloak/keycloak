@@ -116,6 +116,25 @@ public class TrustedHostClientRegistrationPolicyTest {
         assertFalse(policy.verifyHost("otherlocalhost"));
     }
 
+    @Test
+    public void testReadingTrustedHostsDoesNotMutateConfig() {
+        // Issue #50286: reading the policy config must not mutate the shared cached
+        // ComponentModel (getList would insert the absent trusted-hosts key).
+        TrustedHostClientRegistrationPolicyFactory factory = new TrustedHostClientRegistrationPolicyFactory();
+        ComponentModel model = new ComponentModel();
+        model.put(TrustedHostClientRegistrationPolicyFactory.HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH, "true");
+        model.put(TrustedHostClientRegistrationPolicyFactory.CLIENT_URIS_MUST_MATCH, "true");
+        TrustedHostClientRegistrationPolicy policy = (TrustedHostClientRegistrationPolicy) factory.create(session, model);
+
+        assertFalse(model.getConfig().containsKey(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS));
+        policy.getTrustedHosts();
+        policy.getTrustedDomains();
+        assertFalse("reading trusted hosts must not mutate the shared component config",
+                model.getConfig().containsKey(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS));
+        assertTrue("trusted hosts and domains must be empty when none are configured",
+                policy.getTrustedHosts().isEmpty() && policy.getTrustedDomains().isEmpty());
+    }
+
     private ComponentModel createComponentModel(String... hosts) {
         ComponentModel model = new ComponentModel();
         model.put(TrustedHostClientRegistrationPolicyFactory.HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH, "true");

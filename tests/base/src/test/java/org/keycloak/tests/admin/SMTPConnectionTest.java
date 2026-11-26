@@ -17,14 +17,27 @@
 
 package org.keycloak.tests.admin;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.mail.Address;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
@@ -33,6 +46,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -49,6 +63,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakUrls;
 
 import org.junit.jupiter.api.Assertions;
@@ -61,6 +77,9 @@ import static org.keycloak.representations.idm.ComponentRepresentation.SECRET_VA
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -84,6 +103,9 @@ public class SMTPConnectionTest {
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
 
     @Test
     @Order(1)
@@ -138,6 +160,18 @@ public class SMTPConnectionTest {
         response = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", SECRET_VALUE));
         assertStatus(response, 500);
+
+        // from address changed — guard must reject reuse even though host/port/user match
+        mailServer.credentials("admin@localhost", password);
+        response = realm.testSMTPConnection(smtpMap("127.0.0.1", "3025", "attacker@evil.example", "true", null, null,
+                "admin@localhost", SECRET_VALUE, null, null, null));
+        assertStatus(response, 500);
+
+        // all fields match including the newly-checked ones — reuse must succeed
+        mailServer.credentials("admin@localhost", password);
+        response = realm.testSMTPConnection(smtpMap("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", SECRET_VALUE, "", "", null));
+        assertStatus(response, 204);
     }
 
     @Test
@@ -175,6 +209,10 @@ public class SMTPConnectionTest {
         final var thirdResponse = realm.testSMTPConnection(settings("localhost", "3025", "auto@keycloak.org", "true", null, null,
                 "admin@localhost", keycloakUrls.getToken(managedRealm.getName()), "test-smtp-client-I", SECRET_VALUE, "basic"));
         assertStatus(thirdResponse, 500);
+
+        final var fourthResponse = realm.testSMTPConnection(smtpMapForTokenAuth("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", "http://attacker.evil.example/steal", "test-smtp-client-I", SECRET_VALUE, "basic", null, null));
+        assertStatus(fourthResponse, 500);
     }
 
     @Test
@@ -231,6 +269,42 @@ public class SMTPConnectionTest {
     }
 
     @Test
+    @Order(10)
+    public void testWithTokenAuthRefreshesTokenBeforeItExpires() throws Exception {
+        // 120-second token: refreshed 30 seconds before it expires
+        assertTokenReusedThenRefreshed("test-smtp-client-IV", 60, 100);
+    }
+
+    @Test
+    @Order(11)
+    public void testWithTokenAuthRefreshesShortLivedTokenHalfwayThroughItsLifetime() throws Exception {
+        // 40-second token: refreshed after 20 seconds, a 30-second margin would already refresh it after 10
+        assertTokenReusedThenRefreshed("test-smtp-client-V", 15, 25);
+    }
+
+    private void assertTokenReusedThenRefreshed(String clientId, int reusedAfterSeconds, int refreshedAfterSeconds) throws Exception {
+        final var realm = adminClient.realms().realm(managedRealm.getName());
+        mailServer.credentials("admin@localhost", token -> true);
+        final var settings = settings("127.0.0.1", "3025", "auto@keycloak.org", "true", null, null,
+                "admin@localhost", keycloakUrls.getToken(managedRealm.getName()), clientId, "secret", "basic");
+
+        assertStatus(realm.testSMTPConnection(settings), 204);
+        assertMailReceived();
+        assertClientLoginEventsCountAndClear(realm, clientId, 1);
+
+        timeOffSet.set(reusedAfterSeconds);
+        assertStatus(realm.testSMTPConnection(settings), 204);
+        assertMailReceived();
+        assertEventsEmpty(realm);
+
+        timeOffSet.set(refreshedAfterSeconds);
+        assertStatus(realm.testSMTPConnection(settings), 204);
+        assertMailReceived();
+        assertClientLoginEventsCountAndClear(realm, clientId, 1);
+        assertEventsEmpty(realm);
+    }
+
+    @Test
     @Order(9)
     public void testAllowUTF8() throws Exception {
         // utf8 on from not allowed if allowutf8 not enabled
@@ -244,7 +318,7 @@ public class SMTPConnectionTest {
         assertStatus(response, 204);
         assertMailReceived("auto@xn--keycloak-k3a.org");
 
-        // utf8 on from allowed if allowutf8 enabled
+        // GreenMail advertises SMTPUTF8, so a UTF-8 sender is allowed
         response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(smtpMap("127.0.0.1", "3025", "autoñ@keycloak.org",
                 null, null, null, null, null, null, null, "true"));
         assertStatus(response, 204);
@@ -269,7 +343,7 @@ public class SMTPConnectionTest {
                     null, null, null, null, null));
             assertStatus(response, 500);
 
-            // allowed on address if allowutf8 enabled
+            // a UTF-8 recipient is allowed when the server advertises SMTPUTF8
             response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(smtpMap("127.0.0.1", "3025", "auto@keycloak.org",
                     null, null, null, null, null, null, null, "true"));
             assertStatus(response, 204);
@@ -279,6 +353,174 @@ public class SMTPConnectionTest {
             userRes.update(userRep);
             realmRep.getSmtpServer().remove(EmailSenderProvider.CONFIG_ALLOW_UTF8);
             realmRes.update(realmRep);
+        }
+    }
+
+    @Test
+    @Order(12)
+    public void testAllowUTF8RejectedWithoutSMTPUTF8() throws Exception {
+        try (SmtpServerWithoutUtf8 smtpServer = new SmtpServerWithoutUtf8()) {
+            Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(smtpMap(
+                    "127.0.0.1", Integer.toString(smtpServer.getPort()), "autoñ@keycloak.org",
+                    null, null, null, null, null, null, null, "true"));
+            assertStatus(response, 500);
+            SmtpResult result = smtpServer.result().get(10, TimeUnit.SECONDS);
+            assertTrue(result.ehloReceived());
+            assertFalse(result.mailFromReceived());
+        }
+    }
+
+    @Test
+    @Order(13)
+    public void testAllowUTF8ConnectionTestRequiresSMTPUTF8WithAsciiAddresses() throws Exception {
+        try (SmtpServerWithoutUtf8 smtpServer = new SmtpServerWithoutUtf8()) {
+            Response response = adminClient.realms().realm(managedRealm.getName()).testSMTPConnection(smtpMap(
+                    "127.0.0.1", Integer.toString(smtpServer.getPort()), "auto@keycloak.org",
+                    null, null, null, null, null, null, null, "true"));
+            assertStatus(response, 500);
+            SmtpResult result = smtpServer.result().get(10, TimeUnit.SECONDS);
+            assertTrue(result.ehloReceived());
+            assertFalse(result.mailFromReceived());
+        }
+    }
+
+    @Test
+    @Order(14)
+    public void testAllowUTF8NormalSendAllowsAsciiAddressesWithoutSMTPUTF8() throws Exception {
+        try (SmtpServerWithoutUtf8 smtpServer = new SmtpServerWithoutUtf8()) {
+            RealmResource realm = adminClient.realms().realm(managedRealm.getName());
+            RealmRepresentation realmRep = realm.toRepresentation();
+            Map<String, String> previousSettings = realmRep.getSmtpServer();
+            realmRep.setSmtpServer(smtpMap("127.0.0.1", Integer.toString(smtpServer.getPort()), "auto@keycloak.org",
+                    null, null, null, null, null, null, null, "true"));
+            realm.update(realmRep);
+
+            try {
+                AccessToken token = oAuthClient.parseToken(adminClient.tokenManager().getAccessToken().getToken(), AccessToken.class);
+                adminClient.realm(managedRealm.getName()).users().get(token.getSubject()).sendVerifyEmail();
+                SmtpResult result = smtpServer.result().get(10, TimeUnit.SECONDS);
+                assertTrue(result.ehloReceived());
+                assertTrue(result.mailFromReceived());
+                assertTrue(result.messageReceived());
+            } finally {
+                realmRep.setSmtpServer(previousSettings);
+                realm.update(realmRep);
+            }
+        }
+    }
+
+    @Test
+    @Order(15)
+    public void testAllowUTF8NormalSendRejectsNonAsciiAddressesWithoutSMTPUTF8() throws Exception {
+        RealmResource realm = adminClient.realms().realm(managedRealm.getName());
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Map<String, String> previousSettings = realmRep.getSmtpServer();
+        AccessToken token = oAuthClient.parseToken(adminClient.tokenManager().getAccessToken().getToken(), AccessToken.class);
+        UserResource user = adminClient.realm(managedRealm.getName()).users().get(token.getSubject());
+        UserRepresentation userRep = user.toRepresentation();
+        String previousEmail = userRep.getEmail();
+
+        try {
+            for (String field : List.of("from", "recipient", "replyTo", "envelopeFrom")) {
+                try (SmtpServerWithoutUtf8 smtpServer = new SmtpServerWithoutUtf8()) {
+                    Map<String, String> config = smtpMap("127.0.0.1", Integer.toString(smtpServer.getPort()), "auto@keycloak.org",
+                            null, null, null, null, null, null, null, "true");
+                    userRep.setEmail("recipient".equals(field) ? "adminñ@localhost" : previousEmail);
+                    user.update(userRep);
+                    if (!"recipient".equals(field)) {
+                        config.put(field, "autoñ@keycloak.org");
+                    }
+                    realmRep.setSmtpServer(config);
+                    realm.update(realmRep);
+
+                    WebApplicationException error = assertThrows(WebApplicationException.class, user::sendVerifyEmail, field);
+                    assertEquals(500, error.getResponse().getStatus(), field);
+                    SmtpResult result = smtpServer.result().get(10, TimeUnit.SECONDS);
+                    assertTrue(result.ehloReceived(), field);
+                    assertFalse(result.mailFromReceived(), field);
+                }
+            }
+        } finally {
+            userRep.setEmail(previousEmail);
+            user.update(userRep);
+            realmRep.setSmtpServer(previousSettings);
+            realm.update(realmRep);
+        }
+    }
+
+    private record SmtpResult(boolean ehloReceived, boolean mailFromReceived, boolean messageReceived) {
+    }
+
+    private static class SmtpServerWithoutUtf8 implements AutoCloseable {
+
+        private final ServerSocket serverSocket;
+        private final CompletableFuture<SmtpResult> result;
+
+        private SmtpServerWithoutUtf8() throws IOException {
+            serverSocket = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+            serverSocket.setSoTimeout(10000);
+            result = CompletableFuture.supplyAsync(this::serve);
+        }
+
+        private int getPort() {
+            return serverSocket.getLocalPort();
+        }
+
+        private CompletableFuture<SmtpResult> result() {
+            return result;
+        }
+
+        private SmtpResult serve() {
+            try (Socket socket = serverSocket.accept();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
+                socket.setSoTimeout(10000);
+                respond(writer, "220 localhost ready");
+                boolean ehloReceived = false;
+                boolean mailFromReceived = false;
+                boolean messageReceived = false;
+                boolean readingData = false;
+                String command;
+                while ((command = reader.readLine()) != null) {
+                    if (readingData) {
+                        if (command.equals(".")) {
+                            readingData = false;
+                            messageReceived = true;
+                            respond(writer, "250 accepted");
+                        }
+                    } else if (command.startsWith("EHLO ")) {
+                        ehloReceived = true;
+                        respond(writer, "250 localhost");
+                    } else if (command.startsWith("MAIL FROM:")) {
+                        mailFromReceived = true;
+                        respond(writer, "250 accepted");
+                    } else if (command.startsWith("RCPT TO:")) {
+                        respond(writer, "250 accepted");
+                    } else if (command.equals("DATA")) {
+                        readingData = true;
+                        respond(writer, "354 end with <CRLF>.<CRLF>");
+                    } else if (command.equals("QUIT")) {
+                        respond(writer, "221 goodbye");
+                        break;
+                    } else {
+                        throw new IOException("Unexpected SMTP command: " + command);
+                    }
+                }
+                return new SmtpResult(ehloReceived, mailFromReceived, messageReceived);
+            } catch (IOException e) {
+                throw new CompletionException(e);
+            }
+        }
+
+        private static void respond(BufferedWriter writer, String response) throws IOException {
+            writer.write(response);
+            writer.write("\r\n");
+            writer.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            serverSocket.close();
         }
     }
 
@@ -390,6 +632,14 @@ public class SMTPConnectionTest {
             realm.clients(ClientBuilder.create("test-smtp-client-III")
                     .secret("secret")
                     .serviceAccountsEnabled(true));
+            realm.clients(ClientBuilder.create("test-smtp-client-IV")
+                    .secret("secret")
+                    .serviceAccountsEnabled(true)
+                    .attribute(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, "120"));
+            realm.clients(ClientBuilder.create("test-smtp-client-V")
+                    .secret("secret")
+                    .serviceAccountsEnabled(true)
+                    .attribute(OIDCConfigAttributes.ACCESS_TOKEN_LIFESPAN, "40"));
 
             realm.users(UserBuilder.create("myadmin")
                     .name("My", "Admin")

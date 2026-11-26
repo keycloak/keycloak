@@ -21,6 +21,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 /**
@@ -38,6 +39,10 @@ public class RejectRequestExecutor implements ClientPolicyExecutorProvider<Clien
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
+        // Validate the callback before rejecting the request during the regular authorization event.
+        if (context.getEvent() == ClientPolicyEvent.AUTHORIZATION_REQUEST_REDIRECT_URI) {
+            return;
+        }
         throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Request not allowed");
     }
 }

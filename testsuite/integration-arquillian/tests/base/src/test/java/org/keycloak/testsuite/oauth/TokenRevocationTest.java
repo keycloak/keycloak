@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -70,7 +71,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.AssertEvents.isTokenId;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -131,7 +131,14 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     @Test
     public void testRevokeToken() throws Exception {
         AccessTokenResponse tokenResponse1 = login("test-app", "test-user@localhost", "password");
-        AccessTokenResponse tokenResponse2 = login("test-app-scope", "test-user@localhost", "password");
+
+        oauth.client("test-app-scope", "password");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
 
         UserResource testUser = realm.users().get(realm.users().search("test-user@localhost").get(0).getId());
         List<UserSessionRepresentation> userSessions = testUser.getUserSessions();
@@ -185,11 +192,11 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         assertTrue(oauth.tokenRevocationRequest(tokenResponse.getAccessToken()).accessToken().send().isSuccess());
 
-        setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan());
+        timeOffSet.set(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan());
 
         isAccessTokenDisabled(tokenResponse.getAccessToken(), "test-app");
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     @Test
@@ -212,7 +219,14 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         // Offline login of same client in same SSO session as previous login
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        AccessTokenResponse tokenResponse2 = login("test-app", "test-user@localhost", "password");
+
+        oauth.client("test-app", "password");
+        oauth.openLoginForm();
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
+
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
 
         // Session IDs of "offline" and online session are same for now. This may change in the future
         Assertions.assertEquals(tokenResponse1.getSessionState(), tokenResponse2.getSessionState());
@@ -319,12 +333,12 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         assertTrue(oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().isSuccess());
 
-        events.expect(EventType.REVOKE_GRANT)
-                .session(tokenResponse.getSessionState())
-                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
-                .detail(Details.REFRESH_TOKEN_TYPE, expectedTokenType)
-                .client("test-app")
-                .assertEvent(true);
+        events.skip(6);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REVOKE_GRANT)
+                .sessionId(tokenResponse.getSessionState())
+                .hasTokenId(Details.REFRESH_TOKEN_ID)
+                .details(Details.REFRESH_TOKEN_TYPE, expectedTokenType)
+                .clientId("test-app");
 
         isTokenDisabled(tokenResponse, "test-app");
         isTokenEnabled(tokenResponse2, "test-app");
@@ -333,9 +347,10 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
     private AccessTokenResponse login(String clientId, String username, String password) {
         oauth.client(clientId, "password");
         oauth.openLoginForm();
-        if (loginPage.isCurrent()) {
-            loginPage.login(username, password);
-        }
+
+        loginPage.assertCurrent();
+        loginPage.login(username, password);
+
         String code = oauth.parseLoginResponse().getCode();
         return oauth.doAccessTokenRequest(code);
     }

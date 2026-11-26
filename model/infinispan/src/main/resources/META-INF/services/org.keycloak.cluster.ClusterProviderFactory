@@ -16,4 +16,5 @@
 #
 
 org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory
+org.keycloak.cluster.infinispan.DatabaseAwareClusterProviderFactory
 org.keycloak.cluster.infinispan.remote.RemoteInfinispanClusterProviderFactory

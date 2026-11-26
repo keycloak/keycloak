@@ -1,4 +1,5 @@
 team/cloud-native:
+  - area/admin/api-v2
   - area/admin/cli
   - area/dist/quarkus
   - area/operator
@@ -22,14 +23,20 @@ team/core-protocols:
   - area/oid4vc
   - area/saml
   - area/token-exchange
+  - area/token-exchange/federated
+  - area/token-exchange/standard
+  - area/token-exchange/subject-impersonation
 
 team/core-iam:
   - area/admin/fine-grained-permissions
+  - area/admin/rbac
   - area/authorization-services
+  - area/events
   - area/identity-brokering
   - area/ldap
   - area/organizations
   - area/scim
+  - area/ssf
   - area/user-profile
   - area/workflows
 
@@ -52,6 +59,7 @@ team/core-shared:
 
 team/production-readiness:
   - area/observability
+  - area/performance
 
 team/community:
   - area/translations
@@ -59,3 +67,4 @@ team/community:
 no-team:
   - area/docs
   - area/dependencies
+  - area/extensions

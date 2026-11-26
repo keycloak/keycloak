@@ -20,11 +20,18 @@ import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
+import org.keycloak.storage.ldap.LDAPUtils;
+import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
+import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.role.RoleMapperConfig;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
@@ -55,7 +62,7 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
-        testingClient.testing().ldap(TEST_REALM_NAME).prepareRolesLDAPTest();
+        runOnServer.run(prepareRolesLDAPTest());
     }
 
     @Test
@@ -191,5 +198,50 @@ public class LDAPRoleMapperTest extends AbstractLDAPTest {
                 appRealm.removeClient(rolesClient.getId());
             }
         });
+    }
+
+    /**
+     * Prepare groups LDAP tests. Creates some LDAP mappers as well as some built-in Groups and users in LDAP
+     */
+    public static RunOnServer prepareRolesLDAPTest() {
+        return session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+            LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+            // Add role mapper
+            LDAPTestUtils.addOrUpdateRoleMapper(realm, ldapModel, LDAPGroupMapperMode.LDAP_ONLY);
+
+            // Remove all LDAP groups and users
+            LDAPTestUtils.removeAllLDAPGroups(session, realm, ldapModel, "rolesMapper");
+            LDAPTestUtils.removeAllLDAPUsers(ldapFedProvider, realm);
+
+            // Add some LDAP users for testing
+            LDAPObject john = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "johnkeycloak", "John", "Doe", "john@email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ldapFedProvider, john, "Password1");
+            LDAPObject mary = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "marykeycloak", "Mary", "Kelly", "mary@email.org", null, "5678");
+            LDAPTestUtils.updateLDAPPassword(ldapFedProvider, mary, "Password1");
+            LDAPObject rob = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "robkeycloak", "Rob", "Brown", "rob@email.org", null, "8910");
+            LDAPTestUtils.updateLDAPPassword(ldapFedProvider, rob, "Password1");
+            LDAPObject james = LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "jameskeycloak", "James", "Brown", "james@email.org", null, "8910");
+            LDAPTestUtils.updateLDAPPassword(ldapFedProvider, james, "Password1");
+
+            // Add some groups for testing
+            LDAPObject group1 = LDAPTestUtils.createLDAPGroup("rolesMapper", session, realm, ldapModel, "group1");
+            LDAPObject group2 = LDAPTestUtils.createLDAPGroup("rolesMapper", session, realm, ldapModel, "group2");
+            LDAPObject group3 = LDAPTestUtils.createLDAPGroup("rolesMapper", session, realm, ldapModel, "group3");
+
+            // add the users to the groups
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, john);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, mary);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, rob);
+
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, john);
+            LDAPUtils.addMember(ldapFedProvider, MembershipType.DN, LDAPConstants.MEMBER, "not-used", group2, mary);
+
+            // Sync LDAP groups to Keycloak DB roles
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ldapModel, "rolesMapper");
+            new RoleLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
+        };
     }
 }

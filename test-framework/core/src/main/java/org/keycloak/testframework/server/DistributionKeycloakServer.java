@@ -13,10 +13,9 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -35,7 +34,6 @@ import org.keycloak.testframework.util.TmpDir;
 
 import io.quarkus.fs.util.ZipUtils;
 import org.jboss.logging.Logger;
-import org.jetbrains.annotations.NotNull;
 
 public class DistributionKeycloakServer implements KeycloakServer {
 
@@ -50,6 +48,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
     private final boolean debug;
     private final boolean reuse;
     private final long startTimeout;
+    private final StringBuilder errorOutput = new StringBuilder();
+    private Thread stderrDrainer;
     private boolean tlsEnabled = false;
 
     public DistributionKeycloakServer(boolean debug, boolean reuse, long startTimeout) {
@@ -96,8 +96,15 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
             OutputHandler outputHandler = startKeycloak(args);
 
-            waitForStart(outputHandler);
-            ReadinessProbe.waitUntilReady(this);
+            try {
+                waitForStart(outputHandler);
+                ReadinessProbe.waitUntilReady(this, startTimeout);
+            } catch (Exception e) {
+                ProcessUtils.killRunningProcess(keycloakProcess);
+                throw e;
+            } finally {
+                stderrDrainer.interrupt();
+            }
 
             if (!Environment.isWindows()) {
                 FileUtils.writeToFile(getPidFile(), ProcessUtils.getKeycloakPid(keycloakProcess));
@@ -136,7 +143,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
         }
     }
 
-    private @NotNull DistributionKeycloakServer.OutputHandler startKeycloak(List<String> args) {
+    private DistributionKeycloakServer.OutputHandler startKeycloak(List<String> args) {
         log.trace("Starting Keycloak");
         List<String> cmd = new LinkedList<>();
         if (Environment.isWindows()) {
@@ -148,6 +155,9 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(new File(keycloakHomeDir, "bin"));
+        // The output handler requires ECS JSON records, so don't allow overriding these from the environment
+        pb.environment().put("KC_LOG_CONSOLE_OUTPUT", "json");
+        pb.environment().put("KC_LOG_CONSOLE_JSON_FORMAT", "ecs");
 
         if (debug) {
             pb.environment().put("DEBUG", "true");
@@ -156,6 +166,30 @@ public class DistributionKeycloakServer implements KeycloakServer {
         OutputHandler outputHandler;
         try {
             keycloakProcess = pb.start();
+
+            errorOutput.setLength(0);
+            // Uses ready()+read() polling instead of blocking readLine() because
+            // blocking readBytes() on process pipes is not interruptible via Thread.interrupt()
+            stderrDrainer = new Thread(() -> {
+                try (InputStreamReader isr = new InputStreamReader(keycloakProcess.getErrorStream(), StandardCharsets.UTF_8)) {
+                    char[] buf = new char[1024];
+                    while (!Thread.currentThread().isInterrupted()) {
+                        if (isr.ready()) {
+                            int n = isr.read(buf);
+                            if (n < 0) break;
+                            errorOutput.append(buf, 0, n);
+                        } else {
+                            Thread.sleep(100);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    // Interrupted after startup
+                } catch (IOException e) {
+                    // Ignored
+                }
+            });
+            stderrDrainer.start();
+
             outputHandler = new OutputHandler(keycloakProcess);
             new Thread(outputHandler).start();
         } catch (IOException e) {
@@ -274,12 +308,14 @@ public class DistributionKeycloakServer implements KeycloakServer {
     }
 
     private void waitForStart(OutputHandler outputHandler) {
-        boolean started = outputHandler.waitForStarted();
-        if (started && ping()) {
-            return;
+        boolean processAlive = outputHandler.waitForStarted();
+        if (!processAlive) {
+            throw new RuntimeException("Keycloak process exited during startup: " + getErrorOutput());
         }
-        keycloakProcess.destroy();
-        throw new RuntimeException("Keycloak did not start within timeout: " + getErrorOutput());
+    }
+
+    private String getErrorOutput() {
+        return errorOutput.toString();
     }
 
     private File getZipLastModifiedFile(File dir) {
@@ -308,14 +344,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
         return info;
     }
 
-    private String getErrorOutput() {
-        try {
-            return new String(keycloakProcess.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            return "";
-        }
-    }
-
     private static File resolveKeycloakDist() {
         Path p = Path.of(System.getProperty("user.dir"));
         String dist = "quarkus/dist/target/" + "keycloak-" + Version.VERSION + ".zip";
@@ -332,8 +360,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
     private class OutputHandler implements Runnable {
 
-        private static final Pattern LOG_PATTERN = Pattern.compile("([^ ]*) ([^ ]*) ([A-Z]*)([ ]*)(.*)");
-        private static final Logger LOGGER = Logger.getLogger("managed.keycloak");
+        private static final String LOGGER_NAME = "managed.keycloak";
+        private static final Logger LOGGER = Logger.getLogger(LOGGER_NAME);
 
         private boolean startedInPrinted = false;
         private final Process process;
@@ -350,24 +378,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             try {
                 for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
-                    if (!startedInPrinted && line.matches(".*Keycloak.* started in.*")) {
-                        startupLatch.countDown();
-                    }
-
-                    Matcher matcher = LOG_PATTERN.matcher(line);
-                    if (matcher.matches()) {
-                        String levelString = matcher.group(3);
-                        String message = matcher.group(5);
-                        if (levelString != null && message != null) {
-                            for (Logger.Level l : Logger.Level.values()) {
-                                if (l.name().equals(levelString)) {
-                                    LOGGER.log(l, message);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    LOGGER.info(line);
+                    logLine(line);
                 }
             } catch (IOException e) {
                 // Ignored
@@ -376,6 +387,26 @@ public class DistributionKeycloakServer implements KeycloakServer {
                     startupLatch.countDown();
                 }
             }
+        }
+
+        private void detectStartup(String text) {
+            if (!startedInPrinted && text.matches(".*Keycloak.* started in.*")) {
+                startupLatch.countDown();
+            }
+        }
+
+        private void logLine(String line) {
+            Optional<EcsLogRecord> record = line.startsWith("{") ? EcsLogRecord.parse(line) : Optional.empty();
+            if (record.isEmpty()) {
+                // Output that is not an ECS log record is forwarded unchanged
+                detectStartup(line);
+                LOGGER.info(line);
+                return;
+            }
+
+            detectStartup(record.get().message());
+            // Nested under the managed logger to keep its configured level, while preserving the original logger name
+            Logger.getLogger(LOGGER_NAME + "." + record.get().loggerName()).log(record.get().level(), record.get().fullMessage());
         }
 
         public boolean waitForStarted() {

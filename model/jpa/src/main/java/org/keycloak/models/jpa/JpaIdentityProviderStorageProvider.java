@@ -19,8 +19,11 @@ package org.keycloak.models.jpa;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -34,6 +37,7 @@ import jakarta.persistence.criteria.MapJoin;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -51,6 +55,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.IdentityProviderMapperEntity;
+import org.keycloak.models.jpa.entities.OrganizationIdentityProviderEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StringUtil;
 
@@ -110,7 +115,6 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
         entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
-        entity.setOrganizationId(identityProvider.getOrganizationId());
         entity.setConfig(identityProvider.getConfig());
         entity.setLinkOnly(identityProvider.isLinkOnly());
         entity.setHideOnLogin(identityProvider.isHideOnLogin());
@@ -133,7 +137,6 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
         entity.setAuthenticateByDefault(identityProvider.isAuthenticateByDefault());
         entity.setFirstBrokerLoginFlowId(identityProvider.getFirstBrokerLoginFlowId());
         entity.setPostBrokerLoginFlowId(identityProvider.getPostBrokerLoginFlowId());
-        entity.setOrganizationId(identityProvider.getOrganizationId());
         entity.setAddReadTokenRoleOnCreate(identityProvider.isAddReadTokenRoleOnCreate());
         entity.setStoreToken(identityProvider.isStoreToken());
         entity.setConfig(identityProvider.getConfig());
@@ -174,6 +177,9 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
             //when accessing the config of the entity (entity.getConfig()) withing the toModel(entity)
             IdentityProviderModel model = toModel(entity);
 
+            em.createNamedQuery("clearDomainIdpRouting")
+                    .setParameter("idpId", entity.getInternalId())
+                    .executeUpdate();
             em.remove(entity);
             // flush so that constraint violations are flagged and converted into model exception now rather than at the end of the tx.
             em.flush();
@@ -265,8 +271,7 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                     }
                     case ALIAS:
                     case FIRST_BROKER_LOGIN_FLOW_ID:
-                    case POST_BROKER_LOGIN_FLOW_ID:
-                    case ORGANIZATION_ID: {
+                    case POST_BROKER_LOGIN_FLOW_ID: {
                         if (StringUtil.isBlank(value)) {
                             predicates.add(builder.isNull(idp.get(key)));
                         } else {
@@ -274,8 +279,28 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
                         }
                         break;
                     }
+                    case ORGANIZATION_ID: {
+                        Subquery<String> orgSub = cq.subquery(String.class);
+                        Root<OrganizationIdentityProviderEntity> orgIdpRoot = orgSub.from(OrganizationIdentityProviderEntity.class);
+                        orgSub.select(orgIdpRoot.get("identityProviderId"));
+                        if (StringUtil.isBlank(value)) {
+                            orgSub.where(builder.equal(orgIdpRoot.get("identityProviderId"), idp.get("internalId")));
+                            predicates.add(builder.not(builder.exists(orgSub)));
+                        } else {
+                            orgSub.where(
+                                    builder.equal(orgIdpRoot.get("identityProviderId"), idp.get("internalId")),
+                                    builder.equal(orgIdpRoot.get("organization").get("id"), value)
+                            );
+                            predicates.add(builder.exists(orgSub));
+                        }
+                        break;
+                    }
                     case ORGANIZATION_ID_NOT_NULL: {
-                        predicates.add(builder.isNotNull(idp.get(ORGANIZATION_ID)));
+                        Subquery<String> orgExistsSub = cq.subquery(String.class);
+                        Root<OrganizationIdentityProviderEntity> orgExistsRoot = orgExistsSub.from(OrganizationIdentityProviderEntity.class);
+                        orgExistsSub.select(orgExistsRoot.get("identityProviderId"));
+                        orgExistsSub.where(builder.equal(orgExistsRoot.get("identityProviderId"), idp.get("internalId")));
+                        predicates.add(builder.exists(orgExistsSub));
                         break;
                     }
                     case SEARCH: {
@@ -547,17 +572,54 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
     }
 
     private Predicate getAliasSearchPredicate(String search, CriteriaBuilder builder, Root<IdentityProviderEntity> idp) {
-        if (search.startsWith("\"") && search.endsWith("\"")) {
+        // when no displayName is configured, the effective display name falls back to the social provider
+        // factory's name (see KeycloakModelUtils#getIdentityProviderDisplayName); that resolved name isn't
+        // stored anywhere, so it's matched here via the (small, bounded) set of registered factories instead
+        Set<String> matchingSocialProviderIds = getSocialProviderIdsMatchingName(search);
+        Predicate resolvedNamePredicate = matchingSocialProviderIds.isEmpty() ? null
+                : builder.and(
+                        builder.or(builder.isNull(idp.get(DISPLAY_NAME)), builder.equal(idp.get(DISPLAY_NAME), "")),
+                        idp.get("providerId").in(matchingSocialProviderIds));
+
+        Predicate predicate;
+        if (search.length() > 1 && search.startsWith("\"") && search.endsWith("\"")) {
             // exact search - alias must be an exact match
-            search = search.substring(1, search.length() - 1);
-            return builder.or(builder.equal(idp.get(ALIAS), search),builder.equal(idp.get(DISPLAY_NAME), search));
+            String exact = search.substring(1, search.length() - 1);
+            predicate = builder.or(builder.equal(idp.get(ALIAS), exact), builder.equal(idp.get(DISPLAY_NAME), exact));
         } else {
-            search = search.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
-            if (!search.endsWith("%")) {
-                search += "%"; // default to prefix search
+            String like = search.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+            if (!like.endsWith("%")) {
+                like += "%"; // default to prefix search
             }
-            return builder.or(builder.like(builder.lower(idp.get(ALIAS)), search.toLowerCase(), '\\'),builder.like(builder.lower(idp.get(DISPLAY_NAME)), search.toLowerCase(), '\\'));
+            predicate = builder.or(builder.like(builder.lower(idp.get(ALIAS)), like.toLowerCase(), '\\'), builder.like(builder.lower(idp.get(DISPLAY_NAME)), like.toLowerCase(), '\\'));
         }
+
+        return resolvedNamePredicate == null ? predicate : builder.or(predicate, resolvedNamePredicate);
+    }
+
+    private Set<String> getSocialProviderIdsMatchingName(String search) {
+        String term;
+        java.util.function.BiPredicate<String, String> matches;
+        if (search.length() > 1 && search.startsWith("\"") && search.endsWith("\"")) {
+            term = search.substring(1, search.length() - 1);
+            // exact search is case-sensitive, matching UserResource#matchesSearch's quoted-search semantics
+            matches = String::equals;
+        } else if (search.length() > 1 && search.startsWith("*") && search.endsWith("*")) {
+            term = search.substring(1, search.length() - 1);
+            matches = (name, t) -> name.toLowerCase(Locale.ROOT).contains(t.toLowerCase(Locale.ROOT));
+        } else {
+            term = search.endsWith("*") ? search.substring(0, search.length() - 1) : search;
+            matches = (name, t) -> name.toLowerCase(Locale.ROOT).startsWith(t.toLowerCase(Locale.ROOT));
+        }
+        if (term.isEmpty()) {
+            return Set.of();
+        }
+        String finalTerm = term;
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class)
+                .map(IdentityProviderFactory.class::cast)
+                .filter(factory -> matches.test(factory.getName(), finalTerm))
+                .map(IdentityProviderFactory::getId)
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     private IdentityProviderModel toModel(IdentityProviderEntity entity) {
@@ -579,7 +641,7 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
         identityProviderModel.setAuthenticateByDefault(entity.isAuthenticateByDefault());
         identityProviderModel.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
         identityProviderModel.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
-        identityProviderModel.setOrganizationId(entity.getOrganizationId());
+        identityProviderModel.setOrganizationIds(getOrganizationIdsForIdp(entity.getInternalId()));
         identityProviderModel.setStoreToken(entity.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
 
@@ -599,6 +661,12 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
             logger.warn("Couldn't find a suitable identity provider factory for " + providerId);
             return new IdentityProviderModel();
         }
+    }
+
+    private Set<String> getOrganizationIdsForIdp(String idpInternalId) {
+        return new LinkedHashSet<>(em.createNamedQuery("getOrganizationIdsByIdp", String.class)
+                .setParameter("idpId", idpInternalId)
+                .getResultList());
     }
 
     private void checkUniqueMapperNamePerIdentityProvider(IdentityProviderMapperModel model) {

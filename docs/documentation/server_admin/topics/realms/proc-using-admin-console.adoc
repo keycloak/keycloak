@@ -15,8 +15,14 @@ To use the Admin Console, you need an administrator account.
 +
 For example, for localhost, use this URL: http://localhost:8080{kc_admins_path}/
 
-. Enter the username and password you created on the Welcome Page or through environment variables as described in https://www.keycloak.org/server/configuration#_creating_the_initial_admin_user[Creating the initial admin user].
+ifeval::[{project_community}==true]
+. Enter the username and password you created on the Welcome Page or through environment variables as described in link:{server_guide_base_link}/configuration#_creating_the_initial_admin_user[Creating the initial admin user].
 +
+endif::[]
+ifeval::[{project_product}==true]
+. Enter the username and password you created on the Welcome Page or through environment variables as described in link:{serverguide_link}configuration#creating_the_initial_admin_user[Creating the initial admin user].
++
+endif::[]
 .Login page
 image:images/login-page.png[Login page]
 +

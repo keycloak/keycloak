@@ -29,7 +29,6 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -61,7 +60,6 @@ public class UserCredentialTest extends AbstractUserTest {
     ManagedUser testUser;
 
     @Test
-    @DatabaseTest
     public void resetUserPassword() {
         UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@localhost").build();
@@ -83,7 +81,7 @@ public class UserCredentialTest extends AbstractUserTest {
         loginPage.fillLogin("user1", "paSSw0rd");
         loginPage.submit();
 
-        assertTrue(driver.page().getPageSource().contains("Happy days"));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AccountHelper.logout(managedRealm.admin(), "user1");
     }
@@ -118,7 +116,7 @@ public class UserCredentialTest extends AbstractUserTest {
         loginPage.assertCurrent();
         loginPage.fillLogin(userName, userPass);
         loginPage.submit();
-        assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AccountHelper.logout(managedRealm.admin(), userName);
 
         Optional<CredentialRepresentation> passwordCredential =
@@ -136,7 +134,6 @@ public class UserCredentialTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void testUpdateCredentials() {
         // both credentials have a null priority - stable ordering is not guaranteed between calls
         // Get user user-with-one-configured-otp and assert he has no label linked to its OTP credential
@@ -197,7 +194,6 @@ public class UserCredentialTest extends AbstractUserTest {
     }
 
     @Test
-    @DatabaseTest
     public void testDeleteCredentials() {
         UserResource user = johnDoh.admin();
         List<CredentialRepresentation> creds = user.credentials();

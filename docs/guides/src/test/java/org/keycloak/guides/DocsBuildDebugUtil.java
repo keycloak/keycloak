@@ -32,7 +32,10 @@ public class DocsBuildDebugUtil {
             Path targetDir = usrDir.resolve("target").resolve("generated-guides").resolve(srcDir.getFileName());
             Files.createDirectories(targetDir);
 
-            GuideBuilder builder = new GuideBuilder(srcDir, targetDir, null, properties);
+            Path docFile = usrDir.resolve("rest/admin-v2/services/target/admin-v2-doc.json");
+            Path cliExamplesFile = usrDir.resolve("integration/client-cli/admin-cli/target/admin-v2-cli-examples.json");
+            Path jsExamplesFile = usrDir.resolve("js/libs/keycloak-admin-client/src/generated/doc-examples/admin-v2-js-examples.json");
+            GuideBuilder builder = new GuideBuilder(srcDir, targetDir, null, properties, docFile, cliExamplesFile, jsExamplesFile);
             builder.build();
             System.out.println("Guides generated to: " + targetDir);
         }

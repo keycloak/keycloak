@@ -30,7 +30,9 @@ import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.storage.UserStorageProvider;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.convert.DisabledListDelimiterHandler;
+import org.apache.commons.configuration2.io.FileHandler;
 import org.jboss.logging.Logger;
 
 /**
@@ -130,10 +132,11 @@ public class LDAPTestConfiguration {
         }
 
         PropertiesConfiguration p;
-        try {
+        try (is) {
             p = new PropertiesConfiguration();
-            p.setDelimiterParsingDisabled(true);
-            p.load(is);
+            p.setListDelimiterHandler(DisabledListDelimiterHandler.INSTANCE);
+            FileHandler fh = new FileHandler(p);
+            fh.load(is);
         }
         catch (Exception e) {
             throw new RuntimeException(e);

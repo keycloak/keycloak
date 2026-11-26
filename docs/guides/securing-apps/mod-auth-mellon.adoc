@@ -209,10 +209,10 @@ Use this procedure to set important client configuration parameters.
 . Ensure *Force POST Binding* is On.
 . Add paosResponse to the *Valid Redirect URIs* list:
 . Copy the postResponse URL in *Valid Redirect URIs* and paste it into the empty add text fields just below the "+".
-. Change `postResponse` to  paosResponse`. (The paosResponse URL is needed for SAML ECP.)
+. Change `postResponse` to `paosResponse`. (The paosResponse URL is needed for SAML ECP.)
 . Click *Save* at the bottom.
 
-Many SAML SPs determine authorization based on a user's membership in a group. The {project_name} IdP can manage user group information but it does not supply the user's groups unless the IdP is configured to supply it as a SAML attribute.
+Many SAML SPs determine authorization based on a user's membership in a group. The {project_name} IdP can manage user group information, but it does not supply the user's groups unless the IdP is configured to supply it as a SAML attribute.
 
 Perform the following procedure to configure the IdP to supply the user's groups as a SAML attribute.
 

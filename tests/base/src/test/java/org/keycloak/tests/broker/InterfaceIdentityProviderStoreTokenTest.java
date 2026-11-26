@@ -2,11 +2,16 @@ package org.keycloak.tests.broker;
 
 import java.util.Optional;
 
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -32,6 +37,7 @@ public interface InterfaceIdentityProviderStoreTokenTest {
     RunOnServerClient getRunOnServer();
     AbstractHttpResponse doFetchExternalIdpToken(String token);
     void checkSuccessfulTokenResponse(AbstractHttpResponse response);
+    void assertPublicClientTokenResponse(AbstractHttpResponse response);
     boolean isIdentityBrokeringAPIV1();
     boolean isRefreshTokenAllowed();
 
@@ -56,6 +62,32 @@ public interface InterfaceIdentityProviderStoreTokenTest {
         if (userResult.isPresent()) {
             AccountHelper.logout(externalRealm.admin(), "testuser");
         }
+    }
+
+    @Test
+    default void testPublicClient() {
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+        ClientResource clientResource = oauth.clientResource();
+        ClientRepresentation originalClient = clientResource.toRepresentation();
+        realm.cleanup().add(r -> clientResource.update(originalClient));
+        clientResource.update(ClientBuilder.update(clientResource.toRepresentation())
+                .publicClient(true)
+                .serviceAccountsEnabled(false)
+                .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString())
+                .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS)
+                .build());
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode())
+                .client(oauth.getClientId())
+                .send();
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
+        assertPublicClientTokenResponse(externalTokens);
     }
 
     @Test
@@ -100,7 +132,9 @@ public interface InterfaceIdentityProviderStoreTokenTest {
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        realm.updateUser("testuser", user -> user.enabled(false));
+        UserRepresentation userRep = AdminApiUtil.findUserByUsername(realm.admin(), "testuser");
+        userRep.setEnabled(false);
+        realm.admin().users().get(userRep.getId()).update(userRep);
 
         AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(400, externalTokens.getStatusCode());

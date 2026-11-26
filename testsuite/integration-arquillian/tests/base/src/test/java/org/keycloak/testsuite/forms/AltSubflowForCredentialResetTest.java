@@ -36,13 +36,12 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
@@ -61,7 +60,7 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMailRule = new GreenMailRule();
+    public MailServer mailRule = new MailServer();
 
     @Page
     LoginPage loginPage;
@@ -119,12 +118,12 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
         try {
             oauth.openLoginForm();
             loginPage.resetPassword();
-            Assertions.assertTrue(loginPasswordResetPage.isCurrent());
+            loginPasswordResetPage.assertCurrent();
             loginPasswordResetPage.changePassword("login@test.com.com");
-            Assertions.assertTrue(loginPage.isCurrent());
+            loginPage.assertCurrent();
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
             oauth.openLoginForm();
-            Assertions.assertTrue(loginPage.isCurrent());
+            loginPage.assertCurrent();
         } finally {
             managedRealm.admin().flows().getFlows().clear();
             RealmRepresentation realm = managedRealm.admin().toRepresentation();

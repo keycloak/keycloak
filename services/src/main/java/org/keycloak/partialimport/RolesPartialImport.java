@@ -24,6 +24,7 @@ import java.util.Set;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -115,6 +116,8 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
 
         try {
             RepresentationToModel.importRoles(rep.getRoles(), realm);
+        } catch (ModelValidationException e) {
+            throw e;
         } catch (Exception e) {
             ServicesLogger.LOGGER.roleImportError(e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);

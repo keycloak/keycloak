@@ -20,9 +20,11 @@ package org.keycloak.tests.admin.group;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,6 +49,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -55,6 +58,8 @@ import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -97,6 +102,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -104,7 +110,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @KeycloakIntegrationTest
-@DatabaseTest
 public class GroupTest extends AbstractGroupTest {
 
     @InjectRealm(config = GroupTestRealmConfig.class)
@@ -121,6 +126,7 @@ public class GroupTest extends AbstractGroupTest {
 
     
     @Test
+    @DatabaseTest
     @DisabledForDatabases("mssql")
     public void createMultiDeleteMultiReadMulti() {
         // create multiple groups
@@ -210,6 +216,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-16888 Error messages for groups with same name in the same level
     public void doNotAllowSameGroupNameAtSameLevel() {
         RealmResource realm = managedRealm.admin();
@@ -248,6 +255,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-11412 Unintended Groups with same names
     public void doNotAllowSameGroupNameAtSameLevelWhenUpdatingName() {
         RealmResource realm = managedRealm.admin();
@@ -261,7 +269,7 @@ public class GroupTest extends AbstractGroupTest {
         topGroup2.setName("top1");
 
         // conflict status 409 - same name not allowed
-        ClientErrorException ex1 = Assertions.assertThrows(ClientErrorException.class, () -> realm.groups().group(topGroup2.getId()).update(topGroup2));
+        ClientErrorException ex1 = assertThrows(ClientErrorException.class, () -> realm.groups().group(topGroup2.getId()).update(topGroup2));
         assertSameNameNotAllowed(ex1.getResponse(), "Sibling group named 'top1' already exists.");
 
 
@@ -276,7 +284,7 @@ public class GroupTest extends AbstractGroupTest {
         anotherlevel2Group.setName("level2-1");
 
         // conflict status 409 - same name not allowed
-        ClientErrorException ex2 = Assertions.assertThrows(ClientErrorException.class, () -> realm.groups().group(anotherlevel2Group.getId()).update(anotherlevel2Group));
+        ClientErrorException ex2 = assertThrows(ClientErrorException.class, () -> realm.groups().group(anotherlevel2Group.getId()).update(anotherlevel2Group));
         assertSameNameNotAllowed(ex2.getResponse(), "Sibling group named 'level2-1' already exists.");
 
     }
@@ -301,6 +309,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void doNotAllowSameGroupNameAtTopLevel() {
         // creating "/test-group"
         GroupRepresentation topGroup = new GroupRepresentation();
@@ -315,6 +324,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() {
         String realmName = managedRealm.getName();
         final String id = runOnServer.fetch(session -> {
@@ -326,7 +336,7 @@ public class GroupTest extends AbstractGroupTest {
         // unique key should work even in top groups
         runOnServer.run(session -> {
             RealmModel realm = session.realms().getRealmByName(realmName);
-            Assertions.assertThrows(
+            assertThrows(
                     ModelDuplicateException.class,
                     () -> realm.createGroup("test-group")
             );
@@ -362,16 +372,140 @@ public class GroupTest extends AbstractGroupTest {
         managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
 
         group.setName("");
-        Assertions.assertThrows(BadRequestException.class,
+        assertThrows(BadRequestException.class,
                 () -> realm.groups().group(groupId).update(group),
                 "Updating a group with empty name should fail"
         );
 
         group.setName(null);
-        Assertions.assertThrows(BadRequestException.class,
+        assertThrows(BadRequestException.class,
                 () -> realm.groups().group(groupId).update(group),
                 "Updating a group with null name should fail"
         );
+    }
+
+    // Issue #54721: Group names with control characters (e.g. NUL) are accepted without validation
+    @Test
+    @DatabaseTest
+    public void createGroupWithControlCharacterNameShouldFail() {
+        GroupRepresentation group = new GroupRepresentation();
+
+        group.setName("a\u0000b");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Group name contains control characters", error.getErrorMessage());
+        }
+
+        group.setName("del\u007Fete");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        group.setName("c1\u0085control");
+        try (Response response = managedRealm.admin().groups().add(group)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    // Issue #54721: Renaming a group to a name containing control characters is rejected
+    @Test
+    @DatabaseTest
+    public void renamingGroupToControlCharacterNameShouldFail() {
+        RealmResource realm = managedRealm.admin();
+
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("cleanGroupName");
+
+        Response response = realm.groups().add(group);
+        String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        group.setName("cleanGroupName\u0000");
+        assertThrows(BadRequestException.class,
+                () -> realm.groups().group(groupId).update(group),
+                "Renaming a group to a name with control characters should fail"
+        );
+    }
+
+    // Issue #54721: The subgroup creation path validates names as well
+    @Test
+    @DatabaseTest
+    public void createSubGroupWithControlCharacterNameShouldFail() {
+        RealmResource realm = managedRealm.admin();
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("parentGroup");
+        String parentId = ApiUtil.getCreatedId(realm.groups().add(parent));
+        managedRealm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("childGroup\u0000");
+        try (Response response = realm.groups().group(parentId).subGroup(child)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    // Issue #54721: Visible special characters (accents, CJK, emoji) remain valid
+    @Test
+    public void createGroupWithVisibleSpecialCharactersNameSucceeds() {
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("Gruppe M\u00FCnchen \u6771\u4EAC \uD83D\uDE80");
+
+        String groupId = ApiUtil.getCreatedId(managedRealm.admin().groups().add(group));
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+        assertEquals("Gruppe M\u00FCnchen \u6771\u4EAC \uD83D\uDE80",
+                managedRealm.admin().groups().group(groupId).toRepresentation().getName());
+    }
+
+    // Issue #54721: Legacy groups whose names already contain control characters can still be updated without renaming
+    @Test
+    public void updatingLegacyGroupWithControlCharactersInNameSucceeds() {
+        String realmName = managedRealm.getName();
+        final String groupId = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            GroupModel legacyGroup = realm.createGroup("legacy\u007FGroup");
+            return legacyGroup.getId();
+        }, String.class);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setName("legacy\u007FGroup");
+        managedRealm.admin().groups().group(groupId).update(rep);
+
+        assertEquals("legacy\u007FGroup", managedRealm.admin().groups().group(groupId).toRepresentation().getName());
+    }
+
+    // Issue #54721: moving a legacy group whose unchanged name contains control
+    // characters must not be blocked (the move endpoints do not apply the name)
+    @Test
+    public void moveLegacyGroupWithControlCharactersInNameSucceeds() {
+        String realmName = managedRealm.getName();
+        final String groupId = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            GroupModel legacyGroup = realm.createGroup("legacy\u007FGroup");
+            return legacyGroup.getId();
+        }, String.class);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("moveParentGroup");
+        String parentId = ApiUtil.getCreatedId(managedRealm.admin().groups().add(parent));
+        managedRealm.cleanup().add(r -> r.groups().group(parentId).remove());
+
+        GroupRepresentation rep = new GroupRepresentation();
+        rep.setId(groupId);
+        rep.setName("legacy\u007FGroup");
+
+        // top-level move endpoint: unchanged legacy name must not be validated
+        try (Response response = managedRealm.admin().groups().add(rep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // subgroup move endpoint: same guarantee
+        try (Response response = managedRealm.admin().groups().group(parentId).subGroup(rep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
     }
 
     @Test
@@ -492,19 +626,19 @@ public class GroupTest extends AbstractGroupTest {
         realm.groups().group(topGroup.getId()).remove();
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.groupPath(topGroup.getId()), ResourceType.GROUP);
 
-        Assertions.assertThrows(
+        assertThrows(
                 NotFoundException.class,
                 () -> realm.getGroupByPath("/top/level2/level3"),
                 "Group should not have been found"
         );
 
-        Assertions.assertThrows(
+        assertThrows(
                 NotFoundException.class,
                 () -> realm.getGroupByPath("/top/level2"),
                 "Group should not have been found"
         );
 
-        Assertions.assertThrows(
+        assertThrows(
                 NotFoundException.class,
                 () -> realm.getGroupByPath("/top"),
                 "Group should not have been found"
@@ -548,6 +682,109 @@ public class GroupTest extends AbstractGroupTest {
         assertThat(group.getAttributes().keySet(), containsInAnyOrder("attr2", "attr3"));
         assertThat(group.getAttributes(), hasEntry(is("attr2"), containsInAnyOrder("attrval2", "attrval2-2")));
         assertThat(group.getAttributes(), hasEntry(is("attr3"), contains("attrval2")));
+
+        group.setName(null);
+        GroupRepresentation finalGroup = group;
+        assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
+        group.setName(" ");
+        assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
+    }
+
+    private static final int MAX_ATTRIBUTE_VALUE_LENGTH = 255;
+    private static final int MAX_ATTRIBUTE_NAME_LENGTH = 255;
+
+    @Test
+    public void createGroupWithTooLongAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        String tooLongValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-long-attr-" + UUID.randomUUID())
+                .attribute("key", tooLongValue)
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void createGroupWithTooLongAttributeNameReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        String tooLongName = "a".repeat(MAX_ATTRIBUTE_NAME_LENGTH + 1);
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-long-attr-name-" + UUID.randomUUID())
+                .attribute(tooLongName, "val")
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void updateGroupWithTooLongAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create().name(groupName).build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+
+        String tooLongValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH + 1);
+        group.setAttributes(Map.of("key", List.of(tooLongValue)));
+        GroupRepresentation finalGroup = group;
+        assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
+    }
+
+    @Test
+    public void createGroupWithMaxLengthAttributeValueSucceeds() {
+        RealmResource realm = managedRealm.admin();
+        String maxValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH);
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create()
+                .name(groupName)
+                .attribute("key", maxValue)
+                .build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+        assertEquals(maxValue, group.getAttributes().get("key").get(0));
+    }
+
+
+    @Test
+    public void createGroupWithTooManyUnicodeUnitsReturnsBadRequest() {
+        // 254 ASCII chars + 1 emoji (2 UTF-16 units) = 256 UTF-16 units, exceeds NVARCHAR(255)
+        RealmResource realm = managedRealm.admin();
+        String tooLongUnicodeValue = "a".repeat(MAX_ATTRIBUTE_VALUE_LENGTH - 1) + "😀";
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-unicode-overflow-" + UUID.randomUUID())
+                .attribute("key", tooLongUnicodeValue)
+                .build();
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void createGroupWithNullAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        GroupRepresentation group = GroupBuilder.create()
+                .name("group-null-attr-" + UUID.randomUUID())
+                .build();
+        group.setAttributes(Collections.singletonMap("key", Collections.singletonList(null)));
+        try (Response response = realm.groups().add(group)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void updateGroupWithNullAttributeValueReturnsBadRequest() {
+        RealmResource realm = managedRealm.admin();
+        final String groupName = "group-" + UUID.randomUUID();
+        GroupRepresentation group = GroupBuilder.create().name(groupName).build();
+        createGroup(managedRealm, group);
+        group = realm.getGroupByPath("/" + groupName);
+
+        group.setAttributes(Collections.singletonMap("key", Collections.singletonList(null)));
+        GroupRepresentation finalGroup = group;
+        assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
     }
 
     @Test
@@ -644,6 +881,7 @@ public class GroupTest extends AbstractGroupTest {
 
 
     @Test
+    @DatabaseTest
     //KEYCLOAK-6300 List of group members is not sorted alphabetically
     public void groupMembershipUsersOrder() {
         RealmResource realm = managedRealm.admin();
@@ -832,6 +1070,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    @DatabaseTest
     public void defaultMaxResults() {
         GroupsResource groups = managedRealm.admin().groups();
         Response response = groups.add(GroupBuilder.create().name("test").build());
@@ -962,6 +1201,72 @@ public class GroupTest extends AbstractGroupTest {
         }
     }
 
+    @Test
+    public void testGroupMembersRespectsUserProfileAttributePermissions() {
+        RealmResource realm = managedRealm.admin();
+        String groupName = "profile-perm-group";
+        String userName = "profile-perm-user";
+
+        UserProfileResource upResource = realm.users().userProfile();
+        UPConfig originalCfg = upResource.getConfiguration();
+
+        try {
+            // Restrict email and firstName to user-role only — admins (USER_API context) cannot view them
+            UPConfig cfg = upResource.getConfiguration();
+
+            UPAttribute emailAttr = cfg.getAttribute(UserModel.EMAIL);
+            if (emailAttr == null) {
+                emailAttr = new UPAttribute(UserModel.EMAIL);
+            }
+            emailAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(emailAttr);
+
+            UPAttribute firstNameAttr = cfg.getAttribute(UserModel.FIRST_NAME);
+            if (firstNameAttr == null) {
+                firstNameAttr = new UPAttribute(UserModel.FIRST_NAME);
+            }
+            firstNameAttr.setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            cfg.addOrReplaceAttribute(firstNameAttr);
+
+            upResource.update(cfg);
+            adminEvents.poll(); // consume the user profile UPDATE event
+
+            String groupId = createGroup(managedRealm, GroupBuilder.create().name(groupName).build());
+            GroupResource group = managedRealm.admin().groups().group(groupId);
+
+            UserRepresentation userRep = UserBuilder.create()
+                    .username(userName)
+                    .firstName("Test")
+                    .email(userName + "@test.com")
+                    .build();
+            UsersResource users = realm.users();
+            Response response = users.create(userRep);
+            String userUuid = ApiUtil.getCreatedId(response);
+            managedRealm.cleanup().add(r -> r.users().get(userUuid).remove());
+            adminEvents.poll(); // consume CREATE USER event
+            users.get(userUuid).joinGroup(groupId);
+            adminEvents.poll(); // consume GROUP_MEMBERSHIP event
+
+            // Group members endpoint must respect user profile attribute permissions
+            for (Boolean briefRep : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                List<UserRepresentation> members = group.members(null, null, briefRep);
+                assertEquals(1, members.size());
+                assertNull(members.get(0).getEmail());
+                assertNull(members.get(0).getFirstName());
+                assertNull(members.get(0).getUserProfileMetadata());
+            }
+
+            // User list endpoint must show the same filtering (parity check)
+            List<UserRepresentation> userList = realm.users().search(userName, true);
+            assertEquals(1, userList.size());
+            assertNull(userList.get(0).getEmail());
+            assertNull(userList.get(0).getFirstName());
+
+        } finally {
+            upResource.update(originalCfg);
+        }
+    }
+
     /**
      * Assert that when you create/move/update a group name, the response is not Http 409 Conflict and the message does not
      * correspond to the returned user-friendly message in such cases
@@ -989,6 +1294,108 @@ public class GroupTest extends AbstractGroupTest {
                     .secret("secret"));
 
             return realm;
+        }
+    }
+
+    @Test
+    public void testAddTopLevelGroupNullRepresentation() {
+        try (Response response = managedRealm.admin().groups().add(null)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Group representation is missing", error.getErrorMessage());
+        }
+    }
+
+    @Test
+    public void testUpdateGroupNullRepresentation() {
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("test-group-update-null");
+        Response response = managedRealm.admin().groups().add(groupRep);
+        String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+        response.close();
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> {
+            managedRealm.admin().groups().group(groupId).update(null);
+        });
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), ex.getResponse().getStatus());
+        ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
+        assertEquals("Group representation is missing", error.getErrorMessage());
+    }
+
+    @Test
+    public void testAddChildToDescendantRejected() {
+        RealmResource realm = managedRealm.admin();
+
+        // Create the hierarchy parent -> child -> grandchild
+        GroupRepresentation parent = new GroupRepresentation();
+        parent.setName("move-descendant-parent");
+        try (Response response = realm.groups().add(parent)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            parent.setId(ApiUtil.getCreatedId(response));
+        }
+        managedRealm.cleanup().add(r -> r.groups().group(parent.getId()).remove());
+
+        GroupRepresentation child = new GroupRepresentation();
+        child.setName("move-descendant-child");
+        try (Response response = realm.groups().group(parent.getId()).subGroup(child)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            child.setId(ApiUtil.getCreatedId(response));
+        }
+
+        GroupRepresentation grandChild = new GroupRepresentation();
+        grandChild.setName("move-descendant-grandchild");
+        try (Response response = realm.groups().group(child.getId()).subGroup(grandChild)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+            grandChild.setId(ApiUtil.getCreatedId(response));
+        }
+
+        // Moving a group under itself is rejected with a client error
+        GroupRepresentation selfMove = new GroupRepresentation();
+        selfMove.setId(parent.getId());
+        selfMove.setName(parent.getName());
+        try (Response response = realm.groups().group(parent.getId()).subGroup(selfMove)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // Moving a group under its direct child is rejected with a client error
+        try (Response response = realm.groups().group(child.getId()).subGroup(parent)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertEquals("Cannot move group 'move-descendant-parent' under itself or its descendants", error.getErrorMessage());
+        }
+
+        // Moving a group under a deeper descendant is rejected too
+        try (Response response = realm.groups().group(grandChild.getId()).subGroup(parent)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // The hierarchy is unchanged after the rejected moves
+        List<GroupRepresentation> parentSubGroups = realm.groups().group(parent.getId()).getSubGroups(null, null, null, null);
+        assertEquals(1, parentSubGroups.size());
+        assertEquals("move-descendant-child", parentSubGroups.get(0).getName());
+
+        // Moving a group under an ancestor (here the grandchild back under its grandparent) is still allowed
+        try (Response response = realm.groups().group(parent.getId()).subGroup(grandChild)) {
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        List<GroupRepresentation> movedSubGroups = realm.groups().group(parent.getId()).getSubGroups(null, null, null, null);
+        assertEquals(2, movedSubGroups.size());
+    }
+
+    @Test
+    public void testAddChildNullRepresentation() {
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("test-group-parent");
+        Response response = managedRealm.admin().groups().add(groupRep);
+        String groupId = ApiUtil.getCreatedId(response);
+        managedRealm.cleanup().add(r -> r.groups().group(groupId).remove());
+        response.close();
+
+        try (Response childResponse = managedRealm.admin().groups().group(groupId).subGroup(null)) {
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), childResponse.getStatus());
+            ErrorRepresentation error = childResponse.readEntity(ErrorRepresentation.class);
+            assertEquals("Group representation is missing", error.getErrorMessage());
         }
     }
 }

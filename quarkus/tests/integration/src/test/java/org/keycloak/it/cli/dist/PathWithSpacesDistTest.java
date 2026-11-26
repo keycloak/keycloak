@@ -2,7 +2,7 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
+@DistributionTest
 class PathWithSpacesDistTest extends AbstractPathDistTest {
 
     @Override

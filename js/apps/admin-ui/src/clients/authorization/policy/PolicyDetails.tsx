@@ -80,29 +80,45 @@ export default function PolicyDetails() {
   useFetch(
     async () => {
       if (policyId) {
-        const result = await Promise.all([
-          adminClient.clients.findOnePolicyWithType({
-            id: permissionClientId ?? id,
-            type: policyType!,
-            policyId,
-          }) as PolicyRepresentation | undefined,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- permissionClientId is undefined when navigating from client authorization tab
+        const clientId = permissionClientId ?? id;
+        const [policy, associatedPolicies] = await Promise.all([
+          policyType === "user"
+            ? adminClient.clients.findOnePolicy({ id: clientId, policyId })
+            : adminClient.clients.findOnePolicyWithType({
+                id: clientId,
+                type: policyType!,
+                policyId,
+              }),
           adminClient.clients.getAssociatedPolicies({
-            id: permissionClientId ?? id,
+            id: clientId,
             permissionId: policyId,
           }),
         ]);
 
-        if (!result[0]) {
+        if (!policy) {
           throw new Error(t("notFound"));
         }
 
-        return {
-          policy: result[0],
-          policies: result[1].map((p) => p.id),
-        };
+        const policies = associatedPolicies.map((p) => p.id);
+        if (policyType === "user") {
+          // The typed response filters out missing users in positive policies.
+          const { config, ...details } = policy;
+          const users = config?.users as string | undefined;
+          return {
+            policy: {
+              ...details,
+              users: JSON.parse(users ?? "[]") as string[],
+            },
+            policies,
+          };
+        }
+
+        return { policy, policies };
       }
       if (!isValidComponentType(policyType!)) {
         const providers = await adminClient.clients.listPolicyProviders({
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- permissionClientId is undefined when navigating from client authorization tab
           id: permissionClientId ?? id,
         });
         const provider = providers.find((p) => p.type === policyType);
@@ -125,7 +141,7 @@ export default function PolicyDetails() {
   );
 
   const onSubmitPolicy = async (policy: Policy) => {
-    policy.groups = policy.groups?.filter((g) => g.id);
+    policy.groups = policy.groups?.filter((g) => g.id || g.path);
     policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
     policy.roles = policy.roles
       ?.filter((r) => r.id)
@@ -148,7 +164,7 @@ export default function PolicyDetails() {
           policy,
         );
 
-        navigate(
+        void navigate(
           navigateTo({
             realm: realm!,
             id: clientId!,
@@ -178,7 +194,7 @@ export default function PolicyDetails() {
           policyId,
         });
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
-        navigate(
+        void navigate(
           isAdminPermissionsClient
             ? toPermissionsConfigurationTabs({
                 realm: realm!,

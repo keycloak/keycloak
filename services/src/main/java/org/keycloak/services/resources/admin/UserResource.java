@@ -17,17 +17,17 @@
 package org.keycloak.services.resources.admin;
 
 import java.net.URI;
-import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -57,6 +57,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
@@ -74,6 +75,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderCapability;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -86,17 +90,20 @@ import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.oid4vc.resources.admin.UserVerifiableCredentialResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityLinkRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
@@ -119,7 +126,9 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
+import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -165,6 +174,8 @@ public class UserResource {
 
     protected final HttpHeaders headers;
 
+    private final Map<String, Boolean> clientVisibility = new HashMap<>();
+
     public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.auth = auth;
@@ -197,6 +208,7 @@ public class UserResource {
         auth.users().requireManage(user);
         try {
 
+            boolean wasEnabled = user.isEnabled();
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
@@ -230,6 +242,10 @@ public class UserResource {
             }
             profile.update(rep.getAttributes() != null);
             updateUserFromRep(profile, user, rep, session, true);
+            if (rep.getCredentials() != null && rep.getCredentials().stream()
+                    .anyMatch(c -> c.getType() == null || CredentialRepresentation.PASSWORD.equals(c.getType()))) {
+                auth.users().requireResetPassword(user);
+            }
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
 
             // we need to do it here as the attributes would be overwritten by what is in the rep
@@ -237,6 +253,14 @@ public class UserResource {
                 session.getProvider(BruteForceProtector.class).cleanUpPermanentLockout(session, realm, user);
             }
 
+            if (rep.isEnabled() != null && rep.isEnabled() != wasEnabled) {
+                // Capture the enabled-state transition as admin event details — the
+                // representation only ever carries the new state, so without this a
+                // listener can't tell "account disabled" apart from any other profile
+                // update (see SSF RiscAccountDisabled / RiscAccountEnabled).
+                adminEvent.detail(Details.PREVIOUS_ENABLED, String.valueOf(wasEnabled))
+                        .detail(Details.UPDATED_ENABLED, String.valueOf(rep.isEnabled()));
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
@@ -252,8 +276,7 @@ public class UserResource {
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
             session.getTransactionManager().setRollbackOnly();
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -449,7 +472,9 @@ public class UserResource {
     })
     public Stream<UserSessionRepresentation> getSessions() {
         auth.users().requireView(user);
-        return session.sessions().getUserSessionsStream(realm, user).map(ModelToRepresentation::toRepresentation);
+        return session.sessions().getUserSessionsStream(realm, user)
+                .filter(this::hasVisibleClientOrNone)
+                .map(userSession -> ModelToRepresentation.toRepresentation(userSession, this::canViewClient));
     }
 
     /**
@@ -472,8 +497,11 @@ public class UserResource {
         auth.users().requireView(user);
         ClientModel client = realm.getClientById(clientUuid);
         if (client == null) {
-            throw new NotFoundException("Client not found");
+            // we do this to make sure somebody can't phish ids
+            if (auth.clients().canList()) throw new NotFoundException("Client not found");
+            else throw new ForbiddenException();
         }
+        auth.clients().requireView(client);
         return new UserSessionManager(session).findOfflineSessionsStream(realm, user)
                 .map(session -> toUserSessionRepresentation(session, clientUuid))
                 .filter(Objects::nonNull);
@@ -506,6 +534,119 @@ public class UserResource {
     }
 
     /**
+     * Get the identity provider links for the user
+     *
+     * @param linked if {@code true} (default), returns the identity providers the user is currently linked to; if
+     *               {@code false}, returns the enabled identity providers available for the user to link to (i.e.
+     *               not already linked)
+     * @param search filter by provider alias or display name. Can be prefixed (name*), contains (*name*) or exact ("name"). Default prefixed
+     * @param firstResult pagination offset
+     * @param maxResults maximum results size
+     * @return a non-null {@code Stream} of identity provider links
+     */
+    @Path("federated-identity-links")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Get the identity provider links for the user",
+            description = "Returns the identity providers the user is currently linked to, or the enabled identity providers available for the user to link to, avoiding the need to separately fetch and cross-reference the full list of identity providers in the realm.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = FederatedIdentityLinkRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Stream<FederatedIdentityLinkRepresentation> getFederatedIdentityLinks(
+            @Parameter(description = "if true (default), returns the identity providers the user is linked to; if false, returns the identity providers available for the user to link to") @QueryParam("linked") Boolean linked,
+            @Parameter(description = "Filter by provider alias or display name. Can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size") @QueryParam("max") Integer maxResults) {
+        if (Boolean.FALSE.equals(linked)) {
+            auth.users().requireManage(user);
+            auth.realm().requireViewIdentityProviders();
+            return getAvailableIdentityProviderLinks(search, firstResult, maxResults);
+        }
+
+        auth.users().requireView(user);
+        return getLinkedIdentityProviderLinks(search, firstResult, maxResults);
+    }
+
+    private Stream<FederatedIdentityLinkRepresentation> getLinkedIdentityProviderLinks(String search, Integer firstResult, Integer maxResults) {
+        Set<String> socialProviderIds = socialProviderIds();
+        Stream<FederatedIdentityLinkRepresentation> linked = session.users().getFederatedIdentitiesStream(realm, user)
+                .map(fedIdentity -> {
+                    IdentityProviderModel provider = session.identityProviders().getByAlias(fedIdentity.getIdentityProvider());
+                    return provider == null ? null : toFederatedIdentityLink(provider, socialProviderIds, fedIdentity.getUserId(), fedIdentity.getUserName());
+                })
+                .filter(rep -> rep != null && matchesSearch(rep, search));
+        return StreamsUtil.paginatedStream(linked, firstResult, maxResults);
+    }
+
+    private Stream<FederatedIdentityLinkRepresentation> getAvailableIdentityProviderLinks(String search, Integer firstResult, Integer maxResults) {
+        // mirror the account console's LinkedAccountsResource: a managed organization member cannot be linked
+        // to any further identity provider, and organization-scoped providers are never offered for linking
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            return Stream.empty();
+        }
+
+        String aliasesToExclude = session.users().getFederatedIdentitiesStream(realm, user)
+                .map(FederatedIdentityModel::getIdentityProvider)
+                .collect(Collectors.joining(","));
+
+        Map<String, String> options = new HashMap<>();
+        options.put(IdentityProviderModel.ENABLED, "true");
+        options.put(IdentityProviderModel.ORGANIZATION_ID, "");
+        options.put(IdentityProviderModel.ALIAS_NOT_IN, aliasesToExclude);
+        if (StringUtil.isNotBlank(search)) {
+            // JpaIdentityProviderStorageProvider#getAliasSearchPredicate also matches a provider whose resolved
+            // display name (e.g. a social provider factory's name, used as a fallback when no displayName is
+            // configured) matches the search term, keeping this in sync with the "linked" branch's matchesSearch
+            options.put(IdentityProviderModel.SEARCH, search);
+        }
+
+        Set<String> socialProviderIds = socialProviderIds();
+        IdentityProviderQuery query = IdentityProviderQuery.capability(IdentityProviderCapability.USER_LINKING).with(options);
+        return session.identityProviders().getAllStream(query, firstResult, maxResults == null ? 100 : maxResults)
+                .map(provider -> toFederatedIdentityLink(provider, socialProviderIds, null, null));
+    }
+
+    private FederatedIdentityLinkRepresentation toFederatedIdentityLink(IdentityProviderModel provider, Set<String> socialProviderIds, String userId, String userName) {
+        FederatedIdentityLinkRepresentation rep = new FederatedIdentityLinkRepresentation();
+        rep.setIdentityProvider(provider.getAlias());
+        rep.setProviderId(provider.getProviderId());
+        rep.setDisplayName(KeycloakModelUtils.getIdentityProviderDisplayName(session, provider));
+        rep.setSocial(socialProviderIds.contains(provider.getProviderId()));
+        rep.setUserId(userId);
+        rep.setUserName(userName);
+        return rep;
+    }
+
+    private Set<String> socialProviderIds() {
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class)
+                .map(ProviderFactory::getId)
+                .collect(Collectors.toSet());
+    }
+
+    private boolean matchesSearch(FederatedIdentityLinkRepresentation rep, String search) {
+        if (StringUtil.isBlank(search)) {
+            return true;
+        } else if (search.length() > 1 && search.startsWith("\"") && search.endsWith("\"")) {
+            String name = search.substring(1, search.length() - 1);
+            return rep.getIdentityProvider().equals(name) || rep.getDisplayName().equals(name);
+        } else if (search.length() > 1 && search.startsWith("*") && search.endsWith("*")) {
+            // non-exact searches are case-insensitive, matching the LIKE lower(...) semantics used by
+            // JpaIdentityProviderStorageProvider#getAliasSearchPredicate for the "linked=false" branch
+            String name = search.substring(1, search.length() - 1).toLowerCase(Locale.ROOT);
+            return rep.getIdentityProvider().toLowerCase(Locale.ROOT).contains(name) || rep.getDisplayName().toLowerCase(Locale.ROOT).contains(name);
+        } else if (search.endsWith("*")) {
+            String name = search.substring(0, search.length() - 1).toLowerCase(Locale.ROOT);
+            return rep.getIdentityProvider().toLowerCase(Locale.ROOT).startsWith(name) || rep.getDisplayName().toLowerCase(Locale.ROOT).startsWith(name);
+        } else {
+            String name = search.toLowerCase(Locale.ROOT);
+            return rep.getIdentityProvider().toLowerCase(Locale.ROOT).startsWith(name) || rep.getDisplayName().toLowerCase(Locale.ROOT).startsWith(name);
+        }
+    }
+
+    /**
      * Add a social login provider to the user
      *
      * @param provider Social login provider id
@@ -527,6 +668,10 @@ public class UserResource {
         auth.users().requireManage(user);
         if (session.users().getFederatedIdentity(realm, user, provider) != null) {
             throw ErrorResponse.exists("User is already linked with provider");
+        }
+
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            throw ErrorResponse.error("Cannot add identity provider link to a managed organization member.", Status.BAD_REQUEST);
         }
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
@@ -576,10 +721,13 @@ public class UserResource {
     public Stream<Map<String, Object>> getConsents() {
         auth.users().requireView(user);
 
-        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user);
+        Set<ClientModel> offlineClients = new UserSessionManager(session).findClientsWithOfflineToken(realm, user).stream()
+                .filter(this::canViewClient)
+                .collect(Collectors.toSet());
 
         Set<ClientModel> clientsWithUserConsents = new HashSet<>();
         List<UserConsentModel> userConsents = UserConsentManager.getConsentsStream(session, realm, user)
+                .filter(ucm -> canViewClient(ucm.getClient()))
                  // collect clients with explicit user consents for later filtering
                 .peek(ucm -> clientsWithUserConsents.add(ucm.getClient()))
                 .collect(Collectors.toList());
@@ -663,6 +811,11 @@ public class UserResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
+    @Path("vc")
+    public UserVerifiableCredentialResource verifiableCredentials() {
+        return new UserVerifiableCredentialResource(session, realm, user, auth, adminEvent);
+    }
+
     /**
      * Remove all user sessions associated with the user
      *
@@ -741,11 +894,17 @@ public class UserResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public void disableCredentialType(List<String> credentialTypes) {
-        auth.users().requireManage(user);
-        if (credentialTypes == null) return;
+        if (credentialTypes == null || credentialTypes.isEmpty()) {
+            auth.users().requireManage(user);
+            return;
+        }
         for (String type : credentialTypes) {
+            if (type == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(type)) {
+                auth.users().requireResetPassword(user);
+            } else {
+                auth.users().requireManage(user);
+            }
             user.credentialManager().disableCredentialType(type);
-
         }
     }
 
@@ -782,8 +941,7 @@ public class UserResource {
             throw new BadRequestException("Can't reset password as account is read only");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
@@ -794,8 +952,7 @@ public class UserResource {
             if (logger.isTraceEnabled()) {
                 logger.trace("Could not update user password.", e);
             }
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
+            throw new ErrorResponseException(e.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), e.getMessage(), e.getParameters()),
                     Status.BAD_REQUEST);
         }
         if (cred.isTemporary() != null && cred.isTemporary()) {
@@ -880,6 +1037,11 @@ public class UserResource {
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
+        }
+
         user.credentialManager().removeStoredCredentialById(credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri())
                 .detail(Details.CREDENTIAL_ID, credentialId)
@@ -957,6 +1119,10 @@ public class UserResource {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
+        }
+        // null type is treated as password for backwards compatibility
+        if (credential.getType() == null || CredentialRepresentation.PASSWORD.equalsIgnoreCase(credential.getType())) {
+            auth.users().requireResetPassword(user);
         }
         user.credentialManager().moveStoredCredentialTo(credentialId, newPreviousCredentialId);
     }
@@ -1138,7 +1304,15 @@ public class UserResource {
                                                        @QueryParam("max") Integer maxResults,
                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
-        return user.getGroupsStream(search, firstResult, maxResults).filter(auth.groups()::canView).map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
+        return user.getGroupsStream(search, firstResult, maxResults)
+                .filter(auth.groups()::canView)
+                .map(g -> {
+                    GroupRepresentation rep = ModelToRepresentation.toRepresentation(g, !briefRepresentation);
+                    if (!briefRepresentation) {
+                        GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+                    }
+                    return rep;
+                });
     }
 
     @GET
@@ -1204,8 +1378,7 @@ public class UserResource {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(me.getMessage(), MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
+            throw new ErrorResponseException(me.getMessage(), ErrorResponse.resolveMessage(session, auth.adminAuth().getToken().getLocale(), me.getMessage(), me.getParameters()),
                     Status.BAD_REQUEST);
         }
     }
@@ -1230,6 +1403,7 @@ public class UserResource {
             throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
         auth.groups().requireManageMembership(group);
+        GroupUtils.checkAdminGroupRoles(group, auth);
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);
@@ -1272,17 +1446,38 @@ public class UserResource {
      * client.
      */
     private UserSessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, final String clientUuid) {
-        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession);
-        // Update lastSessionRefresh with the timestamp from clientSession
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUuid);
         if (clientSession == null) {
             return null;
         }
+        UserSessionRepresentation rep = ModelToRepresentation.toRepresentation(userSession, this::canViewClient);
+        // Update lastSessionRefresh with the timestamp from clientSession
         rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
     }
 
+    /**
+     * Checks client view permission once per client for this request, as session listings repeat the same clients.
+     */
+    private boolean canViewClient(ClientModel client) {
+        return clientVisibility.computeIfAbsent(client.getId(), id -> auth.clients().canView(client));
+    }
+
+    /**
+     * A session used only by clients the caller cannot view would reveal that the user uses a hidden client, so it is
+     * left out. A session without any clients, e.g. after its clients were removed, reveals nothing and stays listed.
+     */
+    private boolean hasVisibleClientOrNone(UserSessionModel userSession) {
+        Collection<AuthenticatedClientSessionModel> clientSessions = userSession.getAuthenticatedClientSessions().values();
+        return clientSessions.isEmpty() || clientSessions.stream().anyMatch(cs -> canViewClient(cs.getClient()));
+    }
+
     private SendEmailParams verifySendEmailParams(String redirectUri, String clientId, Integer lifespan) {
+        return verifySendEmailParams(session, realm, user, redirectUri, clientId, lifespan);
+    }
+
+    public static SendEmailParams verifySendEmailParams(KeycloakSession session, RealmModel realm, UserModel user,
+                                                        String redirectUri, String clientId, Integer lifespan) {
         if (user.getEmail() == null) {
             throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
         }
@@ -1320,15 +1515,27 @@ public class UserResource {
         return new SendEmailParams(redirectUri, client.getClientId(), lifespan);
     }
 
-    private static class SendEmailParams {
-        final String redirectUri;
-        final String clientId;
-        final int lifespan;
+    public static class SendEmailParams {
+        private final String redirectUri;
+        private final String clientId;
+        private final int lifespan;
 
         public SendEmailParams(String redirectUri, String clientId, Integer lifespan) {
             this.redirectUri = redirectUri;
             this.clientId = clientId;
             this.lifespan = lifespan;
+        }
+
+        public String getRedirectUri() {
+            return redirectUri;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public int getLifespan() {
+            return lifespan;
         }
     }
 }

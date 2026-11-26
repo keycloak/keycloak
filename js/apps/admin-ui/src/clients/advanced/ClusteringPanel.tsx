@@ -128,7 +128,7 @@ export const ClusteringPanel = ({
             ariaLabelKey="registeredClusterNodes"
             loader={() =>
               Promise.resolve<Node[]>(
-                Object.entries(nodes || {}).map((entry) => {
+                Object.entries(nodes).map((entry) => {
                   return { host: entry[0], registration: entry[1] };
                 }),
               )

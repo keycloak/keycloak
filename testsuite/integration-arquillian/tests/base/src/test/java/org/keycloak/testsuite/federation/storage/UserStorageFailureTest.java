@@ -36,7 +36,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -45,12 +44,12 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProvider;
 import org.keycloak.testsuite.federation.FailableHardcodedStorageProviderFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -87,9 +86,6 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -164,11 +160,11 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
         oauth.doLogin(FailableHardcodedStorageProvider.username, "password");
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(AssertEvents.isUUID())
-                .client("offline-client")
-                .detail(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/offline-client")
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("offline-client")
+                .hasUserId()
+                .details(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
@@ -244,9 +240,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, password);
         System.out.println(driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
-        Assertions.assertTrue(appPage.isCurrent());
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         oauth.openLogoutForm();
     }
 
@@ -391,7 +385,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
         try {
             // force cache to expire
-            setTimeOffset(Math.toIntExact(Duration.ofMinutes(10).toSeconds()));
+            timeOffSet.set(Math.toIntExact(Duration.ofMinutes(10).toSeconds()));
             user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertFalse(user.isEnabled());
             toggleForceFailOnValidation(false);
@@ -399,7 +393,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             assertTrue(user.isEnabled());
 
             // force cache to expire again and make sure user is disabled
-            setTimeOffset(Math.toIntExact(Duration.ofMinutes(20).toSeconds()));
+            timeOffSet.set(Math.toIntExact(Duration.ofMinutes(20).toSeconds()));
             toggleForceFailOnValidation(true);
             user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertFalse(user.isEnabled());
@@ -414,8 +408,56 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertTrue(user.isEnabled());
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
             toggleForceFailOnValidation(false);
+        }
+    }
+
+    @Test
+    public void testUnavailableStorageDoesNotCacheEmptyGroups() {
+        String groupName = "external-group";
+
+        try {
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserStorageUtil.userCache(session).evict(realm);
+                if (session.groups().getGroupByName(realm, null, groupName) == null) {
+                    realm.createGroup(groupName);
+                }
+                FailableHardcodedStorageProvider.groupName = groupName;
+
+                session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+            });
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+                Assertions.assertTrue(user instanceof CachedUserModel);
+            });
+
+            toggleForceFailOnValidation(true);
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+                Assertions.assertEquals(0, user.getGroupsStream().count());
+            });
+
+            toggleForceFailOnValidation(false);
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+                Assertions.assertEquals(groupName, user.getGroupsStream().findFirst().orElseThrow().getName());
+            });
+        } finally {
+            toggleForceFailOnValidation(false);
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+                FailableHardcodedStorageProvider.groupName = null;
+                UserStorageUtil.userCache(session).evict(realm);
+                var group = session.groups().getGroupByName(realm, null, groupName);
+                if (group != null) {
+                    realm.removeGroup(group);
+                }
+            });
         }
     }
 

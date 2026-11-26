@@ -59,6 +59,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.util.ViteManifest;
 import org.keycloak.theme.FreeMarkerException;
+import org.keycloak.theme.ThemeResourcesParser;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
@@ -215,6 +216,7 @@ public class AdminConsole {
         }
 
         final String issuedFor = authResult.token().getIssuedFor();
+        // azp-restricted: it must be the admin console
         if (!Constants.ADMIN_CONSOLE_CLIENT_ID.equals(issuedFor)) {
             if (issuedFor == null) {
                 throw new ForbiddenException("No azp claim in the token");
@@ -262,7 +264,7 @@ public class AdminConsole {
         Locale locale = session.getContext().resolveLocale(user);
 
         return Cors.builder()
-                .allowedOrigins(authResult.token())
+                .checkAllowedOrigins(authResult.token())
                 .allowedMethods("GET")
                 .auth()
                 .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale, Boolean.parseBoolean(user.getFirstAttribute(IS_TEMP_ADMIN_ATTR_NAME)))));
@@ -278,6 +280,11 @@ public class AdminConsole {
         final RealmModel realm = session.realms().getRealmByName(currentRealm);
         if (realm != null) {
             getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
+            RealmModel masterRealm = session.realms().getRealmByName(Config.getAdminRealm());
+            RoleModel adminRole = masterRealm.getRole(AdminRoles.ADMIN);
+            if (adminRole != null && user.hasRole(adminRole)) {
+                realmAdminAccess.get(currentRealm).add(AdminRoles.ADMIN);
+            }
         } else {
             throw new NotFoundException("Realm not found");
         }
@@ -352,6 +359,7 @@ public class AdminConsole {
             map.put("loginRealm", realm.getName());
             map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
+            map.put("themeResources", ThemeResourcesParser.parse(theme.getProperties()));
             map.put("darkMode", "true".equals(theme.getProperties().getProperty("darkMode"))
                     && realm.getAttribute("darkMode", true));
 
@@ -361,18 +369,18 @@ public class AdminConsole {
                 map.put("devServerUrl", devServerUrl);
             }
 
-            final var manifestFile = theme.getResourceAsStream(".vite/manifest.json");
+            try (final var manifestFile = theme.getResourceAsStream(".vite/manifest.json")) {
+                if (devServerUrl == null && manifestFile != null) {
+                    final var manifest = ViteManifest.parseFromInputStream(manifestFile);
+                    final var entryChunk = manifest.getEntryChunk();
+                    final var entryStyles = entryChunk.css().orElse(new String[] {});
+                    final var entryScript = entryChunk.file();
+                    final var entryImports = entryChunk.imports().orElse(new String[] {});
 
-            if (devServerUrl == null && manifestFile != null) {
-                final var manifest = ViteManifest.parseFromInputStream(manifestFile);
-                final var entryChunk = manifest.getEntryChunk();
-                final var entryStyles = entryChunk.css().orElse(new String[] {});
-                final var entryScript = entryChunk.file();
-                final var entryImports = entryChunk.imports().orElse(new String[] {});
-
-                map.put("entryStyles", entryStyles);
-                map.put("entryScript", entryScript);
-                map.put("entryImports", entryImports);
+                    map.put("entryStyles", entryStyles);
+                    map.put("entryScript", entryScript);
+                    map.put("entryImports", entryImports);
+                }
             }
 
             final var freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);

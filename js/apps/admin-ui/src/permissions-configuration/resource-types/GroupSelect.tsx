@@ -40,13 +40,13 @@ export const GroupSelect = ({
     getValues,
     formState: { errors },
   } = useFormContext();
-  const values: string[] = getValues(name!);
+  const values: string[] = getValues(name!) || [];
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
 
   useFetch(
     () => {
-      if (values && values.length > 0) {
+      if (values.length > 0) {
         return Promise.all(
           (values as string[]).map((id) => adminClient.groups.findOne({ id })),
         );
@@ -136,10 +136,11 @@ export const GroupSelect = ({
                     variant="link"
                     className="keycloak__client-authorization__policy-row-remove"
                     icon={<MinusCircleIcon />}
+                    aria-label={t("removeGroup", { name: group.path })}
                     onClick={() => {
                       setValue(name!, [
                         ...convertGroups(
-                          (groups || []).filter(({ id }) => id !== group.id),
+                          groups.filter(({ id }) => id !== group.id),
                         ),
                       ]);
                       setGroups([

@@ -20,6 +20,8 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -121,7 +123,9 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         SessionUpdatesList<V> myUpdates = updates.get(key);
         if (myUpdates == null) {
             SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-            if (wrappedEntity == null) {
+            if (wrappedEntity == null || wrappedEntity.isTombstoneMarker()) {
+                // A tombstone marker is a short-lived leftover of a concurrent removal (see
+                // SessionResurrectionGuardListener); it must never be treated as real session data.
                 return null;
             }
 
@@ -216,7 +220,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             // exists in transaction, avoid cache operation
             return updatesList.getEntityWrapper().getEntity();
         }
-        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+        long lifespanMs = computeLifespan(maxIdle, lifespan);
+        long maxIdleMs = computeMaxIdle(maxIdle, lifespan);
+        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS);
+        existing = resolveTombstoneOnImport(key, existing, session, lifespanMs, maxIdleMs);
         if (existing == null) {
             // keep track of the imported session for updates
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
@@ -224,6 +231,24 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         }
         updates.put(key, new SessionUpdatesList<>(realmModel, existing));
         return existing.getEntity();
+    }
+
+    /**
+     * If {@code existing} is a short-lived tombstone marker left behind by a concurrent removal (see
+     * {@link SessionEntityWrapper#isTombstoneMarker()}), it is not real session data and must not block an
+     * import. This attempts to atomically overwrite it with {@code session}, returning {@code null} on success
+     * so the caller treats the import as if the cache had been empty.
+     */
+    private SessionEntityWrapper<V> resolveTombstoneOnImport(K key, SessionEntityWrapper<V> existing, SessionEntityWrapper<V> session, long lifespanMs, long maxIdleMs) {
+        if (existing == null || !existing.isTombstoneMarker()) {
+            return existing;
+        }
+        if (cacheHolder.cache().replace(key, existing, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)) {
+            return null;
+        }
+        // Lost the race to another writer; use whatever is there now.
+        SessionEntityWrapper<V> current = cacheHolder.cache().get(key);
+        return current != null && current.isTombstoneMarker() ? null : current;
     }
 
     /**
@@ -263,7 +288,10 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
                 //nothing to import, already expired
                 return;
             }
-            var future = cacheHolder.cache().putIfAbsentAsync(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
+            long lifespanMs = computeLifespan(maxIdle, lifespan);
+            long maxIdleMs = computeMaxIdle(maxIdle, lifespan);
+            var future = cacheHolder.cache().putIfAbsentAsync(key, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)
+                    .thenCompose(existing -> resolveTombstoneOnImportAsync(key, existing, session, lifespanMs, maxIdleMs));
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
             stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
         });
@@ -272,10 +300,22 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
         allSessions.forEach((key, wrapper) -> updates.put(key, new SessionUpdatesList<>(realmModel, wrapper)));
     }
 
+    /**
+     * Async counterpart of {@link #resolveTombstoneOnImport}, used by {@link #importSessionsConcurrently}.
+     */
+    private CompletionStage<SessionEntityWrapper<V>> resolveTombstoneOnImportAsync(K key, SessionEntityWrapper<V> existing, SessionEntityWrapper<V> session, long lifespanMs, long maxIdleMs) {
+        if (existing == null || !existing.isTombstoneMarker()) {
+            return CompletableFuture.completedFuture(existing);
+        }
+        return cacheHolder.cache().replaceAsync(key, existing, session, lifespanMs, TimeUnit.MILLISECONDS, maxIdleMs, TimeUnit.MILLISECONDS)
+                .thenCompose(replaced -> replaced ? CompletableFuture.completedFuture(null) : cacheHolder.cache().getAsync(key)
+                        .thenApply(current -> current != null && current.isTombstoneMarker() ? null : current));
+    }
+
     private void lookupAndAndExecuteTask(K key, SessionUpdateTask<V> task) {
         // Lookup entity from cache
         SessionEntityWrapper<V> wrappedEntity = cacheHolder.cache().get(key);
-        if (wrappedEntity == null) {
+        if (wrappedEntity == null || wrappedEntity.isTombstoneMarker()) {
             logger.tracef("Not present cache item for key %s", key);
             return;
         }

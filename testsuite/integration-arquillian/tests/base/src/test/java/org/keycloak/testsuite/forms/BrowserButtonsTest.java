@@ -18,17 +18,19 @@
 package org.keycloak.testsuite.forms;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
@@ -39,7 +41,7 @@ import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UIUtils;
 
@@ -47,6 +49,8 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.chrome.ChromeDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -78,10 +82,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
-
-    @Page
-    protected AppPage appPage;
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -154,16 +155,19 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         updatePasswordPage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
-        UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
+        driver.navigate().back();
+        if (driver instanceof ChromeDriver) {
+            driver.navigate().refresh();
+        }
+        loginExpiredPage.assertCurrent();
 
         // Click browser forward. Assert on "updateProfile" page again
         driver.navigate().forward();
         updatePasswordPage.assertCurrent();
 
-
         // Successfully update password and assert user logged
         updatePassword();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
     private void updateProfile() {
@@ -216,7 +220,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Successfully update password and assert user logged
         updatePassword();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -247,7 +251,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Confirm consent. Assert authenticated
         grantPage.accept();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
     }
 
 
@@ -331,7 +335,8 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
         // Receive email
-        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+        Assertions.assertTrue(mail.waitForIncomingEmail(1));
+        MimeMessage message = mail.getReceivedMessages()[mail.getReceivedMessages().length - 1];
 
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
@@ -386,4 +391,22 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         registerPage.assertCurrent();
     }
 
+    @Test
+     public void executeActionInAnotherFlow() {
+         // open the login page
+         oauth.openLoginForm();
+         loginPage.assertCurrent();
+
+         // execute the action specified but in another flow like reset-credentials
+         String loginUrl = loginPage.getFormUrl();
+         KeycloakUriBuilder resetCredentialsBuilder = KeycloakUriBuilder.fromUri(loginUrl, false);
+         resetCredentialsBuilder.replacePath(Paths.get(resetCredentialsBuilder.getPath()).getParent()
+                 .resolve(LoginActionsService.RESET_CREDENTIALS_PATH).toString(), false);
+         oauth.getDriver().navigate().to(resetCredentialsBuilder.buildAsString());
+         resetPasswordPage.assertCurrent();
+
+         // go back to initial login url, page is expired because flow was reset
+         oauth.getDriver().navigate().to(loginUrl);
+         loginExpiredPage.assertCurrent();
+     }
 }

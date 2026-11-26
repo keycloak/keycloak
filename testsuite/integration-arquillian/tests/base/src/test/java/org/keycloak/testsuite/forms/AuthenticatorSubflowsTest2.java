@@ -26,12 +26,12 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticator;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticatorFactory;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.PushTheButtonPage;
@@ -40,6 +40,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:n1330@me.com">Tomohiro Nagai</a>
@@ -48,9 +49,6 @@ public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswo
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -166,9 +164,9 @@ public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswo
 
         // Fill username+password. I am successfully authenticated.
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
 
@@ -185,9 +183,9 @@ public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswo
 
         // Push the button. I am successfully authenticated.
         pushTheButtonPage.submit();
-        appPage.assertCurrent();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
 }

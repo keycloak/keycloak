@@ -167,6 +167,7 @@ public class UserProfileTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void defaultMaxResults() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
@@ -198,6 +199,7 @@ public class UserProfileTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void defaultMaxResultsBrief() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();

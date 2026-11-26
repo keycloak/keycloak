@@ -1,9 +1,5 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import {
-  KeycloakSpinner,
-  useAlerts,
-  useFetch,
-} from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
   ButtonVariant,
@@ -120,7 +116,11 @@ export default function RealmRoleTabs() {
   );
 
   useFetch(
-    async () => adminClient.clients.findOne({ id: clientId }),
+    // Only look up the client for client roles; looking up with an undefined
+    // id collapses the URI template to the clients list endpoint, which
+    // requires view-clients permission a realm role manager does not need.
+    async () =>
+      clientId ? adminClient.clients.findOne({ id: clientId }) : undefined,
     (client) => {
       if (clientId) setCanManageClientRole(client?.access?.manage as boolean);
     },
@@ -216,7 +216,7 @@ export default function RealmRoleTabs() {
           });
         }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
-        navigate(toOverview());
+        void navigate(toOverview());
       } catch (error) {
         addError("roleDeleteError", error);
       }
@@ -230,7 +230,7 @@ export default function RealmRoleTabs() {
         composites,
       );
       refresh();
-      navigate(toTab("associated-roles"));
+      void navigate(toTab("associated-roles"));
       addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
     } catch (error) {
       addError("addAssociatedRolesError", error);
@@ -238,11 +238,7 @@ export default function RealmRoleTabs() {
   };
 
   const isDefaultRole = (name: string | undefined) =>
-    realm?.defaultRole && realm.defaultRole!.name === name;
-
-  if (!realm) {
-    return <KeycloakSpinner />;
-  }
+    realm.defaultRole && realm.defaultRole!.name === name;
 
   return (
     <>

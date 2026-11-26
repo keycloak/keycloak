@@ -92,7 +92,9 @@ public class PolicyResourceService {
 
         representation.setId(policy.getId());
 
-        RepresentationToModel.toModel(representation, authorization, policy);
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfResourceTypeOrScopesNotProvided(
+                authorization.getKeycloakSession(), resourceServer, representation);
+        RepresentationToModel.updatePolicy(representation, authorization, policy);
 
 
         audit(representation, OperationType.UPDATE);

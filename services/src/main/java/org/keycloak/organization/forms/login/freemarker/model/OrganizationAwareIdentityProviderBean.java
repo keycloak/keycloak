@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.forms.login.freemarker.model;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,10 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -34,6 +38,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 
 import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ALL;
@@ -59,6 +65,21 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         this.organization = Organizations.resolveOrganization(super.session);
         this.onlyRealmBrokers = onlyRealmBrokers;
         this.onlyOrganizationBrokers = onlyOrganizationBrokers;
+    }
+
+    @Override
+    protected IdentityProvider createIdentityProvider(RealmModel realm, URI baseURI, IdentityProviderModel identityProvider) {
+        AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+        if (authSession != null && identityProvider.isLoginHint()) {
+            String username = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
+
+            if (username != null) {
+                baseURI = UriBuilder.fromUri(baseURI).replaceQueryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, "{loginHint}").build(username);
+            }
+        }
+
+        return super.createIdentityProvider(realm, baseURI, identityProvider);
     }
 
     @Override
@@ -123,21 +144,21 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         // use the predicate from the superclass combined with the organization filter.
         return super.federatedProviderPredicate().and(idp -> {
             if (onlyRealmBrokers) {
-                return idp.getOrganizationId() == null;
+                return !idp.hasOrganization();
             } else if (onlyOrganizationBrokers) {
                 return isPublicOrganizationBroker(idp);
             } else {
-                return idp.getOrganizationId() == null || isPublicOrganizationBroker(idp);
+                return !idp.hasOrganization() || isPublicOrganizationBroker(idp);
             }
         });
     }
 
     private boolean isPublicOrganizationBroker(IdentityProviderModel idp) {
 
-        if (idp.getOrganizationId() == null) {
+        if (!idp.hasOrganization()) {
             return false;
         }
-        if (organization != null && !Objects.equals(organization.getId(),idp.getOrganizationId())) {
+        if (organization != null && !idp.isLinkedToOrganization(organization.getId())) {
             return false;
         }
         return Booleans.isFalse(idp.isHideOnLogin());
@@ -159,7 +180,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
     }
 
     private boolean isShownWhenLinkedElsewhere(IdentityProviderModel idp) {
-        if (idp.getOrganizationId() == null) {
+        if (!idp.hasOrganization()) {
             return false;
         }
 
@@ -167,7 +188,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
             return false;
         }
 
-        if (organization != null && !Objects.equals(organization.getId(), idp.getOrganizationId())) {
+        if (organization != null && !idp.isLinkedToOrganization(organization.getId())) {
             return false;
         }
 

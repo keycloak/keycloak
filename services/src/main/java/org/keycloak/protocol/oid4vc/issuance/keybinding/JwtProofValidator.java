@@ -28,9 +28,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.CryptoUtils;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureProviderFactory;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -44,6 +47,7 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -56,6 +60,9 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
+
 /**
  * Validates the conformance and authenticity of presented JWT proofs.
  *
@@ -66,10 +73,8 @@ public class JwtProofValidator extends AbstractProofValidator {
     private static final Logger LOGGER = Logger.getLogger(JwtProofValidator.class);
 
     public static final String PROOF_JWT_TYP = "openid4vci-proof+jwt";
-    private static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
     private static final String KEY_ATTESTATION_CLAIM = "key_attestation";
-    // JOSE private JWK parameters across RSA/EC/OKP/oct key types. TODO: This is not very reliable and should be either removed or improved to cover the cases when other algorithms are introduced in the future
-    private static final Set<String> JWK_PRIVATE_KEY_CLAIMS = Set.of("d", "p", "q", "dp", "dq", "qi", "oth", "k");
+    
     private static final int PROOF_MAX_AGE_SECONDS = 30;
     private static final int PROOF_FUTURE_SKEW_SECONDS = 10;
     private final AttestationKeyResolver keyResolver;
@@ -148,7 +153,8 @@ public class JwtProofValidator extends AbstractProofValidator {
         Map<String, Object> headerClaims = JsonSerialization.mapper.convertValue(jwsHeader,
                 new TypeReference<>() {
                 });
-        validateNoPrivateKeyInHeaderClaims(headerClaims);
+        String algorithm = jwsHeader.getAlgorithm().name();
+        validateNoPrivateKeyInHeaderClaims(algorithm, headerClaims);
         KeyAttestationInfo attestationInfo = resolveHeaderAttestation(vcIssuanceContext, headerClaims);
 
         // Handle both JWK and kid cases for the proof key
@@ -173,7 +179,7 @@ public class JwtProofValidator extends AbstractProofValidator {
                 }
             }
         } else if (jwsHeader.getX5c() != null && !jwsHeader.getX5c().isEmpty()) {
-            jwk = AttestationValidatorUtil.resolveJwkFromValidatedX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
+            jwk = AttestationValidatorUtil.resolveJwkFromProofX5c(jwsHeader.getX5c(), jwsHeader.getAlgorithm().name());
         } else {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing binding key. JWT must contain either jwk, kid, or x5c in header.");
         }
@@ -213,11 +219,21 @@ public class JwtProofValidator extends AbstractProofValidator {
             return;
         }
 
-        // If binding is required, this implementation currently only supports the "jwk" method.
-        if (!vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported()
-                .contains(CRYPTOGRAPHIC_BINDING_METHOD_JWK)) {
-            throw new IllegalStateException("This SD-JWT implementation only supports jwk as cryptographic binding method");
+        String expectedBindingMethod = getExpectedCryptographicBindingMethod(vcIssuanceContext.getCredentialConfig());
+        if (!vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported().contains(expectedBindingMethod)) {
+            throw new IllegalStateException("JWT proof validation only supports "
+                    + expectedBindingMethod + " cryptographic binding for credential format "
+                    + vcIssuanceContext.getCredentialConfig().getFormat());
         }
+    }
+
+    private static String getExpectedCryptographicBindingMethod(SupportedCredentialConfiguration credentialConfiguration) {
+        // OID4VCI 1.0 Appendix F.1 defines JWT proof key transport as JOSE (jwk, kid, or x5c). This metadata value
+        // is different: Section 12.2.4 describes the representation used inside the issued credential.
+        if (VCFormat.MSO_MDOC.equals(credentialConfiguration.getFormat())) {
+            return CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+        }
+        return CRYPTOGRAPHIC_BINDING_METHOD_JWK;
     }
 
     private Optional<List<String>> getProofFromContext(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
@@ -230,7 +246,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         Proofs proofs = credentialRequest != null ? credentialRequest.getProofs() : null;
 
         // If no proof types are configured for this credential configuration, cryptographic binding is
-        // not required and we must not enforce presence of proofs. However, if a JWT proof is supplied,
+        // not required, and we must not enforce presence of proofs. However, if a JWT proof is supplied,
         // reject it explicitly rather than silently ignoring an unconfigured proof input.
         // Note: do not use Optional.map(getProofTypesSupported): a null ProofTypesSupported must still run this logic.
         if (proofTypesSupported == null
@@ -247,7 +263,10 @@ public class JwtProofValidator extends AbstractProofValidator {
 
         Map<String, SupportedProofTypeData> supportedProofTypes = proofTypesSupported.getSupportedProofTypes();
         Optional.ofNullable(supportedProofTypes.get(ProofType.JWT))
-                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "SD-JWT supports only jwt proof type."));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, String.format(
+                        "%s credentials do not support jwt proof type.",
+                        config.getFormat()
+                )));
 
         // At this point, JWT is an explicitly supported proof type and must be enforced.
         if (proofs == null || proofs.getJwt() == null || proofs.getJwt().isEmpty()) {
@@ -271,7 +290,7 @@ public class JwtProofValidator extends AbstractProofValidator {
      */
     private void validateJwsHeader(VCIssuanceContext vcIssuanceContext, JWSHeader jwsHeader) throws VCIssuerException {
         String alg = Optional.ofNullable(jwsHeader.getAlgorithm())
-                .map(algorithm -> algorithm.name())
+                .map(Enum::name)
                 .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing jwsHeader claim alg"));
         if (!CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(keycloakSession).contains(alg)) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Proof signature algorithm not supported: " + alg);
@@ -311,6 +330,11 @@ public class JwtProofValidator extends AbstractProofValidator {
     private KeyAttestationInfo resolveHeaderAttestation(VCIssuanceContext vcIssuanceContext, Map<String, Object> headerClaims)
             throws JWSInputException, VerificationException {
         if (!headerClaims.containsKey(KEY_ATTESTATION_CLAIM)) {
+            KeyAttestationsRequired attestationRequirements = AttestationValidatorUtil.getAttestationRequirements(vcIssuanceContext, ProofType.JWT);
+            if (attestationRequirements != null) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "key_attestation JWT header claim is required by the credential configuration but was not provided");
+            }
             return KeyAttestationInfo.absent();
         }
 
@@ -329,7 +353,6 @@ public class JwtProofValidator extends AbstractProofValidator {
         if (attestedKeys == null || attestedKeys.isEmpty()) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "key_attestation does not contain attested keys");
         }
-
         return new KeyAttestationInfo(attestedKeys);
     }
 
@@ -366,12 +389,21 @@ public class JwtProofValidator extends AbstractProofValidator {
         }
     }
 
-    private void validateNoPrivateKeyInHeaderClaims(Map<String, Object> headerClaims) {
+    /**
+     * Rejects proofs containing private key material in their JWK header claim.
+     */
+    void validateNoPrivateKeyInHeaderClaims(String algorithm, Map<String, Object> headerClaims) {
         Object jwkClaim = headerClaims.get("jwk");
         if (!(jwkClaim instanceof Map<?, ?> jwkMap)) {
             return;
         }
-        for (String privateClaim : JWK_PRIVATE_KEY_CLAIMS) {
+
+        Object factory = keycloakSession.getKeycloakSessionFactory()
+                .getProviderFactory(SignatureProvider.class, algorithm);
+
+        Set<String> privateClaimNames = getPrivateClaimNames(algorithm, factory);
+
+        for (String privateClaim : privateClaimNames) {
             if (jwkMap.containsKey(privateClaim)) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF,
                         "JWK header must not contain private key material claim: " + privateClaim);
@@ -379,10 +411,25 @@ public class JwtProofValidator extends AbstractProofValidator {
         }
     }
 
+    private static Set<String> getPrivateClaimNames(String algorithm, Object factory) {
+        if (!(factory instanceof SignatureProviderFactory signatureProviderFactory)) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "No SignatureProviderFactory found for algorithm: " + algorithm);
+        }
+
+        Set<String> privateClaimNames = signatureProviderFactory.getJwkPrivateKeyClaims();
+
+        if (privateClaimNames.isEmpty()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "SignatureProviderFactory for algorithm " + algorithm + " does not define private JWK claims");
+        }
+        return privateClaimNames;
+    }
+
     private void validateProofPayload(VCIssuanceContext vcIssuanceContext, AccessToken proofPayload)
             throws VCIssuerException, VerificationException {
         AuthenticationManager.AuthResult authResult = vcIssuanceContext.getAuthResult();
-        AccessToken requestToken = authResult != null ? authResult.getToken() : null;
+        AccessToken requestToken = authResult != null ? authResult.token() : null;
         String expectedClientId = requestToken != null ? requestToken.getIssuedFor() : null;
         String proofIssuer = proofPayload.getIssuer();
 
@@ -430,11 +477,17 @@ public class JwtProofValidator extends AbstractProofValidator {
         if (cNonceHandler == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler not configured");
         }
+        if (!cNonceHandler.supportsCNonceTokenRetrieval()) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "CNonce handler does not support token retrieval");
+        }
         try {
-            cNonceHandler.verifyCNonce(proofPayload.getNonce(),
-                    List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
-                    Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
-                            OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
+            vcIssuanceContext.addVerifiedCNonce(
+                    proofPayload.getNonce(),
+                    cNonceHandler.verifyCNonceAndGetToken(
+                            proofPayload.getNonce(),
+                            List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                            Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                                    OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext))));
         } catch (VerificationException e) {
             throw new VCIssuerException(ErrorType.INVALID_NONCE, e.getMessage());
         }

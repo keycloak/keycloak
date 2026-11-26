@@ -118,6 +118,61 @@ public class KeycloakSanitizerTest {
         assertResult("<p><a href=\"https://localhost?key=123&msg=abc\" rel=\"nofollow\">link1</a><a href=\"https://localhost?key=abc&msg=123\" rel=\"nofollow\">link2</a></p>", html);
     }
 
+    @Test
+    public void testJavascriptUrlViaNumericCharacterReferenceIsNeutralized() throws Exception {
+        List<String> html = new ArrayList<>();
+
+        html.add("<a href=\"javascript&#58alert(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"javascript&#x3aprompt(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"javascript&#X3Aprompt(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"javascript&#0000058alert(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"JaVaScRiPt&#58alert(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"java&#115cript&#58alert(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"java&#10script&#58alert(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"java&#9script&#58alert(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"vbscript&#58msgbox(xss)\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"data&#58text/plain,hello\">link</a>");
+        assertResult("<a href=\"\" rel=\"nofollow\">link</a>", html);
+
+        html.set(0, "<a href=\"javascript&#58;alert(xss)\">link</a>");
+        assertResult("link", html);
+
+        html.set(0, "<a href=\"javascript&colon;alert(xss)\">link</a>");
+        assertResult("link", html);
+    }
+
+    @Test
+    public void testLegitimateMarkupAndLinksArePreserved() throws Exception {
+        List<String> html = new ArrayList<>();
+
+        html.add("<b>ACME Corp</b>");
+        assertResult("<b>ACME Corp</b>", html);
+
+        html.set(0, "<a href=\"https://www.example.org/welcome\">Welcome</a>");
+        assertResult("<a href=\"https://www.example.org/welcome\" rel=\"nofollow\">Welcome</a>", html);
+
+        html.set(0, "<a href=\"https://kc.example.org/realms/r/login-actions/action-token?key=abc.def&client_id=account&tab_id=x1\">verify</a>");
+        assertResult("<a href=\"https://kc.example.org/realms/r/login-actions/action-token?key=abc.def&client_id=account&tab_id=x1\" rel=\"nofollow\">verify</a>", html);
+    }
+
     private void assertResult(String expectedResult, List<String> html) throws Exception {
         String result = kcEscape.exec(html).toString();
         assertEquals(expectedResult, result);

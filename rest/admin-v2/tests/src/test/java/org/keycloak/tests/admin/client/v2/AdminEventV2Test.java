@@ -17,20 +17,15 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-
-import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -39,13 +34,6 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,6 +49,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -71,14 +60,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AdminEventV2Test extends AbstractClientApiV2Test {
     private static final String TEST_CLIENT_ID = "v2-rep-test-client";
 
-    @InjectHttpClient
-    CloseableHttpClient client;
-
-    @InjectRealm(attachTo = "master", ref = "master")
-    ManagedRealm masterRealm;
-
     @InjectRunOnServer
     RunOnServerClient runOnServer;
+
+    @InjectRealm
+    ManagedRealm testRealm;
+
+    @Override
+    public String getRealmName() {
+        return testRealm.getName();
+    }
 
     @BeforeEach
     public void setupAndClearEvents() {
@@ -87,14 +78,14 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
             System.setProperty("kc.admin-v2.client-service.events.enabled", "true");
         });
 
-        // Enable admin events on master realm
-        RealmEventsConfigRepresentation eventsConfig = masterRealm.admin().getRealmEventsConfig();
+        // Enable admin events on test realm
+        RealmEventsConfigRepresentation eventsConfig = testRealm.admin().getRealmEventsConfig();
         eventsConfig.setAdminEventsEnabled(true);
         eventsConfig.setAdminEventsDetailsEnabled(true);
-        masterRealm.admin().updateRealmEventsConfig(eventsConfig);
+        testRealm.admin().updateRealmEventsConfig(eventsConfig);
         
         // Clear any existing events
-        masterRealm.admin().clearAdminEvents();
+        testRealm.admin().clearAdminEvents();
     }
 
     @AfterEach
@@ -110,7 +101,7 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
         createTestClient();
         try {
             // Verify v2 events were fired
-            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+            List<AdminEventRepresentation> events = testRealm.admin().getAdminEvents();
 
             // Should have at least 1 event
             assertThat("Should have at least 1 event", events.size(), greaterThanOrEqualTo(1));
@@ -133,20 +124,13 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     public void updateClientFiresV2Event() throws Exception {
         createTestClient();
         try {
-            masterRealm.admin().clearAdminEvents();
-
-            HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
-            setAuthHeader(updateRequest);
-            updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
+            testRealm.admin().clearAdminEvents();
             OIDCClientRepresentation rep = getTestClientRepresentation();
             // update the client
             rep.setDescription("Updated description");
 
-            updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-            try (var response = client.execute(updateRequest)) {
-                assertEquals(200, response.getStatusLine().getStatusCode());
+            try (var response = getClientApi(TEST_CLIENT_ID).createOrUpdateClient(rep)) {
+                assertEquals(200, response.getStatus());
             }
 
             assertUpdateEventFired("Updated description");
@@ -159,21 +143,12 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     public void patchClientFiresV2Event() throws Exception {
         createTestClient();
         try {
-            masterRealm.admin().clearAdminEvents();
-
-            HttpPatch patchRequest = new HttpPatch(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
-            setAuthHeader(patchRequest);
-
-            patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+            testRealm.admin().clearAdminEvents();
 
             OIDCClientRepresentation patch = new OIDCClientRepresentation();
             patch.setDescription("Patched description");
 
-            patchRequest.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
-
-            try (var response = client.execute(patchRequest)) {
-                assertEquals(200, response.getStatusLine().getStatusCode());
-            }
+            assertNotNull(getClientApi(TEST_CLIENT_ID).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch))));
 
             assertUpdateEventFired("Patched description");
         } finally {
@@ -185,17 +160,14 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     public void deleteClientFiresV2Event() throws Exception {
         createTestClient();
         try {
-            masterRealm.admin().clearAdminEvents();
+            testRealm.admin().clearAdminEvents();
 
-            HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
-            setAuthHeader(deleteRequest);
-
-            try (var response = client.execute(deleteRequest)) {
-                assertEquals(204, response.getStatusLine().getStatusCode());
+            try (var response = getClientApi(TEST_CLIENT_ID).deleteClient()) {
+                assertEquals(204, response.getStatus());
             }
 
             // Verify v2 DELETE event was fired
-            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+            List<AdminEventRepresentation> events = testRealm.admin().getAdminEvents();
 
             // Find the v2 event
             AdminEventRepresentation v2Event = events.stream()
@@ -227,21 +199,19 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
             assertThat(eventRepresentation.getAuth().getSecret(), is(not(testClientRep.getAuth().getSecret())));
             assertThat(eventRepresentation.getAuth().getSecret(), is("**********"));
 
-            try (var response = client.execute(deleteRequest)) {
-                assertEquals(404, response.getStatusLine().getStatusCode());
+            try (var response = getClientApi(TEST_CLIENT_ID).deleteClient()) {
+                assertEquals(404, response.getStatus());
             }
         } finally {
-            HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
-            setAuthHeader(deleteRequest);
-            try (var response = client.execute(deleteRequest)) {
-                assertThat(response.getStatusLine().getStatusCode(), anyOf(is(204), is(404)));
+            try (var response = getClientApi(TEST_CLIENT_ID).deleteClient()) {
+                assertThat(response.getStatus(), anyOf(is(204), is(404)));
             }
         }
     }
 
     private void assertUpdateEventFired(String newDescription){
         // Verify v2 UPDATE event was fired
-        List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+        List<AdminEventRepresentation> events = testRealm.admin().getAdminEvents();
 
         // Find the v2 event (has apiVersion=v2 in details)
         AdminEventRepresentation v2Event = events.stream()
@@ -264,7 +234,7 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
         createTestClient();
         try {
             // Verify v2 event contains the v2 representation format
-            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+            List<AdminEventRepresentation> events = testRealm.admin().getAdminEvents();
 
             // Find the v2 event
             AdminEventRepresentation v2Event = events.stream()
@@ -288,66 +258,10 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
         }
     }
 
-    @Test
-    public void stripSamlSigningCertificateFromRepresentation() throws Exception {
-        var SAML_CLIENT_ID = "saml-with-certificate";
-
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
-        SAMLClientRepresentation samlRep = new SAMLClientRepresentation();
-        samlRep.setEnabled(true);
-        samlRep.setClientId(SAML_CLIENT_ID);
-        samlRep.setSigningCertificate("""
-                -----BEGIN CERTIFICATE-----
-                MIIDqDCCApCgAwIBAgIUY0R7RzJQbQJx9z3Y+0l9v0E2XQkwDQYJKoZIhvcNAQEL
-                BQAwgYUxCzAJBgNVBAYTAkRFMRMwEQYDVQQIDApTb21lLVN0YXRlMRMwEQYDVQQH
-                DApTb21lLUNpdHkxFTATBgNVBAoMDEV4YW1wbGUgT3JnMR8wHQYDVQQLDBZJZGVu
-                dGl0eSAmIEFjY2VzczE-HELLO-HOW-ARE-YOU-AwwQZXhhbXBsZS5jb20wHhcNMj
-                MDAwWhcNMjYwMTAxMDAwMDAwWjCBhTELMAkGA1UEBhMCREUxEzARBgNVBAgMClNv
-                bWUtU3RhdGUxEzARBgNVBAcMClNvbWUtQ2l0eTEVMBMGA1UECgwMRXhhbXBsZSBP
-                cmcxHzAdBgNVBAsMFklkZW50aXR5ICYgQWNjZXNzMRkwFwYDVQQDDBBleGFtcGxl
-                LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL+...
-                -----END CERTIFICATE-----
-                """);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(samlRep)));
-
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertEquals(201, response.getStatusLine().getStatusCode());
-        }
-
-        try {
-            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
-
-            // Find the v2 event
-            AdminEventRepresentation v2Event = events.stream()
-                    .filter(e -> e.getDetails() != null && API_VERSION_V2.equals(e.getDetails().get(API_VERSION_DETAIL_KEY)))
-                    .findFirst()
-                    .orElse(null);
-
-            assertThat("V2 event should be present", v2Event, notNullValue());
-            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2"));
-            var representation = v2Event.getRepresentation();
-            assertThat("V2 event should have representation", representation, notNullValue());
-            assertThat("V2 event should have masked signing certificate in representation", representation, containsString("\"signingCertificate\":\"**********\""));
-        } finally {
-            deleteClient(SAML_CLIENT_ID);
-        }
-    }
-
     private void createTestClient() throws Exception {
         // Create a client via v2 API (representation details already enabled in @BeforeEach)
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
-        request.setEntity(new StringEntity(mapper.writeValueAsString(getTestClientRepresentation())));
-
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertEquals(201, response.getStatusLine().getStatusCode());
+        try (var response = getClientsApi().createClient(getTestClientRepresentation())) {
+            assertEquals(201, response.getStatus());
         }
     }
 
@@ -356,10 +270,8 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     }
 
     private void deleteClient(String clientId) throws Exception {
-        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
-        setAuthHeader(deleteRequest);
-        try (var response = client.execute(deleteRequest)) {
-            assertEquals(204, response.getStatusLine().getStatusCode());
+        try (var response = getClientApi(clientId).deleteClient()) {
+            assertEquals(204, response.getStatus());
         }
     }
 

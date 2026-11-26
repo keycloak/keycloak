@@ -95,6 +95,10 @@ public class KeycloakServerConfigBuilder {
         return this.externalInfinispan;
     }
 
+    public KeycloakServerConfigBuilder cacheEmbeddedClusterName(String clusterName) {
+        return option("cache-embedded-cluster-name", clusterName);
+    }
+
     public KeycloakServerConfigBuilder shutdownDelay(String shutdownDelay) {
         this.shutdownDelay = shutdownDelay;
         return this;
@@ -132,7 +136,9 @@ public class KeycloakServerConfigBuilder {
      * @return
      */
     public KeycloakServerConfigBuilder featuresDisabled(Profile.Feature... features) {
-        this.featuresDisabled.addAll(toFeatureStrings(features));
+        this.featuresDisabled.addAll(Arrays.stream(features)
+                .map(Profile.Feature::getUnversionedKey)
+                .collect(Collectors.toSet()));
         return this;
     }
 

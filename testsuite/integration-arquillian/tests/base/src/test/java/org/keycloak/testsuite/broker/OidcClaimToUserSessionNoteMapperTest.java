@@ -28,6 +28,7 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -140,6 +141,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
                 .client("broker-app", consumerClientRep.getSecret())
                 .redirectUri(getAuthServerRoot() + "realms/" + bc.consumerRealmName() + "/app");
         AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
+        Assertions.assertTrue(authzResponse.isSuccess());
 
         String code = authzResponse.getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);

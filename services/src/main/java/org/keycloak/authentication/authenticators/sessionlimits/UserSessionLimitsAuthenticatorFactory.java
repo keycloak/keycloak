@@ -32,7 +32,7 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
 
     @Override
     public String getReferenceCategory() {
-        return null;
+        return USER_SESSION_LIMITS;
     }
 
     @Override

@@ -138,7 +138,11 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setName(String name) {
+        if (Objects.equals(getName(), name)) {
+            return;
+        }
         realm.setName(name);
+        // Flush here to trigger the unique constraint name
         em.flush();
     }
 
@@ -170,7 +174,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setEnabled(boolean enabled) {
         realm.setEnabled(enabled);
-        em.flush();
     }
 
     @Override
@@ -181,7 +184,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setSslRequired(SslRequired sslRequired) {
         realm.setSslRequired(sslRequired.name());
-        em.flush();
     }
 
     @Override
@@ -192,7 +194,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setUserManagedAccessAllowed(boolean userManagedAccessAllowed) {
         realm.setAllowUserManagedAccess(userManagedAccessAllowed);
-        em.flush();
     }
 
     @Override
@@ -203,7 +204,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setRegistrationAllowed(boolean registrationAllowed) {
         realm.setRegistrationAllowed(registrationAllowed);
-        em.flush();
     }
 
     @Override
@@ -215,7 +215,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     public void setRegistrationEmailAsUsername(boolean registrationEmailAsUsername) {
         realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
         if (registrationEmailAsUsername) realm.setDuplicateEmailsAllowed(false);
-        em.flush();
     }
 
     @Override
@@ -226,34 +225,82 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setRememberMe(boolean rememberMe) {
         realm.setRememberMe(rememberMe);
-        em.flush();
     }
 
     @Override
     public void setAttribute(String name, String value) {
+        updateAttribute(name, value);
+    }
+
+    /**
+     * Sets the attribute and publishes a {@link RealmModel.RealmAttributeUpdateEvent} if the value changed.
+     *
+     * @return {@code true} if the value changed and the event was published, {@code false} for a no-op write
+     */
+    private boolean updateAttribute(String name, String value) {
+        RealmAttributeEntity existing = null;
         for (RealmAttributeEntity attr : realm.getAttributes()) {
             if (attr.getName().equals(name)) {
-                attr.setValue(value);
-                return;
+                existing = attr;
+                break;
             }
         }
-        RealmAttributeEntity attr = new RealmAttributeEntity();
-        attr.setName(name);
-        attr.setValue(value);
-        attr.setRealm(realm);
-        em.persist(attr);
-        realm.getAttributes().add(attr);
+        if (existing != null) {
+            if (Objects.equals(existing.getValue(), value)) {
+                return false;
+            }
+            existing.setValue(value);
+        } else {
+            RealmAttributeEntity attr = new RealmAttributeEntity();
+            attr.setName(name);
+            attr.setValue(value);
+            attr.setRealm(realm);
+            em.persist(attr);
+            realm.getAttributes().add(attr);
+        }
+        publishRealmAttributeUpdateEvent(name, value);
+        return true;
+    }
+
+    private void publishRealmAttributeUpdateEvent(String name, String value) {
+        session.getKeycloakSessionFactory().publish(new RealmModel.RealmAttributeUpdateEvent() {
+
+            @Override
+            public RealmModel getRealm() {
+                return RealmAdapter.this;
+            }
+
+            @Override
+            public String getAttributeName() {
+                return name;
+            }
+
+            @Override
+            public String getAttributeValue() {
+                return value;
+            }
+
+            @Override
+            public KeycloakSession getKeycloakSession() {
+                return session;
+            }
+        });
     }
 
     @Override
     public void removeAttribute(String name) {
+        boolean removed = false;
         Iterator<RealmAttributeEntity> it = realm.getAttributes().iterator();
         while (it.hasNext()) {
             RealmAttributeEntity attr = it.next();
             if (attr.getName().equals(name)) {
                 it.remove();
                 em.remove(attr);
+                removed = true;
             }
+        }
+        if (removed) {
+            publishRealmAttributeUpdateEvent(name, null);
         }
     }
 
@@ -409,7 +456,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setVerifyEmail(boolean verifyEmail) {
         realm.setVerifyEmail(verifyEmail);
-        em.flush();
     }
 
     @Override
@@ -421,7 +467,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     public void setLoginWithEmailAllowed(boolean loginWithEmailAllowed) {
         realm.setLoginWithEmailAllowed(loginWithEmailAllowed);
         if (loginWithEmailAllowed) realm.setDuplicateEmailsAllowed(false);
-        em.flush();
     }
 
     @Override
@@ -436,7 +481,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             realm.setLoginWithEmailAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
         }
-        em.flush();
     }
 
     @Override
@@ -447,7 +491,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setResetPasswordAllowed(boolean resetPasswordAllowed) {
         realm.setResetPasswordAllowed(resetPasswordAllowed);
-        em.flush();
     }
 
     @Override
@@ -458,7 +501,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setEditUsernameAllowed(boolean editUsernameAllowed) {
         realm.setEditUsernameAllowed(editUsernameAllowed);
-        em.flush();
     }
 
     @Override
@@ -499,7 +541,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAccessTokenLifespan(int tokenLifespan) {
         realm.setAccessTokenLifespan(tokenLifespan);
-        em.flush();
     }
 
     @Override
@@ -631,7 +672,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAccessCodeLifespan(int accessCodeLifespan) {
         realm.setAccessCodeLifespan(accessCodeLifespan);
-        em.flush();
     }
 
     @Override
@@ -642,7 +682,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAccessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
         realm.setAccessCodeLifespanUserAction(accessCodeLifespanUserAction);
-        em.flush();
     }
 
     @Override
@@ -683,7 +722,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAccessCodeLifespanLogin(int accessCodeLifespanLogin) {
         realm.setAccessCodeLifespanLogin(accessCodeLifespanLogin);
-        em.flush();
     }
 
     @Override
@@ -732,7 +770,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     public void addRequiredCredential(String type) {
         RequiredCredentialModel model = initRequiredCredentialModel(type);
         addRequiredCredential(model);
-        em.flush();
     }
 
     public void addRequiredCredential(RequiredCredentialModel model) {
@@ -744,7 +781,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         entity.setFormLabel(model.getFormLabel());
         em.persist(entity);
         realm.getRequiredCredentials().add(entity);
-        em.flush();
     }
 
     @Override
@@ -770,7 +806,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                 addRequiredCredential(cred);
             }
         }
-        em.flush();
     }
 
 
@@ -790,17 +825,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         if (groupsIds.contains(group.getId())) return;
 
         groupsIds.add(group.getId());
-        em.flush();
         GroupUpdatedEvent.fire(group, session);
     }
 
     @Override
     public void removeDefaultGroup(GroupModel group) {
-        Collection<String> groupIds = realm.getDefaultGroupIds();
-
-        if (groupIds.remove(group.getId())) {
-            em.flush();
-        }
+        realm.getDefaultGroupIds().remove(group.getId());
     }
 
     @Override
@@ -893,7 +923,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setSmtpConfig(Map<String, String> smtpConfig) {
         realm.setSmtpConfig(smtpConfig);
-        em.flush();
     }
 
 
@@ -949,7 +978,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     public void setPasswordPolicy(PasswordPolicy policy) {
         this.passwordPolicy = policy;
         realm.setPasswordPolicy(policy.toString());
-        em.flush();
     }
 
     @Override
@@ -976,7 +1004,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         realm.setOtpPolicyType(policy.getType());
         realm.setOtpPolicyPeriod(policy.getPeriod());
         setAttribute(OTPPolicy.REALM_REUSABLE_CODE_ATTRIBUTE, policy.isCodeReusable());
-        em.flush();
     }
 
 
@@ -1044,6 +1071,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         }
         policy.setRequireResidentKey(requireResidentKey);
 
+        String residentKey = getAttribute(RealmAttributes.WEBAUTHN_POLICY_RESIDENT_KEY + attributePrefix);
+        if (residentKey == null || residentKey.isEmpty()) {
+            residentKey = defaultConfig.getResidentKey();
+        }
+        policy.setResidentKey(residentKey);
+
         String userVerificationRequirement = getAttribute(RealmAttributes.WEBAUTHN_POLICY_USER_VERIFICATION_REQUIREMENT + attributePrefix);
         if (userVerificationRequirement == null || userVerificationRequirement.isEmpty()) {
             userVerificationRequirement = defaultConfig.getUserVerificationRequirement();
@@ -1110,6 +1143,9 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         String authenticatorAttachment = policy.getAuthenticatorAttachment();
         setAttribute(RealmAttributes.WEBAUTHN_POLICY_AUTHENTICATOR_ATTACHMENT + attributePrefix, authenticatorAttachment);
 
+        String residentKey = policy.getResidentKey();
+        setAttribute(RealmAttributes.WEBAUTHN_POLICY_RESIDENT_KEY + attributePrefix, residentKey);
+
         String requireResidentKey = policy.getRequireResidentKey();
         setAttribute(RealmAttributes.WEBAUTHN_POLICY_REQUIRE_RESIDENT_KEY + attributePrefix, requireResidentKey);
 
@@ -1175,7 +1211,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setLoginTheme(String name) {
         realm.setLoginTheme(name);
-        em.flush();
     }
 
     @Override
@@ -1186,7 +1221,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAccountTheme(String name) {
         realm.setAccountTheme(name);
-        em.flush();
     }
 
     @Override
@@ -1197,7 +1231,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAdminTheme(String name) {
         realm.setAdminTheme(name);
-        em.flush();
     }
 
     @Override
@@ -1208,7 +1241,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setEmailTheme(String name) {
         realm.setEmailTheme(name);
-        em.flush();
     }
 
     @Override
@@ -1219,7 +1251,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setEventsEnabled(boolean enabled) {
         realm.setEventsEnabled(enabled);
-        em.flush();
     }
 
     @Override
@@ -1230,7 +1261,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setEventsExpiration(long expiration) {
         realm.setEventsExpiration(expiration);
-        em.flush();
     }
 
     @Override
@@ -1241,7 +1271,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setEventsListeners(Set<String> listeners) {
         realm.setEventsListeners(listeners);
-        em.flush();
     }
 
     @Override
@@ -1252,7 +1281,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setEnabledEventTypes(Set<String> enabledEventTypes) {
         realm.setEnabledEventTypes(enabledEventTypes);
-        em.flush();
     }
 
     @Override
@@ -1263,7 +1291,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAdminEventsEnabled(boolean enabled) {
         realm.setAdminEventsEnabled(enabled);
-        em.flush();
     }
 
     @Override
@@ -1274,7 +1301,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setAdminEventsDetailsEnabled(boolean enabled) {
         realm.setAdminEventsDetailsEnabled(enabled);
-        em.flush();
     }
 
     @Override
@@ -1294,33 +1320,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public void setAdminPermissionsEnabled(boolean adminPermissionsEnabled) {
-        boolean isAdminPermissionsAlreadyEnabled = getAdminPermissionsClient() != null;
-        setAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, adminPermissionsEnabled);
+        boolean published = updateAttribute(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
 
-        // sending an event if we are enabling the permissions and it was not enabled already
-        if (adminPermissionsEnabled && !isAdminPermissionsAlreadyEnabled) {
-            session.getKeycloakSessionFactory().publish(new RealmModel.RealmAttributeUpdateEvent() {
-
-                @Override
-                public RealmModel getRealm() {
-                    return RealmAdapter.this;
-                }
-
-                @Override
-                public String getAttributeName() {
-                    return RealmAttributes.ADMIN_PERMISSIONS_ENABLED;
-                }
-
-                @Override
-                public String getAttributeValue() {
-                    return String.valueOf(adminPermissionsEnabled);
-                }
-
-                @Override
-                public KeycloakSession getKeycloakSession() {
-                    return session;
-                }
-            });
+        // updateAttribute already published the update if the value changed. This explicit publish
+        // covers only the repair case where the attribute was already "true" but the admin
+        // permissions client is missing, keeping one event per change.
+        if (!published && adminPermissionsEnabled && getAdminPermissionsClient() == null) {
+            publishRealmAttributeUpdateEvent(RealmAttributes.ADMIN_PERMISSIONS_ENABLED, String.valueOf(adminPermissionsEnabled));
         }
     }
 
@@ -1360,7 +1366,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     public void setMasterAdminClient(ClientModel client) {
         String appEntityId = client !=null ? em.getReference(ClientEntity.class, client.getId()).getId() : null;
         realm.setMasterAdminClient(appEntityId);
-        em.flush();
     }
 
     @Override
@@ -1427,7 +1432,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setInternationalizationEnabled(boolean enabled) {
         realm.setInternationalizationEnabled(enabled);
-        em.flush();
     }
 
     @Override
@@ -1438,7 +1442,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setSupportedLocales(Set<String> locales) {
         realm.setSupportedLocales(locales);
-        em.flush();
     }
 
     @Override
@@ -1449,7 +1452,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setDefaultLocale(String locale) {
         realm.setDefaultLocale(locale);
-        em.flush();
     }
 
     @Override
@@ -1622,6 +1624,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         AuthenticationFlowEntity entity = getAuthenticationFlowEntity(model.getId(), true);
         if (entity == null) return;
         em.remove(entity);
+        // Flush so that the removed entity is no longer returned by the lazily loaded collections of the realm entity
         em.flush();
     }
 
@@ -1740,9 +1743,18 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         entity.setFlowId(model.getFlowId());
         if (model.getParentFlow() != null) {
             AuthenticationFlowEntity flow = em.find(AuthenticationFlowEntity.class, model.getParentFlow());
+            AuthenticationFlowEntity oldFlow = entity.getParentFlow();
             entity.setParentFlow(flow);
+            if (oldFlow != flow) {
+                // Reading a lazy collection doesn't flush, and removing the execution from the old collection would orphan-delete it.
+                // Instead, flush the changed parent and reload the collections.
+                em.flush();
+                if (oldFlow != null) {
+                    em.refresh(oldFlow);
+                }
+                em.refresh(flow);
+            }
         }
-        em.flush();
     }
 
     @Override
@@ -1750,6 +1762,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         AuthenticationExecutionEntity entity = getAuthenticationExecution(model.getId(), true);
         if (entity == null) return;
         em.remove(entity);
+        // Flush so that the removed entity is no longer returned by the lazily loaded collections of the realm entity
         em.flush();
 
     }
@@ -1782,6 +1795,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         AuthenticatorConfigEntity entity = getAuthenticatorConfigEntity(model.getId(), true);
         if (entity == null) return;
         em.remove(entity);
+        // Flush so that the removed entity is no longer returned by the lazily loaded collections of the realm entity
         em.flush();
 
     }
@@ -1816,7 +1830,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                 entity.getConfig().putAll(model.getConfig());
             }
         }
-        em.flush();
 
     }
 
@@ -1938,6 +1951,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         RequiredActionProviderEntity entity = getRequiredProviderEntity(model.getId(), true);
         if (entity == null) return;
         em.remove(entity);
+        // Flush so that the removed entity is no longer returned by the lazily loaded collections of the realm entity
         em.flush();
 
     }
@@ -1984,7 +1998,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                 entity.getConfig().putAll(model.getConfig());
             }
         }
-        em.flush();
 
     }
 
@@ -2089,6 +2102,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         entity.setRealm(getEntity());
         entity.setDefaultScope(defaultScope);
         em.persist(entity);
+        // Flush and detach, as removeDefaultClientScope uses a bulk delete that would leave a managed entity stale
         em.flush();
         em.detach(entity);
     }
@@ -2099,6 +2113,7 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                 .setParameter("clientScopeId", clientScope.getId())
                 .setParameter("realm", getEntity())
                 .executeUpdate();
+        // The bulk delete bypasses the persistence context, flush to keep it consistent
         em.flush();
     }
 
@@ -2370,7 +2385,6 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
         if (entity == null) return;
         if (!entity.getRealm().getId().equals(realm.getId())) return;
         em.remove(entity);
-        em.flush();
     }
 
     @Override

@@ -18,15 +18,18 @@ package org.keycloak.services.resources.admin;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -75,6 +78,14 @@ import org.jboss.resteasy.reactive.NoCache;
 public class ComponentResource {
     protected static final Logger logger = Logger.getLogger(ComponentResource.class);
 
+    /**
+     * Session attribute key used to record which config fields in an update request contained the
+     * {@link ComponentRepresentation#SECRET_VALUE} placeholder or were omitted instead of being explicitly
+     * re-entered. This allows downstream validation (e.g. in provider factories) to distinguish
+     * auto-preserved secrets from explicitly re-entered ones.
+     */
+    public static final String SECRET_PLACEHOLDER_FIELDS_ATTR = "component.update.secretPlaceholderFields";
+
     protected final RealmModel realm;
 
     private final AdminPermissionEvaluator auth;
@@ -119,6 +130,7 @@ public class ComponentResource {
         }
 
         return components
+                .filter(component -> !isInternalComponent(component.getProviderType(), component.getProviderId()))
                 .filter(component -> Objects.isNull(name) || Objects.equals(component.getName(), name))
                 .filter(component -> Objects.isNull(providerId) || Objects.equals(component.getProviderId(), providerId))
                 .map(component -> {
@@ -138,6 +150,7 @@ public class ComponentResource {
     public Response create(ComponentRepresentation rep) {
         auth.realm().requireManageRealm();
         try {
+            rejectInternalComponent(rep.getProviderType(), rep.getProviderId());
             ComponentModel model = RepresentationToModel.toModel(session, rep);
             if (model.getParentId() == null) model.setParentId(realm.getId());
 
@@ -161,7 +174,7 @@ public class ComponentResource {
     public ComponentRepresentation getComponent(@PathParam("id") String id) {
         auth.realm().requireViewRealm();
         ComponentModel model = realm.getComponent(id);
-        if (model == null) {
+        if (model == null || isInternalComponent(model.getProviderType(), model.getProviderId())) {
             throw new NotFoundException("Could not find component");
         }
         ComponentRepresentation rep = ModelToRepresentation.toRepresentation(session, model, false);
@@ -179,6 +192,25 @@ public class ComponentResource {
             ComponentModel model = realm.getComponent(id);
             if (model == null) {
                 throw new NotFoundException("Could not find component");
+            }
+            rejectInternalComponent(model.getProviderType(), model.getProviderId());
+            // Record which config fields have the SECRET_VALUE placeholder or are omitted/empty before merging,
+            // so downstream validation can detect auto-preserved (not re-entered) secrets.
+            Set<String> secretPlaceholderFields = new HashSet<>();
+            if (model.getConfig() != null) {
+                for (String key : model.getConfig().keySet()) {
+                    if (rep.getConfig() == null || !rep.getConfig().containsKey(key)) {
+                        secretPlaceholderFields.add(key);
+                    } else {
+                        List<String> values = rep.getConfig().get(key);
+                        if (values == null || values.isEmpty() || values.contains(ComponentRepresentation.SECRET_VALUE)) {
+                            secretPlaceholderFields.add(key);
+                        }
+                    }
+                }
+            }
+            if (!secretPlaceholderFields.isEmpty()) {
+                session.setAttribute(SECRET_PLACEHOLDER_FIELDS_ATTR, secretPlaceholderFields);
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
@@ -200,6 +232,7 @@ public class ComponentResource {
         if (model == null) {
             throw new NotFoundException("Could not find component");
         }
+        rejectInternalComponent(model.getProviderType(), model.getProviderId());
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
         realm.removeComponent(model);
     }
@@ -238,22 +271,38 @@ public class ComponentResource {
     public Stream<ComponentTypeRepresentation> getSubcomponentConfig(@PathParam("id") String parentId, @QueryParam("type") String subtype) {
         auth.realm().requireViewRealm();
         ComponentModel parent = realm.getComponent(parentId);
-        if (parent == null) {
+        if (parent == null || isInternalComponent(parent.getProviderType(), parent.getProviderId())) {
             throw new NotFoundException("Could not find parent component");
         }
         if (subtype == null) {
             throw new BadRequestException("must specify a subtype");
         }
-        Class<? extends Provider> providerClass;
-        try {
-            providerClass = (Class<? extends Provider>)Class.forName(subtype);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        Class<? extends Provider> providerClass = session.getProviderClass(subtype);
+        if (providerClass == null) {
+            throw new NotFoundException("Provider subtype not registered or found");
         }
 
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(providerClass)
             .filter(ComponentFactory.class::isInstance)
+            .filter(factory -> !((ComponentFactory<?, ?>) factory).isInternal())
             .map(factory -> toComponentTypeRepresentation(factory, parent));
+    }
+
+    private boolean isInternalComponent(String providerType, String providerId) {
+        try {
+            Class<? extends Provider> providerClass = session.getProviderClass(providerType);
+            if (providerClass == null) return false;
+            ProviderFactory<?> factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
+            return factory instanceof ComponentFactory<?, ?> cf && cf.isInternal();
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    private void rejectInternalComponent(String providerType, String providerId) {
+        if (isInternalComponent(providerType, providerId)) {
+            throw new ForbiddenException("Components managed through internal APIs cannot be managed through the component endpoint");
+        }
     }
 
     private ComponentTypeRepresentation toComponentTypeRepresentation(ProviderFactory factory, ComponentModel parent) {

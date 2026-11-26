@@ -38,7 +38,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -60,7 +62,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.RoleMapperResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.utils.GroupUtils;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -90,6 +94,11 @@ public class OrganizationGroupResource {
         this.auth = auth;
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     */
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
@@ -100,9 +109,18 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public GroupRepresentation getGroup(@Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+        RealmModel realm = session.getContext().getRealm();
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
+        GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
         if (subGroupsCount) rep.setSubGroupCount(group.getSubGroupsCount());
         return rep;
+    }
+
+    @Path("role-mappings")
+    public RoleMapperResource getRoleMappings() {
+        AdminPermissionEvaluator.RequirePermissionCheck manageCheck = () -> auth.orgs().requireManage(organization);
+        AdminPermissionEvaluator.RequirePermissionCheck viewCheck = () -> auth.orgs().requireView(organization);
+        return new RoleMapperResource(session, auth, group, adminEvent, manageCheck, viewCheck);
     }
 
     @DELETE
@@ -177,6 +195,11 @@ public class OrganizationGroupResource {
         }
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     */
     @GET
     @Path("children")
     @NoCache
@@ -252,8 +275,14 @@ public class OrganizationGroupResource {
                     throw ErrorResponse.error("Group does not belong to this organization", Response.Status.BAD_REQUEST);
                 }
 
+                // Reject moves that would create a cycle in the group hierarchy
+                if (KeycloakModelUtils.isDescendantOfOrSelf(group, child)) {
+                    throw ErrorResponse.error("Cannot move group '" + child.getName() + "' under itself or its descendants", Response.Status.BAD_REQUEST);
+                }
+
                 // Move the group if it's not already a child of this group
                 if (!Objects.equals(child.getParentId(), group.getId())) {
+                    GroupUtils.checkAdminGroupRoles(group, auth);
                     session.groups().moveGroup(realm, child, group);
                 }
                 adminEvent.operation(OperationType.UPDATE);
@@ -270,6 +299,7 @@ public class OrganizationGroupResource {
 
             adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
             GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
+            GroupUtils.filterRolesInRepresentation(childRep, session.getContext().getRealm(), session, auth);
             return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
 
         } catch (ModelDuplicateException e) {
@@ -279,6 +309,12 @@ public class OrganizationGroupResource {
         }
     }
 
+    /**
+     * Precondition: caller must have passed through {@link OrganizationsResource#get(String)}
+     * which enforces {@code auth.orgs().requireView(organization)}, and then through
+     * {@link OrganizationGroupsResource#getGroupById(String)} which enforces the same check.
+     * This method additionally requires {@code auth.users().requireQuery()}.
+     */
     @GET
     @NoCache
     @Path("members")
@@ -294,21 +330,26 @@ public class OrganizationGroupResource {
                                                    @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
                                                    @Parameter(description = "Only return basic information (only guaranteed to return id, username, created, first and last name, email, enabled state, email verification state, federation link, and access. Note that it means that namely user attributes, required actions, and not before are not returned.)")
                                                    @QueryParam("briefRepresentation") Boolean briefRepresentation) {
+        auth.users().requireQuery();
         RealmModel realm = session.getContext().getRealm();
+
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
+            return Stream.empty();
+        }
+
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> toMemberRepresentation(realm, user, briefRepresentation));
+                .map(user -> toMemberRepresentation(user, briefRepresentation));
     }
 
-    private MemberRepresentation toMemberRepresentation(RealmModel realm, UserModel user, Boolean briefRepresentation) {
-        UserRepresentation userRep = Boolean.TRUE.equals(briefRepresentation)
-                ? ModelToRepresentation.toBriefRepresentation(user)
-                : ModelToRepresentation.toRepresentation(session, realm, user);
-
+    private MemberRepresentation toMemberRepresentation(UserModel user, Boolean briefRepresentation) {
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
+        UserRepresentation userRep = ModelToRepresentation.toRepresentation(session, user, briefRep);
         MemberRepresentation memberRep = new MemberRepresentation(userRep);
+
         memberRep.setMembershipType(
-            organizationProvider.isManagedMember(organization, user)
-                ? MembershipType.MANAGED
-                : MembershipType.UNMANAGED
+                organizationProvider.isManagedMember(organization, user)
+                        ? MembershipType.MANAGED
+                        : MembershipType.UNMANAGED
         );
 
         return memberRep;
@@ -344,6 +385,8 @@ public class OrganizationGroupResource {
         if (user.isMemberOf(group)) {
             throw ErrorResponse.error("User is already a member of the group", Response.Status.CONFLICT);
         }
+
+        GroupUtils.checkAdminGroupRoles(group, auth);
 
         try {
             user.joinGroup(group);
@@ -394,6 +437,8 @@ public class OrganizationGroupResource {
             } catch (ModelException me) {
                 throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
             }
+        } else {
+            throw ErrorResponse.error("User not a member", Status.BAD_REQUEST);
         }
     }
 }

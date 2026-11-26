@@ -7,12 +7,14 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -154,7 +156,12 @@ public class RealmOAuthActionsTest extends AbstractRealmTest {
         assertNotNull(event);
 
         managedRealm.admin().deleteSession(event.getSessionId(), false);
-        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.deleteSessionPath(event.getSessionId()), ResourceType.USER_SESSION);
+        AdminEventRepresentation adminEvent = adminEvents.poll();
+        AdminEventAssertion.assertEvent(adminEvent, OperationType.DELETE, AdminEventPaths.deleteSessionPath(event.getSessionId()), ResourceType.USER_SESSION);
+        // The resource path only names the session; the user it belonged to is carried as a detail
+        // so listeners (e.g. SSF) can still attribute the deletion after the session is gone.
+        assertNotNull(adminEvent.getDetails());
+        assertEquals(event.getUserId(), adminEvent.getDetails().get(Details.USER_ID));
         try {
             managedRealm.admin().deleteSession(event.getSessionId(), false);
             fail("Expected 404");

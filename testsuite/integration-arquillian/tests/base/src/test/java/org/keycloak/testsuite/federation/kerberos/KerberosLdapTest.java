@@ -36,6 +36,7 @@ import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.storage.user.SynchronizationResult;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
@@ -97,7 +98,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
             // Assert user was imported
             assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", "hnelson@KEYCLOAK.ORG", false);
 
-            appPage.logout(accessTokenResponse.getIdToken());
+            oauth.doLogout(accessTokenResponse.getIdToken());
 
             testingClient.server().run(session -> {
                 LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -188,7 +189,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
 
     @Test
     public void writableEditModeTest() throws Exception {
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
 
         // Change editMode to WRITABLE
         updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
@@ -202,9 +203,10 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         //bypassPage.clickContinue();
 
         // Login with old password doesn't work, but with new password works
-
-        Assertions.assertFalse(testAppHelper.login("jduke", "theduke"));
-        Assertions.assertTrue(testAppHelper.login("jduke", "newPass"));
+        testAppHelper.login("jduke", "theduke");
+        loginPage.assertCurrent();
+        testAppHelper.login("jduke", "newPass");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         // Assert SPNEGO login with the new password as mode is writable
         events.clear();
@@ -213,11 +215,10 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         Assertions.assertEquals(302, spnegoResponse.getStatus());
         List<UserRepresentation> users = testRealmResource().users().search("jduke", 0, 1);
         String userId = users.get(0).getId();
-        events.expectLogin()
-                .client("kerberos-app")
-                .user(userId)
-                .detail(Details.USERNAME, "jduke")
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("kerberos-app")
+                .userId(userId)
+                .details(Details.USERNAME, "jduke");
 
         String codeUrl = spnegoResponse.getLocation().toString();
 

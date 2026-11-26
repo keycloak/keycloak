@@ -33,6 +33,7 @@ public class OAuth2Code {
 
     public static final String ID_NOTE = "id";
     public static final String EXPIRATION_NOTE = "exp";
+    private static final String CLIENT_UUID_NOTE = "client_uuid";
     private static final String NONCE_NOTE = "nonce";
     private static final String SCOPE_NOTE = "scope";
     private static final String RESOURCE_NOTE = "resource";
@@ -41,8 +42,11 @@ public class OAuth2Code {
     private static final String CODE_CHALLENGE_METHOD_NOTE = "code_challenge_method";
     private static final String DPOP_JKT_NOTE = "dpop_jkt";
     public static final String USER_SESSION_ID_NOTE = "user_session_id";
+    public static final String USER_ID_NOTE = "user_id";
 
     private final String id;
+
+    private final String clientUUID;
 
     private final int expiration;
 
@@ -60,23 +64,12 @@ public class OAuth2Code {
 
     private final String userSessionId;
 
+    private final String userId;
 
-    public OAuth2Code(String id, int expiration, String nonce, String scope, String userSessionId) {
+    public OAuth2Code(String id, String clientUUID, int expiration, String nonce, String scope, String resource, String redirectUriParam,
+                      String codeChallenge, String codeChallengeMethod, String dpopJkt, String userSessionId, String userId) {
         this.id = id;
-        this.expiration = expiration;
-        this.nonce = nonce;
-        this.scope = scope;
-        this.resource = null;
-        this.redirectUriParam = null;
-        this.codeChallenge = null;
-        this.codeChallengeMethod = null;
-        this.dpopJkt = null;
-        this.userSessionId = userSessionId;
-    }
-
-    public OAuth2Code(String id, int expiration, String nonce, String scope, String resource, String redirectUriParam,
-                      String codeChallenge, String codeChallengeMethod, String dpopJkt, String userSessionId) {
-        this.id = id;
+        this.clientUUID = clientUUID;
         this.expiration = expiration;
         this.nonce = nonce;
         this.scope = scope;
@@ -86,10 +79,12 @@ public class OAuth2Code {
         this.codeChallengeMethod = codeChallengeMethod;
         this.dpopJkt = dpopJkt;
         this.userSessionId = userSessionId;
+        this.userId = userId;
     }
 
     private OAuth2Code(Map<String, String> data) {
         id = data.get(ID_NOTE);
+        clientUUID = data.get(CLIENT_UUID_NOTE);
         expiration = Integer.parseInt(data.get(EXPIRATION_NOTE));
         nonce = data.get(NONCE_NOTE);
         scope = data.get(SCOPE_NOTE);
@@ -99,6 +94,7 @@ public class OAuth2Code {
         codeChallengeMethod = data.get(CODE_CHALLENGE_METHOD_NOTE);
         dpopJkt = data.get(DPOP_JKT_NOTE);
         userSessionId = data.get(USER_SESSION_ID_NOTE);
+        userId = data.get(USER_ID_NOTE);
     }
 
 
@@ -111,6 +107,7 @@ public class OAuth2Code {
         Map<String, String> result = new HashMap<>();
 
         result.put(ID_NOTE, id);
+        result.put(CLIENT_UUID_NOTE, clientUUID);
         result.put(EXPIRATION_NOTE, String.valueOf(expiration));
         result.put(NONCE_NOTE, nonce);
         result.put(SCOPE_NOTE, scope);
@@ -120,12 +117,17 @@ public class OAuth2Code {
         result.put(CODE_CHALLENGE_METHOD_NOTE, codeChallengeMethod);
         result.put(DPOP_JKT_NOTE, dpopJkt);
         result.put(USER_SESSION_ID_NOTE, userSessionId);
+        result.put(USER_ID_NOTE, userId);
 
         return result;
     }
 
     public String getId() {
         return id;
+    }
+
+    public String getClientUUID() {
+        return clientUUID;
     }
 
     public int getExpiration() {
@@ -162,5 +164,9 @@ public class OAuth2Code {
 
     public String getUserSessionId() {
         return userSessionId;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 }

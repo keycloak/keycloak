@@ -21,7 +21,7 @@ import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigMo
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
@@ -172,13 +172,13 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
             Assertions.assertEquals(1, crlRule.getCounter("cached-crl"));
 
             // wait the min time and it should be refreshed now and fail
-            setTimeOffset(10);
+            timeOffSet.set(10);
             assertLoginFailedDueRevokedCertificate();
             AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(2, crlRule.getCounter("cached-crl"));
 
             // now it's cached until next update 50 years
-            setTimeOffset(3600);
+            timeOffSet.set(3600);
             assertLoginFailedDueRevokedCertificate();
             AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(2, crlRule.getCounter("cached-crl"));
@@ -321,13 +321,10 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
 
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId)
+                .details(Details.USERNAME, "test-user@localhost");
     }
 }

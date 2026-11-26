@@ -10,19 +10,21 @@ import {
 } from "../utils/attributes.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
-import { goToGroups } from "../utils/sidebar.ts";
 import { goToGroupDetails } from "./util.ts";
 
 test.describe.serial("Attributes", () => {
+  const realmName = `groups-attributes-${uuid()}`;
   const groupName = `group-${uuid()}`;
 
-  test.beforeAll(() => adminClient.createGroup(groupName));
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    await adminClient.createGroup(groupName, realmName);
+  });
 
-  test.afterAll(() => adminClient.deleteGroups());
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToGroups(page);
+    await login(page, { to: { pathname: `/${realmName}/groups` } });
     await goToGroupDetails(page, groupName);
     await goToAttributesTab(page);
   });

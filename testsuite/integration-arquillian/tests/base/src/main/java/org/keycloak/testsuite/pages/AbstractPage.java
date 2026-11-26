@@ -17,15 +17,25 @@
 
 package org.keycloak.testsuite.pages;
 
+import java.time.Duration;
+
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ *
+ * THIS ABSTRACT PAGE WON'T BE MIGRATED TO THE NEW TEST FRAMEWORK!
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractPage {
 
     @ArquillianResource
@@ -35,20 +45,44 @@ public abstract class AbstractPage {
     protected OAuthClient oauth;
 
     public void assertCurrent() {
-        String name = getClass().getSimpleName();
-        Assertions.assertTrue(isCurrent(),
-                "Expected " + name + " but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
+        waitForPage(this);
     }
 
-    abstract public boolean isCurrent();
-
-    public boolean isCurrent(String expectedTitle) {
-        return PageUtils.getPageTitle(driver).equals(expectedTitle);
-    }
+    public abstract String getExpectedPageId();
 
     public void setDriver(WebDriver driver) {
         this.driver = driver ;
         oauth.setDriver(driver);
     }
 
+    private void waitForPage(AbstractPage page) {
+        String expectedPageId = page.getExpectedPageId();
+        try {
+            createDefaultWait().until(d -> isCurrentPageId(expectedPageId));
+        } catch (TimeoutException e) {
+            Assertions.fail("Expected page '" + expectedPageId + "' to be loaded, but currently on page '" + getCurrentPageId() + "' after timeout");
+        }
+    }
+
+    private boolean isCurrentPageId(String expectedPageId) {
+        try {
+            return expectedPageId.equals(getCurrentPageId());
+        } catch (StaleElementReferenceException e) {
+            return false;
+        } catch (WebDriverException e) {
+            // ChromeDriver reports this instead of a stale element when the document is swapped during a navigation
+            if (e.getMessage() != null && e.getMessage().contains("does not belong to the document")) {
+                return false;
+            }
+            throw e;
+        }
+    }
+
+    private WebDriverWait createDefaultWait() {
+        return new WebDriverWait(driver, Duration.ofSeconds(5), Duration.ofMillis(50));
+    }
+
+    private String getCurrentPageId() {
+        return driver.findElement(By.xpath("//body")).getAttribute("data-page-id");
+    }
 }

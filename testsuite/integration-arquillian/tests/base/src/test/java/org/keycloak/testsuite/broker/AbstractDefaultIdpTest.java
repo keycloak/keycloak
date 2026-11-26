@@ -68,7 +68,8 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
 
         // Navigate to the auth page
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
 
@@ -86,7 +87,8 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
 
         // Navigate to the auth page
         oauth.client("broker-app");
-        loginPage.open(bc.providerRealmName());
+        oauth.realm(bc.providerRealmName());
+        oauth.openLoginForm();
 
         waitForPage(driver, "sign in to", true);
 
@@ -125,7 +127,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
 
         WebElement errorElement;
         try {
-            errorElement = driver.findElement(By.className("pf-v5-c-alert"));
+            errorElement = driver.findElement(By.className("pf-v6-c-alert"));
         } catch (NoSuchElementException e) {
             errorElement = driver.findElement(By.className("alert-error"));
         }

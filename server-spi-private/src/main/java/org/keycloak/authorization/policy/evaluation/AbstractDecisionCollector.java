@@ -123,7 +123,7 @@ public abstract class AbstractDecisionCollector implements Decision<Evaluation> 
             default:
                 // defaults to UNANIMOUS
                 for (Result.PolicyResult decision : policyResult.getAssociatedPolicies()) {
-                    if (Effect.DENY.equals(decision.getEffect())) {
+                    if (!Effect.PERMIT.equals(decision.getEffect())) {
                         return false;
                     }
                 }

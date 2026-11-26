@@ -18,34 +18,24 @@
 package org.keycloak.quarkus.runtime.cli;
 
 import java.io.PrintWriter;
-import java.nio.file.FileSystemException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.Messages;
 
 import io.quarkus.bootstrap.logging.InitialConfigurator;
-import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 import picocli.CommandLine.ParseResult;
-
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 
 public final class ExecutionExceptionHandler implements CommandLine.IExecutionExceptionHandler {
 
     private static Logger logger;
     private boolean verbose;
-    private static Map<String, Function<Throwable, Throwable>> exceptionTransformers = new HashMap<>();
 
     public ExecutionExceptionHandler() {}
 
     @Override
     public int handleExecutionException(Exception cause, CommandLine cmd, ParseResult parseResult) {
-        var exception = handleExceptionTransformers(cause);
+        var exception = cause;
         if (exception instanceof PropertyException) {
             PrintWriter writer = cmd.getErr();
             writer.println(cmd.getColorScheme().errorText(exception.getMessage()));
@@ -63,13 +53,12 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
     }
 
     public void error(PrintWriter errorWriter, String message, Throwable cause) {
-        var exception = handleExceptionTransformers(cause);
         if (message != null) {
             logError(errorWriter, "ERROR: " + message);
         }
 
-        if (exception != null) {
-            dumpException(errorWriter, exception);
+        if (cause != null) {
+            dumpException(errorWriter, cause);
 
             if (!verbose) {
                 logError(errorWriter, "For more details run the same command passing the '--verbose' option. Also you can use '--help' to see the details about the usage of the particular command.");
@@ -85,21 +74,7 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
                 if (cause.getMessage() != null) {
                     logError(errorWriter, String.format("ERROR: %s", cause.getMessage()));
                 }
-                printErrorHints(errorWriter, cause);
             } while ((cause = cause.getCause()) != null);
-        }
-
-        printErrorHints(errorWriter, cause);
-    }
-
-    private void printErrorHints(PrintWriter errorWriter, Throwable cause) {
-        if (cause instanceof FileSystemException) {
-            FileSystemException fse = (FileSystemException) cause;
-            ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https-certificate-file");
-
-            if (fse.getFile().equals(Optional.ofNullable(httpsCertFile.getValue()).orElse(null))) {
-                logError(errorWriter, Messages.httpsConfigurationNotSet());
-            }
         }
     }
 
@@ -137,33 +112,4 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
         this.verbose = verbose;
     }
 
-    public static void addExceptionTransformer(Class<?> fromClass, Function<Throwable, Throwable> transformer) {
-        if (exceptionTransformers.get(fromClass.getName()) != null) {
-            getLogger().warnf("Transformer for the '%s' class is overridden", fromClass.getName());
-        }
-        exceptionTransformers.put(fromClass.getName(), transformer);
-    }
-
-    public static void resetExceptionTransformers() {
-        exceptionTransformers = new HashMap<>();
-    }
-
-    private static Throwable handleExceptionTransformers(Throwable exception) {
-        if (exception == null) {
-            return null;
-        }
-
-        if (exceptionTransformers.isEmpty()) {
-            return exception;
-        }
-
-        var stackTrace = exception.getStackTrace();
-        for (var trace : stackTrace) {
-            var transformer = exceptionTransformers.get(trace.getClassName());
-            if (transformer != null) {
-                return transformer.apply(exception);
-            }
-        }
-        return exception;
-    }
 }

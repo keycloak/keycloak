@@ -35,15 +35,14 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -75,9 +74,6 @@ public class AccountLinkTest extends AbstractKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AppPage appPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {

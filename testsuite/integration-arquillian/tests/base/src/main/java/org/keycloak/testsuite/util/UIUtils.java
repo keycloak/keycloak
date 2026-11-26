@@ -326,9 +326,7 @@ public final class UIUtils {
      */
     public static void navigateBackWithRefresh(WebDriver driver, AbstractPage expectedPage) {
         driver.navigate().back();
-        if (!expectedPage.isCurrent() && BrowserDriverUtil.isDriverChrome(driver)) {
-            driver.navigate().refresh();
-        }
+        driver.navigate().refresh();
         expectedPage.assertCurrent();
     }
 }

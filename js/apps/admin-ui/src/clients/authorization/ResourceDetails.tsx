@@ -109,7 +109,9 @@ export default function ResourceDetails() {
           resource,
         );
         setResource(resource);
-        navigate(toResourceDetails({ realm, id, resourceId: result._id! }));
+        void navigate(
+          toResourceDetails({ realm, id, resourceId: result._id! }),
+        );
       }
       addAlert(
         t((resourceId ? "update" : "create") + "ResourceSuccess"),
@@ -152,7 +154,9 @@ export default function ResourceDetails() {
           resourceId: resourceId!,
         });
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
-        navigate(toAuthorizationTab({ realm, clientId: id, tab: "resources" }));
+        void navigate(
+          toAuthorizationTab({ realm, clientId: id, tab: "resources" }),
+        );
       } catch (error) {
         addError("resourceDeletedError", error);
       }

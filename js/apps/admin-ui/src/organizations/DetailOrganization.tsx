@@ -24,6 +24,7 @@ import {
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useParams } from "../utils/useParams";
 import { DetailOrganizationHeader } from "./DetailOraganzationHeader";
+import { DomainsTab } from "./DomainsTab";
 import { IdentityProviders } from "./IdentityProviders";
 import { MembersSection } from "./MembersSection";
 import GroupsSection from "../groups/GroupsSection";
@@ -62,14 +63,19 @@ export default function DetailOrganization() {
   };
 
   useFetch(
-    () => adminClient.organizations.findOne({ id }),
+    () =>
+      adminClient.organizations.findOne({ id }) as Promise<
+        | Awaited<ReturnType<typeof adminClient.organizations.findOne>>
+        | undefined
+      >,
     (org) => {
       if (!org) {
         throw new Error(t("notFound"));
       }
       form.reset({
         ...org,
-        domains: org.domains?.map((d) => d.name),
+        domains: undefined,
+        serverDomains: org.domains,
         attributes: arrayToKeyValue(org.attributes),
       });
     },
@@ -89,6 +95,7 @@ export default function DetailOrganization() {
   const attributesTab = useTab("attributes");
   const membersTab = useTab("members");
   const groupsTab = useTab("groups");
+  const domainsTab = useTab("domains");
   const identityProvidersTab = useTab("identityProviders");
   const eventsTab = useTab("events");
 
@@ -137,6 +144,14 @@ export default function DetailOrganization() {
             </PageSection>
           </Tab>
           <Tab
+            id="domains"
+            data-testid="domainsTab"
+            title={<TabTitleText>{t("domains")}</TabTitleText>}
+            {...domainsTab}
+          >
+            <DomainsTab />
+          </Tab>
+          <Tab
             id="attributes"
             data-testid="attributeTab"
             title={<TabTitleText>{t("attributes")}</TabTitleText>}
@@ -179,7 +194,7 @@ export default function DetailOrganization() {
           >
             <IdentityProviders />
           </Tab>
-          {realmRepresentation?.adminEventsEnabled &&
+          {realmRepresentation.adminEventsEnabled &&
             hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"

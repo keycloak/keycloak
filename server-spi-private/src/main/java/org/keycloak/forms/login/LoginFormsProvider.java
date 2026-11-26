@@ -91,6 +91,14 @@ public interface LoginFormsProvider extends Provider {
 
     Response createErrorPage(Response.Status status);
 
+    /**
+     * Creates an error page, using the supplied OAuth error code for JSON responses.
+     * Providers that do not support OAuth error codes retain their existing behavior.
+     */
+    default Response createErrorPage(Response.Status status, String error) {
+        return createErrorPage(status);
+    }
+
     Response createWebAuthnErrorPage();
 
     Response createOAuthGrant();

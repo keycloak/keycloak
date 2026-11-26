@@ -20,6 +20,7 @@ package org.keycloak.operator.testsuite.unit;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -71,6 +72,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.managed.ManagedWorkflowAndDependentResourceContext;
 import io.quarkus.test.InjectMock;
@@ -111,10 +113,15 @@ public class PodTemplateTest {
 
     @Inject
     KeycloakRealmImportJobDependentResource importJobResource;
+    
+    Context context;
 
     @BeforeEach
     protected void setup() {
         this.deployment = new KeycloakDeploymentDependentResource();
+        context = Mockito.mock(Context.class, Mockito.RETURNS_DEEP_STUBS);
+        Mockito.when(context.getClient()).thenReturn(Mockito.mock(KubernetesClient.class));
+        Mockito.when(context.getControllerConfiguration().getInformerConfig()).thenReturn(Mockito.mock(InformerConfiguration.class));
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
@@ -125,7 +132,7 @@ public class PodTemplateTest {
                 .endSelector().endSpec().build();
 
         //noinspection unchecked
-        Context context = mockContext(null);
+        mockContext(null);
         return deployment.initialDesired(kc, context);
     }
 
@@ -147,16 +154,13 @@ public class PodTemplateTest {
         return kc;
     }
 
-    private Context<Keycloak> mockContext(StatefulSet existingDeployment) {
-        Context<Keycloak> context = Mockito.mock(Context.class);
+    private void mockContext(StatefulSet existingDeployment) {
         ManagedWorkflowAndDependentResourceContext managedWorkflowAndDependentResourceContext = Mockito.mock(ManagedWorkflowAndDependentResourceContext.class);
         Mockito.when(context.managedWorkflowAndDependentResourceContext()).thenReturn(managedWorkflowAndDependentResourceContext);
         Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.ofNullable(existingDeployment));
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(OPERATOR_CONFIG_KEY, Config.class)).thenReturn(operatorConfig);
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(WATCHED_RESOURCES_KEY, WatchedResources.class)).thenReturn(watchedResources);
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(DIST_CONFIGURATOR_KEY, KeycloakDistConfigurator.class)).thenReturn(distConfigurator);
-        Mockito.when(context.getClient()).thenReturn(Mockito.mock(KubernetesClient.class));
-        return context;
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
@@ -348,8 +352,8 @@ public class PodTemplateTest {
                 .withNewSpec()
                 .addNewContainer()
                 .addNewEnv()
-                .withName("KC_CACHE_STACK")
-                .withValue("template_stack")
+                .withName("KC_CACHE_CONFIG_FILE")
+                .withValue("template_cache.xml")
                 .endEnv()
                 .addNewEnv()
                 .withName("KC_DB_URL_HOST")
@@ -361,7 +365,7 @@ public class PodTemplateTest {
 
         // Act
         var podTemplate = getDeployment(additionalPodTemplate, null,
-                s -> s.addNewAdditionalOption("cache.stack", "additional_stack")
+                s -> s.addNewAdditionalOption("cache.config-file", "additional_cache.xml")
                         .addNewAdditionalOption("http.port", "additional_port").withNewDatabaseSpec().withHost("spec-host")
                         .endDatabaseSpec())
                 .getSpec().getTemplate();
@@ -373,7 +377,7 @@ public class PodTemplateTest {
             return e1;
         }));
         // template spec takes the most priority for envs - only fields called out in the KeycloakDeployment warning are overriden by the rest of the spec
-        assertThat(envVarMap.get("KC_CACHE_STACK").getValue()).isEqualTo("template_stack");
+        assertThat(envVarMap.get("KC_CACHE_CONFIG_FILE").getValue()).isEqualTo("template_cache.xml");
         assertThat(envVarMap.get("KC_DB_URL_HOST").getValue()).isEqualTo("template_host");
         // the main spec takes priority over the additional options
         assertThat(envVarMap.get("KC_HTTP_PORT").getValue()).isEqualTo("8080");
@@ -403,6 +407,51 @@ public class PodTemplateTest {
 
         // Assert
         assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("two", "2");
+    }
+    
+    @Test
+    public void testServiceAccountName() {
+        // in a single namespace, we'll still allow setting via the template 
+        
+        // Arrange
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .withServiceAccount("foo")
+                .endSpec()
+                .build();
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getServiceAccount()).isEqualTo("foo");
+        
+        // in multinamespace we won't
+        
+        Mockito.when(context.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(true);
+
+        // Act
+        podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getServiceAccount()).isNull();
+        
+        // test again with serviceAccountName
+        
+        additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .withServiceAccountName("bar")
+                .endSpec()
+                .build();
+        
+        Mockito.when(context.getControllerConfiguration().getInformerConfig().watchAllNamespaces()).thenReturn(false);
+        Mockito.when(context.getControllerConfiguration().getInformerConfig().getNamespaces()).thenReturn(Set.of("one", "two"));
+
+        // Act
+        podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getServiceAccountName()).isNull();
     }
 
     @Test
@@ -485,6 +534,10 @@ public class PodTemplateTest {
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TELEMETRY_RESOURCE_ATTRIBUTES));
         assertThat(envVars.stream()).noneMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.POD_IP));
+        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.CACHE_EMBEDDED_NODE_NAME)
+                && envVar.getValueFrom() != null
+                && envVar.getValueFrom().getFieldRef() != null
+                && "metadata.name".equals(envVar.getValueFrom().getFieldRef().getFieldPath()));
 
         var readiness = container.getReadinessProbe().getHttpGet();
         assertNotNull(readiness);
@@ -789,7 +842,7 @@ public class PodTemplateTest {
         StatefulSetBuilder desired = getDeployment(null, existingStatefulSet, newSpec).toBuilder();
 
         // setup the mock context
-        Context<Keycloak> context = mockContext(null);
+        mockContext(null);
         var managedWorkflowAndDependentResourceContext = context.managedWorkflowAndDependentResourceContext();
         Mockito.when(managedWorkflowAndDependentResourceContext.get(OLD_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(Optional.of(existingStatefulSet));
         Mockito.when(managedWorkflowAndDependentResourceContext.getMandatory(NEW_DEPLOYMENT_KEY, StatefulSet.class)).thenReturn(desired.build());
@@ -802,7 +855,7 @@ public class PodTemplateTest {
         existingModifier.accept(existingBuilder);
         StatefulSet existingStatefulSet = existingBuilder.build();
 
-        Context context = mockContext(existingStatefulSet);
+        mockContext(existingStatefulSet);
         var kc = createKeycloak(null, keycloakSpec);
         Mockito.when(context.managedWorkflowAndDependentResourceContext().getMandatory(ContextUtils.KEYCLOAK, Keycloak.class)).thenReturn(kc);
 
@@ -893,7 +946,7 @@ public class PodTemplateTest {
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getLifecycle());
         assertNull(job.getSpec().getTemplate().getSpec().getInitContainers().get(0).getRestartPolicy());
     }
-
+    
     @Test
     public void testEnvVars() {
         var statefulSet = getDeployment(null, null, builder -> builder.addNewEnv("JAVA_OPTS", "my opts")

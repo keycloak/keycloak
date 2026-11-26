@@ -54,5 +54,12 @@
                 <include>pinned-guides</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/admin-api</directory>
+            <outputDirectory>generated-guides/admin-api/</outputDirectory>
+            <includes>
+                <include>pinned-guides</include>
+            </includes>
+        </fileSet>
     </fileSets>
 </assembly>

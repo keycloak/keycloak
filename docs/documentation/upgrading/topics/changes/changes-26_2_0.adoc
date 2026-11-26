@@ -103,8 +103,8 @@ disable the `token-exchange` feature, which represents the Legacy token exchange
 legacy token exchange. In this case, {project_name} serves the standard internal-to-internal requests preferably by the standard token exchange while the other requests are served by the legacy token exchange. The choice of standard or legacy token exchange is determined based on the
 parameters of the particular request. For example, requests containing non-standard parameters such as `requested_issuer` or `requested_subject` are considered legacy.
 +
-If you still need legacy token exchange, you also need link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
-link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose
+If you still need legacy token exchange, you also need link:{adminguide_link}#fine_grained_permissions[Fine-grained admin permissions version 1] enabled (FGAP:v1) because
+link:{adminguide_link}#fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose
 because token-exchange is conceptually not really an "admin" permission and therefore token exchange permissions were not added to FGAP:v2.
 
 * Standard token exchange requires enabling a switch on the client as described in the link:{securing_apps_token_exchange_link}#_standard-token-exchange-enable[{securing_apps_token_exchange_name}].
@@ -139,7 +139,20 @@ Due to fundamental changes in the permission model, **automatic migration from V
 
 * A new `admin-permissions` client is introduced. This client is created when you enable the capability for the realm. The client holds the authorization model for FGAP:V2.
 * The existing FGAP:V1 authorization model remains unchanged within the `realm-management` client.
-* Administrators must _recreate permissions and policies_ using the new model, which can be configured in the updated *Permissions* section of the Admin Console.
+* Administrators must _recreate permissions and policies_ using the new model, which can be configured in the updated *Permissions* section of the Admin Console or through the Admin REST API.
+
+==== REST API changes
+
+The V1 per-resource permission endpoints (for example, `PUT /admin/realms/{realm}/groups/{group-id}/management/permissions`)
+are no longer available when using FGAP:V2. In V2, the concept of enabling or disabling permissions on individual resources does not exist. Instead, permissions are managed centrally through the authorization endpoints of the `admin-permissions` client.
+
+To manage permissions programmatically in V2, use the authorization REST API on the `admin-permissions` client:
+
+* Discover the client: `GET /admin/realms/{realm}/clients?clientId=admin-permissions`
+* Create policies: `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/{type}` (where `type` is `user`, `group`, or `role`)
+* Create permissions: `POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/scope`
+
+For detailed examples and the full API reference, see link:{adminguide_link}#_managing-permissions-rest-api[Managing permissions using the Admin REST API].
 
 ==== Key Differences Between FGAP:V1 and FGAP:V2
 
@@ -180,7 +193,7 @@ We don't expect that this will impact any deployments due to the lack of support
 
 === JWT client authentication defines a new max expiration option for the token
 
-When a client is configured to authenticate using the *Signed JWT* or *Signed JWT with Client Secret* type, {project_name} now enforces a maximum expiration for the token. This means that, although the `exp` (expiration) claim in the token may be much later, {project_name} will not accept tokens issued before that max expiration time. The default value is 60 seconds. Note that JWT tokens should be issued right before being sent for authentication. This way, the client has one minute window to send the token for login. Nevertheless this expiration can be tuned using the *Max expiration* configuration option in the client *Credentials* tab (see link:{adminguide_link}#_client-credentials[Confidential client credentials in the {adminguide_name}] for more information).
+When a client is configured to authenticate using the *Signed JWT* or *Signed JWT with Client Secret* type, {project_name} now enforces a maximum expiration for the token. This means that, although the `exp` (expiration) claim in the token may be much later, {project_name} will not accept tokens issued before that max expiration time. The default value is 60 seconds. Note that JWT tokens should be issued right before being sent for authentication. This way, the client has one minute window to send the token for login. Nevertheless this expiration can be tuned using the *Max expiration* configuration option in the client *Credentials* tab (see link:{adminguide_link}#client-credentials[Confidential client credentials in the {adminguide_name}] for more information).
 
 === Updates to the `user-profile-commons.ftl` theme template
 The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.

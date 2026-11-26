@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,13 +58,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.SystemClientUtil;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.protocol.oidc.LogoutTokenValidationContext;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
 import org.keycloak.protocol.oidc.utils.LogoutUtil;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.IDToken;
@@ -87,6 +91,7 @@ import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -136,6 +141,7 @@ public class LogoutEndpoint {
      *
      * When the logout is initiated by a remote idp, the parameter "initiating_idp" can be supplied. This param will
      * prevent upstream logout (since the logout procedure has already been started in the remote idp).
+     * Deprecated and ignored by default; re-enable with the "{@value OIDCLoginProtocolFactory#CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM}" provider option.
      *
      * This endpoint is aligned with OpenID Connect RP-Initiated Logout specification https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
      *
@@ -146,7 +152,7 @@ public class LogoutEndpoint {
      * @param postLogoutRedirectUri Parameter "post_logout_redirect_uri" as described in the specification with the URL to redirect after logout.
      * @param state Parameter "state" as described in the specification. Will be used to send "state" when redirecting back to the application after the logout
      * @param uiLocales Parameter "ui_locales" as described in the specification. Can be used by the client to display pages in specified locale (if any pages are going to be displayed to the user during logout)
-     * @param initiatingIdp The alias of the idp initiating the logout.
+     * @param initiatingIdp The alias of the idp initiating the logout. Deprecated and ignored by default; see the method description.
      * @return
      */
     @GET
@@ -172,7 +178,7 @@ public class LogoutEndpoint {
         boolean forcedConfirmation = false;
         ClientModel client = clientId == null ? null : realm.getClientByClientId(clientId);
         if (clientId != null && client == null) {
-            logger.warnf("Client '%s' not found.", clientId);
+            logger.warnf("Client '%s' not found.", StringUtil.removeControlCharacters(clientId));
             forcedConfirmation = true;
         }
 
@@ -204,7 +210,7 @@ public class LogoutEndpoint {
                     String errorMessage = "Parameter client_id is different than the client for which ID Token was issued.";
                     event.detail(Details.REASON, errorMessage);
                     event.error(Errors.INVALID_TOKEN);
-                    logger.warnf("%s Parameter client_id: '%s', ID Token issued for: '%s'.", errorMessage, clientId, idToken.getIssuedFor());
+                    logger.warnf("%s Parameter client_id: '%s', ID Token issued for: '%s'.", errorMessage, StringUtil.removeControlCharacters(clientId), idToken.getIssuedFor());
                     return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
                 } else {
                     confirmationNeeded = false;
@@ -221,7 +227,13 @@ public class LogoutEndpoint {
             if (client != null) {
                 OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
                 Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
-                validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
+                if (isAllowOidcParamsInRedirectUris(client)) {
+                    // Backward compat: skip forbidden params check
+                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true, Collections.emptySet());
+                } else {
+                    // Default: use FORBIDDEN_OIDC_PARAMS (5-arg overload)
+                    validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), postLogoutRedirectUri, postLogoutRedirectUris, true);
+                }
             }
 
             if (validatedRedirectUri == null) {
@@ -241,21 +253,38 @@ public class LogoutEndpoint {
             if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.session().getId())) {
                 forcedConfirmation = true;
             }
-        } else {
-            // Skip confirmation in case that valid redirect URI was setup for given client_id and there is no session in the browser as well as no id_token_hint.
-            // We can do automatic redirect as there is no logout needed at all for this scenario (Session was probably already logged-out before)
-            if (encodedIdToken == null && client != null && validatedRedirectUri != null) {
+        } else if (idToken == null) {
+            // No browser session and no id_token_hint: skip confirmation if a valid redirect URI was configured for the client,
+            // since there is nothing to log out (session was probably already logged out before).
+            if (client != null && validatedRedirectUri != null) {
                 confirmationNeeded = false;
+            }
+        } else if (idToken.getSessionState() != null) {
+            userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
+            if (userSession != null) {
+                // Validate the id_token_hint early, before any logout (root auth) session or AUTH_SESSION_ID cookie is
+                // created: a stale token must be rejected without leaving state behind or showing a confirmation
+                // screen that is bound to fail once the user confirms.
+                try {
+                    checkTokenIssuedAt(idToken.getIat(), userSession);
+                } catch (OAuthErrorException e) {
+                    event.event(EventType.LOGOUT);
+                    event.detail(Details.REASON, e.getDescription());
+                    event.error(Errors.INVALID_TOKEN);
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+                }
             }
         }
 
-        if (userSession == null && idToken != null && idToken.getSessionState() != null) {
-            userSession = session.sessions().getUserSession(realm, idToken.getSessionState());
-        }
-
         AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm,
-                new AuthenticationSessionManager(session), userSession, true, true);
+                userSession, true, true);
         session.getContext().setAuthenticationSession(logoutSession);
+        // The logout session may be an existing one from an earlier logout request, don't let its values leak into this one
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI);
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM);
+        logoutSession.removeAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP);
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE);
+        logoutSession.removeAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT);
         if (uiLocales != null) {
             logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
         }
@@ -266,7 +295,13 @@ public class LogoutEndpoint {
             logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_STATE_PARAM, state);
         }
         if (initiatingIdp != null) {
-            logoutSession.setAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP, initiatingIdp);
+            OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+            if (loginProtocol.getConfig().isAllowInitiatingIdpLogoutParam()) {
+                logoutSession.setAuthNote(AuthenticationManager.LOGOUT_INITIATING_IDP, initiatingIdp);
+            } else {
+                logger.warnf("Ignoring the deprecated 'initiating_idp' logout parameter, the upstream identity provider logout will be performed. " +
+                        "Enable it with the '%s' option if you still rely on it.", OIDCLoginProtocolFactory.CONFIG_ALLOW_INITIATING_IDP_LOGOUT_PARAM);
+            }
         }
         if (idToken != null) {
             logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE, idToken.getSessionState());
@@ -291,6 +326,15 @@ public class LogoutEndpoint {
         }
     }
 
+    private boolean isAllowOidcParamsInRedirectUris(ClientModel client) {
+        OIDCLoginProtocol protocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        if (protocol.getConfig().isAllowOidcParamsInRedirectUris()) {
+            return true;
+        }
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        return clientConfig.isAllowOidcParamsInRedirectUris();
+    }
+
     private Response displayLogoutConfirmationScreen(LoginFormsProvider loginForm, AuthenticationSessionModel authSession) {
         ClientSessionCode<AuthenticationSessionModel> accessCode = new ClientSessionCode<>(session, realm, authSession);
         accessCode.setAction(AuthenticatedClientSessionModel.Action.LOGGING_OUT.name());
@@ -311,6 +355,7 @@ public class LogoutEndpoint {
     @NoCache
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response logout() {
+        ContentTypeValidationUtil.requireValidContentType(headers, MediaType.APPLICATION_FORM_URLENCODED_TYPE);
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();
         if (form.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
             return logoutToken();
@@ -409,28 +454,33 @@ public class LogoutEndpoint {
         String userSessionIdFromIdToken = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_SESSION_STATE);
         String idTokenIssuedAtStr = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT);
         if (userSessionIdFromIdToken != null && idTokenIssuedAtStr != null) {
+            boolean success = false;
             try {
                 userSession = session.sessions().getUserSession(realm, userSessionIdFromIdToken);
 
                 if (userSession == null) {
                     event.event(EventType.LOGOUT);
                     event.error(Errors.SESSION_EXPIRED);
-                    KeycloakContext context = session.getContext();
-                    AuthenticationSessionModel authSession = context.getAuthenticationSession();
-
-                    if (authSession != null) {
-                        // no valid session, make sure the current root auth session is also deleted and restart cookies
-                        new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
-                    }
                 } else {
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
                     checkTokenIssuedAt(idTokenIssuedAt, userSession);
+                    success = true;
                 }
             } catch (OAuthErrorException e) {
                 event.event(EventType.LOGOUT);
                 event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.SESSION_NOT_ACTIVE);
+            } finally {
+                if (!success) {
+                    KeycloakContext context = session.getContext();
+                    AuthenticationSessionModel authSession = context.getAuthenticationSession();
+
+                    if (authSession != null) {
+                        // make sure the current tab, and root auth session is removed if possible
+                        new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(authSession.getRealm(), authSession);
+                    }
+                }
             }
         }
 
@@ -438,11 +488,11 @@ public class LogoutEndpoint {
         AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.session();
-            return initiateBrowserLogout(userSession);
+            return initiateBrowserLogout(userSession, logoutSession);
         } else if (userSession != null) {
             // identity cookie is missing but there's valid id_token_hint which matches session cookie => continue with browser logout
             if (AuthenticationManager.compareSessionIdWithSessionCookie(session, userSessionIdFromIdToken)) {
-                return initiateBrowserLogout(userSession);
+                return initiateBrowserLogout(userSession, logoutSession);
             }
             // check if the user session is not logging out or already logged out
             // this might happen when a backChannelLogout is already initiated from AuthenticationManager.authenticateIdentityCookie
@@ -496,7 +546,7 @@ public class LogoutEndpoint {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
+            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(client, form));
             refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
@@ -713,7 +763,7 @@ public class LogoutEndpoint {
 
     private ClientModel authorizeClient() {
         ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, cors).getClient();
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, Errors.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
@@ -730,11 +780,13 @@ public class LogoutEndpoint {
 
     private void checkTokenIssuedAt(long idTokenIssuedAt, UserSessionModel userSession) throws OAuthErrorException {
         if (idTokenIssuedAt + 1 < userSession.getStarted()) {
-            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Toked issued before the user session started");
+            throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Token issued before the user session started");
         }
     }
 
-    private Response initiateBrowserLogout(UserSessionModel userSession) {
+    private Response initiateBrowserLogout(UserSessionModel userSession, AuthenticationSessionModel logoutSession) {
+        // the logout session may have been created without a user session (e.g. only an id_token_hint), bind it now so it is reused
+        logoutSession.setAuthNote(AuthenticationManager.LOGOUT_USER_SESSION_ID, userSession.getId());
         userSession.setNote(AuthenticationManager.KEYCLOAK_LOGOUT_PROTOCOL, OIDCLoginProtocol.LOGIN_PROTOCOL);
         logger.tracef("Calling initiateBrowserLogout for user session '%s'", userSession.getId());
         Response response =  AuthenticationManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);

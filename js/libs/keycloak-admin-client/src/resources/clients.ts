@@ -1,4 +1,5 @@
 import type { KeycloakAdminClient } from "../client.js";
+import { NetworkError } from "../utils/fetchWithError.js";
 import type CertificateRepresentation from "../defs/certificateRepresentation.js";
 import type ClientRepresentation from "../defs/clientRepresentation.js";
 import type ClientScopeRepresentation from "../defs/clientScopeRepresentation.js";
@@ -75,7 +76,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string },
-    ClientRepresentation | undefined
+    ClientRepresentation | null
   >({
     method: "GET",
     path: "/{id}",
@@ -161,19 +162,6 @@ export class Clients extends Resource<{ realm?: string }> {
   });
 
   /**
-   * Service account user
-   */
-
-  public getServiceAccountUser = this.makeRequest<
-    { id: string },
-    UserRepresentation
-  >({
-    method: "GET",
-    path: "/{id}/service-account-user",
-    urlParamKeys: ["id"],
-  });
-
-  /**
    * Client secret
    */
 
@@ -213,6 +201,15 @@ export class Clients extends Resource<{ realm?: string }> {
   /**
    * Client Scopes
    */
+  public listAvailableClientScopes = this.makeRequest<
+    { id: string },
+    ClientScopeRepresentation[]
+  >({
+    method: "GET",
+    path: "/{id}/available-client-scopes",
+    urlParamKeys: ["id"],
+  });
+
   public listDefaultClientScopes = this.makeRequest<
     { id: string },
     ClientScopeRepresentation[]
@@ -302,7 +299,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findProtocolMapperById = this.makeRequest<
     { id: string; mapperId: string },
-    ProtocolMapperRepresentation
+    ProtocolMapperRepresentation | null
   >({
     method: "GET",
     path: "/{id}/protocol-mappers/models/{mapperId}",
@@ -312,7 +309,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findProtocolMappersByProtocol = this.makeRequest<
     { id: string; protocol: string },
-    ProtocolMapperRepresentation[]
+    ProtocolMapperRepresentation[] | null
   >({
     method: "GET",
     path: "/{id}/protocol-mappers/protocol/{protocol}",
@@ -424,6 +421,16 @@ export class Clients extends Resource<{ realm?: string }> {
     path: "/{id}/evaluate-scopes/protocol-mappers",
     urlParamKeys: ["id"],
     queryParamKeys: ["scope"],
+  });
+
+  public evaluateGenerateSamlResponse = this.makeRequest<
+    { id: string; scope: string; userId: string },
+    Record<string, unknown>
+  >({
+    method: "GET",
+    path: "/{id}/evaluate-scopes/generate-example-saml-response",
+    urlParamKeys: ["id"],
+    queryParamKeys: ["scope", "userId"],
   });
 
   public evaluateGenerateAccessToken = this.makeRequest<
@@ -671,7 +678,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOnePolicyWithType = this.makeRequest<
     { id: string; type: string; policyId: string },
-    void
+    PolicyRepresentation | null
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{type}/{policyId}",
@@ -681,7 +688,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOnePolicy = this.makeRequest<
     { id: string; policyId: string },
-    void
+    PolicyRepresentation | null
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{policyId}",
@@ -718,11 +725,11 @@ export class Clients extends Resource<{ realm?: string }> {
     policyName: string;
     policy: PolicyRepresentation;
   }): Promise<PolicyRepresentation> {
-    const policyFound = await this.findPolicyByName({
-      id: payload.id,
-      name: payload.policyName,
-    });
-    if (policyFound) {
+    try {
+      const policyFound = await this.findPolicyByName({
+        id: payload.id,
+        name: payload.policyName,
+      });
       await this.updatePolicy(
         {
           id: payload.id,
@@ -731,15 +738,18 @@ export class Clients extends Resource<{ realm?: string }> {
         },
         payload.policy,
       );
-      return this.findPolicyByName({
+      return await this.findPolicyByName({
         id: payload.id,
         name: payload.policyName,
       });
-    } else {
-      return this.createPolicy(
-        { id: payload.id, type: payload.policy.type! },
-        payload.policy,
-      );
+    } catch (error) {
+      if (error instanceof NetworkError && error.response.status === 404) {
+        return this.createPolicy(
+          { id: payload.id, type: payload.policy.type! },
+          payload.policy,
+        );
+      }
+      throw error;
     }
   }
 
@@ -982,6 +992,10 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "attr"],
   });
 
+  /**
+   * @deprecated Clients should generate their own key pairs and upload only the
+   *             public key/certificate. The private key is no longer stored on the server.
+   */
   public generateKey = this.makeRequest<
     { id: string; attr: string },
     CertificateRepresentation
@@ -991,6 +1005,10 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "attr"],
   });
 
+  /**
+   * @deprecated Private keys are no longer stored on the server. The downloaded
+   *             keystore will only contain the certificate.
+   */
   public downloadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     KeyStoreConfig,
@@ -1004,6 +1022,10 @@ export class Clients extends Resource<{ realm?: string }> {
     },
   });
 
+  /**
+   * @deprecated Clients should generate their own key pairs and upload only the
+   *             public key/certificate.
+   */
   public generateAndDownloadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     KeyStoreConfig,
@@ -1017,6 +1039,9 @@ export class Clients extends Resource<{ realm?: string }> {
     },
   });
 
+  /**
+   * @deprecated Use {@link uploadCertificate} instead.
+   */
   public uploadKey = this.makeUpdateRequest<
     { id: string; attr: string },
     FormData

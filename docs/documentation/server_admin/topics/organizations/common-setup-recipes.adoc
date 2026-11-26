@@ -1,0 +1,110 @@
+[id="common-organization-setup-recipes_{context}"]
+
+= Common setup recipes
+
+This section provides step-by-step instructions for common organization configurations. Each recipe shows how to
+achieve a specific outcome using identity provider links, domain routing, and auto-membership settings.
+
+For the full details on the settings referenced in these recipes, see <<_managing_identity_provider_,Managing identity providers>>,
+<<managing-organization-domains_{context},Managing organization domains>>, and <<authenticating-members_{context},Authenticating members>>.
+
+== Single identity provider with automatic managed membership
+
+*Goal:* Users from a known email domain authenticate through the organization's identity provider and are automatically added as managed members.
+
+*Prerequisites:* An identity provider created at the realm level.
+
+.Procedure
+
+. Create an organization with a domain (for example, `acme.com`).
+. Go to the organization's *Identity providers* tab and click *Link identity provider*.
+. Select the identity provider, set *Auto membership* to *ON* and *Membership type* to *Managed*. Click *Save*.
+. Go to the organization's *Domains* tab and click the domain (`acme.com`).
+. Select the linked identity provider from the dropdown and enable *Auto redirect*. Click *Save*.
+
+*Result:* When a user enters an email like `alice@acme.com` on the login page, they are automatically redirected to the identity provider. After authenticating, they are added to the organization as a managed member. If the organization or the membership is removed, the user's account is also removed from the realm.
+
+== Multiple domains with different identity providers
+
+*Goal:* A single organization authenticates users from different email domains through different identity providers, with different membership types.
+
+*Prerequisites:* Two identity providers created at the realm level (for example, `idp-corporate` and `idp-partner`).
+
+.Procedure
+
+. Create an organization with two domains (for example, `acme.com` and `partner.com`).
+. Go to the organization's *Identity providers* tab:
+.. Link `idp-corporate` with *Auto membership* ON and *Membership type* set to *Managed*.
+.. Link `idp-partner` with *Auto membership* ON and *Membership type* set to *Unmanaged*.
+. Go to the organization's *Domains* tab:
+.. Edit `acme.com`: select `idp-corporate`, enable *Auto redirect*.
+.. Edit `partner.com`: select `idp-partner`, enable *Auto redirect*.
+
+*Result:* Users with `@acme.com` emails are routed to `idp-corporate` and added as managed members. Users with `@partner.com` emails are routed to `idp-partner` and added as unmanaged members. The organization controls the membership type independently for each identity provider link.
+
+== Shared identity provider across multiple organizations
+
+*Goal:* A single corporate identity provider (for example, a central EntraId instance) serves multiple organizations, with each organization only accepting users from its own email domain.
+
+*Prerequisites:* One identity provider created at the realm level.
+
+.Procedure
+
+. Create Org-A with domain `acme.com`.
+. Create Org-B with domain `globex.com`.
+. In Org-A's *Identity providers* tab: link the identity provider with *Auto membership* ON and the desired *Membership type*.
+. In Org-A's *Domains* tab: edit `acme.com`, select the identity provider, enable *Auto redirect*.
+. In Org-B's *Identity providers* tab: link the same identity provider with *Auto membership* ON and the desired *Membership type*.
+. In Org-B's *Domains* tab: edit `globex.com`, select the identity provider, enable *Auto redirect*.
+
+*Result:* Both organizations share the same identity provider. The domain gate ensures that users with `@acme.com` are only added to Org-A, and users with `@globex.com` are only added to Org-B. A user whose email domain does not match either organization is not added to any organization.
+
+NOTE: You can verify the shared configuration from the identity provider's realm-level detail page. The *Organizations* tab shows both organizations with their per-association settings, and the *Domains* sub-tab shows all domains routing to this provider.
+
+NOTE: At most one organization can set the membership type to *Managed* for a given identity provider. If Org-A uses *Managed*, Org-B must use *Unmanaged*.
+
+== Domain-less organization with auto-membership
+
+*Goal:* An organization without domains automatically accepts any user who authenticates through a linked identity provider, regardless of their email domain.
+
+*Prerequisites:* An identity provider created at the realm level.
+
+.Procedure
+
+. Create an organization without any domains.
+. Go to the organization's *Identity providers* tab and link the identity provider with *Auto membership* ON.
+
+*Result:* Any user authenticating through this identity provider is added to the organization because the domain gate is skipped for organizations without domains.
+
+IMPORTANT: When the identity provider is also linked to other organizations, the resolved-organization gate applies. If a user's login was initiated through another organization's domain (SP-initiated), the domain-less organization is skipped. The domain-less organization only receives members when it is the resolved organization (for example, via the `organization:alias` scope) or when no organization was resolved (for example, during IdP-initiated login via `kc_idp_hint`).
+
+== Identity provider linked without auto-membership
+
+*Goal:* Link an identity provider to an organization for login convenience without automatically adding users as members. Membership is managed through invitations or manual admin actions only.
+
+*Prerequisites:* An identity provider created at the realm level.
+
+.Procedure
+
+. Go to the organization's *Identity providers* tab and link the identity provider.
+. Set *Auto membership* to *OFF*. The *Membership type* will be set to *Unmanaged* (managed is not available when auto membership is disabled).
+. Click *Save*.
+
+*Result:* The identity provider is available on the login page (unless hidden), and users can authenticate through it. However, users are not automatically added as organization members. To add users to the organization, use invitations or add them manually as realm users.
+
+== Adding members through invitations
+
+*Goal:* Invite a user to join an organization, regardless of identity provider or domain configuration.
+
+*Prerequisites:* An organization exists.
+
+.Procedure
+
+. Go to the organization's *Members* tab and click *Add member*.
+. Click *Invite member*.
+. Provide the user's email address and optionally a first and last name.
+. Click *Send*.
+
+*Result:* The invited user receives an email with a link. When they click the link and authenticate (using any method, including an organization's identity provider), they are added to the organization as an unmanaged member. The invitation flow bypasses all auto-membership and domain gate logic -- the invitation determines the target organization directly.
+
+NOTE: For more details on managing invitations, see <<_managing_members_,Managing members>>.

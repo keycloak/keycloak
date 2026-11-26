@@ -40,11 +40,17 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.PasswordCredentialData;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -73,9 +79,12 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.Matcher;
@@ -93,7 +102,7 @@ public class ExportImportUtil {
 
     // In the old testsuite, this method exists as a public method of ImportTest from the model package.
     // However, model package is not ready to be migrated yet.
-    public static void assertDataImportedInRealm(Keycloak adminClient, KeycloakTestingClient testingClient, RealmRepresentation realm) throws IOException {
+    public static void assertDataImportedInRealm(Keycloak adminClient, KeycloakTestingClient.Server runOnServer, RealmRepresentation realm) throws IOException {
         Assertions.assertTrue(realm.isVerifyEmail());
         Assertions.assertEquals((Integer)3600000, realm.getOfflineSessionIdleTimeout());
         Assertions.assertEquals((Integer)1500, realm.getAccessTokenLifespanForImplicitFlow());
@@ -272,9 +281,9 @@ public class ExportImportUtil {
         Assertions.assertEquals(1, socialLowercaseLinks.size());
         Assertions.assertEquals("lowercasesocialuser@gmail.com", socialLowercaseLinks.get(0).getUserName());
 
-        UserRepresentation foundSocialUser =  testingClient.testing(realm.getRealm()).getUserByFederatedIdentity(realm.getRealm(), "facebook1", "facebook1", "fbuser1");
+        UserRepresentation foundSocialUser =  runOnServer.fetch(getUserByFederatedIdentity("facebook1", "facebook1", "fbuser1"));
         Assertions.assertEquals(foundSocialUser.getUsername(), socialUser.toRepresentation().getUsername());
-        Assertions.assertNull(testingClient.testing(realm.getRealm()).getUserByFederatedIdentity(realm.getRealm(), "facebook", "not-existing", "not-existing"));
+        Assertions.assertNull(runOnServer.fetch(getUserByFederatedIdentity("facebook", "not-existing", "not-existing")));
 
         Assertions.assertEquals("facebook1", facebookIdentityRep.getUserId());
         Assertions.assertEquals("fbuser1", facebookIdentityRep.getUserName());
@@ -337,15 +346,15 @@ public class ExportImportUtil {
         /////////////////
 
         // Assert that federation link wasn't created during import
-        Assertions.assertNull(testingClient.testing(realm.getRealm()).getUserByUsernameFromFedProviderFactory(realm.getRealm(), "wburke"));
+        Assertions.assertNull(runOnServer.fetch(getUserByUsernameFromFedProviderFactory("wburke")));
 
         // Test builtin authentication flows
-        AuthenticationFlowRepresentation clientFlow = testingClient.testing(realm.getRealm()).getClientAuthFlow(realm.getRealm());
+        AuthenticationFlowRepresentation clientFlow = runOnServer.fetch(getClientAuthFlow());
         Assertions.assertEquals(DefaultAuthenticationFlows.CLIENT_AUTHENTICATION_FLOW, clientFlow.getAlias());
         Assertions.assertNotNull(realmRsc.flows().getFlow(clientFlow.getId()));
         Assertions.assertTrue(realmRsc.flows().getExecutions(clientFlow.getAlias()).size() > 0);
 
-        AuthenticationFlowRepresentation resetFlow = testingClient.testing(realm.getRealm()).getResetCredFlow(realm.getRealm());
+        AuthenticationFlowRepresentation resetFlow = runOnServer.fetch(getResetCredFlow());
         Assertions.assertEquals(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, resetFlow.getAlias());
         Assertions.assertNotNull(realmRsc.flows().getFlow(resetFlow.getId()));
         Assertions.assertTrue(realmRsc.flows().getExecutions(resetFlow.getAlias()).size() > 0);
@@ -424,11 +433,11 @@ public class ExportImportUtil {
 
         if (ProfileAssume.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             Assertions.assertTrue(testAppAuthzApp.isServiceAccountsEnabled());
-            Assertions.assertNull(testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), application.getClientId()));//session.users().getUserByServiceAccountClient(application));
-            UserRepresentation otherAppSA = testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), otherApp.getClientId());//session.users().getUserByServiceAccountClient(otherApp);
+            Assertions.assertNull(runOnServer.fetch(getUserByServiceAccountClient(application.getClientId())));//session.users().getUserByServiceAccountClient(application));
+            UserRepresentation otherAppSA = runOnServer.fetch(getUserByServiceAccountClient(otherApp.getClientId()));//session.users().getUserByServiceAccountClient(otherApp);
             Assertions.assertNotNull(otherAppSA);
             Assertions.assertEquals("service-account-otherapp", otherAppSA.getUsername());
-            UserRepresentation testAppAuthzSA = testingClient.testing(realm.getRealm()).getUserByServiceAccountClient(realm.getRealm(), testAppAuthzApp.getClientId());
+            UserRepresentation testAppAuthzSA = runOnServer.fetch(getUserByServiceAccountClient(testAppAuthzApp.getClientId()));
             Assertions.assertNotNull(testAppAuthzSA);
             Assertions.assertEquals("service-account-test-app-authz", testAppAuthzSA.getUsername());
 
@@ -782,4 +791,109 @@ public class ExportImportUtil {
             }
         }
     }
+
+    private static FetchOnServerWrapper<UserRepresentation> getUserByServiceAccountClient(String clientId) {
+        return new FetchOnServerWrapper<>() {
+
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = session.getContext().getRealm();
+                    ClientModel client = realm.getClientByClientId(clientId);
+                    UserModel user = session.users().getServiceAccount(client);
+                    if (user == null) return null;
+                    return ModelToRepresentation.toRepresentation(session, realm, user);
+                };
+            }
+
+            @Override
+            public Class<UserRepresentation> getResultClass() {
+                return UserRepresentation.class;
+            }
+        };
+    }
+
+    private static FetchOnServerWrapper<AuthenticationFlowRepresentation> getResetCredFlow() {
+        return new FetchOnServerWrapper<>() {
+
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = session.getContext().getRealm();
+                    AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
+                    if (flow == null) return null;
+                    return ModelToRepresentation.toRepresentation(session, realm, flow);
+                };
+            }
+
+            @Override
+            public Class<AuthenticationFlowRepresentation> getResultClass() {
+                return AuthenticationFlowRepresentation.class;
+            }
+        };
+    }
+
+    private static FetchOnServerWrapper<AuthenticationFlowRepresentation> getClientAuthFlow() {
+        return new FetchOnServerWrapper<>() {
+
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = session.getContext().getRealm();
+                    AuthenticationFlowModel flow = realm.getClientAuthenticationFlow();
+                    if (flow == null) return null;
+                    return ModelToRepresentation.toRepresentation(session, realm, flow);
+                };
+            }
+
+            @Override
+            public Class<AuthenticationFlowRepresentation> getResultClass() {
+                return AuthenticationFlowRepresentation.class;
+            }
+        };
+    }
+
+    private static FetchOnServerWrapper<UserRepresentation> getUserByUsernameFromFedProviderFactory(String userName) {
+        return new FetchOnServerWrapper<>() {
+
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = session.getContext().getRealm();
+                    DummyUserFederationProviderFactory factory = (DummyUserFederationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, "dummy");
+                    UserModel user = factory.create(session, null).getUserByUsername(realm, userName);
+                    if (user == null) return null;
+                    return ModelToRepresentation.toRepresentation(session, realm, user);
+                };
+            }
+
+            @Override
+            public Class<UserRepresentation> getResultClass() {
+                return UserRepresentation.class;
+            }
+        };
+    }
+
+    private static FetchOnServerWrapper<UserRepresentation> getUserByFederatedIdentity(String identityProvider,
+                                                                                      String userId,
+                                                                                      String userName) {
+        return new FetchOnServerWrapper<>() {
+
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = session.getContext().getRealm();
+                    UserModel foundFederatedUser = session.users().getUserByFederatedIdentity(realm, new FederatedIdentityModel(identityProvider, userId, userName));
+                    if (foundFederatedUser == null) return null;
+                    return ModelToRepresentation.toRepresentation(session, realm, foundFederatedUser);
+                };
+            }
+
+            @Override
+            public Class<UserRepresentation> getResultClass() {
+                return UserRepresentation.class;
+            }
+        };
+    }
+
 }

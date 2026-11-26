@@ -18,11 +18,11 @@
 package org.keycloak.testsuite.organization.exportimport;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
@@ -36,29 +36,42 @@ import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.dir.DirImportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileImportProviderFactory;
+import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationIdentityProviderLinkRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.client.resources.TestingExportImportResource;
+import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.apache.http.client.HttpClient;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,6 +86,25 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         Map<String, List<String>> expectedManagedMembers = new HashMap<>();
         Map<String, List<String>> expectedUnmanagedMembers = new HashMap<>();
         Map<String, String> expectedGroupIds = new HashMap<>();
+        Map<String, Boolean> expectedAutoMembership = new HashMap<>();
+
+        // Create realm role for org group role mapping
+        RoleRepresentation realmRole = new RoleRepresentation("org-export-realm-role", "Realm role for export test", false);
+        managedRealm.admin().roles().create(realmRole);
+        RoleRepresentation createdRealmRole = managedRealm.admin().roles().get("org-export-realm-role").toRepresentation();
+
+        // Create client with a role for org group role mapping
+        ClientRepresentation clientRep = new ClientRepresentation();
+        clientRep.setClientId("org-export-test-client");
+        clientRep.setEnabled(true);
+        String clientUuid;
+        try (Response response = managedRealm.admin().clients().create(clientRep)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
+        RoleRepresentation clientRole = new RoleRepresentation("org-export-client-role", "Client role for export test", false);
+        managedRealm.admin().clients().get(clientUuid).roles().create(clientRole);
+        RoleRepresentation createdClientRole = managedRealm.admin().clients().get(clientUuid).roles().get("org-export-client-role").toRepresentation();
 
         for (int i = 0; i < 2; i++) {
             IdentityProviderRepresentation broker = bc.setUpIdentityProvider();
@@ -97,6 +129,10 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             expectedGroupIds.put("Team-" + i, teamId);
             expectedGroupIds.put("Development-" + i, devId);
             expectedGroupIds.put("QA-" + i, qaId);
+
+            // Add realm and client role mappings to the Department group
+            organization.groups().group(deptId).roles().realmLevel().add(List.of(createdRealmRole));
+            organization.groups().group(deptId).roles().clientLevel(clientUuid).add(List.of(createdClientRole));
 
             expectedOrganizations.add(orgRep);
 
@@ -125,6 +161,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
                 // login to the organization identity provider and run the configured first broker login flow
                 loginPage.login(email, bc.getUserPassword());
+                verifyEmail();
                 assertIsMember(email, organization);
                 managedRealm.admin().logoutAll();
                 providerRealm.logoutAll();
@@ -135,23 +172,35 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             organization.groups().group(deptId).addMember(orgMembers.get(0).getId());
             organization.groups().group(teamId).addMember(orgMembers.get(1).getId());
             organization.groups().group(devId).addMember(orgMembers.get(2).getId());
+
+            // Update IdP link policy after members are enrolled, so auto-membership change is captured in export
+            if (i == 1) {
+                OrganizationIdentityProviderLinkRepresentation linkUpdate = new OrganizationIdentityProviderLinkRepresentation();
+                linkUpdate.setAutoMembership(false);
+                try (Response response = organization.identityProviders().get(broker.getAlias()).update(linkUpdate)) {
+                    assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+                }
+                expectedAutoMembership.put(orgRep.getName(), false);
+            } else {
+                expectedAutoMembership.put(orgRep.getName(), true);
+            }
         }
 
         RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true);
 
-        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, importedSingleFileRealm);
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, expectedAutoMembership, importedSingleFileRealm);
 
         managedRealm.admin().logoutAll();
         providerRealm.logoutAll();
 
         RealmRepresentation importedDirRealm = exportRemoveImportRealm(false);
 
-        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, importedDirRealm);
+        validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, expectedAutoMembership, importedDirRealm);
     }
 
     private void validateImported(List<OrganizationRepresentation> expectedOrganizations,
             Map<String, List<String>> expectedManagedMembers, Map<String, List<String>> expectedUnmanagedMembers,
-            Map<String, String> expectedGroupIds,
+            Map<String, String> expectedGroupIds, Map<String, Boolean> expectedAutoMembership,
             RealmRepresentation importedRealm) {
         assertTrue(importedRealm.isOrganizationsEnabled());
 
@@ -192,6 +241,16 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             
             // Validate organization groups and hierarchy
             validateOrganizationGroups(organization, expectedGroupIds);
+
+            // Validate IdP link policy survived export/import
+            List<IdentityProviderRepresentation> idps = organization.identityProviders().getIdentityProviders();
+            assertThat(idps, hasSize(1));
+            IdentityProviderRepresentation idpRep = idps.get(0);
+            assertThat(idpRep.getOrganizationLinks(), notNullValue());
+            assertThat(idpRep.getOrganizationLinks(), hasSize(1));
+            OrganizationIdentityProviderLinkRepresentation linkRep = idpRep.getOrganizationLinks().get(0);
+            assertEquals(expectedAutoMembership.get(orgRep.getName()), linkRep.getAutoMembership(),
+                    "autoMembership mismatch for org: " + orgRep.getName());
         }
 
         // make sure a managed user can authenticate through the broker associated with an org
@@ -199,7 +258,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         openIdentityFirstLoginPage(email, true, null, false, false);
         // login to the organization identity provider and run the configured first broker login flow
         loginPage.login(email, bc.getUserPassword());
-        assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         AuthenticationManagementResource flows = managedRealm.admin().flows();
         List<AuthenticationExecutionInfoRepresentation> executions = flows.getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW);
@@ -225,6 +284,9 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         // Validate group memberships are preserved
         validateGroupMemberships(organization, topLevelGroups);
+
+        // Validate role mappings are preserved
+        validateGroupRoleMappings(organization, topLevelGroups);
     }
 
     private void validateSubGroups(OrganizationResource organization, List<GroupRepresentation> topLevelGroups, Map<String, String> expectedGroupIds) {
@@ -262,6 +324,33 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         assertThat(devMembers, hasSize(1));
     }
 
+    private void validateGroupRoleMappings(OrganizationResource organization, List<GroupRepresentation> topLevelGroups) {
+        GroupRepresentation deptGroup = topLevelGroups.stream().filter(g -> g.getName().startsWith("Department-")).findFirst().orElseThrow();
+
+        // Validate via role mapping API
+        List<RoleRepresentation> realmRoles = organization.groups().group(deptGroup.getId()).roles().realmLevel().listAll();
+        assertThat(realmRoles, hasSize(1));
+        assertThat(realmRoles.get(0).getName(), equalTo("org-export-realm-role"));
+
+        List<RoleRepresentation> clientRoles = organization.groups().group(deptGroup.getId()).roles()
+                .clientLevel(managedRealm.admin().clients().findByClientId("org-export-test-client").get(0).getId()).listAll();
+        assertThat(clientRoles, hasSize(1));
+        assertThat(clientRoles.get(0).getName(), equalTo("org-export-client-role"));
+
+        // Validate via group representation
+        GroupRepresentation deptRep = organization.groups().group(deptGroup.getId()).toRepresentation(false);
+        assertThat(deptRep.getRealmRoles(), hasSize(1));
+        assertThat(deptRep.getRealmRoles(), hasItem("org-export-realm-role"));
+        assertThat(deptRep.getClientRoles(), notNullValue());
+        assertThat(deptRep.getClientRoles().get("org-export-test-client"), hasSize(1));
+        assertThat(deptRep.getClientRoles().get("org-export-test-client"), hasItem("org-export-client-role"));
+
+        // Team group should have no role mappings
+        GroupRepresentation teamGroup = topLevelGroups.stream().filter(g -> g.getName().startsWith("Team-")).findFirst().orElseThrow();
+        List<RoleRepresentation> teamRealmRoles = organization.groups().group(teamGroup.getId()).roles().realmLevel().listAll();
+        assertThat(teamRealmRoles, hasSize(0));
+    }
+
     private void validateGroupIds(List<GroupRepresentation> groups, Map<String, String> expectedGroupIds) {
         for (GroupRepresentation group : groups) {
             String expectedId = expectedGroupIds.get(group.getName());
@@ -291,35 +380,34 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     private RealmRepresentation exportRemoveImportRealm(boolean file) {
-        TestingExportImportResource exportImport = testingClient.testing().exportImport();
         String fileOrDir;
 
         //export
         if (file) {
-            exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-            fileOrDir = exportImport.getExportImportTestDirectory() + File.separator + "org-export.json";
-            exportImport.setFile(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+            fileOrDir = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "org-export.json";
+            runOnServerMaster.run(ExportImportHelper.setFile(fileOrDir));
         } else {
-            exportImport.setProvider(DirExportProviderFactory.PROVIDER_ID);
-            fileOrDir = exportImport.getExportImportTestDirectory();
-            exportImport.setDir(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
+            fileOrDir = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","");
+            runOnServerMaster.run(ExportImportHelper.setDir(fileOrDir));
         }
-        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
-        exportImport.setRealmName(managedRealm.admin().toRepresentation().getRealm());
-        exportImport.runExport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(managedRealm.admin().toRepresentation().getRealm()));
+        runOnServerMaster.run(ExportImportHelper.runExport());
+
 
         // remove the realm and import it back
         managedRealm.admin().remove();
-        exportImport = testingClient.testing().exportImport();
         if (file) {
-            exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
-            exportImport.setFile(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileImportProviderFactory.PROVIDER_ID));
+            runOnServerMaster.run(ExportImportHelper.setFile(fileOrDir));
         } else {
-            exportImport.setProvider(DirImportProviderFactory.PROVIDER_ID);
-            exportImport.setDir(fileOrDir);
+            runOnServerMaster.run(ExportImportHelper.setProvider(DirImportProviderFactory.PROVIDER_ID));
+            runOnServerMaster.run(ExportImportHelper.setDir(fileOrDir));
         }
-        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
-        exportImport.runImport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+        runOnServerMaster.run(ExportImportHelper.runImport());
         getCleanup().addCleanup(() -> {
             managedRealm.admin().remove();
             getTestContext().getTestRealmReps().clear();
@@ -329,25 +417,71 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     @Test
-    public void testPartialExport() {
-        createOrganization();
-        assertPartialExportImport(false, false);
-        assertPartialExportImport(true, false);
-        assertPartialExportImport(true, true);
-        assertPartialExportImport(false, true);
+    public void testPartialExport() throws IOException {
+        OrganizationRepresentation expected = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(expected.getId());
+        createTopLevelGroup(organization, "Department");
+        addMember(organization);
+
+        OrganizationIdentityProviderLinkRepresentation linkUpdate = new OrganizationIdentityProviderLinkRepresentation();
+        linkUpdate.setAutoMembership(false);
+        String brokerAlias = expected.getDomains().iterator().next().getIdentityProviderAlias();
+        try (Response response = organization.identityProviders().get(brokerAlias).update(linkUpdate)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+        }
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            assertPartialExportImport(client, expected, false, false);
+            assertPartialExportImport(client, expected, true, false);
+            assertPartialExportImport(client, expected, true, true);
+            assertPartialExportImport(client, expected, false, true);
+        }
     }
 
-    private void assertPartialExportImport(boolean exportGroupsAndRoles, boolean exportClients) {
-        RealmRepresentation export = managedRealm.admin().partialExport(exportGroupsAndRoles, exportClients);
-        assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
-        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> Objects.nonNull(idp.getOrganizationId())));
-        PartialImportRepresentation rep = new PartialImportRepresentation();
-        rep.setUsers(export.getUsers());
-        rep.setClients(export.getClients());
-        rep.setRoles(export.getRoles());
-        rep.setIdentityProviders(export.getIdentityProviders());
-        rep.setGroups(export.getGroups());
-        managedRealm.admin().partialImport(rep).close();
+    private void assertPartialExportImport(HttpClient client, OrganizationRepresentation expected, boolean exportGroupsAndRoles, boolean exportClients) throws IOException {
+        String realmUrl = suiteContext.getAuthServerInfo().getContextRoot() + "/auth/admin/realms/" + managedRealm.getName();
+        String token = adminClient.tokenManager().getAccessTokenString();
+
+        ObjectNode exportedFile = (ObjectNode) SimpleHttpDefault.doPost(realmUrl + "/partial-export?exportGroupsAndRoles=" + exportGroupsAndRoles + "&exportClients=" + exportClients, client)
+                .auth(token)
+                .entity(new StringEntity(""))
+                .asJson();
+        RealmRepresentation export = JsonSerialization.mapper.treeToValue(exportedFile, RealmRepresentation.class);
+
+        assertThat(export.getOrganizations(), hasSize(1));
+        OrganizationRepresentation exported = export.getOrganizations().get(0);
+        assertThat(exported.getId(), equalTo(expected.getId()));
+        assertThat(exported.getName(), equalTo(expected.getName()));
+        assertThat(exported.getAlias(), equalTo(expected.getAlias()));
+        assertThat(exported.getDescription(), equalTo(expected.getDescription()));
+        assertThat(exported.getAttributes(), equalTo(expected.getAttributes()));
+
+        OrganizationDomainRepresentation expectedDomain = expected.getDomains().iterator().next();
+        OrganizationDomainRepresentation exportedDomain = exported.getDomain(expectedDomain.getName());
+        assertThat(exportedDomain, notNullValue());
+        assertThat(exportedDomain.getIdentityProviderAlias(), equalTo(expectedDomain.getIdentityProviderAlias()));
+        assertThat(exportedDomain.isAutoRedirect(), is(expectedDomain.isAutoRedirect()));
+
+        assertThat(exported.getIdentityProviders(), hasSize(1));
+        IdentityProviderRepresentation exportedBroker = exported.getIdentityProviders().get(0);
+        assertThat(exportedBroker.getAlias(), equalTo(expectedDomain.getIdentityProviderAlias()));
+        assertThat(exportedBroker.getOrganizationLinks(), hasSize(1));
+        OrganizationIdentityProviderLinkRepresentation exportedLink = exportedBroker.getOrganizationLinks().get(0);
+        OrganizationIdentityProviderLinkRepresentation expectedLink = managedRealm.admin().organizations().get(expected.getId())
+                .identityProviders().getIdentityProviders().get(0).getOrganizationLinks().get(0);
+        assertThat(exportedLink.getOrganizationId(), equalTo(expected.getId()));
+        assertThat(exportedLink.getAutoMembership(), is(false));
+        assertThat(exportedLink.getMembershipType(), notNullValue());
+        assertThat(exportedLink.getMembershipType(), equalTo(expectedLink.getMembershipType()));
+
+        assertThat(exported.getGroups().stream().map(GroupRepresentation::getName).toList(), containsInAnyOrder("Department"));
+        assertThat(Optional.ofNullable(exported.getMembers()).orElse(List.of()), empty());
+        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> idp.getOrganizationLinks() != null && !idp.getOrganizationLinks().isEmpty()));
+
+        exportedFile.put("ifResourceExists", PartialImportRepresentation.Policy.SKIP.name());
+        try (SimpleHttpResponse response = SimpleHttpDefault.doPost(realmUrl + "/partialImport", client).auth(token).json(exportedFile).asResponse()) {
+            assertThat(response.getStatus(), equalTo(Response.Status.OK.getStatusCode()));
+        }
     }
 
     private String createTopLevelGroup(OrganizationResource organization, String name) {

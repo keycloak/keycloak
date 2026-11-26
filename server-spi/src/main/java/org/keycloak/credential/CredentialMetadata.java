@@ -8,6 +8,8 @@ public class CredentialMetadata {
     LocalizedMessage warningMessageTitle;
     LocalizedMessage warningMessageDescription;
     CredentialModel credentialModel;
+    private String iconLight;
+    private String iconDark;
 
     public CredentialModel getCredentialModel() {
         return credentialModel;
@@ -50,6 +52,22 @@ public class CredentialMetadata {
 
     public void setInfoProperties(List<LocalizedMessage> infoProperties) {
         this.infoProperties = infoProperties;
+    }
+
+    public String getIconLight() {
+        return iconLight;
+    }
+
+    public void setIconLight(String iconLight) {
+        this.iconLight = iconLight;
+    }
+
+    public String getIconDark() {
+        return iconDark;
+    }
+
+    public void setIconDark(String iconDark) {
+        this.iconDark = iconDark;
     }
 
     public static class LocalizedMessage {

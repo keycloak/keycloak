@@ -31,9 +31,12 @@ import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
+import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.hamcrest.Matchers;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -48,6 +51,13 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @ClassRule
     public static LDAPRule ldapRule = new LDAPRule();
+
+    KeycloakTestingClient.Server runOnServerAdminClientTest;
+
+    @Before
+    public void setup() {
+        runOnServerAdminClientTest = testingClient.server(REALM_NAME);
+    }
 
     @Test
     public void testLdapConnections() {
@@ -64,7 +74,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         assertStatus(response, 204);
 
         // Connection success with invalid credentials
-        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(ldapRule.getConfig(), false);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(ldapRule.getConfig(), false)).replace("\"", "");
         getCleanup().addCleanup(() -> {
             adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);;
         });
@@ -162,7 +172,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         Map<String, String> cfg = ldapRule.getConfig();
         cfg.put(LDAPConstants.CONNECTION_URL, "ldap://invalid:10389 ldap://localhost:10389");
         cfg.put(LDAPConstants.CONNECTION_TIMEOUT, "1000");
-        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(cfg, false);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
 
         // Only 2nd server works with stored LDAP federation provider
         response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
@@ -179,7 +189,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
         cfg.put(LDAPConstants.CONNECTION_URL, "ldaps://localhost:10636");
         cfg.put(LDAPConstants.START_TLS, "false");
         cfg.put(LDAPConstants.USE_TRUSTSTORE_SPI, "true");
-        String ldapModelId = testingClient.testing().ldap(REALM_NAME).createLDAPProvider(cfg, false);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
         try {
             // test passing everything with password included
             Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
@@ -215,6 +225,148 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
                     cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
                     cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
             assertStatus(response, 400);
+
+            // test providing the explicit password when modifying the connection URL works
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION,
+                    "ldap://localhost:10389", cfg.get(LDAPConstants.BIND_DN), cfg.get(LDAPConstants.BIND_CREDENTIAL),
+                    "false", cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 204);
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testTestAuthenticationRejectsUrlChangeWithPlaceholderCredential() {
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            // testing authentication with changed URL and placeholder credential should be rejected
+            Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(
+                    LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://anotherhost:10389",
+                    cfg.get(LDAPConstants.BIND_DN), ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 400);
+
+            // testing authentication with changed Bind DN and placeholder credential should be rejected
+            response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(
+                    LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, cfg.get(LDAPConstants.CONNECTION_URL),
+                    "uid=anotheradmin,ou=system", ComponentRepresentation.SECRET_VALUE,
+                    cfg.get(LDAPConstants.USE_TRUSTSTORE_SPI), cfg.get(LDAPConstants.CONNECTION_TIMEOUT),
+                    cfg.get(LDAPConstants.START_TLS), cfg.get(LDAPConstants.AUTH_TYPE), ldapModelId));
+            assertStatus(response, 400);
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testUpdateComponentRejectsUrlChangeWithPlaceholderCredential() {
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // changing URL while credential is the sentinel should be rejected
+            rep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://anotherhost:10389");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // changing URL while credential is omitted should also be rejected
+            rep.getConfig().remove(LDAPConstants.BIND_CREDENTIAL);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // re-entering the credential explicitly should allow the URL change
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+            realm.components().component(ldapModelId).update(rep);
+
+            // verify the URL was actually updated
+            ComponentRepresentation updated = realm.components().component(ldapModelId).toRepresentation();
+            Assertions.assertEquals("ldap://anotherhost:10389", updated.getConfig().getFirst(LDAPConstants.CONNECTION_URL));
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testUpdateComponentRejectsBindDnChangeWithPlaceholderCredential() {
+        Map<String, String> cfg = ldapRule.getConfig();
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // changing bind DN while credential is the sentinel should be rejected
+            rep.getConfig().putSingle(LDAPConstants.BIND_DN, "uid=anotheradmin,ou=system");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // changing bind DN while credential is omitted should also be rejected
+            rep.getConfig().remove(LDAPConstants.BIND_CREDENTIAL);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // re-entering the credential explicitly should allow the bind DN change
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+            realm.components().component(ldapModelId).update(rep);
+
+            // verify the bind DN was actually updated
+            ComponentRepresentation updated = realm.components().component(ldapModelId).toRepresentation();
+            Assertions.assertEquals("uid=anotheradmin,ou=system", updated.getConfig().getFirst(LDAPConstants.BIND_DN));
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testUpdateComponentAllowsUrlChangeWhenBothAnonymousAndNoCredentialStored() {
+        // When both old and new auth type are AUTH_TYPE_NONE and no credential is stored,
+        // there is nothing to protect and a URL change must be allowed.
+        Map<String, String> cfg = new java.util.HashMap<>(ldapRule.getConfig());
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        cfg.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
+        cfg.remove(LDAPConstants.BIND_CREDENTIAL);  // no credential stored
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // URL change with placeholder credential when no credential is stored should be allowed
+            rep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://anotherhost:10389");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            realm.components().component(ldapModelId).update(rep);
+        } finally {
+            adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
+        }
+    }
+
+    @Test
+    public void testUpdateComponentRejectsUrlChangeWhenCredentialStoredUnderNoneAuthType() {
+        // A component using AUTH_TYPE_NONE can still carry a stored bind credential in its config.
+        // Changing the URL while leaving that credential as a placeholder must be rejected —
+        // auth type alone is not sufficient to determine whether a credential is at risk.
+        Map<String, String> cfg = new java.util.HashMap<>(ldapRule.getConfig());  // copy — includes a real bindCredential
+        cfg.put(LDAPConstants.CONNECTION_URL, "ldap://localhost:10389");
+        cfg.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
+        String ldapModelId = runOnServerAdminClientTest.fetchString(LdapHelper.createLDAPProvider(cfg, false)).replace("\"", "");
+        try {
+            ComponentRepresentation rep = realm.components().component(ldapModelId).toRepresentation();
+
+            // Changing URL while credential is the placeholder must be rejected even under auth=none.
+            rep.getConfig().putSingle(LDAPConstants.CONNECTION_URL, "ldap://anotherhost:10389");
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, ComponentRepresentation.SECRET_VALUE);
+            Assertions.assertThrows(BadRequestException.class, () ->
+                    realm.components().component(ldapModelId).update(rep));
+
+            // Supplying an explicit credential must allow the URL change.
+            rep.getConfig().putSingle(LDAPConstants.BIND_CREDENTIAL, "secret");
+            realm.components().component(ldapModelId).update(rep);
         } finally {
             adminClient.realm(REALM_NAME).components().removeComponent(ldapModelId);
         }

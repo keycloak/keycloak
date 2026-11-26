@@ -1,6 +1,5 @@
 package org.keycloak.tests.oid4vc.issuance;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +23,9 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
@@ -66,11 +67,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
     /** Returns the credential scope configured for this test's format. */
     protected abstract CredentialScopeRepresentation getCredentialScope();
 
-    /**
-     * Returns the claim name (last segment of the path) used when building mandatory-claim
-     * authorization details for this format.
-     */
-    protected abstract String getExpectedClaimPath();
+    /** Returns the claim path used when building mandatory-claim authorization details for this format. */
+    protected abstract List<Object> getExpectedClaimPath();
 
     /** Returns the name of the firstName protocol mapper in the credential scope. */
     protected abstract String getFirstNameProtocolMapperName();
@@ -202,8 +200,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         assertEquals(400, credentialResponse.getStatusCode(),
                 "Credential request with token without OID4VCI scope should fail");
-        assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), credentialResponse.getError());
-        assertEquals("Invalid AccessToken for credential request. No authorization_details", credentialResponse.getErrorDescription());
+        assertEquals(ErrorType.INVALID_TOKEN.getValue(), credentialResponse.getError());
+        assertEquals("Invalid or missing token", credentialResponse.getErrorDescription());
     }
 
     /**
@@ -253,6 +251,35 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
         assertSuccessfulCredentialResponse(credResponse);
+    }
+
+    /**
+     * Replaying the same proof JWT in a second credential request must fail because the
+     * proof c_nonce is consumed after the first successful request.
+     */
+    @Test
+    public void testCredentialRequestRejectsReplayedProofCNonce() throws Exception {
+
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        Proofs proofs = newJwtProofs();
+
+        Oid4vcCredentialResponse firstResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proofs)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+        assertSuccessfulCredentialResponse(firstResponse);
+
+        Oid4vcCredentialResponse replayResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proofs)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+
+        assertEquals(400, replayResponse.getStatusCode());
+        assertEquals(ErrorType.INVALID_NONCE.getValue(), replayResponse.getError());
     }
 
     /** After refreshing the token the new access-token must still be usable for a credential request. */
@@ -430,6 +457,10 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
             userState.userRep.setLastName(null);
             userState.user.update(userState.userRep);
 
+            UserRepresentation userRep = testRealm.admin().users().search(TEST_USER).get(0);
+            var lastName = userRep.getLastName();
+            assertNull(lastName, "User last name should be null, not: " + lastName);
+
             Oid4vcCredentialResponse resp = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
                     .proofs(newJwtProofs())
@@ -465,6 +496,56 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
             protocolMapper.getConfig().put(Oid4vcProtocolMapperModel.MANDATORY,
                     originalMandatoryValue != null ? originalMandatoryValue : "false");
             clientScopeResource.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
+        }
+    }
+
+    /**
+     * Requesting verifiable-credential, which user does not have should fail
+     */
+    @Test
+    public void testRequestingVerifiableCredentialMissingForUser()
+            throws Exception {
+
+        // User still has credential. Token request should be successful
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        events.clear();
+
+        // Revoke verifiable credential from user
+        String userId = testRealm.admin().users().search(TEST_USER).get(0).getId();
+        try {
+            testRealm.admin().users().get(userId).verifiableCredentials().revokeCredential(ctx.getScope());
+
+            Oid4vcCredentialResponse credResponse = oauth.oid4vc().credentialRequest()
+                    .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
+                    .bearerToken(tokenResponse.getAccessToken())
+                    .send();
+
+            assertEquals(400, credResponse.getStatusCode());
+            assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credResponse.getError());
+
+            events.poll();
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                    .error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue())
+                    .details(Details.REASON, "User 'john' does not have requested verifiable credential '" + ctx.getCredentialConfigurationId() + "'");
+
+            // Test new token-endpoint request fails as user does not have credential
+            OID4VCBasicWallet.AuthorizationEndpointRequest authRequest = wallet.authorizationRequest()
+                    .scope(ctx.getScope());
+            authRequest.openLoginForm();
+            AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
+            String code = authResponse.getCode();
+            AccessTokenResponse errorResponse = oauth.accessTokenRequest(code).send();
+            assertEquals(400, errorResponse.getStatusCode());
+            assertTrue(errorResponse.getErrorDescription().contains("User 'john' does not have verifiable credential '" + ctx.getCredentialConfigurationId() + "'."));
+        } finally {
+            // Add back verifiable credential to the user
+            UserVerifiableCredentialRepresentation credRep = new UserVerifiableCredentialRepresentation();
+            credRep.setCredentialScopeName(ctx.getScope());
+            testRealm.admin().users().get(userId).verifiableCredentials().createCredential(credRep);
         }
     }
 
@@ -858,13 +939,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
      */
     protected List<ClaimsDescription> mandatoryLastNameClaims() {
         ClaimsDescription claim = new ClaimsDescription();
-        List<Object> claimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            claimPath = Collections.singletonList(getExpectedClaimPath());
-        } else {
-            claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        claim.setPath(claimPath);
+        claim.setPath(getExpectedClaimPath());
         claim.setMandatory(true);
         return List.of(claim);
     }
@@ -956,6 +1031,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         UserRepresentation userRep = testRealm.admin().users().search(TEST_USER).get(0);
         UserResource userResource = testRealm.admin().users().get(userRep.getId());
         userRep = userResource.toRepresentation();
+        // Ensure attributes is non-null so that subsequent updates (e.g. setLastName(null))
+        // skip the putIfAbsent merge in UserResource.updateUser and actually clear the field.
+        if (userRep.getAttributes() == null) {
+            userRep.setAttributes(Collections.emptyMap());
+        }
         return new UserState(userResource, userRep,
                 userRep.getFirstName(),
                 userRep.getLastName(),

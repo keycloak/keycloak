@@ -8,6 +8,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Expiry;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
@@ -44,8 +45,9 @@ public class DefaultLocalCacheProviderFactory implements LocalCacheProvider, Loc
             builder.maximumSize(configuration.maxSize());
         }
 
-        if (configuration.hasExpiration()) {
-            builder.expireAfterAccess(configuration.expiration());
+        switch (configuration.expirationMode()) {
+            case ACCESS -> builder.expireAfter(Expiry.accessing(configuration.expiration()));
+            case CREATE -> builder.expireAfter(Expiry.creating(configuration.expiration()));
         }
 
         if (configuration.hasLoader()) {

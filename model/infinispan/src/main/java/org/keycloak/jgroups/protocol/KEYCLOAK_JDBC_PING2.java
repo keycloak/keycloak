@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,7 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -39,6 +45,7 @@ import org.jgroups.PhysicalAddress;
 import org.jgroups.View;
 import org.jgroups.annotations.Property;
 import org.jgroups.conf.AttributeType;
+import org.jgroups.logging.Log;
 import org.jgroups.protocols.JDBC_PING2;
 import org.jgroups.protocols.PingData;
 import org.jgroups.protocols.relay.SiteUUID;
@@ -52,7 +59,32 @@ import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
 
 public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
+    private static final int HEALTH_CHECK_INTERVAL_SECONDS = 10;
+    private static final int HEALTH_CHECK_REPEAT_LOG_CYCLES = 180; // re-log after 180 * 10s = 30 minutes
+
+    @Property(description = "SQL to count entries in the JDBC_PING table belonging to cluster names other than the current one. "
+            + "Used to detect multiple clusters sharing the same database without the stateless feature.")
+    protected String select_other_clusters_count_sql =
+            "SELECT COUNT(*) FROM jgroups WHERE cluster != ? AND last_update >= ?";
+
+    @Property(description = "Whether multiple cluster names in the JDBC_PING table are permitted. "
+            + "Set to true when the stateless feature is enabled, as it provides the cross-cluster cache invalidation "
+            + "mechanism that makes multi-cluster setups safe.")
+    protected boolean allow_multiple_clusters = false;
+
+    private static final Executor NETWORK_TIMEOUT_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "jdbc-ping-network-timeout");
+        t.setDaemon(true);
+        return t;
+    });
+
     private JpaConnectionProviderFactory factory;
+    private volatile HealthStatus previousHealthStatus = HealthStatus.HEALTHY;
+    // address of a member that left the view -> time in seconds when it left
+    private final Map<Address, Long> leftMembers = new ConcurrentHashMap<>();
+    private volatile int cyclesSinceLastLog = 0;
+    private volatile Future<?> healthCheckTask;
+    private volatile Runnable onHealthRestored;
 
     @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
     protected long staleness_timeout = 60000L;
@@ -64,9 +96,20 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
     @Override
     protected Connection getConnection() throws SQLException {
+        Connection connection = null;
         try {
-            return factory.getConnection();
+            connection = factory.getConnection();
+            try {
+                connection.setNetworkTimeout(NETWORK_TIMEOUT_EXECUTOR, (int) (staleness_timeout / 3));
+            } catch (SQLFeatureNotSupportedException e) {
+                log.warn("JDBC driver does not support setNetworkTimeout. " +
+                        "Health check queries may hang during database outages.");
+            }
+            return connection;
         } catch (Exception e) {
+            if (connection != null) {
+                try { connection.close(); } catch (SQLException ignored) {}
+            }
             var cause = e.getCause();
             if (cause instanceof SQLException sql) {
                 // it should hit this branch 100% of the time
@@ -115,12 +158,32 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Override
     protected void handleView(View new_view, View old_view, boolean coord_changed) {
         super.handleView(new_view, old_view, coord_changed);
+        trackLeftMembers(new_view, old_view);
         if (coord_changed) {
             try {
                 removeStaleEntries();
             } catch (Exception e) {
                 log.error(String.format("%s: failed handling view change", local_addr), e);
             }
+        }
+    }
+
+    /**
+     * Remember when members left the view. Their row is allocated to themselves and stays in the table until it is stale,
+     * and could win the split-brain decision against this node.
+     * As only a member itself writes its coordinator row, a row updated after the member left shows that it is alive again.
+     */
+    private void trackLeftMembers(View new_view, View old_view) {
+        leftMembers.keySet().removeIf(new_view::containsMember);
+        if (old_view == null) {
+            return;
+        }
+        // rows older than the staleness timeout are ignored when reading, so there is no need to remember them
+        long cutoff = getStalenessCutoff();
+        leftMembers.values().removeIf(leftAt -> leftAt < cutoff);
+        long now = Time.currentTime();
+        for (Address addr : View.diff(old_view, new_view)[1]) {
+            leftMembers.put(addr, now);
         }
     }
 
@@ -165,6 +228,16 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     protected List<PingData> readFromDB(String cluster) throws Exception {
+        return readRowsFromDB(cluster).stream().map(PingRow::data).collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    /**
+     * A row from the table, with the time of its last update in seconds.
+     */
+    protected record PingRow(PingData data, long lastUpdate) {
+    }
+
+    protected List<PingRow> readRowsFromDB(String cluster) throws Exception {
         try(Connection conn=getConnection();
             PreparedStatement ps=prepare(conn, select_all_pingdata_sql, TYPE_FORWARD_ONLY, CONCUR_UPDATABLE)) {
             ps.setString(1, cluster);
@@ -172,7 +245,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                 log.trace("%s: SQL for reading: %s", local_addr, ps);
             try(ResultSet resultSet=ps.executeQuery()) {
                 reads++;
-                List<PingData> retval=new LinkedList<>();
+                List<PingRow> retval=new LinkedList<>();
                 Map<Address, Set<Address>> members = new HashMap<>();
                 while(resultSet.next()) {
                     String uuid=resultSet.getString(1);
@@ -187,14 +260,14 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                     Address addr=Util.addressFromString(uuid);
                     IpAddress ip_addr=new IpAddress(ip);
                     PingData data=new PingData(addr, true, name, ip_addr).coord(coord);
-                    retval.add(data);
+                    retval.add(new PingRow(data, last_update));
                     if (coordinated_by != null) {
                         Address coordinate_by_address = Util.addressFromString(coordinated_by);
                         members.computeIfAbsent(coordinate_by_address, address -> new HashSet<>())
                                 .add(addr);
                     }
                 }
-                retval.forEach(a -> a.mbrs(members.get(a.getAddress())));
+                retval.forEach(r -> r.data().mbrs(members.get(r.data().getAddress())));
                 return retval;
             }
         }
@@ -224,8 +297,86 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         return TimeUnit.MILLISECONDS.toSeconds(Time.currentTimeMillis() - staleness_timeout);
     }
 
+    @Override
+    public void start() throws Exception {
+        super.start();
+        healthCheckTask = timer.scheduleWithFixedDelay(() -> runHealthCheck(log),
+                HEALTH_CHECK_INTERVAL_SECONDS, HEALTH_CHECK_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void stop() {
+        Future<?> task = healthCheckTask;
+        if (task != null) {
+            task.cancel(false);
+            healthCheckTask = null;
+        }
+        super.stop();
+    }
+
+    protected void runHealthCheck(Log logger) {
+        if (view == null) {
+            return;
+        }
+        HealthStatus status = healthStatus();
+        boolean statusChanged = status != previousHealthStatus;
+        if (statusChanged) {
+            previousHealthStatus = status;
+            cyclesSinceLastLog = 0;
+        }
+
+        if (status == HealthStatus.HEALTHY) {
+            if (statusChanged) {
+                logger.info("Cluster health restored for cluster '%s'.", cluster_name);
+                Runnable callback = onHealthRestored;
+                if (callback != null) {
+                    try {
+                        callback.run();
+                    } catch (Throwable t) {
+                        logger.error("onHealthRestored callback failed", t);
+                    }
+                }
+            }
+            return;
+        }
+
+        // For non-healthy states: log on transition and then every HEALTH_CHECK_REPEAT_LOG_CYCLES.
+        if (statusChanged || cyclesSinceLastLog >= HEALTH_CHECK_REPEAT_LOG_CYCLES) {
+            cyclesSinceLastLog = 0;
+            switch (status) {
+                case UNHEALTHY -> logger.error("Split-brain detected for cluster '%s'. This node (%s) is in the losing "
+                        + "partition and should not be serving requests. Possible causes: (1) nodes within this "
+                        + "cluster cannot reach each other over the network — check network connectivity and "
+                        + "firewall rules; (2) two separate Keycloak deployments share the same database but use "
+                        + "the same cluster name — each deployment must be assigned a distinct cluster name via "
+                        + "'cache-embedded-cluster-name'.",
+                        cluster_name, local_addr);
+                case NO_COORDINATOR -> logger.warn("No coordinator found in the database for cluster '%s'. "
+                        + "This is most likely transient and will resolve once a coordinator is elected.", cluster_name);
+                case ERROR -> logger.warn("Failed to determine cluster health for cluster '%s' from the database. "
+                        + "This may indicate a database connectivity issue.",
+                        cluster_name);
+                case MULTIPLE_CLUSTERS -> logger.error("Multiple cluster names detected in the JDBC_PING table "
+                        + "while the stateless feature is not enabled. "
+                        + "Cross-cluster cache invalidation requires the stateless feature to be enabled. "
+                        + "Either enable the stateless feature or ensure all nodes use the same cluster name "
+                        + "via 'cache-embedded-cluster-name'.");
+            }
+        } else {
+            cyclesSinceLastLog++;
+        }
+    }
+
     public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
         this.factory = Objects.requireNonNull(factory);
+    }
+
+    public Runnable getOnHealthRestored() {
+        return onHealthRestored;
+    }
+
+    public void setOnHealthRestored(Runnable onHealthRestored) {
+        this.onHealthRestored = onHealthRestored;
     }
 
     // Pick the largest partition first, then order by address to allow for a stable result
@@ -241,7 +392,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      * <ul>
      *     <li>Reads the data from the database</li>
      *     <li>If an error occurs fetching the data, it returns {@link HealthStatus#ERROR}</li>
-     *     <li>Filters out non coordinator members</li>
+     *     <li>Filters out non coordinator members, and members that left the view and did not write their row after that</li>
      *     <li>If no coordinator is found, it return {@link HealthStatus#NO_COORDINATOR}</li>
      *     <li>If multiple coordinators are found, it compares them and uses the coordinator with the lowest {@link UUID}</li>
      *     <li>Finally, it compares if the coordinator is the same as the current view coordinator. If so, it returns {@link HealthStatus#HEALTHY}, otherwise {@link HealthStatus#UNHEALTHY}</li>
@@ -252,19 +403,42 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
      */
     public HealthStatus healthStatus() {
         try {
-            return readFromDB(cluster_name)
+            HealthStatus status = readRowsFromDB(cluster_name)
                     .stream()
-                    .filter(PingData::isCoord)
+                    .filter(row -> row.data().isCoord())
+                    // ignore a member that left our view, until it writes its row again
+                    .filter(row -> {
+                        Long leftAt = leftMembers.get(row.data().getAddress());
+                        return leftAt == null || row.lastUpdate() > leftAt;
+                    })
+                    .map(PingRow::data)
                     .sorted(SPLIT_BRAIN_DECIDER)
                     .map(PingData::getAddress)
                     .findFirst()
                     .map(view.getCoord()::equals)
                     .map(isCoordinatorInView -> isCoordinatorInView ? HealthStatus.HEALTHY : HealthStatus.UNHEALTHY)
                     .orElse(HealthStatus.NO_COORDINATOR);
+
+            if (status == HealthStatus.HEALTHY && !allow_multiple_clusters && hasOtherClusters()) {
+                return HealthStatus.MULTIPLE_CLUSTERS;
+            }
+            return status;
         } catch (Exception e) {
-            // database failed?
-            log.warn("Failed to fetch the cluster members from the database.", e);
             return HealthStatus.ERROR;
+        }
+    }
+
+    private boolean hasOtherClusters() {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(select_other_clusters_count_sql)) {
+            ps.setString(1, cluster_name);
+            ps.setLong(2, getStalenessCutoff());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to check for other cluster names in the database.", e);
+            return false;
         }
     }
 
@@ -284,6 +458,11 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         /**
          * If an error occurs when reading from the database.
          */
-        ERROR
+        ERROR,
+        /**
+         * Multiple cluster names detected in the database table while the stateless feature is not enabled.
+         * Cross-cluster cache invalidation requires the stateless feature.
+         */
+        MULTIPLE_CLUSTERS
     }
 }

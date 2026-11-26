@@ -210,11 +210,6 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
         } else {
             commands.add("--cache=ispn");
             commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
-
-            var stack = System.getProperty("auth.server.quarkus.cluster.stack");
-            if (stack != null) {
-                commands.add("--cache-stack=" + stack);
-            }
         }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
@@ -236,6 +231,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             commands.add("--cache-remote-tls-enabled=false");
             commands.add("--spi-cache-embedded-default-site-name=test");
         }
+
 
         if (!suiteContext.get().isAuthServerMigrationEnabled()) {
             commands.add("--bootstrap-admin-username=" + AuthRealm.ADMIN);

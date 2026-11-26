@@ -11,12 +11,14 @@ type KeycloakDropdownProps = Omit<DropdownProps, "toggle"> & {
   "data-testid"?: string;
   isKebab?: boolean;
   title?: ReactNode;
+  toggleLabel?: string;
   dropDownItems: ReactNode[];
 };
 
 export const KeycloakDropdown = ({
   isKebab = false,
   title,
+  toggleLabel,
   dropDownItems,
   ...rest
 }: KeycloakDropdownProps) => {
@@ -26,12 +28,13 @@ export const KeycloakDropdown = ({
     <Dropdown
       {...rest}
       popperProps={{
-        position: "right",
+        position: "end",
       }}
       onOpenChange={(isOpen) => setOpen(isOpen)}
       toggle={(ref) => (
         <MenuToggle
           data-testid={`${rest["data-testid"]}-toggle`}
+          aria-label={toggleLabel}
           ref={ref}
           onClick={() => setOpen(!open)}
           isExpanded={open}

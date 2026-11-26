@@ -37,6 +37,7 @@ import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
@@ -59,12 +60,21 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
-    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator) {
-        super(session, event, maxInflatingSize, destinationValidator);
+    public static final String AUTHN_REQUEST_CANNOT_BE_PROCESSED = "Authentication request cannot be processed.";
+
+    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator, long maxSoapMessageRequestSize, boolean enableSaml11Parsers) {
+        super(session, event, maxInflatingSize, destinationValidator, maxSoapMessageRequestSize,  enableSaml11Parsers);
     }
 
     public Response authenticate(InputStream inputStream) {
-        return authenticate(Soap.extractSoapMessage(inputStream));
+        Document soapMessage;
+        try (InputStream limitedInputStream = SamlProtocolUtils.limit(inputStream, maxSoapMessageRequestSize)) {
+            soapMessage = Soap.extractSoapMessage(limitedInputStream);
+        } catch (Exception e) {
+            logger.debugf(e, "Error while processing SOAP request.");
+            return Soap.createFault().reason("Some error occurred while processing the SOAP request.").build();
+        }
+        return authenticate(soapMessage);
     }
 
     public Response authenticate(Document soapMessage) {
@@ -73,7 +83,8 @@ public class SamlEcpProfileService extends SamlService {
 
                 @Override
                 protected Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters) {
-                    return Soap.createFault().code("error").reason(message).build();
+                    logger.debugf("Error while authenticating request. Reason '%s'", message);
+                    return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
                 }
 
                 @Override
@@ -96,7 +107,7 @@ public class SamlEcpProfileService extends SamlService {
                     // Do not allow ECP login when client does not support it
                     if (!new SamlClient(client).allowECPFlow()) {
                         logger.errorf("Client %s is not allowed to execute ECP flow", client.getClientId());
-                        throw new RuntimeException("Client is not allowed to use ECP profile.");
+                        return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
                     }
 
                     // force passive authentication when executing this profile
@@ -106,14 +117,8 @@ public class SamlEcpProfileService extends SamlService {
                 }
             }.execute(Soap.toSamlHttpPostMessage(soapMessage), null, null, null);
         } catch (Exception e) {
-            String reason = "Some error occurred while processing the AuthnRequest.";
-            String detail = e.getMessage();
-
-            if (detail == null) {
-                detail = reason;
-            }
-
-            return Soap.createFault().reason(reason).detail(detail).build();
+            logger.error("Some error occurred while processing the AuthnRequest.", e);
+            return Soap.createFault().code("error").reason(AUTHN_REQUEST_CANNOT_BE_PROCESSED).build();
         }
     }
 

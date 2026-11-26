@@ -38,6 +38,8 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.representation.TokenIntrospectionResponse;
+import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -45,6 +47,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
@@ -65,6 +68,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE;
+import static org.keycloak.protocol.oidc.OIDCProviderConfig.DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -419,6 +424,167 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
+    public void testMutatedUriDoesNotBypassResourceMatching() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        // catch-all "/*" resource with a grant policy — this is the permissive fallback
+        ResourceRepresentation catchAll = addResource("Catch-All Resource", null, Collections.singleton("/*"), false, "ScopeA");
+        ResourcePermissionRepresentation catchAllPermission = new ResourcePermissionRepresentation();
+        catchAllPermission.setName("Catch-All Permission");
+        catchAllPermission.addResource(catchAll.getName());
+        catchAllPermission.addPolicy(grantPolicy.getName());
+        authorization.permissions().resource().create(catchAllPermission).close();
+
+        // restricted "/api/admin" resource with a deny policy — only specific users should reach this
+        ResourceRepresentation adminResource = addResource("Admin Resource", null, Collections.singleton("/api/admin"), false, "ScopeA");
+        ResourcePermissionRepresentation adminPermission = new ResourcePermissionRepresentation();
+        adminPermission.setName("Admin Permission");
+        adminPermission.addResource(adminResource.getName());
+        adminPermission.addPolicy(denyPolicy.getName());
+        authorization.permissions().resource().create(adminPermission).close();
+
+        // restricted template resource with a deny policy — URIs with curly braces must still match correctly
+        ResourceRepresentation templateResource = addResource("Template Resource", null,
+                Collections.singleton("/api/{version}/admin"), false, "ScopeA");
+        ResourcePermissionRepresentation templatePermission = new ResourcePermissionRepresentation();
+        templatePermission.setName("Template Permission");
+        templatePermission.addResource(templateResource.getName());
+        templatePermission.addPolicy(denyPolicy.getName());
+        authorization.permissions().resource().create(templatePermission).close();
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        String token = accessTokenResponse.getToken();
+
+        // exact URI must be denied — the Admin Resource's deny policy applies
+        try {
+            authorizeDecision(token, true, new PermissionRequest("/api/admin", "ScopeA"));
+            fail("Should be denied for /api/admin");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // all mutated forms must also be denied — they must resolve to Admin Resource, not fall through to /*
+        String[] mutatedUris = {
+                "/api/admin;x=1",       // matrix params - Servlet/JAX-RS silently strip these when routing
+                "/api/admin%3Bx=1",     // percent-encoded semicolon - form decoder decodes %3B to ; before PathMatcher
+                "/api/admin%3bx=1",     // percent-encoded semicolon (lowercase hex)
+                "/api/admin/",          // trailing slash - server routes this the same as /api/admin
+                "/api/admin%2F",        // percent-encoded trailing slash
+                "//api///admin",        // double slashes - collapse to /api/admin
+                "/api/foo/../admin",    // dot segments - resolves to /api/admin
+                "/api/foo/%2E%2E/admin", // percent-encoded dot traversal
+                "/api/%61dmin",         // percent-encoded unreserved char - %61 = 'a', equivalent per RFC 3986 §2.3
+                "/api/%2Fadmin",        // percent-encoded slash
+                "/api%2F%2Fadmin",      // percent-encoded double slash
+                "/api/foo%2F..%2Fadmin", // percent-encoded slash + dot traversal combined
+                "/api/admin;x=1/",     // combined: matrix params + trailing slash
+        };
+        for (String mutatedUri : mutatedUris) {
+            try {
+                authorizeDecision(token, true, new PermissionRequest(mutatedUri, "ScopeA"));
+                fail("Should be denied for mutated URI: " + mutatedUri);
+            } catch (AuthorizationDeniedException expected) {
+            }
+        }
+
+        // URIs with curly braces (template parameters) must still match the template resource, not fall through to /*
+        try {
+            authorizeDecision(token, true, new PermissionRequest("/api/{version}/admin", "ScopeA"));
+            fail("Should be denied for URI with curly braces");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // malformed or pathless URIs — normalizeUri returns null, matches() returns null, server returns 400 invalid_resource
+        String[] invalidUris = {
+                "/api/foo/../admin%",   // bare % is invalid percent-encoding
+                "foo:bar",             // valid URI but has no path component
+        };
+        for (String invalidUri : invalidUris) {
+            try {
+                authorizeDecision(token, true, new PermissionRequest(invalidUri, "ScopeA"));
+                fail("Should be denied for invalid URI: " + invalidUri);
+            } catch (RuntimeException expected) {
+                assertTrue(expected.getCause() instanceof HttpResponseException
+                        && ((HttpResponseException) expected.getCause()).getStatusCode() == 400,
+                        "Expected 400 error for: " + invalidUri + " but got: " + expected.getMessage());
+            }
+        }
+    }
+
+    @Test
+    public void testDoubleEncodedUriDoesNotBypassResourceMatching() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        // catch-all "/*" resource with a grant policy — the permissive fallback a broken match would leak into
+        ResourceRepresentation catchAll = addResource("Catch-All Resource DE", null, Collections.singleton("/*"), false, "ScopeA");
+        ResourcePermissionRepresentation catchAllPermission = new ResourcePermissionRepresentation();
+        catchAllPermission.setName("Catch-All Permission DE");
+        catchAllPermission.addResource(catchAll.getName());
+        catchAllPermission.addPolicy(grantPolicy.getName());
+        authorization.permissions().resource().create(catchAllPermission).close();
+
+        // restricted "/api/admin" resource with a deny policy
+        ResourceRepresentation adminResource = addResource("Admin Resource DE", null, Collections.singleton("/api/admin"), false, "ScopeA");
+        ResourcePermissionRepresentation adminPermission = new ResourcePermissionRepresentation();
+        adminPermission.setName("Admin Permission DE");
+        adminPermission.addResource(adminResource.getName());
+        adminPermission.addPolicy(denyPolicy.getName());
+        authorization.permissions().resource().create(adminPermission).close();
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        String token = accessTokenResponse.getToken();
+
+        // sanity check — the exact URI is denied
+        try {
+            authorizeDecision(token, true, new PermissionRequest("/api/admin", "ScopeA"));
+            fail("Should be denied for /api/admin");
+        } catch (AuthorizationDeniedException expected) {
+        }
+
+        // the form decoder decodes "%252Fadmin" exactly once, to the literal text "%2Fadmin" - it must not
+        // resolve to "/api/admin" (bypassing the deny policy) or produce an unresolved "//". It resolves to
+        // the wildcard catch-all resource instead and is granted there, like any other non-matching URI.
+        AuthorizationResponse response = authorizeDecision(token, true,
+                new PermissionRequest("/api/%252Fadmin", "ScopeA"));
+        assertTrue((Boolean) response.getOtherClaims().getOrDefault("result", "false"),
+                "Double-encoded slash should resolve to the catch-all resource and be granted, not denied or rejected");
+    }
+
+    @Test
+    public void testAbsoluteUriResourceMatching() throws Exception {
+        ClientResource client = getClient(getRealm());
+        AuthorizationResource authorization = client.authorization();
+
+        // template resource configured as a full absolute URI — scheme and authority must survive normalization
+        ResourceRepresentation templateResource = addResource("Absolute Template Resource", null,
+                Collections.singleton("https://my.domain/example/{module-name}"), false, "ScopeA");
+        ResourcePermissionRepresentation templatePermission = new ResourcePermissionRepresentation();
+        templatePermission.setName("Absolute Template Permission");
+        templatePermission.addResource(templateResource.getName());
+        templatePermission.addPolicy(grantPolicy.getName());
+        authorization.permissions().resource().create(templatePermission).close();
+
+        // wildcard resource configured as a full absolute URI
+        ResourceRepresentation wildcardResource = addResource("Absolute Wildcard Resource", null,
+                Collections.singleton("https://my.other.domain/example/*"), false, "ScopeA");
+        ResourcePermissionRepresentation wildcardPermission = new ResourcePermissionRepresentation();
+        wildcardPermission.setName("Absolute Wildcard Permission");
+        wildcardPermission.addResource(wildcardResource.getName());
+        wildcardPermission.addPolicy(grantPolicy.getName());
+        authorization.permissions().resource().create(wildcardPermission).close();
+
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+        String token = accessTokenResponse.getToken();
+
+        // must resolve to the configured absolute-URI resources, not fail with "resource not found"
+        assertTrue((Boolean) authorizeDecision(token, true,
+                new PermissionRequest("https://my.domain/example/one", "ScopeA")).getOtherClaims().getOrDefault("result", "false"));
+        assertTrue((Boolean) authorizeDecision(token, true,
+                new PermissionRequest("https://my.other.domain/example/one", "ScopeA")).getOtherClaims().getOrDefault("result", "false"));
+    }
+
+    @Test
     public void testCORSHeadersInFailedRptRequest() throws Exception {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
 
@@ -442,7 +608,66 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
             assertEquals(400, response.getStatusLine().getStatusCode());
+            // Signature is valid (token was issued by Keycloak), so CORS headers should be set
+            // even though token validation failed due to the user being disabled (KEYCLOAK-15429)
             assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+        }
+    }
+
+    @Test
+    public void testCORSHeadersSetForExpiredToken() throws Exception {
+        AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
+
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        post.addHeader("Authorization", "Bearer " + accessTokenResponse.getToken());
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        // Advance server time past access token lifespan to force expiration
+        try {
+            timeOffSet.set(600);
+
+            try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+                assertEquals(400, response.getStatusLine().getStatusCode());
+                // Signature is still valid on expired tokens, so CORS headers should be set (KEYCLOAK-15429)
+                assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
+            }
+        } finally {
+            timeOffSet.set(0);
+        }
+    }
+
+    @Test
+    public void testCORSHeadersNotSetForForgedToken() throws Exception {
+        // CVE-2026-37977: CORS headers must not be set when the JWT signature is invalid
+        PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
+        String ticket = getAuthzClient().protection().permission().create(Arrays.asList(permissions)).getTicket();
+
+        String tokenEndpoint = getAuthzClient().getServerConfiguration().getTokenEndpoint();
+        HttpPost post = new HttpPost(tokenEndpoint);
+        post.addHeader("Origin", "http://localhost");
+        // Forged token: valid structure but signed with an unknown key
+        post.addHeader("Authorization", "Bearer eyJhbGciOiJSUzI1NiJ9.eyJhenAiOiJyZXNvdXJjZS1zZXJ2ZXItdGVzdCJ9.invalidsignature");
+        List<NameValuePair> parameters = new LinkedList<>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE));
+        parameters.add(new BasicNameValuePair("ticket", ticket));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            // Invalid signature: CORS headers must not be set based on unverified claims
+            assertNull(response.getFirstHeader("Access-Control-Allow-Origin"));
         }
     }
 
@@ -616,6 +841,52 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
         clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "true");
         client.update(clientRepresentation);
+    }
+
+    @Test
+    public void testUsingBigSubjectToken() {
+        AuthzClient authzClient = getAuthzClient();
+
+        // Request 1: Using service-account credentials works
+        AuthorizationRequest request = new AuthorizationRequest();
+        AuthorizationResponse response = authzClient.authorization().authorize(request);
+        assertNotNull(response.getToken());
+
+        // Request 2: Using invalid subject_token should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token");
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        // Request 3: Using invalid subject_token with length bigger than 4000 characters should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE + 10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token of length " + DEFAULT_REQ_PARAMS_DEFAULT_MAX_SIZE + 10);
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("unauthorized_client"));
+        }
+
+        // Request 4: Using invalid subject_token with length bigger than 20000 characters should fail
+        request = new AuthorizationRequest();
+        request.setSubjectToken(SecretGenerator.getInstance().randomString(DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE + 10));
+        try {
+            authzClient.authorization().authorize(request);
+            fail("should fail, invalid subject_token of length " + DEFAULT_REQ_TOKEN_PARAMS_DEFAULT_MAX_SIZE + 10);
+        } catch (Exception e) {
+            Throwable expected = e.getCause();
+            assertEquals(400, HttpResponseException.class.cast(expected).getStatusCode());
+            assertTrue(HttpResponseException.class.cast(expected).toString().contains("invalid_request"));
+        }
     }
 
     private String getIdToken(String username, String password) {

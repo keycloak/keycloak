@@ -16,6 +16,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.events.Details;
@@ -27,6 +28,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.AbstractNestedBrokerTest;
@@ -55,6 +57,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -191,9 +194,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         BackchannelLogoutResponse response = oauth.doBackchannelLogout(null);
         assertEquals(400, response.getStatusCode());
         assertEquals("No logout token", response.getErrorDescription());
-        events.expectLogoutError(Errors.INVALID_TOKEN)
-                .realm(realmIdConsumerRealm)
-                .assertEvent();
+        EventAssertion.expectLogoutError(events.poll()).error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -205,9 +206,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         BackchannelLogoutResponse response = oauth.doBackchannelLogout(logoutTokenMissingContent);
         assertEquals(400, response.getStatusCode());
         assertEquals(LogoutTokenValidationCode.DECODE_TOKEN_FAILED.getErrorMessage(), response.getErrorDescription());
-        events.expectLogoutError(Errors.INVALID_TOKEN)
-                .realm(realmIdConsumerRealm)
-                .assertEvent();
+        EventAssertion.expectLogoutError(events.poll()).error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -580,6 +579,50 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         assertNoOfflineSessionsInClient(nbc.consumerRealmName(), consumerClientId, userIdConsumerRealm);
     }
+    
+    @Test
+    public void postBackchannelLogoutRejectsUnsignedTokenWhenSignatureValidationDisabled() throws Exception {
+        String brokerClientIdProviderRealm = getClientId(nbc.providerRealmName(), BROKER_CLIENT_ID);
+
+        logInAsUserInIDP(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
+        String userIdConsumerRealm = getUserIdConsumerRealm();
+
+        String sessionIdProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
+        String sessionIdConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm,
+                userIdConsumerRealm, sessionIdConsumerRealm);
+
+        disableConsumerIdentityProviderSignatureValidation();
+        
+        String unsignedLogoutTokenEncoded = getLogoutTokenEncodedAndUnsigned(userIdProviderRealm, sessionIdProviderRealm, false);
+
+        oauth.realm(nbc.consumerRealmName());
+        assertFalse(oauth.doBackchannelLogout(unsignedLogoutTokenEncoded).isSuccess());
+
+        assertConsumerLogoutError(sessionIdConsumerRealm, userIdConsumerRealm, Errors.INVALID_TOKEN);
+        assertActiveSessionInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm,
+                userIdConsumerRealm, sessionIdConsumerRealm);
+        assertActiveSessionInClient(nbc.providerRealmName(), brokerClientIdProviderRealm,
+                userIdProviderRealm, sessionIdProviderRealm);
+        
+        // also check if signed token still works
+        String signedLogoutTokenEncoded = getLogoutTokenEncodedAndSigned(userIdProviderRealm, sessionIdProviderRealm);
+        assertTrue(oauth.doBackchannelLogout(signedLogoutTokenEncoded).isSuccess());
+        assertConsumerLogoutEvent(sessionIdConsumerRealm, userIdConsumerRealm);
+        assertNoSessionsInClient(nbc.consumerRealmName(), accountClientIdConsumerRealm, userIdConsumerRealm,
+                sessionIdConsumerRealm);
+    }
+
+    private void disableConsumerIdentityProviderSignatureValidation() {
+        IdentityProviderResource consumerIDPResource = adminClient.realm(nbc.consumerRealmName())
+                .identityProviders().get(nbc.getIDPAlias());
+
+        IdentityProviderRepresentation consumerIDP = consumerIDPResource.toRepresentation();
+        Map<String, String> cConfig = consumerIDP.getConfig();
+        cConfig.put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+
+        consumerIDPResource.update(consumerIDP);
+    }
 
     private void subConsumerIdpRequestsOfflineSessions() {
         IdentityProviderResource subConsumerIDPResource = adminClient.realm(nbc.subConsumerRealmName())
@@ -600,6 +643,16 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         return getLogoutTokenEncodedAndSigned(userId, sessionId, false);
     }
 
+    private String getLogoutTokenEncodedAndUnsigned(String userIdProviderRealm, String sessionIdProviderRealm, boolean revokeOfflineSessions)
+          throws IOException {
+        return LogoutTokenUtil.generateUnsignedLogoutToken(
+                getConsumerRoot() + "/auth/realms/" + nbc.providerRealmName(),
+                nbc.getIDPClientIdInProviderRealm(),
+                userIdProviderRealm,
+                sessionIdProviderRealm,
+                revokeOfflineSessions);
+    }
+    
     private String getLogoutTokenEncodedAndSigned(String userId, String sessionId, boolean revokeOfflineSessions)
             throws IOException {
         String keyId = adminClient.realm(nbc.providerRealmName())
@@ -639,14 +692,14 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (loginEventOptional.isPresent()) {
             EventRepresentation loginEvent = loginEventOptional.get();
-            this.events.expectLogin()
-                    .realm(realmId)
-                    .client(clientId)
-                    .user(userId)
-                    .removeDetail(Details.CODE_ID)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent(loginEvent);
+            EventAssertion.assertSuccess(loginEvent)
+                    .type(EventType.LOGIN)
+                    .hasCodeId()
+                    .hasSessionId()
+                    .hasIpAddress()
+                    .clientId(clientId)
+                    .userId(userId);
+
             sessionId = loginEvent.getSessionId();
         } else {
             fail("No Login event found for user " + userId);
@@ -675,15 +728,30 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (logoutEventOptional.isPresent()) {
             EventRepresentation logoutEvent = logoutEventOptional.get();
-            this.events.expectLogout(sessionId)
-                    .realm(realmId)
-                    .user(userId)
-                    .client((String) null)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .assertEvent(logoutEvent);
+            EventAssertion.assertSuccess(logoutEvent)
+                    .type(EventType.LOGOUT)
+                    .sessionId(sessionId)
+                    .userId(userId)
+                    .clientId(null)
+                    .withoutDetails(Details.REDIRECT_URI);
         } else {
             fail("No Logout event found for session " + sessionId);
         }
+    }
+
+    private void assertConsumerLogoutError(String sessionIdConsumerRealm, String userIdConsumerRealm, String error) {
+        assertLogoutError(sessionIdConsumerRealm, userIdConsumerRealm, nbc.consumerRealmName(), error);
+    }
+
+    private void assertLogoutError(String sessionId, String userId, String realmName, String error) {
+
+        Optional<EventRepresentation> logoutErrorsOptional = adminClient.realm(realmName).getEvents().stream()
+                .filter(event -> EventType.LOGOUT_ERROR.toString().equals(event.getType()))
+                .filter(event -> error.equals(event.getError()))
+                .findAny();
+        
+        assertFalse("The expected LOGOUT_ERROR event not found for session " + sessionId, logoutErrorsOptional.isEmpty());
+
     }
 
     private void assertLogoutErrorEvent(String realmName) {
@@ -698,9 +766,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (logoutErrorEventOptional.isPresent()) {
             EventRepresentation logoutEvent = logoutErrorEventOptional.get();
-            this.events.expectLogoutError(Errors.LOGOUT_FAILED)
-                    .realm(realmId)
-                    .assertEvent(logoutEvent);
+            EventAssertion.expectLogoutError(logoutEvent).error(Errors.LOGOUT_FAILED);
         } else {
             fail("No Logout error event found in realm " + realmName);
         }
@@ -717,12 +783,12 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
             if (logoutEventOptional.isPresent()) {
                 EventRepresentation logoutEvent = logoutEventOptional.get();
-                this.events.expectLogout(sessionId)
-                        .realm(realmIdConsumerRealm)
-                        .user(userIdConsumerRealm)
-                        .client((String) null)
-                        .removeDetail(Details.REDIRECT_URI)
-                        .assertEvent(logoutEvent);
+                EventAssertion.assertSuccess(logoutEvent)
+                        .type(EventType.LOGOUT)
+                        .sessionId(sessionId)
+                        .userId(userIdConsumerRealm)
+                        .clientId(null)
+                        .withoutDetails(Details.REDIRECT_URI);
             } else {
                 fail("No Logout event found for session " + sessionId);
             }

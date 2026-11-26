@@ -135,11 +135,20 @@ public class AuthChainingAcrossDomainsTest {
                     .build());
 
             // test client to request jwt auth grant in domainb
+            ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+            audienceMapper.setName("audience-clientb");
+            audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+            audienceMapper.setConfig(new HashMap<>());
+            audienceMapper.getConfig().put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, "clientb");
+            audienceMapper.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+
             realm.clients(ClientBuilder.create("clientb")
                     .secret("password")
                     .redirectUris("*")
                     .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
-                    .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_IDP, "domaina"));
+                    .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_IDP, "domaina")
+                    .protocolMappers(audienceMapper));
 
             return realm;
         }

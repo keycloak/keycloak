@@ -19,6 +19,7 @@ import { FormFields } from "../ClientDetails";
 import { IdentityProviderSelect } from "../../components/identity-provider/IdentityProviderSelect";
 import { IdentityProviderType } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useAccess } from "../../context/access/Access";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -50,7 +51,19 @@ export const CapabilityConfig = ({
   );
   const isFeatureEnabled = useIsFeatureEnabled();
   const { hasSomeAccess } = useAccess();
+  const { realmRepresentation } = useRealm();
   const showIdentityProviders = hasSomeAccess("view-identity-providers");
+  // Mirror the gate in ClientDetails: only expose the SSF capability
+  // toggle when both the server feature is enabled and the realm has
+  // opted in. Otherwise enabling the toggle would just render a tab
+  // that crashes on its first API call.
+  const showSsfReceiverToggle =
+    isFeatureEnabled(Feature.Ssf) &&
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
+  // V2 rejects public clients, but V1 accepts bearer tokens issued to any client
+  const showExternalTokenSettings =
+    isFeatureEnabled(Feature.IdentityBrokeringAPIV1) ||
+    (isFeatureEnabled(Feature.IdentityBrokeringAPIV2) && !clientAuthentication);
   return (
     <FormAccess
       isHorizontal
@@ -103,6 +116,12 @@ export const CapabilityConfig = ({
                       setValue(
                         convertAttributeNameToForm<FormFields>(
                           "attributes.oauth2.jwt.authorization.grant.enabled",
+                        ),
+                        false,
+                      );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.ssf.enabled",
                         ),
                         false,
                       );
@@ -457,7 +476,6 @@ export const CapabilityConfig = ({
                   IdentityProviderType.JWT_AUTHORIZATION_GRANT
                 }
                 isDisabled={clientAuthentication}
-                realmOnly
                 stringify
               />
             )}
@@ -471,33 +489,42 @@ export const CapabilityConfig = ({
               stringify
             />
           )}
-          {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) &&
-            !clientAuthentication && (
-              <>
-                <DefaultSwitchControl
-                  name={convertAttributeNameToForm<FormFields>(
-                    "attributes.external.token.enabled",
-                  )}
-                  label={t("externalTokenEnabled")}
-                  labelIcon={t("externalTokenEnabledHelp")}
-                  stringify
-                />
-                {showIdentityProviders &&
-                  externalTokenEnabled?.toString() === "true" && (
-                    <IdentityProviderSelect
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.external.token.idp",
-                      )}
-                      label={t("externalTokenIdp")}
-                      helpText={t("externalTokenIdpHelp")}
-                      convertToName={convertAttributeNameToForm}
-                      identityProviderType={IdentityProviderType.ANY}
-                      realmOnly
-                      stringify
-                    />
-                  )}
-              </>
-            )}
+          {showExternalTokenSettings && (
+            <>
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.external.token.enabled",
+                )}
+                label={t("externalTokenEnabled")}
+                labelIcon={t("externalTokenEnabledHelp")}
+                stringify
+              />
+              {showIdentityProviders &&
+                externalTokenEnabled?.toString() === "true" && (
+                  <IdentityProviderSelect
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.external.token.idp",
+                    )}
+                    label={t("externalTokenIdp")}
+                    helpText={t("externalTokenIdpHelp")}
+                    convertToName={convertAttributeNameToForm}
+                    identityProviderType={IdentityProviderType.ANY}
+                    realmOnly
+                    stringify
+                  />
+                )}
+            </>
+          )}
+          {!clientAuthentication && showSsfReceiverToggle && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.ssf.enabled",
+              )}
+              label={t("ssfReceiverEnabled")}
+              labelIcon={t("ssfReceiverEnabledHelp")}
+              stringify
+            />
+          )}
         </>
       )}
       {protocol === "saml" && (

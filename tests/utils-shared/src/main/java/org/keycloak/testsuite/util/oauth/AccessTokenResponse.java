@@ -2,10 +2,10 @@ package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
@@ -136,10 +136,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
     }
 
     private <ADR extends AuthorizationDetailsJSONRepresentation> List<ADR> getAuthorizationDetails(Class<ADR> clazz) {
-        if (authorizationDetails == null) {
-            return Collections.emptyList();
-        }
-        return authorizationDetails.stream()
+        return Optional.ofNullable(authorizationDetails).orElse(List.of()).stream()
                 .map(authzResponse -> authzResponse.asSubtype(clazz))
                 .toList();
     }

@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -50,6 +49,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -58,6 +58,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 
@@ -70,6 +71,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @resource Groups
@@ -106,7 +108,7 @@ public class GroupResource {
         this.auth.groups().requireView(group);
 
         GroupRepresentation rep = GroupUtils.toRepresentation(this.auth.groups(), group, true);
-
+        GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
         rep.setAccess(auth.groups().getAccess(group));
 
         return GroupUtils.populateSubGroupCount(group, rep);
@@ -129,9 +131,13 @@ public class GroupResource {
     public Response updateGroup(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
+
         String groupName = rep.getName();
 
-        if (ObjectUtil.isBlank(groupName)) {
+        if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
@@ -140,6 +146,10 @@ public class GroupResource {
         }
 
         if (!Objects.equals(groupName, group.getName())) {
+            if (Validation.containsControlCharacters(groupName)) {
+                throw ErrorResponse.error("Group name contains control characters", Response.Status.BAD_REQUEST);
+            }
+
             boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
                     .anyMatch(s -> Objects.equals(s.getName(), groupName));
             if (exists) {
@@ -187,6 +197,7 @@ public class GroupResource {
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Boolean which defines whether brief groups representations are returned or not (default: false)") @QueryParam("briefRepresentation") @DefaultValue("false") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether to return the count of subgroups for each subgroup of this group (default: true)") @QueryParam("subGroupsCount") @DefaultValue("true") Boolean subGroupsCount) {
+        this.auth.groups().requireList();
         this.auth.groups().requireView(group);
 
         Stream<GroupModel> stream = group.getSubGroupsStream(search, exact, -1, -1);
@@ -198,6 +209,9 @@ public class GroupResource {
         return paginatedStream(stream, first, max)
             .map(g -> {
                 GroupRepresentation rep = GroupUtils.toRepresentation(auth.groups(), g, !briefRepresentation);
+                if (!briefRepresentation) {
+                    GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+                }
 
                 if (subGroupsCount) {
                     return GroupUtils.populateSubGroupCount(g, rep);
@@ -229,9 +243,20 @@ public class GroupResource {
     public Response addChild(GroupRepresentation rep) {
         this.auth.groups().requireManage(group);
 
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
+
         String groupName = rep.getName();
-        if (ObjectUtil.isBlank(groupName)) {
+        if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
+        // validate the name only when a new subgroup is created; requests that move an
+        // existing group (rep.id present) do not apply the name, so the stored name
+        // of legacy groups must not be rejected here
+        if (rep.getId() == null && Validation.containsControlCharacters(groupName)) {
+            throw ErrorResponse.error("Group name contains control characters", Response.Status.BAD_REQUEST);
         }
 
         try {
@@ -242,7 +267,15 @@ public class GroupResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
+                if (Organizations.isOrganizationGroup(child)) {
+                    throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Response.Status.BAD_REQUEST);
+                }
+                auth.groups().requireManage(child);
+                if (KeycloakModelUtils.isDescendantOfOrSelf(group, child)) {
+                    throw ErrorResponse.error("Cannot move group '" + child.getName() + "' under itself or its descendants", Response.Status.BAD_REQUEST);
+                }
                 if (!Objects.equals(child.getParentId(), group.getId())) {
+                    GroupUtils.checkAdminGroupRoles(group, auth);
                     realm.moveGroup(child, group);
                 }
                 adminEvent.operation(OperationType.UPDATE);
@@ -334,12 +367,10 @@ public class GroupResource {
 
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        boolean briefRep = Boolean.TRUE.equals(briefRepresentation);
 
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
-                .map(user -> briefRepresentationB
-                        ? ModelToRepresentation.toBriefRepresentation(user)
-                        : ModelToRepresentation.toRepresentation(session, realm, user));
+                .map(user -> ModelToRepresentation.toRepresentation(session, user, briefRep));
     }
 
     /**

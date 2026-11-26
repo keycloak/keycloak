@@ -19,7 +19,9 @@ public class TestClassServer {
     public static final Set<String> DEFAULT_PERMITTED_PACKAGES = Set.of(
         "org.keycloak.testframework",
         "org.junit",
-        "org.opentest4j"
+        "org.opentest4j",
+        "org.hamcrest",
+        "org.awaitility"
     );
 
     private final Set<String> permittedPackages;

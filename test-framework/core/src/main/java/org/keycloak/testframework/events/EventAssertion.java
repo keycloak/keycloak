@@ -1,7 +1,13 @@
 package org.keycloak.testframework.events;
 
+import java.util.Set;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantTypeFactory;
+import org.keycloak.protocol.oidc.grants.RefreshTokenGrantTypeFactory;
 import org.keycloak.representations.idm.EventRepresentation;
 
 import org.hamcrest.MatcherAssert;
@@ -50,6 +56,167 @@ public class EventAssertion {
     }
 
     /**
+     * Assert an expected LOGIN event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLoginSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.LOGIN)
+                .hasCodeId()
+                .hasSessionId()
+                .hasIpAddress()
+                .loginSuccessEventHasAllRequiredDetails();
+    }
+
+    /**
+     * Assert an expected LOGIN_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLoginError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.LOGIN_ERROR)
+                .hasCodeId()
+                .hasIpAddress();
+    }
+
+    /**
+     * Assert an expected LOGOUT event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLogoutSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.LOGOUT)
+                .hasIpAddress()
+                .hasSessionId()
+                .hasRedirectUri();
+    }
+
+    /**
+     * Assert an expected LOGOUT_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLogoutError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.LOGOUT_ERROR)
+                .hasIpAddress()
+                .sessionId(null)
+                .clientId(null)
+                .userId(null)
+                .withoutDetails(Details.CODE_ID);
+    }
+
+    /**
+     * Assert an expected REGISTER event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectRegisterSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.REGISTER)
+                .sessionId(null)
+                .hasCodeId()
+                .hasUserId()
+                .hasRedirectUri()
+                .details(Details.REGISTER_METHOD, "form");
+    }
+
+    /**
+     * Assert an expected REGISTER_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectRegisterError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.REGISTER_ERROR)
+                .sessionId(null)
+                .userId(null)
+                .hasCodeId()
+                .hasRedirectUri()
+                .details(Details.REGISTER_METHOD, "form");
+    }
+
+    /**
+     * Assert an expected CLIENT_LOGIN event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectClientLoginSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.CLIENT_LOGIN)
+                .hasSessionId()
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .details(Details.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS);
+    }
+
+    /**
+     * Assert an expected REFRESH_TOKEN event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectRefreshTokenSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.REFRESH_TOKEN)
+                .hasSessionId()
+                .hasTokenId(Details.UPDATED_REFRESH_TOKEN_ID)
+                .hasAccessTokenId(RefreshTokenGrantTypeFactory.GRANT_SHORTCUT);
+    }
+
+    /**
+     * Assert an expected CODE_TO_TOKEN event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectCodeToTokenSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.CODE_TO_TOKEN)
+                .hasSessionId()
+                .hasCodeId()
+                .hasTokenId(Details.REFRESH_TOKEN_ID)
+                .hasAccessTokenId(AuthorizationCodeGrantTypeFactory.GRANT_SHORTCUT);
+    }
+
+    /**
+     * Assert an expected CODE_TO_TOKEN_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectCodeToTokenError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.CODE_TO_TOKEN_ERROR)
+                .hasSessionId()
+                .hasCodeId()
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
+    }
+
+    /**
+     * Assert an expected required action event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectRequiredAction(EventRepresentation event) {
+        return assertSuccess(event)
+                .sessionId(null)
+                .hasIpAddress()
+                .hasCodeId()
+                .withoutDetails(Details.CONSENT);
+    }
+
+    /**
      * Assert the error message
      *
      * @param error the expected error message
@@ -82,16 +249,58 @@ public class EventAssertion {
     }
 
     /**
-     * Assert the event has the <code>code_id</code> details set
+     * Assert the event has a userId set
+     *
      * @return
      */
-    public EventAssertion isCodeId() {
+    public EventAssertion hasUserId() {
+        MatcherAssert.assertThat(event.getUserId(), EventMatchers.isUUID());
+        return this;
+    }
+
+    /**
+     * Assert the event has the <code>code_id</code> details set
+     *
+     * @return
+     */
+    public EventAssertion hasCodeId() {
         MatcherAssert.assertThat(event.getDetails().get(Details.CODE_ID), EventMatchers.isCodeId());
         return this;
     }
 
     /**
+     * Assert the event has the <code>token_id</code> details set
+     *
+     * @return
+     */
+    public EventAssertion hasTokenId(String tokenType) {
+        MatcherAssert.assertThat(event.getDetails().get(tokenType), EventMatchers.isTokenId());
+        return this;
+    }
+
+    /**
+     * Assert the event has the <code>token_id</code> details set
+     *
+     * @return
+     */
+    public EventAssertion hasAccessTokenId(String expectedGrantShortcut) {
+        MatcherAssert.assertThat(event.getDetails().get(Details.TOKEN_ID), EventMatchers.isAccessTokenId(expectedGrantShortcut));
+        return this;
+    }
+
+    /**
+     * Assert the event has the <code>scope</code> details set
+     *
+     * @return
+     */
+    public EventAssertion hasScope(String scope) {
+        MatcherAssert.assertThat(event.getDetails().get(Details.SCOPE), EventMatchers.isScope(scope));
+        return this;
+    }
+
+    /**
      * Assert the event has an ipAddress set
+     *
      * @return
      */
     public EventAssertion hasIpAddress() {
@@ -160,6 +369,29 @@ public class EventAssertion {
         for (String key : keys) {
             MatcherAssert.assertThat(event.getDetails(), Matchers.not(Matchers.hasKey(key)));
         }
+        return this;
+    }
+
+    /**
+     * Assert the LOGIN event details with required key set
+     *
+     * @return
+     */
+    private EventAssertion loginSuccessEventHasAllRequiredDetails() {
+        Set<String> keyDetails = Set.of("auth_method", "response_type", "redirect_uri", "consent", "code_id", "response_mode");
+        for (String key : keyDetails) {
+            MatcherAssert.assertThat(event.getDetails(), Matchers.hasKey(key));
+        }
+        return this;
+    }
+
+    /**
+     * Assert the event details has redirect_uri
+     *
+     * @return
+     */
+    private EventAssertion hasRedirectUri() {
+        MatcherAssert.assertThat(event.getDetails(), Matchers.hasKey("redirect_uri"));
         return this;
     }
 

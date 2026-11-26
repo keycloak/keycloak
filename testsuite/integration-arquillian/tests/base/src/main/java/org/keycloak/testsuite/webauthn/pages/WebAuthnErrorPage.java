@@ -5,7 +5,6 @@ import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
 import org.junit.jupiter.api.Assertions;
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -23,7 +22,7 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
     @FindBy(id = "cancelWebAuthnAIA")
     private WebElement cancelRegistrationAIA;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement errorMessage;
 
     public void clickTryAgain() {
@@ -49,14 +48,8 @@ public class WebAuthnErrorPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("kc-try-again"));
-            driver.findElement(By.id("kc-error-credential-form"));
-            return true;
-        } catch (NoSuchElementException e) {
-            return false;
-        }
+    public String getExpectedPageId() {
+        return "login-webauthn-error";
     }
 
 }

@@ -25,12 +25,13 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { ComponentProps } from "../components/dynamic/components";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import useToggle from "../utils/useToggle";
 
 type IdentityProviderSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: "typeaheadMulti" | "typeahead";
   isRequired?: boolean;
+  orgId?: string;
+  onIdpSelected?: (idp: IdentityProviderRepresentation) => void;
 };
 
 export const IdentityProviderSelect = ({
@@ -41,6 +42,8 @@ export const IdentityProviderSelect = ({
   isRequired,
   variant = "typeahead",
   isDisabled,
+  orgId,
+  onIdpSelected,
 }: IdentityProviderSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -66,13 +69,17 @@ export const IdentityProviderSelect = ({
     async () => {
       const params: IdentityProvidersQuery = {
         max: 20,
-        realmOnly: true,
       };
       if (search) {
         params.search = search;
       }
 
-      return await adminClient.identityProviders.find(params);
+      const allIdps = await adminClient.identityProviders.find(params);
+      if (!orgId) return allIdps;
+      return allIdps.filter(
+        (idp) =>
+          !idp.organizationLinks?.some((link) => link.organizationId === orgId),
+      );
     },
     setIdps,
     [search],
@@ -96,9 +103,6 @@ export const IdentityProviderSelect = ({
     return options;
   };
 
-  if (!idps) {
-    return <KeycloakSpinner />;
-  }
   return (
     <FormGroup
       label={t(label!)}
@@ -116,9 +120,7 @@ export const IdentityProviderSelect = ({
         control={control}
         rules={{
           validate: (value: string[]) =>
-            isRequired && value.filter((i) => i !== undefined).length === 0
-              ? t("required")
-              : undefined,
+            isRequired && value.length === 0 ? t("required") : undefined,
         }}
         render={({ field }) => (
           <Select
@@ -185,7 +187,7 @@ export const IdentityProviderSelect = ({
                           setInputValue("");
                           setSearch("");
                           field.onChange([]);
-                          textInputRef?.current?.focus();
+                          textInputRef.current?.focus();
                         }}
                         aria-label={t("clear")}
                       >
@@ -208,6 +210,7 @@ export const IdentityProviderSelect = ({
                   field.onChange([]);
                 } else {
                   field.onChange([option]);
+                  onIdpSelected?.(idp);
                 }
 
                 setInputValue(removed ? "" : option || "");

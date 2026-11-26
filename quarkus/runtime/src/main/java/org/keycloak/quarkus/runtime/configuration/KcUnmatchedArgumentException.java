@@ -18,10 +18,8 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import picocli.CommandLine;
 
@@ -29,7 +27,7 @@ import picocli.CommandLine;
  * Custom CommandLine.UnmatchedArgumentException with amended suggestions
  */
 public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentException {
-    
+
     private static final int MAX_OPTION_SUGGESTIONS = 7;
     private static final int MAX_COMMAND_SUGGESTIONS = 3;
 
@@ -47,7 +45,7 @@ public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentE
      */
     @Override
     public List<String> getSuggestions() {
-        String unmatched = this.getUnmatched().get(0).toLowerCase();
+        String unmatched = this.getUnmatched().get(0);
         List<String> candidates;
         int maxSuggestions;
         if (isUnknownOption()) {
@@ -62,31 +60,7 @@ public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentE
             }
             maxSuggestions = MAX_COMMAND_SUGGESTIONS;
         }
-        
-        return candidates.stream().map(c -> Map.entry(cosineSimilarity(unmatched, c.toLowerCase()), c))
-                .sorted((e1, e2) -> e2.getKey().compareTo(e1.getKey())).map(Map.Entry::getValue).limit(maxSuggestions).toList();
-    }
 
-    static double cosineSimilarity(String a, String b) {
-        Map<String, Integer> aFreq = bigramFrequency(a);
-        Map<String, Integer> bFreq = bigramFrequency(b);
-        double dot = dotProduct(aFreq, bFreq);
-        double normA = dotProduct(aFreq, aFreq);
-        double normB = dotProduct(bFreq, bFreq);
-        double denominator = Math.sqrt(normA * normB);
-        return denominator == 0 ? 0 : dot / denominator;
-    }
-
-    private static Map<String, Integer> bigramFrequency(String s) {
-        Map<String, Integer> freq = new HashMap<>();
-        for (int i = 0; i < s.length() - 1; i++) {
-            freq.merge(s.substring(i, i + 2), 1, Integer::sum);
-        }
-        return freq;
-    }
-
-    private static double dotProduct(Map<String, Integer> m1, Map<String, Integer> m2) {
-        return m1.entrySet().stream()
-                .collect(Collectors.summingDouble(e -> e.getValue() * (m2.getOrDefault(e.getKey(), 0))));
+        return SimilarityUtil.findSimilar(unmatched, candidates, maxSuggestions, 0);
     }
 }

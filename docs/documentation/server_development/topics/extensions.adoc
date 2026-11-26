@@ -1,5 +1,4 @@
 [[_extensions]]
-
 == Extending the server
 
 The {project_name} SPI framework offers the possibility to implement or override particular built-in providers. However {project_name}
@@ -32,6 +31,9 @@ Your JAX-RS resource is only recognized by the server and registered as a valid 
 For details on how to package and deploy a custom provider, refer to the <<_providers,Service Provider Interfaces>> chapter.
 
 NOTE: While it is possible to install other JAX-RS components via the providers extension mechanism, such as filters and interceptors, these are not officially supported.
+
+NOTE: To align with Keycloak's built-in transaction per request lifecycle, you should use only blocking, synchronous endpoints. Examples of asynchronous endpoints include
+the usage of `AsyncResponse`, or returning `CompletableFuture` or `CompletionStage`.
 
 [[_extensions_spi]]
 === Add your own custom SPI
@@ -81,6 +83,12 @@ ExampleSpi
 . Create the interfaces `ExampleServiceProviderFactory`, which extends from `ProviderFactory` and `ExampleService`, which extends from `Provider`.
 The `ExampleService` will usually contain the business methods you need for your use case. Note that the `ExampleServiceProviderFactory` instance
 is always scoped per application, however `ExampleService` is scoped per-request (or more accurately per `KeycloakSession` lifecycle).
+. Create the file `META-INF/services/com.acme.ExampleServiceProviderFactory` and add the factory implementation class to it. For example:
++
+[source]
+----
+com.acme.ExampleServiceProviderFactoryImpl
+----
 
 . Finally you need to implement your providers in the same manner as described in the <<_providers,Service Provider Interfaces>> chapter.
 
@@ -136,6 +144,9 @@ this to retrieve `EntityManager` and call DB operations on it.
 EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 Company myCompany = em.find(Company.class, "123");
 ----
+
+NOTE: If you access the database in the `postInit()` method of a provider factory, declare a dependency on `JpaConnectionProvider` in `dependsOn()`.
+See <<_provider_factory_lifecycle,Provider factory lifecycle>>.
 
 The methods `getChangelogLocation` and `getFactoryId` are important to support automatic updating of your entities by Liquibase. https://www.liquibase.com/community/contributors[Liquibase]
 is a framework for updating the database schema, which {project_name} internally uses to create the DB schema and update the DB schema among versions. You may need to use

@@ -17,8 +17,10 @@
 package org.keycloak.testsuite.oauth;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -28,8 +30,12 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -46,7 +52,9 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
+import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -92,6 +100,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     private static final String DEVICE_APP_PUBLIC_CUSTOM_CONSENT = "test-device-public-custom-consent";
     private static final String DEVICE_APP_WITHOUT_SCOPES = "test-device-without-scopes";
     private static final String SHORT_DEVICE_FLOW_URL = "https://keycloak.org/device";
+    private static final String DEVICE_LOGIN_ACR_USER = "device-login-acr";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -104,6 +113,11 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
+
+    @Page
+    protected LoginTotpPage loginTotpPage;
+
+    private final TimeBasedOTP totp = new TimeBasedOTP();
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -149,6 +163,10 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
                 .attribute("phoneNumber","211211211")
                 .build();
         realm.users(user);
+
+        // Dedicated user so OTP is not attached to the shared device-login account
+        realm.users(UserBuilder.create().id(KeycloakModelUtils.generateId()).username(DEVICE_LOGIN_ACR_USER)
+                .email("device-login-acr@localhost").password("password").totpSecret("totpSecret").build());
 
         testRealms.add(realm.build());
     }
@@ -203,6 +221,64 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(tokenString);
 
         assertNotNull(token);
+    }
+
+    @Test
+    public void testMinimumAcrValueEnforced() throws Exception {
+        LevelOfAssuranceFlowTest.configureStepUpFlow(REALM_NAME, testingClient);
+        getTestingClient().testing().setTestingInfinispanTimeService();
+
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
+        ClientRepresentation clientRep = client.toRepresentation();
+        Map<String, String> originalAttributes = clientRep.getAttributes() == null ? new HashMap<>() : new HashMap<>(clientRep.getAttributes());
+        if (clientRep.getAttributes() == null) {
+            clientRep.setAttributes(new HashMap<>());
+        }
+        clientRep.getAttributes().put(Constants.ACR_LOA_MAP, "{\"copper\":0,\"silver\":1,\"gold\":2}");
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setMinimumAcrValue("gold");
+        client.update(clientRep);
+
+        try {
+            oauth.realm(REALM_NAME);
+            oauth.client(DEVICE_APP, DEVICE_APP_SECRET);
+            DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
+            Assertions.assertEquals(200, response.getStatusCode());
+
+            openVerificationPage(response.getVerificationUri());
+            verificationPage.assertCurrent();
+            verificationPage.submit(response.getUserCode());
+
+            loginPage.assertCurrent();
+            oauth.fillLoginForm(DEVICE_LOGIN_ACR_USER, "password");
+
+            // Password alone must not finish authorization when minimum ACR requires OTP
+            loginTotpPage.assertCurrent();
+            AccessTokenResponse pendingResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
+            Assertions.assertEquals(400, pendingResponse.getStatusCode());
+            Assertions.assertEquals("authorization_pending", pendingResponse.getError());
+            assertNull(pendingResponse.getAccessToken());
+            assertNull(pendingResponse.getIdToken());
+
+            loginTotpPage.login(totp.generateTOTP("totpSecret"));
+            grantPage.assertCurrent();
+            grantPage.accept();
+            verificationPage.assertApprovedPage();
+
+            timeOffSet.set(5); // honor device polling interval after the pending token poll
+            AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
+            Assertions.assertEquals(200, tokenResponse.getStatusCode());
+            Assertions.assertEquals("gold", oauth.verifyToken(tokenResponse.getAccessToken()).getAcr());
+            Assertions.assertEquals("gold", oauth.verifyIDToken(tokenResponse.getIdToken()).getAcr());
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+            timeOffSet.set(0);
+            clientRep = client.toRepresentation();
+            clientRep.setAttributes(new HashMap<>(originalAttributes));
+            client.update(clientRep);
+            RealmRepresentation realm = adminClient.realm(REALM_NAME).toRepresentation();
+            realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
+            adminClient.realm(REALM_NAME).update(realm);
+        }
     }
 
     @Test
@@ -623,15 +699,15 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assertions.assertEquals(5, response.getInterval());
 
         try {
-            setTimeOffset(610);
+            timeOffSet.set(610);
             openVerificationPage(response.getVerificationUriComplete());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         // device code not found in the cache because of expiration => invalid_grant error and redirection to the login page
-        loginPage.assertCurrent();
+        verificationPage.assertCurrent();
     }
 
     @Test
@@ -718,7 +794,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assertions.assertEquals(5, response.getInterval());
 
         try {
-            setTimeOffset(610);
+            timeOffSet.set(610);
             // Token request from device
             AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
 
@@ -726,7 +802,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("invalid_grant", tokenResponse.getError());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 
@@ -737,7 +813,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         DeviceAuthorizationResponse response = doDeviceAuthorizationWithDuplicatedParams(DEVICE_APP_PUBLIC, null);
         
         Assertions.assertEquals(400, response.getStatusCode());
-        Assertions.assertEquals("invalid_grant", response.getError());
+        Assertions.assertEquals("invalid_request", response.getError());
         Assertions.assertEquals("duplicated parameter", response.getErrorDescription());
     }
 
@@ -768,14 +844,14 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         AccessTokenResponse tokenResponse;
 
         try {
-            setTimeOffset(100);
+            timeOffSet.set(100);
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
 
             Assertions.assertEquals(400, tokenResponse.getStatusCode());
             Assertions.assertEquals("authorization_pending", tokenResponse.getError());
 
-            setTimeOffset(125);
+            timeOffSet.set(125);
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
 
@@ -783,7 +859,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("expired_token", tokenResponse.getError());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         clientRepresentation.getAttributes().put(OAuth2DeviceConfig.OAUTH2_DEVICE_CODE_LIFESPAN_PER_CLIENT, "");
@@ -828,7 +904,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals(400, tokenResponse.getStatusCode());
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
-            setTimeOffset(7);
+            timeOffSet.set(7);
 
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -836,7 +912,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals(400, tokenResponse.getStatusCode());
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
-            setTimeOffset(10);
+            timeOffSet.set(10);
 
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -881,7 +957,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
             // Wait the interval
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             // Polling again
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -908,7 +984,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("authorization_pending", tokenResponse.getError());
 
             // Wait
-            setTimeOffset(10);
+            timeOffSet.set(10);
 
             // Polling again without waiting
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -918,7 +994,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
             // Wait
-            setTimeOffset(15);
+            timeOffSet.set(15);
 
             // Polling again
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -1039,6 +1115,26 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assertions.assertEquals(Errors.INVALID_CLIENT, response.getError());
         Assertions.assertEquals("Invalid client or Invalid client credentials", response.getErrorDescription());
     }
+
+    @Test
+    public void testDeviceFlowInvalidScopeAndResource() throws Exception {
+        oauth.realm(REALM_NAME);
+        oauth.client(DEVICE_APP_PUBLIC);
+
+        // 1. Test failing flow due to an invalid/unsupported scope
+        DeviceAuthorizationResponse scopeResponse;
+        try {
+            oauth.scope("service_account");
+            scopeResponse = oauth.device().doDeviceAuthorizationRequest();
+        } finally {
+            oauth.scope(null); // Reset scope for subsequent tests
+        }
+
+        Assertions.assertEquals(400, scopeResponse.getStatusCode());
+        Assertions.assertEquals("invalid_scope", scopeResponse.getError());
+        Assertions.assertTrue(scopeResponse.getErrorDescription().toLowerCase().contains("invalid scope"));
+    }
+
     @Test
     public void testClientWithErrors() throws Exception {
         try {

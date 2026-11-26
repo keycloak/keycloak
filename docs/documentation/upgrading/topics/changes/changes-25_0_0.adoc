@@ -184,7 +184,7 @@ To enable histograms for latencies, set the option `cache-metrics-histograms-ena
 The metrics provided by {project_name} now include HTTP server metrics starting with `http_server`.
 See below for some examples.
 
-[source]
+[source,subs="-specialchars"]
 ----
 http_server_active_requests 1.0
 http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 1.0
@@ -240,7 +240,7 @@ It is not expected that you should be relying upon these behaviors from the WILD
 = Addressed 'You are already logged in' for expired authentication sessions
 
 {project_name} now does not display the message _You are already logged in_ to the end user when an authentication session expires and user is already logged-in. Instead it redirects the error
-about the expired authentication session to the client application, so the client can act on it and restart authentication as described in the link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions chapter].
+about the expired authentication session to the client application, so the client can act on it and restart authentication as described in the link:{adminguide_link}#authentication-sessions[{adminguide_name} authentication sessions chapter].
 You may consider updating your applications to being able to handle this error.
 
 = Removed a model module

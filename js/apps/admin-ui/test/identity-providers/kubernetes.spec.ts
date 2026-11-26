@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
@@ -6,12 +7,15 @@ import { goToIdentityProviders } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import { clickSaveButton, createKubernetesProvider } from "./main.ts";
 
-test.beforeEach(async ({ page }) => {
-  await login(page);
-  await goToIdentityProviders(page);
-});
+const realmName = `idp-kubernetes-${uuid()}`;
 
-test.afterAll(() => adminClient.deleteIdentityProvider("kubernetes"));
+test.beforeAll(() => adminClient.createRealm(realmName));
+
+test.afterAll(() => adminClient.deleteRealm(realmName));
+
+test.beforeEach(async ({ page }) => {
+  await login(page, { to: { pathname: `/${realmName}/identity-providers` } });
+});
 
 test.describe.serial("Kubernetes identity provider test", () => {
   test("should create a Kubernetes provider", async ({ page }) => {

@@ -55,6 +55,11 @@ public abstract class AbstractCibaEndpoint {
             throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
         }
 
+        if (client.isPublicClient()) {
+            event.error(Errors.INVALID_CLIENT);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Public client not allowed", Response.Status.UNAUTHORIZED);
+        }
+
         if (!realm.getCibaPolicy().isOIDCCIBAGrantEnabled(client)) {
             event.error(Errors.NOT_ALLOWED);
             throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT,

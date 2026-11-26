@@ -51,11 +51,17 @@ export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
         formData,
       );
       if (info.jwks) {
-        setValue("config.publicKeySignatureVerifier", info.jwks);
-        setValue("config.publicKeySignatureVerifierKeyId", "");
+        setValue("config.publicKeySignatureVerifier", info.jwks, {
+          shouldDirty: true,
+        });
+        setValue("config.publicKeySignatureVerifierKeyId", "", {
+          shouldDirty: true,
+        });
         addAlert(t("importSuccess"), AlertVariant.success);
       } else if (info.publicKey) {
-        setValue("config.publicKeySignatureVerifier", info.publicKey);
+        setValue("config.publicKeySignatureVerifier", info.publicKey, {
+          shouldDirty: true,
+        });
         addAlert(t("importSuccess"), AlertVariant.success);
       } else {
         addError("importError", t("emptyResources"));

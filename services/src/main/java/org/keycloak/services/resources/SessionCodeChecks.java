@@ -36,11 +36,11 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.ClientData;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.RestartLoginCookie;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
@@ -156,6 +156,12 @@ public class SessionCodeChecks {
             client = realm.getClientByClientId(clientId);
         }
         if (client != null) {
+            if (checkClientDisabled(client)) {
+                event.client(client);
+                event.error(Errors.CLIENT_DISABLED);
+                response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+                return null;
+            }
             session.getContext().setClient(client);
             setClientToEvent(client);
         }
@@ -168,7 +174,7 @@ public class SessionCodeChecks {
             authSession = authSessionManager.getAuthenticationSessionByEncodedIdAndClient(realm, authSessionId, client, tabId);
         AuthenticationSessionModel authSessionCookie = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
 
-        if (authSession != null && authSessionCookie != null && !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId())) {
+        if (authSession != null && (authSessionCookie == null || !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId()))) {
             event.detail(Details.REASON, "cookie does not match auth_session query parameter");
             event.error(Errors.INVALID_CODE);
             response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
@@ -187,15 +193,19 @@ public class SessionCodeChecks {
             return null;
         }
 
-        if (authSession != null) {
-            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession);
-            return authSession;
-        }
+        AuthenticationSessionModel resolvedAuthSession = authSession != null ? authSession : authSessionCookie;
+        if (resolvedAuthSession != null) {
+            UserModel user = resolvedAuthSession.getAuthenticatedUser();
+            if (isUserDisabled(user) && !AuthenticationSessionModel.Action.LOGGING_OUT.name().equals(resolvedAuthSession.getAction())) {
+                event.user(user);
+                event.detail(Details.USERNAME, user.getUsername());
+                event.error(Errors.USER_DISABLED);
+                response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.ACCOUNT_DISABLED);
+                return null;
+            }
 
-        if (authSessionCookie != null) {
-            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSessionCookie);
-            return authSessionCookie;
-
+            session.getProvider(LoginFormsProvider.class).setAuthenticationSession(resolvedAuthSession);
+            return resolvedAuthSession;
         }
 
         // Otherwise just try to restart from the cookie
@@ -451,14 +461,11 @@ public class SessionCodeChecks {
                 flowPath = LoginActionsService.AUTHENTICATE_PATH;
             }
 
-            //set redirect uri and other notes from client data parameter
+            // set redirect uri from client_data parameter if valid.
             try {
                 ClientData clientData = ClientData.decodeClientDataFromParameter(clientDataString);
                 if (RedirectUtils.verifyRedirectUri(session, clientData.getRedirectUri(), authSession.getClient()) != null) {
                     authSession.setRedirectUri(clientData.getRedirectUri());
-                    authSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, clientData.getResponseType());
-                    authSession.setClientNote(OIDCLoginProtocol.RESPONSE_MODE_PARAM, clientData.getResponseMode());
-                    authSession.setClientNote(OIDCLoginProtocol.STATE_PARAM, clientData.getState());
                 }
             } catch (Exception e) {
                 logger.debugf(e, "ClientData parameter in invalid format. ClientData parameter was %s", clientDataString);
@@ -522,5 +529,9 @@ public class SessionCodeChecks {
 
     protected boolean checkClientDisabled(ClientModel client) {
         return !client.isEnabled();
+    }
+
+    protected boolean isUserDisabled(UserModel user) {
+        return user != null && !user.isEnabled();
     }
 }

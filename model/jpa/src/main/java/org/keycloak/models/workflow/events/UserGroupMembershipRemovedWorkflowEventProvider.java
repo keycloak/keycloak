@@ -1,5 +1,6 @@
 package org.keycloak.models.workflow.events;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupMemberLeaveEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -41,12 +42,12 @@ public class UserGroupMembershipRemovedWorkflowEventProvider extends AbstractWor
         }
         if (super.configParameter != null) {
             String groupName = configParameter;
-            // this is the case when the group name is passed as a parameter to the event provider - like user-group-membership-removed(mygroup)
             if (!groupName.startsWith(GROUP_PATH_SEPARATOR))
                 groupName = GROUP_PATH_SEPARATOR + groupName;
             ProviderEvent groupEvent = (ProviderEvent) context.getEvent().getEvent();
             if (groupEvent instanceof GroupMemberLeaveEvent leaveEvent) {
-                return groupName.equals(KeycloakModelUtils.buildGroupPath(leaveEvent.getGroup()));
+                GroupModel group = KeycloakModelUtils.findGroupByPath(session, leaveEvent.getRealm(), groupName);
+                return group != null && group.getId().equals(leaveEvent.getGroup().getId());
             } else {
                 return false;
             }

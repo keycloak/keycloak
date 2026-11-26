@@ -17,12 +17,20 @@
 
 package org.keycloak.theme;
 
+import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.Config;
+import org.keycloak.encoding.ResourceEncodingProvider;
+import org.keycloak.encoding.ResourceEncodingProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ThemeManager;
+import org.keycloak.provider.Provider;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.theme.freemarker.FreeMarkerProviderFactory;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -34,6 +42,8 @@ public class DefaultThemeManagerFactory implements ThemeManagerFactory {
     private static final Logger log = Logger.getLogger(DefaultThemeManagerFactory.class);
 
     private ConcurrentHashMap<ThemeKey, Theme> themeCache;
+
+    private KeycloakSessionFactory sessionFactory;
 
     public DefaultThemeManagerFactory() {
         if(Config.scope("theme").getBoolean("cacheThemes", true)) {
@@ -52,6 +62,34 @@ public class DefaultThemeManagerFactory implements ThemeManagerFactory {
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        this.sessionFactory = factory;
+        String welcomeThemeName = Config.scope("theme").get("welcomeTheme");
+        if (StringUtil.isNotBlank(welcomeThemeName)) {
+            try (KeycloakSession session = factory.create()) {
+                validateWelcomeTheme(session, welcomeThemeName);
+            }
+        }
+    }
+
+    @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(ThemeProvider.class, ThemeSelectorProvider.class);
+    }
+
+    private static void validateWelcomeTheme(KeycloakSession session, String name) {
+        try {
+            Theme theme = session.theme().getTheme(name, Theme.Type.WELCOME);
+            if (theme == null || !name.equals(theme.getName())) {
+                throw new IllegalStateException("Welcome theme '" + name + "' could not be loaded. Check --spi-theme--welcome-theme.");
+            }
+            String template = TemplatingUtil.getWelcomeTemplateName(theme);
+            if (theme.getTemplate(template) == null) {
+                throw new IllegalStateException("Theme '" + name + "' does not provide or inherit '" + template
+                        + "' required for the welcome page. Check --spi-theme--welcome-theme.");
+            }
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to validate welcome theme '" + name + "'. Check --spi-theme--welcome-theme.", e);
+        }
     }
 
     @Override
@@ -98,6 +136,16 @@ public class DefaultThemeManagerFactory implements ThemeManagerFactory {
         if (themeCache != null) {
             themeCache.clear();
             log.info("Cleared theme cache");
+        }
+
+        if (sessionFactory != null) {
+            FreeMarkerProviderFactory freeMarkerProviderFactory = (FreeMarkerProviderFactory) sessionFactory.getProviderFactory(FreeMarkerProvider.class);
+            if (freeMarkerProviderFactory != null) {
+                freeMarkerProviderFactory.clearCache();
+            }
+
+            sessionFactory.getProviderFactoriesStream(ResourceEncodingProvider.class)
+                    .forEach(f -> ((ResourceEncodingProviderFactory) f).clearCache());
         }
     }
 

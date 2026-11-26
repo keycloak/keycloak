@@ -13,7 +13,7 @@ export const AuthenticationRoute: AppRouteObject = {
   path: "/:realm/authentication",
   element: <AuthenticationSection />,
   handle: {
-    access: ["view-realm", "view-identity-providers", "view-clients"],
+    access: ["view-realm"],
     breadcrumb: (t) => t("authentication"),
   },
 };

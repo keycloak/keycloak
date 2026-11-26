@@ -39,6 +39,7 @@ import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IssuedVerifiableCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ProtocolMapperModel;
@@ -48,6 +49,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
@@ -55,6 +57,9 @@ import org.keycloak.models.cache.infinispan.entities.CachedFederatedIdentityLink
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsent;
 import org.keycloak.models.cache.infinispan.entities.CachedUserConsents;
+import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredential;
+import org.keycloak.models.cache.infinispan.entities.CachedUserVerifiableCredentials;
+import org.keycloak.models.cache.infinispan.entities.FederatedIdentityUserListQuery;
 import org.keycloak.models.cache.infinispan.entities.UserListQuery;
 import org.keycloak.models.cache.infinispan.events.CacheKeyInvalidatedEvent;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
@@ -64,6 +69,7 @@ import org.keycloak.models.cache.infinispan.events.UserFederationLinkRemovedEven
 import org.keycloak.models.cache.infinispan.events.UserFederationLinkUpdatedEvent;
 import org.keycloak.models.cache.infinispan.events.UserFullInvalidationEvent;
 import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
+import org.keycloak.models.cache.infinispan.events.UserVerifiableCredentialsUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
@@ -92,6 +98,12 @@ import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizati
  * @version $Revision: 1 $
  */
 public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateComponent, UserProfileDecorator {
+
+    // tracks the realm a managed user was resolved for, since the user itself may be a raw delegate or a wrapper
+    // that doesn't expose it
+    private record ManagedUser(UserModel user, String realmId) {
+    }
+
     protected static final Logger logger = Logger.getLogger(UserCacheSession.class);
     protected UserCacheManager cache;
     protected KeycloakSession session;
@@ -104,8 +116,8 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected Set<String> invalidations = new HashSet<>();
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
-    protected Map<String, UserModel> managedUsers = new HashMap<>();
-    private StoreManagers datastoreProvider;
+    protected Map<String, ManagedUser> managedUsers = new HashMap<>();
+    private final StoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
         this.cache = cache;
@@ -211,9 +223,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             logger.trace("registered for invalidation return delegate");
             return getDelegate().getUserById(realm, id);
         }
-        if (managedUsers.containsKey(id)) {
-            logger.trace("return managedusers");
-            return managedUsers.get(id);
+        ManagedUser managedUser = managedUsers.get(id);
+        if (managedUser != null && realm.getId().equals(managedUser.realmId())) {
+            return managedUser.user();
         }
 
         CachedUser cached = cache.get(id, CachedUser.class);
@@ -235,7 +247,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         } else {
             adapter = validateCache(realm, cached, () -> getDelegate().getUserById(realm, id));
         }
-        addManagedUser(id, adapter);
+        addManagedUser(realm, id, adapter);
         return adapter;
     }
 
@@ -251,8 +263,15 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return getUserByFederatedIdentityCacheKey(realmId, socialLink.getIdentityProvider(), socialLink.getUserId());
     }
 
+    private static String escapeCacheKeyComponent(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace(".", "\\.");
+    }
+
     static String getUserByFederatedIdentityCacheKey(String realmId, String identityProvider, String socialUserId) {
-        return realmId + ".idp." + identityProvider + "." + socialUserId;
+        return realmId + ".idp." + escapeCacheKeyComponent(identityProvider) + "." + escapeCacheKeyComponent(socialUserId);
     }
 
     static String getFederatedIdentityLinksCacheKey(String userId) {
@@ -287,17 +306,21 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             String userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) {
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null) {
                 logger.tracev("return managed user");
-                return managedUsers.get(userId);
+                UserModel managedUser = managed.user();
+                // the user was loaded by another lookup in this session (for example by email), so the query for
+                // this key still needs to be cached, but only if the managed user is really a match for the key
+                if (realm.getId().equals(managed.realmId()) && username.equalsIgnoreCase(managedUser.getUsername())) {
+                    cacheUserQuery(realm, cacheKey, loaded, managedUser);
+                }
+                return managedUser;
             }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
-            if (adapter instanceof UserAdapter) { // this was cached, so we can cache query too
-                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
-            }
-            addManagedUser(userId, adapter);
+            cacheUserQuery(realm, cacheKey, loaded, adapter);
+            addManagedUser(realm, userId, adapter);
             return adapter;
         }
 
@@ -317,6 +340,20 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                     registerInvalidation(cacheKey);
                     return getDelegate().getUserByUsername(realm, username);
                 });
+    }
+
+    /**
+     * Caches the lookup query for the given key, but only if the user itself is cached. Users that are not cached
+     * (for example from a provider with {@code NO_CACHE}) must not get a query either.
+     */
+    private void cacheUserQuery(RealmModel realm, String cacheKey, long loaded, UserModel user) {
+        if (user instanceof UserAdapter) {
+            long lifespan = getLifespan(realm, user);
+            if (lifespan != 0) {
+                UserListQuery query = new UserListQuery(loaded, cacheKey, realm, user.getId());
+                cache.addRevisioned(query, startupRevision, lifespan);
+            }
+        }
     }
 
     private long getLifespan(RealmModel realm, UserModel user) {
@@ -431,7 +468,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     private void onCache(RealmModel realm, UserAdapter adapter, UserModel delegate) {
-        ((OnUserCache)getDelegate()).onCache(realm, adapter, delegate);
+        if (getDelegate() instanceof OnUserCache onUserCache) {
+            onUserCache.onCache(realm, adapter, delegate);
+        }
     }
 
     @Override
@@ -453,14 +492,19 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             if (model == null) return null;
             String userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) return managedUsers.get(userId);
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null) {
+                UserModel managedUser = managed.user();
+                // see getUserByUsername: cache the query for this key, but only if the managed user is a match for it
+                if (realm.getId().equals(managed.realmId()) && email.equalsIgnoreCase(managedUser.getEmail())) {
+                    cacheUserQuery(realm, cacheKey, loaded, managedUser);
+                }
+                return managedUser;
+            }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
-            if (adapter instanceof UserAdapter) {
-                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
-                cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
-            }
-            addManagedUser(userId, adapter);
+            cacheUserQuery(realm, cacheKey, loaded, adapter);
+            addManagedUser(realm, userId, adapter);
             return adapter;
         }
 
@@ -506,15 +550,15 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             if (model == null) return null;
             userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) return managedUsers.get(userId);
+            if (managedUsers.containsKey(userId)) return managedUsers.get(userId).user();
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
-                query = new UserListQuery(loaded, cacheKey, realm, model.getId());
+                query = new FederatedIdentityUserListQuery(loaded, cacheKey, realm, model.getId(), socialLink.getIdentityProvider());
                 cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
 
-            addManagedUser(userId, adapter);
+            addManagedUser(realm, userId, adapter);
             return adapter;
         } else {
             userId = query.getUsers().iterator().next();
@@ -592,7 +636,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             if (invalidations.contains(userId)) return model;
             if (managedUsers.containsKey(userId)) {
                 logger.tracev("return managed user");
-                return managedUsers.get(userId);
+                return managedUsers.get(userId).user();
             }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
@@ -600,7 +644,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
                 query = new UserListQuery(loaded, cacheKey, realm, model.getId());
                 cache.addRevisioned(query, startupRevision, getLifespan(realm, adapter));
             }
-            addManagedUser(userId, adapter);
+            addManagedUser(realm, userId, adapter);
             return adapter;
         } else {
             userId = query.getUsers().iterator().next();
@@ -655,7 +699,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
 
         if (managedUsers.containsKey(delegate.getId())) {
-            return managedUsers.get(delegate.getId());
+            return managedUsers.get(delegate.getId()).user();
         }
 
         CachedUser cached = cache.get(delegate.getId(), CachedUser.class);
@@ -745,6 +789,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         return userId + ".consents";
     }
 
+    static String getVerifiableCredentialsCacheKey(String userId) {
+        return userId + ".verifiableCredentials";
+    }
 
     @Override
     public void addConsent(RealmModel realm, String userId, UserConsentModel consent) {
@@ -846,11 +893,115 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         for (String clientScopeId : cachedConsent.getClientScopeIds()) {
             ClientScopeModel clientScope = KeycloakModelUtils.findClientScopeById(realm, client, clientScopeId);
             if (clientScope != null) {
-                consentModel.addGrantedClientScope(clientScope);
+                if (ClientScopeModel.isParameterizedScope(clientScope)) {
+                    cachedConsent.getParameters(clientScopeId).stream()
+                            .forEach(p -> consentModel.addGrantedClientScope(clientScope, p));
+                } else {
+                    consentModel.addGrantedClientScope(clientScope);
+                }
             }
         }
 
         return consentModel;
+    }
+
+
+    @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel) {
+        invalidateVerifiableCredentials(userId);
+        return getDelegate().addVerifiableCredential(userId, credentialModel);
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String clientScopeId) {
+        invalidateVerifiableCredentials(userId);
+        return getDelegate().removeVerifiableCredential(userId, clientScopeId);
+    }
+
+    private void invalidateVerifiableCredentials(String userId) {
+        cache.verifiableCredentialsInvalidation(userId, invalidations);
+        invalidationEvents.add(UserVerifiableCredentialsUpdatedEvent.create(userId));
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        logger.tracev("getVerifiableCredentialsByUser: {0}", userId);
+
+        String cacheKey = getVerifiableCredentialsCacheKey(userId);
+        if (invalidations.contains(userId) || invalidations.contains(cacheKey)) {
+            return getDelegate().getVerifiableCredentialsByUser(userId);
+        }
+
+        CachedUserVerifiableCredentials cached = cache.get(cacheKey, CachedUserVerifiableCredentials.class);
+
+        if (cached != null && realmInvalidations.contains(cached.getRealm())) {
+            return getDelegate().getVerifiableCredentialsByUser(userId);
+        }
+
+        if (cached == null) {
+            long loaded = cache.getCurrentRevision(cacheKey);
+            List<UserVerifiableCredentialModel> credentials = getDelegate().getVerifiableCredentialsByUser(userId).toList();
+            RealmModel realm = session.getContext().getRealm();
+            cached = new CachedUserVerifiableCredentials(loaded, cacheKey, realm, credentials);
+            cache.addRevisioned(cached, startupRevision);
+            return credentials.stream();
+        } else {
+            return cached.getCredentials().stream()
+                    .map(this::toCredentialModel);
+        }
+    }
+
+    private UserVerifiableCredentialModel toCredentialModel(CachedUserVerifiableCredential cachedCredential) {
+        UserVerifiableCredentialModel credentialModel = new UserVerifiableCredentialModel(cachedCredential.getId(), cachedCredential.getClientScopeId());
+        credentialModel.setRevision(cachedCredential.getRevision());
+        credentialModel.setCreatedDate(cachedCredential.getCreatedDate());
+        credentialModel.setUpdatedDate(cachedCredential.getUpdatedDate());
+        credentialModel.setUserAttributes(cachedCredential.getUserAttributes());
+        return credentialModel;
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialById(String id) {
+        return getDelegate().getVerifiableCredentialById(id);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel getVerifiableCredentialByClientScope(String userId, String clientScopeId) {
+        return getVerifiableCredentialsByUser(userId)
+                .filter(vc -> clientScopeId.equals(vc.getClientScopeId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String clientScopeId) {
+        invalidateVerifiableCredentials(userId);
+        return getDelegate().updateVerifiableCredential(userId, clientScopeId);
+    }
+
+    @Override
+    public IssuedVerifiableCredentialModel addIssuedVerifiableCredential(IssuedVerifiableCredentialModel issuedVc) {
+        return getDelegate().addIssuedVerifiableCredential(issuedVc);
+    }
+
+    @Override
+    public Stream<IssuedVerifiableCredentialModel> getIssuedVerifiableCredentialsStreamByUser(String userId) {
+        return getDelegate().getIssuedVerifiableCredentialsStreamByUser(userId);
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String credentialId) {
+        return getDelegate().removeIssuedVerifiableCredential(credentialId);
+    }
+
+    @Override
+    public boolean removeIssuedVerifiableCredential(String userId, String credentialId) {
+        return getDelegate().removeIssuedVerifiableCredential(userId, credentialId);
+    }
+
+    @Override
+    public void removeExpiredIssuedVerifiableCredentials() {
+        getDelegate().removeExpiredIssuedVerifiableCredentials();
     }
 
     @Override
@@ -885,15 +1036,15 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         UserModel user = getDelegate().addUser(realm, id, username, addDefaultRoles, addDefaultRequiredActions);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
         fullyInvalidateUser(realm, user);
-        addManagedUser(user.getId(), user);
+        addManagedUser(realm, user.getId(), user);
         return user;
     }
 
-    private void addManagedUser(String id, UserModel user) {
+    private void addManagedUser(RealmModel realm, String id, UserModel user) {
         if (EntityManagers.isBatchMode()) {
             return;
         }
-        managedUsers.put(id, user);
+        managedUsers.put(id, new ManagedUser(user, realm.getId()));
     }
 
     @Override
@@ -901,7 +1052,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         UserModel user = getDelegate().addUser(realm, username);
         // just in case the transaction is rolled back you need to invalidate the user and all cache queries for that user
         fullyInvalidateUser(realm, user);
-        addManagedUser(user.getId(), user);
+        addManagedUser(realm, user.getId(), user);
         return user;
     }
 
@@ -998,7 +1149,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public void preRemove(ClientScopeModel clientScope) {
-        // Not needed to invalidate realm probably. Just consents are affected ATM and they are checked if they exists
+        addRealmInvalidation(clientScope.getRealm().getId());
         getDelegate().preRemove(clientScope);
     }
 

@@ -22,6 +22,7 @@ import java.io.InputStream;
 
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.AttributeQueryType;
+import org.keycloak.saml.common.exceptions.ParsingException;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +46,14 @@ public class SAMLAttributeQueryParserTest {
     @Before
     public void initParser() {
         this.parser = new SAMLParser();
+        this.parser.enableSaml11Parsers();
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml11AttributeQueryWrong() throws Exception {
+        try (InputStream is = SAMLAttributeQueryParserTest.class.getResourceAsStream("saml11-attributequery-not-wellformed.xml")) {
+            parser.parse(is);
+        }
     }
 
     @Test(timeout = 2000000)

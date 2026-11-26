@@ -38,7 +38,9 @@ import io.smallrye.config.SmallRyeConfig;
 
 public final class Environment {
 
+    public static final String KC_RUN_IN_CONTAINER = "KC_RUN_IN_CONTAINER";
     public static final String KC_CONFIG_REBUILD_CHECK = "kc.config.rebuild-check";
+    public static final String KC_SCRIPT_PID = "kc.script.pid";
     public static final String KC_CONFIG_BUILT = "kc.config.built";
     public static final String KC_HOME_DIR = "kc.home.dir";
     public static final String PROFILE ="kc.profile";
@@ -47,6 +49,8 @@ public final class Environment {
     public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
+    public static final String LAUNCH_MODE_EXIT_AFTER_START = "exit_after_start";
+    public static final String LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP = "exit_before_bootstrap";
 
     private Environment() {}
 
@@ -86,9 +90,6 @@ public final class Environment {
         System.setProperty(org.keycloak.common.util.Environment.PROFILE, profile);
         System.setProperty(LaunchMode.current().getProfileKey(), profile);
         System.setProperty(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, profile);
-        if (isTestLaunchMode()) {
-            System.setProperty("mp.config.profile", profile);
-        }
     }
 
     /**
@@ -135,12 +136,13 @@ public final class Environment {
         })).collect(Collectors.toMap(File::getName, Function.identity()));
     }
 
-    public static boolean isTestLaunchMode() {
-        return "test".equals(System.getProperty(LAUNCH_MODE));
+    public static boolean hasEarlyExitLaunchMode() {
+        String mode = System.getProperty(LAUNCH_MODE);
+        return LAUNCH_MODE_EXIT_AFTER_START.equals(mode) || LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP.equals(mode);
     }
 
-    public static void forceTestLaunchMode() {
-        System.setProperty(LAUNCH_MODE, "test");
+    public static void forceExitAfterStartLaunchMode() {
+        System.setProperty(LAUNCH_MODE, LAUNCH_MODE_EXIT_AFTER_START);
     }
 
     /**
@@ -208,5 +210,16 @@ public final class Environment {
 
     public static void setRebuild() {
         System.setProperty("quarkus.launch.rebuild", "true");
+    }
+    
+    /**
+     * The process id of the script used to launch the server. Will be null if a script other than kc.sh is used
+     */
+    public static Optional<String> getScriptPid() {
+        return Optional.ofNullable(System.getProperty(KC_SCRIPT_PID));
+    }
+    
+    public static boolean isRunInContainer() {
+        return Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false);
     }
 }

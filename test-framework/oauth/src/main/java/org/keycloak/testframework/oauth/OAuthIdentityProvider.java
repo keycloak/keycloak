@@ -7,6 +7,7 @@ import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
@@ -36,11 +37,13 @@ public class OAuthIdentityProvider {
 
     private final OAuthIdentityProviderKeys keys;
     private final OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config;
+    private final String issuer;
 
     private int keysRequestCount = 0;
 
     public OAuthIdentityProvider(HttpServer httpServer, OAuthIdentityProviderConfigBuilder.OAuthIdentityProviderConfiguration config) {
         this.config = config;
+        this.issuer = config.issuer();
         if (!CryptoIntegration.isInitialised()) {
             CryptoIntegration.setProvider(new DefaultCryptoProvider());
         }
@@ -58,6 +61,10 @@ public class OAuthIdentityProvider {
 
     public String encodeToken(JsonWebToken token, OAuthIdentityProviderKeys keys) {
         return new JWSBuilder().type("JWT").jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
+    }
+
+    public String encodeIDJAG(JsonWebToken token) {
+        return new JWSBuilder().type(OAuth2Constants.IDENTITY_ASSERTION_JWT_HEADER_TYPE).jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
     }
 
     public OAuthIdentityProviderKeys createKeys() {
@@ -82,6 +89,9 @@ public class OAuthIdentityProvider {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             OIDCConfigurationRepresentation oidcConfig = new OIDCConfigurationRepresentation();
+            if (issuer != null) {
+                oidcConfig.setIssuer(issuer);
+            }
             oidcConfig.setJwksUri("http://127.0.0.1:8500/idp/jwks");
             String oidcConfigString = JsonSerialization.writeValueAsString(oidcConfig);
 

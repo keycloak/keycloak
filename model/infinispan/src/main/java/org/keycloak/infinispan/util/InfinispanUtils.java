@@ -101,13 +101,15 @@ public final class InfinispanUtils {
     }
 
     public static boolean isVirtualThreadsEnabled() {
-        return Boolean.parseBoolean(System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP));
+        return Boolean.parseBoolean(System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP, "true"));
     }
 
     public static void configureVirtualThreads() {
         // enable Infinispan and JGroups virtual threads by default
-        if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null && getParallelism() >= MIN_VT_POOL_SIZE)
-            System.setProperty(INFINISPAN_VIRTUAL_THREADS_PROP, "true");
+        if (System.getProperty(INFINISPAN_VIRTUAL_THREADS_PROP) == null) {
+            // if the user doesn't set this system properties, we are free to enable/disable as we wish.
+            System.setProperty(INFINISPAN_VIRTUAL_THREADS_PROP, Boolean.toString(getParallelism() >= MIN_VT_POOL_SIZE));
+        }
     }
 
     public static void ensureVirtualThreadsParallelism() {

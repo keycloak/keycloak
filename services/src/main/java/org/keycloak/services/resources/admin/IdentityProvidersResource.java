@@ -18,12 +18,14 @@
 package org.keycloak.services.resources.admin;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamException;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -46,6 +48,7 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.http.FormPartValue;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.IdentityProviderCapability;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderQuery;
@@ -57,9 +60,11 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -68,12 +73,14 @@ import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
+import org.apache.http.client.HttpResponseException;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -84,6 +91,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
  */
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
+
+    protected static final Logger logger = Logger.getLogger(IdentityProvidersResource.class);
 
     private final RealmModel realm;
     private final KeycloakSession session;
@@ -134,7 +143,10 @@ public class IdentityProvidersResource {
             throw new BadRequestException();
         }
         String providerId = formDataMap.getFirst("providerId").asString();
-        String config = StreamUtil.readString(formDataMap.getFirst("file").asInputStream());
+        String config;
+        try (InputStream is = formDataMap.getFirst("file").asInputStream()) {
+            config = StreamUtil.readString(is);
+        }
         IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
         return providerFactory.parseConfig(session, config);
     }
@@ -189,9 +201,38 @@ public class IdentityProvidersResource {
 
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        String file = session.getProvider(HttpClientProvider.class).getString(from);
+
+        String file;
+        try {
+            file = session.getProvider(HttpClientProvider.class).getString(from);
+        } catch (IOException | IllegalArgumentException e) {
+            // Only report the response status, transport errors can reveal internal addresses
+            logger.debug("Failed to fetch identity provider metadata", e);
+            String message = "Cannot fetch identity provider metadata";
+            if (e instanceof HttpResponseException responseException) {
+                message += ": HTTP " + responseException.getStatusCode();
+            }
+            throw ErrorResponse.error(message, BAD_REQUEST);
+        }
+
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(session, file);
+
+        Map<String, String> config;
+        try {
+            config = providerFactory.parseConfig(session, file);
+        } catch (RuntimeException e) {
+            // The factories report an unusable document by the cause they wrap, except for a SAML
+            // document that parses into something other than an entity descriptor
+            if (!(e instanceof ClassCastException
+                    || e.getCause() instanceof IOException
+                    || e.getCause() instanceof ParsingException
+                    || e.getCause() instanceof XMLStreamException)) {
+                throw e;
+            }
+            logger.debug("Failed to parse identity provider metadata", e);
+            throw ErrorResponse.error("Cannot parse identity provider metadata", BAD_REQUEST);
+        }
+
         // add the URL just if needed by the identity provider
         config.put(IdentityProviderModel.METADATA_DESCRIPTOR_URL, from);
         return config;
@@ -228,7 +269,11 @@ public class IdentityProvidersResource {
 
         Function<IdentityProviderModel, IdentityProviderRepresentation> toRepresentation = Optional.ofNullable(briefRepresentation).orElse(false)
                 ? m -> ModelToRepresentation.toBriefRepresentation(realm, m)
-                : m -> StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, m));
+                : m -> {
+                    IdentityProviderRepresentation rep = StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, m));
+                    Organizations.filterOrganizationLinks(rep, session, auth);
+                    return rep;
+                };
 
         boolean searchRealmOnlyIDPs = Optional.ofNullable(realmOnly).orElse(false);
 
@@ -272,8 +317,16 @@ public class IdentityProvidersResource {
 
         ReservedCharValidator.validateNoSpace(representation.getAlias());
 
+        // organization-related information should not be processed by non-organization API
+        Organizations.stripOrganizationId(representation);
+
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
+            if (!auth.hasOneAdminRole(AdminRoles.MANAGE_REALM) && identityProvider.isAllowAdminRoleMapping()) {
+                throw ErrorResponse.error("Only users with '" + AdminRoles.MANAGE_REALM
+                        + "' role can enable the '" + IdentityProviderModel.ALLOW_ADMIN_ROLE_MAPPING + "' setting.",
+                        Response.Status.FORBIDDEN);
+            }
             session.identityProviders().create(identityProvider);
 
             representation.setInternalId(identityProvider.getInternalId());
@@ -287,6 +340,10 @@ public class IdentityProvidersResource {
 
             if (message == null) {
                 message = "Invalid request";
+            }
+
+            if (logger.isDebugEnabled()) {
+                logger.debug(message, e);
             }
 
             throw ErrorResponse.error(message, BAD_REQUEST);
@@ -315,4 +372,5 @@ public class IdentityProvidersResource {
         return Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class));
     }
+
 }

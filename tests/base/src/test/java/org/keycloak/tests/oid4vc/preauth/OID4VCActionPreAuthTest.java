@@ -11,7 +11,7 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
-import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.tests.oid4vc.OID4VCActionTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -39,7 +39,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
     @InjectPage
     OID4VCCredentialOfferPage credentialOfferPage;
 
-    @InjectUser(config = TestRealmUserConfig.class)
+    @InjectUser(config = OID4VCActionTest.OID4VCTestUserConfig.class)
     ManagedUser user;
 
     OID4VCTestContext ctx;
@@ -136,5 +136,32 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
         credentialOfferPage.clickContinueButton();
         String code = oauth.parseLoginResponse().getCode();
         assertNotNull(code, "Authorization code should not be null");
+    }
+
+    @Test
+    public void testCredentialOfferAIA_preAuthorizedCodeBoundToClient() {
+
+        oauth.loginForm()
+                .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, true))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
+        credentialOfferPage.assertCurrent();
+
+        String credentialOfferNonce = getNonceFromCredentialOfferUri(credentialOfferPage.getCredentialOfferUri());
+        String preAuthCode = oauth.oid4vc().credentialOfferRequest(credentialOfferNonce).send()
+                .getCredentialsOffer().getPreAuthorizedCode();
+        assertNotNull(preAuthCode);
+
+        // Redeem Pre-Authorized Code with a client the offer was not issued to
+        //
+        oauth.client(pubClient.getClientId(), null);
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertEquals("invalid_grant", tokenResponse.getError());
+
+        // The offer is still valid for the client it was issued to
+        //
+        oauth.client(client.getClientId(), client.getSecret());
+        tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
     }
 }

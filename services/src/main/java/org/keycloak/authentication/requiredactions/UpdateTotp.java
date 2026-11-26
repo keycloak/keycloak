@@ -191,6 +191,9 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         }
 
         context.getAuthenticationSession().removeAuthNote(Constants.TOTP_SECRET_KEY);
+        if (credentialModel.getId() != null) {
+            event.detail(Details.CREDENTIAL_ID, credentialModel.getId());
+        }
         context.success();
         deprecatedEvent.success();
     }
@@ -276,10 +279,5 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     @Override
     public String getCredentialType(KeycloakSession session, AuthenticationSessionModel authenticationSession) {
         return OTPCredentialModel.TYPE;
-    }
-
-    @Override
-    public boolean isOneTimeAction() {
-        return true;
     }
 }

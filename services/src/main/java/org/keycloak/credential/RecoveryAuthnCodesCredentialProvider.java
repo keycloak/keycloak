@@ -64,7 +64,6 @@ public class RecoveryAuthnCodesCredentialProvider
                 .category(CredentialTypeMetadata.Category.TWO_FACTOR).displayName("recovery-authn-codes-display-name")
                 .helpText("recovery-authn-codes-help-text").iconCssClass("kcAuthenticatorRecoveryAuthnCodesClass")
                 .removeable(true);
-        UserModel user = metadataContext.getUser();
         builder.createAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
         return builder.build(session);
     }
@@ -114,8 +113,7 @@ public class RecoveryAuthnCodesCredentialProvider
                     String nextRecoveryCode = nextRecoveryAuthnCode.get().getEncodedHashedValue();
                     if (RecoveryAuthnCodesUtils.verifyRecoveryCodeInput(rawInputRecoveryAuthnCode, nextRecoveryCode)) {
                         credentialModel.removeRecoveryAuthnCode();
-                        user.credentialManager().updateStoredCredential(credentialModel);
-                        return true;
+                        return user.credentialManager().updateStoredCredential(credential.get(), credentialModel);
                     }
 
                 }

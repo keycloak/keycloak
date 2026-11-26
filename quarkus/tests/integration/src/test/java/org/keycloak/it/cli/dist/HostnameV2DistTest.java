@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -28,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@DistributionTest
+@DistributionTest(stopServer = Mode.BEFORE_BOOTSTRAP)
 @RawDistOnly(reason = "Containers are immutable")
 public class HostnameV2DistTest {
     @Test

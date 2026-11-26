@@ -1,6 +1,7 @@
 package org.keycloak.client.admin.cli.commands.v2;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -89,6 +90,62 @@ public class KcAdmV2DescriptorBuilderTest {
 
         // getThing has no summary in test-openapi.json
         assertEquals("Get thing", byName.get("get").getDescription());
+    }
+
+    @Test
+    public void testEnumValuesExtractedFromRefSchema() {
+        KcAdmV2CommandDescriptor.CommandDescriptor create = commandsByName().get("create");
+        KcAdmV2CommandDescriptor.OptionDescriptor priority = create.getOptions().stream()
+                .filter(o -> "priority".equals(o.getName()))
+                .findFirst().orElse(null);
+        assertNotNull("create should have a 'priority' option", priority);
+        assertEquals(List.of("low", "medium", "high"), priority.getEnumValues());
+    }
+
+    @Test
+    public void testQueryParametersExtractedFromListOperation() {
+        KcAdmV2CommandDescriptor.CommandDescriptor list = commandsByName().get("list");
+        List<KcAdmV2CommandDescriptor.OptionDescriptor> queryParams = list.getOptions().stream()
+                .filter(KcAdmV2CommandDescriptor.OptionDescriptor::isQueryParam)
+                .toList();
+
+        assertEquals("list should have 6 query param options", 6, queryParams.size());
+
+        Map<String, KcAdmV2CommandDescriptor.OptionDescriptor> byName = queryParams.stream()
+                .collect(Collectors.toMap(KcAdmV2CommandDescriptor.OptionDescriptor::getName, o -> o));
+
+        assertTrue("should have fields but found: " + byName.keySet(), byName.containsKey("fields"));
+        assertTrue("fields should be array but found: " + byName.get("fields").isArray(), byName.get("fields").isArray());
+        assertFalse("fields should not explode (comma-separated)", byName.get("fields").isExplode());
+
+        assertTrue("should have q but found: " + byName.keySet(), byName.containsKey("q"));
+        assertFalse("q should not be array but found: " + byName.get("q").isArray(), byName.get("q").isArray());
+        assertTrue("q should explode by default", byName.get("q").isExplode());
+
+        assertTrue("should have limit but found: " + byName.keySet(), byName.containsKey("limit"));
+        assertEquals("limit type", "integer", byName.get("limit").getType());
+
+        assertTrue("should have offset but found: " + byName.keySet(), byName.containsKey("offset"));
+        assertEquals("offset type", "integer", byName.get("offset").getType());
+
+        assertTrue("should have sortBy but found: " + byName.keySet(), byName.containsKey("sortBy"));
+        assertEquals("sortBy type should be resolved from $ref", "string", byName.get("sortBy").getType());
+        assertEquals("sortBy enum values", List.of("name", "priority"), byName.get("sortBy").getEnumValues());
+
+        assertTrue("should have sortOrder but found: " + byName.keySet(), byName.containsKey("sortOrder"));
+        assertEquals("sortOrder type should be resolved from $ref", "string", byName.get("sortOrder").getType());
+        assertEquals("sortOrder enum values", List.of("asc", "desc"), byName.get("sortOrder").getEnumValues());
+    }
+
+    @Test
+    public void testQueryParamsDoNotLeakIntoBodyCommands() {
+        for (String cmd : List.of("create", "patch")) {
+            KcAdmV2CommandDescriptor.CommandDescriptor command = commandsByName().get(cmd);
+            long queryParamCount = command.getOptions().stream()
+                    .filter(KcAdmV2CommandDescriptor.OptionDescriptor::isQueryParam)
+                    .count();
+            assertEquals(cmd + " should have no query param options", 0, queryParamCount);
+        }
     }
 
     @Test

@@ -139,7 +139,7 @@ public class OrganizationGroupsResource {
                 }
 
                 builder = Response.status(204);
-                adminEvent.operation(OperationType.UPDATE);
+                adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
 
             } else {
                 // CREATE new top-level org group
@@ -158,12 +158,10 @@ public class OrganizationGroupsResource {
                 URI uri = session.getContext().getUri().getAbsolutePathBuilder()
                         .path(group.getId()).build();
                 builder = Response.created(uri);
-                adminEvent.operation(OperationType.CREATE);
+                adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), group.getId());
             }
 
-            adminEvent.resourcePath(session.getContext().getUri())
-                    .representation(rep)
-                    .success();
+            adminEvent.representation(rep).success();
 
             GroupRepresentation groupRep = ModelToRepresentation.groupToBriefRepresentation(group);
             return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(groupRep).build();
@@ -210,13 +208,17 @@ public class OrganizationGroupsResource {
         // builds hierarchy mainly for admin UI
         if (populateHierarchy) {
             String internalGroupId = organizationProvider.getOrganizationGroup(organization).getId();
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId);
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId)
+                    .peek(rep -> GroupUtils.filterRolesInRepresentation(rep, realm, session, auth));
         }
 
         return groups.map(group -> {
             GroupRepresentation rep = briefRepresentation ?
                     ModelToRepresentation.groupToBriefRepresentation(group) :
                     ModelToRepresentation.toRepresentation(group, true);
+            if (!briefRepresentation) {
+                GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+            }
             if (subGroupsCount) {
                 rep.setSubGroupCount(group.getSubGroupsCount());
             }
@@ -237,6 +239,7 @@ public class OrganizationGroupsResource {
             @APIResponse(responseCode = "404", description = "Not Found")
     })
     public GroupRepresentation getGroupByPath(@PathParam("path") String path,
+                                              @Parameter(description = "Whether to return a brief representation (default: true)") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
                                               @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
         auth.orgs().requireView(organization);
 
@@ -244,7 +247,12 @@ public class OrganizationGroupsResource {
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
         }
-        GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(found);
+        GroupRepresentation rep = briefRepresentation ?
+                ModelToRepresentation.groupToBriefRepresentation(found) :
+                ModelToRepresentation.toRepresentation(found, true);
+        if (!briefRepresentation) {
+            GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+        }
         if (subGroupsCount) {
             rep.setSubGroupCount(found.getSubGroupsCount());
         }

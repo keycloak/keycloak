@@ -2,7 +2,7 @@ export interface DecodedToken {
   exp?: number;
 }
 
-export function decodeToken(token: string): DecodedToken {
+export function decodeToken(token?: string): DecodedToken {
   const [, payload] = token?.split(".") || [];
 
   if (typeof payload !== "string") {

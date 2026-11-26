@@ -21,6 +21,8 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 
+import static org.keycloak.testframework.util.ApiUtil.addAdminApiClientScope;
+
 public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthClient> {
 
     @Override
@@ -63,6 +65,11 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
 
         String id = ApiUtil.getCreatedId(realm.admin().clients().create(testAppClient));
         ClientResource clientResource = realm.admin().clients().get(id);
+
+        if (annotation.adminApiAccess()) {
+            addAdminApiClientScope(realm.admin(), clientId);
+        }
+
         OAuthClient oAuthClient = new OAuthClient(keycloakUrls.getBase(), httpClient, webDriver, clientResource);
         oAuthClient.config().realm(realm.getName()).client(clientId, clientSecret).redirectUri(redirectUri);
         return oAuthClient;

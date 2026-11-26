@@ -24,7 +24,6 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.organization.utils.Organizations;
@@ -34,12 +33,12 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.AbstractBrokerTest;
 import org.keycloak.testsuite.broker.AbstractInitializedBaseBrokerTest;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import org.hamcrest.Matchers;
@@ -115,7 +114,8 @@ public class OrganizationPostBrokerLoginTest extends AbstractInitializedBaseBrok
 
         // 4) First login via broker, run post-broker OTP setup
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         logInWithBroker(bc);
 
         // Post broker flow should require TOTPs
@@ -131,16 +131,25 @@ public class OrganizationPostBrokerLoginTest extends AbstractInitializedBaseBrok
         assertThat("Expected TOTP credential type after setup", credentials.get(0).getType(), equalTo(OTPCredentialModel.TYPE));
 
         IdentityProviderRepresentation postTotpIdp = consumerRealm.identityProviders().get(idp.getAlias()).toRepresentation();
-        postTotpIdp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, orgDomain);
-        postTotpIdp.getConfig().put(OrganizationModel.IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         postTotpIdp.setHideOnLogin(true);
         consumerRealm.identityProviders().get(postTotpIdp.getAlias()).update(postTotpIdp);
         consumerRealm.organizations().get(orgId).identityProviders().addIdentityProvider(postTotpIdp.getAlias()).close();
 
+        OrganizationRepresentation orgRep = consumerRealm.organizations().get(orgId).toRepresentation();
+        orgRep.getDomains().stream()
+                .filter(d -> d.getName().equals(orgDomain))
+                .findFirst()
+                .ifPresent(d -> {
+                    d.setIdentityProviderAlias(postTotpIdp.getAlias());
+                    d.setAutoRedirect(true);
+                });
+        consumerRealm.organizations().get(orgId).update(orgRep).close();
+
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         // 5) Try re-login: user SHOULD be automatically redirected to the identity provider
         oauth.client("broker-app");
-        loginPage.open(bc.consumerRealmName());
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
         // submit username/email to trigger organization resolution which should redirect to the provider
         loginPage.loginUsername(bc.getUserEmail());
 

@@ -6,7 +6,6 @@ import java.util.Set;
 
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelValidationException;
-import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,7 +19,7 @@ import static java.util.Optional.ofNullable;
  * the representation of a resource type and to validate and map the attributes from the schema from a {@link ResourceTypeRepresentation}, usually an
  * object from the RESTful layer, to a {@link Model} and vice versa.
  */
-public interface ModelSchema<M extends Model, R extends ResourceTypeRepresentation> {
+public interface ModelSchema<M extends Model, R> {
 
     /**
      * The id of the schema. It is used to identify the schema and to associate it with a resource type.
@@ -98,6 +97,21 @@ public interface ModelSchema<M extends Model, R extends ResourceTypeRepresentati
      */
     default void remove(R resource, M model, String path) {
         throw new UnsupportedOperationException("Add operation is not supported for this schema");
+    }
+
+    /**
+     * Performs a PATCH {@code remove} operation on the given {@code model} for the attribute defined by the given {@code path},
+     * using the operation's {@code value}, if any, to select the values to remove from a multi-valued attribute when the
+     * path has no filter. For example, Microsoft Entra ID removes a group member with {@code "path": "members"} and a
+     * {@code "value"} listing the members to remove.
+     *
+     * @param resource the resource to perform the operation on
+     * @param model the model to perform the operation on
+     * @param path the path of the attribute to perform the operation on
+     * @param value the value of the operation, or {@code null} if the operation has no value
+     */
+    default void remove(R resource, M model, String path, JsonNode value) {
+        remove(resource, model, path);
     }
 
     /**

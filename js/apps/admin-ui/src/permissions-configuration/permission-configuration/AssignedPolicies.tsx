@@ -78,18 +78,15 @@ export const AssignedPolicies = ({
       return Promise.resolve([]);
     },
     (policies) => {
-      const filteredPolicy = policies.filter((p) => p) as [];
-      setSelectedPolicies(filteredPolicy);
+      setSelectedPolicies(policies.filter((p) => p !== null));
     },
     [policies],
   );
 
   const sortedProviders = sortBy(
     providers
-      ? providers
-          .filter((p) => p.type !== "resource" && p.type !== "scope")
-          .map((provider) => provider.name)
-      : [],
+      .filter((p) => p.type !== "resource" && p.type !== "scope")
+      .map((provider) => provider.name),
   );
 
   const assign = async (policies: { policy: PolicyRepresentation }[]) => {

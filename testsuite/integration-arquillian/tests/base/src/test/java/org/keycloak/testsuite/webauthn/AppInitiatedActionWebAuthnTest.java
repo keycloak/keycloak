@@ -35,10 +35,10 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -67,7 +67,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -192,7 +192,8 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
                 .update()) {
             OAuthClient oauth2 = oauth.newConfig().driver(driver2);
             oauth2.doLogin(DEFAULT_USERNAME, getPassword(DEFAULT_USERNAME));
-            event1 = events.expectLogin().assertEvent();
+            event1 = events.poll();
+            EventAssertion.expectLoginSuccess(event1);
             assertEquals(1, testUser.getUserSessions().size());
         }
 
@@ -239,12 +240,11 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         passwordPage.assertCurrent();
         passwordPage.login(getPassword(DEFAULT_USERNAME));
 
-        appPage.assertCurrent();
-        assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
-        assertNotNull(oauth.parseLoginResponse().getCode());
+        assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        return events.expectLogin()
-                .detail(Details.USERNAME, DEFAULT_USERNAME)
-                .assertEvent();
+        EventRepresentation eventRep = events.poll();
+        EventAssertion.expectLoginSuccess(eventRep)
+                .details(Details.USERNAME, DEFAULT_USERNAME);
+        return eventRep;
     }
 }

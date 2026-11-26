@@ -1,4 +1,4 @@
-[[_policy_overview]]
+[[policy_overview]]
 = Managing policies
 
 As mentioned previously, policies define the conditions that must be satisfied before granting access to an object.

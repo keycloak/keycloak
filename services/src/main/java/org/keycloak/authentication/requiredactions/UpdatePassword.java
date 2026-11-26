@@ -145,7 +145,10 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         }
 
         try {
-            user.credentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
+            user.credentialManager()
+                    .updateCredentialAndGet(UserCredentialModel.password(passwordNew, false))
+                    .ifPresent(credential -> event.detail(Details.CREDENTIAL_ID, credential.getId()));
+
             context.success();
             deprecatedEvent.success();
         } catch (ModelException me) {
@@ -196,11 +199,6 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     @Override
     public String getId() {
         return UserModel.RequiredAction.UPDATE_PASSWORD.name();
-    }
-
-    @Override
-    public boolean isOneTimeAction() {
-        return true;
     }
 
     @Override

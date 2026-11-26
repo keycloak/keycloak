@@ -17,6 +17,9 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
@@ -55,6 +58,11 @@ import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
 
     private static final Logger logger = Logger.getLogger(ClientCredentialsGrantType.class);
+
+    @Override
+    public boolean isConfidentialOnlyGrantType() {
+        return true;
+    }
 
     @Override
     public Response process(Context context) {
@@ -111,6 +119,10 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         if (!useRefreshToken()) {
             // we don't want to store a session hence we mark it as transient, see KEYCLOAK-9551
             sessionPersistenceState = UserSessionModel.SessionPersistenceState.TRANSIENT;
+        } else {
+            logger.warnf("Client '%s' in the realm '%s' has enabled switch 'Use refresh tokens for client credentials grant'. The switch is deprecated and " +
+                    "will be removed in the future version. It is recommended to disable the switch and update your client application to not rely on this switch being enabled",
+                    client.getClientId(), realm.getName());
         }
 
         UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, clientUser, clientUsername,
@@ -142,12 +154,17 @@ public class ClientCredentialsGrantType extends OAuth2GrantTypeBase {
         // client credentials grant always removes the online session
         clientSessionCtx.getClientSession().setNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS, Boolean.TRUE.toString());
         return createTokenResponse(clientUser, userSession, clientSessionCtx, scope, true,
-                responseBuilder -> new ServiceAccountTokenResponseContext(formParams, clientSessionCtx.getClientSession(), responseBuilder));
+                responseBuilder -> new ServiceAccountTokenResponseContext(formParams, clientSessionCtx, responseBuilder));
     }
 
     @Override
     public EventType getEventType() {
         return EventType.CLIENT_LOGIN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
     @Override

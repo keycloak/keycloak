@@ -146,5 +146,4 @@ public interface LoginProtocol extends Provider {
     default boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
         return false;
     }
-
 }

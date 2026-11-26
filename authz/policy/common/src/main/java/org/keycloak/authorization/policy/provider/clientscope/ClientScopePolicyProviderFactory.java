@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -41,13 +42,19 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation.ClientScopeDefinition;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
  */
 public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<ClientScopePolicyRepresentation> {
+
+    private static final Logger logger = Logger.getLogger(ClientScopePolicyProviderFactory.class);
 
     private ClientScopePolicyProvider provider = new ClientScopePolicyProvider(this::toRepresentation);
 
@@ -79,9 +86,22 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                     @Override
                     public void accept(Policy policy) {
                         List<Map<String, Object>> clientScopes = new ArrayList<>();
+                        boolean clientScopeRemoved = false;
 
                         for (Map<String, Object> clientScope : getClientScopes(policy)) {
-                            if (!clientScope.get("id").equals(removedClientScope.getId())) {
+                            if (clientScope.get("id").equals(removedClientScope.getId())) {
+                                if (Boolean.TRUE.equals(clientScope.get("required"))) {
+                                    logger.warnf("Required client scope '%s' (%s) was deleted in realm '%s'. "
+                                            + "Client scope policy '%s' (%s) for resource server '%s' will deny access while this required client scope is missing.",
+                                            removedClientScope.getName(), removedClientScope.getId(), provider.getRealm().getName(),
+                                            policy.getName(), policy.getId(), policy.getResourceServer().getId());
+                                    return;
+                                }
+                                if (Logic.NEGATIVE.equals(policy.getLogic())) {
+                                    return;
+                                }
+                                clientScopeRemoved = true;
+                            } else {
                                 Map<String, Object> updated = new HashMap<>();
                                 updated.put("id", clientScope.get("id"));
                                 Object required = clientScope.get("required");
@@ -92,15 +112,16 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                             }
                         }
 
-                        if (clientScopes.isEmpty()) {
-                            policyStore.delete(policy.getId());
-                        } else {
-                            try {
-                                policy.putConfig("clientScopes", JsonSerialization.writeValueAsString(clientScopes));
-                            } catch (IOException e) {
-                                throw new RuntimeException(
-                                    "Error while synchronizing client scopes with policy [" + policy.getName() + "].", e);
-                            }
+                        // Keep a depleted policy attached so a dependent still sees a denial.
+                        if (!clientScopeRemoved || clientScopes.isEmpty()) {
+                            return;
+                        }
+
+                        try {
+                            policy.putConfig("clientScopes", JsonSerialization.writeValueAsString(clientScopes));
+                        } catch (IOException e) {
+                            throw new RuntimeException(
+                                "Error while synchronizing client scopes with policy [" + policy.getName() + "].", e);
                         }
                     }
                 });
@@ -150,19 +171,7 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
     public ClientScopePolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         ClientScopePolicyRepresentation representation = new ClientScopePolicyRepresentation();
 
-        try {
-            String clientScopes = policy.getConfig().get("clientScopes");
-
-            if (clientScopes == null) {
-                representation.setClientScopes(Collections.emptySet());
-            } else {
-                representation
-                        .setClientScopes(new HashSet<>(Arrays.asList(JsonSerialization.readValue(clientScopes,
-                                ClientScopePolicyRepresentation.ClientScopeDefinition[].class))));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to deserialize client scopes", e);
-        }
+        representation.setClientScopes(readClientScopes(policy.getConfig()));
 
         return representation;
     }
@@ -174,20 +183,25 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
 
     @Override
     public void onCreate(Policy policy, ClientScopePolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateClientScopes(policy, representation, authorization);
+        updateClientScopes(policy, authorization, representation.getClientScopes(), Set.of(), false);
     }
 
     @Override
     public void onUpdate(Policy policy, ClientScopePolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateClientScopes(policy, representation, authorization);
+        updateClientScopes(policy, authorization, representation.getClientScopes(), getStoredScopeIds(policy.getConfig()), false);
     }
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        onImport(policy, representation, authorization, Map.of());
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization, Map<String, String> previousConfig) {
         try {
             updateClientScopes(policy, authorization,
                 new HashSet<>(Arrays.asList(JsonSerialization.readValue(representation.getConfig().get("clientScopes"),
-                    ClientScopePolicyRepresentation.ClientScopeDefinition[].class))));
+                    ExportedClientScopeDefinition[].class))), getStoredScopeIds(previousConfig), true);
         } catch (IOException e) {
             throw new RuntimeException("Failed to deserialize client scopes during import", e);
         }
@@ -196,13 +210,16 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {
         Map<String, String> config = new HashMap<>();
-        Set<ClientScopePolicyRepresentation.ClientScopeDefinition> clientScopes = toRepresentation(policy,
-            authorizationProvider).getClientScopes();
+        List<ExportedClientScopeDefinition> clientScopes = new ArrayList<>();
 
-        for (ClientScopePolicyRepresentation.ClientScopeDefinition clientScopeDefinition : clientScopes) {
-            ClientScopeModel clientScope = authorizationProvider.getRealm().getClientScopeById(clientScopeDefinition.getId());
+        for (ClientScopeDefinition definition : toRepresentation(policy, authorizationProvider).getClientScopes()) {
+            ClientScopeModel clientScope = authorizationProvider.getRealm().getClientScopeById(definition.getId());
+            ExportedClientScopeDefinition exported = new ExportedClientScopeDefinition();
 
-            clientScopeDefinition.setId(clientScope.getName());
+            exported.setId(clientScope == null ? definition.getId() : clientScope.getName());
+            exported.setRequired(definition.isRequired());
+            exported.setUnresolved(clientScope == null);
+            clientScopes.add(exported);
         }
 
         try {
@@ -214,18 +231,35 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
         representation.setConfig(config);
     }
 
-    private void updateClientScopes(Policy policy, ClientScopePolicyRepresentation representation,
-        AuthorizationProvider authorization) {
-        updateClientScopes(policy, authorization, representation.getClientScopes());
+    private Set<ClientScopeDefinition> readClientScopes(Map<String, String> config) {
+        String clientScopes = config.get("clientScopes");
+        if (clientScopes == null) {
+            return Collections.emptySet();
+        }
+        try {
+            return new HashSet<>(Arrays.asList(JsonSerialization.readValue(clientScopes, ClientScopeDefinition[].class)));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize client scopes", e);
+        }
+    }
+
+    private Set<String> getStoredScopeIds(Map<String, String> config) {
+        return readClientScopes(config).stream().map(ClientScopeDefinition::getId).collect(Collectors.toSet());
     }
 
     private void updateClientScopes(Policy policy, AuthorizationProvider authorization,
-        Set<ClientScopeDefinition> clientScopes) {
+        Set<ClientScopeDefinition> clientScopes, Set<String> storedScopeIds, boolean importing) {
         RealmModel realm = authorization.getRealm();
         Set<ClientScopePolicyRepresentation.ClientScopeDefinition> updatedClientScopes = new HashSet<>();
 
         if (clientScopes != null) {
             for (ClientScopePolicyRepresentation.ClientScopeDefinition definition : clientScopes) {
+                if ((definition.getId() != null && storedScopeIds.contains(definition.getId()))
+                        || (importing && definition instanceof ExportedClientScopeDefinition exported && exported.isUnresolved())) {
+                    // Preserve stored IDs and discard export-only metadata.
+                    updatedClientScopes.add(new ClientScopeDefinition(definition.getId(), definition.isRequired()));
+                    continue;
+                }
                 String clientScopeName = definition.getId();
                 ClientScopeModel clientScope = realm.getClientScopesStream()
                     .filter(scope -> scope.getName().equals(clientScopeName)).findAny().orElse(null);
@@ -235,12 +269,16 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                 }
 
                 if (clientScope == null) {
+                    if (importing && definition.isRequired()) {
+                        // Preserve deleted requirements when importing an existing policy.
+                        updatedClientScopes.add(new ClientScopeDefinition(definition.getId(), true));
+                        continue;
+                    }
                     throw new RuntimeException(
                         "Error while updating policy [" + policy.getName() + "]. Client Scope [" + "] could not be found.");
                 }
 
-                definition.setId(clientScope.getId());
-                updatedClientScopes.add(definition);
+                updatedClientScopes.add(new ClientScopeDefinition(clientScope.getId(), definition.isRequired()));
             }
         }
 
@@ -248,6 +286,19 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
             policy.putConfig("clientScopes", JsonSerialization.writeValueAsString(updatedClientScopes));
         } catch (IOException e) {
             throw new RuntimeException("Failed to serialize client scopes", e);
+        }
+    }
+
+    private static class ExportedClientScopeDefinition extends ClientScopeDefinition {
+        private boolean unresolved;
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        public boolean isUnresolved() {
+            return unresolved;
+        }
+
+        public void setUnresolved(boolean unresolved) {
+            this.unresolved = unresolved;
         }
     }
 }

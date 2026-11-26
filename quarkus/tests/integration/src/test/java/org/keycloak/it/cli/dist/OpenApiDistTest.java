@@ -21,7 +21,9 @@ import java.io.IOException;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -33,10 +35,11 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DistributionTest(keepAlive = true, requestPort = 9000, containerExposedPorts = {8080, 9000})
+@DistributionTest(stopServer = Mode.MANUAL, requestPort = 9000, containerExposedPorts = {8080, 9000})
 @Tag(DistributionTest.SLOW)
 public class OpenApiDistTest {
 
@@ -48,11 +51,11 @@ public class OpenApiDistTest {
 
   @Test
   @Launch({"start-dev", FEATURES_OPTION})
-  void testOpenApiEndpointNotEnabled(KeycloakDistribution distribution) {
+  void testOpenApiEndpointNotEnabled(KeycloakRunner runner) {
     assertThrows(IOException.class, () -> when().get(OPENAPI_ENDPOINT), "Connection refused must be thrown");
     assertThrows(IOException.class, () -> when().get(OPENAPI_UI_ENDPOINT), "Connection refused must be thrown");
 
-    distribution.setRequestPort(8080);
+    runner.setRequestPort(8080);
 
     when().get(OPENAPI_ENDPOINT).then()
         .statusCode(404);
@@ -76,20 +79,20 @@ public class OpenApiDistTest {
         .statusCode(200);
   }
 
-  @DryRun
+  @StopServer(Mode.BEFORE_QUARKUS)
   @Test
   @Launch({ "start-dev", "--openapi-ui-enabled=true", FEATURES_OPTION})
   void testOpenApiUiFailsWhenOpenApiIsNotEnabled(CLIResult cliResult) {
     cliResult.assertError("Disabled option: '--openapi-ui-enabled'. Available only when OpenAPI Endpoint is enabled");
   }
 
-  @DryRun
+  @StopServer(Mode.BEFORE_QUARKUS)
   @Test
-  void testOpenApiRequiresFeatures(KeycloakDistribution dist) {
-    CLIResult cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=openapi");
+  void testOpenApiRequiresFeatures(KeycloakRunner runner) {
+    CLIResult cliResult = runner.run("start-dev", "--openapi-enabled=true", "--features=openapi");
     cliResult.assertError("ERROR: Feature openapi depends on disabled feature client-admin-api-v2");
 
-    cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=client-admin-api:v2");
+    cliResult = runner.run("start-dev", "--openapi-enabled=true", "--features=client-admin-api:v2");
     cliResult.assertError("Disabled option: '--openapi-enabled'. Available only when OpenAPI feature is enabled");
   }
 
@@ -108,7 +111,9 @@ public class OpenApiDistTest {
       response
           .body("components.schemas.BaseClientRepresentation.discriminator.propertyName", equalTo("protocol"))
           .body("components.schemas.BaseClientRepresentation.discriminator.mapping.openid-connect", equalTo("#/components/schemas/OIDCClientRepresentation"))
-          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"));
+          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"))
+          .body("components.schemas.BaseClientRepresentation.required", hasItem("clientId"))
+          .body("components.schemas.BaseClientRepresentation.required", not(hasItem("protocol")));
 
       // Verify subtypes have the discriminator property and allOf reference to parent
       response

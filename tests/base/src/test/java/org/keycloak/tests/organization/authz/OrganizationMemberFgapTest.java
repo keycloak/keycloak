@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.OrganizationMembersResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.Constants;
@@ -35,16 +36,15 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,9 +69,6 @@ public class OrganizationMemberFgapTest {
     @InjectRealm(config = OrganizationAdminPermissionsConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
-    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
-    ManagedClient client;
-
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
 
@@ -84,10 +81,13 @@ public class OrganizationMemberFgapTest {
     @InjectUser(ref = "charlie")
     ManagedUser userCharlie;
 
+    private ClientResource clientResource;
+    
     private String orgId;
 
     @BeforeEach
     public void setup() {
+        clientResource = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         // create the organization
         OrganizationRepresentation orgRep = new OrganizationRepresentation();
         orgRep.setName("testOrg");
@@ -111,7 +111,7 @@ public class OrganizationMemberFgapTest {
     public void testSearchReturnsOnlyPermittedMembers() {
         // grant myadmin permission to view only alice and bob
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, Set.of(userAlice.getId(), userBob.getId()), AdminPermissionsSchema.USERS.getType(), Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(userAlice.getId(), userBob.getId()), AdminPermissionsSchema.USERS.getType(), Set.of(VIEW), policy);
 
         List<MemberRepresentation> result = getOrgMembers().list(-1, -1);
 
@@ -126,7 +126,7 @@ public class OrganizationMemberFgapTest {
     public void testCountReturnsOnlyPermittedMembers() {
         // grant myadmin permission to view only alice
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, Set.of(userAlice.getId()), AdminPermissionsSchema.USERS.getType(), Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(userAlice.getId()), AdminPermissionsSchema.USERS.getType(), Set.of(VIEW), policy);
 
         assertThat(getOrgMembers().count(), equalTo(1L));
     }
@@ -147,7 +147,7 @@ public class OrganizationMemberFgapTest {
     public void testSearchWithAllUsersPermission() {
         // grant myadmin permission to view all users
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, AdminPermissionsSchema.USERS.getType(), policy, Set.of(VIEW));
+        PermissionTestUtils.createAllPermission(clientResource, AdminPermissionsSchema.USERS.getType(), policy, Set.of(VIEW));
 
         // should see all three members
         assertThat(getOrgMembers().list(null, null), hasSize(3));
@@ -157,7 +157,7 @@ public class OrganizationMemberFgapTest {
     public void testCountWithAllUsersPermission() {
         // grant myadmin permission to view all users
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, AdminPermissionsSchema.USERS.getType(), policy, Set.of(VIEW));
+        PermissionTestUtils.createAllPermission(clientResource, AdminPermissionsSchema.USERS.getType(), policy, Set.of(VIEW));
 
         assertThat(getOrgMembers().count(), equalTo(3L));
     }
@@ -176,7 +176,7 @@ public class OrganizationMemberFgapTest {
 
         // grant myadmin VIEW_MEMBERS on the group - this implicitly allows viewing users in that group
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, Set.of(group.getId()), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(group.getId()), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
 
         List<MemberRepresentation> result = getOrgMembers().list(-1, -1);
 
@@ -200,7 +200,7 @@ public class OrganizationMemberFgapTest {
 
         // grant myadmin VIEW_MEMBERS on the group
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, Set.of(group.getId()), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(group.getId()), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), policy);
 
         Long count = getOrgMembers().count();
 
@@ -222,6 +222,6 @@ public class OrganizationMemberFgapTest {
 
     private UserPolicyRepresentation createAdminPolicy() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        return PermissionTestUtils.createUserPolicy(realm, client, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
+        return PermissionTestUtils.createUserPolicy(realm, clientResource, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
     }
 }

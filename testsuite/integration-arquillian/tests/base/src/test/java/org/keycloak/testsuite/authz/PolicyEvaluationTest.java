@@ -50,6 +50,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -156,6 +157,71 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         evaluation = createEvaluation(session, authorization, null, resourceServer, policy, attributes);
         provider.evaluate(evaluation);
         assertEquals(Effect.DENY, evaluation.getEffect());
+    }
+
+    @Test
+    public void testCheckDateAndTimeWithBlankRepeatFields() {testingClient.server().run(PolicyEvaluationTest::testCheckDateAndTimeWithBlankRepeatFields);}
+
+    public static void testCheckDateAndTimeWithBlankRepeatFields(KeycloakSession session) {
+        session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.clients().getClientByClientId(session.getContext().getRealm(), "resource-server-test");
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
+        Map<String, Collection<String>> attributes = new HashMap<>();
+        attributes.put("kc.time.date_time", Arrays.asList("2026-10-05 10:30:00"));
+
+        // blank repeat fields, as stored by the admin console, are ignored and only nbf/noa are evaluated
+        TimePolicyRepresentation policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithBlankRepeatFields");
+        policyRepresentation.setNotBefore("2026-10-01 00:00:00");
+        policyRepresentation.setNotOnOrAfter("2026-10-31 23:59:59");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.PERMIT);
+
+        // a blank end is treated as unset, so the start must match exactly
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithBlankEndMatch");
+        policyRepresentation.setMonth("10");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.PERMIT);
+
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithBlankEndNoMatch");
+        policyRepresentation.setMonth("11");
+        policyRepresentation.setMonthEnd(" ");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.DENY);
+
+        // ranges keep working when the other repeat fields are blank
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithRangeMatch");
+        policyRepresentation.setHour("9");
+        policyRepresentation.setHourEnd("11");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.PERMIT);
+
+        policyRepresentation = createTimePolicyWithBlankRepeatFields("testCheckDateAndTimeWithRangeNoMatch");
+        policyRepresentation.setHour("11");
+        policyRepresentation.setHourEnd("12");
+        assertTimePolicyEffect(session, authorization, resourceServer, policyRepresentation, attributes, Effect.DENY);
+    }
+
+    private static TimePolicyRepresentation createTimePolicyWithBlankRepeatFields(String name) {
+        TimePolicyRepresentation policyRepresentation = new TimePolicyRepresentation();
+        policyRepresentation.setName(name);
+        policyRepresentation.setDayMonth("");
+        policyRepresentation.setDayMonthEnd("");
+        policyRepresentation.setMonth("");
+        policyRepresentation.setMonthEnd("");
+        policyRepresentation.setYear("");
+        policyRepresentation.setYearEnd("");
+        policyRepresentation.setHour("");
+        policyRepresentation.setHourEnd("");
+        policyRepresentation.setMinute("");
+        policyRepresentation.setMinuteEnd("");
+        return policyRepresentation;
+    }
+
+    private static void assertTimePolicyEffect(KeycloakSession session, AuthorizationProvider authorization, ResourceServer resourceServer,
+                                               TimePolicyRepresentation policyRepresentation, Map<String, Collection<String>> attributes, Effect expected) {
+        Policy policy = authorization.getStoreFactory().getPolicyStore().create(resourceServer, policyRepresentation);
+        PolicyProvider provider = authorization.getProvider(policy.getType());
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, null, resourceServer, policy, attributes);
+        provider.evaluate(evaluation);
+        assertEquals(expected, evaluation.getEffect());
     }
 
     @Test
@@ -672,6 +738,47 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 return baseAttributes;
             }
         };
+    }
+
+    @Test
+    public void testResolveServiceAccountByClientId() {
+        testingClient.server().run(PolicyEvaluationTest::testResolveServiceAccountByClientId);
+    }
+
+    public static void testResolveServiceAccountByClientId(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        session.getContext().setRealm(realm);
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.clients().getClientByClientId(realm, "resource-server-test");
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
+
+        // get the service account user and assign a realm role
+        UserModel serviceAccount = session.users().getServiceAccount(clientModel);
+        assertNotNull(serviceAccount);
+        RoleModel roleA = realm.getRole("role-a");
+        assertNotNull(roleA);
+        serviceAccount.grantRole(roleA);
+
+        // create a simple user policy (type doesn't matter, we test through the Realm interface)
+        UserPolicyRepresentation policyRepresentation = new UserPolicyRepresentation();
+        policyRepresentation.setName("testResolveServiceAccountByClientId");
+        policyRepresentation.addUser(serviceAccount.getId());
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+
+        // resolve service account using the client's internal ID (the fix scenario)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(clientModel.getId(), "role-a"),
+                "Service account should be resolved by client internal ID");
+
+        // resolve service account using the service account username (regression check)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(serviceAccount.getUsername(), "role-a"),
+                "Service account should still be resolved by username");
+
+        // non-existent ID should not cause errors (NPE check)
+        Assertions.assertFalse(evaluation.getRealm().isUserInRealmRole("non-existent-id", "role-a"),
+                "Non-existent ID should return false without errors");
     }
 
     @Test

@@ -21,16 +21,19 @@ package org.keycloak.testsuite.oidc;
 import java.util.List;
 
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -93,7 +96,7 @@ public class OIDCPublicClientTest extends AbstractKeycloakTest {
         // It should be possible to authenticate
         oauth.doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -103,7 +106,11 @@ public class OIDCPublicClientTest extends AbstractKeycloakTest {
 
         assertEquals(200, response.getStatusCode());
         assertNotNull(response.getAccessToken());
-        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
     }
 
 }

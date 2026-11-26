@@ -102,7 +102,7 @@ public class SyncFederationTest extends AbstractAuthTest {
             while (true) {
                 SynchronizationResult result = UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), dummyModel);
                 if (result.isIgnored()) {
-                    log.infof("Still waiting for lock before periodic sync is finished", result.toString());
+                    log.infof("Still waiting for lock before periodic sync is finished: %s", result.toString());
                     sleep(1000);
                 } else {
                     break;
@@ -255,7 +255,7 @@ public class SyncFederationTest extends AbstractAuthTest {
             while (true) {
                 SynchronizationResult result = UserStoragePrivateUtil.runPeriodicSync(session.getKeycloakSessionFactory(), dummyModel);
                 if (result.isIgnored()) {
-                    log.infof("Still waiting for lock before periodic sync is finished", result.toString());
+                    log.infof("Still waiting for lock before periodic sync is finished: %s", result.toString());
                     sleep(1000);
                 } else {
                     break;

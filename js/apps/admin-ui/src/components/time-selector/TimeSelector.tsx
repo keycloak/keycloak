@@ -90,14 +90,18 @@ export const TimeSelector = ({
   }, [units, multiplier]);
 
   useEffect(() => {
-    const multiplier = getTimeUnit(times, value).multiplier;
+    const calculatedMultiplier = getTimeUnit(times, value).multiplier;
 
-    if (value) {
-      setMultiplier(multiplier);
-      setTimeValue(value / multiplier);
-      setLastMultiplier(multiplier);
+    if (value != null && (value as string | number) !== "") {
+      const resolvedMultiplier =
+        String(value) === "0"
+          ? (multiplier ?? defaultMultiplier ?? 1)
+          : calculatedMultiplier;
+      setMultiplier(resolvedMultiplier);
+      setTimeValue(value / resolvedMultiplier);
+      setLastMultiplier(resolvedMultiplier);
     } else {
-      setTimeValue(value || "");
+      setTimeValue("");
       setMultiplier(lastMultiplier ?? defaultMultiplier);
       setLastMultiplier(lastMultiplier ?? defaultMultiplier);
     }

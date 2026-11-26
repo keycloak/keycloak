@@ -50,10 +50,23 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
     /**
      * Get configuration, which needs to be used for adapter ( keycloak.json ) of particular client. Some implementations
      * may return just template and user needs to edit the values according to his environment (For example fill the location of keystore file)
+     * Sensitive entries must be declared by {@link #getAdapterConfigurationSecretKeys()}.
      *
      * @return
      */
     Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client);
+
+    /**
+     * Declare all sensitive entries in the map returned by {@link #getAdapterConfiguration(KeycloakSession, ClientModel)}.
+     * Paths are slash-separated map keys with a leading slash, for example {@code /secret} or {@code /secret-jwt/secret}.
+     * Keys must be non-empty and cannot contain slashes. No escaping is supported.
+     * Only nested maps can be traversed; array traversal is not supported.
+     * Missing paths are permitted for optional configuration entries. An entry declared sensitive is masked in its
+     * entirety, including when its value is a map or collection. Non-sensitive template placeholders need not be declared.
+     *
+     * @return a non-null set of secret paths, or an empty set if the configuration contains no secrets
+     */
+    Set<String> getAdapterConfigurationSecretKeys();
 
     /**
      * Get authentication methods for the specified protocol
@@ -71,7 +84,7 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      *         For example "client_secret_basic", "client_secret_post" or "private_key_jwt" might be used as returned values.
      */
     default String getProtocolAuthenticatorMethod(ClientRepresentation client) {
-        String loginProtocol = client.getProtocol() == null ? Constants.OIDC_PROTOCOL : client.getProtocol();
+        String loginProtocol = client.getProtocol() == null ? Constants.DEFAULT_PROTOCOL : client.getProtocol();
         Set<String> protocolAuthMethods = getProtocolAuthenticatorMethods(loginProtocol);
         return protocolAuthMethods == null || protocolAuthMethods.isEmpty() ? null : protocolAuthMethods.iterator().next();
     }
@@ -93,6 +106,15 @@ public interface ClientAuthenticatorFactory extends ProviderFactory<ClientAuthen
      * @return if it supports secret
      */
     default boolean supportsSecret() {
+        return false;
+    }
+
+    /**
+     * Is this authenticator supports authentication with client assertion?
+     *
+     * @return if it supports authentication with client assertion
+     */
+    default boolean supportsClientAssertion() {
         return false;
     }
 }

@@ -99,7 +99,7 @@ public class PKCEEnforcerExecutor implements ClientPolicyExecutorProvider<PKCEEn
                 break;
             case AUTHORIZATION_REQUEST:
                 AuthorizationRequestContext authorizationRequestContext = (AuthorizationRequestContext)context;
-                executeOnAuthorizationRequest(authorizationRequestContext.getparsedResponseType(),
+                executeOnAuthorizationRequest(authorizationRequestContext.getParsedResponseType(),
                     authorizationRequestContext.getAuthorizationEndpointRequest(),
                     authorizationRequestContext.getRedirectUri());
                 return;

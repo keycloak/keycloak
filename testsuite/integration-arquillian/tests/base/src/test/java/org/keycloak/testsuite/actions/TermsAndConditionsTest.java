@@ -28,12 +28,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.util.DroneUtils;
@@ -41,7 +40,6 @@ import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -51,8 +49,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
-
-import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -68,9 +64,6 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -95,17 +88,17 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(termsPage.isCurrent());
+        termsPage.assertCurrent();
 
         termsPage.acceptTerms();
 
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         Assertions.assertNotNull(response.getCode());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // assert user attribute is properly set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -128,24 +121,22 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
     public void termsDeclined() throws Exception {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-        Assertions.assertTrue(termsPage.isCurrent());
+        termsPage.assertCurrent();
 
         termsPage.declineTerms();
-        WaitUtils.waitForPageToLoad();
 
         // assert on app page with reject login
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertTrue(oauth.parseLoginResponse().isError());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         Assertions.assertNull(response.getCode());
         Assertions.assertEquals(Errors.ACCESS_DENIED, response.getError());
         Assertions.assertEquals(Messages.TERMS_AND_CONDITIONS_DECLINED, response.getErrorDescription());
 
         // assert event
-        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+        EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
-                .removeDetail(Details.CONSENT)
-                .session(Matchers.nullValue(String.class))
-                .assertEvent();
+                .withoutDetails(Details.CONSENT)
+                .sessionId(null);
 
         // assert user attribute is properly removed
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -159,26 +150,25 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
     @Test // only for firefox and chrome as it needs to go to the account console
     @IgnoreBrowserDriver(value={ChromeDriver.class, FirefoxDriver.class}, negate=true)
     public void termsDeclinedAccount() {
-        appPage.open();
-        appPage.openAccount();
+        driver.navigate().to(oauth.getBaseUrl() + "/realms/" + TEST_REALM_NAME + "/account");
 
+        WaitUtils.waitForPageToLoad();
         loginPage.assertCurrent();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assertions.assertTrue(termsPage.isCurrent());
+        termsPage.assertCurrent();
 
         termsPage.declineTerms();
 
         WaitUtils.waitForPageToLoad();
 
-        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+        EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
-                .removeDetail(Details.CONSENT)
-                .session(Matchers.nullValue(String.class))
-                .client(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
-                .detail(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/" + TEST_REALM_NAME + "/account")
-                .assertEvent();
+                .withoutDetails(Details.CONSENT)
+                .sessionId(null)
+                .clientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
+                .details(Details.REDIRECT_URI, oauth.getBaseUrl() + "/realms/" + TEST_REALM_NAME + "/account");
 
 
         // assert user attribute is properly removed
@@ -211,9 +201,9 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
     }
 

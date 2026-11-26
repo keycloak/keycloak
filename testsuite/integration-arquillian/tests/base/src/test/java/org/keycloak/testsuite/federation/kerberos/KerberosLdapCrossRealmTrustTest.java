@@ -20,13 +20,19 @@ package org.keycloak.testsuite.federation.kerberos;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -111,14 +117,16 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     @Test
     public void test03SpnegoLoginUsernamePassword() throws Exception {
         // User jduke@KC2.COM
-        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
-        Assertions.assertFalse(testAppHelper.login("jduke2", "theduke"));
-        Assertions.assertTrue(testAppHelper.login("jduke2", "theduke2"));
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage);
+        testAppHelper.login("jduke2", "theduke");
+        loginPage.assertCurrent();
+        testAppHelper.login("jduke2", "theduke2");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         Assertions.assertTrue(testAppHelper.logout());
 
         // User jduke@KEYCLOAK.ORG
-        Assertions.assertTrue(testAppHelper.login("jduke", "theduke"));
-
+        testAppHelper.login("jduke", "theduke");
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         // Logout
         testAppHelper.logout();
         events.poll();
@@ -155,7 +163,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     public void test05DisableTrust() throws Exception {
         // Remove the LDAP entry corresponding to the Kerberos principal krbtgt/KEYCLOAK.ORG@KC2.COM
         // This will effectively disable kerberos cross-realm trust
-        testingClient.testing().ldap("test").removeLDAPUser("krbtgt2");
+        runOnServer.run(removeLDAPUser("krbtgt2"));
 
 
         // There is no trust among kerberos realms anymore. SPNEGO shouldn't work. There would be failure even on Apache HTTP client side
@@ -168,5 +176,20 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         }
     }
 
+
+    /**
+     * Remove specified user directly just from the LDAP server
+     */
+    public static RunOnServer removeLDAPUser(String ldapUsername) {
+        return session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ComponentModel ldapCompModel = LDAPTestUtils.getLdapProviderModel(realm);
+            UserStorageProviderModel ldapModel = new UserStorageProviderModel(ldapCompModel);
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
+
+            LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, realm,
+                    ldapProvider.getLdapIdentityStore().getConfig(), ldapUsername);
+        };
+    }
 
 }

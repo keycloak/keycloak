@@ -11,7 +11,7 @@ export const CreateFlowRoute: AppRouteObject = {
   path: "/:realm/authentication/flows/create",
   element: <CreateFlow />,
   handle: {
-    access: "manage-authorization",
+    access: "manage-realm",
     breadcrumb: (t) => t("createFlow"),
   },
 };

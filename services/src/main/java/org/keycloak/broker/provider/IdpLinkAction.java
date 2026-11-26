@@ -214,7 +214,6 @@ public class IdpLinkAction implements RequiredActionProvider, RequiredActionFact
                 .setUser(context.getUser())
                 .setErrors(Collections.singletonList(formMessage))
                 .createErrorPage(Response.Status.BAD_REQUEST);
-        context.getEvent().error(formMessage.getMessage());
         context.challenge(response);
     }
 

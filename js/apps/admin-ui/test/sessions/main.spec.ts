@@ -1,13 +1,14 @@
 import { expect, test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
+import { SERVER_URL } from "../utils/constants.ts";
 import { login } from "../utils/login.ts";
 import {
   assertAxeViolations,
   assertNotificationMessage,
   selectActionToggleItem,
 } from "../utils/masthead.ts";
-import { goToSessions } from "../utils/sidebar.ts";
+import { goToRealm, goToSessions } from "../utils/sidebar.ts";
 import {
   assertNoResults,
   assertRowExists,
@@ -53,15 +54,12 @@ test.describe.serial("Sessions test", () => {
 });
 
 test.describe.serial("Offline sessions", () => {
+  const realmName = `offline-sessions-${uuid()}`;
   const clientId = `offline-client-${uuid()}`;
   const username = `user-${uuid()}`;
 
-  test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToSessions(page);
-  });
-
-  test.beforeEach(async () => {
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName, { enabled: true });
     await Promise.all([
       adminClient.createClient({
         protocol: "openid-connect",
@@ -71,29 +69,43 @@ test.describe.serial("Offline sessions", () => {
         clientAuthenticatorType: "client-secret",
         secret: "secret",
         standardFlowEnabled: true,
+        realm: realmName,
       }),
       adminClient.createUser({
         username,
         enabled: true,
+        email: `${username}@example.org`,
+        firstName: "Offline",
+        lastName: "User",
         credentials: [{ type: "password", value: "password" }],
+        realm: realmName,
       }),
     ]);
-
-    await adminClient.auth({
-      username,
-      password: "password",
-      grantType: "password",
-      clientId,
-      clientSecret: "secret",
-      scopes: ["openid", "offline_access"],
-    });
   });
 
-  test.afterAll(async () => {
-    await Promise.all([
-      adminClient.deleteClient(clientId),
-      adminClient.deleteUser(username),
-    ]);
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
+  test.beforeEach(async ({ page }) => {
+    // Each request creates a new offline session for the user.
+    const response = await fetch(
+      `${SERVER_URL}/realms/${realmName}/protocol/openid-connect/token`,
+      {
+        method: "POST",
+        body: new URLSearchParams({
+          grant_type: "password",
+          client_id: clientId,
+          client_secret: "secret",
+          username,
+          password: "password",
+          scope: "openid offline_access",
+        }),
+      },
+    );
+    expect(response.ok).toBe(true);
+
+    await login(page);
+    await goToRealm(page, realmName);
+    await goToSessions(page);
   });
 
   test("check offline token", async ({ page }) => {
@@ -101,7 +113,7 @@ test.describe.serial("Offline sessions", () => {
     await assertRowExists(page, username);
     await clickRowKebabItem(page, username, "Revoke");
 
-    await searchItem(page, placeHolder, clientId);
+    // The realm has no other sessions, so the table and its search toolbar disappear.
     await assertRowExists(page, username, false);
   });
 });
@@ -118,10 +130,16 @@ test.describe.serial("Search", () => {
   });
 });
 
+// The not-before policy is realm-wide and invalidates the tokens of all its users, so it is changed in a separate realm.
 test.describe.serial("revocation", () => {
+  const realmName = `revocation-${uuid()}`;
+
+  test.beforeAll(() => adminClient.createRealm(realmName));
+
+  test.afterAll(() => adminClient.deleteRealm(realmName));
+
   test.beforeEach(async ({ page }) => {
-    await login(page);
-    await goToSessions(page);
+    await login(page, { to: { pathname: `/${realmName}/sessions` } });
   });
 
   test("Clear revocation notBefore", async ({ page }) => {

@@ -8,6 +8,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { HelpItem, TextControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsKerberosIntegrationProps = {
@@ -80,6 +81,23 @@ export const LdapSettingsKerberosIntegration = ({
                 required: t("validateRealm"),
               }}
             />
+            <FormGroup
+              label={t("allowedKerberosRealms")}
+              labelIcon={
+                <HelpItem
+                  helpText={t("allowedKerberosRealmsHelp")}
+                  fieldLabelId="allowedKerberosRealms"
+                />
+              }
+              fieldId="kc-allowed-kerberos-realms"
+            >
+              <MultiLineInput
+                id="kc-allowed-kerberos-realms"
+                name="config.allowedKerberosRealms"
+                aria-label={t("allowedKerberosRealms")}
+                addButtonLabel="addAllowedKerberosRealm"
+              />
+            </FormGroup>
             <TextControl
               name="config.serverPrincipal.0"
               label={t("serverPrincipal")}

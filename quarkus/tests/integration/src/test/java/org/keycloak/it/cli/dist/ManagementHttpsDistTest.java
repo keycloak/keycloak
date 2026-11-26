@@ -19,6 +19,7 @@ package org.keycloak.it.cli.dist;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -30,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.containsString;
 
-@DistributionTest(keepAlive = true,
+@DistributionTest(stopServer = Mode.MANUAL,
         enableTls = true,
         defaultOptions = {"--db=dev-file", "--health-enabled=true", "--metrics-enabled=true"},
         requestPort = 9000)

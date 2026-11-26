@@ -62,7 +62,7 @@ export default function PageList() {
     signal: { providerId },
     loader: async () => {
       const params: ComponentQuery = {
-        parent: realm?.id,
+        parent: realm.id,
         type: PAGE_PROVIDER,
         providerId,
       };
@@ -142,7 +142,9 @@ export default function PageList() {
             instructions={t("noItemsInstructions")}
             primaryActionText={t("createItem")}
             onPrimaryAction={() =>
-              navigate(addDetailPage({ realm: realmName, providerId: page.id }))
+              void navigate(
+                addDetailPage({ realm: realmName, providerId: page.id }),
+              )
             }
           />
         }

@@ -27,6 +27,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 
 import static org.keycloak.models.light.LightweightUserAdapter.isLightweightUser;
 
@@ -51,6 +53,11 @@ public class UserConsentManager {
         if (revokedConsent) {
             // Logout clientSessions for this user and client
             AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client, session.getContext().getUri(), session.getContext().getRequestHeaders());
+
+            // Callback to login protocol factories
+            session.getKeycloakSessionFactory().getProviderFactoriesStream(LoginProtocol.class)
+                    .map(LoginProtocolFactory.class::cast)
+                    .forEach(loginProtocolFactory -> loginProtocolFactory.onConsentRevoked(session, client, user));
         }
 
         return revokedConsent || revokedOfflineToken;

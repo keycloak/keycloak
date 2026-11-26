@@ -68,7 +68,7 @@ public class AuthorizeClientUtil {
         }
 
         if (cors != null) {
-            cors.allowedOrigins(session, client);
+            cors.checkAllowedOrigins(session, client);
         }
 
         String protocol = client.getProtocol();

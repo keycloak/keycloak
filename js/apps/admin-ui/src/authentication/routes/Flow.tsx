@@ -16,7 +16,7 @@ export const FlowRoute: AppRouteObject = {
   path: "/:realm/authentication/:id/:usedBy",
   element: <FlowDetails />,
   handle: {
-    access: "view-authorization",
+    access: "view-realm",
     breadcrumb: (t) => t("flowDetails"),
   },
 };

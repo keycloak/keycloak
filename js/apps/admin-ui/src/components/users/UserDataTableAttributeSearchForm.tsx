@@ -140,6 +140,7 @@ export function UserDataTableAttributeSearchForm({
   };
 
   const createAttributeKeyInputField = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- may be undefined at runtime despite the type
     if (profile) {
       return (
         <KeycloakSelect

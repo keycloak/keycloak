@@ -40,7 +40,7 @@ export default function CreateFlow() {
       const { id } =
         await adminClient.authenticationManagement.createFlow(flow);
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
-      navigate(
+      void navigate(
         toFlow({
           realm,
           id: id!,
@@ -59,7 +59,7 @@ export default function CreateFlow() {
         <FormProvider {...form}>
           <FormAccess
             isHorizontal
-            role="manage-authorization"
+            role="manage-realm"
             onSubmit={handleSubmit(onSubmit)}
           >
             <NameDescription />

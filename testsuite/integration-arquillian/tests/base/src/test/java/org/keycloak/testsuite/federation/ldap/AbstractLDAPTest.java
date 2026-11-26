@@ -24,12 +24,12 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.LDAPRule;
+import org.keycloak.testsuite.util.runonserver.LdapHelper;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
@@ -44,9 +44,6 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -79,7 +76,7 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
     protected void createLDAPProvider() {
         Map<String, String> cfg = getLDAPRule().getConfig();
-        ldapModelId = testingClient.testing().ldap(TEST_REALM_NAME).createLDAPProvider(cfg, isImportEnabled());
+        ldapModelId = runOnServer.fetchString(LdapHelper.createLDAPProvider(cfg, isImportEnabled())).replace("\"", "");
         Assertions.assertEquals(22, ldapModelId.length(), "Short ID not used for ldap id");
         log.infof("LDAP Provider created");
     }

@@ -15,7 +15,7 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProviderFactoryImpl;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
 import org.junit.Test;
 

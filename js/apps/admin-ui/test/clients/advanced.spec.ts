@@ -4,6 +4,8 @@ import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import { assertEmptyTable, clickTableRowItem } from "../utils/table.ts";
+import { OID4VCI_SERVER_FEATURE } from "../utils/oid4vci.ts";
+import { createDefaultTrustProvider } from "../identity-providers/main.ts";
 import {
   assertAccessTokenSignatureAlgorithm,
   assertAdvancedSwitchesOn,
@@ -32,21 +34,31 @@ import {
   revertAuthFlowOverride,
   saveOid4vci,
   revertOid4vci,
-  assertOid4vciEnabled,
+  assertOid4vciSection,
   switchOid4vciEnabled,
+  selectOid4vciAttesterTrustIdps,
+  getOid4vciAttesterTrustIdpsValues,
+  getOid4vciAttesterTrustIdpsSelect,
 } from "./advanced.ts";
 
 test.describe.serial("Advanced tab test", () => {
+  const realmName = `advanced-tab-${uuidv4()}`;
   const clientId = `advanced-tab-${uuidv4()}`;
 
-  test.beforeAll(() =>
-    adminClient.createClient({ clientId, publicClient: true }),
-  );
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    await adminClient.createClient({
+      clientId,
+      publicClient: true,
+      realm: realmName,
+    });
+  });
 
-  test.afterAll(() => adminClient.deleteClient(clientId));
+  test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
     await login(page);
+    await goToRealm(page, realmName);
     await goToClients(page);
     await clickTableRowItem(page, clientId);
     await goToAdvancedTab(page);
@@ -137,6 +149,7 @@ test.describe.serial("Client Offline Session Max", () => {
 test.describe.serial("OpenID for Verifiable Credentials", () => {
   const realmName = `oid4vci-test-${uuidv4()}`;
   const clientIdOpenIdConnect = `client-oidc-${uuidv4()}`;
+
   test.beforeAll(async () => {
     await adminClient.createRealm(realmName, {
       verifiableCredentialsEnabled: true,
@@ -149,6 +162,10 @@ test.describe.serial("OpenID for Verifiable Credentials", () => {
   });
 
   test.afterAll(() => adminClient.deleteRealm(realmName));
+
+  const getTestClient = async () => {
+    return await adminClient.getClient(clientIdOpenIdConnect, realmName);
+  };
 
   test.describe.serial("with protocol openid-connect", () => {
     test.beforeEach(async ({ page }) => {
@@ -167,23 +184,11 @@ test.describe.serial("OpenID for Verifiable Credentials", () => {
     test("should handle OID4VC section visibility based on feature flag", async ({
       page,
     }) => {
-      const toggleSwitch = page.locator("#attributes\\.oid4vci🍺enabled");
+      const featureEnabled = await adminClient.isFeatureEnabled(
+        OID4VCI_SERVER_FEATURE,
+      );
 
-      const isVisible = await toggleSwitch.isVisible();
-
-      if (isVisible) {
-        await toggleSwitch.scrollIntoViewIfNeeded();
-        await assertOid4vciEnabled(page, false);
-        await switchOid4vciEnabled(page, true);
-        await saveOid4vci(page);
-        await assertOid4vciEnabled(page, true);
-        await switchOid4vciEnabled(page, false);
-        await assertOid4vciEnabled(page, false);
-        await revertOid4vci(page);
-        await assertOid4vciEnabled(page, true);
-      } else {
-        await expect(toggleSwitch).toBeHidden();
-      }
+      await assertOid4vciSection(page, featureEnabled);
     });
 
     test("should hide OID4VC section when verifiable credentials are disabled for the realm", async ({
@@ -206,6 +211,48 @@ test.describe.serial("OpenID for Verifiable Credentials", () => {
       await adminClient.updateRealm(realmName, {
         verifiableCredentialsEnabled: true,
       });
+    });
+
+    test("should show OID4VCI Attester Trust IdPs field only when OID4VCI is enabled", async ({
+      page,
+    }) => {
+      const attesterTrustIdpsSelect = getOid4vciAttesterTrustIdpsSelect(page);
+
+      await switchOid4vciEnabled(page, true);
+      await expect(attesterTrustIdpsSelect).toBeVisible();
+
+      await switchOid4vciEnabled(page, false);
+      await expect(attesterTrustIdpsSelect).toBeHidden();
+    });
+
+    test("should persist OID4VCI Attester Trust IdPs values", async ({
+      page,
+    }) => {
+      const aliases = ["trust-idp-alias-1", "trust-idp-alias-2"];
+      for (const alias of aliases) {
+        const jwksUrl = `https://jwks.io/v1/${uuidv4()}`;
+        await createDefaultTrustProvider(page, alias, jwksUrl);
+      }
+
+      await goToClients(page);
+      await clickTableRowItem(page, clientIdOpenIdConnect);
+      await goToAdvancedTab(page);
+
+      await switchOid4vciEnabled(page, true);
+      await selectOid4vciAttesterTrustIdps(page, aliases);
+      await saveOid4vci(page);
+
+      // Verify chips for the selected aliases are persisted
+      expect(await getOid4vciAttesterTrustIdpsValues(page)).toEqual(aliases);
+      const client = await getTestClient();
+      expect(client?.attributes?.["oid4vci.attester_trust_idps"]).toBe(
+        aliases.join(","),
+      );
+
+      // Change the value and test reverting
+      await selectOid4vciAttesterTrustIdps(page, [aliases[0]]);
+      await revertOid4vci(page);
+      expect(await getOid4vciAttesterTrustIdpsValues(page)).toEqual(aliases);
     });
   });
 });

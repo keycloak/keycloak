@@ -75,8 +75,7 @@ export async function clickAddCondition(page: Page) {
 }
 
 async function selectConditionType(page: Page, condition: string) {
-  await page.locator("#provider").click();
-  await page.getByTestId(condition).click();
+  await selectItem(page, "#provider", page.getByTestId(condition));
 }
 
 export async function clickCancelConditionButton(page: Page) {

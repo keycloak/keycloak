@@ -27,8 +27,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.Config;
-import org.keycloak.authentication.ClientAuthenticator;
-import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authorization.admin.AuthorizationService;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
@@ -41,6 +39,7 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
+import org.keycloak.services.managers.ClientInstallationUtils;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.util.JsonSerialization;
 
@@ -51,7 +50,7 @@ import org.keycloak.util.JsonSerialization;
 public class KeycloakOIDCClientInstallation implements ClientInstallationProvider {
 
     @Override
-    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
+    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, boolean includeSecrets) {
         ClientManager.InstallationAdapterConfig rep = new ClientManager.InstallationAdapterConfig();
         rep.setAuthServerUrl(baseUri.toString());
         rep.setRealm(realm.getName());
@@ -64,7 +63,7 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         rep.setResource(client.getClientId());
 
         if (showClientCredentialsAdapterConfig(client)) {
-            Map<String, Object> adapterConfig = getClientCredentialsAdapterConfig(session, client);
+            Map<String, Object> adapterConfig = getClientCredentialsAdapterConfig(session, client, includeSecrets);
             rep.setCredentials(adapterConfig);
         }
 
@@ -83,10 +82,8 @@ public class KeycloakOIDCClientInstallation implements ClientInstallationProvide
         return Response.ok(json, MediaType.TEXT_PLAIN_TYPE).build();
     }
 
-    public static Map<String, Object> getClientCredentialsAdapterConfig(KeycloakSession session, ClientModel client) {
-        String clientAuthenticator = client.getClientAuthenticatorType();
-        ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
-        return authenticator.getAdapterConfiguration(session, client);
+    public static Map<String, Object> getClientCredentialsAdapterConfig(KeycloakSession session, ClientModel client, boolean includeSecrets) {
+        return ClientInstallationUtils.getClientCredentialsAdapterConfig(session, client, includeSecrets);
     }
 
 

@@ -49,7 +49,7 @@ Operations that fetch a single user (for example during login) are usually cache
 
 ==== Edit mode
 
-Users and admins can modify user metadata, users through the <<_account-service, Account Console>>, and administrators through the Admin Console. The `Edit Mode` configuration on the LDAP configuration page defines the user's LDAP update privileges.
+Users and admins can modify user metadata, users through the <<account-service, Account Console>>, and administrators through the Admin Console. The `Edit Mode` configuration on the LDAP configuration page defines the user's LDAP update privileges.
 
 READ_ONLY::
 You cannot change the username, email, first name, last name, and other mapped attributes. {project_name} shows an error anytime a user attempts to update these fields. Password updates are not supported.
@@ -95,6 +95,41 @@ Hover the mouse pointer over the tooltips in the Admin Console to see more detai
 When you configure a secure connection URL to your LDAP store (for example,`ldaps://myhost.com:636`), {project_name} uses SSL to communicate with the LDAP server. Configure a truststore on the {project_name} server side so that {project_name} can trust the SSL connection to LDAP - see https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}.
 
 The `Use Truststore SPI` configuration property is deprecated.  It should normally be left as `Always`.
+
+==== Connecting to multiple LDAP servers for failover
+
+You can configure multiple LDAP server URLs for failover by entering them as a *space-separated* list in the *Connection URL* field. For example:
+
+```
+ldap://server1:389 ldap://server2:389
+```
+
+or for SSL connections:
+
+```
+ldaps://server1:636 ldaps://server2:636
+```
+
+When multiple URLs are configured, the underlying Java JNDI provider tries each URL in order from left to right. If a connection to the first URL fails, it tries the next URL, and so on until a connection succeeds. This is a sequential failover mechanism, not load balancing — the first reachable server is always used.
+
+Failover occurs at connection creation time. If a server becomes unreachable after a connection has been established, the current operation may fail, but subsequent operations create new connections and go through the failover list again.
+
+[NOTE]
+====
+All configured LDAP servers must be *replicas of the same directory* (for example, Active Directory domain controllers in the same domain, or replicated OpenLDAP instances). Each LDAP entry must have the same unique identifier (such as `entryUUID` or `objectGUID`) across all servers. If the servers are independent instances loaded with the same data, each server generates its own unique identifiers, which will cause synchronization and authentication failures when failover switches to a different server.
+====
+
+[WARNING]
+====
+URLs must be separated by *spaces only*. Do not use commas as separators:
+
+* `ldap://server1,ldap://server2` results in a connection error.
+* `ldap://server1, ldap://server2` (comma followed by a space) silently discards the first URL due to the trailing comma, leaving you with no failover and no warning.
+====
+
+The *Connection Timeout* setting controls how long {project_name} waits for a TCP connection to each URL before trying the next one. The default is 5000 milliseconds (5 seconds). If a server is unreachable (for example, due to a network partition or a firewall silently dropping packets), the full timeout is spent on each unreachable URL before failover proceeds. Adjust this value based on your network environment to balance between fast failover and tolerance for slow connections.
+
+NOTE: If a server is cleanly stopped (the port is closed), the connection is refused immediately and failover to the next URL occurs with no noticeable delay.
 
 ==== Synchronizing LDAP users to {project_name}
 
@@ -151,6 +186,13 @@ This mapper grants a specified {project_name} role to each {project_name} user f
 
 Group Mapper::
 This mapper maps LDAP groups from a branch of an LDAP tree into groups within {project_name}. This mapper also propagates user-group mappings from LDAP into user-group mappings in {project_name}.
++
+[NOTE]
+====
+The `LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY` value of the *User Groups Retrieve Strategy* option is available only for Microsoft Active Directory. It uses the `LDAP_MATCHING_RULE_IN_CHAIN` extension to resolve nested group memberships. Active Directory evaluates the `member` and `memberOf` attributes of the user and group objects when processing these queries, so the LDAP bind account configured for the provider must have permission to read these attributes on both the user and the group objects (e.g. `Read all properties` on the relevant user and group `OU`s). If the bind account lacks this permission, Active Directory does not return an error, but the group memberships, including the members of nested groups, might not be retrieved or displayed in {project_name}.
+
+The same applies to the `LOAD_ROLES_BY_MEMBER_ATTRIBUTE_RECURSIVELY` strategy of the Role Mapper.
+====
 
 [[_msad_mapper]]
 MSAD User Account Mapper::

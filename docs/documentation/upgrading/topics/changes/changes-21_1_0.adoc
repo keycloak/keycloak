@@ -10,7 +10,7 @@ Default `Client ID` mapper of `Service Account Client` has been changed. `Token 
 `client_id` claim is compliant with OAuth2 specifications:
 
 - https://datatracker.ietf.org/doc/html/rfc9068#section-2.2[JSON Web Token (JWT) Profile for OAuth 2.0 Access Tokens]
-- https://www.rfc-editor.org/rfc/rfc7662#section-2.2[OAuth 2.0 Token Introspection]
+- https://datatracker.ietf.org/doc/html/rfc7662#section-2.2[OAuth 2.0 Token Introspection]
 - https://datatracker.ietf.org/doc/html/rfc8693#section-4.3[OAuth 2.0 Token Exchange]
 
 `clientId` userSession note still exists.

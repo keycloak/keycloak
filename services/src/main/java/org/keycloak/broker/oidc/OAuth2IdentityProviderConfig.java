@@ -17,6 +17,8 @@
 package org.keycloak.broker.oidc;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
@@ -241,5 +243,68 @@ public class OAuth2IdentityProviderConfig extends IdentityProviderModel {
                 throw new IllegalArgumentException("PKCE Method not supported: " + pkceMethod);
             }
         }
+    }
+
+    /**
+     * Config keys that determine where/how a client secret is sent. Includes {@code baseUrl},
+     * which some social providers (for example GitHub/OpenShift) use to derive the token
+     * endpoint at runtime. Provider-specific configs may override to add keys such as
+     * {@code tenantId} or {@code sandbox}.
+     */
+    protected String[] getClientSecretDestinationConfigKeys() {
+        return new String[] {
+                TOKEN_ENDPOINT_URL,
+                TOKEN_INTROSPECTION_URL,
+                "clientId",
+                "baseUrl"
+        };
+    }
+
+    /**
+     * Reuse a masked {@code clientSecret} only when fields that determine where/how the secret
+     * is sent are unchanged. Otherwise a delegated IdP manager could rebind the stored secret
+     * to an attacker-controlled token endpoint.
+     */
+    @Override
+    public boolean canReuseMaskedClientSecret(IdentityProviderModel other) {
+        Map<String, String> thisConfig = getConfig() != null ? getConfig() : Map.of();
+        Map<String, String> otherConfig = other.getConfig() != null ? other.getConfig() : Map.of();
+
+        for (String key : getClientSecretDestinationConfigKeys()) {
+            if (isClientSecretDestinationChanged(key, otherConfig.get(key), thisConfig.get(key))) {
+                return false;
+            }
+        }
+        return Objects.equals(
+                clientAuthMethod(thisConfig.get("clientAuthMethod")),
+                clientAuthMethod(otherConfig.get("clientAuthMethod")));
+    }
+
+    /**
+     * An absent or empty {@code clientAuthMethod} behaves as {@code client_secret_post} at runtime
+     * (see {@code AbstractOAuth2IdentityProvider#authenticateTokenRequest}).
+     */
+    private static String clientAuthMethod(String value) {
+        return value == null || value.isEmpty() ? OIDCLoginProtocol.CLIENT_SECRET_POST : value;
+    }
+
+    /**
+     * Decides whether a destination config value changed in a way that affects where/how the
+     * client secret is sent. By default {@code null} and {@code ""} are treated as equivalent, as
+     * UI/API clients may send {@code ""} for omitted optional fields; any other difference is a
+     * change, matching the raw values used at runtime. Sub-classes may override to apply
+     * key-specific semantics such as boolean or default-value equivalence.
+     *
+     * @param key the config key being compared
+     * @param stored the currently stored value, possibly {@code null}
+     * @param updated the submitted value, possibly {@code null}
+     * @return {@code true} if the values represent different destinations
+     */
+    protected boolean isClientSecretDestinationChanged(String key, String stored, String updated) {
+        return !Objects.equals(normalize(stored), normalize(updated));
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isEmpty() ? null : value;
     }
 }

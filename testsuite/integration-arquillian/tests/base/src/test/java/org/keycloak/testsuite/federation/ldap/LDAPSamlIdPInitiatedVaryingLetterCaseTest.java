@@ -51,7 +51,6 @@ import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.broker.KcSamlBrokerConfiguration;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -166,6 +165,8 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         // Configure identity provider
         IdentityProviderRepresentation idp = KcSamlBrokerConfiguration.INSTANCE.setUpIdentityProvider();
         idp.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
+        idp.getConfig().put(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
+        idp.getConfig().put(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false");
         idp.setFirstBrokerLoginFlowAlias(FLOW_AUTO_LINK);
         final Creator<IdentityProviderResource> idpCreator = Creator.create(managedRealm.admin(), idp);
         
@@ -213,12 +214,10 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
     public void loginLDAPTest() {
         oauth.openLoginForm();
         loginPage.login(USER_NAME_LDAP, USER_PASSWORD);
-        appPage.assertCurrent();
-        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
-        appPage.logout(idTokenHint);
+        oauth.doLogout(idTokenHint);
     }
 
     protected URI getAuthServerBrokerSamlEndpoint(String realm, String identityProviderAlias, String samlClientId) throws IllegalArgumentException, UriBuilderException {

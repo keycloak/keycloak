@@ -160,10 +160,15 @@ public class ThemeResource {
 
             ResourceEncodingProvider encodingProvider = session.theme().isCacheEnabled() ? ResourceEncodingHelper.getResourceEncodingProvider(session, contentType) : null;
 
-            InputStream resource;
+            InputStream resource = null;
             if (encodingProvider != null) {
-                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path), themeType, themeName, path.replace('/', File.separatorChar));
-            } else {
+                resource = encodingProvider.getEncodedStream(() -> theme.getResourceAsStream(path),
+                        theme.getType().toString().toLowerCase(), theme.getName(),
+                        path.replace('/', File.separatorChar));
+            }
+            if (resource == null) {
+                // Encoding failures should not prevent serving the original resource
+                encodingProvider = null;
                 resource = theme.getResourceAsStream(path);
             }
 
@@ -214,7 +219,9 @@ public class ThemeResource {
             theTheme = session.theme().getTheme(theme, type.get());
         }
 
-        final Locale locale = Locale.forLanguageTag(localeString);
+        // Resolve against the locales supported by the theme and the realm. The locale is a cache key further down,
+        // so an arbitrary tag taken straight from the request would let a client grow those caches without bound.
+        final Locale locale = LocaleUtil.resolveSupportedLocale(realm, theTheme, localeString);
         if (showSource) {
             Properties messagesByLocale = theTheme.getMessages("messages", locale);
             Set<KeySource> resultSet = messagesByLocale.entrySet().stream().map(e ->

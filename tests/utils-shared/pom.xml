@@ -43,12 +43,25 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-remote-providers</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-client-tests</artifactId>
+            <artifactId>keycloak-model-infinispan</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ldap-federation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-client-internal</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>

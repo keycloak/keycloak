@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -18,6 +19,7 @@ import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -73,12 +75,47 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     }
 
     @Test
+    public void testValidTokenWithClientId() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client(INTERNAL_CLIENT_ID)
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertSuccess(internalClientId, response);
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testWrongClientIdFailsValidation() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client("completely-wrong-id")
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertFailure(response);
+        assertFailure("completely-wrong-id", expectedTokenIssuer, externalClientId, jwt.getId(), "client_not_found", events.poll());
+    }
+
+    @Test
     public void testReuse() {
         JsonWebToken jwt = createDefaultToken();
         assertSuccess(internalClientId, doClientGrant(jwt));
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
         assertSuccess(internalClientId, doClientGrant(jwt));
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testHS256AlgorithmConfusion() {
+        JsonWebToken token = createDefaultToken();
+        String encodedToken = new JWSBuilder()
+                .type("JWT")
+                .jsonContent(token)
+                .hmac256(identityProvider.getKeys().getKeyWrapper().getPublicKey().getEncoded());
+
+        assertFailure("Invalid signature algorithm", doClientGrant(encodedToken));
     }
 
     @Override

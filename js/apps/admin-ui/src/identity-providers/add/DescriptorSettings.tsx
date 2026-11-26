@@ -38,6 +38,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.validateSignature",
   });
 
+  const wantAssertionsSigned = useWatch({
+    control,
+    name: "config.wantAssertionsSigned",
+  });
+
   const useMetadataDescriptorUrl = useWatch({
     control,
     name: "config.useMetadataDescriptorUrl",
@@ -243,6 +248,15 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <DefaultSwitchControl
           name="config.wantAssertionsSigned"
           label={t("wantAssertionsSigned")}
+          defaultValue="true"
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
+          name="config.proxyRestrictionValidation"
+          label={t("proxyRestrictionValidation")}
+          labelIcon={t("proxyRestrictionValidationHelp")}
+          defaultValue="true"
           isDisabled={readOnly}
           stringify
         />
@@ -274,10 +288,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <DefaultSwitchControl
           name="config.validateSignature"
           label={t("validateSignature")}
+          defaultValue="true"
           isDisabled={readOnly}
           stringify
         />
-        {validateSignature === "true" && (
+        {(validateSignature === "true" || wantAssertionsSigned === "true") && (
           <>
             <TextControl
               name="config.metadataDescriptorUrl"

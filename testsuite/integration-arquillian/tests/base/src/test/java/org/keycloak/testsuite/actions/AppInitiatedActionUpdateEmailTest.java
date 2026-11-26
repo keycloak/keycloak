@@ -31,6 +31,7 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
@@ -57,7 +58,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
     @After
     public void after() {
-        setTimeOffset(0);
+        timeOffSet.set(0);
         // update email required action max auth age back to default
         Optional<RequiredActionProviderRepresentation> updateEmailAction = managedRealm.admin().flows().getRequiredActions()
                 .stream()
@@ -73,8 +74,8 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     public void updateEmail() throws Exception {
         changeEmailUsingAIA("new@email.com");
 
-        events.expect(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL).details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com");
 
         assertKcActionStatus("success");
 
@@ -102,8 +103,8 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         emailConfig.getValidations().remove(LengthValidator.ID);
         userProfile.update(upConfig);
         changeEmailUsingAIA("new@email.com");
-        events.expect(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL).details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com");
     }
 
     @Test
@@ -120,8 +121,8 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
         assertFalse(driver.getPageSource().contains(unexpectedAttributeName));
         changeEmailUsingAIA("new@email.com");
-        events.expect(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL).details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com");
     }
 
     @Override
@@ -141,11 +142,10 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
     @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
     public void updateEmailReAuthentication() {
-        appPage.open();
-        appPage.openAccount();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
-        setTimeOffset(400);
+        timeOffSet.set(400);
         UIUtils.clickLink(updateEmailBtn);
         loginPage.assertCurrent();
         loginPage.login("password");
@@ -157,8 +157,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     @Test
     @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
     public void testNoReAuthenticationIfMaxAgeNotReached() {
-        appPage.open();
-        appPage.openAccount();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         UIUtils.clickLink(updateEmailBtn);
@@ -182,8 +181,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         updateEmailAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "0");
         managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction);
 
-        appPage.open();
-        appPage.openAccount();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         UIUtils.clickLink(updateEmailBtn);

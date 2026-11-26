@@ -25,10 +25,12 @@ import java.util.stream.Stream;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationDomainModel;
+import org.keycloak.models.OrganizationIdentityProviderLinkModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.infinispan.LazyModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 
 public class OrganizationAdapter implements OrganizationModel {
 
@@ -159,13 +161,14 @@ public class OrganizationAdapter implements OrganizationModel {
     @Override
     public void setDomains(Set<OrganizationDomainModel> domains) {
         getDelegateForUpdate();
+        invalidateDomains(domains);
         updated.setDomains(domains);
     }
 
     @Override
     public Stream<IdentityProviderModel> getIdentityProviders() {
         if (isUpdated()) return updated.getIdentityProviders();
-        return cached.getIdentityProviders();
+        return session.identityProviders().getByOrganization(getId(), null, null);
     }
 
     @Override
@@ -192,5 +195,31 @@ public class OrganizationAdapter implements OrganizationModel {
     @Override
     public int hashCode() {
         return getId().hashCode();
+    }
+
+    OrganizationIdentityProviderLinkModel getIdentityProviderLink(IdentityProviderModel identityProvider) {
+        if (isUpdated()) {
+            return delegate.get().getIdentityProviderLink(this, identityProvider);
+        }
+        return cached.getIdentityProviderLink(identityProvider.getInternalId());
+    }
+
+    CachedOrganization getCached() {
+        return cached;
+    }
+
+    private void invalidateDomains(Set<OrganizationDomainModel> domains) {
+        for (OrganizationDomainModel domain : domains) {
+            String name = domain.getName();
+            OrganizationModel org = organizationCache.getByDomainName(name);
+
+            if (org == null && name.startsWith("*.")) {
+                org = Organizations.resolveOrganization(session, null, name);
+            }
+
+            if (org != null && !this.equals(org)) {
+                organizationCache.registerOrganizationInvalidation(org);
+            }
+        }
     }
 }

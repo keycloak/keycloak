@@ -26,8 +26,6 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -35,6 +33,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.REDIRECT_URI;
 import static org.keycloak.OAuth2Constants.RESPONSE_TYPE;
@@ -60,17 +59,19 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractChangeImpor
     @Page
     protected LoginPage loginPage;
     
-    @Page
-    protected AppPage appPage;
-    
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
     protected abstract String getAiaAction();
     
     protected void doAIA() {
+        doAIA(getAiaAction());
+    }
+
+    protected void doAIA(String action) {
         UriBuilder builder = OIDCLoginProtocolService.authUrl(authServerPage.createUriBuilder());
-        String uri = builder.queryParam(KC_ACTION, getAiaAction())
+        String uri = builder.queryParam(KC_ACTION, action)
                             .queryParam(RESPONSE_TYPE, "code")
                             .queryParam(CLIENT_ID, "test-app")
                             .queryParam(SCOPE, "openid")
@@ -81,13 +82,13 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractChangeImpor
     }
 
     protected void assertKcActionStatus(String expectedStatus) {
-        assertThat(appPage.getRequestType(),is(RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String kcActionStatus = getCurrentUrlParam(KC_ACTION_STATUS);
         assertThat(kcActionStatus, is(expectedStatus));
     }
 
     protected void assertKcAction(String expectedKcAction) {
-        assertThat(appPage.getRequestType(),is(RequestType.AUTH_RESPONSE));
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
         String kcAction = getCurrentUrlParam(KC_ACTION);
         assertThat(kcAction, is(expectedKcAction));
     }

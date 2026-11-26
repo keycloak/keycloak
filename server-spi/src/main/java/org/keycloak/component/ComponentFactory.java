@@ -113,5 +113,14 @@ public interface ComponentFactory<CreatedType, ProviderType extends Provider> ex
 
     }
 
+    /**
+     * Indicates whether this component factory is managed internally and should not be exposed
+     * through the generic component REST API.
+     *
+     * @return {@code true} if the component is internal, {@code false} otherwise.
+     */
+    default boolean isInternal() {
+        return false;
+    }
 
 }

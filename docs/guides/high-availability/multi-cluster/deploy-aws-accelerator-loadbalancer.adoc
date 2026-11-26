@@ -105,6 +105,7 @@ abab80a363ce8479ea9c4349d116bce2-6b65e8b4272fa4b5.elb.eu-west-1.amazonaws.com
 +
 . Create a Global Accelerator instance
 +
+--
 .Command:
 [source,bash]
 ----
@@ -116,7 +117,9 @@ aws globalaccelerator create-accelerator \
 <1> The name of the accelerator to be created, update as required
 <2> Can be 'DUAL_STACK' or 'IPV4'
 <3> All `globalaccelerator` commands must use the region 'us-west-2'
+--
 +
+--
 .Output:
 [source,json]
 ----
@@ -156,9 +159,11 @@ aws globalaccelerator create-accelerator \
 <1> The ARN associated with the created Accelerator instance, this will be used in subsequent commands
 <2> The DNS name which IPv4 {project_name} clients should connect to
 <3> The DNS name which IPv6 {project_name} clients should connect to
+--
 +
 . Create a Listener for the accelerator
 +
+--
 .Command:
 [source,bash]
 ----
@@ -168,7 +173,9 @@ aws globalaccelerator create-listener \
   --protocol TCP \
   --region us-west-2
 ----
+--
 +
+--
 .Output:
 [source,json]
 ----
@@ -186,9 +193,11 @@ aws globalaccelerator create-listener \
     }
 }
 ----
+--
 +
 . Create an Endpoint Group for the Listener
 +
+--
 .Command:
 [source,bash]
 ----
@@ -226,7 +235,9 @@ aws globalaccelerator create-endpoint-group \
 <1> The DNS hostname of the Cluster's NLB
 <2> The ARN of the Listener created in the previous step
 <3> This should be the AWS region that hosts the clusters
+--
 +
+--
 .Output:
 [source,json]
 ----
@@ -259,6 +270,7 @@ aws globalaccelerator create-endpoint-group \
 }
 </#noparse>
 ----
+--
 . Optional: Configure your custom domain
 +
 If you are using a custom domain, pointed your custom domain to the AWS Global Load Balancer by configuring an Alias or CNAME in your custom domain.

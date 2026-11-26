@@ -16,6 +16,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.entity.ContentType;
@@ -42,6 +43,11 @@ public class Oid4vcCredentialRequest extends AbstractHttpPostRequest<Oid4vcCrede
         return this;
     }
 
+    public Oid4vcCredentialRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
+        return this;
+    }
+
     public Oid4vcCredentialRequest proofs(Proofs proofs) {
         credRequest.setProofs(proofs);
         return this;
@@ -64,9 +70,18 @@ public class Oid4vcCredentialRequest extends AbstractHttpPostRequest<Oid4vcCrede
      * Encrypt current credential request as compact JWE and send with application/jwt.
      */
     public Oid4vcCredentialRequest encryptRequest(JWK issuerEncryptionJwk, boolean useDeflateCompression) {
+        return encryptRequest(issuerEncryptionJwk, useDeflateCompression, null);
+    }
+
+    /**
+     * Encrypt current credential request as compact JWE and send with application/jwt, forcing the
+     * given key management algorithm in the JWE header regardless of the issuer key's advertised
+     * algorithm. Passing {@code algorithmOverride} exercises algorithm-downgrade scenarios.
+     */
+    public Oid4vcCredentialRequest encryptRequest(JWK issuerEncryptionJwk, boolean useDeflateCompression, String algorithmOverride) {
         try {
             String requestPayload = JsonSerialization.valueAsString(credRequest);
-            String jwePayload = encryptPayload(requestPayload, issuerEncryptionJwk, useDeflateCompression);
+            String jwePayload = encryptPayload(requestPayload, issuerEncryptionJwk, useDeflateCompression, algorithmOverride);
             return payload(jwePayload, ContentType.create("application/jwt", StandardCharsets.UTF_8));
         } catch (Exception e) {
             throw new RuntimeException("Failed to encrypt credential request", e);
@@ -96,11 +111,12 @@ public class Oid4vcCredentialRequest extends AbstractHttpPostRequest<Oid4vcCrede
         return new Oid4vcCredentialResponse(response);
     }
 
-    private static String encryptPayload(String payload, JWK issuerEncJwk, boolean useCompression) throws Exception {
+    private static String encryptPayload(String payload, JWK issuerEncJwk, boolean useCompression, String algorithmOverride) throws Exception {
         PublicKey publicKey = JWKParser.create(issuerEncJwk).toPublicKey();
+        String algorithm = algorithmOverride != null ? algorithmOverride : issuerEncJwk.getAlgorithm();
         JWEHeader.JWEHeaderBuilder builder = new JWEHeader.JWEHeaderBuilder()
                 .keyId(issuerEncJwk.getKeyId())
-                .algorithm(issuerEncJwk.getAlgorithm())
+                .algorithm(algorithm)
                 .encryptionAlgorithm("A256GCM")
                 .type("JWT");
         if (useCompression) {

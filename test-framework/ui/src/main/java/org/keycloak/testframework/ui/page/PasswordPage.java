@@ -22,7 +22,7 @@ public class PasswordPage extends AbstractLoginPage {
     @FindBy(name = "login")
     private WebElement submitButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement loginErrorMessage;
 
     @FindBy(linkText = "Forgot Password?")
@@ -44,16 +44,17 @@ public class PasswordPage extends AbstractLoginPage {
         submitButton.click();
     }
 
+    public void resetPassword() {
+        resetPasswordLink.click();
+    }
+
     public String getPassword() {
         return passwordInput.getAttribute("value");
     }
 
     public String getPasswordError() {
-        try {
-            return passwordError.getText();
-        } catch (NoSuchElementException e) {
-            return null;
-        }
+        String error = FieldErrorText.readNow(driver, "input-error-password");
+        return error.isBlank() ? null : error;
     }
 
     public String getError() {
@@ -66,6 +67,10 @@ public class PasswordPage extends AbstractLoginPage {
 
     public void clickTryAnotherWayLink() {
         tryAnotherWayLink.click();
+    }
+
+    public void clickResetPassword() {
+        resetPasswordLink.click();
     }
 
     @Override

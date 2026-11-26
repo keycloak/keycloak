@@ -29,8 +29,7 @@ public class ManagedRealmCleanup {
     }
 
     void runCleanupTasks(RealmResource realm) {
-        cleanupTasks.forEach(t -> t.cleanup(realm));
-        cleanupTasks.clear();
+        CleanupTasks.runAll(cleanupTasks, t -> t.cleanup(realm), "realm");
     }
 
     public interface RealmCleanup {

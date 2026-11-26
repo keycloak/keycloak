@@ -36,7 +36,7 @@ import static org.keycloak.protocol.util.ClientCliInstallationUtil.quote;
 public class KeycloakOIDCJbossSubsystemClientCliInstallation implements ClientInstallationProvider {
 
     @Override
-    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {
+    public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri, boolean includeSecrets) {
         String deploymentName = "WAR MODULE NAME.war";
         StringBuilder builder = new StringBuilder();
         
@@ -62,7 +62,7 @@ public class KeycloakOIDCJbossSubsystemClientCliInstallation implements ClientIn
 
 
         if (KeycloakOIDCClientInstallation.showClientCredentialsAdapterConfig(client)) {
-            Map<String, Object> adapterConfig = KeycloakOIDCClientInstallation.getClientCredentialsAdapterConfig(session, client);
+            Map<String, Object> adapterConfig = KeycloakOIDCClientInstallation.getClientCredentialsAdapterConfig(session, client, includeSecrets);
             for (Map.Entry<String, Object> entry : adapterConfig.entrySet()) {
                 builder.append("/subsystem=keycloak/secure-deployment=").append(quote(deploymentName)).append("/")
                        .append("credential=").append(entry.getKey()).append(":add(value=").append(entry.getValue())

@@ -105,26 +105,21 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
 
     @Test
     public void testRollingNoUpgradePolicy() {
-        Profile.Feature v1 = Profile.Feature.LOGIN_V1;
-        Profile.Feature v2 = Profile.Feature.LOGIN_V2;
+        Profile.Feature v3 = Profile.Feature.LOGIN_V3;
 
         FeatureCompatibilityMetadataProvider provider = new FeatureCompatibilityMetadataProvider();
 
-        Map<String, String> v1Meta = getMeta(v1, true);
-        Map<String, String> v2Meta = getMeta(v2, true);
+        Profile.configure(new FeatureResolver(v3, true));
+        assertFeature(v3, true, v3.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
 
-        // Test v1 enabled switching to v2
-        Profile.configure(new FeatureResolver(v1, true));
-        assertFeature(v1, true, v1.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertFeature(v2, false, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(v2Meta));
-
-        // Test v2 enabled switching to v1
-        Profile.reset();
-        Profile.configure(new FeatureResolver(v2, true));
-        assertFeature(v1, false, v1.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertFeature(v2, true, v2.getVersion(), Profile.FeatureUpdatePolicy.ROLLING_NO_UPGRADE);
-        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(v1Meta));
+        // Start from complete current metadata and only rewrite login to an older version so the
+        // assertion isolates the ROLLING_NO_UPGRADE version transition.
+        Map<String, String> oldVersionMeta = new HashMap<>(provider.metadata());
+        oldVersionMeta.put(
+                v3.getUnversionedKey(),
+                "{\"enabled\":true,\"version\":1,\"updatePolicy\":\"ROLLING_NO_UPGRADE\"}"
+        );
+        assertCompatibility(CompatibilityResult.ExitCode.RECREATE, provider.isCompatible(oldVersionMeta));
     }
 
     @ParameterizedTest
@@ -148,8 +143,7 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         return Stream.of(
               Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.IMPERSONATION),
               Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.Feature.PERSISTENT_USER_SESSIONS),
-              // Expect a RECREATE as the Feature has the ROLLING_NO_UPGRADE policy
-              Arguments.of(CompatibilityResult.ExitCode.RECREATE, Profile.Feature.LOGIN_V2)
+              Arguments.of(CompatibilityResult.ExitCode.ROLLING, Profile.Feature.LOGIN_V3)
         );
     }
 
@@ -197,19 +191,13 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         public FeatureConfig getFeatureConfig(String featureName) {
             // No support for transitive dependencies but that should be fine for now
             if (enabled) {
-                if (DEPENDENT_FEATURES.containsKey(feature)) {
-                    for (Profile.Feature dep : DEPENDENT_FEATURES.get(feature)) {
-                        if (dep.getVersionedKey().equals(featureName))
-                            return FeatureConfig.ENABLED;
-                    }
-                }
                 for (Profile.Feature dep : feature.getDependencies()) { // Explicitly enable dependencies that might be disabled by default
                     if (dep.getVersionedKey().equals(featureName))
                         return FeatureConfig.ENABLED;
                 }
                 return feature.getVersionedKey().equals(featureName) ? FeatureConfig.ENABLED : FeatureConfig.UNCONFIGURED;
             } else {
-                if (DEPENDENT_FEATURES.containsKey(feature)) {
+                if (DEPENDENT_FEATURES.containsKey(feature)) { // Explicitly disable features that depend on the passed one
                     for (Profile.Feature dep : DEPENDENT_FEATURES.get(feature)) {
                         if (dep.getUnversionedKey().equals(featureName))
                             return FeatureConfig.DISABLED;

@@ -20,26 +20,35 @@ import java.util.List;
 
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.AccessTokenIntrospectionProviderFactory;
+import org.keycloak.protocol.oidc.RefreshTokenIntrospectionProviderFactory;
 import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
+import org.keycloak.protocol.oidc.utils.ContentTypeValidationUtil;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.resteasy.reactive.NoCache;
 
@@ -74,6 +83,10 @@ public class TokenIntrospectionEndpoint {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
     public Response introspect() {
+        // https://datatracker.ietf.org/doc/html/rfc7662#section-2.1 says 'application/x-www-form-urlencoded'
+        // not requiring concrete content type to keep this backwards compatible for the moment being
+        ContentTypeValidationUtil.requireValidOrNoContentType(request.getHttpHeaders());
+
         event.event(EventType.INTROSPECT_TOKEN);
 
         checkSsl();
@@ -96,6 +109,10 @@ public class TokenIntrospectionEndpoint {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Token not provided.", Status.BAD_REQUEST);
         }
 
+        if (AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE.equals(tokenTypeHint) && isRefreshToken(token)) {
+            tokenTypeHint = RefreshTokenIntrospectionProviderFactory.REFRESH_TOKEN_TYPE;
+        }
+
         TokenIntrospectionProvider provider = this.session.getProvider(TokenIntrospectionProvider.class, tokenTypeHint);
 
         if (provider == null) {
@@ -105,7 +122,7 @@ public class TokenIntrospectionEndpoint {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(session.getContext().getClient(), formParams));
             token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
@@ -124,6 +141,23 @@ public class TokenIntrospectionEndpoint {
         }
     }
 
+    /**
+     * Refresh and offline tokens are never issued to an audience of clients, so they are routed to the refresh token
+     * provider based on their type claim, no matter whether the caller omitted {@code token_type_hint} or sent
+     * {@code access_token}. Any other hint is left untouched.
+     */
+    private boolean isRefreshToken(String token) {
+        if (token.indexOf('.') < 0) {
+            return false;
+        }
+        try {
+            String typ = new JWSInput(token).readJsonContent(JsonWebToken.class).getType();
+            return TokenUtil.TOKEN_TYPE_REFRESH.equals(typ) || TokenUtil.TOKEN_TYPE_OFFLINE.equals(typ);
+        } catch (JWSInputException e) {
+            return false;
+        }
+    }
+
     private void authorizeClient() {
         try {
             ClientModel client = AuthorizeClientUtil.authorizeClient(session, event, null).getClient();
@@ -136,9 +170,21 @@ public class TokenIntrospectionEndpoint {
 
         } catch (ErrorResponseException ere) {
             throw ere;
+        } catch (WebApplicationException wae) {
+            throw convertClientAuthenticationException(wae);
         } catch (Exception e) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Authentication failed.", Status.UNAUTHORIZED);
         }
+    }
+
+    private WebApplicationException convertClientAuthenticationException(WebApplicationException wae) {
+        Response response = wae.getResponse();
+        if (response != null && response.getStatus() == Status.UNAUTHORIZED.getStatusCode()
+                && response.getEntity() instanceof OAuth2ErrorRepresentation error
+                && OAuthErrorException.UNAUTHORIZED_CLIENT.equals(error.getError())) {
+            return throwErrorResponseException(OAuthErrorException.INVALID_CLIENT, "Client authentication failed.", Status.UNAUTHORIZED);
+        }
+        return wae;
     }
 
     private void checkSsl() {

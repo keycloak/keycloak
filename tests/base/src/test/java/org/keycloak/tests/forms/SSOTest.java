@@ -102,7 +102,7 @@ public class SSOTest {
 
         // Initial login for SSO
         oauth.doLogin(testUser.getUsername(), testUser.getPassword());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = events.poll();
         EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
@@ -218,7 +218,7 @@ public class SSOTest {
 
         // SSO login
         oauth.doLogin(testUser.getUsername(), testUser.getPassword());
-        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess());
 
         EventRepresentation loginEvent = events.poll();
         EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);

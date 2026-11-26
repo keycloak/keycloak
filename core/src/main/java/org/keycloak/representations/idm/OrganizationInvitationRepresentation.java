@@ -18,6 +18,7 @@ public class OrganizationInvitationRepresentation {
     private int sentDate;
     private int expiresAt;
     private Status status;
+    @Deprecated
     private String inviteLink;
 
     public OrganizationInvitationRepresentation() {
@@ -87,10 +88,18 @@ public class OrganizationInvitationRepresentation {
         this.status = status;
     }
 
+    /**
+     * @deprecated The invite link is no longer exposed in API responses.
+     */
+    @Deprecated
     public String getInviteLink() {
         return inviteLink;
     }
 
+    /**
+     * @deprecated The invite link is no longer exposed in API responses.
+     */
+    @Deprecated
     public void setInviteLink(String inviteLink) {
         this.inviteLink = inviteLink;
     }

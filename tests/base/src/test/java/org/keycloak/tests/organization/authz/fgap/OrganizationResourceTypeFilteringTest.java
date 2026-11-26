@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -33,16 +34,15 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.PermissionTestUtils;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,21 +63,21 @@ public class OrganizationResourceTypeFilteringTest {
     @InjectRealm(config = OrganizationFgapConfig.class, lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
 
-    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
-    ManagedClient client;
-
     @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM, client = "myclient", user = "myadmin")
     Keycloak realmAdminClient;
 
     @InjectUser(ref = "alice")
     ManagedUser userAlice;
-
+    
+    private ClientResource clientResource;
+    
     private String orgAId;
     private String orgBId;
     private String orgCId;
 
     @BeforeEach
     public void setup() {
+        clientResource = AdminApiUtil.findClientByClientId(realm.admin(), Constants.ADMIN_PERMISSIONS_CLIENT_ID);
         orgAId = createOrg("orgA", "orga.org");
         orgBId = createOrg("orgB", "orgb.org");
         orgCId = createOrg("orgC", "orgc.org");
@@ -98,7 +98,7 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testSearchReturnsOnlyPermittedOrganizations() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, Set.of(orgAId, orgBId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(orgAId, orgBId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         List<OrganizationRepresentation> result = realmAdminClient.realm(realm.getName()).organizations().search(null, null, -1, -1);
         assertThat(result, hasSize(2));
@@ -110,7 +110,7 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testCountReturnsOnlyPermittedOrganizations() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, orgAId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         long count = realmAdminClient.realm(realm.getName()).organizations().count(null);
         assertThat(count, equalTo(1L));
@@ -119,7 +119,7 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testSearchWithAllOrganizationsPermission() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
 
         List<OrganizationRepresentation> result = realmAdminClient.realm(realm.getName()).organizations().search(null, null, -1, -1);
         assertThat(result, hasSize(3));
@@ -128,7 +128,7 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testCountWithAllOrganizationsPermission() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
 
         long count = realmAdminClient.realm(realm.getName()).organizations().count(null);
         assertThat(count, equalTo(3L));
@@ -137,14 +137,14 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testDenyRemovesFromSearchResults() {
         UserPolicyRepresentation allowPolicy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW));
 
         List<OrganizationRepresentation> result = realmAdminClient.realm(realm.getName()).organizations().search(null, null, -1, -1);
         assertThat(result, hasSize(3));
 
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation denyPolicy = PermissionTestUtils.createUserPolicy(Logic.NEGATIVE, realm, client, "Deny Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
-        PermissionTestUtils.createPermission(client, orgBId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), denyPolicy);
+        UserPolicyRepresentation denyPolicy = PermissionTestUtils.createUserPolicy(Logic.NEGATIVE, realm, clientResource, "Deny Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
+        PermissionTestUtils.createPermission(clientResource, orgBId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), denyPolicy);
 
         result = realmAdminClient.realm(realm.getName()).organizations().search(null, null, -1, -1);
         assertThat(result, hasSize(2));
@@ -154,13 +154,13 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testDenyReducesCount() {
         UserPolicyRepresentation allowPolicy = createAdminPolicy();
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW));
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, allowPolicy, Set.of(VIEW));
 
         assertThat(realmAdminClient.realm(realm.getName()).organizations().count(null), equalTo(3L));
 
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation denyPolicy = PermissionTestUtils.createUserPolicy(Logic.NEGATIVE, realm, client, "Deny Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
-        PermissionTestUtils.createPermission(client, orgBId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), denyPolicy);
+        UserPolicyRepresentation denyPolicy = PermissionTestUtils.createUserPolicy(Logic.NEGATIVE, realm, clientResource, "Deny Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
+        PermissionTestUtils.createPermission(clientResource, orgBId, ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), denyPolicy);
 
         assertThat(realmAdminClient.realm(realm.getName()).organizations().count(null), equalTo(2L));
     }
@@ -168,7 +168,7 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testSearchByName() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, Set.of(orgAId, orgCId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(orgAId, orgCId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         List<OrganizationRepresentation> result = realmAdminClient.realm(realm.getName()).organizations().search("orgA", true, -1, -1);
         assertThat(result, hasSize(1));
@@ -185,8 +185,8 @@ public class OrganizationResourceTypeFilteringTest {
         realm.admin().organizations().get(orgCId).members().addMember(userAlice.getId()).close();
 
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, userAlice.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
-        PermissionTestUtils.createPermission(client, Set.of(orgAId, orgCId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, userAlice.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(orgAId, orgCId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW), policy);
 
         List<OrganizationRepresentation> orgs = realmAdminClient.realm(realm.getName()).organizations().members().getOrganizations(userAlice.getId());
         assertThat(orgs, hasSize(2));
@@ -201,8 +201,8 @@ public class OrganizationResourceTypeFilteringTest {
         realm.admin().organizations().get(orgBId).members().addMember(userAlice.getId()).close();
 
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, userAlice.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
-        PermissionTestUtils.createAllPermission(client, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
+        PermissionTestUtils.createPermission(clientResource, userAlice.getId(), AdminPermissionsSchema.USERS_RESOURCE_TYPE, Set.of(VIEW), policy);
+        PermissionTestUtils.createAllPermission(clientResource, ORGANIZATIONS_RESOURCE_TYPE, policy, Set.of(VIEW));
 
         List<OrganizationRepresentation> orgs = realmAdminClient.realm(realm.getName()).organizations().members().getOrganizations(userAlice.getId());
         assertThat(orgs, hasSize(2));
@@ -211,7 +211,7 @@ public class OrganizationResourceTypeFilteringTest {
     @Test
     public void testDeleteCleansUpFgapResources() {
         UserPolicyRepresentation policy = createAdminPolicy();
-        PermissionTestUtils.createPermission(client, Set.of(orgAId, orgBId, orgCId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
+        PermissionTestUtils.createPermission(clientResource, Set.of(orgAId, orgBId, orgCId), ORGANIZATIONS_RESOURCE_TYPE, Set.of(VIEW, MANAGE), policy);
 
         List<OrganizationRepresentation> result = realmAdminClient.realm(realm.getName()).organizations().search(null, null, -1, -1);
         assertThat(result, hasSize(3));
@@ -243,6 +243,6 @@ public class OrganizationResourceTypeFilteringTest {
 
     private UserPolicyRepresentation createAdminPolicy() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        return PermissionTestUtils.createUserPolicy(realm, client, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
+        return PermissionTestUtils.createUserPolicy(realm, clientResource, "Allow My Admin " + KeycloakModelUtils.generateId(), myadmin.getId());
     }
 }

@@ -1,0 +1,9 @@
+{
+  "realm": "dir-import-migration",
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true
+    }
+  ]
+}

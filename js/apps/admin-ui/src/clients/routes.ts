@@ -10,6 +10,7 @@ import { ClientRegistrationRoute } from "./routes/ClientRegistration";
 import { ClientRoleRoute } from "./routes/ClientRole";
 import { ClientsRoute, ClientsRouteWithTab } from "./routes/Clients";
 import { ClientScopesRoute } from "./routes/ClientScopeTab";
+import { ClientSsfTabRoute } from "./routes/ClientSsfTab";
 import { CreateInitialAccessTokenRoute } from "./routes/CreateInitialAccessToken";
 import {
   DedicatedScopeDetailsRoute,
@@ -50,6 +51,7 @@ const routes: AppRouteObject[] = [
   DedicatedScopeDetailsRoute,
   DedicatedScopeDetailsWithTabRoute,
   ClientScopesRoute,
+  ClientSsfTabRoute,
   ClientRoleRoute,
   AuthorizationRoute,
   NewResourceRoute,

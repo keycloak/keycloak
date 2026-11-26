@@ -5,9 +5,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jakarta.ws.rs.core.Response.Status;
+
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.schema.Schema;
@@ -22,13 +25,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest(config = ScimServerConfig.class)
+@KeycloakIntegrationTest
 public class SchemaTest extends AbstractScimTest {
 
     @Test
     public void testGetAllSchemas() {
+        addEnterpriseUserUserProfileAttributes();
         String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
         addOrReplaceUPAttribute(customSchema, "myattribute");
 
@@ -51,6 +56,40 @@ public class SchemaTest extends AbstractScimTest {
     }
 
     @Test
+    public void testSchemasWithNoAttributesNotReturned() {
+        // Extension schemas with no user profile attributes mapped should not be returned
+        // (e.g., EnterpriseUser schema when no UP attributes have the kc.scim.schema.attribute annotation)
+        ListResponse<Schema> response = client.schemas().getAll();
+
+        assertNotNull(response);
+        assertNotNull(response.getResources());
+
+        List<String> schemaIds = response.getResources().stream()
+                .map(Schema::getId)
+                .toList();
+
+        // Core schemas are always present regardless of attributes
+        assertTrue(schemaIds.contains(Scim.USER_CORE_SCHEMA));
+        assertTrue(schemaIds.contains(Scim.GROUP_CORE_SCHEMA));
+
+        // EnterpriseUser schema should not be listed when no UP attributes are mapped to it
+        assertFalse(schemaIds.contains(Scim.ENTERPRISE_USER_SCHEMA),
+                "Schemas with no attributes should not be returned from the /Schemas endpoint");
+
+        // Only core schemas should be returned
+        assertEquals(2, response.getTotalResults());
+
+        // After adding enterprise user attributes, the schema should appear
+        addEnterpriseUserUserProfileAttributes();
+        response = client.schemas().getAll();
+        schemaIds = response.getResources().stream()
+                .map(Schema::getId)
+                .toList();
+        assertTrue(schemaIds.contains(Scim.ENTERPRISE_USER_SCHEMA),
+                "Schema should be returned once attributes are mapped to it");
+    }
+
+    @Test
     public void testGetUserCoreSchema() {
         Schema schema = client.schemas().get(Scim.USER_CORE_SCHEMA);
 
@@ -70,18 +109,18 @@ public class SchemaTest extends AbstractScimTest {
 
         assertAttribute(findAttribute(schema, "userName"), "string", false, true, false, "readWrite", "server");
         assertAttribute(findAttribute(schema, "emails"), "complex", true, false, false, "readWrite", "global");
-        assertAttribute(findAttribute(schema, "name"), "complex", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "displayName"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "title"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "name"), "complex", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "displayName"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "title"), "string", false, false, false, "readWrite", "none");
         assertAttribute(findAttribute(schema, "externalId"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "userType"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "nickName"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "locale"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "timezone"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "preferredLanguage"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "profileUrl"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "active"), "boolean", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "groups"), "complex", true, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "userType"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "nickName"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "locale"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "timezone"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "preferredLanguage"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "profileUrl"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "active"), "boolean", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "groups"), "complex", true, false, false, "readWrite", "none");
 
         // Verify name sub-attributes
         Schema.Attribute name = findAttribute(schema, "name");
@@ -118,7 +157,7 @@ public class SchemaTest extends AbstractScimTest {
 
         assertAttribute(findAttribute(schema, "displayName"), "string", false, false, false, "readWrite", "none");
         assertAttribute(findAttribute(schema, "externalId"), "string", false, false, true, "immutable", "none");
-        assertAttribute(findAttribute(schema, "members"), "complex", true, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "members"), "complex", true, false, false, "readWrite", "none");
     }
 
     @Test
@@ -139,11 +178,11 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals(6, attributeNames.size(), "Enterprise User schema should have exactly 6 attributes");
 
         // Simple string attributes
-        assertAttribute(findAttribute(schema, "employeeNumber"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "costCenter"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "organization"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "division"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "department"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "employeeNumber"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "costCenter"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "organization"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "division"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "department"), "string", false, false, false, "readWrite", "none");
 
         // Manager is a complex attribute with sub-attributes
         assertAttribute(findAttribute(schema, "manager"), "complex", false, false, false, "readWrite", "none");
@@ -178,8 +217,8 @@ public class SchemaTest extends AbstractScimTest {
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
         assertEquals(2, attributeNames.size());
-        assertAttribute(findAttribute(schema, "myattribute"), "string", false, false, true, "readWrite", "none");
-        assertAttribute(findAttribute(schema, "team"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "myattribute"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "team"), "string", false, false, false, "readWrite", "none");
 
         schema = client.schemas().get(barSchema);
         attributeNames = schema.getAttributes().stream()
@@ -187,7 +226,54 @@ public class SchemaTest extends AbstractScimTest {
                 .collect(Collectors.toSet());
         assertEquals(1, attributeNames.size());
         // Simple string attributes
-        assertAttribute(findAttribute(schema, "other"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "other"), "string", false, false, false, "readWrite", "none");
+    }
+
+    @Test
+    public void testGetCustomSchemaWithMultivaluedComplexAttribute() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom-multi:1.0:User";
+
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+
+        UPAttribute assuranceAttribute = new UPAttribute("assurance", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":assurance.value"));
+        assuranceAttribute.setMultivalued(true);
+        assuranceAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(assuranceAttribute);
+
+        UPAttribute affiliationAttribute = new UPAttribute("affiliation", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ":affiliation"));
+        affiliationAttribute.setMultivalued(true);
+        affiliationAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(affiliationAttribute);
+
+        realm.admin().users().userProfile().update(upConfig);
+
+        try {
+            Schema schema = client.schemas().get(customSchema);
+            assertNotNull(schema);
+            assertEquals(customSchema, schema.getId());
+
+            Set<String> attributeNames = schema.getAttributes().stream()
+                    .map(Schema.Attribute::getName)
+                    .collect(Collectors.toSet());
+            assertEquals(2, attributeNames.size());
+            assertTrue(attributeNames.contains("assurance"));
+            assertTrue(attributeNames.contains("affiliation"));
+
+            assertAttribute(findAttribute(schema, "affiliation"), "string", true, false, false, "readWrite", "none");
+
+            Schema.Attribute assurance = findAttribute(schema, "assurance");
+            assertAttribute(assurance, "complex", true, false, false, "readWrite", "none");
+            assertNotNull(assurance.getSubAttributes(), "assurance should have sub-attributes");
+            assertEquals(1, assurance.getSubAttributes().size());
+            assertSubAttribute(assurance.getSubAttributes().get(0), "string", false, "readWrite");
+            assertEquals("value", assurance.getSubAttributes().get(0).getName());
+        } finally {
+            upConfig.removeAttribute("assurance");
+            upConfig.removeAttribute("affiliation");
+            realm.admin().users().userProfile().update(upConfig);
+        }
     }
 
     @Test
@@ -212,6 +298,7 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals(1, nameCount, "name attribute should appear exactly once");
 
         // Verify EnterpriseUser manager appears only once
+        addEnterpriseUserUserProfileAttributes();
         Schema enterpriseSchema = client.schemas().get(Scim.ENTERPRISE_USER_SCHEMA);
         List<String> enterpriseNames = enterpriseSchema.getAttributes().stream()
                 .map(Schema.Attribute::getName)
@@ -220,6 +307,13 @@ public class SchemaTest extends AbstractScimTest {
                 .filter("manager"::equals)
                 .count();
         assertEquals(1, managerCount, "manager attribute should appear exactly once");
+    }
+
+    @Test
+    public void testFilterForbidden() {
+        ScimClientException e = assertThrows(ScimClientException.class,
+                () -> client.schemas().doPost("id eq \"test\"", null, null));
+        assertEquals(Status.FORBIDDEN.getStatusCode(), e.getError().getStatusInt());
     }
 
     // Helper method to find attribute by name
@@ -246,13 +340,5 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals(type, subAttribute.getType(), subAttribute.getName() + " sub-attribute type");
         assertEquals(multiValued, subAttribute.getMultiValued(), subAttribute.getName() + " sub-attribute multiValued");
         assertEquals(mutability, subAttribute.getMutability(), subAttribute.getName() + " sub-attribute mutability");
-    }
-
-    private void addOrReplaceUPAttribute(String customSchema, String name) {
-        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
-        UPAttribute upAttribute = new UPAttribute("scim" + name, Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + "." + name));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
-        upConfig.addOrReplaceAttribute(upAttribute);
-        realm.admin().users().userProfile().update(upConfig);
     }
 }

@@ -72,7 +72,7 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
                 validateTokenActive(getAllowedClockSkew(), getMaximumExpirationTime(), isReusePermitted());
     }
 
-    private boolean validateClientAssertionParameters() {
+    protected boolean validateClientAssertionParameters() {
         String clientAssertionType = clientAssertionState.getClientAssertionType();
         String clientAssertion = clientAssertionState.getClientAssertion();
 
@@ -92,19 +92,13 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
         return true;
     }
 
-    private boolean validateClient() {
+    protected boolean validateClient() {
         JsonWebToken token = clientAssertionState.getToken();
 
         String clientId = token.getSubject();
         if (clientId == null) {
             logger.debug("Can't identify client. Subject missing on JWT token");
             return failure("Token sub claim is required");
-        }
-
-        String clientIdParam = context.getHttpRequest().getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ID);
-        if (clientIdParam != null && !clientIdParam.equals(clientId)) {
-            logger.debug("client_id parameter does not match JWT subject");
-            return failure("client_id parameter does not match sub claim");
         }
 
         String expectedTokenIssuer = getExpectedTokenIssuer();
@@ -116,10 +110,15 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
 
         if (client == null) {
             return failure(AuthenticationFlowError.CLIENT_NOT_FOUND);
-        } else {
-            context.getEvent().client(client.getClientId());
-            context.setClient(client);
         }
+
+        String clientIdParam = context.getHttpRequest().getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ID);
+        if (clientIdParam != null && !clientIdParam.equals(client.getClientId())) {
+            return failure("client_id parameter does not match authenticated client");
+        }
+
+        context.getEvent().client(client.getClientId());
+        context.setClient(client);
 
         if (!client.isEnabled()) {
             return failure(AuthenticationFlowError.CLIENT_DISABLED);
@@ -133,7 +132,7 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
         return true;
     }
 
-    private boolean validateSignature() {
+    protected boolean validateSignature() {
         return signatureValidator.verifySignature(this);
     }
 
@@ -147,15 +146,15 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
 
     public boolean failure(String error, String errorDescription, int statusCode) {
         Response challengeResponse = ClientAuthUtil.errorResponse(statusCode, error, errorDescription);
-        return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+        return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse, errorDescription);
     }
 
-    private boolean failure(AuthenticationFlowError error) {
-        return failure(error, null);
+    protected boolean failure(AuthenticationFlowError error) {
+        return failure(error, null, null);
     }
 
-    private boolean failure(AuthenticationFlowError error, Response response) {
-        context.failure(error, response);
+    protected boolean failure(AuthenticationFlowError error, Response response, String errorDescription) {
+        context.failure(error, response, errorDescription, null);
         return false;
     }
 

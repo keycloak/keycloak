@@ -41,7 +41,7 @@ public class DockerRegistryConfigFileInstallationProvider implements ClientInsta
     }
 
     @Override
-    public Response generateInstallation(final KeycloakSession session, final RealmModel realm, final ClientModel client, final URI serverBaseUri) {
+    public Response generateInstallation(final KeycloakSession session, final RealmModel realm, final ClientModel client, final URI serverBaseUri, boolean includeSecrets) {
         final StringBuilder responseString = new StringBuilder("auth:\n")
                 .append("  token:\n")
                 .append("    realm: ").append(serverBaseUri).append("/realms/").append(realm.getName()).append("/protocol/").append(DockerAuthV2Protocol.LOGIN_PROTOCOL).append("/auth\n")

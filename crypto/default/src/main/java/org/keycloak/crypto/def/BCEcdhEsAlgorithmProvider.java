@@ -192,8 +192,15 @@ public class BCEcdhEsAlgorithmProvider implements JWEAlgorithmProvider {
 
         String name = nistToSecCurveName(crv);
         try {
-            ECPoint point = new ECPoint(x, y);
             ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(name);
+
+            // Defense-in-depth: validate that the point lies on the named curve
+            org.bouncycastle.math.ec.ECPoint bcPoint = spec.getCurve().createPoint(x, y);
+            if (!bcPoint.isValid()) {
+                throw new IllegalArgumentException("Invalid EC point: not on the named curve");
+            }
+
+            ECPoint point = new ECPoint(x, y);
             ECParameterSpec params = new ECNamedCurveSpec(name, spec.getCurve(), spec.getG(), spec.getN());
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
             KeyFactory keyFactory = KeyFactory.getInstance("EC");

@@ -28,7 +28,13 @@ public interface Decision<D extends Evaluation> {
 
     enum Effect {
         PERMIT,
-        DENY
+        DENY,
+        /**
+         * The policy cannot be evaluated because its configuration is invalid.
+         * Unlike {@link #DENY}, this effect must not be inverted by negative logic.
+         * Aggregated policies propagate it unchanged; permission decision strategies count it as a denial.
+         */
+        INVALID
     }
 
     void onDecision(D evaluation);

@@ -58,8 +58,19 @@ public class KeycloakOpenAPI {
             public static final String USERS = "Users";
             public static final String ORGANIZATIONS = "Organizations";
             public static final String WORKFLOWS = "Workflows";
+            public static final String SSF = "SSF";
             private Tags() { }
         }
 
+    }
+
+    public static class Ssf {
+
+        private Ssf() { }
+
+        public static class Tags {
+            public static final String TRANSMITTER = "SSF Transmitter";
+            private Tags() { }
+        }
     }
 }

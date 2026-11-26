@@ -19,15 +19,23 @@ package org.keycloak.social.microsoft;
 
 import java.util.Optional;
 
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuthErrorException;
 import org.keycloak.broker.oidc.AbstractOAuth2IdentityProvider;
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.social.SocialIdentityProvider;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
@@ -67,6 +75,35 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     @Override
     protected String getProfileEndpointForValidation(EventBuilder event) {
         return PROFILE_URL;
+    }
+
+    @Override
+    protected BrokeredIdentityContext validateExternalTokenThroughUserInfo(EventBuilder event, String subjectToken, String subjectTokenType) {
+        String tenant = ((MicrosoftIdentityProviderConfig) getConfig()).getTenantId();
+        if (isTenantRestricted(tenant) && !tenant.equalsIgnoreCase(tokenTenantId(subjectToken))) {
+            event.detail(Details.REASON, "token tenant does not match configured tenant");
+            event.error(Errors.INVALID_TOKEN);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_TOKEN, "invalid token", Response.Status.BAD_REQUEST);
+        }
+        return super.validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
+    }
+
+    // A concrete tenant restricts access; the multi-tenant aliases (common/organizations/consumers) accept any tenant.
+    private static boolean isTenantRestricted(String tenant) {
+        return tenant != null
+                && !"common".equalsIgnoreCase(tenant)
+                && !"organizations".equalsIgnoreCase(tenant)
+                && !"consumers".equalsIgnoreCase(tenant);
+    }
+
+    private String tokenTenantId(String token) {
+        try {
+            JsonNode tid = JsonSerialization.readValue(new JWSInput(token).getContent(), JsonNode.class).get("tid");
+            return tid == null ? null : tid.asText();
+        } catch (Exception e) {
+            log.debug("Unable to extract tenant id (tid) from Microsoft access token", e);
+            return null;
+        }
     }
 
     @Override

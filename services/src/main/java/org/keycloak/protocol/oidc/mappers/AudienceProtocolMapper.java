@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -103,8 +104,13 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession, KeycloakSession keycloakSession, ClientSessionContext clientSessionCtx) {
         String audienceValue = mappingModel.getConfig().get(INCLUDED_CLIENT_AUDIENCE);
 
-        if (audienceValue == null) {
-            // Fallback to custom audience
+        if (audienceValue != null) {
+            ClientModel audienceClient = keycloakSession.clients().getClientByClientId(keycloakSession.getContext().getRealm(), audienceValue);
+
+            // Don't add the client to the audience if it was removed or disabled
+            if (audienceClient == null || !audienceClient.isEnabled()) return;
+        } else {
+            // Fallback to custom audience.
             audienceValue = mappingModel.getConfig().get(INCLUDED_CUSTOM_AUDIENCE);
         }
 
@@ -116,6 +122,13 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
                                                         String includedClientAudience,
                                                         String includedCustomAudience,
                                                         boolean accessToken, boolean idToken, boolean introspectionEndpoint) {
+        return createClaimMapper(name, includedClientAudience, includedCustomAudience, accessToken, idToken, introspectionEndpoint, false);
+    }
+
+    public static ProtocolMapperModel createClaimMapper(String name,
+                                                        String includedClientAudience,
+                                                        String includedCustomAudience,
+                                                        boolean accessToken, boolean idToken, boolean introspectionEndpoint, boolean lightweightAccessToken) {
         ProtocolMapperModel mapper = new ProtocolMapperModel();
         mapper.setName(name);
         mapper.setProtocolMapper(PROVIDER_ID);
@@ -132,6 +145,7 @@ public class AudienceProtocolMapper extends AbstractOIDCProtocolMapper implement
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
+        if (lightweightAccessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_LIGHTWEIGHT_ACCESS_TOKEN, "true");
         mapper.setConfig(config);
         return mapper;
     }

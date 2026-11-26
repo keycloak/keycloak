@@ -42,6 +42,7 @@ interface EvaluateFormInputs
   groups: string[];
   users: string[];
   roles: string[];
+  organizations: string[];
   resourceType?: string;
 }
 
@@ -101,7 +102,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
 
     const formValues = getValues();
     const getSingleValue = (source: string | string[]) => {
-      return Array.isArray(source) ? source?.[0] : source;
+      return Array.isArray(source) ? source[0] : source;
     };
 
     const getResourceName = (resourceType: string) => {
@@ -114,6 +115,8 @@ const PermissionEvaluateContent = ({ client }: Props) => {
           return getSingleValue(formValues.clients);
         case "Roles":
           return getSingleValue(formValues.roles);
+        case "Organizations":
+          return getSingleValue(formValues.organizations);
         default:
           return undefined;
       }
@@ -192,6 +195,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
                     }}
                     options={resourceTypes.map((resource) => resource.type!)}
                   />
+                  {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- undefined when selectedResourceType not in COMPONENTS */}
                   {ResourceTypeComponent && (
                     <ResourceTypeComponent
                       name={selectedResourceType?.toLowerCase()}

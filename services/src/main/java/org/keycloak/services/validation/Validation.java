@@ -33,6 +33,7 @@ public class Validation {
     public static final String FIELD_USERNAME = "username";
     public static final String FIELD_OTP_CODE = "totp";
     public static final String FIELD_OTP_LABEL = "userLabel";
+    public static final int MAX_USERNAME_LENGTH = 255; // USER_ENTITY table
 
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[\\p{IsLatin}|\\p{IsCommon}]+$");
 
@@ -58,6 +59,23 @@ public class Validation {
      */
     public static boolean isBlank(String s) {
         return s == null || s.trim().length() == 0;
+    }
+
+    /**
+     * Check if string contains control characters (Unicode general category Cc),
+     * e.g. NUL (U+0000), DEL (U+007F) or the C1 controls (U+0080-U+009F). Such
+     * characters are not printable, can break storage engines (for example,
+     * PostgreSQL does not allow NUL bytes in text values) and are significant for
+     * exact string comparisons, which can silently break matching and authorization logic.
+     *
+     * @param s to check
+     * @return true if the string contains at least one control character
+     */
+    public static boolean containsControlCharacters(String s) {
+        if (s == null) {
+            return false;
+        }
+        return s.codePoints().anyMatch(cp -> Character.getType(cp) == Character.CONTROL);
     }
 
     public static boolean isEmailValid(String email) {

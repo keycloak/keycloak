@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.client;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -79,24 +80,24 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     @DatabaseTest
-    public void test01GetMappersList() {
+    public void testGetMappersList() {
         Assertions.assertTrue(oidcMappersRsc.getMappers().isEmpty());
         Assertions.assertTrue(samlMappersRsc.getMappers().isEmpty());
     }
 
     @Test
     @DatabaseTest
-    public void test02CreateOidcMappersFromList() {
+    public void testCreateOidcMappersFromList() {
         testAddAllBuiltinMappers(oidcMappersRsc, "openid-connect", AdminEventPaths.clientScopeProtocolMappersPath(oidcClientScopeId));
     }
 
     @Test
-    public void test03CreateSamlMappersFromList() {
+    public void testCreateSamlMappersFromList() {
         testAddAllBuiltinMappers(samlMappersRsc, "saml", AdminEventPaths.clientScopeProtocolMappersPath(samlClientScopeId));
     }
 
     @Test
-    public void test04CreateSamlProtocolMapper() {
+    public void testCreateSamlProtocolMapper() {
 
         //{"protocol":"saml",
         // "config":{"role":"account.view-profile","new.role.name":"new-role-name"},
@@ -108,9 +109,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
         int totalMappers = samlMappersRsc.getMappers().size();
         int totalSamlMappers = samlMappersRsc.getMappersPerProtocol("saml").size();
-        Response resp = samlMappersRsc.createMapper(rep);
-        resp.close();
-        String createdId = ApiUtil.getCreatedId(resp);
+        String createdId = ApiUtil.getCreatedId(samlMappersRsc.createMapper(rep));
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
@@ -123,7 +122,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     @DatabaseTest
-    public void test05CreateOidcProtocolMapper() {
+    public void testCreateOidcProtocolMapper() {
         //{"protocol":"openid-connect",
         // "config":{"role":"myrole"},
         // "consentRequired":true,
@@ -134,9 +133,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
         int totalMappers = oidcMappersRsc.getMappers().size();
         int totalOidcMappers = oidcMappersRsc.getMappersPerProtocol("openid-connect").size();
-        Response resp = oidcMappersRsc.createMapper(rep);
-        resp.close();
-        String createdId = ApiUtil.getCreatedId(resp);
+        String createdId = ApiUtil.getCreatedId(oidcMappersRsc.createMapper(rep));
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
@@ -148,12 +145,10 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
-    public void test06UpdateSamlMapper() {
+    public void testUpdateSamlMapper() {
         ProtocolMapperRepresentation rep = makeSamlMapper("saml-role-name-mapper2");
 
-        Response resp = samlMappersRsc.createMapper(rep);
-        resp.close();
-        String createdId = ApiUtil.getCreatedId(resp);
+        String createdId = ApiUtil.getCreatedId(samlMappersRsc.createMapper(rep));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "account.manage-account");
@@ -167,12 +162,10 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     @DatabaseTest
-    public void test07UpdateOidcMapper() {
+    public void testUpdateOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper2");
 
-        Response resp = oidcMappersRsc.createMapper(rep);
-        resp.close();
-        String createdId = ApiUtil.getCreatedId(resp);
+        String createdId = ApiUtil.getCreatedId(oidcMappersRsc.createMapper(rep));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         rep.getConfig().put("role", "myotherrole");
@@ -186,7 +179,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
     @Test
     @DatabaseTest
-    public void test08EffectiveMappers() {
+    public void testEffectiveMappers() {
         ClientScopeResource rolesScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "roles");
         Assertions.assertNotNull(rolesScope);
         List<ProtocolMapperRepresentation> mappers = rolesScope.getProtocolMappers().getMappers();
@@ -197,7 +190,8 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
 
         String clientScopeID = rolesScope.toRepresentation().getId();
         String protocolMapperId = audienceMapper.getId();
-        Map<String, String> origConfig = audienceMapper.getConfig();
+        // Copy, otherwise the removals below would also strip the config we are meant to restore
+        Map<String, String> origConfig = new HashMap<>(audienceMapper.getConfig());
 
         try {
             // Test default values available on the protocol mapper
@@ -226,10 +220,10 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
             Assertions.assertEquals("false", audienceMapper.getConfig().get(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION));
 
         } finally {
-            audienceMapper.getConfig().putAll(origConfig);
+            // Replace the config rather than merging into it, so the "includeInIntrospection" override is dropped
+            audienceMapper.setConfig(origConfig);
             rolesScope.getProtocolMappers().update(protocolMapperId, audienceMapper);
             AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE, AdminEventPaths.clientScopeProtocolMapperPath(clientScopeID, protocolMapperId), audienceMapper, ResourceType.PROTOCOL_MAPPER);
-
         }
     }
 
@@ -237,20 +231,13 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     public void testDeleteSamlMapper() {
         ProtocolMapperRepresentation rep = makeSamlMapper("saml-role-name-mapper3");
 
-        Response resp = samlMappersRsc.createMapper(rep);
-        resp.close();
-        String createdId = ApiUtil.getCreatedId(resp);
+        String createdId = ApiUtil.getCreatedId(samlMappersRsc.createMapper(rep));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         samlMappersRsc.delete(createdId);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientScopeProtocolMapperPath(samlClientScopeId, createdId), ResourceType.PROTOCOL_MAPPER);
 
-        try {
-            samlMappersRsc.getMapperById(createdId);
-            Assertions.fail("Not expected to find mapper");
-        } catch (NotFoundException nfe) {
-            // Expected
-        }
+        Assertions.assertThrows(NotFoundException.class, () -> samlMappersRsc.getMapperById(createdId));
     }
 
     @Test
@@ -258,20 +245,13 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     public void testDeleteOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper3");
 
-        Response resp = oidcMappersRsc.createMapper(rep);
-        resp.close();
-        String createdId = ApiUtil.getCreatedId(resp);
+        String createdId = ApiUtil.getCreatedId(oidcMappersRsc.createMapper(rep));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), rep, ResourceType.PROTOCOL_MAPPER);
 
         oidcMappersRsc.delete(createdId);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE, AdminEventPaths.clientScopeProtocolMapperPath(oidcClientScopeId, createdId), ResourceType.PROTOCOL_MAPPER);
 
-        try {
-            oidcMappersRsc.getMapperById(createdId);
-            Assertions.fail("Not expected to find mapper");
-        } catch (NotFoundException nfe) {
-            // Expected
-        }
+        Assertions.assertThrows(NotFoundException.class, () -> oidcMappersRsc.getMapperById(createdId));
     }
 
 

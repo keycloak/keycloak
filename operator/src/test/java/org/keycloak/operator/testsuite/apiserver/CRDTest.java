@@ -17,7 +17,7 @@
 
 package org.keycloak.operator.testsuite.apiserver;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
@@ -50,7 +50,7 @@ public class CRDTest {
     static final ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
-    public static void before() throws FileNotFoundException {
+    public static void before() throws IOException {
         BaseOperatorTest.createCRDs(client);
     }
 

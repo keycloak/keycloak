@@ -32,9 +32,10 @@ export class AuthenticationManagement extends Resource<{ realm?: string }> {
   });
 
   // Get required action for alias
-  public getRequiredActionForAlias = this.makeRequest<{
-    alias: string;
-  }>({
+  public getRequiredActionForAlias = this.makeRequest<
+    { alias: string },
+    RequiredActionProviderRepresentation | null
+  >({
     method: "GET",
     path: "/required-actions/{alias}",
     urlParamKeys: ["alias"],

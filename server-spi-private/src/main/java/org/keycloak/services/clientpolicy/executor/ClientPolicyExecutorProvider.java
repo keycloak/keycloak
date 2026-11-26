@@ -26,9 +26,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 /**
  * This executor specifies what action is executed on the client to which a client policy is adopted.
  * The executor can be executed on the events defined in {@link ClientPolicyEvent}.
- * It is sufficient for the implementer of this executor to implement methods in which they are interested
- * and {@link isEvaluatedOnEvent} method.
- * 
+ *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public interface ClientPolicyExecutorProvider<CONFIG extends ClientPolicyExecutorConfigurationRepresentation> extends Provider {

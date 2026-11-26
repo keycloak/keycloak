@@ -11,12 +11,39 @@ Keep attention where a particular test belong, most of the tests are placed in t
 
 Support for test suites:
 * Based on _JUnit Platform Suite_
-* All currently available suites are in the [suites package](../base/src/test/java/org/keycloak/tests/suites)
+* Base-module suites are in the [suites package](../base/src/test/java/org/keycloak/tests/suites)
 * Part of the _GitHub Actions_ [CI worklow](../../.github/workflows/ci.yml)
 
 Useful guides:
 * [_Keycloak Test Framework_](../../test-framework/docs/README.md)
 * [_FIPS_ tests execution](FIPS_104-2.md) - how to set up a local machine to successfully execute the _FIPS_ tests.
+* [_Docker Authentication test_](DOCKER_AUTHENTICATION_TEST.md) - how to run `DockerClientTest` locally.
+
+### Database test suite
+
+The [`DatabaseTestSuite`](../base/src/test/java/org/keycloak/tests/suites/DatabaseTestSuite.java) runs tests annotated with [`@DatabaseTest`](../base/src/test/java/org/keycloak/tests/suites/DatabaseTest.java).
+It is a curated subset for cross-database coverage, not every test that happens to use a database.
+Include tests whose persistence behavior warrants coverage across database vendors, such as queries and search/pagination, schema or type handling, transactions/concurrency, and regressions caused by database-specific behavior.
+Merely creating a realm, user, or client as test setup is not a reason to add the annotation.
+Keep selection focused because each selected test adds work to the database matrix.
+
+Annotate an entire class when all its tests warrant cross-database coverage, as in [`DbTest`](../base/src/test/java/org/keycloak/tests/db/DbTest.java).
+For a class with mixed coverage needs, annotate only the relevant methods, as in [`EventStoreProviderTest`](../base/src/test/java/org/keycloak/tests/events/EventStoreProviderTest.java).
+
+Suite selection and database configuration are separate.
+`@DatabaseTest` does not choose a database or run a matrix locally.
+From the repository root, run the suite against PostgreSQL with:
+
+```shell
+KC_TEST_DATABASE=postgres ./mvnw package -f tests/pom.xml -Dtest=DatabaseTestSuite
+```
+
+Without a database override, the framework defaults to in-memory H2.
+See [Running tests](../../test-framework/docs/RUNNING_TESTS.md) for database and server configuration.
+
+CI runs the suite against the databases configured in the Store IT jobs in [`ci.yml`](../../.github/workflows/ci.yml), using the [`run-store-tests` action](../../.github/actions/run-store-tests/action.yml).
+Additional and managed-database jobs in the same workflow also use the suite.
+Refer to the workflow for the current matrix and execution conditions.
 
 ## Utilities
 
@@ -67,3 +94,26 @@ Available guides, which cover the required knowledge to successfully migrate a s
 * [Manual migration](MANUAL_MIGRATION.md) - Guide with recommendations on how to fully migrate a test
 
 Once the migration is over the _migration-util_ module will be removed!
+
+
+## Loopback redirect policy regression tests
+
+`SecureRedirectUrisLoopbackTest` checks that hostnames resolving to loopback addresses still require domain allowlist validation.
+
+Before running locally:
+
+1. Open your hosts file with administrator privileges: `/etc/hosts` on Linux/macOS, or `C:\Windows\System32\drivers\etc\hosts` on Windows.
+2. Add these entries if they are missing:
+
+   ```text
+   127.0.0.1 redirect-loopback-v4.kc.test
+   ::1 redirect-loopback-v6.kc.test
+   ```
+
+3. From the repository root, run:
+
+   ```shell
+   ./mvnw test -pl tests/base -Dtest=SecureRedirectUrisLoopbackTest
+   ```
+
+CI configures these mappings automatically. The test checks hostname resolution inside the server JVM and fails if either mapping is missing.

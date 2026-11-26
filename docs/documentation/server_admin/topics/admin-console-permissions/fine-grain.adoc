@@ -3,7 +3,7 @@
 === Fine grained admin permissions V1
 
 IMPORTANT: Preview feature fine-grained admin permissions V1 has been replaced by a new
-<<_fine_grained_permissions, supported version>>. Version 1 of the feature is still available, but it has been deprecated
+<<fine_grained_permissions, supported version>>. Version 1 of the feature is still available, but it has been deprecated
 and will be removed in future release. To enable it, start the server with `--features=admin-fine-grained-authz:v1`.
 
 Sometimes roles like `manage-realm` or `manage-users` are too coarse grain and you want to create
@@ -228,6 +228,9 @@ manage::
     even if the admin does not have privileges to map the role to the client's scope.
     This is currently the limitation of protocol mappers as they don't have a way
     to assign individual permissions to them like roles do.
+    +
+    When granted on a specific client, the administrator can view its assigned client scopes, assign any existing realm client scope to that client, remove assigned scopes, and change their type (default ↔ optional).
+    This does not grant permission to edit shared client scope definitions.
 configure::
     Reduced set of privileges to manage the client.  It is like the `manage` scope except
     the admin is not allowed to define protocol mappers, change the client template,

@@ -18,9 +18,11 @@
 package org.keycloak.protocol.oidc;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.TokenVerifier;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.util.UserSessionUtil;
@@ -77,4 +79,25 @@ public class RefreshTokenIntrospectionProvider extends AccessTokenIntrospectionP
             return false;
         }
     }
+
+    @Override
+    protected boolean verifyAudience() {
+        ClientModel authenticatedClient = session.getContext().getClient();
+
+        if (authenticatedClient.getClientId().equals(token.getIssuedFor())) {
+            return true;
+        }
+
+        logger.debugf("Introspection denied: client '%s' is not the client the %s token was issued for '%s'",
+                authenticatedClient.getClientId(), token.getType(), token.getIssuedFor());
+        eventBuilder.detail(Details.REASON, String.format("Client '%s' is not the client the token was issued for", authenticatedClient.getClientId()));
+        eventBuilder.error(Errors.INVALID_TOKEN);
+        return false;
+    }
+
+    @Override
+    protected void addAdditionalVerifications(TokenVerifier<RefreshToken> verifier) {
+        // Skip additional verifications for refresh token. Audience is always KC server as issuer for refresh tokens
+    }
+
 }

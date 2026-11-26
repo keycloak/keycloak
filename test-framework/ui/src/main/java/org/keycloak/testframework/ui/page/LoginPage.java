@@ -29,9 +29,6 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
-    @FindBy(className = "pf-m-success")
-    private WebElement loginSuccessMessage;
-
     @FindBy(id = "input-error-username")
     private WebElement userNameInputError;
 
@@ -68,6 +65,19 @@ public class LoginPage extends AbstractLoginPage {
         return driver.findElement(By.id(id));
     }
 
+    public boolean isSocialButtonPresent(String alias) {
+        String id = "social-" + alias;
+        return !driver.driver().findElements(By.id(id)).isEmpty();
+    }
+
+    public boolean isUsernameInputPresent() {
+        return !driver.driver().findElements(By.id("username")).isEmpty();
+    }
+
+    public boolean isPasswordInputPresent() {
+        return !driver.driver().findElements(By.id("password")).isEmpty();
+    }
+
     public void rememberMe(boolean value) {
         boolean selected = isRememberMe();
         if ((value && !selected) || !value && selected) {
@@ -83,12 +93,12 @@ public class LoginPage extends AbstractLoginPage {
         registerLink.click();
     }
 
-    public void resetPassword() {
-        resetPasswordLink.click();
+    public boolean isRegisterLinkPresent() {
+        return !driver.driver().findElements(By.linkText("Register")).isEmpty();
     }
 
-    public String getSuccessMessage() {
-        return loginSuccessMessage != null ? loginSuccessMessage.getText() : null;
+    public void resetPassword() {
+        resetPasswordLink.click();
     }
 
     @Override
@@ -109,18 +119,44 @@ public class LoginPage extends AbstractLoginPage {
     }
 
     public String getUsernameInputError() {
-        try {
-            return userNameInputError.getText();
-        } catch (NoSuchElementException e) {
-            return null;
-        }
+        String error = FieldErrorText.readNow(driver, "input-error-username");
+        return error.isBlank() ? null : error;
     }
 
     public Optional<String> getPasswordInputError() {
+        String error = FieldErrorText.readNow(driver, "input-error-password");
+        return error.isBlank() ? Optional.empty() : Optional.of(error);
+    }
+
+    public String waitForPasswordInputError() {
+        return FieldErrorText.read(driver, "input-error-password");
+    }
+
+    public boolean isRememberMeCheckboxPresent() {
         try {
-            return Optional.of(passwordInputError.getText());
+            return rememberMe.isDisplayed();
         } catch (NoSuchElementException e) {
-            return Optional.empty();
+            return false;
         }
+    }
+
+    public boolean isSwitchOrganizationPresent() {
+        return !driver.driver().findElements(By.id("switch-organization")).isEmpty();
+    }
+
+    public void clickSwitchOrganization() {
+        driver.findElement(By.id("switch-organization")).click();
+    }
+
+    public void clickResetLogin() {
+        driver.findElement(By.id("reset-login")).click();
+    }
+
+    public boolean isTryAnotherWayPresent() {
+        return !driver.driver().findElements(By.id("try-another-way")).isEmpty();
+    }
+
+    public void clickTryAnotherWay() {
+        driver.findElement(By.id("try-another-way")).click();
     }
 }

@@ -30,12 +30,11 @@ import org.infinispan.protostream.annotations.ProtoReserved;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@ProtoReserved(numbers = {3}, names = {"resendingEvent"})
+@ProtoReserved(numbers = {3, 4}, names = {"resendingEvent", "siteId"})
 public abstract class SessionClusterEvent implements ClusterEvent {
 
     private String realmId;
     private String eventKey;
-    private String siteId;
     private String nodeId;
 
 
@@ -54,7 +53,6 @@ public abstract class SessionClusterEvent implements ClusterEvent {
         this.realmId = realmId;
         this.eventKey = eventKey;
         NodeInfo nodeInfo = session.getProvider(InfinispanConnectionProvider.class).getNodeInfo();
-        this.siteId = nodeInfo.siteName();
         this.nodeId = nodeInfo.nodeName();
     }
 
@@ -75,15 +73,6 @@ public abstract class SessionClusterEvent implements ClusterEvent {
 
     void setEventKey(String eventKey) {
         this.eventKey = eventKey;
-    }
-
-    @ProtoField(4)
-    public String getSiteId() {
-        return siteId;
-    }
-
-    void setSiteId(String siteId) {
-        this.siteId = siteId;
     }
 
     @ProtoField(5)

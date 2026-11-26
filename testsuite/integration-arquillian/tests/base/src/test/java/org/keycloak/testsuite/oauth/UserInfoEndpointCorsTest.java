@@ -36,6 +36,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         testRealms.add(realm);
     }
 
+
     @Test
     public void userInfoCorsValidRequestWithValidUrl() throws Exception {
 
@@ -72,7 +73,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         // Set time offset to make sure that userInfo request will be invalid due the expired token
-        setTimeOffset(600);
+        timeOffSet.set(600);
 
         ResteasyClient resteasyClient = AdminClientUtil.createResteasyClient();
         try {
@@ -108,7 +109,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
                     .header("Origin", INVALID_CORS_URL) // manually trigger CORS handling
                     .get();
 
-            UserInfoClientUtil.testSuccessfulUserInfoResponse(userInfoResponse, "test-user@localhost", "test-user@localhost");
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), userInfoResponse.getStatus());
 
             assertNotCors(userInfoResponse);
         } finally {

@@ -21,6 +21,12 @@ import java.io.Serializable;
 
 /**
  * Model implementation of an organization internet domain.
+ * 
+ * <p>Supports pattern-based domain matching:
+ * <ul>
+ *   <li><code>example.com</code> - exact match only</li>
+ *   <li><code>*.example.com</code> - matches example.com and all subdomains</li>
+ * </ul>
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
@@ -34,14 +40,26 @@ public class OrganizationDomainModel implements Serializable {
 
     private final String name;
     private final boolean verified;
+    private final String identityProviderAlias;
+    private final boolean autoRedirect;
 
     public OrganizationDomainModel(String name) {
-        this(name, false);
+        this(name, false, null, false);
     }
 
     public OrganizationDomainModel(String name, boolean verified) {
+        this(name, verified, null, false);
+    }
+
+    public OrganizationDomainModel(String name, boolean verified, String identityProviderAlias) {
+        this(name, verified, identityProviderAlias, false);
+    }
+
+    public OrganizationDomainModel(String name, boolean verified, String identityProviderAlias, boolean autoRedirect) {
         this.name = name == null ? null : name.trim().toLowerCase();
         this.verified = verified;
+        this.identityProviderAlias = identityProviderAlias;
+        this.autoRedirect = autoRedirect;
     }
 
     public String getName() {
@@ -50,6 +68,14 @@ public class OrganizationDomainModel implements Serializable {
 
     public boolean isVerified() {
         return this.verified;
+    }
+
+    public String getIdentityProviderAlias() {
+        return this.identityProviderAlias;
+    }
+
+    public boolean isAutoRedirect() {
+        return this.autoRedirect;
     }
 
     @Override

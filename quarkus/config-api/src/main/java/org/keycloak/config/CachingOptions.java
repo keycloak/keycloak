@@ -18,6 +18,8 @@ public class CachingOptions {
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_FILE_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-file";
     public static final String CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-trust-store-password";
     public static final String CACHE_EMBEDDED_MTLS_ROTATION_PROPERTY = CACHE_EMBEDDED_MTLS_PREFIX + "-rotation-interval-days";
+    public static final String CACHE_EMBEDDED_NODE_NAME_PROPERTY = CACHE_EMBEDDED_PREFIX + "-node-name";
+    public static final String CACHE_EMBEDDED_CLUSTER_NAME_PROPERTY = CACHE_EMBEDDED_PREFIX + "-cluster-name";
     public static final String CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-bind-address";
     public static final String CACHE_EMBEDDED_NETWORK_BIND_PORT_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-bind-port";
     public static final String CACHE_EMBEDDED_NETWORK_EXTERNAL_ADDRESS_PROPERTY = CACHE_EMBEDDED_PREFIX + "-network-external-address";
@@ -48,30 +50,6 @@ public class CachingOptions {
             .description("Defines the cache mechanism for high-availability. "
                     + "By default in production mode, a 'ispn' cache is used to create a cluster between multiple server nodes. "
                     + "By default in development mode, a 'local' cache disables clustering and is intended for development and testing purposes.")
-            .build();
-
-    public enum Stack {
-        jdbc_ping,
-        kubernetes,
-        jdbc_ping_udp,
-        tcp,
-        udp,
-        ec2,
-        azure,
-        google;
-
-        @Override
-        public String toString() {
-            return CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, super.toString());
-        }
-    }
-
-    public static final Option<Stack> CACHE_STACK = new OptionBuilder<>("cache-stack", Stack.class)
-            .category(OptionCategory.CACHE)
-            .strictExpectedValues(false)
-            .description("Define the default stack to use for cluster communication and node discovery. Defaults to 'jdbc-ping' if not set.")
-            // Do not set a default value here as it would otherwise overwrite an explicit stack chosen in cache config XML
-            .deprecatedValues("Use 'jdbc-ping' instead by leaving it unset", Stack.azure, Stack.ec2, Stack.google, Stack.jdbc_ping_udp, Stack.kubernetes, Stack.tcp, Stack.udp)
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>(CACHE_CONFIG_FILE_PROPERTY, File.class)
@@ -119,6 +97,21 @@ public class CachingOptions {
             .category(OptionCategory.CACHE)
             .defaultValue(30)
             .description("Rotation period in days of automatic JGroups MTLS certificates.")
+            .build();
+
+    public static final Option<String> CACHE_EMBEDDED_NODE_NAME = new OptionBuilder<>(CACHE_EMBEDDED_NODE_NAME_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("Name of this node in the embedded cluster. Used in log messages and management tools to identify this instance. "
+                    + "If not set, a name is generated automatically.")
+            .build();
+
+    public static final Option<String> CACHE_EMBEDDED_CLUSTER_NAME = new OptionBuilder<>(CACHE_EMBEDDED_CLUSTER_NAME_PROPERTY, String.class)
+            .category(OptionCategory.CACHE)
+            .description("Name of the embedded Infinispan cluster. All nodes that belong to the same Keycloak deployment must share the same value; "
+                    + "nodes that belong to different deployments sharing the same database must each use a different value. "
+                    + "Defaults to 'ISPN' if not set. "
+                    + "WARNING: Using distinct cluster names without enabling the stateless feature disables cross-cluster cache invalidation, "
+                    + "which leads to stale caches and incorrect behavior. Use only together with '--features=stateless'.")
             .build();
 
     public static final Option<String> CACHE_EMBEDDED_NETWORK_BIND_ADDRESS = new OptionBuilder<>(CACHE_EMBEDDED_NETWORK_BIND_ADDRESS_PROPERTY, String.class)

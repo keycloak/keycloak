@@ -49,6 +49,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
+import org.keycloak.services.validation.Validation;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
@@ -112,7 +113,12 @@ public class GroupsResource {
         }
 
         if (populateHierarchy) {
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator, subGroupsCount);
+            Stream<GroupRepresentation> hierarchy = GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator, subGroupsCount);
+            if (!briefRepresentation) {
+                // filterRolesInRepresentation recurses into subgroups, so applying it to the roots covers the whole tree
+                hierarchy = hierarchy.peek(rep -> GroupUtils.filterRolesInRepresentation(rep, realm, session, auth));
+            }
+            return hierarchy;
         }
 
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
@@ -121,6 +127,9 @@ public class GroupsResource {
 
         return stream.map(g -> {
             GroupRepresentation rep = GroupUtils.toRepresentation(groupsEvaluator, g, !briefRepresentation);
+            if (!briefRepresentation) {
+                GroupUtils.filterRolesInRepresentation(rep, realm, session, auth);
+            }
 
             if (subGroupsCount) {
                 return GroupUtils.populateSubGroupCount(g, rep);
@@ -198,12 +207,23 @@ public class GroupsResource {
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.groups().requireManage();
 
+        if (rep == null) {
+            throw ErrorResponse.error("Group representation is missing", Response.Status.BAD_REQUEST);
+        }
+
         GroupModel child;
         Response.ResponseBuilder builder = Response.status(204);
         String groupName = rep.getName();
 
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+        }
+
+        // validate the name only when a new group is created; requests that move an
+        // existing group (rep.id present) do not apply the name, so the stored name
+        // of legacy groups must not be rejected here
+        if (rep.getId() == null && Validation.containsControlCharacters(groupName)) {
+            throw ErrorResponse.error("Group name contains control characters", Response.Status.BAD_REQUEST);
         }
 
         try {
@@ -216,6 +236,7 @@ public class GroupsResource {
                     throw ErrorResponse.error("Cannot manage organization related group via non Organization API.", Status.BAD_REQUEST);
                 }
                 if (child.getParentId() != null) {
+                    auth.groups().requireManage(child);
                     realm.moveGroup(child, null);
                 }
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());

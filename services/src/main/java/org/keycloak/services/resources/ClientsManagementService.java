@@ -16,9 +16,10 @@
  */
 package org.keycloak.services.resources;
 
+import java.util.List;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -43,6 +44,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ClientNodeRegistrationContext;
 
 import org.jboss.logging.Logger;
 
@@ -91,14 +95,12 @@ public class ClientsManagementService {
     /**
      * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
-     * @param authorizationHeader
-     * @param formData
      * @return
      */
     @Path("register-node")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response registerNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
+    public Response registerNode() {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
         }
@@ -110,6 +112,7 @@ public class ClientsManagementService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 
@@ -117,9 +120,31 @@ public class ClientsManagementService {
         logger.debugf("Registering cluster host '%s' for client '%s'", nodeHost, client.getClientId());
 
         try {
-            client.registerNode(nodeHost, Time.currentTime());
+            session.clientPolicy().triggerOnEvent(
+                    new ClientNodeRegistrationContext(client, List.of(nodeHost),
+                            ClientPolicyEvent.REGISTER_NODE));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, cpe.getErrorDetail());
+            event.error(Errors.INVALID_INPUT);
+            OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation(
+                    cpe.getError(), cpe.getErrorDetail());
+            throw new BadRequestException(
+                    Response.status(Response.Status.BAD_REQUEST)
+                            .entity(errorRep)
+                            .type(MediaType.APPLICATION_JSON_TYPE)
+                            .build());
+        }
+
+        // Strip URI brackets from IPv6 addresses - store canonical only
+        String nodeHostToStore = nodeHost.startsWith("[") && nodeHost.endsWith("]")
+                ? nodeHost.substring(1, nodeHost.length() - 1)
+                : nodeHost;
+
+        try {
+            client.registerNode(nodeHostToStore, Time.currentTime());
         } catch (RuntimeException e) {
-            event.error(e.getMessage());
+            event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.GENERIC);
             throw e;
         }
 
@@ -132,14 +157,12 @@ public class ClientsManagementService {
     /**
      * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
-     * @param authorizationHeader
-     * @param formData
      * @return
      */
     @Path("unregister-node")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response unregisterNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
+    public Response unregisterNode() {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
         }
@@ -151,13 +174,17 @@ public class ClientsManagementService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 
         event.client(client).detail(Details.NODE_HOST, nodeHost);
         logger.debugf("Unregistering cluster host '%s' for client '%s'", nodeHost, client.getClientId());
 
-        client.unregisterNode(nodeHost);
+        String nodeHostToUnregister = nodeHost.startsWith("[") && nodeHost.endsWith("]")
+                ? nodeHost.substring(1, nodeHost.length() - 1)
+                : nodeHost;
+        client.unregisterNode(nodeHostToUnregister);
 
         event.success();
 
@@ -178,7 +205,7 @@ public class ClientsManagementService {
 
     protected String getClientClusterHost(MultivaluedMap<String, String> formData) {
         String clientClusterHost = formData.getFirst(AdapterConstants.CLIENT_CLUSTER_HOST);
-        if (clientClusterHost == null || clientClusterHost.length() == 0) {
+        if (clientClusterHost == null || clientClusterHost.isBlank()) {
             OAuth2ErrorRepresentation errorRep = new OAuth2ErrorRepresentation( OAuthErrorException.INVALID_REQUEST, "Client cluster host not specified");
             event.error(Errors.INVALID_CODE);
             throw new BadRequestException("Cluster host not specified", jakarta.ws.rs.core.Response.status(jakarta.ws.rs.core.Response.Status.BAD_REQUEST).entity(errorRep).type(MediaType.APPLICATION_JSON_TYPE).build());

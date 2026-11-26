@@ -29,15 +29,19 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -60,13 +64,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractAppInitiatedActionUpdateEmailTest {
 
 	@Rule
-	public GreenMailRule greenMail = new GreenMailRule();
+	public MailServer mail = new MailServer();
 
 	@Page
 	protected InfoPage infoPage;
 
 	@Page
 	protected ErrorPage errorPage;
+
+	@Page
+	protected LoginPasswordUpdatePage changePasswordPage;
 
 	@Override
 	public void configureTestRealm(RealmRepresentation testRealm) {
@@ -80,14 +87,20 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 
 	@Override
 	protected void changeEmailUsingAIA(String newEmail) throws Exception {
+		changeEmailUsingAIA(newEmail, true);
+	}
+
+	protected void changeEmailUsingAIA(String newEmail, boolean login) throws Exception {
 		doAIA();
-		loginPage.login("test-user@localhost", "password");
+		if (login) {
+			loginPage.login("test-user@localhost", "password");
+		}
 
 		emailUpdatePage.assertCurrent();
 		assertTrue(emailUpdatePage.isCancelDisplayed());
 		emailUpdatePage.changeEmail(newEmail);
 
-		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail).assertEvent();
+		EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, newEmail);
 		Assertions.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 
 		driver.navigate().to(fetchEmailConfirmationLink(newEmail));
@@ -100,11 +113,37 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 	public void updateEmail() throws Exception {
 		changeEmailUsingAIA("new@localhost");
 
-		events.expect(EventType.UPDATE_EMAIL)
-				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-				.detail(Details.UPDATED_EMAIL, "new@localhost");
+		EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+				.details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.details(Details.UPDATED_EMAIL, "new@localhost");
 
 		Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+	}
+
+	@Test
+	public void updateEmailAlreadyLoggedIn() throws Exception {
+		oauth.doLogin("test-user@localhost", "password");
+		EventAssertion.expectLoginSuccess(events.poll());
+
+		changeEmailUsingAIA("new@localhost", false);
+
+		EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+				.details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.details(Details.UPDATED_EMAIL, "new@localhost");
+
+		Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+
+		doAIA(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+		changePasswordPage.assertCurrent();
+		assertTrue(changePasswordPage.isCancelDisplayed());
+
+		changePasswordPage.changePassword("password", "password");
+		Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+		assertKcActionStatus(SUCCESS);
+
+		EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+		EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+		EventAssertion.expectLoginSuccess(events.poll());
 	}
 
 	@Test
@@ -146,11 +185,11 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		driver.navigate().to(confirmationLink);
 
 		errorPage.assertCurrent();
-		assertEquals("Email already exists.", errorPage.getError());
+		assertEquals("This email is already associated with an existing account.", errorPage.getError());
 	}
 
 	private String fetchEmailConfirmationLink(String emailRecipient) throws MessagingException, IOException {
-		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+		MimeMessage[] receivedMessages = mail.getReceivedMessages();
 		Assertions.assertEquals(1, receivedMessages.length);
 		MimeMessage message = receivedMessages[0];
 		Address[] recipients = message.getRecipients(Message.RecipientType.TO);
@@ -169,7 +208,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		assertTrue(emailUpdatePage.isCancelDisplayed());
 		emailUpdatePage.changeEmail("new@localhost");
 
-		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+		EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, "new@localhost");
 		Assertions.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 		String link = fetchEmailConfirmationLink("new@localhost");
 		String token = link.substring(link.indexOf("key=") + "key=".length()).split("&")[0];
@@ -188,9 +227,9 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		final WebElement backToApplicationLink = driver.findElement(By.linkText("« Back to Application"));
 		assertThat(backToApplicationLink.getDomAttribute("href"), Matchers.containsString("/auth/realms/master/app/auth"));
 
-		events.expect(EventType.UPDATE_EMAIL)
-				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-				.detail(Details.UPDATED_EMAIL, "new@localhost");
+		EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+				.details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.details(Details.UPDATED_EMAIL, "new@localhost");
 		Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 	}
 
@@ -214,7 +253,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
             emailUpdatePage.assertCurrent();
             emailUpdatePage.changeEmail("new@localhost");
 
-            events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, "new@localhost");
             String link = fetchEmailConfirmationLink("new@localhost");
 
             // Simulate opening the verification link in a clean browser (no session cookies)
@@ -235,9 +274,9 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
             assertThat("Expected OIDC authentication URL", finalUrl, Matchers.containsString("/protocol/openid-connect/auth"));
             assertThat("Expected response_type=code for OIDC authorization code flow", finalUrl, Matchers.containsString("response_type=code"));
 
-            events.expect(EventType.UPDATE_EMAIL)
-                    .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                    .detail(Details.UPDATED_EMAIL, "new@localhost");
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+                    .details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                    .details(Details.UPDATED_EMAIL, "new@localhost");
             Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 		
 		} finally {

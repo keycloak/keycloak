@@ -81,7 +81,7 @@ public class PolicyEvaluationResponseBuilder {
 
         Collection<Result> results = decision.getResults();
 
-        if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect().equals(Decision.Effect.DENY))) {
+        if (results.stream().anyMatch(evaluationResult -> evaluationResult.getEffect() != Decision.Effect.PERMIT)) {
             response.setStatus(DecisionEffect.DENY);
         } else {
             response.setStatus(DecisionEffect.PERMIT);
@@ -90,7 +90,7 @@ public class PolicyEvaluationResponseBuilder {
         for (Result result : results) {
             PolicyEvaluationResponse.EvaluationResultRepresentation rep = new PolicyEvaluationResponse.EvaluationResultRepresentation();
 
-            if (result.getEffect() == Decision.Effect.DENY) {
+            if (result.getEffect() != Decision.Effect.PERMIT) {
                 rep.setStatus(DecisionEffect.DENY);
             } else {
                 rep.setStatus(DecisionEffect.PERMIT);
@@ -233,7 +233,7 @@ public class PolicyEvaluationResponseBuilder {
 
         policyResultRep.setPolicy(representation);
 
-        if (result.getEffect() == Decision.Effect.DENY) {
+        if (result.getEffect() != Decision.Effect.PERMIT) {
             policyResultRep.setStatus(DecisionEffect.DENY);
             policyResultRep.setScopes(representation.getScopes());
         } else {

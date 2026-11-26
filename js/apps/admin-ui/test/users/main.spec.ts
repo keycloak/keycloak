@@ -160,6 +160,79 @@ test.describe("Existing users", () => {
     await assertNotificationMessage(page, "The user has been saved");
   });
 
+  test("formats Terms and Conditions accepted timestamp", async ({ page }) => {
+    const termsAcceptedTimestamp = "1700000000";
+    const email = "existing-user@example.com";
+    const firstName = "Existing";
+    const lastName = "User";
+
+    await using testBed = await createTestBed({
+      attributes: {
+        userProfileEnabled: "true",
+      },
+      requiredActions: [
+        {
+          alias: "TERMS_AND_CONDITIONS",
+          name: "Terms and Conditions",
+          providerId: "TERMS_AND_CONDITIONS",
+          enabled: true,
+          defaultAction: false,
+          priority: 20,
+          config: {},
+        },
+      ],
+      users: [
+        {
+          username: existingUserName,
+          email,
+          firstName,
+          lastName,
+          attributes: {
+            terms_and_conditions: [termsAcceptedTimestamp],
+          },
+        },
+      ],
+    });
+    const user = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+
+    await login(page, {
+      to: toUser({ realm: testBed.realm, id: user.id!, tab: "settings" }),
+    });
+
+    const termsAcceptedField = page.getByTestId("terms_and_conditions");
+    await expect(termsAcceptedField).toBeVisible();
+    await expect(termsAcceptedField).not.toHaveText(termsAcceptedTimestamp);
+    await expect(
+      page.getByText(termsAcceptedTimestamp, { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      page.locator(`input[value="${termsAcceptedTimestamp}"]`),
+    ).toHaveCount(0);
+
+    const displayedTimestamp = await termsAcceptedField.innerText();
+    expect(displayedTimestamp).toContain("2023");
+    expect(displayedTimestamp).toMatch(/\D/);
+    expect(displayedTimestamp).toMatch(/\d{1,2}:\d{2}/);
+
+    await expect(page.getByTestId("email")).toHaveValue(email);
+    await expect(page.getByTestId("firstName")).toHaveValue(firstName);
+    await expect(page.getByTestId("lastName")).toHaveValue(lastName);
+
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "The user has been saved");
+
+    const updatedUser = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+    expect(updatedUser.attributes?.terms_and_conditions).toEqual([
+      termsAcceptedTimestamp,
+    ]);
+  });
+
   test("shows validation error for empty required attribute", async ({
     page,
   }) => {
@@ -282,5 +355,107 @@ test.describe("Existing users", () => {
     await joinGroup(page, ["test-group"], true);
     await assertNotificationMessage(page, "Added group membership");
     await assertRowExists(page, "test-group");
+  });
+
+  test("shows credentials of a disabled user", async ({ page }) => {
+    await using testBed = await createTestBed({
+      users: [
+        {
+          username: existingUserName,
+          enabled: false,
+          credentials: [{ type: "password", value: "test" }],
+        },
+      ],
+    });
+    const user = await adminClient.findUserByUsername(
+      testBed.realm,
+      existingUserName,
+    );
+
+    await login(page, {
+      to: toUser({ realm: testBed.realm, id: user.id!, tab: "credentials" }),
+    });
+
+    await expect(page.getByTestId("credentialType")).toHaveText("Password");
+  });
+});
+
+test.describe("User attribute search", () => {
+  const exactUserName = "search-exact-user";
+  const partialUserName = "search-partial-user";
+  const overrides: RealmRepresentation = {
+    attributes: {
+      userProfileEnabled: "true",
+    },
+    users: [
+      {
+        username: exactUserName,
+        attributes: { custom: ["94"] },
+      },
+      {
+        username: partialUserName,
+        attributes: { custom: ["94#381"] },
+      },
+    ],
+  };
+
+  test("matches partially when Exact search is unchecked", async ({ page }) => {
+    await using testBed = await createTestBed(overrides);
+    await adminClient.addUserProfile(testBed.realm, {
+      attributes: [
+        {
+          name: "custom",
+          displayName: "custom",
+          permissions: { view: ["admin", "user"], edit: ["admin", "user"] },
+        },
+      ],
+    });
+
+    await login(page, { to: toUsers({ realm: testBed.realm }) });
+
+    // switch to attribute search and add a `custom = 94` filter
+    await page.getByTestId("user-search-toggle").click();
+    await page.getByRole("menuitem", { name: "Attribute search" }).click();
+    await page.getByTestId("dropdown-panel-btn").click();
+    await page.getByPlaceholder("Select attribute").click();
+    await page.getByPlaceholder("Select attribute").fill("custom");
+    await page.getByRole("option", { name: "custom" }).click();
+    await page.getByPlaceholder("Type a value").fill("94");
+    await page.getByTestId("user-attribute-search-add-filter-button").click();
+
+    // an unchecked "Exact search" must also match `94#381` partially
+    await expect(page.getByTestId("exact")).not.toBeChecked();
+    await page.getByTestId("search-user-attribute-btn").click();
+    await assertRowExists(page, exactUserName);
+    await assertRowExists(page, partialUserName);
+
+    // a checked "Exact search" still narrows to the exact match only
+    await page.getByTestId("dropdown-panel-btn").click();
+    await page.getByTestId("exact").check();
+    await page.getByTestId("search-user-attribute-btn").click();
+    await assertRowExists(page, exactUserName);
+    await assertRowExists(page, partialUserName, false);
+  });
+
+  test("does not list service account users in the default list", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed(overrides);
+    await adminClient.createClient({
+      realm: testBed.realm,
+      clientId: "sa-client",
+      enabled: true,
+      publicClient: false,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    await login(page, { to: toUsers({ realm: testBed.realm }) });
+
+    // the default user list sends no attribute query, so it must not send an
+    // `exact` flag either - otherwise the server switches to a filtered query
+    // that includes service account users in the results
+    await assertRowExists(page, exactUserName);
+    await assertRowExists(page, "service-account-sa-client", false);
   });
 });

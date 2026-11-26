@@ -15,7 +15,9 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.common.MultiValuedAttribute;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.schema.attribute.ScimDateTimeUtil;
 import org.keycloak.scim.resource.schema.path.Path;
+import org.keycloak.scim.resource.spi.ScimMutabilityException;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -97,6 +99,11 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
 
     @Override
     public void remove(R resource, M model, String rawPath) {
+        remove(resource, model, rawPath, null);
+    }
+
+    @Override
+    public void remove(R resource, M model, String rawPath, JsonNode value) {
         Objects.requireNonNull(model, "model cannot be null");
 
         if (isBlank(rawPath)) {
@@ -104,9 +111,23 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
 
         Path path = new Path(this, rawPath);
+        boolean hasValue = value != null && !value.isNull();
+
+        if (hasValue && path.hasFilter()) {
+            // the two would select the values to remove in different ways, and one of them would be silently ignored
+            throw new ModelValidationException("Patch operation remove cannot have both a filter in the path and a value");
+        }
 
         for (Entry<Attribute<M, R>, JsonNode> entry : resolveAttributes(path.getPath(), NullNode.getInstance()).entrySet()) {
-            setValue(model, entry.getKey(), path.getValue(entry.getKey()), REMOVE);
+            Attribute<M, R> attribute = entry.getKey();
+            JsonNode values = path.getValue(attribute);
+
+            if (hasValue && attribute.isMultivalued() && attribute.getComplexType() != null) {
+                // the value lists the values to remove, e.g. "members" with [{"value": "<user id>"}], normalized as for add
+                values = ofNullable(resolveAttributes(path.getPath(), value).get(attribute)).orElse(NullNode.getInstance());
+            }
+
+            setValue(model, attribute, values, REMOVE);
         }
     }
 
@@ -159,7 +180,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             throw new RuntimeException("Failed to convert representation to JSON", e);
         }
 
-        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+        for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
             Attribute<M, R> attribute = entry.getValue();
             String scimName = attribute.getName();
             ObjectNode valueNode = resourceNode;
@@ -184,7 +205,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     }
 
     private void populateResourceType(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
-        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+        for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
             Attribute<M, R> attribute = entry.getValue();
 
             if (!attribute.isExcluded(this, requestedAttributes, excludedAttributes)) {
@@ -207,7 +228,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
 
             if (attribute != null) {
-                mappers.put(name, attribute);
+                mappers.put(attribute.getName(), attribute);
             }
         }
 
@@ -259,6 +280,10 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
                 Attribute<M, R> attr = entry.getValue();
 
                 if (hasPath(attr, path)) {
+                    if (valueJson.isObject() && attr.isMultivalued() && attr.getComplexType() != null && attr.equals(getAttributes().get(attr.getName()))) {
+                        // another spelling of the attribute name, e.g. "Members": resolve the object as for "members" instead of unwrapping it
+                        return resolveAttributes(attr.getName(), valueJson);
+                    }
                     return Map.of(attr, resolveAttributeValue(attr, valueJson));
                 }
             }
@@ -353,7 +378,38 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         Objects.requireNonNull(attribute, "attribute cannot be null");
         Objects.requireNonNull(operation, "operation cannot be null");
 
+        if (attribute.isImmutable()) {
+            String modelAttrName = attribute.getModelAttributeName();
+            Object currentValue = modelAttrName == null ? null : getAttributeValue(model, modelAttrName);
+
+            if (operation == SET) {
+                // PUT/create: RFC 7644 §3.5.1 only rejects the request if the attribute already has a value
+                // and the incoming value differs from it; re-submitting the same value is allowed.
+                if (currentValue != null && !valuesEqual(attribute, currentValue, value)) {
+                    throw new ScimMutabilityException(
+                            "Attribute '" + attribute.getName() + "' is immutable");
+                }
+            } else {
+                if (modelAttrName == null || currentValue != null) {
+                    throw new ScimMutabilityException(
+                            "Attribute '" + attribute.getName() + "' is immutable");
+                }
+                if (operation == REMOVE) {
+                    return;
+                }
+            }
+        }
+
         JsonNode jsonValue = toJsonNode(value);
+
+        if (operation != SET && attribute.isMultivalued() && attribute.getComplexType() != null && jsonValue != null && jsonValue.isArray()) {
+            for (JsonNode entry : jsonValue) {
+                if (!entry.isObject()) {
+                    // e.g. "members" with [null] or ["<user id>"] instead of [{"value": "<user id>"}]
+                    throw new ModelValidationException("Each entry of " + attribute.getName() + " must be an object");
+                }
+            }
+        }
 
         switch (operation) {
             case SET -> attribute.set(model, jsonValue);
@@ -361,6 +417,28 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             case REMOVE -> attribute.remove(model, jsonValue);
             default -> throw new ModelException("Invalid operation: " + operation);
         }
+    }
+
+    /**
+     * Compares the current model value of an immutable attribute with the incoming value, to determine whether a
+     * PUT is actually attempting to change it. Timestamp attributes are normalized to epoch milliseconds before
+     * comparing, since the model stores them as {@link Long} while the wire representation is an ISO 8601 string.
+     */
+    private boolean valuesEqual(Attribute<M, R> attribute, Object currentValue, Object incomingValue) {
+        if (attribute.isTimestamp()) {
+            Long incoming;
+
+            try {
+                incoming = incomingValue instanceof Long l ? l : ScimDateTimeUtil.parseDateTime(incomingValue.toString());
+            } catch (IllegalArgumentException e) {
+                throw new ModelValidationException(e.getMessage());
+            }
+
+            Long current = currentValue instanceof Long l ? l : Long.valueOf(currentValue.toString());
+            return current.equals(incoming);
+        }
+
+        return String.valueOf(currentValue).equals(String.valueOf(incomingValue));
     }
 
     private JsonNode toJsonNode(Object value) {

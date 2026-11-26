@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
+import { MissingPolicyReference } from "../../../components/MissingPolicyReference";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { AddScopeDialog } from "../../scopes/AddScopeDialog";
 
@@ -33,10 +34,12 @@ export const ClientScope = () => {
 
   useFetch(
     () => adminClient.clientScopes.find(),
-    (scopes = []) => {
-      const clientScopes = getValues("clientScopes") || [];
+    (scopes) => {
+      const clientScopes = getValues("clientScopes");
       setSelectedScopes(
-        clientScopes.map((s) => scopes.find((c) => c.id === s.id)!),
+        clientScopes.map(
+          (s) => scopes.find((c) => c.id === s.id) ?? { id: s.id },
+        ),
       );
       setScopes(localeSort(scopes, mapByKey("name")));
     },
@@ -109,7 +112,14 @@ export const ClientScope = () => {
           <Tbody>
             {selectedScopes.map((scope, index) => (
               <Tr key={scope.id}>
-                <Td>{scope.name}</Td>
+                <Td>
+                  {scope.name ?? (
+                    <MissingPolicyReference
+                      id={scope.id}
+                      label={t("missingClientScope")}
+                    />
+                  )}
+                </Td>
                 <Td>
                   <Controller
                     name={`clientScopes.${index}.required`}

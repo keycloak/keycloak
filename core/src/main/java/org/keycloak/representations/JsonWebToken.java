@@ -28,16 +28,13 @@ import java.util.Objects;
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
 import org.keycloak.common.util.Time;
-import org.keycloak.json.StringOrArrayDeserializer;
-import org.keycloak.json.StringOrArraySerializer;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.json.KeycloakJsonMapperFactory;
+import org.keycloak.json.StringOrArray;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -47,26 +44,31 @@ public class JsonWebToken implements Serializable, Token {
     public static final String AZP = "azp";
     public static final String AUD = "aud";
     public static final String SUBJECT = "sub";
+    public static final String JTI = "jti";
+    public static final String ISSUER = "iss";
+    public static final String TYPE = "typ";
+    public static final String ISSUED_AT = "iat";
+    public static final String EXPIRED = "exp";
+    public static final String NOT_BEFORE = "nbf";
 
-    @JsonProperty("jti")
+    @JsonProperty(JTI)
     protected String id;
 
     protected Long exp;
     protected Long nbf;
     protected Long iat;
 
-    @JsonProperty("iss")
+    @JsonProperty(ISSUER)
     protected String issuer;
     @JsonProperty(AUD)
-    @JsonSerialize(using = StringOrArraySerializer.class)
-    @JsonDeserialize(using = StringOrArrayDeserializer.class)
+    @StringOrArray
     protected String[] audience;
     @JsonProperty(SUBJECT)
     protected String subject;
-    @JsonProperty("typ")
+    @JsonProperty(TYPE)
     protected String type;
     @JsonProperty(AZP)
-    public String issuedFor;
+    protected String issuedFor;
     protected Map<String, Object> otherClaims = new HashMap<>();
 
     public String getId() {
@@ -324,7 +326,7 @@ public class JsonWebToken implements Serializable, Token {
     @Override
     public String toString() {
         try {
-            return JsonSerialization.writeValueAsString(this);
+            return KeycloakJsonMapperFactory.mapper().writeValueAsString(this);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

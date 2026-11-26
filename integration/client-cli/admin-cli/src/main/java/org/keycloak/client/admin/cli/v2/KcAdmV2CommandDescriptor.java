@@ -2,6 +2,10 @@ package org.keycloak.client.admin.cli.v2;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import static java.util.function.Predicate.not;
+
 /**
  * Compact descriptor for v2 CLI commands.
  * Produced at build time from OpenAPI spec, cached per-server at runtime.
@@ -60,6 +64,18 @@ public class KcAdmV2CommandDescriptor {
         private List<OptionDescriptor> options;
         private List<VariantDescriptor> variants;
 
+        /** Populated during conversion but not serialized — only used for doc example generation. */
+        @JsonIgnore
+        private String operationId;
+
+        public String getOperationId() {
+            return operationId;
+        }
+
+        public void setOperationId(String operationId) {
+            this.operationId = operationId;
+        }
+
         public String getName() {
             return name;
         }
@@ -106,6 +122,10 @@ public class KcAdmV2CommandDescriptor {
 
         public void setRequiresId(boolean requiresId) {
             this.requiresId = requiresId;
+        }
+
+        public boolean hasRequestBody() {
+            return (options != null && options.stream().anyMatch(not(OptionDescriptor::isQueryParam))) || hasVariants();
         }
 
         public boolean isHasResponseBody() {
@@ -197,6 +217,8 @@ public class KcAdmV2CommandDescriptor {
         private boolean array;
         private List<String> enumValues;
         private String parentFieldName;
+        private boolean queryParam;
+        private boolean explode = true;
 
         public String getName() {
             return name;
@@ -252,6 +274,22 @@ public class KcAdmV2CommandDescriptor {
 
         public void setParentFieldName(String parentFieldName) {
             this.parentFieldName = parentFieldName;
+        }
+
+        public boolean isQueryParam() {
+            return queryParam;
+        }
+
+        public void setQueryParam(boolean queryParam) {
+            this.queryParam = queryParam;
+        }
+
+        public boolean isExplode() {
+            return explode;
+        }
+
+        public void setExplode(boolean explode) {
+            this.explode = explode;
         }
     }
 }

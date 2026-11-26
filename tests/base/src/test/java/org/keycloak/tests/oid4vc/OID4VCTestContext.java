@@ -89,13 +89,21 @@ public class OID4VCTestContext {
 
     public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {
         AccessTokenResponse response = assertAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY);
-        return Optional.ofNullable(response)
-                .map(AccessTokenResponse::getOID4VCAuthorizationDetails)
-                .orElse(Collections.emptyList());
+        return response.getOID4VCAuthorizationDetails();
     }
 
     public OID4VCAuthorizationDetail getAuthorizationDetail() {
         List<OID4VCAuthorizationDetail> tokenAuthDetails = getAuthorizationDetails();
+        return tokenAuthDetails.size() == 1 ? tokenAuthDetails.get(0) : null;
+    }
+
+    public List<OID4VCAuthorizationDetail> getAuthorizationDetailsFromAccessToken() {
+        AccessTokenResponse response = assertAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY);
+        return OID4VCAuthorizationDetailsUtil.getAuthorizationDetailsFromAccessToken(response.getAccessToken());
+    }
+
+    public OID4VCAuthorizationDetail getAuthorizationDetailFromAccessToken()  {
+        List<OID4VCAuthorizationDetail> tokenAuthDetails = getAuthorizationDetailsFromAccessToken();
         return tokenAuthDetails.size() == 1 ? tokenAuthDetails.get(0) : null;
     }
 
@@ -180,7 +188,8 @@ public class OID4VCTestContext {
     }
 
     public <T> T assertAttachment(AttachmentKey<T> key) {
-        return Optional.of(getAttachment(key)).get();
+        return Optional.ofNullable(getAttachment(key))
+                .orElseThrow(() -> new IllegalStateException("No attachment for: " + key));
     }
 
     @SuppressWarnings("unchecked")

@@ -23,12 +23,6 @@
             		<groupId>io.vertx</groupId>
             		<artifactId>vertx-uri-template</artifactId>
             	</exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-vertx</artifactId>
-            <exclusions>
                 <exclusion>
                     <groupId>com.aayushatharva.brotli4j</groupId>
                     <artifactId>*</artifactId>
@@ -37,7 +31,11 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-reactive-routes</artifactId>
+            <artifactId>quarkus-vertx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -474,6 +472,37 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ssf-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ssf-transmitter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-ssf-services</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Keycloak Dependencies-->
         <dependency>
             <groupId>org.jboss.logging</groupId>
@@ -747,6 +776,12 @@
         <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
+        </dependency>
+
+        <!-- dbus-java for SSSD -->
+        <dependency>
+            <groupId>com.github.hypfvieh</groupId>
+            <artifactId>dbus-java-transport-native-unixsocket</artifactId>
         </dependency>
     </dependencies>
 

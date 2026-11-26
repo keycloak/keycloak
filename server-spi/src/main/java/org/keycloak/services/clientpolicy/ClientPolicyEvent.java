@@ -33,6 +33,7 @@ public enum ClientPolicyEvent {
     PRE_AUTHORIZATION_REQUEST,
     AUTHORIZATION_REQUEST,
     IMPLICIT_HYBRID_TOKEN_RESPONSE,
+    PRE_TOKEN_REQUEST,
     TOKEN_REQUEST,
     TOKEN_RESPONSE,
     SERVICE_ACCOUNT_TOKEN_REQUEST,
@@ -52,11 +53,25 @@ public enum ClientPolicyEvent {
     DEVICE_TOKEN_REQUEST,
     DEVICE_TOKEN_RESPONSE,
     TOKEN_EXCHANGE_REQUEST,
+    TOKEN_EXCHANGE_RESPONSE,
     RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST,
     RESOURCE_OWNER_PASSWORD_CREDENTIALS_RESPONSE,
     JWT_AUTHORIZATION_GRANT,
+    JWT_AUTHORIZATION_GRANT_RESPONSE,
     IDENTITY_BROKERING_API,
 
     SAML_AUTHN_REQUEST,
     SAML_LOGOUT_REQUEST,
+    REGISTER_NODE,
+
+    REGISTER_PROTOCOL_MAPPER,
+    UPDATE_PROTOCOL_MAPPER,
+    UNREGISTER_PROTOCOL_MAPPER,
+
+    /**
+     * Validate the effective authorization redirect URI before any response can redirect to it.
+     * Conditions and executors receive this event normally. Executors unrelated to redirect URI
+     * validation should ignore it and perform their checks during the regular authorization event.
+     */
+    AUTHORIZATION_REQUEST_REDIRECT_URI,
 }

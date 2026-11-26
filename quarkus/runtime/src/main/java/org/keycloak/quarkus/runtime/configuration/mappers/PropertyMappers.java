@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.MultivaluedHashMap;
@@ -25,6 +26,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
+import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -32,7 +34,6 @@ import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Expressions;
-import org.jboss.logging.Logger;
 
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider.isKeyStoreConfigSource;
@@ -42,7 +43,6 @@ public final class PropertyMappers {
     public static final String KC_SPI_PREFIX = "kc.spi";
     public static String VALUE_MASK = "*******";
     private static MappersConfig MAPPERS;
-    private static final Logger log = Logger.getLogger(PropertyMappers.class);
     private final static List<PropertyMapperGrouping> GROUPINGS;
     static {
         GROUPINGS = List.of(new CachingPropertyMappers(), new DatabasePropertyMappers(),
@@ -166,11 +166,16 @@ public final class PropertyMappers {
         return switch (mappers.size()) {
             case 0 -> null;
             case 1 -> mappers.get(0);
-            default -> {
-                log.tracef("Duplicated mappers for key '%s'. Used the first found.", property);
-                yield mappers.get(0);
-            }
+            default -> mappers.stream().filter(mapper -> !mapper.getOption().isSynthetic()).findFirst().orElse(mappers.get(0));
         };
+    }
+    
+    /**
+     * Get the first non-synthetic wildcard matching the given option.
+     */
+    public static Optional<WildcardPropertyMapper<?>> getWildcardPropertyMapper(Option<?> option) {
+        return MAPPERS.getWildcardMappers().stream()
+                .filter(mapper -> mapper.getOption().getKey().equals(option.getKey()) && !mapper.getOption().isSynthetic()).findFirst();
     }
 
     public static PropertyMapper<?> getMapper(String property) {
@@ -309,20 +314,28 @@ public final class PropertyMappers {
         }
 
         public void sanitizeDisabledMappers(AbstractCommand command) {
-            // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
-            if (isRebuildCheck()) {
-                PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
-            } else {
+            // For a build (explicit, or a potential auto-build) the feature profile and the enabled state of the
+            // mappers must not be influenced by the persisted values, so disable the Persisted CS
+            boolean build = isRebuildCheck() || Build.NAME.equals(command.getName());
+
+            Supplier<Void> sanitize = () -> {
+                // Initialize profile in order to check state of features
                 Environment.getCurrentOrCreateFeatureProfile();
-                if (!command.shouldStart()) {
+                if (!build && !command.shouldStart()) {
                     // this will use the deferred logger, which means it may not be seen in some circumstances
                     Profile.getInstance().logUnsupportedFeatures();
                 }
+
+                sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
+                sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
+                return null;
+            };
+            if (build) {
+                PersistedConfigSource.getInstance().runWithDisabled(sanitize);
+            } else {
+                sanitize.get();
             }
 
-            sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
-            sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
-            
             // enforce single mappings - by dropping multiple mapping synthetics
             entrySet().stream().forEach(e -> {
                 if (e.getValue().size() <= 1) {

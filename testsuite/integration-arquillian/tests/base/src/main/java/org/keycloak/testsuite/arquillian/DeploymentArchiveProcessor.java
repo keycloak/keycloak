@@ -130,12 +130,15 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
                     modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "http", "https");
                     modifyDocElementAttribute(doc, "SP", "logoutPage", "8080", System.getProperty("app.server.https.port"));
                     modifyDocElementAttribute(doc, "SP", "logoutPage", "http", "https");
+                    modifyDocElementAttribute(doc, "IDP", "entityID", "8080", System.getProperty("auth.server.https.port"));
+                    modifyDocElementAttribute(doc, "IDP", "entityID", "http", "https");
                 } else {
                     modifyDocElementAttribute(doc, "SingleSignOnService", "bindingUrl", "8080", System.getProperty("auth.server.http.port"));
                     modifyDocElementAttribute(doc, "SingleSignOnService", "assertionConsumerServiceUrl", "8080", System.getProperty("app.server.http.port"));
                     modifyDocElementAttribute(doc, "SingleLogoutService", "postBindingUrl", "8080", System.getProperty("auth.server.http.port"));
                     modifyDocElementAttribute(doc, "SingleLogoutService", "redirectBindingUrl", "8080", System.getProperty("auth.server.http.port"));
                     modifyDocElementAttribute(doc, "SP", "logoutPage", "8080", System.getProperty("app.server.http.port"));
+                    modifyDocElementAttribute(doc, "IDP", "entityID", "8080", System.getProperty("auth.server.http.port"));
                 }
 
                 archive.add(new StringAsset(IOUtil.documentToString(doc)), adapterConfigPath);

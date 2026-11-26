@@ -18,31 +18,31 @@
 package org.keycloak.models.cache.infinispan;
 
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.UserCacheProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
-import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class InfinispanUserCacheProviderFactory implements UserCacheProviderFactory {
+public class InfinispanUserCacheProviderFactory implements UserCacheProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserCacheProviderFactory.class);
     public static final String USER_CLEAR_CACHE_EVENTS = "USER_CLEAR_CACHE_EVENTS";
     public static final String USER_INVALIDATION_EVENTS = "USER_INVALIDATION_EVENTS";
 
     protected volatile UserCacheManager userCache;
-
-
 
     @Override
     public UserCache create(KeycloakSession session) {
@@ -54,25 +54,15 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
         if (userCache == null) {
             synchronized (this) {
                 if (userCache == null) {
-                    Cache<String, Revisioned> cache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_CACHE_NAME);
-                    Cache<String, Long> revisions = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME);
+                    var ispnProvider = session.getProvider(InfinispanConnectionProvider.class);
+                    var cluster = session.getProvider(ClusterProvider.class);
+
+                    Cache<String, Revisioned> cache = ispnProvider.getCache(InfinispanConnectionProvider.USER_CACHE_NAME);
+                    Cache<String, Long> revisions = ispnProvider.getCache(USER_REVISIONS_CACHE_NAME);
                     userCache = new UserCacheManager(cache, revisions);
 
-                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-
-                    cluster.registerListener(USER_INVALIDATION_EVENTS, (ClusterEvent event) -> {
-
-                        InvalidationEvent invalidationEvent = (InvalidationEvent) event;
-                        userCache.invalidationEventReceived(invalidationEvent);
-
-                    });
-
-                    cluster.registerListener(USER_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
-
-                        userCache.clear();
-
-                    });
-
+                    cluster.registerListener(USER_INVALIDATION_EVENTS, userCache::onInvalidateEvent);
+                    cluster.registerListener(USER_CLEAR_CACHE_EVENTS, userCache::onClearEvent);
                     log.debug("Registered cluster listeners");
                 }
             }
@@ -95,5 +85,10 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
     @Override
     public String getId() {
         return "default";
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return config.getBoolean("enabled", !Profile.isFeatureEnabled(Profile.Feature.STATELESS));
     }
 }

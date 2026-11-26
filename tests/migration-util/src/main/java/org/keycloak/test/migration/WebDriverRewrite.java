@@ -24,10 +24,10 @@ public class WebDriverRewrite extends TestRewrite {
                 if (n.trim().equals("@Drone")) {
                     content.remove(i);
                     if (content.get(i).trim().equals("@SecondBrowser")) {
-                        content.add(i, n.replace("@Drone", "@InjectWebDriver(ref = \"secondDriver\")"))     ;
+                        content.add(i, n.replace("@Drone", "@InjectWebDriver(ref = \"secondDriver\")"));
                         content.remove(i + 1);
                     } else if (content.get(i).trim().equals("@ThirdBrowser")){
-                        content.add(i, n.replace("@Drone", "@InjectWebDriver(ref = \"thirdDriver\")"))     ;
+                        content.add(i, n.replace("@Drone", "@InjectWebDriver(ref = \"thirdDriver\")"));
                         content.remove(i + 1);
                     } else {
                         content.add(i, n.replace("@Drone", "@InjectWebDriver"));

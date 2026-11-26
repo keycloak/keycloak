@@ -73,7 +73,7 @@ public enum UserProfileContext {
     /**
      * In this context, a user profile is managed through the management interface such as the Admin API.
      */
-    SCIM(false, false, false);
+    SCIM(true, false, false);
 
     private final boolean resetEmailVerified;
     private final Predicate<String> attributeSelector;

@@ -29,6 +29,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 public interface WorkflowStepProviderFactory<P extends WorkflowStepProvider> extends ComponentFactory<P, WorkflowStepProvider>, EnvironmentDependentProviderFactory {
 
+    @Override
+    default boolean isInternal() {
+        return true;
+    }
+
     /**
      * Supported types, usually one type but could be more (RestartStep for example)
      */

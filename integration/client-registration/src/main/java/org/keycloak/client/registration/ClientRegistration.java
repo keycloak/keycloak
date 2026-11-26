@@ -20,7 +20,6 @@ package org.keycloak.client.registration;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -45,12 +44,9 @@ public class ClientRegistration {
     }
 
     private final String JSON = "application/json";
-    private final String XML = "application/xml";
 
     private final String DEFAULT = "default";
-    private final String INSTALLATION = "install";
     private final String OIDC = "openid-connect";
-    private final String SAML = "saml2-entity-descriptor";
 
     private HttpUtil httpUtil;
 
@@ -85,11 +81,6 @@ public class ClientRegistration {
         return resultStream != null ? deserialize(resultStream, ClientRepresentation.class) : null;
     }
 
-    public AdapterConfig getAdapterConfig(String clientId) throws ClientRegistrationException {
-        InputStream resultStream = httpUtil.doGet(JSON, INSTALLATION, clientId);
-        return resultStream != null ? deserialize(resultStream, AdapterConfig.class) : null;
-    }
-
     public ClientRepresentation update(ClientRepresentation client) throws ClientRegistrationException {
         String content = serialize(client);
         InputStream resultStream = httpUtil.doPut(content, JSON, UTF_8, JSON, DEFAULT, client.getClientId());
@@ -106,10 +97,6 @@ public class ClientRegistration {
 
     public OIDCClientRegistration oidc() {
         return new OIDCClientRegistration();
-    }
-
-    public SAMLClientRegistration saml() {
-        return new SAMLClientRegistration();
     }
 
     public static String serialize(Object obj) throws ClientRegistrationException {
@@ -153,15 +140,6 @@ public class ClientRegistration {
 
         public void delete(String clientId) throws ClientRegistrationException {
             httpUtil.doDelete(OIDC, clientId);
-        }
-
-    }
-
-    public class SAMLClientRegistration {
-
-        public ClientRepresentation create(String entityDescriptor) throws ClientRegistrationException {
-            InputStream resultStream = httpUtil.doPost(entityDescriptor, XML, UTF_8, JSON, SAML);
-            return deserialize(resultStream, ClientRepresentation.class);
         }
 
     }

@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
-import org.keycloak.cluster.ClusterProvider.DCNotify;
 import org.keycloak.cluster.infinispan.TaskCallback;
 import org.keycloak.cluster.infinispan.WrapperClusterEvent;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
@@ -89,11 +88,11 @@ public class RemoteInfinispanNotificationManager {
         return existing != null ? existing : callback;
     }
 
-    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender, DCNotify dcNotify) {
+    public void notify(String taskKey, Collection<? extends ClusterEvent> events, boolean ignoreSender) {
         if (events == null || events.isEmpty()) {
             return;
         }
-        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), nodeInfo.siteName(), dcNotify, ignoreSender);
+        var wrappedEvent = WrapperClusterEvent.wrap(taskKey, events, nodeInfo.nodeName(), ignoreSender);
 
         var eventKey = SecretGenerator.getInstance().generateSecureID();
 
@@ -168,7 +167,7 @@ public class RemoteInfinispanNotificationManager {
             return;
         }
 
-        if (event.rejectEvent(nodeInfo.nodeName(), nodeInfo.siteName())) {
+        if (event.rejectEvent(nodeInfo.nodeName())) {
             return;
         }
 

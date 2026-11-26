@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.httpclient;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -24,16 +25,17 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
 
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -43,6 +45,11 @@ import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.checkerframework.checker.calledmethods.qual.EnsuresCalledMethods;
+import org.checkerframework.checker.mustcall.qual.CreatesMustCallFor;
+import org.checkerframework.checker.mustcall.qual.MustCall;
+import org.checkerframework.checker.mustcall.qual.NotOwning;
+import org.checkerframework.checker.mustcall.qual.Owning;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.StringUtil.isBlank;
@@ -57,7 +64,8 @@ import static org.keycloak.utils.StringUtil.isBlank;
  * }
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultHttpClientFactory implements HttpClientFactory {
+@MustCall("close")
+public class DefaultHttpClientFactory implements HttpClientFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);
     private static final String configScope = "keycloak.connectionsHttpClient.default.";
@@ -68,7 +76,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     public static final String MAX_CONSUMED_RESPONSE_SIZE = "max-consumed-response-size";
     public static final String ALLOW_REDIRECTS = "allow-redirects";
 
-    private volatile CloseableHttpClient httpClient;
+    @Owning private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
 
     private BasicResponseHandler stringResponseHandler;
@@ -76,6 +84,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private final InputStreamResponseHandler inputStreamResponseHandler = new InputStreamResponseHandler();
     private long maxConsumedResponseSize;
 
+    // Resource types in generic arguments are unsupported (manual section 8.10); the caller owns the returned stream.
+    @SuppressWarnings("type.argument")
     private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
 
         @Override
@@ -83,10 +93,6 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             return entity.getContent();
         }
 
-        @Override
-        public InputStream handleResponse(HttpResponse response) throws IOException {
-            return super.handleResponse(response);
-        }
     }
 
     @Override
@@ -95,7 +101,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
         return new HttpClientProvider() {
             @Override
-            public CloseableHttpClient getHttpClient() {
+            public @NotOwning CloseableHttpClient getHttpClient() {
                 return httpClient;
             }
 
@@ -123,23 +129,37 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             @Override
             public String getString(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
-                HttpResponse response = httpClient.execute(request);
-                String body = stringResponseHandler.handleResponse(response);
-                if (body == null) {
-                    throw new IOException("No content returned from HTTP call");
+                try (CloseableHttpResponse response = httpClient.execute(request)) {
+                    String body = stringResponseHandler.handleResponse(response);
+                    if (body == null) {
+                        throw new IOException("No content returned from HTTP call");
+                    }
+                    return body;
                 }
-                return body;
             }
 
             @Override
             public InputStream getInputStream(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
-                HttpResponse response = httpClient.execute(request);
-                InputStream body = inputStreamResponseHandler.handleResponse(response);
-                if (body == null) {
-                    throw new IOException("No content returned from HTTP call");
+                CloseableHttpResponse response = httpClient.execute(request);
+                try {
+                    InputStream body = inputStreamResponseHandler.handleResponse(response);
+                    if (body == null) {
+                        throw new IOException("No content returned from HTTP call");
+                    }
+                    return new FilterInputStream(body) {
+                        @Override
+                        public void close() throws IOException {
+                            try (response) {
+                                super.close();
+                            }
+                        }
+                    };
+                } catch (IOException | RuntimeException | Error e) {
+                    try (response) {
+                        throw e;
+                    }
                 }
-                return body;
             }
 
             @Override
@@ -150,6 +170,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     }
 
     @Override
+    @EnsuresCalledMethods(value = "httpClient", methods = "close")
     public void close() {
         try {
             if (httpClient != null) {
@@ -170,6 +191,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         this.config = config;
     }
 
+    @CreatesMustCallFor("this")
     private void lazyInit(KeycloakSession session) {
         if (httpClient == null) {
             synchronized(this) {
@@ -454,6 +476,11 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .defaultValue("0.5")
                 .add()
                 .build();
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.HTTP_CLIENT);
     }
 
     private boolean getBooleanConfigWithSysPropFallback(String key, boolean defaultValue) {

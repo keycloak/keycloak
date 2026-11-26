@@ -93,7 +93,7 @@ export const TranslatableField = ({
     if (predefinedAttributes?.includes(value)) {
       return;
     }
-    if (realm?.internationalizationEnabled && value) {
+    if (realm.internationalizationEnabled && value) {
       setValue(fieldName, `\${${prefix}.${value}}`);
     }
   }, [value]);
@@ -131,11 +131,11 @@ export const TranslatableField = ({
           <TextInput
             id={`kc-attribute-${fieldName}`}
             data-testid={`attributes-${fieldName}`}
-            isDisabled={realm?.internationalizationEnabled}
+            isDisabled={realm.internationalizationEnabled}
             {...register(fieldName)}
           />
         </InputGroupItem>
-        {realm?.internationalizationEnabled && (
+        {realm.internationalizationEnabled && (
           <InputGroupItem>
             <Button
               variant="link"
@@ -148,7 +148,7 @@ export const TranslatableField = ({
           </InputGroupItem>
         )}
       </InputGroup>
-      {realm?.internationalizationEnabled && (
+      {realm.internationalizationEnabled && (
         <FormHelperText>
           <Alert
             variant="info"

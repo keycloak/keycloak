@@ -27,7 +27,7 @@ export class Components extends Resource<{ realm?: string }> {
 
   public findOne = this.makeRequest<
     { id: string },
-    ComponentRepresentation | undefined
+    ComponentRepresentation | null
   >({
     method: "GET",
     path: "/{id}",

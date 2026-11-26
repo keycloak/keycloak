@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.keycloak.common.util.Time;
@@ -41,11 +42,25 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
 
     private static final String ENTRY_KEY = "json";
+    private static final String CACHE_KEY_PREFIX = "oid4vc_offer:";
 
     private final KeycloakSession session;
 
     DefaultCredentialOfferStorage(KeycloakSession session) {
         this.session = session;
+    }
+
+    /**
+     * Builds a cache key for credential offer state entries.
+     * <p>
+     * The key is namespaced by a prefix and the realm ID to prevent cross-realm
+     * cache collisions, similar to how {@code ParEndpoint} uses the {@code par:} prefix.
+     *
+     * @param offerId The credential offer ID
+     * @return The fully qualified cache key
+     */
+    private String buildCacheKey(String offerId) {
+        return CACHE_KEY_PREFIX + session.getContext().getRealm().getId() + ":" + offerId;
     }
 
     /**
@@ -55,7 +70,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
      * @return Lifespan in seconds, or 0 if the entry is already expired
      */
     private long calculateLifespanSeconds(long expiresAt) {
-        long currentTime = Time.currentTime();
+        long currentTime = Time.currentTimeSeconds();
         long lifespan = expiresAt - currentTime;
         
         // If already expired or about to expire immediately, skip storage
@@ -74,18 +89,16 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
             return;
         }
         
+        SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
+        String cacheKey = buildCacheKey(entry.getCredentialsOfferId());
         String entryJson = JsonSerialization.valueAsString(entry);
 
-        // Store with key=offerId
-        session.singleUseObjects().put(entry.getCredentialsOfferId(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
-
-        // Store with key=nonce
-        session.singleUseObjects().put(entry.getNonce(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
+        singleUseObjects.put(cacheKey, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
     }
 
     @Override
     public CredentialOfferState getOfferStateById(String offerId) {
-        return Optional.ofNullable(session.singleUseObjects().get(offerId))
+        return Optional.ofNullable(session.singleUseObjects().get(buildCacheKey(offerId)))
                 .map(o -> o.get(ENTRY_KEY))
                 .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
                 .orElse(null);
@@ -93,16 +106,19 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
     @Override
     public CredentialOfferState getOfferStateByNonce(String nonce) {
-        return Optional.ofNullable(session.singleUseObjects().get(nonce))
-                .map(o -> o.get(ENTRY_KEY))
-                .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
-                .orElse(null);
+        String offerId = CredentialOfferLookupKey.extractOfferId(nonce);
+        if (offerId == null) {
+            return null;
+        }
+        CredentialOfferState offerState = getOfferStateById(offerId);
+        if (offerState == null || !Objects.equals(nonce, offerState.getNonce())) {
+            return null;
+        }
+        return offerState;
     }
 
     @Override
     public void removeOfferState(CredentialOfferState offerState) {
-        SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
-        singleUseObjects.remove(offerState.getCredentialsOfferId());
-        singleUseObjects.remove(offerState.getNonce());
+        session.singleUseObjects().remove(buildCacheKey(offerState.getCredentialsOfferId()));
     }
 }

@@ -194,27 +194,121 @@ export const OpenIdConnectCompatibilityModes = ({
           )}
         />
       </FormGroup>
+      <FormGroup
+        label={t("allowTokenIntrospectionWithoutAudienceCheck")}
+        fieldId="allowTokenIntrospectionWithoutAudienceCheck"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("allowTokenIntrospectionWithoutAudienceCheckHelp")}
+            fieldLabelId="allowTokenIntrospectionWithoutAudienceCheck"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.allow.token.introspection.without.audience.check",
+          )}
+          defaultValue=""
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="allowTokenIntrospectionWithoutAudienceCheck"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={field.value === "true"}
+              onChange={(_event, value) => field.onChange(value.toString())}
+              aria-label={t("allowTokenIntrospectionWithoutAudienceCheck")}
+            />
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("allowUserinfoWithLightweightAccessToken")}
+        fieldId="allowUserinfoWithLightweightAccessToken"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("allowUserinfoWithLightweightAccessTokenHelp")}
+            fieldLabelId="allowUserinfoWithLightweightAccessToken"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.allow.userinfo.with.lightweight.access.token",
+          )}
+          defaultValue=""
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="allowUserinfoWithLightweightAccessToken"
+              label={t("on")}
+              labelOff={t("off")}
+              isChecked={field.value === "true"}
+              onChange={(_event, value) => field.onChange(value.toString())}
+              aria-label={t("allowUserinfoWithLightweightAccessToken")}
+            />
+          )}
+        />
+      </FormGroup>
 
       {isFeatureEnabled(Feature.StandardTokenExchangeV2) && (
-        <SelectControl
-          name={convertAttributeNameToForm<FormFields>(
-            "attributes.standard.token.exchange.enableRefreshRequestedTokenType",
-          )}
-          label={t("enableRefreshRequestedTokenType")}
-          labelIcon={t("enableRefreshRequestedTokenTypeHelp")}
-          controller={{
-            defaultValue: "",
-          }}
-          isDisabled={
-            tokenExchangeEnabled?.toString() !== "true" ||
-            useRefreshTokens?.toString() !== "true"
-          }
-          options={[
-            { key: "", value: t("choose") },
-            { key: "NO", value: t("no") },
-            { key: "SAME_SESSION", value: t("sameSession") },
-          ]}
-        />
+        <>
+          <FormGroup
+            label={t("allowExchangeTokenExpirationAfterSubjectTokenExpiration")}
+            fieldId="allowExchangeTokenExpirationAfterSubjectTokenExpiration"
+            hasNoPaddingTop
+            labelIcon={
+              <HelpItem
+                helpText={t(
+                  "allowExchangeTokenExpirationAfterSubjectTokenExpirationHelp",
+                )}
+                fieldLabelId="allowExchangeTokenExpirationAfterSubjectTokenExpiration"
+              />
+            }
+          >
+            <Controller
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.standard.token.exchange.allowTokenExpirationAfterSubjectTokenExpiration",
+              )}
+              defaultValue="false"
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  id="allowExchangeTokenExpirationAfterSubjectTokenExpiration"
+                  label={t("on")}
+                  labelOff={t("off")}
+                  isChecked={field.value === "true"}
+                  isDisabled={tokenExchangeEnabled?.toString() !== "true"}
+                  onChange={(_event, value) => field.onChange(value.toString())}
+                  aria-label={t(
+                    "allowExchangeTokenExpirationAfterSubjectTokenExpiration",
+                  )}
+                />
+              )}
+            />
+          </FormGroup>
+          <SelectControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.standard.token.exchange.enableRefreshRequestedTokenType",
+            )}
+            label={t("enableRefreshRequestedTokenType")}
+            labelIcon={t("enableRefreshRequestedTokenTypeHelp")}
+            controller={{
+              defaultValue: "",
+            }}
+            isDisabled={
+              tokenExchangeEnabled?.toString() !== "true" ||
+              useRefreshTokens?.toString() !== "true"
+            }
+            options={[
+              { key: "", value: t("choose") },
+              { key: "NO", value: t("no") },
+              { key: "SAME_SESSION", value: t("sameSession") },
+            ]}
+          />
+        </>
       )}
       {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
         jwtAuthorizationGrantEnabled.toString() === "true" &&

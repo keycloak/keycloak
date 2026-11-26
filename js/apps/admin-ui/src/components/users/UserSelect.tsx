@@ -13,6 +13,7 @@ import {
   Select,
   SelectList,
   SelectOption,
+  Spinner,
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
@@ -24,6 +25,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import useToggle from "../../utils/useToggle";
+import { MissingPolicyReference } from "../MissingPolicyReference";
 import type { ComponentProps } from "../dynamic/components";
 
 type UserSelectVariant = "typeaheadMulti" | "typeahead";
@@ -31,7 +33,18 @@ type UserSelectVariant = "typeaheadMulti" | "typeahead";
 type UserSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: UserSelectVariant;
   isRequired?: boolean;
+  showMissing?: boolean;
 };
+
+const USER_SEARCH_LIMIT = 20;
+const SHOW_MORE = "show-more";
+
+// The search also matches email and first/last name, so show them alongside
+// the username to explain why a user was matched.
+const describeUser = ({ firstName, lastName, email }: UserRepresentation) =>
+  [[firstName, lastName].filter(Boolean).join(" "), email]
+    .filter(Boolean)
+    .join(" · ") || undefined;
 
 export const UserSelect = ({
   name,
@@ -40,6 +53,7 @@ export const UserSelect = ({
   defaultValue,
   isRequired,
   variant = "typeaheadMulti",
+  showMissing = false,
 }: UserSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -53,12 +67,26 @@ export const UserSelect = ({
 
   const [open, toggleOpen, setOpen] = useToggle();
   const [selectedUsers, setSelectedUsers] = useState<UserRepresentation[]>([]);
-  const [searchedUsers, setSearchedUsers] = useState<UserRepresentation[]>([]);
+  const [pageUsers, setPageUsers] = useState<UserRepresentation[]>([]);
+  const [exactMatch, setExactMatch] = useState<UserRepresentation>();
+  const [first, setFirst] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
   const textInputRef = useRef<HTMLInputElement>();
 
-  const debounceFn = useCallback(debounce(setSearch, 500), []);
+  const debounceFn = useCallback(
+    debounce((value: string) => {
+      setFirst(0);
+      setHasMore(false);
+      setLoadingMore(false);
+      setPageUsers([]);
+      setExactMatch(undefined);
+      setSearch(value);
+    }, 500),
+    [],
+  );
 
   useFetch(
     async () => {
@@ -67,10 +95,13 @@ export const UserSelect = ({
       }
 
       const foundUsers = await Promise.all(
-        values.map((id) => adminClient.users.findOne({ id })),
+        values.map(async (id) => {
+          const user = await adminClient.users.findOne({ id });
+          return user ?? (showMissing ? { id } : null);
+        }),
       );
 
-      return foundUsers.filter((user) => user !== undefined);
+      return foundUsers.filter((user) => user !== null);
     },
     (users) => {
       setSelectedUsers(users);
@@ -82,12 +113,30 @@ export const UserSelect = ({
   );
 
   useFetch(
-    async () =>
+    () =>
       adminClient.users.find({
-        username: search,
-        max: 20,
+        search,
+        first,
+        max: USER_SEARCH_LIMIT + 1,
       }),
-    setSearchedUsers,
+    (page) => {
+      const more = page.length > USER_SEARCH_LIMIT;
+      const nextUsers = more ? page.slice(0, USER_SEARCH_LIMIT) : page;
+      setPageUsers((current) =>
+        first === 0 ? nextUsers : [...current, ...nextUsers],
+      );
+      setHasMore(more);
+      setLoadingMore(false);
+    },
+    [search, first],
+  );
+
+  useFetch(
+    () =>
+      search
+        ? adminClient.users.find({ username: search, exact: true, max: 1 })
+        : Promise.resolve<UserRepresentation[]>([]),
+    (matches) => setExactMatch(matches.at(0)),
     [search],
   );
 
@@ -97,6 +146,16 @@ export const UserSelect = ({
       setInputValue("");
     }
   }, [values]);
+
+  const searchedUsers = useMemo(() => {
+    if (!exactMatch) {
+      return pageUsers;
+    }
+    return [
+      exactMatch,
+      ...pageUsers.filter((user) => user.id !== exactMatch.id),
+    ];
+  }, [exactMatch, pageUsers]);
 
   const users = useMemo(
     () => [...selectedUsers, ...searchedUsers],
@@ -109,6 +168,7 @@ export const UserSelect = ({
         key={option.id}
         value={option.id}
         selected={values?.includes(option.id!)}
+        description={describeUser(option)}
       >
         {option.username}
       </SelectOption>
@@ -118,7 +178,17 @@ export const UserSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={<HelpItem helpText={helpText!} fieldLabelId={t(label!)} />}
+      labelIcon={
+        <HelpItem
+          helpText={
+            <>
+              <p>{helpText}</p>
+              <p className="pf-v5-u-mt-sm">{t("userSelectSearchHelp")}</p>
+            </>
+          }
+          fieldLabelId={t(label!)}
+        />
+      }
       fieldId={name!}
     >
       <Controller
@@ -133,6 +203,8 @@ export const UserSelect = ({
         render={({ field }) => (
           <Select
             id={name!}
+            isScrollable
+            maxMenuHeight="300px"
             onOpenChange={toggleOpen}
             toggle={(ref) => (
               <MenuToggle
@@ -179,10 +251,17 @@ export const UserSelect = ({
                                   );
                                 }}
                               >
-                                {
-                                  users.find((u) => u?.id === selection)
-                                    ?.username
-                                }
+                                {users.find((u) => u.id === selection)
+                                  ?.username ??
+                                  (showMissing &&
+                                    selectedUsers.some(
+                                      (user) => user.id === selection,
+                                    ) && (
+                                      <MissingPolicyReference
+                                        id={selection}
+                                        label={t("missingUser")}
+                                      />
+                                    ))}
                               </Chip>
                             ),
                           )}
@@ -194,10 +273,16 @@ export const UserSelect = ({
                       <Button
                         variant="plain"
                         onClick={() => {
+                          debounceFn.cancel();
                           setInputValue("");
+                          setFirst(0);
+                          setHasMore(false);
+                          setLoadingMore(false);
+                          setPageUsers([]);
+                          setExactMatch(undefined);
                           setSearch("");
                           field.onChange([]);
-                          textInputRef?.current?.focus();
+                          textInputRef.current?.focus();
                         }}
                         aria-label="Clear input value"
                       >
@@ -212,6 +297,11 @@ export const UserSelect = ({
             selected={field.value}
             onSelect={(_, v) => {
               const option = v?.toString();
+              if (option === SHOW_MORE) {
+                setLoadingMore(true);
+                setFirst((f) => f + USER_SEARCH_LIMIT);
+                return;
+              }
               if (variant !== "typeaheadMulti") {
                 const removed = field.value.includes(option);
 
@@ -224,7 +314,7 @@ export const UserSelect = ({
                 setInputValue(
                   removed
                     ? ""
-                    : users.find((u) => u?.id === option)?.username || "",
+                    : users.find((u) => u.id === option)?.username || "",
                 );
                 setOpen(false);
               } else {
@@ -238,7 +328,27 @@ export const UserSelect = ({
             }}
             aria-label={t(name!)}
           >
-            <SelectList>{convert(searchedUsers)}</SelectList>
+            <SelectList>
+              {convert(searchedUsers)}
+              {hasMore && (
+                <SelectOption
+                  key={SHOW_MORE}
+                  value={SHOW_MORE}
+                  isDisabled={loadingMore}
+                  aria-label={
+                    loadingMore ? t("spinnerLoading") : t("showMoreUsers")
+                  }
+                >
+                  {loadingMore ? (
+                    <>
+                      <Spinner size="sm" /> {t("spinnerLoading")}
+                    </>
+                  ) : (
+                    t("showMore")
+                  )}
+                </SelectOption>
+              )}
+            </SelectList>
           </Select>
         )}
       />

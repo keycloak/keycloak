@@ -30,6 +30,8 @@ public interface AccountRoles {
     String MANAGE_CONSENT = "manage-consent";
     String DELETE_ACCOUNT = "delete-account";
     String VIEW_GROUPS = "view-groups";
+    String VIEW_VERIFIABLE_CREDENTIALS = "view-verifiable-credentials";
+    String MANAGE_VERIFIABLE_CREDENTIALS = "manage-verifiable-credentials";
 
     String[] DEFAULT = {VIEW_PROFILE, MANAGE_ACCOUNT};
 

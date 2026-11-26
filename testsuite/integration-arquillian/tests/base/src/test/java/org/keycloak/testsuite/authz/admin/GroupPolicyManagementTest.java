@@ -223,7 +223,7 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
         groups.group(group.getId()).remove();
 
         GroupPolicyRepresentation actual = getClient().authorization().policies().group().findByName(representation.getName());
-        assertEquals(0, actual.getGroups().size());
+        assertEquals(1, actual.getGroups().size());
     }
 
     private void assertCreated(AuthorizationResource authorization, GroupPolicyRepresentation representation) {

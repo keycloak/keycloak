@@ -6,6 +6,7 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Flex,
   Form,
   Modal,
   ModalVariant,
@@ -43,7 +44,7 @@ export const ExecutionConfigModal = ({
     useState<AuthenticatorConfigInfoRepresentation>();
 
   const form = useForm<ExecutionConfigModalForm>();
-  const { setValue, handleSubmit } = form;
+  const { setValue, handleSubmit, reset } = form;
 
   // default config all executions should have
   const defaultConfigProperties = execution.authenticationFlow
@@ -170,34 +171,46 @@ export const ExecutionConfigModal = ({
               />
             </FormProvider>
             <ActionGroup>
-              <Button data-testid="save" variant="primary" type="submit">
-                {t("save")}
-              </Button>
-              <Button
-                data-testid="cancel"
-                variant={ButtonVariant.link}
-                onClick={() => {
-                  setShow(false);
-                }}
+              <Flex
+                className="pf-v5-u-flex-grow-1"
+                justifyContent={{ default: "justifyContentSpaceBetween" }}
               >
-                {t("cancel")}
-              </Button>
-              {config && (
-                <Button
-                  className="pf-v5-u-ml-4xl"
-                  data-testid="clear"
-                  variant={ButtonVariant.link}
-                  onClick={async () => {
-                    await adminClient.authenticationManagement.delConfig({
-                      id: config.id!,
-                    });
-                    setConfig(undefined);
-                    setShow(false);
-                  }}
-                >
-                  {t("clear")} <TrashIcon />
-                </Button>
-              )}
+                <div>
+                  <Button
+                    className="pf-v5-u-mr-md"
+                    data-testid="save"
+                    variant="primary"
+                    type="submit"
+                  >
+                    {t("save")}
+                  </Button>
+                  <Button
+                    data-testid="cancel"
+                    variant={ButtonVariant.link}
+                    onClick={() => {
+                      setShow(false);
+                    }}
+                  >
+                    {t("cancel")}
+                  </Button>
+                </div>
+                {config && (
+                  <Button
+                    data-testid="clear"
+                    variant={ButtonVariant.link}
+                    onClick={async () => {
+                      await adminClient.authenticationManagement.delConfig({
+                        id: config.id!,
+                      });
+                      setConfig(undefined);
+                      reset();
+                      setShow(false);
+                    }}
+                  >
+                    {t("clear")} <TrashIcon />
+                  </Button>
+                )}
+              </Flex>
             </ActionGroup>
           </Form>
         </Modal>

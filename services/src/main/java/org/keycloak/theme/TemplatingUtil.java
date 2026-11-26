@@ -17,12 +17,18 @@
 
 package org.keycloak.theme;
 
+import java.io.IOException;
 import java.util.Properties;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 public class TemplatingUtil {
+
+    public static String getWelcomeTemplateName(Theme theme) throws IOException {
+        return theme.getType() == Theme.Type.WELCOME && theme.getTemplate("index.ftl") != null
+                ? "index.ftl" : "welcome.ftl";
+    }
 
     public static String resolveVariables(String text, Properties props) {
         return resolveVariables(text, props, "${", "}");

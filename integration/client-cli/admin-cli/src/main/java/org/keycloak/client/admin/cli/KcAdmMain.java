@@ -23,6 +23,7 @@ import java.util.Set;
 import org.keycloak.client.admin.cli.commands.KcAdmCmd;
 import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
 import org.keycloak.client.admin.cli.v2.KcAdmV2Completer;
+import org.keycloak.client.cli.common.BaseGlobalOptionsCmd;
 import org.keycloak.client.cli.common.CommandState;
 import org.keycloak.client.cli.common.Globals;
 import org.keycloak.client.cli.util.OsUtil;
@@ -73,7 +74,38 @@ public class KcAdmMain {
             KcAdmV2Completer.complete(stripArgs(v2Args, COMPLETE_FLAG),
                     new PrintWriter(System.out, true));
         } else {
+            showHelpForLeafCommand(v2Args);
             Globals.main(v2Args, new KcAdmV2Cmd(v2Args), CMD, DEFAULT_CONFIG_FILE_STRING);
+        }
+    }
+
+    /**
+     * This assures that the root command or the config command shows help if user (by mistake?)
+     * does not use the {@code --help} option on the leaf command, e.g.
+     * <code>
+     * kcadm.sh --v2 --help client
+     * kcadm.sh --v2 config --help editor
+     * </code>
+     * They require special treatment as they extend the {@link BaseGlobalOptionsCmd} unlike v2 commands generated
+     * from the OpenAPI specification.
+     * Additionally, this also improves default behavior: whenever the help is requested, we show it for the leaf command.
+     * Reasoning here is that if users write commands like:
+     * <pre>{@code
+     * kcadm.sh --v2 --help client list
+     * kcadm.sh --v2 client --help list
+     * }</pre>
+     * they probably want to see the {@code list} command help, or they would stop typing after the {@code --help}.
+     */
+    public static void showHelpForLeafCommand(String[] v2Args) {
+        if (v2Args.length > 1) {
+            for (int i = 0; i < v2Args.length - 1; i++) {
+                if ("--help".equals(v2Args[i]) || "-h".equals(v2Args[i])) {
+                    String helpFlag = v2Args[i];
+                    System.arraycopy(v2Args, i + 1, v2Args, i, v2Args.length - i - 1);
+                    v2Args[v2Args.length - 1] = helpFlag;
+                    break;
+                }
+            }
         }
     }
 

@@ -25,7 +25,7 @@ Elytron OIDC or SpringBoot. You can check the quickstarts also for the example o
 
 = Upgrade to PatternFly 5
 
-In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://www.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
+In {project_name} 24, the Welcome page is updated to use https://www.patternfly.org/[PatternFly 5], the latest version of the design system that underpins the user interface of {project_name}. In this release, the  Admin Console and Account Console are also updated to use PatternFly 5. If you want to extend and customize the Admin Console and Account Console, review https://v5-archive.patternfly.org/get-started/upgrade/[the changes in PatternFly 5] and update your customizations accordingly.
 
 = Argon2 password hashing
 
@@ -109,7 +109,7 @@ The following APIs for setting custom cookies have been removed:
 The Keycloak 23 release provided improvements for when a user is authenticated in parallel in multiple browser tabs. However, this improvement did not address the case when an authentication session
 expired. Now for the case when user is already logged-in in one browser tab and an authentication session expired in other browser tabs, {project_name} is able to redirect back to the client
 application with an OIDC/SAML error, so the client application can immediately retry authentication, which should usually automatically log in the application because of the SSO session. For more
-details, see link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions].
+details, see link:{adminguide_link}#authentication-sessions[{adminguide_name} authentication sessions].
 
 = Lightweight access token to be even more lightweight
 

@@ -26,7 +26,7 @@ import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -47,10 +47,10 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFac
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
@@ -63,6 +63,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.device.DeviceAuthorizationResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
@@ -81,7 +82,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -89,7 +89,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest {
 
     @Page
@@ -417,7 +416,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(400, response.getStatusCode());
@@ -440,14 +439,19 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
@@ -505,7 +509,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
@@ -654,7 +658,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.realm(REALM_NAME);
         oauth.client(clientId);
         oauth.openLoginForm();
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("Exception thrown intentionally", errorPage.getError());
     }
 
@@ -690,7 +694,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertEquals(200, response.getStatusCode());

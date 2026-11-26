@@ -25,12 +25,12 @@ public class IdpConfirmOverrideLinkPage extends LanguageComboboxAwarePage {
     @FindBy(id = "confirmOverride")
     private WebElement confirmOverrideButton;
 
-    @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
+    @FindBy(css = "div[class^='pf-v6-c-alert'], div[class^='alert-error']")
     private WebElement message;
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver).equals("Broker link already exists");
+    public String getExpectedPageId() {
+        return "login-login-idp-link-confirm-override";
     }
 
     public String getMessage() {

@@ -2,7 +2,7 @@
 
 = Using default groups
 [role="_abstract"]
-To automatically assign group membership to any users who is created or who is imported through <<_identity_broker, Identity Brokering>>, you use default groups.
+To automatically assign group membership to any users who is created or who is imported through <<identity_broker, Identity Brokering>>, you use default groups.
 
 . Click *Realm settings* in the menu.
 . Click the *User registration* tab.

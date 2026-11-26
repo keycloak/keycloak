@@ -26,14 +26,8 @@ export function generateEncodedPath<Path extends string>(
   originalPath: Path,
   params: PathParams<Path>,
 ): string {
-  // Clone the params object so we don't mutate the original.
-  const encodedParams = structuredClone(params);
-
-  // Encode each param in the path so that it can be used in a URL.
-  for (const key in encodedParams) {
-    const pathKey = key as PathParam<Path>;
-    encodedParams[pathKey] = encodeURIComponent(encodedParams[pathKey]);
-  }
-
-  return generatePath(originalPath, encodedParams);
+  return generatePath(
+    originalPath,
+    params as Parameters<typeof generatePath<Path>>[1],
+  );
 }

@@ -22,54 +22,45 @@ import java.util.List;
 import java.util.Objects;
 
 import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.marshalling.Marshalling;
 
 import org.infinispan.protostream.WrappedMessage;
-import org.infinispan.protostream.annotations.Proto;
 import org.infinispan.protostream.annotations.ProtoFactory;
 import org.infinispan.protostream.annotations.ProtoField;
+import org.infinispan.protostream.annotations.ProtoReserved;
 import org.infinispan.protostream.annotations.ProtoTypeId;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @ProtoTypeId(Marshalling.WRAPPED_CLUSTER_EVENT)
+@ProtoReserved(
+        value = {3, 4},
+        names = {"senderSite", "siteFilter"}
+)
 public class WrapperClusterEvent implements ClusterEvent {
 
     @ProtoField(1)
     final String eventKey;
     @ProtoField(2)
     final String senderAddress; // null means invoke everywhere
-    @ProtoField(3)
-    final String senderSite; // can be null
-    @ProtoField(4)
-    final SiteFilter siteFilter;
     private final Collection<? extends ClusterEvent> events;
 
-    private WrapperClusterEvent(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, Collection<? extends ClusterEvent> events) {
+    private WrapperClusterEvent(String eventKey, String senderAddress, Collection<? extends ClusterEvent> events) {
         this.eventKey = Objects.requireNonNull(eventKey);
         this.senderAddress = senderAddress;
-        this.senderSite = senderSite;
-        this.siteFilter = Objects.requireNonNull(siteFilter);
         this.events = Objects.requireNonNull(events);
     }
 
     @ProtoFactory
-    static WrapperClusterEvent protoFactory(String eventKey, String senderAddress, String senderSite, SiteFilter siteFilter, List<WrappedMessage> eventPS) {
+    static WrapperClusterEvent protoFactory(String eventKey, String senderAddress, List<WrappedMessage> eventPS) {
         var events = eventPS.stream().map(WrappedMessage::getValue).map(ClusterEvent.class::cast).toList();
-        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteFilter, events);
+        return new WrapperClusterEvent(eventKey, senderAddress, events);
     }
 
-    public static WrapperClusterEvent wrap(String eventKey, Collection<? extends ClusterEvent> events, String senderAddress, String senderSite, ClusterProvider.DCNotify dcNotify, boolean ignoreSender) {
+    public static WrapperClusterEvent wrap(String eventKey, Collection<? extends ClusterEvent> events, String senderAddress, boolean ignoreSender) {
         senderAddress = ignoreSender ? Objects.requireNonNull(senderAddress) : null;
-        senderSite = dcNotify == ClusterProvider.DCNotify.ALL_DCS ? null : senderSite;
-        var siteNotification = switch (dcNotify) {
-            case ALL_DCS -> SiteFilter.ALL;
-            case LOCAL_DC_ONLY -> SiteFilter.LOCAL;
-            case ALL_BUT_LOCAL_DC -> SiteFilter.REMOTE;
-        };
-        return new WrapperClusterEvent(eventKey, senderAddress, senderSite, siteNotification, events);
+        return new WrapperClusterEvent(eventKey, senderAddress, events);
     }
 
     @ProtoField(5)
@@ -85,10 +76,8 @@ public class WrapperClusterEvent implements ClusterEvent {
         return events;
     }
 
-    public boolean rejectEvent(String mySiteAddress, String mySiteName) {
-        return (senderAddress != null && senderAddress.equals(mySiteAddress)) ||
-                (senderSite != null  && siteFilter.reject(senderSite, mySiteName));
-
+    public boolean rejectEvent(String mySiteAddress) {
+        return senderAddress != null && senderAddress.equals(mySiteAddress);
     }
 
     @Override
@@ -99,8 +88,6 @@ public class WrapperClusterEvent implements ClusterEvent {
         WrapperClusterEvent that = (WrapperClusterEvent) o;
         return eventKey.equals(that.eventKey) &&
                 Objects.equals(senderAddress, that.senderAddress) &&
-                Objects.equals(senderSite, that.senderSite) &&
-                siteFilter == that.siteFilter &&
                 events.equals(that.events);
     }
 
@@ -108,37 +95,12 @@ public class WrapperClusterEvent implements ClusterEvent {
     public int hashCode() {
         int result = eventKey.hashCode();
         result = 31 * result + Objects.hashCode(senderAddress);
-        result = 31 * result + Objects.hashCode(senderSite);
-        result = 31 * result + siteFilter.hashCode();
         result = 31 * result + events.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
-        return String.format("WrapperClusterEvent [ eventKey=%s, sender=%s, senderSite=%s, delegateEvents=%s ]", eventKey, senderAddress, senderSite, events);
-    }
-
-    @Proto
-    @ProtoTypeId(Marshalling.WRAPPED_CLUSTER_EVENT_SITE_FILTER)
-    public enum SiteFilter {
-        ALL {
-            @Override
-            boolean reject(String senderSite, String mySite) {
-                return false;
-            }
-        }, LOCAL {
-            @Override
-            boolean reject(String senderSite, String mySite) {
-                return !Objects.equals(senderSite, mySite);
-            }
-        }, REMOTE {
-            @Override
-            boolean reject(String senderSite, String mySite) {
-                return Objects.equals(senderSite, mySite);
-            }
-        };
-
-        abstract boolean reject(String senderSite, String mySite);
+        return String.format("WrapperClusterEvent [ eventKey=%s, sender=%s, delegateEvents=%s ]", eventKey, senderAddress, events);
     }
 }

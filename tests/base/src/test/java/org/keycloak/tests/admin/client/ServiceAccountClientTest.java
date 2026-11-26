@@ -19,11 +19,18 @@ package org.keycloak.tests.admin.client;
 
 import java.util.stream.Collectors;
 
-import org.keycloak.admin.client.resource.ClientScopeResource;
+import jakarta.ws.rs.ForbiddenException;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.constants.ServiceAccountConstants;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.Constants;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -33,6 +40,9 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -47,7 +57,11 @@ import org.junit.jupiter.api.Test;
 @KeycloakIntegrationTest
 public class ServiceAccountClientTest {
 
-    @InjectRealm
+    private static final String clientId = "service-account-client";
+    private static final String VIEW_CLIENTS_USER = "view-clients-user";
+    private static final String PASSWORD = "password";
+
+    @InjectRealm(config = ServiceAccountRealmConfig.class)
     ManagedRealm managedRealm;
 
     @InjectClient(config = ServiceAccountClientConfig.class)
@@ -56,11 +70,12 @@ public class ServiceAccountClientTest {
     @InjectOAuthClient
     OAuthClient oAuthClient;
 
-    private static final String clientId = "service-account-client";
+    @InjectAdminClientFactory
+    AdminClientFactory adminClientFactory;
 
     @Test
     public void testServiceAccountEnableDisable() {
-        ClientScopeResource serviceAccountScopeRsc = AdminApiUtil.findClientScopeByName(
+        org.keycloak.admin.client.resource.ClientScopeResource serviceAccountScopeRsc = AdminApiUtil.findClientScopeByName(
                 managedRealm.admin(), ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
         Assertions.assertNotNull(serviceAccountScopeRsc);
         ClientScopeRepresentation serviceAccountScope = serviceAccountScopeRsc.toRepresentation();
@@ -124,10 +139,33 @@ public class ServiceAccountClientTest {
         Assertions.assertNotNull(accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ADDRESS));
 
         // remove the service account and client credentials should fail
-        UserRepresentation serviceAccountUser = managedClient.admin().getServiceAccountUser();
-        managedRealm.admin().users().delete(serviceAccountUser.getId()).close();
+        String serviceAccountUserId = managedClient.admin().toRepresentation().getServiceAccountUserId();
+        managedRealm.admin().users().delete(serviceAccountUserId).close();
         response = oAuthClient.doClientCredentialsGrantAccessTokenRequest();
         Assertions.assertEquals("invalid_request", response.getError());
+    }
+
+    @Test
+    public void testServiceAccountUserIdVisibleWithViewClientsOnly() {
+        try (Keycloak viewClientsAdmin = adminClientFactory.create()
+                .realm(managedRealm.getName())
+                .username(VIEW_CLIENTS_USER)
+                .password(PASSWORD)
+                .clientId(Constants.ADMIN_CLI_CLIENT_ID)
+                .build()) {
+
+            ClientRepresentation client = viewClientsAdmin.realm(managedRealm.getName())
+                    .clients().findByClientId(clientId).get(0);
+            ClientResource clientResource = viewClientsAdmin.realm(managedRealm.getName())
+                    .clients().get(client.getId());
+
+            ClientRepresentation fullClient = clientResource.toRepresentation();
+            Assertions.assertNotNull(fullClient.getServiceAccountUserId());
+
+            Assertions.assertThrows(ForbiddenException.class, () ->
+                    viewClientsAdmin.realm(managedRealm.getName())
+                            .users().get(fullClient.getServiceAccountUserId()).toRepresentation());
+        }
     }
 
     private static class ServiceAccountClientConfig implements ClientConfig {
@@ -141,6 +179,21 @@ public class ServiceAccountClientTest {
                     .serviceAccountsEnabled(true)
                     .authenticatorType("client-secret")
                     .publicClient(false);
+        }
+    }
+
+    private static class ServiceAccountRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.users(UserBuilder.create(VIEW_CLIENTS_USER)
+                    .password(PASSWORD)
+                    .email(VIEW_CLIENTS_USER + "@localhost")
+                    .firstName("View")
+                    .lastName("Clients")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
+                            AdminRoles.VIEW_CLIENTS));
+            return realm;
         }
     }
 }

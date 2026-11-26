@@ -29,6 +29,9 @@ public class VerifyEmailActionToken extends DefaultActionToken {
 
     public static final String TOKEN_TYPE = "verify-email";
 
+    // Signed proof key for verification requested during organization broker onboarding.
+    public static final String ORGANIZATION_EMAIL_VERIFICATION = "org_email_verification";
+
     private static final String JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID = "oasid";
     private static final String JSON_FIELD_REDIRECT_URI = "reduri";
 

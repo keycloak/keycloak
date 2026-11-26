@@ -20,17 +20,19 @@ package org.keycloak.testsuite.oidc;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
@@ -39,13 +41,11 @@ import org.junit.jupiter.api.Assertions;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@Deprecated(forRemoval = true)
 public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    protected AppPage appPage;
 
     @Page
     protected LoginPage loginPage;
@@ -76,10 +76,13 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
         // Test scope in the access token
         assertScopes(expectedScope, accessToken.getScope());
 
-        EventRepresentation codeToTokenEvent = events.expectCodeToToken(codeId, sessionId)
-                .user(userId)
-                .client(clientId)
-                .assertEvent();
+        EventRepresentation codeToTokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
 
         // Test scope in the event
         assertScopes(expectedScope, codeToTokenEvent.getDetails().get(Details.SCOPE));

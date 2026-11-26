@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -51,6 +52,15 @@ public class DefaultThemeManager implements ThemeManager {
 
     private static final Logger log = Logger.getLogger(DefaultThemeManager.class);
 
+    /**
+     * Maximum number of locales cached per message bundle, beyond which the least recently used entry is evicted.
+     * Chosen to leave ample room for the locales a theme and a realm can declare, while keeping the memory held by
+     * the cache bounded.
+     */
+    private static final int MAX_CACHED_LOCALES = 200;
+
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+
     private final DefaultThemeManagerFactory factory;
     private final KeycloakSession session;
     private List<ThemeProvider> providers;
@@ -75,7 +85,11 @@ public class DefaultThemeManager implements ThemeManager {
             if (theme == null) {
                 String defaultThemeName = session.getProvider(ThemeSelectorProvider.class).getDefaultThemeName(type);
                 theme = loadTheme(defaultThemeName, type, realm);
-                log.errorv("Failed to find {0} theme {1}, using built-in themes", type, name);
+                if (theme == null) {
+                    log.warnv("Failed to find {0} theme {1}, as it might be unavailable because a required feature is disabled", type, name);
+                } else {
+                    log.errorv("Failed to find {0} theme {1}, using built-in themes", type, name);
+                }
             } else {
                 theme = factory.addCachedTheme(name, type, theme);
             }
@@ -89,6 +103,9 @@ public class DefaultThemeManager implements ThemeManager {
         Set<String> themes = new HashSet<String>();
         for (ThemeProvider p : getProviders()) {
             themes.addAll(p.nameSet(type));
+            if (type == Theme.Type.WELCOME) {
+                themes.addAll(p.nameSet(Theme.Type.LOGIN));
+            }
         }
         return themes;
     }
@@ -121,7 +138,7 @@ public class DefaultThemeManager implements ThemeManager {
         if (theme.getParentName() != null) {
             for (String parentName = theme.getParentName(); parentName != null; parentName = theme.getParentName()) {
                 String currentThemeName = theme.getName();
-                theme = findTheme(parentName, type);
+                theme = findTheme(parentName, theme.getType());
                 if (theme == null) {
                     log.warnf("Not found parent theme '%s' of theme '%s'. Unable to load %s theme '%s' due to this.", parentName, currentThemeName, type, name);
                     return null;
@@ -144,6 +161,10 @@ public class DefaultThemeManager implements ThemeManager {
                     log.errorv(e, p.getClass() + " failed to load theme, type={0}, name={1}", type, name);
                 }
             }
+        }
+        if (type == Theme.Type.WELCOME) {
+            log.debugf("Welcome theme '%s' not found, falling back to login theme lookup", name);
+            return findTheme(name, Theme.Type.LOGIN);
         }
         return null;
     }
@@ -169,7 +190,7 @@ public class DefaultThemeManager implements ThemeManager {
 
         private Properties properties;
 
-        private final ConcurrentHashMap<String, ConcurrentHashMap<Locale, Map<Locale, Properties>>> messages =
+        private final ConcurrentHashMap<String, Map<Locale, Map<Locale, Properties>>> messages =
                 new ConcurrentHashMap<>();
 
         private Pattern compiledContentHashPattern;
@@ -293,40 +314,59 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         private Map<Locale, Properties> getMessagesByLocale(String baseBundlename, Locale locale) throws IOException {
-            if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
-                Locale parent = LocaleUtil.getParentLocale(locale, realm);
-
-                Map<Locale, Properties> parentMessages =
-                        parent == null ? Collections.emptyMap() : getMessagesByLocale(baseBundlename, parent);
-
-                Properties currentMessages = new Properties();
-                Map<Locale, Properties> groupedMessages = new HashMap<>(parentMessages);
-                groupedMessages.put(locale, currentMessages);
-
-                for (ThemeResourceProvider t : themeResourceProviders) {
-                    currentMessages.putAll(t.getMessages(baseBundlename, locale));
-                }
-
-                ListIterator<Theme> itr = themes.listIterator(themes.size());
-                while (itr.hasPrevious()) {
-                    Properties m = itr.previous().getMessages(baseBundlename, locale);
-                    if (m != null) {
-                        currentMessages.putAll(m);
-                    }
-                }
-
-                addlocaleTranslations(locale, currentMessages);
-
-                this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<>());
-                this.messages.get(baseBundlename).putIfAbsent(locale, groupedMessages);
-
-                return groupedMessages;
-            } else {
-                return messages.get(baseBundlename).get(locale);
+            Map<Locale, Map<Locale, Properties>> bundleMessages = messages.get(baseBundlename);
+            Map<Locale, Properties> cachedMessages = bundleMessages == null ? null : bundleMessages.get(locale);
+            if (cachedMessages != null) {
+                return cachedMessages;
             }
+
+            Locale parent = LocaleUtil.getParentLocale(locale, realm);
+
+            Map<Locale, Properties> parentMessages =
+                    parent == null ? Collections.emptyMap() : getMessagesByLocale(baseBundlename, parent);
+
+            Properties currentMessages = new Properties();
+            Map<Locale, Properties> groupedMessages = new HashMap<>(parentMessages);
+            groupedMessages.put(locale, currentMessages);
+
+            for (ThemeResourceProvider t : themeResourceProviders) {
+                currentMessages.putAll(t.getMessages(baseBundlename, locale));
+            }
+
+            ListIterator<Theme> itr = themes.listIterator(themes.size());
+            while (itr.hasPrevious()) {
+                Properties m = itr.previous().getMessages(baseBundlename, locale);
+                if (m != null) {
+                    currentMessages.putAll(m);
+                }
+            }
+
+            addlocaleTranslations(locale, currentMessages);
+
+            messages.computeIfAbsent(baseBundlename, name -> createMessageCache()).putIfAbsent(locale, groupedMessages);
+
+            return groupedMessages;
+        }
+
+        /**
+         * Creates the cache holding the messages of a single bundle, keyed by locale. Callers are expected to resolve
+         * the locale to one supported by the theme or the realm before it is used as a key here. Should an unresolved
+         * locale still reach this point, the least recently used entry is evicted rather than letting the cache grow
+         * without bound, so that the locales actually in use stay cached.
+         */
+        private static Map<Locale, Map<Locale, Properties>> createMessageCache() {
+            return Collections.synchronizedMap(
+                    new LinkedHashMap<Locale, Map<Locale, Properties>>(16, DEFAULT_LOAD_FACTOR, true) {
+                        @Override
+                        protected boolean removeEldestEntry(Map.Entry<Locale, Map<Locale, Properties>> eldest) {
+                            return size() > MAX_CACHED_LOCALES;
+                        }
+                    });
         }
 
         protected void addlocaleTranslations(Locale locale, Properties m) throws IOException {
+            Locale currentLocale = Locale.forLanguageTag(resolveChineseLocale(locale.toLanguageTag()));
+
             for (String l : getProperties().getProperty("locales", "").split(",")) {
                 l = l.trim();
                 String key = "locale_" + l;
@@ -334,17 +374,10 @@ public class DefaultThemeManager implements ThemeManager {
                 if (label != null) {
                     continue;
                 }
-                String rl = l;
-                // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
-                // Once the existing locales have been moved, this code can be removed.
-                if (l.equals("zh-CN")) {
-                    rl = "zh-Hans";
-                } else if (l.equals("zh-TW")) {
-                    rl = "zh-Hant";
-                }
+                String rl = resolveChineseLocale(l);
                 Locale loc = Locale.forLanguageTag(rl);
                 label = capitalize(loc.getDisplayName(locale), locale);
-                if (!Objects.equals(loc, locale)) {
+                if (!Objects.equals(loc, currentLocale)) {
                     label += " (" + capitalize(loc.getDisplayName(loc), loc) + ")";
                 }
                 m.put(key, label);
@@ -400,6 +433,17 @@ public class DefaultThemeManager implements ThemeManager {
             for (final String propertyName : properties.stringPropertyNames()) {
                 properties.setProperty(propertyName, StringPropertyReplacer.replaceProperties(properties.getProperty(propertyName), SystemEnvProperties.UNFILTERED::getProperty));
             }
+        }
+
+        private String resolveChineseLocale(String locale) {
+            // This is mapping old locale codes to the new locale codes for Simplified and Traditional Chinese.
+            // Once the existing locales have been moved, this code can be removed.
+            if (locale.equals("zh-CN")) {
+                return "zh-Hans";
+            } else if (locale.equals("zh-TW")) {
+                return "zh-Hant";
+            }
+            return locale;
         }
     }
 

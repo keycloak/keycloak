@@ -40,6 +40,7 @@ public class WebAuthnPolicyTwoFactorDefaults extends WebAuthnPolicy {
         this.attestationConveyancePreference = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.authenticatorAttachment = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.requireResidentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
+        this.residentKey = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.userVerificationRequirement = Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED;
         this.createTimeout = 0;
         this.avoidSameAuthenticatorRegister = false;
@@ -76,6 +77,11 @@ public class WebAuthnPolicyTwoFactorDefaults extends WebAuthnPolicy {
 
     @Override
     public void setRequireResidentKey(String requireResidentKey) {
+        throwReadOnlyException();
+    }
+
+    @Override
+    public void setResidentKey(String residentKey) {
         throwReadOnlyException();
     }
 

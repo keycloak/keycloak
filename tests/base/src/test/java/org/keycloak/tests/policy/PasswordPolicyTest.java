@@ -25,8 +25,8 @@ import java.nio.file.Paths;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
-import org.keycloak.policy.BlacklistPasswordPolicyProvider;
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
+import org.keycloak.policy.DenylistPasswordPolicyProvider;
+import org.keycloak.policy.DenylistPasswordPolicyProviderFactory;
 import org.keycloak.policy.MaximumLengthPasswordPolicyProviderFactory;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PasswordPolicyProvider;
@@ -47,6 +47,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.endsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -187,7 +188,7 @@ public class PasswordPolicyTest {
      * KEYCLOAK-5244
      */
     @Test
-    public void testBlacklistPasswordPolicyWithTestBlacklist() {
+    public void testDenylistPasswordPolicyWithTestDenylist() {
         runOnServer.run(session -> {
 
             RealmModel realmModel = session.getContext().getRealm();
@@ -195,22 +196,22 @@ public class PasswordPolicyTest {
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "passwordBlacklist(test-password-blacklist.txt)"));
 
-            Assertions.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted1").getMessage());
-            Assertions.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
-            Assertions.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "bLaCkLiSteD2").getMessage());
+            Assertions.assertEquals(DenylistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted1").getMessage());
+            Assertions.assertEquals(DenylistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
+            Assertions.assertEquals(DenylistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "bLaCkLiSteD2").getMessage());
             assertNull(policyManager.validate("jdoe", "notblacklisted"));
         });
     }
 
     @Test
-    public void testBlacklistPasswordPolicyDefaultPath() {
+    public void testDenylistPasswordPolicyDefaultPath() {
         final String SEPARATOR = File.separator;
 
         runOnServer.run(session -> {
             ProviderFactory<PasswordPolicyProvider> passPolicyFact = session.getKeycloakSessionFactory().getProviderFactory(
-                    PasswordPolicyProvider.class, BlacklistPasswordPolicyProviderFactory.ID);
-            assertThat(passPolicyFact, instanceOf(BlacklistPasswordPolicyProviderFactory.class));
-            assertThat(((BlacklistPasswordPolicyProviderFactory) passPolicyFact).getDefaultBlacklistsBasePath(),
+                    PasswordPolicyProvider.class, DenylistPasswordPolicyProviderFactory.ID);
+            assertThat(passPolicyFact, instanceOf(DenylistPasswordPolicyProviderFactory.class));
+            assertThat(((DenylistPasswordPolicyProviderFactory) passPolicyFact).getDefaultDenylistsBasePath(),
                     endsWith(SEPARATOR + "data" + SEPARATOR + "password-blacklists" + SEPARATOR));
         });
     }
@@ -294,6 +295,7 @@ public class PasswordPolicyTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "length(8) and maxLength(32) and digits(2) and lowerCase(2) and upperCase(2) and specialChars(2) and notUsername()"));
+            assertThat(realmModel.getPasswordPolicy().getPolicies(), contains("length", "maxLength", "digits", "lowerCase", "upperCase", "specialChars", "notUsername"));
             Assertions.assertNotNull(policyManager.validate("jdoe", "12aaBB&"));
             Assertions.assertNotNull(policyManager.validate("jdoe", "aaaaBB&-"));
             Assertions.assertNotNull(policyManager.validate("jdoe", "12AABB&-"));

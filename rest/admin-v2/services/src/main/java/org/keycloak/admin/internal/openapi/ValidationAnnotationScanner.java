@@ -1,9 +1,11 @@
 package org.keycloak.admin.internal.openapi;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -80,7 +82,8 @@ public class ValidationAnnotationScanner {
 
     private ResourceBundle loadValidationMessages() {
         try {
-            return ResourceBundle.getBundle("org.hibernate.validator.ValidationMessages");
+            // Always use the English base bundle, so the generated OpenAPI document does not depend on the locale of the build machine
+            return ResourceBundle.getBundle("org.hibernate.validator.ValidationMessages", Locale.ROOT);
         } catch (MissingResourceException e) {
             log.warn("Could not load ValidationMessages resource bundle", e);
             return null;
@@ -144,7 +147,7 @@ public class ValidationAnnotationScanner {
 
         // Interpolate annotation parameters into the message (e.g., {min}, {max}, {value}, {regexp})
         if (annotation != null) {
-            for (AnnotationValue value : annotation.values()) {
+            for (AnnotationValue value : getAnnotationValues(annotation)) {
                 String placeholder = "{" + value.name() + "}";
                 if (resolved.contains(placeholder)) {
                     resolved = resolved.replace(placeholder, formatAnnotationValue(value));
@@ -153,6 +156,16 @@ public class ValidationAnnotationScanner {
         }
 
         return resolved;
+    }
+
+    private List<AnnotationValue> getAnnotationValues(AnnotationInstance annotation) {
+        try {
+            // some packages like Hibernate Validator are currently not present in the index, but we still
+            // care about the defaults of these that are there, like jakarta.validation.constraints.Size
+            return annotation.valuesWithDefaults(indexView);
+        } catch (IllegalArgumentException ignored) {
+            return annotation.values();
+        }
     }
 
     private String formatAnnotationValue(AnnotationValue value) {
@@ -306,33 +319,68 @@ public class ValidationAnnotationScanner {
      * @return map of field name to validation description
      */
     public Map<String, String> buildClassLevelDescriptions(ClassInfo classInfo) {
-        Map<String, String> fieldDescriptions = new HashMap<>();
+        Map<String, List<String>> collected = new HashMap<>();
 
-        for (AnnotationInstance annotation : classInfo.annotations()) {
-            if (annotation.target().kind() != AnnotationTarget.Kind.CLASS) {
-                continue;
-            }
-
-            if (!isConstraintAnnotation(annotation.name())) {
-                continue;
-            }
-
+        for (AnnotationInstance annotation : classLevelConstraintAnnotations(classInfo)) {
             String context = getGroupContext(annotation);
-            String message = buildConstraintDescription(annotation);
+            String messageTemplate = buildConstraintDescription(annotation);
 
-            AnnotationValue affectedField = annotation.value("affectedFieldNames");
-            String[] affectedFields = affectedField != null ? affectedField.asStringArray() : getDefault(annotation.name(), "affectedFieldNames").asStringArray();
-
-            if (affectedFields == null) {
+            String[] affectedFields = resolveAffectedFieldNames(annotation);
+            if (affectedFields == null || affectedFields.length == 0) {
                 throw new IllegalStateException("Missing affectedFieldNames value for " + annotation.name());
             }
 
             for (String affected : affectedFields) {
-                fieldDescriptions.put(affected, context + message);
+                String message = MessageFormat.format(messageTemplate, affected);
+                collected.computeIfAbsent(affected, k -> new ArrayList<>()).add(context + message);
             }
         }
 
+        Map<String, String> fieldDescriptions = new HashMap<>();
+        for (var entry : collected.entrySet()) {
+            List<String> descriptions = entry.getValue();
+            descriptions.sort(String::compareTo);
+            fieldDescriptions.put(entry.getKey(), String.join("; ", descriptions));
+        }
         return fieldDescriptions;
+    }
+
+    private List<AnnotationInstance> classLevelConstraintAnnotations(ClassInfo classInfo) {
+        List<AnnotationInstance> constraints = new ArrayList<>();
+        for (AnnotationInstance annotation : classInfo.annotations()) {
+            if (annotation.target().kind() != AnnotationTarget.Kind.CLASS) {
+                continue;
+            }
+            if (isRepeatableContainer(annotation)) {
+                AnnotationValue value = annotation.value();
+                if (value != null && value.kind() == AnnotationValue.Kind.ARRAY) {
+                    for (AnnotationInstance nested : value.asNestedArray()) {
+                        if (isConstraintAnnotation(nested.name())) {
+                            constraints.add(nested);
+                        }
+                    }
+                }
+                continue;
+            }
+            if (isConstraintAnnotation(annotation.name())) {
+                constraints.add(annotation);
+            }
+        }
+        return constraints;
+    }
+
+    private static boolean isRepeatableContainer(AnnotationInstance annotation) {
+        return annotation.name().local().startsWith("List")
+                && annotation.name().toString().contains("$");
+    }
+
+    private String[] resolveAffectedFieldNames(AnnotationInstance annotation) {
+        AnnotationValue affectedField = annotation.value("affectedFieldNames");
+        if (affectedField != null) {
+            return affectedField.asStringArray();
+        }
+        AnnotationValue defaultValue = getDefault(annotation.name(), "affectedFieldNames");
+        return defaultValue != null ? defaultValue.asStringArray() : null;
     }
 
     /**

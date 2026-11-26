@@ -95,7 +95,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
 
   const { realm } = useRealm();
 
-  const [keyData, setKeyData] = useState<KeyData[]>([]);
+  const [keyData, setKeyData] = useState<KeyData[] | undefined>();
 
   const [filter, setFilter] = useState<string>(FILTER_OPTIONS[0]);
 
@@ -146,7 +146,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       <KeycloakDataTable
         isNotCompact
         className="kc-keys-list"
-        loader={filteredKeyData}
+        loader={filteredKeyData ?? []}
         ariaLabelKey="keysList"
         searchPlaceholderKey="searchKey"
         searchTypeComponent={
@@ -246,7 +246,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             instructions={t("noKeysDescription")}
             primaryActionText={t("addProvider")}
             onPrimaryAction={() =>
-              navigate(toKeysTab({ realm, tab: "providers" }))
+              void navigate(toKeysTab({ realm, tab: "providers" }))
             }
           />
         }

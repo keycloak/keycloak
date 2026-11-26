@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
@@ -28,6 +29,8 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresentation.ClientScopeDefinition;
+import org.keycloak.representations.idm.authorization.Logic;
 
 import org.jboss.logging.Logger;
 
@@ -49,27 +52,58 @@ public class ClientScopePolicyProvider implements PolicyProvider {
     }
 
     @Override
+    public boolean isValid(Policy policy, AuthorizationProvider authorization) {
+        boolean negative = Logic.NEGATIVE.equals(policy.getLogic());
+        boolean hasScope = false;
+        for (ClientScopeDefinition scope : representationFunction.apply(policy, authorization).getClientScopes()) {
+            if (authorization.getRealm().getClientScopeById(scope.getId()) != null) {
+                hasScope = true;
+            } else if (scope.isRequired() || negative) {
+                return false;
+            }
+        }
+        return hasScope;
+    }
+
+    @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
-        Set<ClientScopePolicyRepresentation.ClientScopeDefinition> clientScopeIds = representationFunction
+        Set<ClientScopeDefinition> clientScopeIds = representationFunction
             .apply(policy, evaluation.getAuthorizationProvider()).getClientScopes();
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RealmModel realm = authorizationProvider.getKeycloakSession().getContext().getRealm();
         Identity identity = evaluation.getContext().getIdentity();
+        boolean negative = Logic.NEGATIVE.equals(policy.getLogic());
+        boolean hasScope = false;
+        boolean granted = false;
+        boolean missingRequiredClientScope = false;
 
-        for (ClientScopePolicyRepresentation.ClientScopeDefinition clientScopeDefinition : clientScopeIds) {
+        for (ClientScopeDefinition clientScopeDefinition : clientScopeIds) {
             ClientScopeModel clientScope = realm.getClientScopeById(clientScopeDefinition.getId());
 
-            if (clientScope != null) {
-                boolean hasClientScope = hasClientScope(identity, clientScope);
-
-                if (!hasClientScope && clientScopeDefinition.isRequired()) {
-                    evaluation.deny();
+            if (clientScope == null) {
+                if (clientScopeDefinition.isRequired() || negative) {
+                    evaluation.setEffect(Effect.INVALID);
                     return;
-                } else if (hasClientScope) {
-                    evaluation.grant();
                 }
+                continue;
             }
+
+            hasScope = true;
+            boolean hasClientScope = hasClientScope(identity, clientScope);
+
+            if (hasClientScope) {
+                granted = true;
+            } else if (clientScopeDefinition.isRequired()) {
+                missingRequiredClientScope = true;
+            }
+        }
+        if (!hasScope) {
+            evaluation.setEffect(Effect.INVALID);
+        } else if (missingRequiredClientScope) {
+            evaluation.deny();
+        } else if (granted) {
+            evaluation.grant();
         }
         logger.debugf("Client Scope Policy %s evaluated to %s", policy.getName(), evaluation.getEffect());
     }

@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.ClientPoliciesUtil;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.ClientPolicyMode;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
@@ -86,7 +87,14 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME, FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME, OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME, SAML_SECURITY_PROFILE_NAME, FAPI2_DPOP_SECURITY_PROFILE_NAME, FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME), Collections.emptyList());
+        assertExpectedProfiles(actualProfilesRep,
+                Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME,
+                        FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME,
+                        OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME,
+                        SAML_SECURITY_PROFILE_NAME,
+                        FAPI2_DPOP_SECURITY_PROFILE_NAME, FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME),
+
+                Collections.emptyList());
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
@@ -405,6 +413,42 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
             return;
         }
         fail();
+    }
+
+    @Test
+    public void testPoliciesWithStrictMode() throws Exception {
+        String beforeUpdatePoliciesJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(getPolicies());
+
+        // Test invalid-mode would fail
+        ClientPolicyRepresentation clientPolicyRep =
+                (new ClientPolicyBuilder()).createPolicy(
+                                "builtin-duplicated-new-policy",
+                                "builtin duplicated new policy is ignored.",
+                                Boolean.TRUE)
+                        .addCondition(ClientRolesConditionFactory.PROVIDER_ID,
+                                createClientRolesConditionConfig(List.of(SAMPLE_CLIENT_ROLE)))
+                        .addProfile(FAPI1_BASELINE_PROFILE_NAME)
+                        .toRepresentation();
+        clientPolicyRep.setMode("INVALID");
+
+        String json = (new ClientPoliciesBuilder())
+                .addPolicy(clientPolicyRep)
+                .toString();
+        try {
+            updatePolicies(json);
+            fail("Not expected to update client policy with mode INVALID");
+        } catch (ClientPolicyException cpe) {
+            assertEquals("Bad Request", cpe.getErrorDetail());
+            String afterFailedUpdatePoliciesJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(getPolicies());
+            assertEquals(beforeUpdatePoliciesJson, afterFailedUpdatePoliciesJson);
+        }
+
+        // Test update with valid mode would be successful
+        clientPolicyRep.setMode(ClientPolicyMode.STRICT.toString());
+        json = (new ClientPoliciesBuilder())
+                .addPolicy(clientPolicyRep)
+                .toString();
+        updatePolicies(json);
     }
 
     @Test

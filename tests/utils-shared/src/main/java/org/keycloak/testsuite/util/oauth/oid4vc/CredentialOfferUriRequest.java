@@ -13,10 +13,10 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class CredentialOfferUriRequest extends AbstractHttpGetRequest<CredentialOfferUriRequest, CredentialOfferUriResponse> {
 
-    private final String credConfigId;
+    private String credConfigId;
     private Boolean preAuthorized;
     private String targetUser;
-    private Integer expireAt;
+    private Long expireAt;
     private OfferResponseType responseType;
     private Integer width, height;
 
@@ -25,9 +25,18 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         this.credConfigId = credConfigId;
     }
 
+    public CredentialOfferUriRequest credentialConfigurationId(String credConfigId) {
+        this.credConfigId = credConfigId;
+        return this;
+    }
+
     public CredentialOfferUriRequest preAuthorized(Boolean preAuthorized) {
         this.preAuthorized = preAuthorized;
         return this;
+    }
+
+    public boolean isPreAuthorized() {
+        return Boolean.TRUE.equals(preAuthorized);
     }
 
     public CredentialOfferUriRequest targetUser(String targetUser) {
@@ -36,6 +45,11 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
     }
 
     public CredentialOfferUriRequest expireAt(Integer expireAt) {
+        this.expireAt = expireAt == null ? null : expireAt.longValue();
+        return this;
+    }
+
+    public CredentialOfferUriRequest expireAt(long expireAt) {
         this.expireAt = expireAt;
         return this;
     }

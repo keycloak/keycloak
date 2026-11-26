@@ -143,7 +143,7 @@ export function UserDataTable() {
           adminClient.users.getProfile(),
         ]);
       } catch (error) {
-        if (error instanceof NetworkError && error?.response?.status === 403) {
+        if (error instanceof NetworkError && error.response.status === 403) {
           // "User Profile" attributes not available for Users Attribute search, when admin user does not have view- or manage-realm realm-management role
           return [{}, {}] as [UiRealmInfo, UserProfileConfig];
         } else {
@@ -170,7 +170,9 @@ export function UserDataTable() {
       params.search = searchParam;
     }
 
-    if (activeFilters.exact) params.exact = true;
+    if (query || activeFilters.exact) {
+      params.exact = activeFilters.exact;
+    }
 
     if (!listUsers && !(params.search || params.q)) {
       return [];
@@ -228,9 +230,9 @@ export function UserDataTable() {
     },
   });
 
-  const goToCreate = () => navigate(toAddUser({ realm: realmName }));
+  const goToCreate = () => void navigate(toAddUser({ realm: realmName }));
 
-  if (uiRealmInfo.userProfileProvidersEnabled === undefined || !realm) {
+  if (uiRealmInfo.userProfileProvidersEnabled === undefined) {
     return <KeycloakSpinner />;
   }
 

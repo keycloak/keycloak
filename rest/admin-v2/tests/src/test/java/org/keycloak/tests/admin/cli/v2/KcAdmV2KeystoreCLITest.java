@@ -2,16 +2,12 @@ package org.keycloak.tests.admin.cli.v2;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
-import org.keycloak.client.cli.common.Globals;
 import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.PemUtils;
@@ -28,11 +24,13 @@ import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.tests.admin.cli.v2.AbstractKcAdmV2CLITest.CommandResult;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import picocli.CommandLine;
+
+import static org.keycloak.tests.utils.admin.AdminApiUtil.addAdminApiClientScope;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -86,7 +84,7 @@ public class KcAdmV2KeystoreCLITest {
 
     @Test
     void testKeystoreAuthWithServiceAccount() {
-        CommandResult result = kcAdmV2CmdRaw("client", "list", "-c",
+        CommandResult result = kcAdmV2CmdRaw(
                 "--no-config",
                 "--server", keycloakUrls.getBase(),
                 "--client", JWT_CLIENT_ID,
@@ -94,7 +92,8 @@ public class KcAdmV2KeystoreCLITest {
                 "--storepass", getStorePassword(),
                 "--alias", KEY_ALIAS,
                 "--truststore", getClientTruststorePath(),
-                "--trustpass", getStorePassword());
+                "--trustpass", getStorePassword(),
+                "client", "list", "-c");
 
         assertThat("keystore auth should succeed: " + result.err(),
                 result.exitCode(), is(0));
@@ -105,19 +104,20 @@ public class KcAdmV2KeystoreCLITest {
     @Test
     void testWithoutKeystoreFails() {
         // Same as testKeystoreAuthWithServiceAccount but without --keystore — proves keystore is required
-        CommandResult result = kcAdmV2CmdRaw("client", "list", "-c",
+        CommandResult result = kcAdmV2CmdRaw(
                 "--no-config",
                 "--server", keycloakUrls.getBase(),
                 "--client", JWT_CLIENT_ID,
                 "--truststore", getClientTruststorePath(),
-                "--trustpass", getStorePassword());
+                "--trustpass", getStorePassword(),
+                "client", "list", "-c");
 
         assertThat("should fail without keystore", result.exitCode(), is(not(0)));
     }
 
     @Test
     void testKeystoreAuthWithWrongAlias() {
-        CommandResult result = kcAdmV2CmdRaw("client", "list", "-c",
+        CommandResult result = kcAdmV2CmdRaw(
                 "--no-config",
                 "--server", keycloakUrls.getBase(),
                 "--client", JWT_CLIENT_ID,
@@ -125,7 +125,8 @@ public class KcAdmV2KeystoreCLITest {
                 "--storepass", getStorePassword(),
                 "--alias", "wrong-alias",
                 "--truststore", getClientTruststorePath(),
-                "--trustpass", getStorePassword());
+                "--trustpass", getStorePassword(),
+                "client", "list", "-c");
 
         assertThat("wrong alias should fail", result.exitCode(), is(not(0)));
     }
@@ -148,11 +149,13 @@ public class KcAdmV2KeystoreCLITest {
                 .substring(response.getLocation().getPath().lastIndexOf('/') + 1);
         response.close();
 
-        var serviceAccountUser = adminClient.realm("master").clients()
-                .get(clientUuid).getServiceAccountUser();
+        var serviceAccountUserId = adminClient.realm("master").clients()
+                .get(clientUuid).toRepresentation().getServiceAccountUserId();
         var adminRole = adminClient.realm("master").roles().get("admin").toRepresentation();
-        adminClient.realm("master").users().get(serviceAccountUser.getId())
+        adminClient.realm("master").users().get(serviceAccountUserId)
                 .roles().realmLevel().add(java.util.List.of(adminRole));
+
+        addAdminApiClientScope(adminClient.realm("master"), adminClient.realm("master").clients().get(clientUuid), true);
 
         try {
             String keystorePath = getClientKeystorePath();
@@ -192,35 +195,12 @@ public class KcAdmV2KeystoreCLITest {
     }
 
     private CommandResult kcAdmV2CmdRaw(String... args) {
-        CommandLine cli = Globals.createCommandLine(new KcAdmV2Cmd(), KcAdmMain.CMD, new PrintWriter(System.err, true));
-
-        StringWriter out = new StringWriter();
-        StringWriter err = new StringWriter();
-        cli.setOut(new PrintWriter(out));
-        cli.setErr(new PrintWriter(err));
-
-        int exitCode = cli.execute(args);
-        return new CommandResult(exitCode, out.toString(), err.toString());
+        return AbstractKcAdmV2CLITest.execute(new KcAdmV2Cmd(args), args);
     }
 
     private CommandResult kcAdmV2Cmd(String... args) {
-        CommandLine cli = Globals.createCommandLine(new KcAdmV2Cmd(), KcAdmMain.CMD, new PrintWriter(System.err, true));
-
-        StringWriter out = new StringWriter();
-        StringWriter err = new StringWriter();
-        cli.setOut(new PrintWriter(out));
-        cli.setErr(new PrintWriter(err));
-
-        String[] fullArgs = new String[args.length + 2];
-        System.arraycopy(args, 0, fullArgs, 0, args.length);
-        fullArgs[args.length] = "--config";
-        fullArgs[args.length + 1] = configFilePath;
-
-        int exitCode = cli.execute(fullArgs);
-        return new CommandResult(exitCode, out.toString(), err.toString());
-    }
-
-    record CommandResult(int exitCode, String out, String err) {
+        String[] fullArgs = AbstractKcAdmV2CLITest.withConfigArg(configFilePath, args);
+        return AbstractKcAdmV2CLITest.execute(new KcAdmV2Cmd(fullArgs), fullArgs);
     }
 
     private static class TlsEnabledConfig implements CertificatesConfig {

@@ -13,9 +13,10 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class ProtectionResourceTest extends AbstractResourceServerTest {
 
@@ -38,17 +39,47 @@ public class ProtectionResourceTest extends AbstractResourceServerTest {
             authorization.update(settings);
         });
 
-        assertBadRequest(() -> {
+        String expectedMessage = "Remote management is disabled";
+        assertResponse(() -> {
             ResourceRepresentation resource = new ResourceRepresentation();
             resource.setName(KeycloakModelUtils.generateId());
             protection.resource().create(resource);
-        });
-        assertBadRequest(() -> protection.resource().update(existing));
-        assertBadRequest(() -> protection.resource().delete(existing.getId()));
-        assertBadRequest(() -> protection.resource().findAll());
+        }, Status.BAD_REQUEST, expectedMessage);
+        assertResponse(() -> protection.resource().update(existing), Status.BAD_REQUEST, expectedMessage);
+        assertResponse(() -> protection.resource().delete(existing.getId()), Status.BAD_REQUEST, expectedMessage);
+        assertResponse(() -> protection.resource().findAll(), Status.BAD_REQUEST, expectedMessage);
     }
 
-    private void assertBadRequest(Runnable runnable) {
+    @Test
+    public void testOnlyOwnerAndServerCanManageResources() throws Exception {
+        ResourceRepresentation resource = addResource(KeycloakModelUtils.generateId(), "marta", true);
+        ResourceRepresentation existing = assertCanManage(protection, resource);
+
+        ProtectionResource koloClient = getAuthzClient().protection("kolo", "password");
+        assertResponse(() -> koloClient.resource().update(existing), Status.FORBIDDEN);
+        assertResponse(() -> koloClient.resource().findById(existing.getId()), Status.FORBIDDEN);
+        assertEquals(0, koloClient.resource().findAll().length);
+        assertResponse(() -> koloClient.resource().delete(existing.getId()), Status.FORBIDDEN);
+
+        ProtectionResource resourceServerClient = getAuthzClient().protection();
+        assertCanManage(resourceServerClient, existing);
+    }
+
+    private ResourceRepresentation assertCanManage(ProtectionResource protection, ResourceRepresentation resource) throws Exception {
+        protection.resource().update(resource);
+        resource = protection.resource().findById(resource.getId());
+        assertNotNull(resource);
+        assertEquals(1, protection.resource().findAll().length);
+        protection.resource().delete(resource.getId());
+        assertEquals(0, protection.resource().findAll().length);
+        return addResource(KeycloakModelUtils.generateId(), "marta", true);
+    }
+
+    private void assertResponse(Runnable runnable, Status status) {
+        assertResponse(runnable, status, null);
+    }
+
+    private void assertResponse(Runnable runnable, Status status, String message) {
         try {
             runnable.run();
             fail("Server should fail the request");
@@ -58,8 +89,10 @@ public class ProtectionResourceTest extends AbstractResourceServerTest {
             if (!(error instanceof HttpResponseException)) {
                 error = error.getCause();
             }
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), ((HttpResponseException) error).getStatusCode());
-            assertTrue(new String(((HttpResponseException) error).getBytes()).contains("Remote management is disabled"));
+            assertEquals(status.getStatusCode(), ((HttpResponseException) error).getStatusCode());
+            if (message != null) {
+                assertTrue(new String(((HttpResponseException) error).getBytes()).contains(message));
+            }
         }
     }
 }

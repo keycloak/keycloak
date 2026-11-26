@@ -31,7 +31,6 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.TokenExchangeContext;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -96,13 +95,6 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
         return identity;
     }
 
-    @Override
-    protected BrokeredIdentityContext exchangeExternalTokenV2Impl(TokenExchangeContext tokenExchangeContext) {
-        // Supporting only introspection-endpoint validation for now
-        validateExternalTokenWithIntrospectionEndpoint(tokenExchangeContext);
-
-        return exchangeExternalUserInfoValidationOnly(tokenExchangeContext.getEvent(), tokenExchangeContext.getFormParams());
-    }
 
     private JsonNode fetchUserProfile(String accessToken) {
         String userInfoUrl = getConfig().getUserInfoUrl();
@@ -135,13 +127,22 @@ public class OAuth2IdentityProvider extends AbstractOAuth2IdentityProvider<OAuth
 
     private SimpleHttpResponse executeRequest(String url, SimpleHttpRequest request) throws IOException {
         SimpleHttpResponse response = request.asResponse();
-        int status = response.getStatus();
-
-        if (Response.Status.fromStatusCode(status).getFamily() != Response.Status.Family.SUCCESSFUL) {
-            logger.warnf("User profile endpoint (%s) returned an error (%d): %s", url, status, response.asString());
-            throw new RuntimeException("Unexpected response from user profile endpoint");
+        try {
+            int status = response.getStatus();
+            if (Response.Status.fromStatusCode(status).getFamily() != Response.Status.Family.SUCCESSFUL) {
+                logger.warnf("User profile endpoint (%s) returned an error (%d): %s", url, status, response.asString());
+                throw new RuntimeException("Unexpected response from user profile endpoint");
+            }
+            return response;
+        } catch (Exception e) {
+            // On exception, the caller never receives the response and can't close it, so we must close it here.
+            // Catching Exception (not IOException) is intentional — compiles via Java 7+ improved rethrow (JLS §11.2.2).
+            try {
+                response.close();
+            } catch (Exception closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
         }
-
-        return  response;
     }
 }

@@ -28,6 +28,10 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  *         <li>Restrict same domain: only allow {client_id} and {redirect_uri} parameter of an authorization request whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
  *         <li>Required properties: only allow a client metadata that includes all required properties</li>
  *     </ul>
+ *     <li>Resource Indicators (RFC 8707) support</li>
+ *     <ul>
+ *         <li>Resource indicator allow list: only allow a {@code resource} parameter value that is included in the configured allow list</li>
+ *     </ul>
  * </ul>
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -37,6 +41,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
 
     // Client ID Verification
     public static final String ALLOW_HTTP_SCHEME = "cimd-allow-http-scheme";
+    public static final String ALLOW_PRIVATE_USE_ADDRESSES = "cimd-allow-private-use-addresses";
 
     // Client ID Validation
     public static final String TRUSTED_DOMAINS = "cimd-allow-permitted-domains";
@@ -44,6 +49,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
     // Client Metadata Validation
     public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
     public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
+
+    // Resource Indicators (RFC 8707) support
+    public static final String RESOURCE_INDICATOR_ALLOW_LIST = "cimd-resource-indicator-allow-list";
 
     // Factory Global Settings
     public static final String CONFIG_CIMD_PROVIDER_NAME = "cimd-provider-name";
@@ -76,8 +84,23 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
         ProviderConfigProperty property = new ProviderConfigProperty(
                 ALLOW_HTTP_SCHEME,
                 "Allow http scheme",
-                "If ON, then the executor allows http scheme as a valid Client ID URL and property of Client Metadata whose value is URL: client_uri, logo_uri, tos_uri, policy_uri, jwks_uri. " +
+                "If ON, then the executor allows http scheme for a URL that the server sends a request to itself, namely the Client ID URL and the " +
+                        "jwks_uri, sector_identifier_uri, request_uris, backchannel_logout_uri and backchannel_client_notification_endpoint " +
+                        "properties of Client Metadata. " +
                         "It can be ON only for development environment. It must be OFF in production environment. ",
+                ProviderConfigProperty.BOOLEAN_TYPE,
+                false);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty(
+                ALLOW_PRIVATE_USE_ADDRESSES,
+                "Allow private-use addresses",
+                "If OFF, then the executor rejects a URL that the server sends a request to itself, namely the Client ID URL and the " +
+                        "jwks_uri, sector_identifier_uri, request_uris, backchannel_logout_uri and backchannel_client_notification_endpoint " +
+                        "properties of Client Metadata, whose host resolves to a " +
+                        "loopback, private, link-local, unique local or multicast address. Such URLs are rejected even if their host " +
+                        "matches one of the trusted domains, which prevents Server-Side Request Forgery (SSRF) against hosts only " +
+                        "reachable from the server. It can be ON only for development environment. It must be OFF in production environment.",
                 ProviderConfigProperty.BOOLEAN_TYPE,
                 false);
         configProperties.add(property);
@@ -88,7 +111,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 "Trusted domains",
                 "If some domains are filled, the executor only accepts the following URL-formatted parameters whose host part matches one of the filled domains: " +
                         "Authorization request parameters: client_id, redirect_uri, " +
-                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri. " +
+                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri, sector_identifier_uri, request_uris, " +
+                        "backchannel_logout_uri, backchannel_client_notification_endpoint. " +
                         "The domains are checked by using wildcard pattern matching (e.g. '*.example.org'). " +
                         "If the domains not filled, the executor denies all such the parameters and properties. " +
                         "For example, use pattern like '*.example.org' if you want to accept the parameter / property whose domain is 'example.org' or its subdomains.",
@@ -110,6 +134,18 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 REQUIRED_PROPERTIES,
                 "Required properties",
                 "If client metadata does not include all the properties, the executor does not accept the client metadata.",
+                ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+                null);
+        configProperties.add(property);
+
+        // Resource Indicators (RFC 8707) support
+        property = new ProviderConfigProperty(
+                RESOURCE_INDICATOR_ALLOW_LIST,
+                "Resource indicator allow list",
+                "Only effective if Resource Indicators feature (RFC 8707) is enabled. " +
+                        "If a resource parameter value of an authorization request is not included in this allow list, the executor rejects the request. " +
+                        "If the request does not include a resource parameter, the executor does not enforce this allow list. " +
+                        "If the allow list is vacant, no resource parameter value is accepted.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
         configProperties.add(property);

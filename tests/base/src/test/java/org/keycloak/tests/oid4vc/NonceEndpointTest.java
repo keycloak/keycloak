@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
@@ -46,9 +47,9 @@ public class NonceEndpointTest extends OID4VCIssuerTestBase {
         // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
-                .clientId((String) null)
-                .userId((String) null)
-                .sessionId((String) null);
+                .clientId(null)
+                .userId(null)
+                .sessionId(null);
 
         String nonceUrl = oauth.getEndpoints().getOid4vcNonce();
 
@@ -81,6 +82,29 @@ public class NonceEndpointTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testCNonceCanOnlyBeConsumedOnce() throws Exception {
+        Oid4vcNonceResponse response = oauth.oid4vc().nonceRequest().send();
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode(),
+                "Nonce endpoint should return 200 OK");
+
+        String cNonce = response.getNonce();
+        Assertions.assertNotNull(cNonce);
+
+        runOnServer.run(session -> {
+            CNonceHandler cNonceHandler = session.getProvider(CNonceHandler.class);
+            var keycloakContext = session.getContext();
+
+            JsonWebToken verifiedToken = cNonceHandler.verifyCNonceAndGetToken(cNonce,
+                    List.of(OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(keycloakContext)),
+                    Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
+                            OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
+            cNonceHandler.consumeCNonce(cNonce, verifiedToken);
+
+            Assertions.assertThrows(VerificationException.class, () -> cNonceHandler.consumeCNonce(cNonce));
+        });
+    }
+
+    @Test
     public void testDPoPNonceHeaderPresent() throws Exception {
         // Clear events before nonce request
         events.clear();
@@ -90,9 +114,9 @@ public class NonceEndpointTest extends OID4VCIssuerTestBase {
         // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
-                .clientId((String) null)
-                .userId((String) null)
-                .sessionId((String) null);
+                .clientId(null)
+                .userId(null)
+                .sessionId(null);
 
         // Verify successful response
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode(),

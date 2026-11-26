@@ -1,8 +1,14 @@
 package org.keycloak.scim.filter;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_DEPTH;
+import static org.keycloak.scim.filter.FilterUtils.MAX_FILTER_LENGTH;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -95,6 +101,15 @@ public class FilterUtilsTest {
     public void testNullLiteral() {
         assertDoesNotThrow(() -> FilterUtils.parseFilter("middleName eq null"));
         assertDoesNotThrow(() -> FilterUtils.parseFilter("middleName eq NULL"));
+        assertDoesNotThrow(() -> FilterUtils.parseFilter("middleName ne null"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"co", "sw", "ew", "gt", "ge", "lt", "le"})
+    public void testNullWithNonEqualityOperatorThrows(String op) {
+        ScimFilterException e = assertThrows(ScimFilterException.class,
+                () -> FilterUtils.parseFilter("userName %s null".formatted(op)));
+        assertTrue(e.getMessage().contains(op));
     }
 
     @Test
@@ -140,9 +155,19 @@ public class FilterUtilsTest {
 
     @Test
     public void testEscapedStrings() {
-        // JSON string escaping
         assertDoesNotThrow(() -> FilterUtils.parseFilter("userName eq \"john\\\"doe\""));
         assertDoesNotThrow(() -> FilterUtils.parseFilter("path eq \"c:\\\\users\\\\john\""));
+
+        assertEquals("quote\"here", FilterUtils.unescapeJsonString("quote\\\"here"));
+        assertEquals("back\\slash", FilterUtils.unescapeJsonString("back\\\\slash"));
+        assertEquals("no escapes", FilterUtils.unescapeJsonString("no escapes"));
+    }
+
+    @Test
+    public void testUnescapeJsonStringDoesNotDoubleDecode() {
+        assertEquals("\\n", FilterUtils.unescapeJsonString("\\\\n"));
+        assertEquals("\\t", FilterUtils.unescapeJsonString("\\\\t"));
+        assertEquals("\\r", FilterUtils.unescapeJsonString("\\\\r"));
     }
 
     @Test
@@ -252,5 +277,61 @@ public class FilterUtilsTest {
         // Value path with schema-prefixed parent attribute
         assertDoesNotThrow(() -> FilterUtils.parseFilter(
             "urn:ietf:params:scim:schemas:core:2.0:User:name[familyName eq \"Silva\"]"));
+    }
+
+    @Test
+    public void testFilterExceedingMaxLength() {
+        String longFilter = "userName eq \"" + "a".repeat(MAX_FILTER_LENGTH) + "\"";
+        ScimFilterException e = assertThrows(ScimFilterException.class,
+                () -> FilterUtils.parseFilter(longFilter));
+        assertTrue(e.getMessage().contains("maximum allowed length"));
+    }
+
+    @Test
+    public void testFilterAtMaxLength() {
+        // build a valid filter that is exactly at the limit
+        String padding = "a".repeat(MAX_FILTER_LENGTH - "userName eq \"\"".length());
+        String filter = "userName eq \"" + padding + "\"";
+        assertEquals(MAX_FILTER_LENGTH, filter.length());
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(filter));
+    }
+
+    @Test
+    public void testFilterExceedingMaxDepth() {
+        // build a filter with nesting depth exceeding the limit: (((...(userName eq "a")...)))
+        String filter = "(".repeat(MAX_FILTER_DEPTH + 1) + "userName eq \"a\"" + ")".repeat(MAX_FILTER_DEPTH + 1);
+        ScimFilterException e = assertThrows(ScimFilterException.class,
+                () -> FilterUtils.parseFilter(filter));
+        assertTrue(e.getMessage().contains("maximum allowed nesting depth"));
+    }
+
+    @Test
+    public void testFilterAtMaxDepth() {
+        String filter = "(".repeat(MAX_FILTER_DEPTH) + "userName eq \"a\"" + ")".repeat(MAX_FILTER_DEPTH);
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(filter));
+    }
+
+    @Test
+    public void testBracketsInsideStringLiteralsIgnored() {
+        // parentheses and brackets inside quoted strings should not count towards nesting depth
+        String filter = "userName eq \"((([[[)))]]\"";
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(filter));
+    }
+
+    @Test
+    public void testValuePathDepthCountsTowardsLimit() {
+        // value path brackets count as a nesting level
+        // build: attr1[attr2[...attrN[x eq "a"]...]] with MAX_FILTER_DEPTH + 1 levels
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= MAX_FILTER_DEPTH; i++) {
+            sb.append("attr").append(i).append("[");
+        }
+        sb.append("x eq \"a\"");
+        for (int i = 0; i <= MAX_FILTER_DEPTH; i++) {
+            sb.append("]");
+        }
+        ScimFilterException e = assertThrows(ScimFilterException.class,
+                () -> FilterUtils.parseFilter(sb.toString()));
+        assertTrue(e.getMessage().contains("maximum allowed nesting depth"));
     }
 }

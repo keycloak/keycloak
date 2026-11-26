@@ -35,7 +35,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
-    @FindBy(className = "pf-v5-c-alert")
+    @FindBy(className = "pf-v6-c-alert")
     private WebElement verifyErrorMessage;
 
     public void submit(String userCode) {
@@ -51,15 +51,8 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        if (driver.getTitle().startsWith("Sign in to ")) {
-            try {
-                driver.findElement(By.id(DEVICE_USER_CODE));
-                return true;
-            } catch (Throwable t) {
-            }
-        }
-        return false;
+    public String getExpectedPageId() {
+        return "login-login-oauth2-device-verify-user-code";
     }
 
     public void assertApprovedPage() {

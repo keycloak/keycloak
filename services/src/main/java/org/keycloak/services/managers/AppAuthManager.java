@@ -199,7 +199,6 @@ public class AppAuthManager extends AuthenticationManager {
             return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
                     verifier -> {
                         DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
-                        verifier.withChecks(GrantTypeEndpointRestrictionValidator.check(session));
                     });
         }
     }

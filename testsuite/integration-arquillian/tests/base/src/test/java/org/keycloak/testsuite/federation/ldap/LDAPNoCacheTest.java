@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -38,13 +40,12 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -109,10 +110,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
-
-    @Page
-    protected AppPage appPage;
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -209,12 +207,20 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        MimeMessage[] messages = greenMail.getReceivedMessages();
+        Assertions.assertTrue(mail.waitForIncomingEmail(expectedCountOfMessages));
+        MimeMessage[] messages = mail.getReceivedMessages();
         Assertions.assertEquals(expectedCountOfMessages, messages.length);
-        MimeMessage message = greenMail.getReceivedMessages()[expectedCountOfMessages - 1];
+        MimeMessage message = mail.getReceivedMessages()[expectedCountOfMessages - 1];
 
         String emailAddress = MailUtils.getRecipient(message);
         Assertions.assertEquals(expectedEmail, emailAddress);
+
+        // the next email for the same user would not be sent during the cooldown
+        testingClient.server().run((KeycloakSession session) -> {
+            RealmModel realm = LDAPTestContext.init(session).getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "johnkeycloak");
+            session.singleUseObjects().remove(EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, user.getId()));
+        });
     }
 
     private static void changeEmailAddressInLDAP(KeycloakTestingClient testingClient, String newEmail) {

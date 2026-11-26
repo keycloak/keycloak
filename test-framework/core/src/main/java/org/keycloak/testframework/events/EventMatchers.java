@@ -1,5 +1,6 @@
 package org.keycloak.testframework.events;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -42,6 +43,57 @@ public class EventMatchers {
     public static Matcher<String> isSessionId() {
         // Make the tests pass with the old and the new encoding of sessions
         return Matchers.anyOf(isBase64WithAtLeast128Bits(), isUUID());
+    }
+
+    /**
+     * Check if value is a token_id
+     *
+     * @return
+     */
+    public static Matcher<String> isTokenId() {
+        // Make the tests pass with the old and the new encoding of token IDs
+        return Matchers.anyOf(isBase64WithAtLeast128Bits(), isUUID());
+    }
+
+    /**
+     * Check if value is a scope
+     *
+     * @return
+     */
+    public static Matcher<String> isScope(String scope) {
+        return new TypeSafeMatcher<>() {
+            @Override
+            protected boolean matchesSafely(String actualValue) {
+                return Matchers.containsInAnyOrder(scope.split(" ")).matches(Arrays.asList(actualValue.split(" ")));
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("contains scope in any order");
+            }};
+    }
+
+    /**
+     * Check if value is a access token_id
+     *
+     * @return
+     */
+    public static Matcher<String> isAccessTokenId(String expectedGrantShortcut) {
+        return new TypeSafeMatcher<>() {
+            @Override
+            protected boolean matchesSafely(String item) {
+                String[] items = item.split(":");
+                if (items.length != 2) return false;
+                // Grant type shortcut starts at character 4th char and is 2-chars long
+                if (items[0].substring(3, 5).equals(expectedGrantShortcut)) return false;
+                return isTokenId().matches(items[1]);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("Not a Token ID with expected grant: " + expectedGrantShortcut);
+            }
+        };
     }
 
     private static Matcher<String> isBase64WithAtLeast128Bits() {

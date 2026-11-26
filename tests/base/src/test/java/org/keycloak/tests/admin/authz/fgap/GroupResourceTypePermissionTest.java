@@ -25,9 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -42,7 +40,7 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
     public void onBefore() {
         UserPolicyRepresentation policy = new UserPolicyRepresentation();
         policy.setName("User Policy");
-        client.admin().authorization().policies().user().create(policy).close();
+        adminPermissionsClient.authorization().policies().user().create(policy).close();
         GroupRepresentation group = new GroupRepresentation();
         group.setName("MyGroup");
         realm.admin().groups().add(group).close();;
@@ -51,12 +49,12 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
     @Test
     public void testCreateResourceTypePermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
-        ScopePermissionRepresentation expected = createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, onlyMyAdminUserPolicy, AdminPermissionsSchema.GROUPS.getScopes());
-        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        ScopePermissionRepresentation expected = createAllPermission(adminPermissionsClient, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, onlyMyAdminUserPolicy, AdminPermissionsSchema.GROUPS.getScopes());
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(adminPermissionsClient).findAll(null, null, null, -1, -1);
         assertEquals(1, result.size());
         ScopePermissionRepresentation permissionRep = result.get(0);
-        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
+        ScopePermissionResource permission = getScopePermissionsResource(adminPermissionsClient).findById(permissionRep.getId());
         assertEquals(expected.getName(), permissionRep.getName());
         assertEquals(AdminPermissionsSchema.GROUPS.getScopes().size(), permission.scopes().size());
         assertEquals(1, permission.associatedPolicies().size());
@@ -67,13 +65,13 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
     @Test
     public void testCreateResourceObjectPermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation onlyMyAdminUserPolicy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
         GroupRepresentation group = realm.admin().groups().groups().get(0);
-        ScopePermissionRepresentation expected = createPermission(client, group.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.GROUPS.getScopes(), onlyMyAdminUserPolicy);
-        List<ScopePermissionRepresentation> result = getScopePermissionsResource(client).findAll(null, null, null, -1, -1);
+        ScopePermissionRepresentation expected = createPermission(adminPermissionsClient, group.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.GROUPS.getScopes(), onlyMyAdminUserPolicy);
+        List<ScopePermissionRepresentation> result = getScopePermissionsResource(adminPermissionsClient).findAll(null, null, null, -1, -1);
         assertEquals(1, result.size());
         ScopePermissionRepresentation permissionRep = result.get(0);
-        ScopePermissionResource permission = getScopePermissionsResource(client).findById(permissionRep.getId());
+        ScopePermissionResource permission = getScopePermissionsResource(adminPermissionsClient).findById(permissionRep.getId());
         assertEquals(expected.getName(), permissionRep.getName());
         assertEquals(AdminPermissionsSchema.GROUPS.getScopes().size(), permission.scopes().size());
         assertEquals(1, permission.associatedPolicies().size());
@@ -111,7 +109,7 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         assertThat(policies.get(0).getConfig().get("groups"), containsString(topGroup1.getId()));
         assertThat(policies.get(1).getConfig().get("groups"), containsString(topGroup1.getId()));
 
-        List<ScopePermissionRepresentation> permissions = getScopePermissionsResource(client).findAll(null, null, null, null, null);
+        List<ScopePermissionRepresentation> permissions = getScopePermissionsResource(adminPermissionsClient).findAll(null, null, null, null, null);
         assertThat(permissions, hasSize(2));
         assertThat(getPolicies().policy(permissions.get(0).getId()).resources().stream().map(ResourceRepresentation::getName).collect(Collectors.toList()), hasItem(topGroup1.getId()));
         assertThat(getPolicies().policy(permissions.get(1).getId()).resources().stream().map(ResourceRepresentation::getName).collect(Collectors.toList()), hasItem(topGroup1.getId()));
@@ -119,18 +117,18 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         //remove group
         realm.admin().groups().group(topGroup1.getId()).remove();
 
-        //check the resource was removed from policies
+        // Group policy references are preserved after deletion.
         GroupPolicyRepresentation groupPolicy = getPolicies().group().findByName("Only topGroup or topGroup1 Group Policy");
         assertThat(groupPolicy, notNullValue());
         Set<String> groupIds = groupPolicy.getGroups().stream().map(GroupDefinition::getId).collect(Collectors.toSet());
-        assertThat(groupIds, not(contains(topGroup1.getId())));
+        assertThat(groupIds, equalTo(Set.of(topGroup.getId(), topGroup1.getId())));
 
         GroupPolicyRepresentation groupPolicy1 = getPolicies().group().findByName("Only topGroup1 Group Policy");
         assertThat(groupPolicy1, notNullValue());
-        assertThat(groupPolicy1.getGroups().stream().map(GroupDefinition::getId).collect(Collectors.toSet()), empty());
+        assertThat(groupPolicy1.getGroups().stream().map(GroupDefinition::getId).collect(Collectors.toSet()), equalTo(Set.of(topGroup1.getId())));
 
         //there should be 1 permission left
-        permissions = getScopePermissionsResource(client).findAll(null, null, null, null, null);
+        permissions = getScopePermissionsResource(adminPermissionsClient).findAll(null, null, null, null, null);
         assertThat(permissions, hasSize(1));
         assertThat(getPolicies().policy(permissions.get(0).getId()).resources().stream().map(ResourceRepresentation::getName).collect(Collectors.toList()), not(hasItem(topGroup1.getId())));
     }
@@ -143,7 +141,7 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
                 .addPolicies(List.of("User Policy"))
                 .build();
 
-        createPermission(client, permission);
+        createPermission(adminPermissionsClient, permission);
 
         return permission;
     }
@@ -153,12 +151,12 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         policy.setName(name);
         policy.addGroup(groupIds);
         policy.setLogic(Logic.POSITIVE);
-        try (Response response = client.admin().authorization().policies().group().create(policy)) {
+        try (Response response = adminPermissionsClient.authorization().policies().group().create(policy)) {
             assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
             realm.cleanup().add(r -> {
-                GroupPolicyRepresentation groupPolicy = client.admin().authorization().policies().group().findByName(name);
+                GroupPolicyRepresentation groupPolicy = adminPermissionsClient.authorization().policies().group().findByName(name);
                 if (groupPolicy != null) {
-                    client.admin().authorization().policies().group().findById(groupPolicy.getId()).remove();
+                    adminPermissionsClient.authorization().policies().group().findById(groupPolicy.getId()).remove();
                 }
             });
         }

@@ -72,7 +72,7 @@ public class DeploymentBuilder {
         try {
             URI.create(sp.getEntityID());
         } catch (IllegalArgumentException ex) {
-            log.warnf("Entity ID is not an URI, assertion that restricts audience will fail. Update Entity ID to be URI.", sp.getEntityID());
+            log.warnf("Entity ID '%s' is not an URI, assertion that restricts audience will fail. Update Entity ID to be URI.", sp.getEntityID());
         }
         deployment.setForceAuthentication(sp.isForceAuthentication());
         deployment.setIsPassive(sp.isIsPassive());
@@ -81,6 +81,7 @@ public class DeploymentBuilder {
         IDP idp = sp.getIdp();
         deployment.setSignatureCanonicalizationMethod(idp.getSignatureCanonicalizationMethod());
         deployment.setAutodetectBearerOnly(sp.isAutodetectBearerOnly());
+        deployment.setTurnOffChangeSessionIdOnLogin(sp.isTurnOffChangeSessionIdOnLogin());
         deployment.setKeepDOMAssertion(sp.isKeepDOMAssertion());
         deployment.setSignatureAlgorithm(SignatureAlgorithm.RSA_SHA256);
         if (idp.getSignatureAlgorithm() != null) {

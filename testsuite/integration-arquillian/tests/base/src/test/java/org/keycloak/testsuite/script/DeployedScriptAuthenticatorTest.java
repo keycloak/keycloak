@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -188,7 +189,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", "password");
 
-        events.expectLogin().user(okayUser()).detail(Details.USERNAME, "user").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(okayUser().getId()).details(Details.USERNAME, "user");
     }
 
     // Issue 20005
@@ -253,7 +254,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("fail", "password");
 
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.USER_NOT_FOUND).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).error(Errors.USER_NOT_FOUND);
     }
 
     @Test

@@ -31,6 +31,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +54,7 @@ public class UsersTest {
     RunOnServerClient runOnServer;
 
     @Test
+    @DatabaseTest
     public void searchUserWithWildcards() {
         createUser("User", "firstName", "lastName", "user@example.com");
 
@@ -79,6 +81,7 @@ public class UsersTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchUserDefaultSettings() throws Exception {
         createUser("User", "firstName", "lastName", "user@example.com");
 
@@ -86,6 +89,7 @@ public class UsersTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchUserMatchUsersCount() {
         createUser("john.doe", "John", "Doe Smith", "john.doe@keycloak.org");
         String search = "jo do";
@@ -100,6 +104,7 @@ public class UsersTest {
      * https://issues.redhat.com/browse/KEYCLOAK-15146
      */
     @Test
+    @DatabaseTest
     public void findUsersByEmailVerifiedStatus() {
         createUser(UserBuilder.create()
                 .username("user1")
@@ -160,6 +165,7 @@ public class UsersTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCountUsersByEnabledStatus() {
         createUser(UserBuilder.create()
                 .username("user1")
@@ -183,6 +189,7 @@ public class UsersTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCountUsersByFederatedIdentity() {
         createUser(UserBuilder.create()
                 .username("user1")
@@ -264,6 +271,7 @@ public class UsersTest {
     }
 
     @Test
+    @DatabaseTest
     public void countUsersBySearchWithViewPermission() {
         createUser(UserBuilder.create()
                 .username("user1")
@@ -322,6 +330,7 @@ public class UsersTest {
     }
 
     @Test
+    @DatabaseTest
     public void countUsersByFiltersWithViewPermission() {
         createUser("user1", "user1FirstName", "user1LastName", "user1@example.com");
         createUser("user2", "user2FirstName", "user2LastName", "user2@example.com");

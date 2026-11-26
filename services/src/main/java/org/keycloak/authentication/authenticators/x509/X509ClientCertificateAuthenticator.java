@@ -51,6 +51,10 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
 
     private final static Logger logger = Logger.getLogger(X509ClientCertificateAuthenticator.class);
 
+    public X509ClientCertificateAuthenticator(boolean legacyCriticalBehavior) {
+        super(legacyCriticalBehavior);
+    }
+
     @Override
     public void close() {
 
@@ -85,17 +89,22 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 context.attempted();
                 return;
             }
+            if (config.getCASubjectDN().isEmpty()) {
+                logger.warnf("[authenticate] Option '%s' is empty, this configuration is deprecated, please configure it for the authenticator in realm '%s'",
+                        CERTIFICATE_CA_SUBJECT_DN, context.getRealm().getName());
+            }
 
             // Validate X509 client certificate
             try {
                 CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
-                validator.checkRevocationStatus()
-                         .validateTrust()
-                         .validateKeyUsage()
-                         .validateExtendedKeyUsage()
+                validator.validateTrust()
+                         .validateCASubjectDN()
+                         .validateTimestamps()
+                         .validateKeyUsage(isLegacyCriticalBehavior())
+                         .validateExtendedKeyUsage(isLegacyCriticalBehavior())
                          .validatePolicy()
-                         .validateTimestamps();
+                         .checkRevocationStatus();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
                 // TODO use specific locale to load error messages

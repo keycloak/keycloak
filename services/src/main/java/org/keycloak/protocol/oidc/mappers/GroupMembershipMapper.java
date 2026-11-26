@@ -50,7 +50,7 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
         property1.setLabel("Full group path");
         property1.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property1.setDefaultValue("true");
-        property1.setHelpText("Include full path to group i.e. /top/level1/level2, false will just specify the group name");
+        property1.setHelpText("Include full path to group i.e. /top/level1/level2, false will just specify the group name. Make sure to enable this setting if your realm has a group hierarchy with duplicated group names.");
         configProperties.add(property1);
 
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(configProperties, GroupMembershipMapper.class);
@@ -99,9 +99,12 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
                 ModelToRepresentation::buildGroupPath : GroupModel::getName;
         List<String> membership = userSession.getUser().getGroupsStream().map(toGroupRepresentation).collect(Collectors.toList());
 
-        // force multivalued as the attribute is not defined for this mapper
-        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
-        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, membership);
+        // force multivalued as the attribute is not defined for this mapper.
+        // do this on a copy of the model so that the shared, cached mapper config is not mutated
+        // (mutating it is not thread-safe and corrupts the config of concurrent token issuances)
+        ProtocolMapperModel model = new ProtocolMapperModel(mappingModel);
+        model.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+        OIDCAttributeMapperHelper.mapClaim(token, model, membership);
     }
 
     public static ProtocolMapperModel create(String name,

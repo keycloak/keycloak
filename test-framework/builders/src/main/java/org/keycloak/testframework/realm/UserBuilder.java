@@ -1,11 +1,16 @@
 package org.keycloak.testframework.realm;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 
 public class UserBuilder extends Builder<UserRepresentation> {
 
@@ -130,6 +135,22 @@ public class UserBuilder extends Builder<UserRepresentation> {
 
     public UserBuilder serviceAccountId(String serviceAccountClientId) {
         rep.setServiceAccountClientId(serviceAccountClientId);
+        return this;
+    }
+
+    public UserBuilder verifiableCredential(String credentialScopeName) {
+        UserVerifiableCredentialRepresentation newCred = new UserVerifiableCredentialRepresentation();
+        newCred.setCredentialScopeName(credentialScopeName);
+        newCred.setRevision(SecretGenerator.getInstance().generateSecureID());
+        newCred.setCreatedDate(Time.currentTimeMillis());
+
+        List<UserVerifiableCredentialRepresentation> creds = Optional.ofNullable(rep.getVerifiableCredentials())
+                .orElseGet(() -> {
+            List<UserVerifiableCredentialRepresentation> newCreds = new ArrayList<>();
+            rep.setVerifiableCredentials(newCreds);
+            return newCreds;
+        });
+        creds.add(newCred);
         return this;
     }
 

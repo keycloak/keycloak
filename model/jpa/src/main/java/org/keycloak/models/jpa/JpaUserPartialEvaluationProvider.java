@@ -18,6 +18,7 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -99,7 +100,7 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
             return cb.exists(createUserMembershipSubquery(context));
         }
 
-        return cb.exists(createUserMembershipSubquery(context, root -> root.get("groupId").in(allowedGroups)));
+        return cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups)));
     }
 
     private Predicate getDeniedGroupsFilters(PartialEvaluationContext context) {
@@ -117,17 +118,17 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
                 if (allowedGroups.isEmpty()) {
                     if (context.getDeniedGroupIds().isEmpty()) {
                         // filter group members but allow
-                        return cb.and(cb.or(notMembers, context.getPath().get("id").in(context.getAllowedResourceIds())));
+                        return cb.and(cb.or(notMembers, context.inPredicate(context.getPath().get("id"), context.getAllowedResourceIds())));
                     }
 
                     return notMembers;
                 }
 
-                Predicate onlySpecificGroups = cb.exists(createUserMembershipSubquery(context, root -> root.get("groupId").in(allowedGroups)));
+                Predicate onlySpecificGroups = cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups)));
                 return cb.and(cb.or(notMembers, onlySpecificGroups));
             }
 
-            return cb.not(cb.exists(createUserMembershipSubquery(context, root -> root.get("groupId").in(context.getDeniedGroupIds()))));
+            return cb.not(cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), expandGroupsToDescendants(context.getDeniedGroupIds())))));
         }
 
         if (context.getAllowedResources().isEmpty() && (allowedGroups.isEmpty() || context.deniedResources().contains(USERS_RESOURCE_TYPE))) {
@@ -138,7 +139,14 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
             return null;
         }
 
-        return cb.not(cb.exists(createUserMembershipSubquery(context, root -> root.get("groupId").in(deniedGroups))));
+        Set<String> expandedDenied = expandGroupsToDescendants(deniedGroups);
+        Set<String> toSubtract = new HashSet<>(allowedGroups);
+        toSubtract.removeAll(deniedGroups);
+        expandedDenied.removeAll(toSubtract);
+        if (expandedDenied.isEmpty()) {
+            return null;
+        }
+        return cb.not(cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), expandedDenied))));
     }
 
     private Subquery<?> createUserMembershipSubquery(PartialEvaluationContext context) {
@@ -168,6 +176,34 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
         return subquery;
     }
 
+//    One query per level of group nesting (N + 1 queries). For typical Keycloak deployments (2-4 levels deep) this is fine, but worth noting.
+//    A recursive CTE would be a single query, though it isn't used elsewhere and portability across DB vendors might be a concern. The iterative
+//    approach is pragmatic here.
+    private Set<String> expandGroupsToDescendants(Set<String> groupIds) {
+        if (groupIds.isEmpty()) return groupIds;
+
+        EntityManager em = getEntityManager();
+        String realmId = getSession().getContext().getRealm().getId();
+        Set<String> expanded = new HashSet<>(groupIds);
+        Set<String> currentLevel = new HashSet<>(groupIds);
+
+        while (!currentLevel.isEmpty()) {
+            List<String> children = em.createNamedQuery("getChildGroupIdsByParentIds", String.class)
+                    .setParameter("realm", realmId)
+                    .setParameter("parentIds", currentLevel)
+                    .getResultList();
+
+            currentLevel = new HashSet<>();
+            for (String childId : children) {
+                if (expanded.add(childId)) {
+                    currentLevel.add(childId);
+                }
+            }
+        }
+
+        return expanded;
+    }
+
     /**
      * @deprecated remove once FGAP v1 is removed
      */
@@ -183,7 +219,7 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
 
         List<Predicate> subPredicates = new ArrayList<>();
 
-        subPredicates.add(from.get("groupId").in(groupIds));
+        subPredicates.add(context.inPredicate(from.get("groupId"), groupIds));
 
         Path<?> root = context.getPath();
 

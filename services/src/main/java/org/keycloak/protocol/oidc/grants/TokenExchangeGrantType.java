@@ -33,6 +33,9 @@ import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
 
+import static org.keycloak.OAuth2Constants.ACTOR_TOKEN;
+import static org.keycloak.OAuth2Constants.SUBJECT_TOKEN;
+
 /**
  * OAuth 2.0 Authorization Code Grant
  * https://datatracker.ietf.org/doc/html/rfc8693#section-2.1
@@ -42,6 +45,11 @@ import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
 public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
 
     private static final Set<String> SUPPORTED_DUPLICATED_PARAMETERS = Set.of(OAuth2Constants.AUDIENCE, OAuth2Constants.RESOURCE);
+
+    @Override
+    public boolean isConfidentialOnlyGrantType() {
+        return true;
+    }
 
     @Override
     public Response process(Context context) {
@@ -100,5 +108,10 @@ public class TokenExchangeGrantType extends OAuth2GrantTypeBase {
     @Override
     public Set<String> getSupportedMultivaluedRequestParameters() {
         return SUPPORTED_DUPLICATED_PARAMETERS;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Set.of(SUBJECT_TOKEN, ACTOR_TOKEN);
     }
 }

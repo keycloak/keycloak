@@ -24,7 +24,7 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
     @FindBy(name = "department")
     private WebElement departmentInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "[type=\"submit\"]")
     private WebElement submitButton;
 
     public void updateAccountInformation(String userName,
@@ -96,8 +96,8 @@ public class UpdateAccountInformationPage extends LanguageComboboxAwarePage {
     }
 
     @Override
-    public boolean isCurrent() {
-        return PageUtils.getPageTitle(driver) != null && PageUtils.getPageTitle(driver).equalsIgnoreCase("update account information");
+    public String getExpectedPageId() {
+        return "login-idp-review-user-profile";
     }
 
     public String getLabelForField(String fieldId) {

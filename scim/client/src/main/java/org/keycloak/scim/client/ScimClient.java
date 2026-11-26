@@ -73,6 +73,16 @@ public final class ScimClient implements AutoCloseable {
         return new ScimSchemasClient(this);
     }
 
+    /**
+     * Execute a raw GET request to the given path relative to the SCIM base URL.
+     * Throws {@link ScimClientException} if the response status is not successful.
+     *
+     * @param path the path relative to the SCIM base URL (e.g., "InvalidType")
+     */
+    public void get(String path) {
+        execute(doGet(path));
+    }
+
     @Override
     public void close() {
         // no-op for now
@@ -101,6 +111,11 @@ public final class ScimClient implements AutoCloseable {
         } catch (Exception e) {
             throw new ScimClientException("Unexpected response from SCIM server", e);
         }
+    }
+
+    SimpleHttpRequest doGet(String path) {
+        return beforeRequest(http.doGet(baseUrl + path))
+                .header(HttpHeaders.ACCEPT, APPLICATION_SCIM_JSON);
     }
 
     SimpleHttpRequest doGet(Class<? extends ResourceTypeRepresentation> resourceType, String path) {

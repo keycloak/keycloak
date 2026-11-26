@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -127,7 +128,17 @@ public class RealmsAdminResource {
 
     protected RealmRepresentation toRealmRep(RealmModel realm, boolean briefRep) {
         if (AdminPermissions.realms(session, auth).canView(realm)) {
-            return briefRep ? ModelToRepresentation.toBriefRepresentation(realm) : ModelToRepresentation.toRepresentation(session, realm, false);
+            if (briefRep) {
+                return ModelToRepresentation.toBriefRepresentation(realm);
+            }
+            RealmRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, false);
+            AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, auth);
+            List<String> filteredDefaultGroups = realm.getDefaultGroupsStream()
+                    .filter(realmAuth.groups()::canView)
+                    .map(ModelToRepresentation::buildGroupPath)
+                    .toList();
+            rep.setDefaultGroups(filteredDefaultGroups.isEmpty() ? null : filteredDefaultGroups);
+            return rep;
         } else if (AdminPermissions.realms(session, auth).isAdmin(realm)) {
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());

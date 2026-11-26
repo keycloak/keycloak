@@ -40,7 +40,7 @@ public class PatchRequest {
     }
 
     public void setSchemas(Set<String> schemas) {
-        this.schemas = schemas;
+        this.schemas = schemas != null ? schemas : Set.of();
     }
 
     public List<PatchOperation> getOperations() {
@@ -138,6 +138,11 @@ public class PatchRequest {
 
         public Builder remove(String path) {
             operation("remove", path, null);
+            return this;
+        }
+
+        public Builder remove(String path, String value) {
+            operation("remove", path, value);
             return this;
         }
 

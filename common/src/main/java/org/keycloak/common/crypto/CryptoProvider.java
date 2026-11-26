@@ -22,6 +22,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
+import org.keycloak.common.util.KeystoreUtil.TruststoreFormat;
 
 /**
  * Abstraction to handle differences between the APIs for non-fips and fips mode
@@ -98,6 +99,17 @@ public interface CryptoProvider {
     KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException;
 
     /**
+     * Get a Java KeyStore backed truststore for the given format.
+     * PEM is an input certificate format, not a generated Java KeyStore format.
+     */
+    default KeyStore getTrustStore(TruststoreFormat format) throws KeyStoreException, NoSuchProviderException {
+        if (!format.isJavaTrustStore()) {
+            throw new KeyStoreException(format.name() + " is not a Java KeyStore truststore format");
+        }
+        return getKeyStore(KeystoreFormat.valueOf(format.name()));
+    }
+
+    /**
      * @return Keystore types/algorithms supported by this CryptoProvider
      */
     default Stream<KeystoreFormat> getSupportedKeyStoreTypes() {
@@ -110,6 +122,37 @@ public interface CryptoProvider {
                         return false;
                     }
                 });
+    }
+
+    /**
+     * @return Java KeyStore backed truststore types supported by this CryptoProvider for generated truststores.
+     */
+    default Stream<TruststoreFormat> getSupportedTrustStoreTypes() {
+        return Stream.of(TruststoreFormat.values())
+                .filter(TruststoreFormat::isJavaTrustStore)
+                .filter(format -> supportsTrustStore(this, format));
+    }
+
+    /**
+     * @return Preferred format for a generated system truststore.
+     */
+    default TruststoreFormat getPreferredGeneratedTrustStoreType() {
+        if (supportsTrustStore(this, TruststoreFormat.PKCS12)) {
+            return TruststoreFormat.PKCS12;
+        }
+        if (supportsTrustStore(this, TruststoreFormat.BCFKS)) {
+            return TruststoreFormat.BCFKS;
+        }
+        throw new IllegalStateException("No generated Java KeyStore backed truststore types are supported");
+    }
+
+    static boolean supportsTrustStore(CryptoProvider provider, TruststoreFormat format) {
+        try {
+            provider.getTrustStore(format);
+            return true;
+        } catch (KeyStoreException | NoSuchProviderException ex) {
+            return false;
+        }
     }
 
     CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException;
