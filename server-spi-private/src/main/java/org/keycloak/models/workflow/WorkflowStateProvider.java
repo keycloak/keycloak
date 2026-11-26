@@ -31,14 +31,16 @@ import org.keycloak.provider.Provider;
 public interface WorkflowStateProvider extends Provider {
 
     /**
-     * Deletes all state records associated with the given resource ID.
+     * Deletes all state records associated with the given resource ID, scoped to the given realm.
      * </p>
-     * This method removes all workflow state information for the specified resource,
-     * regardless of which workflows the resource is associated with.
+     * This method removes workflow state information for the specified resource that belongs to
+     * workflows of the given realm. State records for other realms are left untouched, even when
+     * they reference a resource with the same ID.
      *
      * @param resourceId the ID of the resource whose state records should be deleted
+     * @param realmId the ID of the realm the resource belongs to
      */
-    void removeByResource(String resourceId);
+    void removeByResource(String resourceId, String realmId);
 
     /**
      * Deletes the state record associated with a specific workflow and resource combination.
