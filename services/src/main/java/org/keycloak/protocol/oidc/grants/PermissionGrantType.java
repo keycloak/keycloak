@@ -88,6 +88,11 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
                 event.error(Errors.INVALID_CLIENT);
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
             }
+
+            if (client.isBearerOnly()) {
+                event.error(Errors.INVALID_CLIENT);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
+            }
         }
 
         String claimToken = null;

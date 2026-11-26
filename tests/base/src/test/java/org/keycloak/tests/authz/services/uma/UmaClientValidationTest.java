@@ -62,9 +62,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest(config = DefaultAuthzServicesServerConfig.class)
-public class UmaClientProtocolTest {
+public class UmaClientValidationTest {
 
-    private static final String RESOURCE_NAME = "protocol-check-resource";
+    private static final String RESOURCE_NAME = "client-check-resource";
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)
     ManagedRealm realm;
@@ -99,6 +99,17 @@ public class UmaClientProtocolTest {
         requestingClient.updateWithCleanup(client -> client.protocol(SamlProtocol.LOGIN_PROTOCOL));
 
         assertRejected(request, bearerToken, "invalid_client", "Wrong client protocol.");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void rejectBearerOnlyRequestingClient(boolean bearerToken) throws IOException {
+        AuthorizationRequest request = createGrantedRequest();
+        assertNotNull(authorize(request, bearerToken).getToken());
+
+        requestingClient.updateWithCleanup(client -> client.bearerOnly(true));
+
+        assertRejected(request, bearerToken, "invalid_client", "Bearer-only not allowed");
     }
 
     @ParameterizedTest
@@ -146,7 +157,7 @@ public class UmaClientProtocolTest {
 
     private void assertRejected(AuthorizationRequest request, boolean bearerToken, String error, String description) throws IOException {
         RuntimeException exception = assertThrows(RuntimeException.class, () -> authorize(request, bearerToken),
-                "A client with a non-OIDC protocol must not participate in UMA token issuance");
+                "UMA token issuance must reject an invalid client configuration");
         HttpResponseException response = assertInstanceOf(HttpResponseException.class, exception.getCause());
         assertEquals(400, response.getStatusCode());
         OAuth2ErrorRepresentation body = JsonSerialization.readValue(response.getBytes(), OAuth2ErrorRepresentation.class);
