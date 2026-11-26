@@ -17,6 +17,10 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeycloakRunner;
@@ -28,9 +32,8 @@ import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -73,31 +76,6 @@ public class CustomJpaEntityProviderDistTest {
     }
 
     @Test
-    @Launch({"start-dev", "--db=dev-file", "--log-level=org.hibernate.orm.jpa:debug", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem", "--db-kind-explicit-custom-store=dev-mem"})
-    void implicitOrmXmlMappingApplied(CLIResult cliResult) {
-        String output = cliResult.getOutput();
-        String defaultPuBlock = extractPersistenceUnitBlock(output, "<default>");
-        String newUserStorePuBlock = extractPersistenceUnitBlock(output, "new-user-store");
-        String explicitCustomStorePuBlock = extractPersistenceUnitBlock(output, "explicit-custom-store");
-        assertNotNull(explicitCustomStorePuBlock, "'explicit-custom-store' PU info block should be present");
-        assertTrue(explicitCustomStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must be in 'explicit-custom-store' PU");
-        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must NOT leak into '<default>' PU");
-
-        assertNotNull(defaultPuBlock, "'<default>' PU info block should be present in Hibernate debug output");
-        assertNotNull(newUserStorePuBlock, "'new-user-store' PU info block should be present in Hibernate debug output");
-
-        assertTrue(newUserStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
-                "OrmMappedEntity (from provider's META-INF/orm.xml) must be assigned to 'new-user-store' "
-                        + "persistence unit, not left unassigned");
-
-        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
-                "OrmMappedEntity (from provider's META-INF/orm.xml) must NOT leak into "
-                        + "Keycloak's '<default>' persistence unit");
-
-        cliResult.assertStartedDevMode();
-    }
-
-    @Test
     @Launch({"start-dev", "--db=dev-file", "--log-level=org.hibernate.orm.jpa:debug,org.keycloak.quarkus.deployment.KeycloakProcessor:debug", "--db-kind-new-user-store=dev-mem", "--db-kind-client-store=dev-file", "--db-kind-pu-without-dialect-store=dev-mem", "--db-kind-explicit-custom-store=dev-mem"})
     void testUserManagedEntityNotAddedToDefaultPU(CLIResult cliResult) {
         cliResult.assertMessage(MULTIPLE_DATASOURCES_MSG);
@@ -112,53 +90,32 @@ public class CustomJpaEntityProviderDistTest {
         cliResult.assertMessageWasShownExactlyNumberOfTimes("name: client-store", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("name: explicit-custom-store", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("name: pu-without-dialect-store", 1);
-        cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.Realm", 1);
-        cliResult.assertMessageWasShownExactlyNumberOfTimes("com.acme.provider.legacy.jpa.entity.UnlistedEntity", 1);
+        assertEntityAssignedOnlyTo(cliResult.getOutput(), "com.acme.provider.legacy.jpa.entity.Realm", "new-user-store");
+        assertEntityAssignedOnlyTo(cliResult.getOutput(), "com.acme.provider.legacy.jpa.entity.UnlistedEntity", "explicit-custom-store");
+        assertEntityAssignedOnlyTo(cliResult.getOutput(), "com.acme.provider.legacy.jpa.entity.OrmMappedEntity", "new-user-store");
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: com.acme.provider.legacy.jpa.entity.KeycloakItH2Dialect", 1);
         cliResult.assertMessageWasShownExactlyNumberOfTimes("hibernate.dialect: org.keycloak.connections.jpa.dialect.KeycloakH2Dialect", 4);
 
         cliResult.assertMessageWasShownExactlyNumberOfTimes("jakarta.persistence.sharedCache.mode: ENABLE_SELECTIVE", 1);
-        cliResult.assertMessageWasShownExactlyNumberOfTimes("jakarta.persistence.validation.mode: NONE", 1);
-        cliResult.assertMessage("Persistence unit 'client-store' declares <jar-file> ([file:lib/does-not-exist.jar]), which is not supported; entities from a referenced jar are not added to this unit. List them with <class> or package them in the unit's own jar.");
-
-        String output = cliResult.getOutput();
-        String defaultPuBlock = extractPersistenceUnitBlock(output, "<default>");
-        String newUserStorePuBlock = extractPersistenceUnitBlock(output, "new-user-store");
-        String explicitCustomStorePuBlock = extractPersistenceUnitBlock(output, "explicit-custom-store");
-        assertNotNull(explicitCustomStorePuBlock, "'explicit-custom-store' PU info block should be present");
-        assertTrue(explicitCustomStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must be in 'explicit-custom-store' PU");
-        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.UnlistedEntity"), "UnlistedEntity (from custom.xml) must NOT leak into '<default>' PU");
-        assertNotNull(defaultPuBlock, "'<default>' PU info block should be present");
-        assertNotNull(newUserStorePuBlock, "'new-user-store' PU info block should be present");
-
-        // Realm is listed as <class> in persistence.xml — it should be in new-user-store only.
-        assertTrue(newUserStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.Realm"),
-                "Realm entity must be in 'new-user-store' PU (from <class> in persistence.xml)");
-        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.Realm"),
-                "Realm entity must NOT leak into '<default>' PU");
-
-        // OrmMappedEntity is in META-INF/orm.xml inside the provider JAR — it must stay in new-user-store.
-        assertTrue(newUserStorePuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
-                "OrmMappedEntity (from orm.xml) must be in 'new-user-store' PU");
-        assertFalse(defaultPuBlock.contains("com.acme.provider.legacy.jpa.entity.OrmMappedEntity"),
-                "OrmMappedEntity (from orm.xml) must NOT leak into '<default>' PU");
+        cliResult.assertMessage("Persistence unit 'client-store' declares <jar-file>");
+        cliResult.assertMessage("META-INF/ignored.jar");
+        cliResult.assertMessage("which is not supported; entities from a referenced jar are not added to this unit.");
+        assertFalse(cliResult.getOutput().contains("com.acme.provider.legacy.jpa.unused.IgnoredJarEntity"),
+                "The entity packaged only in the unsupported referenced jar must not be added to a persistence unit");
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("Custom persistence unit validation mode: NONE", 1);
 
         cliResult.assertStartedDevMode();
     }
 
-    private static String extractPersistenceUnitBlock(String output, String puName) {
-        String marker = "HHH008541: PersistenceUnitInfo [";
-        String nameToken = "name: " + puName;
-        int idx = 0;
-        while ((idx = output.indexOf(marker, idx)) != -1) {
-            int nextBlock = output.indexOf(marker, idx + marker.length());
-            String block = nextBlock == -1 ? output.substring(idx) : output.substring(idx, nextBlock);
-            if (block.contains(nameToken)) {
-                return block;
+    private static void assertEntityAssignedOnlyTo(String output, String entityClass, String persistenceUnit) {
+        var blocks = Pattern.compile("HHH008541: PersistenceUnitInfo \\[\\s+name: ([^\\r\\n]+).*?Managed classes names \\[(.*?)\\]", Pattern.DOTALL).matcher(output);
+        Set<String> assignedUnits = new HashSet<>();
+        while (blocks.find()) {
+            if (blocks.group(2).lines().map(String::trim).anyMatch(entityClass::equals)) {
+                assignedUnits.add(blocks.group(1).trim());
             }
-            idx += marker.length();
         }
-        return null;
+        assertEquals(Set.of(persistenceUnit), assignedUnits, "Unexpected persistence unit ownership for " + entityClass);
     }
 }

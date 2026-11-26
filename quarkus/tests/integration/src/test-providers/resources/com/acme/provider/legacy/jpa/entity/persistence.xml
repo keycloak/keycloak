@@ -29,11 +29,12 @@
             <property name="jakarta.persistence.jtaDataSource" value="new-user-store" />
             <property name="hibernate.hbm2ddl.auto" value="update" />
             <property name="hibernate.show_sql" value="false" />
+            <property name="hibernate.session_factory_observer" value="com.acme.provider.legacy.jpa.entity.ValidationModeObserver" />
         </properties>
     </persistence-unit>
 
     <persistence-unit name="client-store" transaction-type="JTA">
-        <jar-file>lib/does-not-exist.jar</jar-file>
+        <jar-file>META-INF/ignored.jar</jar-file>
         <properties>
             <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
         </properties>

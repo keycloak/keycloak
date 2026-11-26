@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.storage.database.jpa;
 
-import java.lang.annotation.Annotation;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
@@ -97,18 +96,8 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     protected abstract EntityManagerFactory getEntityManagerFactory();
 
     protected Optional<EntityManagerFactory> getEntityManagerFactory(String unitName) {
-        Instance<EntityManagerFactory> instance = Arc.container().select(EntityManagerFactory.class, new PersistenceUnit() {
-
-            @Override
-            public Class<? extends Annotation> annotationType() {
-                return PersistenceUnit.class;
-            }
-
-            @Override
-            public String value() {
-                return unitName;
-            }
-        });
+        Instance<EntityManagerFactory> instance = Arc.container().select(EntityManagerFactory.class,
+                new PersistenceUnit.PersistenceUnitLiteral(unitName));
 
         if (instance.isResolvable()) {
             return Optional.of(instance.get());
