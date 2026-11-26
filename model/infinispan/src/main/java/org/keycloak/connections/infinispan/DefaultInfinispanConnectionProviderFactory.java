@@ -484,9 +484,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void addEmbeddedOperationalInfo(Map<String, String> info) {
+        addEmbeddedOperationalInfo(cacheManager, info);
+    }
+
+    // Only caches with a configuration: login-failures:v2 and stateless remove some of
+    // CLUSTERED_CACHE_NAMES, and Infinispan reports a cache it does not know as FAILED.
+    static void addEmbeddedOperationalInfo(EmbeddedCacheManager cacheManager, Map<String, String> info) {
         var cacheManagerInfo = cacheManager.getCacheManagerInfo();
         info.put("clusterSize", Integer.toString(cacheManagerInfo.getClusterSize()));
         var cacheNames = Arrays.stream(CLUSTERED_CACHE_NAMES)
+                .filter(cacheManager::cacheConfigurationExists)
                 .sorted()
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         for (CacheHealth health : cacheManager.getHealth().getCacheHealth(cacheNames)) {
