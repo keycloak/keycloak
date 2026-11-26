@@ -102,6 +102,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebElement;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
@@ -174,6 +175,11 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         assertTrue(loginPage.isPasswordInputPresent());
         // no idp should be shown because there is only a single idp that is bound to an organization
         assertFalse(loginPage.isSocialButtonPresent(organizationName + "-identity-provider"));
+
+        // the attempted username is associated with the login form so password managers can match the credential
+        WebElement attemptedUsername = driver.driver().findElement(By.id("kc-attempted-username"));
+        assertThat(attemptedUsername.getDomAttribute("autocomplete"), is("username"));
+        assertThat(attemptedUsername.getDomAttribute("form"), is("kc-form-login"));
 
         // the member should be able to log in using the credentials
         loginPage.fillPassword(memberPassword);
