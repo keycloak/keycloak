@@ -309,6 +309,21 @@ The common login layout (`template.ftl`) renders three optional chrome macros th
 * `footer.ftl` — content at the bottom of the login card (empty by default)
 
 Each file declares a `content` macro. Create the same file in your custom login theme to replace the default.
+The `aside.ftl` and `footer.ftl` macros take no parameters.
+The `header.ftl` macro must accept a `brandName` parameter, because `template.ftl` passes the realm display name as a named argument.
+
+An example for a custom `header.ftl` may look like this:
+
+[source]
+----
+<#noparse>
+<#macro content brandName>
+  <div id="kc-header-wrapper" class="${properties.kcLoginBrand!}">
+    ${kcSanitize(msg("loginTitleHtml", brandName))?no_esc}
+  </div>
+</#macro>
+</#noparse>
+----
 
 An example for a custom `footer.ftl` may look like this:
 

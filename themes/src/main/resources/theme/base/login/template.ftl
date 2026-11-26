@@ -40,7 +40,7 @@
 <#macro pageLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false
     bodyPageId="login-${pageId}" brandName=(realm.displayNameHtml)!'' pageTitle=(title!'')
     headerDescription="" displayMain=true>
-<#local asideHtml><#compress><@loginAside.content/></#compress></#local>
+<#local asideHtml><@loginAside.content/></#local>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}" lang="${lang}"<#if (realm.internationalizationEnabled)!false> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
 
@@ -261,7 +261,7 @@
         </div>
     </main>
     </#if>
-    <#if asideHtml?has_content>
+    <#if asideHtml?markup_string?trim?has_content>
       <aside id="kc-aside" class="${properties.kcLoginAside!}">${asideHtml}</aside>
     </#if>
   </div>

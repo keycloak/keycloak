@@ -13,6 +13,10 @@
 }
 
 /* Two-column layout when a custom aside.ftl provides side content */
+.kc-login-aside {
+    align-self: center;
+}
+
 @media (min-width: 75rem) {
     .pf-v6-c-login__container:has(.kc-login-aside) {
         grid-template-columns: 34rem minmax(18rem, 34rem);
@@ -20,11 +24,10 @@
                              "main aside";
         max-width: none;
     }
-}
 
-.kc-login-aside {
-    grid-area: aside;
-    align-self: center;
+    .kc-login-aside {
+        grid-area: aside;
+    }
 }
 
 .pf-v6-c-login__main {
