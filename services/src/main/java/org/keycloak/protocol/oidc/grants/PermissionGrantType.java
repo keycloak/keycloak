@@ -32,6 +32,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
@@ -82,6 +83,16 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
 
             cors.checkAllowedOrigins(session, client);
             event.client(client);
+
+            if (client.getProtocol() != null && !OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+                event.error(Errors.INVALID_CLIENT);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Wrong client protocol.", Response.Status.BAD_REQUEST);
+            }
+
+            if (client.isBearerOnly()) {
+                event.error(Errors.INVALID_CLIENT);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
+            }
         }
 
         String claimToken = null;
