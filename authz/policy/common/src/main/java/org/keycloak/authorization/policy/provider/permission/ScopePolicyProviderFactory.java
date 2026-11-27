@@ -22,6 +22,7 @@ import java.util.Map;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema.PermissionConfigOption;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
@@ -66,32 +67,55 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
     @Override
     public ScopePermissionRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         ScopePermissionRepresentation representation = new ScopePermissionRepresentation();
-        representation.setResourceType(policy.getConfig().get("defaultResourceType"));
-        if (AdminPermissionsSchema.SCHEMA.isExtendChildren(policy)) {
-            representation.setExtendChildren(Boolean.TRUE);
+        String resourceType = policy.getConfig().get("defaultResourceType");
+        representation.setResourceType(resourceType);
+
+        // only the settings supported by the resource type are exposed, the others are internal. Values that are not
+        // valid, as stored through generic representations without validation, are not exposed either so that clients
+        // sending the representation back on update are not rejected
+        Map<String, String> config = new HashMap<>();
+
+        for (PermissionConfigOption option : AdminPermissionsSchema.SCHEMA.getPermissionConfigOptions(resourceType)) {
+            String value = policy.getConfig().get(option.name());
+            if (option.isValid(value)) {
+                config.put(option.name(), value);
+            }
         }
+
+        if (!config.isEmpty()) {
+            representation.setConfig(config);
+        }
+
         return representation;
     }
 
     @Override
     public void onCreate(Policy policy, ScopePermissionRepresentation representation, AuthorizationProvider authorization) {
         updateResourceType(policy, representation);
+        clearPermissionCaches(policy, authorization);
     }
 
     @Override
     public void onUpdate(Policy policy, ScopePermissionRepresentation representation, AuthorizationProvider authorization) {
         updateResourceType(policy, representation);
+        clearPermissionCaches(policy, authorization);
     }
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
         // the config of generic representations is copied as is, so the flag is removed as for typed representations
         removeExtendChildrenIfNotTargetingSpecificGroups(policy);
+        clearPermissionCaches(policy, authorization);
     }
 
     @Override
     public void onRemove(Policy policy, AuthorizationProvider authorization) {
         AdminPermissionsSchema.SCHEMA.removeOrphanResources(policy, authorization);
+        clearPermissionCaches(policy, authorization);
+    }
+
+    private void clearPermissionCaches(Policy policy, AuthorizationProvider authorization) {
+        AdminPermissionsSchema.SCHEMA.clearPermissionCaches(authorization.getKeycloakSession(), policy.getResourceServer());
     }
 
     private void updateResourceType(Policy policy, ScopePermissionRepresentation representation) {
@@ -103,13 +127,19 @@ public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePe
                 return resourceType != null ? representation.getResourceType() : null;
             });
 
-            Boolean extendChildren = representation.getExtendChildren();
+            Map<String, String> permissionConfig = representation.getConfig();
 
-            // null means the flag is not being changed, so that clients unaware of it do not reset it on update
-            if (Boolean.TRUE.equals(extendChildren)) {
-                config.put(AdminPermissionsSchema.EXTEND_CHILDREN, Boolean.TRUE.toString());
-            } else if (Boolean.FALSE.equals(extendChildren)) {
-                config.remove(AdminPermissionsSchema.EXTEND_CHILDREN);
+            // null means the config is not being changed, so that clients unaware of it do not reset it on update
+            if (permissionConfig != null) {
+                for (PermissionConfigOption option : AdminPermissionsSchema.SCHEMA.getPermissionConfigOptions(representation.getResourceType())) {
+                    String value = permissionConfig.get(option.name());
+                    // default values are not stored
+                    if (option.isDefault(value)) {
+                        config.remove(option.name());
+                    } else {
+                        config.put(option.name(), value);
+                    }
+                }
             }
 
             policy.setConfig(config);

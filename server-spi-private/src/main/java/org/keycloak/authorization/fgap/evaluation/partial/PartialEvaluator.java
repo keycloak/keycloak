@@ -172,11 +172,13 @@ public final class PartialEvaluator {
      * Evaluates the given {@code permission} for the {@code adminUser}, consistently with the evaluation of the permissions
      * returned by the policy providers.
      *
-     * @return {@code false} if any of its policies denies access, {@code true} if at least one grants access, or {@code null}
-     * if none of its policies can be decided
+     * @return {@code false} if any of its policies denies access, {@code true} if all of them grant access, or {@code null}
+     * if any of them can not be decided, as admin permissions are unanimous and such a policy might deny access during
+     * direct evaluation
      */
     private Boolean evaluatePermission(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy permission, UserModel adminUser) {
-        Boolean granted = null;
+        boolean granted = false;
+        boolean undecided = false;
 
         for (Policy policy : permission.getAssociatedPolicies()) {
             Boolean outcome = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, true);
@@ -185,12 +187,14 @@ public final class PartialEvaluator {
                 return false;
             }
 
-            if (Boolean.TRUE.equals(outcome)) {
+            if (outcome == null) {
+                undecided = true;
+            } else {
                 granted = true;
             }
         }
 
-        return granted;
+        return granted && !undecided ? Boolean.TRUE : null;
     }
 
     /**

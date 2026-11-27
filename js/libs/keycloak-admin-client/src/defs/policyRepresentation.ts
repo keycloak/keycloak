@@ -38,5 +38,4 @@ export default interface PolicyRepresentation {
   users?: string[];
   roles?: PolicyRoleRepresentation[];
   resourceType?: string;
-  extendChildren?: boolean;
 }

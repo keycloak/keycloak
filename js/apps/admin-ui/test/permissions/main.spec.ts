@@ -152,7 +152,7 @@ test.describe.serial("Permissions section tests", () => {
   });
 
   test("should extend group permission to children", async ({ page }) => {
-    const extendChildren = "#extendChildren";
+    const extendChildren = "#config\\.extendChildren";
 
     await clickCreatePermission(page);
     await selectResource(page, "Groups");
@@ -212,7 +212,7 @@ test.describe.serial("Permissions section tests", () => {
     await selectResource(page, "Organizations");
     await fillPermissionForm(page, { enforcementMode: "specificResources" });
     await expect(page.getByTestId("select-organization-button")).toBeVisible();
-    await expect(page.locator("#extendChildren")).toBeHidden();
+    await expect(page.locator("#config\\.extendChildren")).toBeHidden();
   });
 
   test("should edit organization permission", async ({ page }) => {

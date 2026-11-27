@@ -31,9 +31,6 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
-import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -73,12 +70,11 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
             return;
         }
 
-        PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-
         // scopes decided by a more specific group, starting with the group itself, whose own permissions were
         // already evaluated by the default evaluator
         Set<Scope> claimedScopes = new HashSet<>();
-        policyStore.findByResource(resourceServer, permission.getResource(), policy -> claimedScopes.addAll(policy.getScopes()));
+        AdminPermissionsSchema.SCHEMA.getGroupPermissions(authorization.getKeycloakSession(), resourceServer, group.getId())
+                .forEach(policy -> claimedScopes.addAll(policy.getScopes()));
 
         // scopes decided by the permissions of the group itself
         Set<Scope> ownScopes = new HashSet<>(claimedScopes);
@@ -93,7 +89,7 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
         while (ancestor != null && visited.add(ancestor.getId())) {
             Set<Scope> claimedByAncestor = new HashSet<>();
 
-            evaluateAncestorPolicies(authorization, resourceServer, ancestor, policy -> {
+            AdminPermissionsSchema.SCHEMA.getGroupPermissions(authorization.getKeycloakSession(), resourceServer, ancestor.getId()).forEach(policy -> {
                 if (!AdminPermissionsSchema.SCHEMA.isExtendChildren(policy)) {
                     nonExtendedPolicies.add(policy);
                     return;
@@ -145,6 +141,7 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
     private boolean isMemberScope(Scope scope) {
         return MEMBER_SCOPES.contains(scope.getName());
     }
+
     private GroupModel resolveGroup(ResourcePermission permission, AuthorizationProvider authorization) {
         Resource resource = permission.getResource();
 
@@ -163,17 +160,5 @@ public final class GroupResourceTypePolicyEvaluator implements ResourceTypePolic
         RealmModel realm = authorization.getRealm();
 
         return session.groups().getGroupById(realm, groupId);
-    }
-
-    private void evaluateAncestorPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, GroupModel group, Consumer<Policy> consumer) {
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource resource = resourceStore.findByName(resourceServer, group.getId());
-
-        if (resource == null) {
-            return;
-        }
-
-        storeFactory.getPolicyStore().findByResource(resourceServer, resource, consumer);
     }
 }

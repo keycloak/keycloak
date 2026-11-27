@@ -16,12 +16,14 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ScopePermissionRepresentation extends AbstractPolicyRepresentation {
 
-    private Boolean extendChildren;
+    private Map<String, String> config;
 
     @Override
     public String getType() {
@@ -29,16 +31,17 @@ public class ScopePermissionRepresentation extends AbstractPolicyRepresentation 
     }
 
     /**
-     * Only applicable to admin permissions for the {@code Groups} resource type. When {@code true}, the permission also
-     * applies to all the descendants of the groups associated with the permission.
+     * Settings specific to the resource type of the permission. Only applicable to admin permissions, and only the keys
+     * supported by the resource type are accepted. For instance, permissions for the {@code Groups} resource type
+     * support {@code extendChildren} to also apply the permission to all the descendants of its groups.
      *
-     * @return {@code true} if the permission extends to children groups, or {@code null} if not set
+     * @return the settings of the permission, or {@code null} if not set, in which case they are not changed on update
      */
-    public Boolean getExtendChildren() {
-        return extendChildren;
+    public Map<String, String> getConfig() {
+        return config;
     }
 
-    public void setExtendChildren(Boolean extendChildren) {
-        this.extendChildren = extendChildren;
+    public void setConfig(Map<String, String> config) {
+        this.config = config;
     }
 }

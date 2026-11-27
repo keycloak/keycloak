@@ -74,7 +74,7 @@ export const ResourceType = ({
             onChange={() => {
               setIsSpecificResources(false);
               form.setValue("resources", []);
-              form.setValue("extendChildren", false);
+              form.setValue("config.extendChildren", "false");
             }}
             className="pf-v5-u-mb-md"
           />
@@ -109,10 +109,11 @@ export const ResourceType = ({
         isSpecificResources &&
         normalizedResourceType === "groups" && (
           <DefaultSwitchControl
-            name="extendChildren"
+            name="config.extendChildren"
             label={t("extendToChildren")}
             labelIcon={t("extendToChildrenPermissionHelp")}
-            defaultValue={false}
+            defaultValue="false"
+            stringify
           />
         )}
     </>

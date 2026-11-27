@@ -137,6 +137,8 @@ final class ExtendChildrenPartialEvaluator {
 
         Set<String> allowed = new HashSet<>();
         Set<String> denied = new HashSet<>();
+        // subgroups by group, as the subtrees of extended groups can overlap
+        Map<String, List<GroupModel>> subGroups = new HashMap<>();
 
         for (Map.Entry<String, List<Boolean>> entry : extendedByGroup.entrySet()) {
             List<Boolean> outcomes = entry.getValue();
@@ -166,7 +168,7 @@ final class ExtendChildrenPartialEvaluator {
             // the walk stops at groups that deny or might deny to not grant access to their descendants
             Set<String> stopAt = memberScope ? (granted ? protectingGroups : Set.of()) : extendedByGroup.keySet();
 
-            for (String descendant : getInheritingDescendants(group, claimedGroups, stopAt)) {
+            for (String descendant : getInheritingDescendants(group, claimedGroups, stopAt, subGroups)) {
                 if (granted) {
                     allowed.add(descendant);
                 } else {
@@ -198,13 +200,13 @@ final class ExtendChildrenPartialEvaluator {
      * are skipped because their own permissions decide, and the walk stops at descendants in {@code stopAt}, whose
      * own extended permissions take over for their subtree.
      */
-    private Set<String> getInheritingDescendants(GroupModel group, Set<String> claimedGroups, Set<String> stopAt) {
+    private Set<String> getInheritingDescendants(GroupModel group, Set<String> claimedGroups, Set<String> stopAt, Map<String, List<GroupModel>> subGroups) {
         Set<String> result = new HashSet<>();
         Set<String> visited = new HashSet<>();
         Deque<GroupModel> queue = new ArrayDeque<>();
 
         visited.add(group.getId());
-        group.getSubGroupsStream().forEach(queue::add);
+        queue.addAll(getSubGroups(group, subGroups));
 
         while (!queue.isEmpty()) {
             GroupModel current = queue.poll();
@@ -221,11 +223,14 @@ final class ExtendChildrenPartialEvaluator {
                 result.add(current.getId());
             }
 
-            List<GroupModel> children = current.getSubGroupsStream().toList();
-            queue.addAll(children);
+            queue.addAll(getSubGroups(current, subGroups));
         }
 
         return result;
+    }
+
+    private List<GroupModel> getSubGroups(GroupModel group, Map<String, List<GroupModel>> subGroups) {
+        return subGroups.computeIfAbsent(group.getId(), id -> group.getSubGroupsStream().toList());
     }
 
     private boolean hasScope(Policy permission, String scope) {

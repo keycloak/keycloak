@@ -16,8 +16,10 @@
  */
 package org.keycloak.tests.admin.authz.fgap;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +34,7 @@ import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -41,6 +44,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -50,6 +54,7 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
+import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -65,6 +70,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.DELEGATE_MEMBERS;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.EXTEND_CHILDREN;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
@@ -81,6 +87,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -123,18 +130,18 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
     @Test
     public void testExtendChildrenIsPersisted() {
         ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), true, allowMyAdmin);
-        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), is(true));
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), equalTo(Map.of(EXTEND_CHILDREN, "true")));
 
-        // not sending the flag on update keeps it
-        permission.setExtendChildren(null);
+        // not sending the config on update keeps it
+        permission.setConfig(null);
         permission.setDescription("updated");
         getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
-        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), is(true));
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), equalTo(Map.of(EXTEND_CHILDREN, "true")));
 
         // explicitly disabling it removes it
-        permission.setExtendChildren(false);
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "false"));
         getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
-        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), nullValue());
     }
 
     @Test
@@ -142,15 +149,15 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), true, allowMyAdmin);
 
         // a client unaware of the flag changes the permission to all groups
-        permission.setExtendChildren(null);
+        permission.setConfig(null);
         permission.setResources(Set.of());
         getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
-        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), nullValue());
 
         // and later back to a specific group, still without sending the flag
         permission.setResources(Set.of(department.getId()));
         getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(permission);
-        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), nullValue());
 
         // the permission is not extended to the descendants again
         assertCanView(department);
@@ -167,13 +174,13 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         PolicyRepresentation generic = policy.toRepresentation();
         generic.setResources(Set.of());
         policy.update(generic);
-        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), nullValue());
 
         // and later back to a specific group
         generic = policy.toRepresentation();
         generic.setResources(Set.of(department.getId()));
         policy.update(generic);
-        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getExtendChildren(), nullValue());
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), nullValue());
 
         // the permission is not extended to the descendants again
         assertCanView(department);
@@ -187,7 +194,42 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         permission.setName(KeycloakModelUtils.generateId());
         permission.setResourceType(CLIENTS_RESOURCE_TYPE);
         permission.setScopes(Set.of(VIEW));
-        permission.setExtendChildren(true);
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "true"));
+        permission.addPolicy(allowMyAdmin.getName());
+
+        createPermission(adminPermissionsClient, permission, Response.Status.BAD_REQUEST);
+    }
+
+    @Test
+    public void testPermissionConfigOnlyExposesSupportedKeys() {
+        ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), true, allowMyAdmin);
+
+        // the generic representation also holds internal keys, such as the resource type
+        assertThat(adminPermissionsClient.authorization().policies().policy(permission.getId()).toRepresentation().getConfig(), hasKey("defaultResourceType"));
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), equalTo(Map.of(EXTEND_CHILDREN, "true")));
+    }
+
+    @Test
+    public void testPermissionConfigRejectsUnsupportedKeys() {
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType(GROUPS_RESOURCE_TYPE);
+        permission.setScopes(Set.of(VIEW));
+        permission.setResources(Set.of(department.getId()));
+        permission.setConfig(Map.of("defaultResourceType", USERS_RESOURCE_TYPE));
+        permission.addPolicy(allowMyAdmin.getName());
+
+        createPermission(adminPermissionsClient, permission, Response.Status.BAD_REQUEST);
+    }
+
+    @Test
+    public void testPermissionConfigRejectsInvalidExtendChildrenValue() {
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType(GROUPS_RESOURCE_TYPE);
+        permission.setScopes(Set.of(VIEW));
+        permission.setResources(Set.of(department.getId()));
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "yes"));
         permission.addPolicy(allowMyAdmin.getName());
 
         createPermission(adminPermissionsClient, permission, Response.Status.BAD_REQUEST);
@@ -199,7 +241,7 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         permission.setName(KeycloakModelUtils.generateId());
         permission.setResourceType(GROUPS_RESOURCE_TYPE);
         permission.setScopes(Set.of(VIEW));
-        permission.setExtendChildren(true);
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "true"));
         permission.addPolicy(allowMyAdmin.getName());
 
         createPermission(adminPermissionsClient, permission, Response.Status.BAD_REQUEST);
@@ -214,7 +256,7 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         permission.setResourceType(GROUPS_RESOURCE_TYPE);
         permission.setScopes(Set.of(VIEW));
         permission.setResources(Set.of(department.getId(), allGroupsResourceId));
-        permission.setExtendChildren(true);
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "true"));
         permission.addPolicy(allowMyAdmin.getName());
 
         createPermission(adminPermissionsClient, permission, Response.Status.BAD_REQUEST);
@@ -232,9 +274,31 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
         permission.setName(KeycloakModelUtils.generateId());
         permission.setScopes(Set.of(scope.getName()));
-        permission.setExtendChildren(true);
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "true"));
 
         createPermission(resourceServer, permission, Response.Status.BAD_REQUEST);
+    }
+
+    @Test
+    public void testScopePermissionOutsideAdminPermissionsHasNoConfig() {
+        ClientResource resourceServer = AdminApiUtil.findClientByClientId(realm.admin(), "myresourceserver");
+        ScopeRepresentation scope = new ScopeRepresentation(KeycloakModelUtils.generateId());
+
+        try (Response response = resourceServer.authorization().scopes().create(scope)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.CREATED.getStatusCode()));
+        }
+
+        // permissions outside admin permissions have no resource type
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setScopes(Set.of(scope.getName()));
+        createPermission(resourceServer, permission);
+        String id = resourceServer.authorization().permissions().scope().findByName(permission.getName()).getId();
+
+        ScopePermissionRepresentation fetched = resourceServer.authorization().permissions().scope().findById(id).toRepresentation();
+        assertThat(fetched.getConfig(), nullValue());
+        resourceServer.authorization().permissions().scope().findById(id).update(fetched);
+        resourceServer.authorization().permissions().scope().findById(id).remove();
     }
 
     @Test
@@ -554,7 +618,7 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         permission.setResourceType(GROUPS_RESOURCE_TYPE);
         permission.setScopes(Set.of(VIEW, VIEW_MEMBERS));
         permission.setResources(Set.of(department.getId()));
-        permission.setExtendChildren(true);
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "true"));
         permission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
         permission.addPolicy(allowMyAdmin.getName(), onlyOthers.getName());
         createPermission(adminPermissionsClient, permission);
@@ -564,6 +628,87 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         assertThat(searchGroupIds("subteam"), empty());
         assertCannotView(member);
         assertThat(searchUserIds(member), empty());
+    }
+
+    @Test
+    public void testInheritedPermissionWithPolicyNotSupportedBySearch() {
+        // client policies can not be evaluated in search, and this one denies as the admin uses another client
+        ClientPolicyRepresentation onlyResourceServer = createClientPolicy(realm, adminPermissionsClient, "Only My Resource Server", "myresourceserver");
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setResourceType(GROUPS_RESOURCE_TYPE);
+        permission.setScopes(Set.of(VIEW, VIEW_MEMBERS));
+        permission.setResources(Set.of(department.getId()));
+        permission.setConfig(Map.of(EXTEND_CHILDREN, "true"));
+        permission.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        permission.addPolicy(allowMyAdmin.getName(), onlyResourceServer.getName());
+        createPermission(adminPermissionsClient, permission);
+        UserRepresentation member = createMember("subteam-member", subteam);
+
+        // the user policy grants, but search must not grant what direct evaluation denies
+        assertCannotView(subteam);
+        assertThat(searchGroupIds("subteam"), empty());
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+    }
+
+    @Test
+    public void testExtendChildrenOnlyEnabledByExactValue() {
+        ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), false, allowMyAdmin);
+        PolicyResource policy = adminPermissionsClient.authorization().policies().policy(permission.getId());
+
+        // generic clients store the config as is, without the validation of the typed representation
+        PolicyRepresentation generic = policy.toRepresentation();
+        generic.setResources(Set.of(department.getId()));
+        generic.getConfig().put(EXTEND_CHILDREN, "TRUE");
+        policy.update(generic);
+
+        assertCanView(department);
+        assertCannotView(team);
+    }
+
+    @Test
+    public void testPermissionConfigDoesNotExposeInvalidValues() {
+        ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), false, allowMyAdmin);
+        PolicyResource policy = adminPermissionsClient.authorization().policies().policy(permission.getId());
+        PolicyRepresentation generic = policy.toRepresentation();
+        generic.setResources(Set.of(department.getId()));
+        generic.getConfig().put(EXTEND_CHILDREN, "TRUE");
+        policy.update(generic);
+
+        ScopePermissionRepresentation fetched = getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation();
+        assertThat(fetched.getConfig(), nullValue());
+
+        // a client sending the representation back, as the admin console does, is not rejected
+        fetched.setResources(Set.of(department.getId()));
+        fetched.setScopes(Set.of(VIEW));
+        fetched.addPolicy(allowMyAdmin.getName());
+        fetched.setDescription("updated");
+        getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).update(fetched);
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getDescription(), equalTo("updated"));
+    }
+
+    @Test
+    public void testPermissionConfigDefaultValueIsNotStored() {
+        ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), false, allowMyAdmin);
+
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(permission.getId()).toRepresentation().getConfig(), nullValue());
+        assertThat(adminPermissionsClient.authorization().policies().policy(permission.getId()).toRepresentation().getConfig(), not(hasKey(EXTEND_CHILDREN)));
+    }
+
+    @Test
+    public void testCachedGroupPermissionsDoNotLeakBetweenGroups() {
+        createGroupPermission(department, Set.of(VIEW, MANAGE), true, allowMyAdmin);
+        // a permission of its own decides for the team, and is inherited by the subteam only if extended
+        createGroupPermission(team, Set.of(VIEW), false, denyMyAdmin);
+        createGroupPermission(subteam, Set.of(MANAGE), true, denyMyAdmin);
+
+        // the permissions of the ancestors are cached when checking several groups and scopes in the same session, in
+        // both orders, and each check must still be decided by the permissions of its own group and ancestors
+        String result = runOnServer.fetch(SessionCacheCheck.viewAndManage(realm.getName(), myadminId,
+                List.of(subteam.getId(), team.getId(), department.getId(), team.getId(), subteam.getId())), String.class);
+
+        assertThat(result, equalTo("subteam=true/false,team=false/true,department=true/true,team=false/true,subteam=true/false"));
     }
 
     @Test
@@ -796,14 +941,14 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
 
         ScopePermissionRepresentation rep = permission;
         rep.setId(getScopePermissionsResource(adminPermissionsClient).findByName(permission.getName()).getId());
-        rep.setExtendChildren(false);
+        rep.setConfig(Map.of(EXTEND_CHILDREN, "false"));
         getScopePermissionsResource(adminPermissionsClient).findById(rep.getId()).update(rep);
 
         assertViewConsistent(department, true);
         assertViewConsistent(subteam, false);
         assertThat(searchUserIds(member), empty());
 
-        rep.setExtendChildren(true);
+        rep.setConfig(Map.of(EXTEND_CHILDREN, "true"));
         getScopePermissionsResource(adminPermissionsClient).findById(rep.getId()).update(rep);
 
         assertViewConsistent(subteam, true);
@@ -819,6 +964,22 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         getScopePermissionsResource(adminPermissionsClient).findById(id).remove();
 
         assertViewConsistent(subteam, false);
+    }
+
+    @Test
+    public void testRemovingGroupKeepsExtendedPermissionOfOtherGroups() {
+        GroupRepresentation other = createGroup("other");
+        GroupRepresentation otherChild = createSubGroup(other, "other-child");
+        ScopePermissionRepresentation permission = createGroupPermission(Set.of(department, other), Set.of(VIEW), true, allowMyAdmin);
+        assertViewConsistent(subteam, true);
+        assertViewConsistent(otherChild, true);
+
+        // removing one of the groups removes it from the permission, which still extends to the other group
+        realm.admin().groups().group(other.getId()).remove();
+
+        String id = getScopePermissionsResource(adminPermissionsClient).findByName(permission.getName()).getId();
+        assertThat(getScopePermissionsResource(adminPermissionsClient).findById(id).toRepresentation().getConfig(), equalTo(Map.of(EXTEND_CHILDREN, "true")));
+        assertViewConsistent(subteam, true);
     }
 
     // --- one permission for several groups ---
@@ -897,7 +1058,7 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         permission.setResourceType(GROUPS_RESOURCE_TYPE);
         permission.setScopes(scopes);
         permission.setResources(groups.stream().map(GroupRepresentation::getId).collect(Collectors.toSet()));
-        permission.setExtendChildren(extendChildren);
+        permission.setConfig(Map.of(EXTEND_CHILDREN, String.valueOf(extendChildren)));
         permission.addPolicy(policy.getName());
 
         createPermission(adminPermissionsClient, permission);
@@ -947,6 +1108,30 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
                 UserModel admin = session.users().getUserById(realmModel, adminId);
                 UserModel target = session.users().getUserById(realmModel, userId);
                 return AdminPermissions.evaluator(session, realmModel, realmModel, admin).users().canDelegate(target);
+            };
+        }
+    }
+
+    /**
+     * Holds the checks run on the server in a single session, separately from the test class which references classes
+     * that are not available on the server.
+     */
+    static final class SessionCacheCheck {
+
+        static FetchOnServer viewAndManage(String realmName, String adminId, List<String> groupIds) {
+            return session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                session.getContext().setRealm(realmModel);
+                UserModel admin = session.users().getUserById(realmModel, adminId);
+                GroupPermissionEvaluator groups = AdminPermissions.evaluator(session, realmModel, realmModel, admin).groups();
+                List<String> result = new ArrayList<>();
+
+                for (String groupId : groupIds) {
+                    GroupModel group = session.groups().getGroupById(realmModel, groupId);
+                    result.add(group.getName() + "=" + groups.canView(group) + "/" + groups.canManage(group));
+                }
+
+                return String.join(",", result);
             };
         }
     }

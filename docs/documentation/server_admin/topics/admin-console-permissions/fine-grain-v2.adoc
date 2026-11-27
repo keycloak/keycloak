@@ -188,7 +188,7 @@ For example, given a hierarchy `Department > Team A > Subteam X`:
 
 By default, a permission for specific groups applies only to the groups selected in the permission.
 To also apply it to all the subgroups of the selected groups, including subgroups created later, enable *Extend to children* on the permission.
-When using the Admin REST API, set the `extendChildren` property of the permission to `true`.
+When using the Admin REST API, set the `extendChildren` key of the `config` property of the permission to `true`.
 This option is only available for permissions of the *Groups* resource type that apply to specific groups.
 
 This is useful for delegating the administration of a group hierarchy.
