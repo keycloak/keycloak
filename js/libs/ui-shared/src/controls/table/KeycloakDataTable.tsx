@@ -20,7 +20,13 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { cloneDeep, get, intersectionBy } from "lodash-es";
+import {
+  cloneDeep,
+  differenceBy,
+  get,
+  intersectionBy,
+  unionBy,
+} from "lodash-es";
 import {
   ComponentClass,
   ReactNode,
@@ -83,6 +89,11 @@ type CellRendererProps = {
 const isRow = (c: ReactNode | IRowCell): c is IRowCell =>
   !!c && (c as IRowCell).title !== undefined;
 
+const getSelectionKey = (row: unknown) =>
+  typeof row === "object" && row !== null && "id" in row
+    ? (row.id ?? row)
+    : row;
+
 const CellRenderer = ({
   row,
   index,
@@ -133,7 +144,7 @@ function DataTable<T>({
       intersectionBy(
         selectedRows,
         rows.map((row) => row.data),
-        "id",
+        getSelectionKey,
       ),
     [selectedRows, rows],
   );
@@ -176,30 +187,23 @@ function DataTable<T>({
     if (isRadio) {
       const selectedRow = isSelected ? [rows[rowIndex].data] : [];
       updateSelectedRows(selectedRow);
-    } else {
-      if (rowIndex === -1) {
-        const rowsSelectedOnPageIds = rowsSelectedOnPage.map((v) =>
-          get(v, "id"),
-        );
-        updateSelectedRows(
-          isSelected
-            ? [...selectedRows, ...selectableRows.map((row) => row.data)]
-            : selectedRows.filter(
-                (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
-              ),
-        );
-      } else {
-        if (isSelected) {
-          updateSelectedRows([...selectedRows, rows[rowIndex].data]);
-        } else {
-          updateSelectedRows(
-            selectedRows.filter(
-              (v) => get(v, "id") !== (rows[rowIndex] as IRow).data.id,
-            ),
-          );
-        }
-      }
+      return;
     }
+
+    let rowsToUpdate: T[];
+    if (rowIndex === -1) {
+      rowsToUpdate = isSelected
+        ? selectableRows.map((row) => row.data)
+        : rowsSelectedOnPage;
+    } else {
+      rowsToUpdate = [rows[rowIndex].data];
+    }
+
+    updateSelectedRows(
+      isSelected
+        ? unionBy(selectedRows, rowsToUpdate, getSelectionKey)
+        : differenceBy(selectedRows, rowsToUpdate, getSelectionKey),
+    );
   };
 
   return (
@@ -251,8 +255,8 @@ function DataTable<T>({
                     onSelect: (_, isSelected, rowIndex) => {
                       updateState(rowIndex, isSelected);
                     },
-                    isSelected: !!selectedRows.find(
-                      (v) => get(v, "id") === row.data.id,
+                    isSelected: selectedRows.some(
+                      (v) => getSelectionKey(v) === getSelectionKey(row.data),
                     ),
                     variant: isRadio ? "radio" : "checkbox",
                     isDisabled: row.disableSelection,
@@ -472,8 +476,9 @@ export function KeycloakDataTable<T>({
             data: value,
             disableSelection: disabledRow,
             disableActions: disabledRow,
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- lodash get performs dynamic property access at runtime
-            selected: !!selected.find((v) => get(v, "id") === get(value, "id")),
+            selected: selected.some(
+              (v) => getSelectionKey(v) === getSelectionKey(value),
+            ),
             isOpen: isDetailColumnsEnabled(value) ? false : undefined,
             cells: renderCell(columns, value),
           },
