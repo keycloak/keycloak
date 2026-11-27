@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.tsx";
+import { toRealmSettings } from "../../src/realm-settings/routes/RealmSettings.routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
 import { login } from "../utils/login.js";

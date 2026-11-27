@@ -1,5 +1,5 @@
 import { test } from "@playwright/test";
-import { toAuthentication } from "../../src/authentication/routes/Authentication.tsx";
+import { toAuthentication } from "../../src/authentication/routes/Authentication.routes.ts";
 import { createTestBed } from "../support/testbed.ts";
 import {
   assertFieldError,
