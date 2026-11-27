@@ -17,7 +17,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.Constants;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -31,8 +34,12 @@ import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserConfig;
+import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -40,6 +47,7 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
+import org.keycloak.testframework.ui.page.LoginTotpPage;
 import org.keycloak.testframework.ui.page.LoginUsernamePage;
 import org.keycloak.testframework.ui.page.PasswordPage;
 import org.keycloak.testframework.ui.page.RegisterPage;
@@ -54,6 +62,7 @@ import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -72,11 +81,17 @@ public class LevelOfAssuranceEssentialAcrTest {
     @InjectUser(config = BasicUserConfig.class)
     ManagedUser user;
 
+    @InjectUser(ref = "otp-user", config = OtpUserConfig.class)
+    ManagedUser otpUser;
+
     @InjectWebDriver(lifecycle = LifeCycle.METHOD)
     ManagedWebDriver driver;
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectOAuthClient(ref = "minimum-acr", config = MinimumAcrClientConfig.class)
+    OAuthClient minimumAcrOauth;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -104,6 +119,9 @@ public class LevelOfAssuranceEssentialAcrTest {
 
     @InjectPage
     LoginPasswordResetPage resetPasswordPage;
+
+    @InjectPage
+    LoginTotpPage loginTotpPage;
 
     @BeforeEach
     public void setUpFlow() {
@@ -451,6 +469,30 @@ public class LevelOfAssuranceEssentialAcrTest {
                 .details(Details.AUTHENTICATION_ERROR_DETAIL, acrNotFulfilledDetail(2, 1));
     }
 
+    @Test
+    public void minimumAcrLevel2DirectResetCredentialsLinkRequiresOtp() {
+        realm.updateWithCleanup(r -> r.resetPasswordAllowed(true));
+
+        // this link skips the authorization endpoint so the minimum ACR of the client is never recorded in the login session
+        driver.open(realm.getBaseUrl() + "/login-actions/reset-credentials?client_id=" + minimumAcrOauth.getClientId()
+                + "&redirect_uri=" + minimumAcrOauth.getRedirectUri());
+        resetPasswordPage.assertCurrent();
+        driver.findElement(By.partialLinkText("Back to Login")).click();
+        loginUsernamePage.assertCurrent();
+        loginUsernamePage.fillLoginWithUsernameOnly(otpUser.getUsername());
+        loginUsernamePage.submit();
+        passwordPage.assertCurrent();
+        passwordPage.fillPassword(otpUser.getPassword());
+        passwordPage.submit();
+
+        loginTotpPage.assertCurrent();
+        loginTotpPage.login(new TimeBasedOTP().generateTOTP("totpsecret"));
+        driver.waiting().waitForOAuthCallback();
+        EventAssertion.expectLoginSuccess(events.poll());
+        AccessTokenResponse tokenResponse = minimumAcrOauth.doAccessTokenRequest(minimumAcrOauth.parseLoginResponse().getCode());
+        assertEquals("2", minimumAcrOauth.parseToken(tokenResponse.getAccessToken(), AccessToken.class).getAcr());
+    }
+
     private void loginWithUsernamePassword() {
         oauth.openLoginForm();
         fillUsernameAndPassword();
@@ -622,5 +664,27 @@ public class LevelOfAssuranceEssentialAcrTest {
         claims.setIdTokenClaims(Map.of(IDToken.ACR, acrClaim));
 
         return oauth.loginForm().claims(claims);
+    }
+
+    private static class OtpUserConfig implements UserConfig {
+        @Override
+        public UserConfigBuilder configure(UserConfigBuilder user) {
+            return user.username("otp-user")
+                    .name("Otp", "User")
+                    .email("otp-user@localhost")
+                    .emailVerified(true)
+                    .password("password")
+                    .totpSecret("totpsecret");
+        }
+    }
+
+    private static class MinimumAcrClientConfig implements ClientConfig {
+        @Override
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+            return client.clientId("minimum-acr-app")
+                    .publicClient(true)
+                    .attribute(Constants.ACR_LOA_MAP, "{\"2\":2}")
+                    .attribute(Constants.MINIMUM_ACR_VALUE, "2");
+        }
     }
 }
