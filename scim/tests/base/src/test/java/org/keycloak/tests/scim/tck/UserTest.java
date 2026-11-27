@@ -1096,6 +1096,99 @@ public class UserTest extends AbstractScimTest {
         expected.setEmail(expectedEmail);
         assertRootAttributes(actual, expected);
 
+        // Microsoft Entra ID changes a user's email with a filter on the email's type (RFC 7644 section 3.5.2):
+        // the filter is resolved against the email the user has, which Keycloak reports as type "work"
+        expected.setEmail(expected.getEmail().replace("filtered.org", "entra.org"));
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails[type eq \"work\"].value", expected.getEmail())
+                .build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // and sends the leaver's switch-off in the same request as a pending email change: all of it applies. The user
+        // was switched off above, so switch them on first, for the request below to change both
+        expected.setActive(true);
+        client.users().patch(expected.getId(), PatchRequest.create().replace("active", "true").build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        expected.setEmail(expected.getEmail().replace("entra.org", "entra2.org"));
+        expected.setActive(false);
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails[type eq \"work\"].value", expected.getEmail())
+                .replace("active", "false")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // a filter on a sub-attribute emails do not have is still refused
+        try {
+            client.users().patch(expected.getId(), PatchRequest.create()
+                    .replace("emails[kind eq \"work\"].value", "nobody@entra3.org")
+                    .build());
+            fail("Should have thrown an exception - emails have no 'kind' sub-attribute");
+        } catch (ScimClientException e) {
+            assertEquals(400, e.getError().getStatusInt());
+            assertTrue(e.getError().getDetail().contains("Unknown attribute kind"), e.getError().getDetail());
+        }
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // a boolean compared with anything but true or false is refused, also when the value holds a brace that the
+        // error message must not treat as a placeholder
+        try {
+            client.users().patch(expected.getId(), PatchRequest.create()
+                    .replace("emails[primary ne \"{\"].value", "nobody@entra3.org")
+                    .build());
+            fail("Should have thrown an exception - primary is a boolean");
+        } catch (ScimClientException e) {
+            assertEquals(400, e.getError().getStatusInt());
+            assertTrue(e.getError().getDetail().contains("Invalid boolean value {"), e.getError().getDetail());
+        }
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // a filter that matches no current email is refused with noTarget (RFC 7644 section 3.12), for a replace and
+        // for a remove, and the user's only email is left as it was
+        for (PatchRequest noMatch : List.of(
+                PatchRequest.create().replace("emails[type eq \"home\"].value", "jane@home.org").build(),
+                PatchRequest.create().remove("emails[type eq \"home\"]").build())) {
+            try {
+                client.users().patch(expected.getId(), noMatch);
+                fail("Should have thrown an exception - no email has type 'home'");
+            } catch (ScimClientException e) {
+                assertEquals(400, e.getError().getStatusInt());
+                assertEquals("noTarget", e.getError().getScimType());
+            }
+            actual = client.users().get(expected.getId());
+            assertRootAttributes(actual, expected);
+        }
+
+        // the operations of one request apply in sequence (RFC 7644 section 3.5.2), so a filter sees what an earlier
+        // operation of the same request did: after the email is removed, a filter on its type matches nothing
+        try {
+            client.users().patch(expected.getId(), PatchRequest.create()
+                    .remove("emails")
+                    .replace("emails[type eq \"work\"].value", "jane@entra3.org")
+                    .build());
+            fail("Should have thrown an exception - the email was removed by the first operation");
+        } catch (ScimClientException e) {
+            assertEquals(400, e.getError().getStatusInt());
+            assertEquals("noTarget", e.getError().getScimType());
+        }
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // and after an email is added again, the filter selects the added one
+        expected.setEmail(expected.getEmail().replace("entra2.org", "entra4.org"));
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove("emails")
+                .add("emails", "[{\"value\": \"" + expected.getEmail().replace("entra4.org", "entra3.org") + "\", \"type\": \"work\", \"primary\": true}]")
+                .replace("emails[type eq \"work\"].value", expected.getEmail())
+                .build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
         // patch an attribute from an extension schema
         addOrReplaceUPAttribute(ENTERPRISE_USER_SCHEMA,  "employeeNumber");
         assertNull(actual.getEnterpriseUser());

@@ -18,6 +18,7 @@ import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.schema.attribute.ScimDateTimeUtil;
 import org.keycloak.scim.resource.schema.path.Path;
 import org.keycloak.scim.resource.spi.ScimMutabilityException;
+import org.keycloak.scim.resource.spi.ScimNoTargetException;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -120,7 +121,24 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
 
         for (Entry<Attribute<M, R>, JsonNode> entry : resolveAttributes(path.getPath(), NullNode.getInstance()).entrySet()) {
             Attribute<M, R> attribute = entry.getKey();
-            JsonNode values = path.getValue(attribute);
+            JsonNode values;
+
+            if (selectsByCurrentEntries(path, attribute, resource)) {
+                // a filter on a sub-attribute other than "value", e.g. Entra ID's emails[type eq "work"].value
+                // (RFC 7644 section 3.5.2): select among the entries the resource holds now
+                ArrayNode matched = path.select(attribute, currentEntries(resource, model, attribute));
+
+                if (matched.isEmpty()) {
+                    // RFC 7644 sections 3.5.2.2, 3.5.2.3 and 3.12: a filter that matches no value is an error. Going on
+                    // would let the add half of a replace overwrite a value the filter did not select, such as the
+                    // user's only email for emails[type eq "home"].value
+                    throw new ScimNoTargetException("No value of " + attribute.getName() + " matches the filter in the path " + rawPath);
+                }
+
+                values = matched;
+            } else {
+                values = path.getValue(attribute);
+            }
 
             if (hasValue && attribute.isMultivalued() && attribute.getComplexType() != null) {
                 // the value lists the values to remove, e.g. "members" with [{"value": "<user id>"}], normalized as for add
@@ -129,6 +147,50 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
 
             setValue(model, attribute, values, REMOVE);
         }
+    }
+
+    /**
+     * Whether a filtered {@code remove} (or the remove half of a {@code replace}) selects among the entries the
+     * resource holds rather than turning the filter into a value. Only for a complex multi-valued attribute of the
+     * core schema that the resource carries by default, with a filter naming a sub-attribute other than
+     * {@code value}. An attribute returned only on request, such as a group's {@code members}, keeps the
+     * {@code value}-only rule, so a filtered remove never reads every member of a large group.
+     */
+    private boolean selectsByCurrentEntries(Path path, Attribute<M, R> attribute, R resource) {
+        return resource != null
+                && path.hasFilter()
+                && attribute.isMultivalued()
+                && attribute.getComplexType() != null
+                && !attribute.isExtension()
+                && (Attribute.RETURNED_DEFAULT.equals(attribute.getReturned()) || Attribute.RETURNED_ALWAYS.equals(attribute.getReturned()))
+                && !path.filtersOnlyOnValue();
+    }
+
+    /**
+     * The attribute's entries as the model holds them now. They are read from the model rather than from
+     * {@code resource}, which is the representation read before the request, so that an earlier operation of the same
+     * PATCH request is taken into account (RFC 7644 section 3.5.2 applies the operations in sequence).
+     */
+    @SuppressWarnings("unchecked")
+    private JsonNode currentEntries(R resource, M model, Attribute<M, R> attribute) {
+        String modelAttributeName = attribute.getModelAttributeName();
+
+        if (modelAttributeName == null) {
+            return null;
+        }
+
+        R current;
+
+        try {
+            current = (R) resource.getClass().getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Could not create instance of resource type " + resource.getClass(), e);
+        }
+
+        attribute.set(current, getAttributeValue(model, modelAttributeName));
+
+        JsonNode representation = JsonSerialization.mapper.valueToTree(current);
+        return representation == null ? null : representation.get(attribute.getName());
     }
 
     @Override
