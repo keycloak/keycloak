@@ -16,6 +16,8 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeMapper;
 import org.keycloak.protocol.oidc.mappers.ParameterizedScopeUserPropertyMapper;
+import org.keycloak.protocol.oidc.scope.StringScopeType;
+import org.keycloak.protocol.oidc.scope.UsernameScopeType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -96,7 +98,7 @@ public class ParameterizedScopeMapperTest {
 
     @TestSetup
     public void setup() {
-        String mainScopeId = createParameterizedScope(SCOPE_NAME);
+        String mainScopeId = createParameterizedScope(SCOPE_NAME, UsernameScopeType.TYPE);
         addMapper(mainScopeId, ParameterizedScopeMapper.create(
                 "raw-param-mapper", RAW_PARAM_CLAIM, "String", true, false, true));
         addMapper(mainScopeId, ParameterizedScopeUserPropertyMapper.create(
@@ -105,7 +107,7 @@ public class ParameterizedScopeMapperTest {
                 "user-email-mapper", "email", USER_EMAIL_CLAIM, "String", true, false, true));
         client.admin().addOptionalClientScope(mainScopeId);
 
-        String secondScopeId = createParameterizedScope(SECOND_SCOPE_NAME);
+        String secondScopeId = createParameterizedScope(SECOND_SCOPE_NAME, StringScopeType.TYPE);
         addMapper(secondScopeId, ParameterizedScopeMapper.create(
                 "other-raw-param-mapper", SECOND_RAW_PARAM_CLAIM, "String", true, false, true));
         client.admin().addOptionalClientScope(secondScopeId);
@@ -156,7 +158,7 @@ public class ParameterizedScopeMapperTest {
     @Test
     public void parameterizedScopeMapperNonExistentUser() {
         AccessToken token = loginWithScopeParam("nonexistent");
-        assertRawParamClaim(token, "nonexistent");
+        assertNoMappedClaims(token);
         assertNoUserClaims(token);
     }
 
@@ -236,19 +238,30 @@ public class ParameterizedScopeMapperTest {
     }
 
     @Test
+    public void nonUsernameScopeUserPropertyMapperIgnored() {
+        addOptionalScopeWithCleanup("string-scope", StringScopeType.TYPE, false,
+                ParameterizedScopeMapper.create("rep-raw-mapper", RAW_PARAM_CLAIM, "String", true, false, true),
+                ParameterizedScopeUserPropertyMapper.create("nuser-id-mapper", "id", USER_ID_CLAIM, "String", true, false, true));
+
+        AccessTokenResponse res = loginAndGetResponse("string-scope:" + TARGET_USERNAME);
+        AccessToken token = oauth.verifyToken(res.getAccessToken());
+        assertRawParamClaim(token, TARGET_USERNAME);
+        assertNoUserClaims(token);
+    }
+
+    @Test
     public void multipleParameterizedScopesMapIndependently() {
-        AccessTokenResponse res = loginAndGetResponse(SCOPE_NAME + ":value-one " + SECOND_SCOPE_NAME + ":value-two");
+        AccessTokenResponse res = loginAndGetResponse(SCOPE_NAME + ":" + TARGET_USERNAME + " " + SECOND_SCOPE_NAME + ":value-two");
         AccessToken token = oauth.verifyToken(res.getAccessToken());
 
-        Assertions.assertEquals("value-one", token.getOtherClaims().get(RAW_PARAM_CLAIM),
-                "First scope's mapper should map its own parameter value");
+        assertAllClaims(token, TARGET_USERNAME, targetUser.getId(), "target@localhost");
         Assertions.assertEquals("value-two", token.getOtherClaims().get(SECOND_RAW_PARAM_CLAIM),
                 "Second scope's mapper should map its own parameter value");
     }
 
     @Test
     public void repeatableScopeMapsMultipleValues() {
-        String repScopeId = addOptionalScopeWithCleanup("rep-scope", true,
+        addOptionalScopeWithCleanup("rep-scope", StringScopeType.TYPE, true,
                 ParameterizedScopeMapper.create("rep-raw-mapper", "rep_values", "String", true, false, true));
 
         AccessToken token = loginWithScopeParam("rep-scope", TARGET_USERNAME, "second-target");
@@ -257,7 +270,7 @@ public class ParameterizedScopeMapperTest {
 
     @Test
     public void repeatableScopeUserPropertyMapsMultipleUsers() {
-        String repScopeId = addOptionalScopeWithCleanup("rep-user-scope", true,
+        addOptionalScopeWithCleanup("rep-user-scope", UsernameScopeType.TYPE, true,
                 ParameterizedScopeUserPropertyMapper.create("rep-user-id-mapper", "id", "rep_user_ids", "String", true, false, true, true));
 
         AccessToken token = loginWithScopeParam("rep-user-scope", TARGET_USERNAME, secondTargetUser.getUsername());
@@ -279,8 +292,8 @@ public class ParameterizedScopeMapperTest {
         return oauth.verifyToken(res.getAccessToken());
     }
 
-    private String addOptionalScopeWithCleanup(String name, boolean repeatable, ProtocolMapperModel... mappers) {
-        String id = createParameterizedScope(name, repeatable);
+    private String addOptionalScopeWithCleanup(String name, String type, boolean repeatable, ProtocolMapperModel... mappers) {
+        String id = createParameterizedScope(name, type, repeatable);
         for (ProtocolMapperModel mapper : mappers) {
             addMapper(id, mapper);
         }
@@ -322,13 +335,13 @@ public class ParameterizedScopeMapperTest {
         return res;
     }
 
-    private String createParameterizedScope(String name) {
-        return createParameterizedScope(name, false);
+    private String createParameterizedScope(String name, String type) {
+        return createParameterizedScope(name, type, false);
     }
 
-    private String createParameterizedScope(String name, boolean repeatable) {
+    private String createParameterizedScope(String name, String type, boolean repeatable) {
         ClientScopeRepresentation scope = create(name)
-                .parameterizedScopeType("string")
+                .parameterizedScopeType(type)
                 .isRepeatableScope(repeatable)
                 .displayOnConsentScreen(true)
                 .alwaysConsent(false)
