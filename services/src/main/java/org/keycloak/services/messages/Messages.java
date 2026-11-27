@@ -131,6 +131,8 @@ public class Messages {
 
     public static final String EMAIL_VERIFIED = "emailVerifiedMessage";
 
+    public static final String EMAIL_VERIFIED_DIFFERENT_BROWSER = "emailVerifiedDifferentBrowserMessage";
+
     public static final String EMAIL_VERIFIED_HEADER = "emailVerifiedMessageHeader";
 
     public static final String EMAIL_VERIFIED_ALREADY = "emailVerifiedAlreadyMessage";
