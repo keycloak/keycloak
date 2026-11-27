@@ -404,6 +404,16 @@ Applications that loaded their `keycloak.json` anonymously from the removed endp
 
 The `default` client registration provider remains deprecated and is not affected by this change.
 
+=== `kcreg` uses the OpenID Connect registration endpoint by default
+// https://github.com/keycloak/keycloak/issues/55462
+
+The Client Registration CLI (`kcreg`) now uses the OpenID Connect dynamic client registration endpoint when `-e` / `--endpoint` is omitted.
+The `-e` option accepts only `oidc` (or `openid-connect`).
+Values such as `default` and `saml2` are rejected.
+Use OIDC JSON field names (for example `client_name`, `redirect_uris`) with `kcreg`.
+Do not set `client_id` on create; the OpenID Connect registration endpoint assigns it.
+For Keycloak JSON client representations, use the Admin REST API or `kcadm`.
+
 === SAML Entity Descriptor client registration endpoint removed
 // https://github.com/keycloak/keycloak/issues/53478
 
@@ -413,7 +423,7 @@ Requests to `/realms/<realm>/clients-registrations/saml2-entity-descriptor` now 
 The following related APIs have also been removed:
 
 * The `ClientRegistration.saml()` method and the `ClientRegistration.SAMLClientRegistration` class in the Java client registration API.
-* The `saml2` endpoint type of the `kcreg` command-line tool. `kcreg create -e saml2` is no longer accepted, and `kcreg create` no longer treats an XML input document as a SAML entity descriptor. Use JSON input, or the `default` and `oidc` endpoint types.
+* The `saml2` endpoint type of the `kcreg` command-line tool. `kcreg create -e saml2` is no longer accepted, and `kcreg create` no longer treats an XML input document as a SAML entity descriptor. Use OIDC JSON input with `kcreg`, or the Admin REST API / `kcadm` for other formats.
 
 To create a client from a SAML entity descriptor, convert the descriptor with the Admin REST API (`POST /admin/realms/<realm>/client-description-converter`), then create the returned client representation (`POST /admin/realms/<realm>/clients`).
 The conversion endpoint itself is not affected by this change.

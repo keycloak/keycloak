@@ -21,9 +21,9 @@ import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -291,15 +291,17 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         File configFile = getDefaultConfigFilePath();
         long lastModified = configFile.exists() ? configFile.lastModified() : 0;
 
-        // This test assumes it is the only user of any instance of on the system
+        // OIDC dynamic client registration assigns client_id; do not send it on create.
         KcRegExec exe = execute("create --no-config --server " + serverUrl +
-                " --realm test " + credentials + " " + extraOptions + " -s clientId=test-client -o");
+                " --realm test " + credentials + " " + extraOptions + " -s client_name=test-client -o");
 
         Assertions.assertEquals(0, exe.exitCode(), "exitCode == 0");
         Assertions.assertEquals(loginMessage, exe.stderrLines().get(0), "login message");
 
-        ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assertions.assertEquals("test-client", client.getClientId(), "clientId");
+        OIDCClientRepresentation client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+        Assertions.assertNotNull(client.getClientId(), "clientId");
+        String clientId = client.getClientId();
+        Assertions.assertEquals("test-client", client.getClientName(), "client_name");
         Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken not null");
 
         long lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
@@ -308,12 +310,12 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
 
 
-        exe = execute("get test-client --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
+        exe = execute("get " + clientId + " --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
         assertExitCodeAndStdErrSize(exe, 0, 1);
 
-        ClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assertions.assertEquals("test-client", client2.getClientId(), "clientId");
+        OIDCClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+        Assertions.assertEquals(clientId, client2.getClientId(), "clientId");
 
         // we did not provide a token, thus no registrationAccessToken is present
         Assertions.assertNull(client2.getRegistrationAccessToken(), "registrationAccessToken is null");
@@ -327,12 +329,12 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
         // the token works even though an intermediary invocation was performed,
         // because the previous invocation didn't use a registration access token
-        exe = execute("get test-client --no-config --server " + serverUrl + " --realm test " + extraOptions + " -t " + client.getRegistrationAccessToken());
+        exe = execute("get " + clientId + " --no-config --server " + serverUrl + " --realm test " + extraOptions + " -t " + client.getRegistrationAccessToken());
 
         assertExitCodeAndStdErrSize(exe, 0, 0);
 
-        ClientRepresentation client3 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assertions.assertEquals("test-client", client3.getClientId(), "clientId");
+        OIDCClientRepresentation client3 = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+        Assertions.assertEquals(clientId, client3.getClientId(), "clientId");
 
         Assertions.assertEquals(client.getRegistrationAccessToken(), client3.getRegistrationAccessToken(), "registrationAccessToken in returned json is different than one returned by create");
 
@@ -344,14 +346,14 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
 
 
-        exe = execute("update test-client --no-config --server " + serverUrl + " --realm test " +
-                credentials + " " + extraOptions + " -s enabled=true -o");
+        exe = execute("update " + clientId + " --no-config --server " + serverUrl + " --realm test " +
+                credentials + " " + extraOptions + " -s client_name=test-client-updated -o");
 
         assertExitCodeAndStdErrSize(exe, 0, 1);
 
-        ClientRepresentation client4 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assertions.assertEquals("test-client", client4.getClientId(), "clientId");
-        Assertions.assertTrue(client4.isEnabled(), "enabled");
+        OIDCClientRepresentation client4 = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+        Assertions.assertEquals(clientId, client4.getClientId(), "clientId");
+        Assertions.assertEquals("test-client-updated", client4.getClientName(), "client_name");
 
         Assertions.assertNull(client4.getRegistrationAccessToken(), "registrationAccessToken in null");
 
@@ -364,14 +366,14 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
 
 
-        exe = execute("update test-client --no-config --server " + serverUrl + " --realm test " + extraOptions +
-                " -s enabled=true -o -t " + client3.getRegistrationAccessToken());
+        exe = execute("update " + clientId + " --no-config --server " + serverUrl + " --realm test " + extraOptions +
+                " -s client_name=test-client-token-update -o -t " + client3.getRegistrationAccessToken());
 
         assertExitCodeAndStdErrSize(exe, 0, 0);
 
-        ClientRepresentation client5 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assertions.assertEquals("test-client", client5.getClientId(), "clientId");
-        Assertions.assertTrue(client5.isEnabled(), "enabled");
+        OIDCClientRepresentation client5 = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
+        Assertions.assertEquals(clientId, client5.getClientId(), "clientId");
+        Assertions.assertEquals("test-client-token-update", client5.getClientName(), "client_name");
 
         Assertions.assertNotEquals(client3.getRegistrationAccessToken(), client5.getRegistrationAccessToken(), "registrationAccessToken in returned json is different than one returned by get");
 
@@ -383,7 +385,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
 
 
-        exe = execute("delete test-client --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
+        exe = execute("delete " + clientId + " --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
 
@@ -395,7 +397,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
 
         // subsequent delete should fail
-        exe = execute("delete test-client --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
+        exe = execute("delete " + clientId + " --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
         Assertions.assertEquals("Client not found [invalid_request]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");

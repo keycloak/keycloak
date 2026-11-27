@@ -14,10 +14,12 @@ You can configure application clients from a command line with the Client Regist
 
 To allow a particular user to use `Client Registration CLI`, the {project_name} administrator typically uses the Admin Console to configure a new user with proper roles or to configure a new client and client secret to grant access to the Client Registration REST API.
 
-[WARNING]
+[NOTE]
 ====
-The `kcreg` CLI tool primarily uses the `default` client registration provider, which is deprecated since {project_name} 26.8 and will be removed in a future major release.
-For new integrations, register and manage clients using the Admin REST API or the standards-compliant OpenID Connect dynamic client registration endpoint (`/realms/<realm>/clients-registrations/openid-connect`).
+The `kcreg` CLI tool uses the OpenID Connect dynamic client registration endpoint (`/realms/<realm>/clients-registrations/openid-connect`).
+The optional `-e` / `--endpoint` flag accepts only `oidc`.
+The OpenID Connect registration endpoint assigns `client_id`; do not set it on create.
+For Keycloak JSON client representations or SAML metadata, use the Admin REST API or `kcadm` instead.
 ====
 
 [[_configuring_a_user_for_client_registration_cli]]
@@ -113,16 +115,16 @@ For example, on:
 [options="npwrap",subs="attributes+"]
 ----
 $ kcreg.sh config credentials --server http://localhost:8080 --realm demo --user user --client reg-cli
-$ kcreg.sh create -s clientId=my_client -s 'redirectUris=["http://localhost:8980/myapp/*"]'
-$ kcreg.sh get my_client
+$ CLIENT_ID=$(kcreg.sh create -i -s client_name=my_client -s 'redirect_uris=["http://localhost:8980/myapp/*"]')
+$ kcreg.sh get "$CLIENT_ID"
 ----
 * Windows:
 +
 [options="npwrap",subs="attributes+"]
 ----
 c:\> kcreg config credentials --server http://localhost:8080 --realm demo --user user --client reg-cli
-c:\> kcreg create -s clientId=my_client -s "redirectUris=[\"http://localhost:8980/myapp/*\"]"
-c:\> kcreg get my_client
+c:\> for /f %i in ('kcreg create -i -s client_name=my_client -s "redirect_uris=[\"http://localhost:8980/myapp/*\"]"') do set CLIENT_ID=%i
+c:\> kcreg get %CLIENT_ID%
 ----
 +
 [NOTE]
@@ -205,28 +207,28 @@ For example, on:
 [options="nowrap"]
 ----
 $ kcreg.sh config initial-token $TOKEN
-$ kcreg.sh create -s clientId=myclient
+$ kcreg.sh create -s client_name=myclient
 ----
 
 or
 
 [options="nowrap"]
 ----
-$ kcreg.sh create -s clientId=myclient -t $TOKEN
+$ kcreg.sh create -s client_name=myclient -t $TOKEN
 ----
 
 * Windows:
 [options="nowrap"]
 ----
 c:\> kcreg config initial-token %TOKEN%
-c:\> kcreg create -s clientId=myclient
+c:\> kcreg create -s client_name=myclient
 ----
 
 or
 
 [options="nowrap"]
 ----
-c:\> kcreg create -s clientId=myclient -t %TOKEN%
+c:\> kcreg create -s client_name=myclient -t %TOKEN%
 ----
 
 When using an Initial Access Token, the server response includes a newly issued Registration Access Token. Any subsequent operation for that client needs to be performed by authenticating with that token, which is only valid for that client.
@@ -243,22 +245,23 @@ Run the [command]`kcreg config initial-token --help` and [command]`kcreg config 
 
 The first task after authenticating with credentials or configuring an Initial Access Token is usually to create a new client. Often you might want to use a prepared JSON file as a template and set or override some of the attributes.
 
-The following example shows how to read a JSON file, override any client id it may contain, set any other attributes, and print the configuration to a standard output after successful creation.
+The following example shows how to read a JSON file, set attributes such as `client_name`, and print the configuration to a standard output after successful creation.
+The OpenID Connect registration endpoint assigns `client_id`, so remove any `client_id` field from the template before creating the client.
 
 * Linux:
 [options="nowrap"]
 ----
-$ kcreg.sh create -f client-template.json -s clientId=myclient -s baseUrl=/myclient -s 'redirectUris=["/myclient/*"]' -o
+$ kcreg.sh create -f client-template.json -s client_name=myclient -s client_uri=/myclient -s 'redirect_uris=["/myclient/*"]' -o
 ----
 * Windows:
 [options="nowrap"]
 ----
-C:\> kcreg create -f client-template.json -s clientId=myclient -s baseUrl=/myclient -s "redirectUris=[\"/myclient/*\"]" -o
+C:\> kcreg create -f client-template.json -s client_name=myclient -s client_uri=/myclient -s "redirect_uris=[\"/myclient/*\"]" -o
 ----
 
 Run the [command]`kcreg create --help` for more information about the [command]`kcreg create` command.
 
-You can use [command]`kcreg attrs` to list available attributes. Keep in mind that many configuration attributes are not checked for validity or consistency. It is up to you to specify proper values. Remember that you should not have any id fields in your
+You can use [command]`kcreg attrs` to list available attributes. Keep in mind that many configuration attributes are not checked for validity or consistency. It is up to you to specify proper values. Remember that you should not have any `client_id` or other id fields in your
 template and should not specify them as arguments to the [command]`kcreg create` command.
 
 
@@ -312,12 +315,12 @@ For example, on:
 * Linux:
 [options="nowrap"]
 ----
-$ kcreg.sh update myclient -s enabled=false -d redirectUris
+$ kcreg.sh update myclient -s client_name=disabled-client -d redirect_uris
 ----
 * Windows:
 [options="nowrap"]
 ----
-C:\> kcreg update myclient -s enabled=false -d redirectUris
+C:\> kcreg update myclient -s client_name=disabled-client -d redirect_uris
 ----
 
 You can also use a file that contains only changes to be applied so you do not have to specify too many values as arguments. In this case, specify [command]`--merge` to tell the Client Registration CLI that rather than treating the JSON file as a full, new configuration, it should treat it as a set of attributes to be applied over the existing configuration.
@@ -327,12 +330,12 @@ For example, on:
 * Linux:
 [options="nowrap"]
 ----
-$ kcreg.sh update myclient --merge -d redirectUris -f mychanges.json
+$ kcreg.sh update myclient --merge -d redirect_uris -f mychanges.json
 ----
 * Windows:
 [options="nowrap"]
 ----
-C:\> kcreg update myclient --merge -d redirectUris -f mychanges.json
+C:\> kcreg update myclient --merge -d redirect_uris -f mychanges.json
 ----
 
 Run the [command]`kcreg update --help` command for more information about the [command]`kcreg update` command.

@@ -30,7 +30,6 @@ import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.client.registration.cli.CmdStdinContext;
 import org.keycloak.client.registration.cli.EndpointType;
 import org.keycloak.client.registration.cli.EndpointTypeConverter;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
@@ -46,11 +45,9 @@ import static org.keycloak.client.cli.util.ConfigUtil.setRegistrationToken;
 import static org.keycloak.client.cli.util.HttpUtil.doPost;
 import static org.keycloak.client.cli.util.IoUtil.printErr;
 import static org.keycloak.client.cli.util.IoUtil.printOut;
-import static org.keycloak.client.cli.util.IoUtil.readFully;
 import static org.keycloak.client.cli.util.OsUtil.OS_ARCH;
 import static org.keycloak.client.cli.util.OsUtil.PROMPT;
 import static org.keycloak.client.cli.util.ParseUtil.parseKeyVal;
-import static org.keycloak.client.registration.cli.EndpointType.DEFAULT;
 import static org.keycloak.client.registration.cli.EndpointType.OIDC;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
 import static org.keycloak.common.util.IoUtils.readPasswordFromConsole;
@@ -64,7 +61,7 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
     @Option(names = {"-i", "--clientId"}, description = "After creation only print clientId to standard output")
     protected boolean returnClientId = false;
 
-    @Option(names = {"-e", "--endpoint"}, description = "Endpoint type / document format to use - one of: 'default', 'oidc'", converter = EndpointTypeConverter.class)
+    @Option(names = {"-e", "--endpoint"}, description = "Endpoint type / document format to use - currently only 'oidc'", converter = EndpointTypeConverter.class)
     protected EndpointType regType;
 
     @Option(names = {"-f", "--file"}, description = "Read object from file or standard input if FILENAME is set to '-'")
@@ -112,7 +109,7 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
         }
 
         if (ctx.getEndpointType() == null) {
-            regType = regType != null ? regType : DEFAULT;
+            regType = regType != null ? regType : OIDC;
             ctx.setEndpointType(regType);
         } else if (regType != null && ctx.getEndpointType() != regType) {
             throw new RuntimeException("Requested endpoint type not compatible with detected configuration format: " + ctx.getEndpointType());
@@ -152,23 +149,12 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
                 contentType, HttpUtil.APPLICATION_JSON, ctx.getContent(), auth);
 
         try {
-            if (ctx.getEndpointType() == DEFAULT) {
-                ClientRepresentation client = JsonSerialization.readValue(response, ClientRepresentation.class);
-                outputResult(client.getClientId(), client);
+            OIDCClientRepresentation client = JsonSerialization.readValue(response, OIDCClientRepresentation.class);
+            outputResult(client.getClientId(), client);
 
-                saveMergeConfig(cfg -> {
-                    setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
-                });
-            } else if (ctx.getEndpointType() == OIDC) {
-                OIDCClientRepresentation client = JsonSerialization.readValue(response, OIDCClientRepresentation.class);
-                outputResult(client.getClientId(), client);
-
-                saveMergeConfig(cfg -> {
-                    setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
-                });
-            } else {
-                printOut("Response from server: " + readFully(response));
-            }
+            saveMergeConfig(cfg -> {
+                setRegistrationToken(cfg.ensureRealmConfigData(server, realm), client.getClientId(), client.getRegistrationAccessToken());
+            });
         } catch (UnrecognizedPropertyException e) {
             throw new RuntimeException("Failed to process HTTP response - " + e.getMessage(), e);
         } catch (IOException e) {
@@ -208,8 +194,8 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
         out.println("    -t, --token TOKEN     Use the specified Initial Access Token for authorization or read it from standard input ");
         out.println("                          if '-' is specified. This overrides any token set by '" + CMD + " config initial-token'.");
         out.println("                          If not specified, session credentials are used - see: CREDENTIALS OPTIONS.");
-        out.println("    -e, --endpoint TYPE   Endpoint type / document format to use - one of: 'default', 'oidc'.");
-        out.println("                          If not specified, the format is deduced from input file or falls back to 'default'.");
+        out.println("    -e, --endpoint TYPE   Endpoint type / document format to use - currently only 'oidc'.");
+        out.println("                          If not specified, 'oidc' is used.");
         out.println("    -s, --set NAME=VALUE  Set a specific attribute NAME to a specified value VALUE");
         out.println("    -f, --file FILENAME   Read object from file or standard input if FILENAME is set to '-'");
         out.println("    -o, --output          After creation output the new client configuration to standard output");
@@ -220,25 +206,24 @@ public class CreateCmd extends AbstractAuthOptionsCmd {
         out.println();
         out.println("Create a new client using configuration read from standard input:");
         if (OS_ARCH.isWindows()) {
-            out.println("  " + PROMPT + " echo { \"clientId\": \"my_client\" } | " + CMD + " create -f -");
+            out.println("  " + PROMPT + " echo { \"client_name\": \"my_client\" } | " + CMD + " create -f -");
         } else {
             out.println("  " + PROMPT + " " + CMD + " create -f - << EOF");
             out.println("  {");
-            out.println("    \"clientId\": \"my_client\"");
+            out.println("    \"client_name\": \"my_client\"");
             out.println("  }");
             out.println("  EOF");
         }
         out.println();
-        out.println("Since we didn't specify an endpoint type it will be deduced from configuration format.");
-        out.println("Supported formats include Keycloak default format and OIDC format.");
+        out.println("kcreg uses the OpenID Connect dynamic client registration endpoint.");
         out.println();
         out.println("Creating a client using file as a template, and overriding some attributes:");
-        out.println("  " + PROMPT + " " + CMD + " create -f my_client.json -s clientId=my_client2 -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]'");
+        out.println("  " + PROMPT + " " + CMD + " create -f my_client.json -s client_name=my_client2 -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]'");
         out.println();
         out.println("Creating a client using an Initial Access Token - you'll be prompted for a token:");
-        out.println("  " + PROMPT + " " + CMD + " create -s clientId=my_client2 -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -t -");
+        out.println("  " + PROMPT + " " + CMD + " create -s client_name=my_client2 -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]' -t -");
         out.println();
-        out.println("Creating a client using 'oidc' endpoint. Without setting endpoint type here it would be 'default':");
+        out.println("Creating a client (explicit -e oidc is optional):");
         out.println("  " + PROMPT + " " + CMD + " create -e oidc -s 'redirect_uris=[\"http://localhost:8980/myapp/*\"]'");
         out.println();
         out.println();
