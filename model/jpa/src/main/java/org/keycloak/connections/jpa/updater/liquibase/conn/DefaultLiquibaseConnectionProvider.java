@@ -18,6 +18,7 @@
 package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.keycloak.Config;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.YugabyteDatabase;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
@@ -33,6 +35,7 @@ import liquibase.ThreadLocalScopeManager;
 import liquibase.database.AbstractJdbcDatabase;
 import liquibase.database.Database;
 import liquibase.database.DatabaseConnection;
+import liquibase.database.core.PostgresDatabase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
@@ -171,6 +174,9 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         } catch (Exception e) {
             throw new RuntimeException("Failed to create instance of " + liquibaseDatabaseClazz.getName());
         }
+        if (liquibaseDatabase.getClass() == PostgresDatabase.class && isYugabyte(connection)) {
+            liquibaseDatabase = new YugabyteDatabase();
+        }
         DatabaseConnection liquibaseConnection = new JdbcConnection(connection);
         try {
             logger.debugf("DB Product Name: %s", liquibaseConnection.getDatabaseProductName());
@@ -180,6 +186,16 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         liquibaseDatabase.setConnection(liquibaseConnection);
 
         return liquibaseDatabase;
+    }
+
+    // YugabyteDB reports itself as PostgreSQL, the version looks like "15.12-YB-2025.2.8.1-b0"
+    private boolean isYugabyte(Connection connection) {
+        try {
+            return connection.getMetaData().getDatabaseProductVersion().contains("-YB-");
+        } catch (SQLException e) {
+            logger.debug("Failed to detect DB product version", e);
+            return false;
+        }
     }
 
 }

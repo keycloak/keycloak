@@ -233,7 +233,8 @@ public class DatabaseIndexCheckerTest {
                         try {
                             stmt.executeUpdate(String.format("CREATE UNIQUE INDEX CONCURRENTLY %s ON %s (realm_id)", qualifiedIndex, qualifiedTable));
                         } catch (SQLException e) {
-                            if (!"23505".equals(e.getSQLState())) {
+                            // YugabyteDB wraps the error and doesn't report the SQL state 23505
+                            if (!"23505".equals(e.getSQLState()) && !e.getMessage().contains("duplicate key value violates unique constraint")) {
                                 throw e;
                             }
                         }

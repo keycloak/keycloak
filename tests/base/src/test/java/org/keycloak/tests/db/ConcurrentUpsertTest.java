@@ -40,6 +40,8 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 
+import org.jboss.logging.Logger;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,6 +55,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DatabaseTest
 @DisabledForDatabases({ "dev-mem", "dev-file" })
 public class ConcurrentUpsertTest {
+
+    private static final Logger LOG = Logger.getLogger(ConcurrentUpsertTest.class);
 
     private static final int ROUNDS = 30;
     private static final int THREADS = 4;
@@ -221,6 +225,7 @@ public class ConcurrentUpsertTest {
                     try {
                         results.add(future.get(60, TimeUnit.SECONDS));
                     } catch (Exception e) {
+                        LOG.error("Concurrent transaction failed", e);
                         Throwable cause = e;
                         while (cause.getCause() != null && cause.getCause() != cause) {
                             cause = cause.getCause();

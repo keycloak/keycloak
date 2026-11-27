@@ -29,6 +29,9 @@ import static org.hamcrest.Matchers.is;
 @DatabaseTest
 public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
 
+    // YugabyteDB is tested as a PostgreSQL database
+    private static final String YUGABYTE = "yugabyte";
+
     @InjectTestDatabase(config = CaseSensitiveDatabaseConfig.class)
     TestDatabase db;
 
@@ -47,7 +50,7 @@ public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
 
             return switch (dbType()) {
                 // DBs that convert unquoted to lower-case by default
-                case PostgresTestDatabase.NAME, EnterpriseDbTestDatabase.NAME
+                case PostgresTestDatabase.NAME, EnterpriseDbTestDatabase.NAME, YUGABYTE
                         -> config.option("db-schema", "KEYCLOAK");
                 // DBs that convert unquoted to upper-case by default
                 case "dev-file", "dev-mem" ->
@@ -60,7 +63,7 @@ public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
     public static class CaseSensitiveDatabaseConfig implements DatabaseConfig {
         @Override
         public DatabaseConfigBuilder configure(DatabaseConfigBuilder database) {
-            if (PostgresTestDatabase.NAME.equals(dbType()) || EnterpriseDbTestDatabase.NAME.equals(dbType())) {
+            if (PostgresTestDatabase.NAME.equals(dbType()) || EnterpriseDbTestDatabase.NAME.equals(dbType()) || YUGABYTE.equals(dbType())) {
                 database.initScript("org/keycloak/tests/db/case-sensitive-schema-postgres.sql");
             }
             return database;

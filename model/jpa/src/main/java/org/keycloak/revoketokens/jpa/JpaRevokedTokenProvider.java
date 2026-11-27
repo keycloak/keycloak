@@ -27,6 +27,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RevokedTokenProvider;
+import org.keycloak.models.jpa.entities.RevokedTokenEntity;
 
 public class JpaRevokedTokenProvider implements RevokedTokenProvider {
 
@@ -44,6 +45,7 @@ public class JpaRevokedTokenProvider implements RevokedTokenProvider {
         var currentTime = Time.currentTimeSeconds();
         var expire = currentTime + lifespanSeconds;
         int rows;
+        JpaUtils.lockForUpsert(em, RevokedTokenEntity.class, id);
         if (JpaUtils.isUpsertRowCountUnreliable(em)) {
             String table = JpaUtils.getTableNameForNativeQuery("REVOKED_TOKEN", em);
             em.createNativeQuery("DELETE FROM " + table + " WHERE ID = ?1 AND EXPIRE <= ?2")

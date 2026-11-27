@@ -22,6 +22,9 @@ import org.keycloak.tests.suites.DatabaseTest;
 @DatabaseTest
 public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
 
+    // YugabyteDB is tested as a PostgreSQL database
+    private static final String YUGABYTE = "yugabyte";
+
     @InjectTestDatabase(config = PreserveSchemaCaseDatabaseConfig.class, lifecycle = LifeCycle.CLASS)
     TestDatabase db;
 
@@ -40,7 +43,7 @@ public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
     private static class PreserveSchemaCaseDatabaseConfig implements DatabaseConfig {
         @Override
         public DatabaseConfigBuilder configure(DatabaseConfigBuilder database) {
-            if (dbType().equals(PostgresTestDatabase.NAME) || dbType().equals(EnterpriseDbTestDatabase.NAME)) {
+            if (dbType().equals(PostgresTestDatabase.NAME) || dbType().equals(EnterpriseDbTestDatabase.NAME) || dbType().equals(YUGABYTE)) {
                 return database.initScript("org/keycloak/tests/db/preserve-schema-case-liquibase-postgres.sql");
             }
             return database.database("keycloak-t");

@@ -145,6 +145,8 @@
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <tidb.version>v8.5.2</tidb.version>
         <tidb.container>mirror.gcr.io/pingcap/tidb:${tidb.version}</tidb.container>
+        <yugabyte.version>2025.2.8.1-b8</yugabyte.version>
+        <yugabyte.container>mirror.gcr.io/yugabytedb/yugabyte:${yugabyte.version}</yugabyte.container>
         <mysql.version>8.4</mysql.version>
         <mysql.container>mirror.gcr.io/mysql:${mysql.version}</mysql.container>
         <mysql-jdbc.version>9.7.0</mysql-jdbc.version>

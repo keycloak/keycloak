@@ -125,6 +125,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             logErrorSettingMigrationTransactionTimeout(e);
         }
         try (Connection connection = getConnection(); KeycloakSession session = factory.create()) {
+            JpaUtils.detectDatabaseProduct(entityManagerFactory, connection);
             try {
                 try (Statement statement = connection.createStatement()) {
                     try (ResultSet rs = statement.executeQuery(String.format(SQL_GET_LATEST_VERSION, getSchema(schema)))) {

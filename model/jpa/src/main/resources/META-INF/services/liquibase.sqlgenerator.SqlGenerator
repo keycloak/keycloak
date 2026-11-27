@@ -18,3 +18,4 @@
 org.keycloak.connections.jpa.updater.liquibase.lock.CustomInsertLockRecordGenerator
 org.keycloak.connections.jpa.updater.liquibase.lock.CustomLockDatabaseChangeLogGenerator
 org.keycloak.connections.jpa.updater.liquibase.custom.CreateTableAsSelectGuard
+org.keycloak.connections.jpa.updater.liquibase.YugabyteCreateIndexGenerator
