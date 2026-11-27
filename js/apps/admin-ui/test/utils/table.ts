@@ -1,7 +1,30 @@
 import { type Locator, type Page, expect } from "@playwright/test";
+import { waitForLoadingCycle, waitForTableIdle } from "./loading.ts";
 
 // The realm list can load slowly while parallel workers create and delete realms.
 const TABLE_LOAD_TIMEOUT_MS = 15_000;
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getTableRowLink(tableBody: Locator, itemName: string): Locator {
+  const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
+
+  return tableBody
+    .getByRole("link", { name: exactNameRegex })
+    .or(tableBody.getByRole("link", { name: itemName }))
+    .or(
+      tableBody.getByTestId("provider-name-link").filter({ hasText: itemName }),
+    )
+    .or(
+      tableBody
+        .locator("tr")
+        .filter({ hasText: exactNameRegex })
+        .getByRole("link")
+        .first(),
+    );
+}
 
 export async function searchItem(
   page: Page,
@@ -15,34 +38,23 @@ export async function searchItem(
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
   await page.getByPlaceholder(placeHolder).fill(itemName);
   await page.keyboard.press("Enter");
+  await waitForLoadingCycle(page);
 }
 
 export async function clearAllFilters(page: Page) {
   await page.getByTestId("clear-all-filters-empty-action").click();
 }
 
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export async function clickTableRowItem(page: Page, itemName: string) {
   const tableBody = page.locator("table tbody");
+  // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
   await tableBody
-    // Use first() because some pages have multiple <tbody> elements (e.g. drag-and-drop rows).
     .first()
     .waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
+  const rowLink = getTableRowLink(tableBody, itemName);
 
-  const exactNameRegex = new RegExp(`^${escapeRegex(itemName)}$`, "i");
-  const anyMatch = tableBody.getByRole("link", { name: itemName }).first();
-
-  // The row may render after the search or page load completes, so wait for it instead of checking once.
-  await anyMatch.waitFor({ state: "visible", timeout: TABLE_LOAD_TIMEOUT_MS });
-
-  const exactMatch = tableBody
-    .getByRole("link", { name: exactNameRegex })
-    .first();
-  const target = (await exactMatch.count()) > 0 ? exactMatch : anyMatch;
-  await target.click();
+  await expect(rowLink.first()).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
+  await rowLink.first().click();
 }
 
 export function getRowByCellText(page: Page, cellText: string): Locator {
@@ -73,9 +85,11 @@ export async function assertRowExists(
   itemName: string,
   exist = true,
 ) {
+  await waitForTableIdle(page);
+
   const row = page.locator("table tbody").getByRole("row", { name: itemName });
   if (exist) {
-    await expect(row.first()).toBeVisible();
+    await expect(row.first()).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
   } else {
     await expect(row).toHaveCount(0);
   }
@@ -87,12 +101,40 @@ export async function assertNoResults(page: Page) {
   ).toBeVisible();
 }
 
+async function resolveTableToolbar(page: Page): Promise<Locator> {
+  const activeTabPanel = page.getByRole("tabpanel").filter({ visible: true });
+  const tabPanelToolbar = activeTabPanel.getByTestId("table-toolbar");
+  if ((await tabPanelToolbar.count()) > 0) {
+    return tabPanelToolbar.first();
+  }
+
+  const toolbars = page.getByTestId("table-toolbar").filter({ visible: true });
+  const toolbarCount = await toolbars.count();
+  for (let index = 0; index < toolbarCount; index++) {
+    const toolbar = toolbars.nth(index);
+    const followingGrid = toolbar.locator(
+      "xpath=following::*[@role='grid' or @role='treegrid'][1]",
+    );
+    const selectedRow = followingGrid.locator(
+      'tbody tr input[type="checkbox"]:checked',
+    );
+    if ((await selectedRow.count()) > 0) {
+      return toolbar;
+    }
+  }
+
+  return toolbars.first();
+}
+
 export async function clickTableToolbarItem(
   page: Page,
   itemName: string,
   kebab = false,
 ) {
-  const toolbar = page.getByTestId("table-toolbar");
+  await waitForTableIdle(page);
+  const toolbar = await resolveTableToolbar(page);
+  await expect(toolbar).toBeVisible({ timeout: TABLE_LOAD_TIMEOUT_MS });
+
   if (kebab) {
     await toolbar.getByTestId("kebab").click();
     const exactMenuItem = page.getByRole("menuitem", {
@@ -111,47 +153,28 @@ export async function clickTableToolbarItem(
     .getByRole("button", { name: itemName, exact: true })
     .or(toolbar.getByRole("link", { name: itemName, exact: true }))
     .first();
-  try {
-    await exactToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
+
+  if (await exactToolbarItem.isVisible()) {
     await exactToolbarItem.click();
     return;
-  } catch {
-    // Fall through to partial name and overflow menu attempts.
   }
 
-  const partialToolbarItem = toolbar
-    .getByRole("button", { name: itemName })
-    .or(toolbar.getByRole("link", { name: itemName }))
-    .first();
-  try {
-    await partialToolbarItem.waitFor({ state: "visible", timeout: 2_000 });
-    await partialToolbarItem.click();
-    return;
-  } catch {
-    // Fall through to overflow menu attempt.
-  }
-
-  const overflowKebab = toolbar.getByTestId("kebab");
-  if ((await overflowKebab.count()) > 0) {
-    await overflowKebab.click();
-    const exactMenuItem = page.getByRole("menuitem", {
-      name: itemName,
-      exact: true,
-    });
-    if ((await exactMenuItem.count()) > 0) {
-      await exactMenuItem.first().click();
-      return;
-    }
-    await page.getByRole("menuitem", { name: itemName }).first().click();
+  await toolbar.getByTestId("kebab").click();
+  const exactMenuItem = page.getByRole("menuitem", {
+    name: itemName,
+    exact: true,
+  });
+  if ((await exactMenuItem.count()) > 0) {
+    await exactMenuItem.first().click();
     return;
   }
-
-  throw new Error(`Toolbar item "${itemName}" not found`);
+  await page.getByRole("menuitem", { name: itemName }).first().click();
 }
 
 export async function getTableData(page: Page, name: string) {
   // Retry the complete data capture so the wait and read cannot race each other
   // during React re-renders that momentarily empty the table.
+  // getTableRows already waits for loading to complete.
   let tableData: string[][] = [];
   await expect
     .poll(
@@ -245,4 +268,5 @@ export async function expandRow(page: Page, tableName: string, row: number) {
 
 export async function refreshTable(page: Page) {
   await page.getByTestId("refresh").click();
+  await waitForLoadingCycle(page);
 }

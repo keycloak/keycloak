@@ -1,4 +1,6 @@
 import { expect, type Page } from "@playwright/test";
+import { switchOff } from "../utils/form.ts";
+import { waitForTableIdle } from "../utils/loading.ts";
 
 export async function goToUserProfileTab(page: Page) {
   await page.getByTestId("rs-user-profile-tab").click();
@@ -47,16 +49,32 @@ export async function goToAttributeGroupsTab(page: Page) {
 }
 
 export async function switchOffIfOn(page: Page, selector: string) {
-  if (await page.isChecked(selector)) {
-    await page.locator(selector).click({ force: true });
+  const switchElement = page.locator(selector);
+  if (await switchElement.isChecked()) {
+    await switchOff(page, switchElement);
   }
 }
 
 export async function clickCreateUser(page: Page) {
-  const emptyAction = page.getByTestId("no-users-found-empty-action");
+  await waitForTableIdle(page);
+
   const addUser = page.getByTestId("add-user");
-  // The table briefly shows its empty state before the spinner appears, so don't decide on a single look.
-  await emptyAction.or(addUser).first().click({ timeout: 15_000 });
+  const emptyAction = page.getByTestId("no-users-found-empty-action");
+
+  await expect
+    .poll(
+      async () =>
+        (await addUser.isVisible()) || (await emptyAction.isVisible()),
+      { timeout: 15_000 },
+    )
+    .toBe(true);
+
+  if (await addUser.isVisible()) {
+    await addUser.click();
+    return;
+  }
+
+  await emptyAction.click();
 }
 
 export async function fillEmailAndOptionalUsername(
