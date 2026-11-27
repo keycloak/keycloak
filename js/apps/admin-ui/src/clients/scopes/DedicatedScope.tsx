@@ -14,6 +14,7 @@ import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import { useAccess } from "../../context/access/Access";
+import { omitClientScopes } from "../utils";
 
 type DedicatedScopeProps = {
   client: ClientRepresentation;
@@ -64,7 +65,10 @@ export const DedicatedScope = ({ client, onChange }: DedicatedScopeProps) => {
   const update = async () => {
     const newClient = { ...client, fullScopeAllowed: !client.fullScopeAllowed };
     try {
-      await adminClient.clients.update({ id: client.id! }, newClient);
+      await adminClient.clients.update(
+        { id: client.id! },
+        omitClientScopes(newClient),
+      );
       addAlert(t("clientScopeSuccess"), AlertVariant.success);
       onChange?.(newClient);
     } catch (error) {

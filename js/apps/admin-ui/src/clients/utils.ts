@@ -1,5 +1,6 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { TFunction } from "i18next";
+import { omit } from "lodash-es";
 
 /**
  * Checks if a client is intended to be used for authenticating a to a realm.
@@ -24,6 +25,12 @@ export const getProtocolName = (t: TFunction<"clients">, protocol: string) => {
 
   return protocol;
 };
+
+/**
+ * Removes client scopes from a client update payload, they are managed through their own endpoints.
+ */
+export const omitClientScopes = (client: ClientRepresentation) =>
+  omit(client, ["defaultClientScopes", "optionalClientScopes"]);
 
 export const defaultContextAttributes = [
   {
