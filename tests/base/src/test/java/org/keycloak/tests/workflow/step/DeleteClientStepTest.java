@@ -1,12 +1,14 @@
 package org.keycloak.tests.workflow.step;
 
 import java.time.Duration;
+import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
+import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.client.DeleteClientStepProviderFactory;
 import org.keycloak.models.workflow.client.DisableClientStepProviderFactory;
 import org.keycloak.models.workflow.events.ClientAuthenticatedWorkflowEventFactory;
@@ -23,6 +25,8 @@ import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -127,6 +131,41 @@ public class DeleteClientStepTest extends AbstractWorkflowTest {
 
         // clean
         managedRealm.admin().clients().delete(cid).close();
+    }
+
+    @Test
+    public void testClientRemovalCleansUpScheduledSteps() {
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
+                .onEvent(ClientCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(DisableClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build())) {
+            assertEquals(201, response.getStatus());
+        }
+
+        // create a client, scheduling the disable-client step
+        String cid = createClient();
+
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
+            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(cid, realm.getId()).toList();
+            assertThat(steps, hasSize(1));
+        });
+
+        // remove the client before the scheduled step runs
+        managedRealm.admin().clients().delete(cid).close();
+
+        // the scheduled step for the removed client should have been cleaned up
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
+            List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(cid, realm.getId()).toList();
+            assertThat(steps, hasSize(0));
+        });
     }
 
     private String createClient() {

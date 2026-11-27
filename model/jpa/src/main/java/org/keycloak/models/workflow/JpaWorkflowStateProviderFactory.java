@@ -18,6 +18,7 @@
 package org.keycloak.models.workflow;
 
 import org.keycloak.Config;
+import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
@@ -38,6 +39,8 @@ public class JpaWorkflowStateProviderFactory implements WorkflowStateProviderFac
                 onUserRemovedEvent(event);
             } if (fired instanceof RealmRemovedEvent event) {
                 onRealmRemovedEvent(event);
+            } if (fired instanceof ClientRemovedEvent event) {
+                onClientRemovedEvent(event);
             }
         });
     }
@@ -66,5 +69,11 @@ public class JpaWorkflowStateProviderFactory implements WorkflowStateProviderFac
         KeycloakSession session = event.getKeycloakSession();
         WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
         provider.removeByResource(event.getUser().getId(), event.getRealm().getId());
+    }
+
+    private void onClientRemovedEvent(ClientRemovedEvent event) {
+        KeycloakSession session = event.getKeycloakSession();
+        WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
+        provider.removeByResource(event.getClient().getId(), event.getClient().getRealm().getId());
     }
 }
