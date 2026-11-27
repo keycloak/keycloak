@@ -24,3 +24,4 @@ org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory
 org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantIdentityProviderFactory
 org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory
 org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory
+org.keycloak.broker.trust.etsi.EtsiTrustListIdentityProviderFactory

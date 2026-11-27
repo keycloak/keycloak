@@ -7,6 +7,7 @@ import { IdentityProviderSpiffeRoute } from "./routes/IdentityProviderSpiffe";
 import { IdentityProviderKubernetesRoute } from "./routes/IdentityProviderKubernetes";
 import { IdentityProviderDefaultTrustRoute } from "./routes/IdentityProviderDefaultTrust";
 import { IdentityProviderOid4VpRoute } from "./routes/IdentityProviderOid4Vp";
+import { IdentityProviderEtsiTrustListRoute } from "./routes/IdentityProviderEtsiTrustList";
 import { IdentityProvidersRoute } from "./routes/IdentityProviders";
 import { IdentityProviderAddMapperRoute } from "./routes/AddMapper";
 import { IdentityProviderEditMapperRoute } from "./routes/EditMapper";
@@ -25,6 +26,7 @@ const routes: AppRouteObject[] = [
   IdentityProviderKubernetesRoute,
   IdentityProviderDefaultTrustRoute,
   IdentityProviderOid4VpRoute,
+  IdentityProviderEtsiTrustListRoute,
   IdentityProviderKeycloakOidcRoute,
   IdentityProviderCreateRoute,
   IdentityProviderRoute,

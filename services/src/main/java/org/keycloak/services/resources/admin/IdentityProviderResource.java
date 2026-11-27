@@ -559,7 +559,10 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
-        IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
+        IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel, IdentityProvider.class);
+        if (provider == null) {
+            throw new NotFoundException();
+        }
         return provider.reloadKeys();
     }
 
