@@ -57,4 +57,14 @@ public interface UpdateLogic {
      */
     void updateStatus(KeycloakStatusAggregator statusAggregator);
 
+    /**
+     * The status is usually not updated when {@link #decideUpdate()} interrupts the reconciliation. Return {@code true}
+     * if the update logic has something to report in the status anyway, e.g. that the decision is retried.
+     *
+     * @return {@code true} if the status must be updated although the reconciliation is interrupted.
+     */
+    default boolean updateStatusOnInterrupt() {
+        return false;
+    }
+
 }

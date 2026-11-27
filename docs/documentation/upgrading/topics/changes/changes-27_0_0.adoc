@@ -869,6 +869,15 @@ A deleted client is registered again from its client metadata document on its ne
 
 A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
 
+=== Operator retries the update compatibility check without a result
+// https://github.com/keycloak/keycloak/issues/55401
+
+With the `Auto` update strategy, the {project_name} Operator previously used a recreate update whenever the update compatibility Job did not return a rolling or recreate result, for example when the Job reached its deadline or the new image could not be pulled.
+It now keeps the current StatefulSet, reports the reason as a warning in the `HasErrors` condition, and replaces the Job with a new one 5 minutes after it finished.
+As a consequence, a broken image or configuration no longer takes down all instances, but blocks the update until a check returns a result, for example after the Keycloak CR is fixed.
+If the check fails for the currently deployed image or configuration, for example for an image older than 26.2, scale the Keycloak CR to 0 instances or switch to the `RecreateOnImageChange` or `Explicit` update strategy to apply the update.
+Scaling the Keycloak CR to 0 instances is still possible, as the Operator uses a recreate update without a Job in this case.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

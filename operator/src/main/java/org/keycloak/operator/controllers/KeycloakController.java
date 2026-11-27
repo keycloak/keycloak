@@ -34,6 +34,7 @@ import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.update.UpdateLogic;
 import org.keycloak.operator.update.UpdateLogicFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -173,6 +174,9 @@ public class KeycloakController implements Reconciler<Keycloak> {
         var updateLogicControl = updateLogic.decideUpdate();
         if (updateLogicControl.isPresent()) {
             Log.debug("--- Reconciliation interrupted due to update logic");
+            if (updateLogic.updateStatusOnInterrupt()) {
+                return withInterruptedStatus(kc, existingDeployment, updateLogic, updateLogicControl.get(), context);
+            }
             return updateLogicControl.get();
         }
 
@@ -204,6 +208,28 @@ public class KeycloakController implements Reconciler<Keycloak> {
             updateControl.rescheduleAfter(config.keycloak().pollIntervalSeconds(), TimeUnit.SECONDS);
         }
 
+        return updateControl;
+    }
+
+    /**
+     * Updates the status while the update logic holds back the StatefulSet update. The observedGeneration is not
+     * advanced, as the current generation is not applied yet.
+     */
+    private UpdateControl<Keycloak> withInterruptedStatus(Keycloak kc, StatefulSet existingDeployment, UpdateLogic updateLogic,
+            UpdateControl<Keycloak> updateLogicControl, Context<Keycloak> context) {
+        var currentStatus = kc.getStatus();
+        var observedGeneration = Optional.ofNullable(currentStatus).map(KeycloakStatus::getObservedGeneration)
+                .orElse(kc.getMetadata().getGeneration());
+        var statusAggregator = new KeycloakStatusAggregator(currentStatus, observedGeneration);
+        updateStatus(kc, existingDeployment, statusAggregator, context);
+        updateLogic.updateStatus(statusAggregator);
+        var status = statusAggregator.build();
+        if (status.equals(currentStatus)) {
+            return updateLogicControl;
+        }
+        kc.setStatus(status);
+        var updateControl = UpdateControl.patchStatus(kc);
+        updateLogicControl.getScheduleDelay().ifPresent(updateControl::rescheduleAfter);
         return updateControl;
     }
 

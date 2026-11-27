@@ -103,6 +103,14 @@ When using the `Auto` update strategy, the {project_name} Operator automatically
 Read more about the process in the <@links.server id="update-compatibility"/> {section}.
 This process consumes cluster resources for the time of the check and introduces a slight delay before the StatefulSet update begins.
 
+If the Job does not produce a result, for example because it reaches its deadline, its Pod is killed, or the check command fails, the {project_name} Operator keeps the current StatefulSet.
+It reports the reason as a warning in the `HasErrors` condition and replaces the Job with a new one 5 minutes after it finished, until a check produces a result.
+If the current or the desired number of instances is 0, the {project_name} Operator does not start a Job and uses a recreate update, as there are no instances to keep available.
+
+The Job also runs the update compatibility metadata command with the currently deployed image and configuration.
+If this command fails, for example because the current image is older than {project_name} 26.2 or a Secret of the current configuration is missing, changing the Keycloak CR does not resolve it.
+To apply the update in this case, scale the Keycloak CR to 0 instances, or switch to the `RecreateOnImageChange` or `Explicit` update strategy.
+
 [WARNING]
 ====
 If the Keycloak CR configured a `podTemplate` as part of the `unsupported` configuration parameters, the Keycloak Operator will do its best to use those settings for the started Job. Still it might miss some settings due to the flexibility of the `podTemplate` feature and its unsupported nature.

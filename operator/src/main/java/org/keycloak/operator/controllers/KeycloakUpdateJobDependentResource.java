@@ -77,7 +77,7 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     // Pod is restarted if it fails with an exit code != 0, and we don't want that.
     private static final int JOB_RETRIES = 0;
     // Job time to live
-    private static final int JOB_TIME_TO_LIVE_SECONDS = (int) TimeUnit.MINUTES.toSeconds(30);
+    public static final int JOB_TIME_TO_LIVE_SECONDS = (int) TimeUnit.MINUTES.toSeconds(30);
 
     public KeycloakUpdateJobDependentResource() {
         super(Job.class);
