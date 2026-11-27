@@ -1,9 +1,16 @@
-FROM registry.access.redhat.com/ubi9 AS ubi-micro-build
+FROM registry.access.redhat.com/ubi9:9.8 AS ubi-micro-build
 
-ENV KEYCLOAK_VERSION 999.0.0-SNAPSHOT
+ARG KEYCLOAK_VERSION=999.0.0-SNAPSHOT
 ARG KEYCLOAK_DIST=https://github.com/keycloak/keycloak/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
+ARG PCRE2_VERSION=10.48
+ARG PCRE2_SHA256=b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed
+# SQLite release in sqlite.org's encoded form (3.54.1 -> 3540100) and year directory.
+# sqlite.org publishes SHA3-256; this is the SHA-256 of the verified tarball.
+ARG SQLITE_VERSION=3540100
+ARG SQLITE_YEAR=2026
+ARG SQLITE_SHA256=926ef8d3eab93fbf6e06011901273eec076b25594a4e1cdadd50c987f4f6d64e
 
-RUN dnf install -y tar gzip
+RUN dnf install -y tar gzip bzip2 curl-minimal gcc make
 
 ADD $KEYCLOAK_DIST /tmp/keycloak/
 
@@ -19,11 +26,50 @@ RUN chmod -R g+rwX /opt/keycloak
 ADD ubi-null.sh /tmp/
 RUN bash /tmp/ubi-null.sh java-21-openjdk-headless glibc-langpack-en findutils
 
+# Fail the build if the repositories resolve an OpenJDK older than the latest
+# known release. 21.0.13.1.2 fixes CVE-2026-114938 (RHSA-2026:100567).
+# Raise JAVA_MIN_VERSION again once a build fixing CVE-2026-91403 ships.
+ARG JAVA_MIN_VERSION=21.0.13.1.2
+RUN java_version="$(rpm -r /tmp/null/rootfs -q --qf '%{VERSION}' java-21-openjdk-headless)" && \
+    echo "Installed java-21-openjdk-headless ${java_version} (minimum ${JAVA_MIN_VERSION})" && \
+    [ "$(rpm --eval "%{lua: print(rpm.vercmp('${java_version}', '${JAVA_MIN_VERSION}'))}")" -ge 0 ] || \
+    { echo "ERROR: java-21-openjdk-headless ${java_version} is older than ${JAVA_MIN_VERSION}" >&2; exit 1; }
+
+# UBI 9 provides PCRE2 10.40 through libselinux. Replace that transitive
+# dependency with the upstream release required by the container image.
+RUN rpm -r /tmp/null/rootfs -e --nodeps pcre2-syntax pcre2 && \
+    curl -fsSL "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${PCRE2_VERSION}/pcre2-${PCRE2_VERSION}.tar.bz2" \
+        -o /tmp/pcre2.tar.bz2 && \
+    echo "${PCRE2_SHA256}  /tmp/pcre2.tar.bz2" | sha256sum -c - && \
+    tar -xjf /tmp/pcre2.tar.bz2 -C /tmp && \
+    cd "/tmp/pcre2-${PCRE2_VERSION}" && \
+    ./configure --prefix=/usr --libdir=/usr/lib64 --disable-static && \
+    make -j"$(nproc)" && \
+    make DESTDIR=/tmp/pcre2-rootfs install && \
+    cp -a /tmp/pcre2-rootfs/usr/lib64/libpcre2-8.so.* /tmp/null/rootfs/usr/lib64/ && \
+    cp -a /tmp/pcre2-rootfs/usr/lib64/libpcre2-posix.so.* /tmp/null/rootfs/usr/lib64/ && \
+    rm -rf /tmp/pcre2.tar.bz2 /tmp/pcre2-rootfs "/tmp/pcre2-${PCRE2_VERSION}"
+
+# UBI 9 provides SQLite 3.34.1 (sqlite-libs), needed only by nss-softokn. Upstream
+# 3.54.0+ fixes CVE-2026-119373 (CVE-2026-119586 is still unfixed in 3.54.1).
+# Replace it with the upstream release, keeping the libsqlite3.so.0 soname.
+RUN rpm -r /tmp/null/rootfs -e --nodeps sqlite-libs && \
+    curl -fsSL "https://www.sqlite.org/${SQLITE_YEAR}/sqlite-autoconf-${SQLITE_VERSION}.tar.gz" \
+        -o /tmp/sqlite.tar.gz && \
+    echo "${SQLITE_SHA256}  /tmp/sqlite.tar.gz" | sha256sum -c - && \
+    tar -xzf /tmp/sqlite.tar.gz -C /tmp && \
+    cd "/tmp/sqlite-autoconf-${SQLITE_VERSION}" && \
+    ./configure --prefix=/usr --libdir=/usr/lib64 --disable-static --soname=legacy && \
+    make -j"$(nproc)" && \
+    make DESTDIR=/tmp/sqlite-rootfs install && \
+    cp -a /tmp/sqlite-rootfs/usr/lib64/libsqlite3.so.* /tmp/null/rootfs/usr/lib64/ && \
+    rm -rf /tmp/sqlite.tar.gz /tmp/sqlite-rootfs "/tmp/sqlite-autoconf-${SQLITE_VERSION}"
+
 FROM registry.access.redhat.com/ubi9-micro
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 # Flag for determining app is running in container
-ENV KC_RUN_IN_CONTAINER true
+ENV KC_RUN_IN_CONTAINER=true
 
 COPY --from=ubi-micro-build /tmp/null/rootfs/ /
 COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
@@ -43,7 +89,7 @@ ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
 ARG KEYCLOAK_VERSION
 ARG KEYCLOAK_URL="https://www.keycloak.org/"
 ARG KEYCLOAK_TAGS="keycloak security identity"
-ARG KEYCLOAK_MAINTAINER=${KEYCLOAK_URL}
+ARG KEYCLOAK_MAINTAINER="https://graphwise.ai/"
 ARG KEYCLOAK_VENDOR=${KEYCLOAK_MAINTAINER}
 
 LABEL maintainer=${KEYCLOAK_MAINTAINER} \
@@ -71,6 +117,7 @@ LABEL name=${KEYCLOAK_SERVER_IMAGE_NAME} \
 # oci
 ARG KEYCLOAK_SOURCE="https://github.com/keycloak/keycloak"
 ARG KEYCLOAK_DOCS=${KEYCLOAK_URL}documentation
+ARG KEYCLOAK_DESCRIPTION="Graphwise security patched version of Keycloak Server"
 
 LABEL org.opencontainers.image.title=${KEYCLOAK_SERVER_DISPLAY_NAME} \
       org.opencontainers.image.url=${KEYCLOAK_URL} \

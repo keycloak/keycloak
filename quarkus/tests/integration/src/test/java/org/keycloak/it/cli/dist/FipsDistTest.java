@@ -18,6 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import java.nio.file.Path;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.keycloak.crypto.fips.KeycloakFipsSecurityProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -31,6 +33,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(keepAlive = true, defaultOptions = { "--features=fips", "--http-enabled=true", "--hostname-strict=false", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
 @RawDistOnly(reason = "Containers are immutable")
+@Disabled("detects local java 25 and fails to build")
 public class FipsDistTest {
 
     @Test

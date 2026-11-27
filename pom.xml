@@ -81,9 +81,11 @@
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
 
         <!-- TODO Are these correct versions? -->
-        <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
+        <bouncycastle.pkixfips.version>1.0.12</bouncycastle.pkixfips.version>
         <!-- 1.0.2.4 exhibits class loading issues -->
-        <bouncycastle.bcfips.version>1.0.2.3</bouncycastle.bcfips.version>
+        <bouncycastle.bcfips.version>1.0.2.7</bouncycastle.bcfips.version>
+        <bouncycastle.bctlsfips.version>1.0.24</bouncycastle.bctlsfips.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -93,7 +95,8 @@
         <h2.version>2.2.224</h2.version>
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
-        <infinispan.version>15.0.7.Final</infinispan.version>
+        <infinispan.version>15.0.22.Final</infinispan.version>
+        <netty.version>4.1.137.Final</netty.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -108,6 +111,8 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
+        <fasterxml.jackson.core.version>2.18.11</fasterxml.jackson.core.version>
+        <guava.version>33.7.2-jre</guava.version>
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
         <resteasy.version>6.2.7.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
@@ -140,7 +145,8 @@
         <apacheds.version>2.0.0.AM26</apacheds.version>
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
-        <freemarker.version>2.3.32</freemarker.version>
+        <freemarker.version>2.3.35</freemarker.version>
+        <micrometer.version>1.15.12</micrometer.version>
 
         <!-- json-ld processing for oid4vci ld-proofs -->
         <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
@@ -312,6 +318,33 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${fasterxml.jackson.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${fasterxml.jackson.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${fasterxml.jackson.core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-bom</artifactId>
                 <version>${quarkus.version}</version>
@@ -392,6 +425,26 @@
             <artifactId>bc-fips</artifactId>
             <version>${bouncycastle.bcfips.version}</version>
           </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-fips</artifactId>
+                <version>${bouncycastle.bctlsfips.version}</version>
+            </dependency>
             
             <dependency>
                 <groupId>com.github.ua-parser</groupId>

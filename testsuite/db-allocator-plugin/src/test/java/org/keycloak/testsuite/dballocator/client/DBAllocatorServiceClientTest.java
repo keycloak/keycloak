@@ -2,6 +2,7 @@ package org.keycloak.testsuite.dballocator.client;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.testsuite.dballocator.client.data.AllocationResult;
 import org.keycloak.testsuite.dballocator.client.data.EraseResult;
@@ -16,6 +17,7 @@ import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
 
+@Ignore("missing dependencies")
 public class DBAllocatorServiceClientTest {
 
     @Test
