@@ -1,0 +1,258 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Migrating custom themes to PatternFly 6"
+priority=10
+summary="Migrate custom login, welcome, account, and admin themes from PatternFly 5 to PatternFly 6 for {project_name} 27.">
+
+{project_name} 27 upgrades its built-in user interfaces from PatternFly 5 to PatternFly 6.
+Custom themes that extend or copy those UIs need a corresponding migration before or during the upgrade.
+
+This guide covers what changes for each theme type, which helpers exist, and how to validate the result.
+For the short per-release summary, see the link:{upgrading_guide_link}[{upgradingguide_name}].
+For general theme structure, see <@links.uicustomization id="themes" />.
+
+== What changed in {project_name} 27
+
+[%header,cols="1,2,2"]
+|===
+| Theme type | Built-in theme | PatternFly version
+
+| Login
+| `keycloak.v3` (replaces `keycloak.v2`)
+| PatternFly 6
+
+| Welcome
+| `keycloak.v3` (replaces standalone `keycloak`)
+| PatternFly 6
+
+| Account Console
+| `keycloak.v4` (replaces `keycloak.v3`) when the Account PF6 migration is enabled
+| PatternFly 6
+
+| Admin Console
+| `keycloak.v3` (replaces `keycloak.v2`) when the Admin PF6 migration is enabled
+| PatternFly 6
+|===
+
+Built-in realm themes are migrated automatically when you upgrade.
+Custom themes are left unchanged and must be updated by you.
+
+Common PatternFly 5 to 6 changes that affect custom themes:
+
+* CSS class prefixes move from `pf-v5-*` to `pf-v6-*`.
+* Global CSS variables move from `--pf-v5-global--*` toward PatternFly 6 design tokens (`--pf-t--global--*` and related).
+* Vendor stylesheet paths move from `vendor/patternfly-v5/` to `vendor/patternfly-v6/`.
+* Some React component APIs used by the Account and Admin consoles were removed or renamed in PatternFly 6.
+
+Upstream PatternFly references:
+
+* https://www.patternfly.org/get-started/upgrade/[PatternFly upgrade overview]
+* https://github.com/patternfly/pf-codemods[PatternFly codemods]
+* https://github.com/patternfly/patternfly/blob/main/UPGRADE-GUIDE.md[PatternFly CSS upgrade guide]
+
+== Before you start
+
+. Inventory every custom theme under `themes/` (and any separately packaged theme JARs).
+. Note each theme's `parent=` value and whether it copies templates, CSS, or only messages.
+. Prefer extending built-in themes and overriding as little as possible.
+  Themes that only override messages or a few CSS rules are cheapest to migrate.
+. Keep a copy of the old theme until you have validated login, account, and admin flows on {project_name} 27.
+. {project_name} 26.8.x remains supported for a period after 27.0 so you can migrate themes before cutting over production.
+
+== Login themes
+
+Login is the FreeMarker-based experience (`login` theme type).
+In {project_name} 27 the default built-in theme is `keycloak.v3`.
+
+=== Automatic realm migration
+
+* New realms default to `keycloak.v3`.
+* Existing realms that used `keycloak.v2` are migrated to `keycloak.v3`.
+* Realms that still used the removed Login v1 theme (`keycloak`) are also migrated to `keycloak.v3`.
+* Custom login theme names are not rewritten.
+
+=== Feature flags
+
+`login:v2` and `login:v1` are removed.
+If you still set `--features=login:v2` or `KC_FEATURES=login:v2`, replace it with `login:v3` or remove the entry (`login:v3` is the default).
+Servers that still request `login:v2` fail feature validation at startup.
+
+=== Prefer the Base theme macros
+
+Login pages and macros live in the Base login theme.
+`keycloak.v3` supplies PatternFly 6 styling through `theme.properties` and resources without duplicating full page templates.
+
+When migrating a custom login theme:
+
+. Set `parent=keycloak.v3` (or `parent=base` if you own the full markup).
+. Drop copied page templates such as `login.ftl` or `register.ftl` when you only need styling changes.
+. Override individual Base macros or a few `kc*` class properties instead of whole pages.
+. Update any `styles` / `stylesCommon` entries that still point at `vendor/patternfly-v5/`.
+
+=== Helper script for login themes
+
+{project_name} provides a migration script that runs PatternFly codemods against a custom login theme and rewrites common `theme.properties` values.
+
+[source,bash]
+----
+# Dry-run (default): writes a report, does not modify the theme
+node misc/scripts/migrate-login-theme-pf5-to-pf6.mjs \
+  --theme-path /path/to/your-theme
+
+# Apply after reviewing the report
+node misc/scripts/migrate-login-theme-pf5-to-pf6.mjs \
+  --theme-path /path/to/your-theme \
+  --apply \
+  --fail-on-unresolved
+----
+
+`--theme-path` may point at the theme root or at the `login` directory.
+When the theme root has a sibling `common/` directory used through `import=common/...`, that directory is migrated as well.
+
+The script:
+
+* Runs `@patternfly/pf-codemods` (`tokens-update`), `@patternfly/css-vars-updater`, and `@patternfly/class-name-updater` on a staged copy.
+* Rewrites `vendor/patternfly-v5/` to `vendor/patternfly-v6/`, `pf-v5-theme-dark` to `pf-v6-theme-dark`, and `parent=keycloak.v2` (or `rh-sso.v2`) to `parent=keycloak.v3`.
+* Writes markdown and JSON reports under `misc/scripts/reports/` (or `--report-dir`).
+* Creates a backup under `misc/scripts/reports/backups/` when `--apply` succeeds.
+
+Always review the report for residual `pf-v5-*` markers and temporary PatternFly tokens, then validate pages manually.
+
+=== Manual login checklist
+
+Even after a successful script run, verify:
+
+* Username/password, registration, and reset-credentials pages in light and dark mode.
+* Social identity-provider buttons and icons (`kcLogoIdP-*` properties).
+* Error, info, and required-action pages you customized.
+* Any custom CSS that targeted `pf-v5-*` layout utilities or global variables.
+* Locales you maintain; compare message keys with the Base / `keycloak.v3` bundles.
+
+== Welcome themes
+
+The built-in welcome theme is `keycloak.v3` and shares its layout and PatternFly 6 styles with login.
+The standalone `keycloak` welcome theme has been removed.
+
+If your custom welcome theme copied PatternFly 5 classes or stylesheets:
+
+. Set `parent=keycloak.v3` (or replace an explicit `spi-theme--welcome-theme=keycloak` startup setting with `keycloak.v3`).
+. Update `theme.properties` so `stylesCommon` (or equivalent) loads PatternFly 6 vendor CSS.
+. Replace `pf-v5-*` classes in `index.ftl` and custom CSS with PatternFly 6 equivalents.
+. Re-test first-boot admin creation and the post-bootstrap redirect to the Admin Console.
+
+There is no dedicated welcome helper script; reuse the PatternFly class-name and CSS-variable updaters on the welcome directory if the theme is large.
+
+== Account Console themes
+
+The Account Console is a React application packaged as an account theme.
+The built-in Account Console is now `keycloak.v4`, based on PatternFly 6.
+The previous `keycloak.v3` Account Console theme and the `account:v3` feature value have been removed.
+
+=== Automatic realm migration
+
+* For new realms, `keycloak.v4` is the default Account Console theme when the `account:v4` feature is enabled (the default).
+* Existing realms that explicitly use `keycloak`, `keycloak.v2`, or `keycloak.v3` as the account theme are migrated to `keycloak.v4` during upgrade.
+* Custom account theme names are left unchanged; update their `parent=` yourself.
+
+=== Feature flags
+
+If you explicitly enable `account:v3` (for example `--features=account:v3` or `KC_FEATURES=account:v3`), replace it with `account:v4`, or remove the entry because `account:v4` is enabled by default.
+Servers that still request `account:v3` fail feature validation at startup.
+
+=== Custom Account UI source packages
+
+If you maintain a fork of `@keycloak/keycloak-account-ui` (or an equivalent source package that reuses those components):
+
+. Upgrade `@patternfly/react-core` and related PatternFly packages to PatternFly 6.
+. Run PatternFly's React and CSS codemods (`@patternfly/pf-codemods`, `@patternfly/css-vars-updater`, `@patternfly/class-name-updater`) against that source package.
+. Replace removed PatternFly 5 React APIs and `pf-v5-*` class names.
+. Point the account theme `parent=` at `keycloak.v4`.
+
+Those upstream PatternFly tools operate on an Account UI *source checkout*.
+They do not rewrite installed or inherited theme directories under `themes/`.
+
+=== CSS-only account themes
+
+If your custom account theme only overrides resources of `keycloak.v3`:
+
+. Change `parent=` to `keycloak.v4`.
+. Update PatternFly 5 classes and CSS variables to PatternFly 6 manually; the helper script does not process those theme directories.
+. Re-test the Account Console pages you styled.
+
+== Admin Console themes
+
+The Admin Console is a React application.
+It has been upgraded to PatternFly 6, and the built-in admin theme has been renamed from `keycloak.v2` to `keycloak.v3`.
+Realms that explicitly use the built-in admin theme are migrated automatically.
+Custom admin themes must be updated manually.
+
+=== Feature flags
+
+If you explicitly enable the admin console version through startup features, replace `admin:v2` with `admin:v3` in `--features` (or remove the entry when `admin:v3` is the default).
+To disable the admin console, use the unversioned flag `--features-disabled=admin`.
+Versioned keys are rejected in `--features-disabled`.
+The `admin:v2` feature flag was removed with the PatternFly 6 admin console migration.
+
+=== Rename the admin theme parent
+
+If your custom admin theme extends the built-in theme, update `theme.properties`:
+
+[source,properties]
+----
+# Before
+parent=keycloak.v2
+
+# After
+parent=keycloak.v3
+----
+
+If your theme extends `rh-sso.v2`, change the parent to `rh-sso.v3` if available in your distribution, or extend `keycloak.v3` instead.
+
+=== Custom Admin UI source packages
+
+If you maintain a fork of the Admin UI (or bundle your own PatternFly React components for admin):
+
+. Upgrade `@patternfly/react-core` and related packages to PatternFly 6.
+. Replace deprecated PatternFly 5 APIs removed during the migration, including modal variants, `Chip` (use `Label`), and drag-and-drop helpers that depended on removed packages.
+. Update CSS class prefixes from `pf-v5-*` to `pf-v6-*` and replace `--pf-v5-global--*` variables with the corresponding `--pf-t--global--*` tokens where applicable.
+. Run PatternFly's React and CSS codemods (`@patternfly/pf-codemods`, `@patternfly/css-vars-updater`, `@patternfly/class-name-updater`) against your Admin UI source checkout.
+
+=== Quick theme downloads
+
+The built-in quick-theme generator produces admin themes with `parent=keycloak.v3`.
+Download a new quick theme after upgrading if you previously generated one for `keycloak.v2`.
+
+== Themes built with Keycloakify
+
+If you generate themes with https://www.keycloakify.dev/[Keycloakify], follow Keycloakify's PatternFly 6 / {project_name} 27 upgrade guidance for that toolchain, then re-validate the generated themes against a {project_name} 27 server.
+Use a Keycloakify release that targets `keycloak.v3` for login, `keycloak.v4` for account, and `keycloak.v3` for admin.
+
+== Validation checklist
+
+After migrating each custom theme:
+
+. Start {project_name} 27 with theme caching disabled while iterating:
++
+[source,bash]
+----
+bin/kc.[sh|bat] start-dev \
+  --spi-theme--static-max-age=-1 \
+  --spi-theme--cache-themes=false \
+  --spi-theme--cache-templates=false
+----
+. Confirm the realm (or `spi-theme--welcome-theme`) selects your migrated theme.
+. Walk the critical paths for that theme type (login/register/reset, account profile/applications, admin realm/client screens you customized).
+. Check light and dark mode where applicable.
+. Search the theme for leftover `pf-v5-`, `patternfly-v5`, and old parents (`keycloak.v2` for login/admin, `keycloak.v3` for account).
+. Re-test any customized translations.
+
+== Related documentation
+
+* link:{upgrading_guide_link}[{upgradingguide_name}] — breaking-change notes for {project_name} 27
+* <@links.uicustomization id="themes" /> — creating and extending themes
+* <@links.uicustomization id="welcome-theme" /> — welcome theme selection
+* `misc/scripts/README.md` — migration script options
+
+</@tmpl.guide>

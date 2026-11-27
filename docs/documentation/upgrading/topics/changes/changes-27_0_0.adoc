@@ -116,6 +116,66 @@ node misc/scripts/migrate-login-theme-pf5-to-pf6.mjs --theme-path /path/to/your/
 Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
 After migration, validate your customizations manually for light and dark mode, social provider buttons, and custom CSS overrides.
 
+For a full walkthrough covering login, welcome, account, and admin custom themes, see *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
+
+=== Account Console moved to `keycloak.v4` and PatternFly 6
+// https://github.com/keycloak/keycloak/issues/52344
+
+The built-in Account Console is now the `keycloak.v4` theme, based on PatternFly 6.
+The previous `keycloak.v3` Account Console theme and the `account:v3` feature value have been removed.
+
+For new realms, `keycloak.v4` is the default Account Console theme when the `account:v4` feature is enabled (the default).
+Existing realms that explicitly use `keycloak`, `keycloak.v2`, or `keycloak.v3` as the account theme are migrated to `keycloak.v4` during upgrade.
+Custom account themes are left unchanged.
+
+If you maintain a custom Account Console theme that extends or copies `keycloak.v3`, migrate it to PatternFly 6 before switching its parent to `keycloak.v4`.
+
+For Account UI *source checkouts* (a directory whose `package.json` name is `@keycloak/keycloak-account-ui`), run PatternFly's React and CSS codemods (`@patternfly/pf-codemods`, `@patternfly/css-vars-updater`, `@patternfly/class-name-updater`).
+Those tools do not rewrite installed or inherited theme directories under `themes/`.
+For CSS-only custom themes that only override resources of `keycloak.v3`, update PatternFly 5 classes and CSS variables to PatternFly 6 manually.
+If you explicitly enable `account:v3` (for example `--features=account:v3` or `KC_FEATURES=account:v3`), replace it with `account:v4`, or remove the entry because `account:v4` is enabled by default.
+Servers that still request `account:v3` fail feature validation at startup.
+
+See also *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
+
+=== Admin console migrated to PatternFly 6
+// https://github.com/keycloak/keycloak/issues/52343
+
+The admin console has been upgraded to PatternFly 6 and the built-in admin theme has been renamed from `keycloak.v2` to `keycloak.v3`.
+Realms that explicitly use the built-in admin theme are migrated automatically.
+Custom admin themes must be updated manually.
+
+If your custom admin theme extends the built-in theme, update `theme.properties`:
+
+[source,properties]
+----
+# Before
+parent=keycloak.v2
+
+# After
+parent=keycloak.v3
+----
+
+If your theme extends `rh-sso.v2`, change the parent to `rh-sso.v3` if available in your distribution, or extend `keycloak.v3` instead.
+
+If you explicitly enable the admin console version through startup features, replace `admin:v2` with `admin:v3` in `--features` (or remove the entry when `admin:v3` is the default).
+To disable the admin console, use the unversioned flag `--features-disabled=admin`.
+Versioned keys are rejected in `--features-disabled`.
+The `admin:v2` feature flag was removed with the PatternFly 6 admin console migration.
+
+The admin console now uses PatternFly 6 React components and design tokens.
+Custom admin themes that bundle their own React components should:
+
+* Upgrade `@patternfly/react-core` and related packages to PatternFly 6.
+* Replace deprecated PatternFly 5 APIs removed during the migration, including modal variants, `Chip` (use `Label`), and drag-and-drop helpers that depended on removed packages.
+* Update CSS class prefixes from `pf-v5-*` to `pf-v6-*` and replace `--pf-v5-global--*` variables with the corresponding `--pf-t--global--*` tokens where applicable.
+* Run PatternFly's React and CSS codemods against an Admin UI source checkout when migrating forked React sources.
+
+The built-in quick-theme generator now produces admin themes with `parent=keycloak.v3`.
+Download a new quick theme after upgrading if you previously generated one for `keycloak.v2`.
+
+See also *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
+
 === OIDC identity providers accept a single issuer
 // https://github.com/keycloak/keycloak/issues/54458
 

@@ -42,12 +42,17 @@ The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry th
 
 = Themes
 
-== Login and welcome UI upgraded to PatternFly 6
+== User interfaces upgraded to PatternFly 6
 
-The built-in login theme is now `keycloak.v3`, based on PatternFly 6. The previous `keycloak.v2` login theme has been removed.
-The welcome page shares the `keycloak.v3` login theme's layout, form controls, branding, and PatternFly 6 styles.
+{project_name} 27 upgrades the built-in login, welcome, Account Console, and Admin Console UIs to PatternFly 6:
 
-Realms that explicitly used `keycloak.v2` are migrated to `keycloak.v3` during upgrade. If you maintain a custom login theme based on `keycloak.v2`, or a custom welcome theme based on PatternFly 5, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
+* Login theme is now `keycloak.v3` (replaces `keycloak.v2`).
+* Welcome theme is now `keycloak.v3` and shares the login theme's layout, form controls, branding, and PatternFly 6 styles.
+* Account Console theme is now `keycloak.v4` (replaces `keycloak.v3`).
+* Admin Console theme is now `keycloak.v3` (replaces `keycloak.v2`).
+
+Built-in realm themes are migrated automatically during upgrade.
+If you maintain custom themes, see the link:{upgradingguide_link}[{upgradingguide_name}] and *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides].
 
 == Login theme chrome macros
 

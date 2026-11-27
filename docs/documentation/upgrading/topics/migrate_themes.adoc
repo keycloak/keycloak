@@ -4,6 +4,8 @@
 
 If you created custom themes, those themes must be migrated to the new server. Also, any changes to the built-in themes might need to be reflected in your custom themes, depending on which aspects you customized.
 
+For the PatternFly 6 upgrade in {project_name} 27 (login, welcome, Account Console, and Admin Console), see *Migrating custom themes to PatternFly 6* in the https://www.keycloak.org/guides#migration[Migration guides] in addition to the version-specific notes in <<migration-changes,Migration Changes>>.
+
 .Procedure
 
 . Copy your custom themes from the old server `themes` directory to the new server `themes` directory.
