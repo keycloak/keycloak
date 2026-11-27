@@ -231,6 +231,33 @@ public class AuthZenEvaluationsTest {
         assertNull(body.get("evaluations"));
     }
 
+    // AuthZEN 1.0 Section 7.1.2 defines options as a general-purpose mechanism; only known options
+    // such as evaluations_semantic are interpreted, unknown keys MUST be ignored (Section 10.1.1).
+    @Test
+    public void testUnknownOptionKeysIgnored() throws IOException {
+        String json = """
+              {"subject":{"type":"user","id":"%s"},\
+              "action":{"name":"read"},\
+              "evaluations":[{"resource":{"type":"endpoint","id":"/admin"}}],\
+              "options":{"evaluations_semantic":"execute_all","another_option":"value"}}""".formatted(ADMIN_USER);
+
+        JsonNode body = postEvaluations(json);
+        assertTrue(body.get("evaluations").get(0).get("decision").asBoolean());
+    }
+
+    // AuthZEN 1.0 Section 5.3: action carries an OPTIONAL properties key, also inside evaluations
+    // items, and unknown fields MUST be ignored (Section 10.1.1).
+    @Test
+    public void testActionPropertiesInEvaluationItemIgnoredAndAccepted() throws IOException {
+        String json = """
+              {"subject":{"type":"user","id":"%s"},\
+              "action":{"name":"read"},\
+              "evaluations":[{"resource":{"type":"endpoint","id":"/admin"},"action":{"name":"read","properties":{"channel":"web"},"bogus":"value"}}]}""".formatted(ADMIN_USER);
+
+        JsonNode body = postEvaluations(json);
+        assertTrue(body.get("evaluations").get(0).get("decision").asBoolean());
+    }
+
     private JsonNode postEvaluations(String json) throws IOException {
         String url = accessEvaluationsEndpoint(keycloakUrls.getBase() + "/realms/" + realm.getName());
         AccessTokenResponse tokenResponse = oauth

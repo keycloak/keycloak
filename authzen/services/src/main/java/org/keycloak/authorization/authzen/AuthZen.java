@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -61,21 +62,34 @@ public final class AuthZen {
         }
     }
 
+    // AuthZEN 1.0, Section 10.1.1: "To ensure forward compatibility, receivers MUST ignore
+    // unknown fields present in request or response bodies."
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Subject(
             @JsonProperty(required = true) SubjectType type,
             @JsonProperty(required = true) String id,
             Map<String, Object> properties) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record Resource(
             @JsonProperty(required = true) String type,
             @JsonProperty(required = true) String id,
             Map<String, Object> properties) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record Action(String name) {}
+    public record Action(
+            @JsonProperty(required = true) String name,
+            Map<String, Object> properties) {
 
+        public Action(String name) {
+            this(name, null);
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record EvaluationRequest(
             @JsonProperty(required = true) Subject subject,
@@ -89,6 +103,7 @@ public final class AuthZen {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record EvaluationItem(
             Subject subject,
@@ -107,10 +122,12 @@ public final class AuthZen {
         PERMIT_ON_FIRST_PERMIT;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record Options(EvaluationsSemantic evaluationsSemantic) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record EvaluationsRequest(
             Subject subject,

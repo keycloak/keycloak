@@ -58,6 +58,7 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.tests.authzen.providers.ReservedAttributePolicyProvider;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.entity.StringEntity;
 import org.junit.jupiter.api.Test;
 
@@ -678,6 +679,18 @@ public class AuthZenEvaluationTest {
     }
 
     @Test
+    public void testMissingActionNameReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .resource("endpoint", "/admin")
+                    .action(null)
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
     public void testUndefinedActionReturnsDenied() throws IOException {
         EvaluationResult result = authzenClient()
               .evaluate(AuthZenClient.evaluationRequest()
@@ -720,6 +733,81 @@ public class AuthZenEvaluationTest {
               .entity(new StringEntity("{invalid json"))
               .asResponse()) {
             assertEquals(400, response.getStatus());
+        }
+    }
+
+    // AuthZEN 1.0 Section 5.3 defines an OPTIONAL "properties" key on the action object. It must be
+    // accepted (and is currently not merged into the evaluation context) instead of rejected with 400.
+    @Test
+    public void testActionPropertiesAccepted() throws IOException {
+        String json = """
+              {"subject":{"type":"user","id":"%s"},\
+              "resource":{"type":"endpoint","id":"/admin"},\
+              "action":{"name":"read","properties":{"channel":"web"}}}""".formatted(ADMIN_USER);
+
+        JsonNode body = postEvaluation(json);
+        assertTrue(body.get("decision").asBoolean());
+    }
+
+    // AuthZEN 1.0 Section 10.1.1: unknown fields in request bodies MUST be ignored.
+    @Test
+    public void testUnknownActionFieldIgnored() throws IOException {
+        String json = """
+              {"subject":{"type":"user","id":"%s"},\
+              "resource":{"type":"endpoint","id":"/admin"},\
+              "action":{"name":"read","bogus":"value"}}""".formatted(ADMIN_USER);
+
+        JsonNode body = postEvaluation(json);
+        assertTrue(body.get("decision").asBoolean());
+    }
+
+    @Test
+    public void testUnknownSubjectFieldIgnored() throws IOException {
+        String json = """
+              {"subject":{"type":"user","id":"%s","extra":"value"},\
+              "resource":{"type":"endpoint","id":"/admin"},\
+              "action":{"name":"read"}}""".formatted(ADMIN_USER);
+
+        JsonNode body = postEvaluation(json);
+        assertTrue(body.get("decision").asBoolean());
+    }
+
+    @Test
+    public void testUnknownResourceFieldIgnored() throws IOException {
+        String json = """
+              {"subject":{"type":"user","id":"%s"},\
+              "resource":{"type":"endpoint","id":"/admin","bogus":"value"},\
+              "action":{"name":"read"}}""".formatted(ADMIN_USER);
+
+        JsonNode body = postEvaluation(json);
+        assertTrue(body.get("decision").asBoolean());
+    }
+
+    @Test
+    public void testUnknownTopLevelFieldIgnored() throws IOException {
+        String json = """
+              {"subject":{"type":"user","id":"%s"},\
+              "resource":{"type":"endpoint","id":"/admin"},\
+              "action":{"name":"read"},\
+              "bogus":"value"}""".formatted(ADMIN_USER);
+
+        JsonNode body = postEvaluation(json);
+        assertTrue(body.get("decision").asBoolean());
+    }
+
+    private JsonNode postEvaluation(String json) throws IOException {
+        String url = accessEvaluationEndpoint(realmUrl());
+        AccessTokenResponse tokenResponse = oauth
+              .client(client.getClientId(), client.getSecret())
+              .doClientCredentialsGrantAccessTokenRequest();
+
+        try (SimpleHttpResponse response = simpleHttp.doPost(url)
+              .auth(tokenResponse.getAccessToken())
+              .header("Content-Type", "application/json")
+              .entity(new StringEntity(json))
+              .asResponse()) {
+            assertEquals(200, response.getStatus());
+            return response.asJson();
         }
     }
 
