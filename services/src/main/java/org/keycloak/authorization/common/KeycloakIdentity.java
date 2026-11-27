@@ -26,12 +26,14 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.TokenVerifier;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Tokens;
+import org.keycloak.common.VerificationException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -155,6 +157,15 @@ public class KeycloakIdentity implements Identity {
             }
 
             ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+            try {
+                TokenVerifier.createWithoutSignature(token)
+                        .withChecks(TokenManager.NotBeforeCheck.forModel(client),
+                                TokenManager.NotBeforeCheck.forModel(keycloakSession, realm, userSession.getUser()))
+                        .verify();
+            } catch (VerificationException cause) {
+                throw new RuntimeException("Invalid token", cause);
+            }
+
             AuthenticatedClientSessionModel clientSessionModel = userSession.getAuthenticatedClientSessionByClient(client.getId());
 
             ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionScopeParameter(clientSessionModel, keycloakSession);
