@@ -464,7 +464,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
         }
 
         if (sign) {
-            builder.queryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod());
+            builder.replaceQueryParam(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod());
             toSign.append("&").append(KeycloakUriBuilder.queryParamAsString(GeneralConstants.SAML_SIG_ALG_REQUEST_KEY, signatureAlgorithm.getXmlSignatureMethod()));
             Signature signature = signatureAlgorithm.createSignature();
             byte[] sig = null;
@@ -476,7 +476,7 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
                 throw new ProcessingException(e);
             }
             String encodedSig = RedirectBindingUtil.base64Encode(sig);
-            builder.queryParam(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY, encodedSig);
+            builder.replaceQueryParam(GeneralConstants.SAML_SIGNATURE_REQUEST_KEY, encodedSig);
         }
         return builder.build();
     }
