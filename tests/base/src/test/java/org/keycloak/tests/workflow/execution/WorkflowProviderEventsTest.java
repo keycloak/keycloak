@@ -1,13 +1,24 @@
 package org.keycloak.tests.workflow.execution;
 
+import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowProviderEvent;
@@ -15,6 +26,10 @@ import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.models.workflow.events.UserGroupMembershipAddedWorkflowEventFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -24,6 +39,7 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +47,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -637,6 +655,184 @@ public class WorkflowProviderEventsTest extends AbstractWorkflowTest {
             assertThat(completedEvent.getWorkflowId(), equalTo(secondWorkflowId));
             assertThat(completedEvent.getResourceId(), equalTo(userId));
             assertThat(completedEvent.getExecutionId(), equalTo(migratedEvent.getNewExecutionId()));
+        });
+    }
+
+    @Test
+    public void testUserEventsTriggerWorkflows() {
+        registerTestListener();
+
+        String wCredentialId = createSimpleWorkflow("w-credential", "user-update-credential(password)");
+        String wRemoveCredentialId = createSimpleWorkflow("w-remove-credential", "user-remove-credential");
+        String wUpdateEmailId = createSimpleWorkflow("w-update-email", "user-update-email");
+        String wUpdateProfileId = createSimpleWorkflow("w-update-profile", "user-update-profile(firstName)");
+        String wUpdateConsentId = createSimpleWorkflow("w-update-consent", "user-update-consent");
+
+        String userId;
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
+                .username("test-trigger-user").email("trigger-user@example.com").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+
+        // clear the collector so that the user creation events are discarded
+        runOnServer.run(session -> WorkflowEventCollector.getInstance().clear());
+
+        // updating a credential of a type other than the one in the filter should not activate the workflow
+        fireUserEvent(EventType.UPDATE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE));
+        assertActivations(List.of(), List.of(wCredentialId));
+
+        fireUserEvent(EventType.UPDATE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE));
+        fireUserEvent(EventType.REMOVE_CREDENTIAL, userId, Map.of(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE));
+        fireUserEvent(EventType.UPDATE_EMAIL, userId, Map.of());
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_FIRST_NAME, "NewFirstName"));
+        fireUserEvent(EventType.UPDATE_CONSENT, userId, Map.of());
+        assertActivations(List.of(wCredentialId, wRemoveCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateConsentId), List.of());
+
+        // updating an attribute other than the one in the filter should not activate the workflow
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_LAST_NAME, "NewLastName"));
+        assertActivations(List.of(), List.of(wUpdateProfileId, wUpdateEmailId));
+
+        // updating the email along with the profile should activate the workflow listening for email updates
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.UPDATED_EMAIL, "trigger-user-new@example.com"));
+        assertActivations(List.of(wUpdateEmailId), List.of(wUpdateProfileId));
+
+        // removing the attribute in the filter should activate the workflow, even though only its previous value is set
+        fireUserEvent(EventType.UPDATE_PROFILE, userId, Map.of(Details.PREVIOUS_FIRST_NAME, "NewFirstName"));
+        assertActivations(List.of(wUpdateProfileId), List.of());
+    }
+
+    @Test
+    public void testAdminOperationsTriggerWorkflows() throws IOException {
+        registerTestListener();
+
+        // allow custom attributes, so that admin updates send them back along with the root attributes
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        managedRealm.admin().users().userProfile().update(upConfig);
+
+        String wCredentialId = createSimpleWorkflow("admin-w-credential", "user-update-credential(password)");
+        String wOtpCredentialId = createSimpleWorkflow("admin-w-otp-credential", "user-update-credential(otp)");
+        String wRemoveCredentialId = createSimpleWorkflow("admin-w-remove-credential", "user-remove-credential(otp)");
+        String wUpdateEmailId = createSimpleWorkflow("admin-w-update-email", "user-update-email");
+        String wUpdateProfileId = createSimpleWorkflow("admin-w-update-profile", "user-update-profile(firstName)");
+        String wUpdateDepartmentId = createSimpleWorkflow("admin-w-update-department", "user-update-profile(department)");
+        String wUpdateAnyProfileId = createSimpleWorkflow("admin-w-update-any-profile", "user-update-profile");
+
+        String userId;
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
+                .username("admin-trigger-user").email("admin-trigger@example.com")
+                .firstName("OldFirst").lastName("OldLast")
+                .attribute("department", "sales").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
+        UserResource user = managedRealm.admin().users().get(userId);
+
+        // clear the collector so that the user creation events are discarded
+        runOnServer.run(session -> WorkflowEventCollector.getInstance().clear());
+
+        // an update that only changes the lastName should not activate workflows listening for other attributes
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setLastName("NewLast");
+        user.update(userRep);
+        assertActivations(List.of(wUpdateAnyProfileId), List.of(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId));
+
+        // an update that changes the email, the firstName and a custom attribute should activate all of them
+        userRep = user.toRepresentation();
+        userRep.setEmail("admin-trigger-new@example.com");
+        userRep.setFirstName("NewFirst");
+        userRep.singleAttribute("department", "engineering");
+        user.update(userRep);
+        assertActivations(List.of(wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId), List.of());
+
+        // an update that clears the email and removes the custom attribute should activate the workflows listening for them
+        userRep = user.toRepresentation();
+        userRep.setEmail("");
+        userRep.getAttributes().remove("department");
+        user.update(userRep);
+        assertActivations(List.of(wUpdateEmailId, wUpdateDepartmentId), List.of(wUpdateProfileId));
+
+        // resetting the password should activate the workflow listening for password updates only
+        CredentialRepresentation newPassword = new CredentialRepresentation();
+        newPassword.setType(CredentialRepresentation.PASSWORD);
+        newPassword.setValue("new-password");
+        newPassword.setTemporary(false);
+        user.resetPassword(newPassword);
+        assertActivations(List.of(wCredentialId), List.of(wOtpCredentialId));
+
+        // setting the password when updating the user should activate the workflow listening for password updates only
+        CredentialRepresentation anotherPassword = new CredentialRepresentation();
+        anotherPassword.setType(CredentialRepresentation.PASSWORD);
+        anotherPassword.setValue("another-password");
+        anotherPassword.setTemporary(false);
+        userRep = user.toRepresentation();
+        userRep.setCredentials(List.of(anotherPassword));
+        user.update(userRep);
+        assertActivations(List.of(wCredentialId), List.of(wOtpCredentialId, wUpdateEmailId, wUpdateProfileId, wUpdateDepartmentId, wUpdateAnyProfileId));
+
+        // setting a legacy OTP credential when updating the user should activate the workflow listening for OTP updates only,
+        // as its totp type is converted to otp when it is set
+        CredentialRepresentation legacyOtp = JsonSerialization.readValue("{\"type\": \"totp\", \"hashedSaltedValue\": \"legacy-secret\", "
+                + "\"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}", CredentialRepresentation.class);
+        userRep = user.toRepresentation();
+        userRep.setCredentials(List.of(legacyOtp));
+        user.update(userRep);
+        assertActivations(List.of(wOtpCredentialId), List.of(wCredentialId, wUpdateAnyProfileId));
+
+        // removing an OTP credential should activate the workflow listening for OTP credential removals
+        String credentialId = runOnServer.fetch(session -> {
+            UserModel userModel = session.users().getUserById(session.getContext().getRealm(), userId);
+            CredentialModel credential = new CredentialModel();
+            credential.setType(OTPCredentialModel.TYPE);
+            credential.setUserLabel("My OTP");
+            return userModel.credentialManager().createStoredCredential(credential).getId();
+        }, String.class);
+        user.removeCredential(credentialId);
+        assertActivations(List.of(wRemoveCredentialId), List.of());
+    }
+
+    private String createSimpleWorkflow(String name, String onEvent) {
+        WorkflowRepresentation workflow = WorkflowRepresentation.withName(name)
+                .onEvent(onEvent)
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(DisableUserStepProviderFactory.ID)
+                                .build()
+                ).build();
+
+        try (Response response = managedRealm.admin().workflows().create(workflow)) {
+            assertThat(response.getStatus(), is(201));
+            return ApiUtil.getCreatedId(response);
+        }
+    }
+
+    /**
+     * Sends a user event to the workflow event listener. Workflows are only activated once the session is committed, so
+     * activations must be checked from another {@code runOnServer} call.
+     */
+    private void fireUserEvent(EventType type, String userId, Map<String, String> details) {
+        runOnServer.run(session -> {
+            EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection())
+                    .event(type)
+                    .user(userId);
+            details.forEach((key, value) -> event.detail(key, value));
+            session.getProvider(EventListenerProvider.class, "workflow-event-listener").onEvent(event.getEvent());
+        });
+    }
+
+    /**
+     * Asserts which of the given workflows were activated since the collector was last cleared, and clears it.
+     */
+    private void assertActivations(List<String> activatedWorkflowIds, List<String> notActivatedWorkflowIds) {
+        runOnServer.run(session -> {
+            WorkflowEventCollector collector = WorkflowEventCollector.getInstance();
+            List<String> activated = collector.getEvents(WorkflowProviderEvent.WorkflowActivatedEvent.class).stream()
+                    .map(WorkflowProviderEvent.WorkflowActivatedEvent::getWorkflowId)
+                    .toList();
+            assertThat(activated, hasItems(activatedWorkflowIds.toArray(String[]::new)));
+            for (String workflowId : notActivatedWorkflowIds) {
+                assertThat(activated, not(hasItem(workflowId)));
+            }
+            collector.clear();
         });
     }
 
