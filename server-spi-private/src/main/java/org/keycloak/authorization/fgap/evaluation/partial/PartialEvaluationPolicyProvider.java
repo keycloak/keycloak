@@ -45,6 +45,9 @@ public interface PartialEvaluationPolicyProvider {
          */
         DENY,
 
+        /** A failed aggregate with an effective negative child, before applying its own logic. */
+        EXPLICIT_DENY,
+
         /**
          * The evaluation should be skipped and the next policy should be evaluated. It is up
          * to the caller to interpret a {@code SKIP} as a {@code SKIP}, a {@code GRANT}, a {@code DENY}, or
@@ -93,6 +96,10 @@ public interface PartialEvaluationPolicyProvider {
      * @return {@code true} if access is granted. Otherwise, returns {@code false}
      */
     boolean evaluate(KeycloakSession session, Policy policy, UserModel subject);
+
+    default Outcome evaluateMemberOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        return evaluateOutcome(session, policy, subject);
+    }
 
     default Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
         return evaluate(session, policy, subject) ? Outcome.GRANT : Outcome.DENY;

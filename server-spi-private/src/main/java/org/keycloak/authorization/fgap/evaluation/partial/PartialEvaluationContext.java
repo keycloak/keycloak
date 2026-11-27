@@ -17,6 +17,8 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ import jakarta.persistence.criteria.Predicate;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
+import org.keycloak.authorization.fgap.evaluation.GroupMemberDecision;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.authorization.ResourceType;
@@ -51,6 +54,7 @@ public final class PartialEvaluationContext {
     private CriteriaBuilder criteriaBuilder;
     private final Set<String> allowedResources;
     private final Set<String> deniedResources;
+    private final Set<String> ungrantedGroups = new HashSet<>();
     private Set<String> allowedGroups = Set.of();
     private Set<String> deniedGroups = Set.of();
     private final AuthorizationProviderFactory authorizationProviderFactory;
@@ -81,6 +85,22 @@ public final class PartialEvaluationContext {
 
     public Set<String> getDeniedGroupIds() {
         return deniedGroups.stream().filter(not(resourceType.getGroupType()::equals)).collect(Collectors.toSet());
+    }
+
+    public void setMemberDecisions(Map<String, GroupMemberDecision> decisions) {
+        allowedGroups = new HashSet<>();
+        deniedGroups = new HashSet<>();
+        decisions.forEach((group, outcome) -> {
+            switch (outcome) {
+                case GRANT -> allowedGroups.add(group);
+                case NO_GRANT -> ungrantedGroups.add(group);
+                case EXPLICIT_DENY, INDETERMINATE -> deniedGroups.add(group);
+            }
+        });
+    }
+
+    public Set<String> getUngrantedGroups() {
+        return ungrantedGroups;
     }
 
     public void setAllowedGroups(Set<String> allowedGroups) {

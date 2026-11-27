@@ -63,7 +63,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Resource resource = permission.getResource();
 
         if (resource != null) {
-            evaluateResourcePolicies(permission, authorizationProvider, policyConsumer);
+            evaluateResourcePolicies(permission, authorizationProvider, policyConsumer, decision);
             evaluateResourceTypePolicies(permission, authorizationProvider, policyConsumer);
         }
 
@@ -80,6 +80,10 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             }
             grantAndComplete(permission, authorizationProvider, executionContext, decision);
         }
+    }
+
+    protected void evaluateResourcePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer, Decision decision) {
+        evaluateResourcePolicies(permission, authorization, policyConsumer);
     }
 
     protected void evaluateResourcePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {

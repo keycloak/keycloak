@@ -160,13 +160,26 @@ To create a new user directly as a member of a group, the delegated administrato
 
 The `view-members`, `manage-members`, and `impersonate-members` scopes cascade through the group hierarchy. When you grant or deny one of these scopes on a group, the permission applies to all descendant groups unless a more specific permission exists on a descendant.
 
-*Deny cascading:* A deny on a parent group prevents access to members of the parent and all its descendant groups (children, grandchildren, and so on).
+*Deny cascading:* An explicit denial on a parent group protects members of the parent and all its descendant groups (children, grandchildren, and so on).
 
 *Allow carve-outs:* You can override a parent deny by granting an explicit allow for the same scope on a specific child group. The allow applies only to direct members of that child group. It does not cascade further to the child's own descendants. Members of deeper descendant groups remain denied unless they also have an explicit allow.
 
-A direct `view` permission on a specific user does not override a group membership deny that uses a member scope. Denies on the member scopes (`view-members`, `manage-members`, and `impersonate-members`)
-take precedence over user-level permissions. The only way to restore access to a user in a denied group subtree is to grant an explicit allow for a member scope (such as `view-members`)
-on the specific group the user belongs to.
+A positive policy that does not match the administrator prevents its permission from granting the member scope on that group.
+A different group or a Users permission can still grant access to the shared user.
+All permissions for the same group and member scope must grant before that group supplies a grant.
+Viewing a shared user exposes only memberships visible to the administrator, and changing membership requires permission on the target group.
+
+A negative policy whose condition matches the administrator produces an explicit denial.
+An explicit denial on a specific group's member scope takes precedence over grants through other memberships and Users permissions.
+Within a group hierarchy, a successful direct grant on the child's member scope can override an inherited explicit denial for direct members of that child.
+An unmatched child permission cannot create this exception.
+
+For an aggregate policy, {project_name} applies its decision strategy and logic first.
+An aggregate that grants access contributes a grant, including when an evaluated child explicitly denied.
+A negative aggregate that evaluates to deny contributes an explicit denial.
+A positive aggregate that evaluates to deny contributes an explicit denial only if one of its evaluated children contributed an explicit denial.
+These rules apply recursively to nested aggregates.
+The Evaluation tab shows each group permission's member-scope decision alongside the final user scopes.
 
 Only the member scopes protect a group's members. A group permission that denies only a `view` or `manage` scope,
 does not block a user-level operation on a member of that group. In that case the user remains accessible through the
@@ -174,7 +187,7 @@ corresponding user-level permission, and the group the administrator cannot acce
 group memberships.
 For example, an administrator with `view` on all users can still view a user who also belongs to a group they cannot access.
 Only the groups the administrator is allowed to see are returned for that user.
-Denying `view-members` (or `manage-members`) on that group is what protects its members and denies access to the user.
+Explicitly denying `view-members` (or `manage-members`) on that group protects its members and denies access to the user.
 
 For example, given a hierarchy `Department > Team A > Subteam X`:
 
@@ -185,9 +198,9 @@ For example, given a hierarchy `Department > Team A > Subteam X`:
 
 ====== Search visibility for group member permissions
 
-When `view-members` is granted on a parent group, members of child groups are accessible via direct user lookup (for example, `GET /admin/realms/{realm}/users/{userId}`) but may not appear in user search or count results. The search mechanism uses a partial evaluation that matches users against the specific groups referenced in the permission, not against their descendants.
-
-To ensure that members of child groups appear in search and count results, grant `view-members` on each child group explicitly.
+User search, counts, and group member listings apply the effective `view-members` permissions to memberships before pagination.
+For supported policies and storage providers, a grant inherited from a parent group makes descendant members visible in both search results and direct user lookups.
+Explicit denials on another effective membership still protect shared users.
 
 When a delegated administrator has `view` permission on a group but not on its ancestor groups, the Admin REST API returns the full group hierarchy so the administrator can understand where the group belongs. Ancestor groups without `view` permission are returned as stripped representations containing only `id`, `name`, `path`, `parentId`, and `description`. Sensitive fields such as `attributes`, `realmRoles`, `clientRoles`, and `access` are omitted from these ancestors.
 
@@ -317,8 +330,9 @@ Keep that fact in mind when creating and updating permissions in production.
 ===== Defining permissions for viewing realm resources
 
 This feature relies on a partial evaluation mechanism to partially evaluate the permissions that a realm administrator has
-when listing and viewing realm resources. This mechanism will pre-fetch all the permissions set for view-related scopes where the realm administrator
-is referenced either directly or indirectly.
+when listing and viewing realm resources.
+For user queries, it considers the permissions for `view` on Users and `view-members` on Groups, including permissions that match a different administrator.
+For other resource types, it pre-fetches view-related permissions that reference the administrator directly or indirectly.
 
 Permissions that grant access to `view` a realm resource of a certain type must use one of the following policies to
 make them available from queries:
@@ -328,7 +342,11 @@ make them available from queries:
 * `Role`
 * `Aggregated`
 
-When using an `Aggregated` policy, underlying policies that support partial evaluation (`User`, `Group`, `Role`, or nested `Aggregated`)
+For a Groups `view-members` permission, all underlying policies must support partial evaluation for user queries to resolve the membership decision.
+If an underlying policy cannot be evaluated, the query excludes users protected by that membership, even when another membership would grant access.
+The direct permission check can still evaluate the policy.
+
+For other view-related permissions using an `Aggregated` policy, underlying policies that support partial evaluation (`User`, `Group`, `Role`, or nested `Aggregated`)
 are evaluated during partial evaluation. Underlying policies of other types (such as `Time` or `JavaScript`) are skipped
 because they cannot be pre-evaluated at the database level. If an aggregated policy contains only unsupported policy types,
 the entire aggregated policy is excluded from partial evaluation.
@@ -350,7 +368,7 @@ with the `admin` role at the master realm (server administrators), or realm admi
 
 When querying resources, the partial evaluation mechanism works as follows:
 
-* Resolve all the permissions for a certain resource type that reference the realm administrator
+* Resolve the view-related permissions for the resource type as described above
 * Pre-evaluate each permission to check if the realm administrator does or does not have access to the resources associated with the permission
 * Decorate database queries based on the resources granted or denied
 

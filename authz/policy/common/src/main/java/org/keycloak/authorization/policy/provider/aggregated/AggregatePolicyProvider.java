@@ -57,9 +57,14 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
         DecisionResultCollector decision = new DecisionResultCollector() {
             @Override
             protected void onComplete(Result result) {
-                if (isGranted(result.getResults().iterator().next())) {
+                var aggregate = result.getResults().iterator().next();
+                if (isGranted(aggregate)) {
                     evaluation.grant();
                 } else {
+                    if (aggregate.getPolicy().getLogic() == Logic.POSITIVE && aggregate.getAssociatedPolicies().stream()
+                            .anyMatch(child -> result.getPermission().isExplicitDenial(child.getPolicy(), child.getEffect()))) {
+                        result.getPermission().setExplicitAggregateDenial(aggregate.getPolicy(), true);
+                    }
                     evaluation.deny();
                 }
             }
@@ -69,6 +74,7 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
         DefaultEvaluation defaultEvaluation = DefaultEvaluation.class.cast(evaluation);
         Map<Policy, Map<Object, Decision.Effect>> decisionCache = defaultEvaluation.getDecisionCache();
         ResourcePermission permission = evaluation.getPermission();
+        permission.setExplicitAggregateDenial(policy, false);
 
         for (Policy associatedPolicy : policy.getAssociatedPolicies()) {
             Map<Object, Decision.Effect> decisions = decisionCache.computeIfAbsent(associatedPolicy, p -> new HashMap<>());
@@ -123,12 +129,22 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
 
     @Override
     public Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        return evaluateChildren(session, policy, subject, false);
+    }
+
+    @Override
+    public Outcome evaluateMemberOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        return evaluateChildren(session, policy, subject, true);
+    }
+
+    private Outcome evaluateChildren(KeycloakSession session, Policy policy, UserModel subject, boolean memberScope) {
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         DecisionStrategy decisionStrategy = policy.getDecisionStrategy();
         Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
         int grants = 0;
         int evaluated = 0;
         int forceDeny = 0;
+        boolean explicitDenial = false;
 
         for (Policy associatedPolicy : associatedPolicies) {
             PolicyProvider policyProvider = authorization.getProvider(associatedPolicy.getType());
@@ -138,7 +154,8 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
             }
 
             if (policyProvider instanceof PartialEvaluationPolicyProvider partialPolicyProvider) {
-                Outcome childOutcome = partialPolicyProvider.evaluateOutcome(session, associatedPolicy, subject);
+                Outcome childOutcome = memberScope ? partialPolicyProvider.evaluateMemberOutcome(session, associatedPolicy, subject)
+                        : partialPolicyProvider.evaluateOutcome(session, associatedPolicy, subject);
 
                 if (Outcome.INVALID.equals(childOutcome)) {
                     return Outcome.INVALID;
@@ -161,6 +178,9 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
                     childGranted = !childGranted;
                 }
 
+                if (!childGranted && (associatedPolicy.getLogic() == Logic.NEGATIVE || childOutcome == Outcome.EXPLICIT_DENY)) {
+                    explicitDenial = true;
+                }
                 if (childGranted) {
                     grants++;
                 }
@@ -169,12 +189,18 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
             }
         }
 
+        if (memberScope && evaluated < associatedPolicies.size() && explicitDenial) {
+            // An unresolved child combined with an explicit denial may change
+            // whether that denial propagates to another membership.
+            return Outcome.FORCE_DENY;
+        }
         if (evaluated == 0) {
             return forceDeny == 0 ? Outcome.SKIP: Outcome.FORCE_DENY;
         }
 
+        Outcome denial = memberScope && explicitDenial ? Outcome.EXPLICIT_DENY : Outcome.DENY;
         if (grants == 0) {
-            return Outcome.DENY;
+            return denial;
         }
 
         // uses total policy count, not just evaluated, so skipped and unsupported children count against unanimity/consensus;
@@ -186,6 +212,6 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
             case CONSENSUS -> grants > associatedPolicies.size() - grants;
         };
 
-        return granted ? Outcome.GRANT : Outcome.DENY;
+        return granted ? Outcome.GRANT : denial;
     }
 }

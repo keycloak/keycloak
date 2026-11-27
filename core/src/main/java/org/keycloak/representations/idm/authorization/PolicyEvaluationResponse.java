@@ -131,6 +131,15 @@ public class PolicyEvaluationResponse {
         private List<PolicyResultRepresentation> associatedPolicies;
         private Set<String> scopes = new HashSet<>();
         private String resourceType;
+        private String memberScopeDecision;
+
+        public String getMemberScopeDecision() {
+            return memberScopeDecision;
+        }
+
+        public void setMemberScopeDecision(String memberScopeDecision) {
+            this.memberScopeDecision = memberScopeDecision;
+        }
 
         public PolicyRepresentation getPolicy() {
             return policy;

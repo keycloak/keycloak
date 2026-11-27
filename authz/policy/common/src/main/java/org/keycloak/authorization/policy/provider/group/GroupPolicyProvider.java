@@ -224,11 +224,26 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
 
     @Override
     public Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        return evaluateSubjectGroups(session, policy, subject, false);
+    }
+
+    @Override
+    public Outcome evaluateMemberOutcome(KeycloakSession session, Policy policy, UserModel subject) {
+        // All member permissions are candidates, including policies for a different group of administrators.
+        return evaluateSubjectGroups(session, policy, subject, true);
+    }
+
+    private Outcome evaluateSubjectGroups(KeycloakSession session, Policy policy, UserModel subject, boolean memberScope) {
         RealmModel realm = session.getContext().getRealm();
         AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
         GroupPolicyRepresentation groupPolicy = representationFunction.apply(policy, authorizationProvider);
-        List<String> userGroups = resolveSubjectGroupPaths(session, subject);
-        return evaluateGroups(session, realm, subject, groupPolicy, new Entry(groupPolicy.getGroupsClaim(), userGroups),
+        String claim = groupPolicy.getGroupsClaim();
+        // Always resolve from actual memberships. The runtime evaluate() path reads the
+        // identity token claim, but partial evaluation has no token. Reading the user
+        // attribute named after groupsClaim would be untrusted — the admin can edit their
+        // own unmanaged attributes through the account console.
+        List<String> groups = resolveSubjectGroupPaths(session, subject);
+        return evaluateGroups(session, realm, memberScope ? null : subject, groupPolicy, new Entry(claim, groups),
                 Logic.NEGATIVE.equals(policy.getLogic()));
     }
 

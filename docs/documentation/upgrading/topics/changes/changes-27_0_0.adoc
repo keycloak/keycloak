@@ -4,6 +4,18 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Delegated administration of users in multiple groups
+// https://github.com/keycloak/keycloak/issues/54405
+
+With fine-grained admin permissions v2, administrators can access a user through a grant on any of the user's groups or an applicable Users permission.
+A positive policy on another group's member scope that does not match that administrator no longer blocks the grant.
+For example, delegating Sales to Alice and Support to Bob allows each administrator to manage a user who belongs to both groups.
+
+Before upgrading, review group member permissions where a positive allowlist is intended to protect members from administrators with independent grants, including grants to impersonate users.
+To exclude a set of administrators from viewing members of a protected group, keep the allowlist and add a negative policy matching the excluded administrators to the group's `view-members` permission.
+Test the excluded administrator and an authorized administrator with a user who also belongs to another delegated group.
+Repeat for each protected member scope.
+
 === Authorization policies with deleted references
 
 Role policies with a missing required role and negative role, group, user, client, or client scope policies with unresolved references now evaluate as invalid.

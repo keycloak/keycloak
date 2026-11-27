@@ -93,60 +93,57 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
             return null;
         }
 
-        EntityManager em = getEntityManager();
-        CriteriaBuilder cb = em.getCriteriaBuilder();
+        return hasGrantingMembership(context);
+    }
 
-        if (allowedGroups.contains(GROUPS_RESOURCE_TYPE)) {
-            return cb.exists(createUserMembershipSubquery(context));
+    private Predicate hasGrantingMembership(PartialEvaluationContext context) {
+        CriteriaBuilder cb = context.getCriteriaBuilder();
+        Set<String> allowed = context.getAllowedGroups();
+        Set<String> denied = new HashSet<>(context.getUngrantedGroups());
+        denied.addAll(context.getDeniedGroupIds());
+        denied.remove(GROUPS_RESOURCE_TYPE);
+        Set<String> excluded = expandGroupsToDescendants(denied);
+        excluded.removeAll(allowed);
+
+        if (allowed.contains(GROUPS_RESOURCE_TYPE)) {
+            if (excluded.isEmpty()) {
+                return cb.exists(createUserMembershipSubquery(context));
+            }
+            return cb.exists(createUserMembershipSubquery(context, root -> cb.not(context.inPredicate(root.get("groupId"), excluded))));
         }
 
-        return cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups)));
+        Set<String> eligible = expandGroupsToDescendants(allowed);
+        eligible.removeAll(excluded);
+        return cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), eligible)));
     }
 
     private Predicate getDeniedGroupsFilters(PartialEvaluationContext context) {
+        Set<String> denied = context.getDeniedGroups();
+        if (denied.isEmpty()) {
+            return null;
+        }
+
         CriteriaBuilder cb = context.getCriteriaBuilder();
-        Set<String> allowedGroups = context.getAllowedGroups();
-        Set<String> deniedGroups = context.getDeniedGroups();
-
-        if (deniedGroups.contains(GROUPS_RESOURCE_TYPE)) {
-            // no access granted to group resources
-            Predicate notMembers = cb.not(cb.exists(createUserMembershipSubquery(context)));
-
-            // access denied for the group resource type
-            if (context.isResourceTypeAllowed()) {
-                // access granted to all resources
-                if (allowedGroups.isEmpty()) {
-                    if (context.getDeniedGroupIds().isEmpty()) {
-                        // filter group members but allow
-                        return cb.and(cb.or(notMembers, context.inPredicate(context.getPath().get("id"), context.getAllowedResourceIds())));
-                    }
-
-                    return notMembers;
-                }
-
-                Predicate onlySpecificGroups = cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), allowedGroups)));
-                return cb.and(cb.or(notMembers, onlySpecificGroups));
+        Set<String> allowed = context.getAllowedGroups();
+        Set<String> blocked = expandGroupsToDescendants(context.getDeniedGroupIds());
+        // Only a successful direct grant carves a child out of an explicitly denied subtree.
+        blocked.removeAll(allowed);
+        List<Predicate> restrictions = new ArrayList<>();
+        if (!blocked.isEmpty()) {
+            restrictions.add(cb.not(cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), blocked)))));
+        }
+        if (denied.contains(GROUPS_RESOURCE_TYPE) && context.isResourceTypeAllowed()) {
+            List<Predicate> exceptions = new ArrayList<>();
+            exceptions.add(cb.not(cb.exists(createUserMembershipSubquery(context))));
+            if (!allowed.isEmpty()) {
+                exceptions.add(hasGrantingMembership(context));
             }
-
-            return cb.not(cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), expandGroupsToDescendants(context.getDeniedGroupIds())))));
+            if (!context.getAllowedResourceIds().isEmpty()) {
+                exceptions.add(context.inPredicate(context.getPath().get("id"), context.getAllowedResourceIds()));
+            }
+            restrictions.add(cb.or(exceptions.toArray(Predicate[]::new)));
         }
-
-        if (context.getAllowedResources().isEmpty() && (allowedGroups.isEmpty() || context.deniedResources().contains(USERS_RESOURCE_TYPE))) {
-            return null;
-        }
-
-        if (deniedGroups.isEmpty()) {
-            return null;
-        }
-
-        Set<String> expandedDenied = expandGroupsToDescendants(deniedGroups);
-        Set<String> toSubtract = new HashSet<>(allowedGroups);
-        toSubtract.removeAll(deniedGroups);
-        expandedDenied.removeAll(toSubtract);
-        if (expandedDenied.isEmpty()) {
-            return null;
-        }
-        return cb.not(cb.exists(createUserMembershipSubquery(context, root -> context.inPredicate(root.get("groupId"), expandedDenied))));
+        return restrictions.isEmpty() ? null : cb.and(restrictions.toArray(Predicate[]::new));
     }
 
     private Subquery<?> createUserMembershipSubquery(PartialEvaluationContext context) {
@@ -180,7 +177,9 @@ public interface JpaUserPartialEvaluationProvider extends PartialEvaluationStora
 //    A recursive CTE would be a single query, though it isn't used elsewhere and portability across DB vendors might be a concern. The iterative
 //    approach is pragmatic here.
     private Set<String> expandGroupsToDescendants(Set<String> groupIds) {
-        if (groupIds.isEmpty()) return groupIds;
+        if (groupIds.isEmpty()) {
+            return new HashSet<>();
+        }
 
         EntityManager em = getEntityManager();
         String realmId = getSession().getContext().getRealm().getId();

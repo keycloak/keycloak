@@ -49,7 +49,9 @@ export const PermissionEvaluationResult = ({
             <ListItem key={p.policy?.id}>
               {t("evaluatedPolicy", {
                 name: p.policy?.name,
-                status: p.status,
+                status: p.memberScopeDecision
+                  ? t(`memberScopeDecision.${p.memberScopeDecision}`)
+                  : p.status,
               })}
             </ListItem>
           ))}

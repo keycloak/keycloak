@@ -38,7 +38,10 @@ class FGAPEvaluation implements Evaluation {
     private final Evaluation evaluation;
     private final Map<Scope, Set<Resource>> scopesGrantedByResource;
 
-    FGAPEvaluation(Evaluation evaluation, Map<Scope, Set<Resource>> scopesGrantedByResource) {
+    private final GroupMemberPermissions members;
+
+    FGAPEvaluation(Evaluation evaluation, Map<Scope, Set<Resource>> scopesGrantedByResource, GroupMemberPermissions members) {
+        this.members = members;
         this.evaluation = evaluation;
         this.scopesGrantedByResource = scopesGrantedByResource;
     }
@@ -65,7 +68,8 @@ class FGAPEvaluation implements Evaluation {
             return false;
         }
 
-        boolean grantedByResourceGroup = policyScopes.stream().map(Scope::getName).anyMatch(aliases::contains);
+        boolean grantedByResourceGroup = policyScopes.stream().map(Scope::getName).filter(aliases::contains)
+                .anyMatch(alias -> members.resolve(alias) == GroupMemberDecision.GRANT);
 
         if (grantedByResourceGroup) {
             scopesGrantedByResource.computeIfAbsent(grantedScope, k -> new HashSet<>()).addAll(grantedPolicy.getResources());
@@ -107,14 +111,14 @@ class FGAPEvaluation implements Evaluation {
         for (Scope scope : deniedScopes) {
             if (aliases.contains(scope.getName())) {
                 if (isPermissionDeniedForSpecificResource) {
-                    // denied for a specific group resource (e.g.: a user group)
-                    // if a specific resource is denied, then it is denied
-                    return true;
+                    // Only a denial that survives membership and hierarchy resolution vetoes this user scope.
+                    return members.resolve(scope.getName()).blocksOtherGrants();
                 }
 
                 // denied if not granted for the specific resource (e.g.: user) or resource type
                 // permissions granted for a specific resource have precedence over denies on a resource group
-                return !isGranted(deniedScope);
+                GroupMemberDecision typeDecision = members.typeDecision(scope.getName());
+                return typeDecision != null && typeDecision.blocksOtherGrants() && !isGranted(deniedScope);
             }
         }
 

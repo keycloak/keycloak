@@ -28,6 +28,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.admin.PolicyEvaluationService.EvaluationDecisionCollector;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.GroupMemberDecision;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
@@ -99,6 +100,17 @@ class FGAPPolicyEvaluationResponseBuilder {
 
             policyRep.setScopes(policy.getPolicy().getScopes().stream().map(Scope::getName).collect(Collectors.toSet()));
             policyRep.setResourceType(policy.getPolicy().getResourceType());
+
+            if (AdminPermissionsSchema.USERS_RESOURCE_TYPE.equals(request.getResourceType())
+                    && AdminPermissionsSchema.GROUPS_RESOURCE_TYPE.equals(policyRep.getResourceType())
+                    && AdminPermissionsSchema.USERS.getScopeAliases().values().stream().flatMap(Set::stream).anyMatch(policyRep.getScopes()::contains)) {
+                // AND is correct because admin permissions only support the UNANIMOUS decision strategy
+                GroupMemberDecision vote = policy.getAssociatedPolicies().isEmpty() ? GroupMemberDecision.NO_GRANT : GroupMemberDecision.GRANT;
+                for (Result.PolicyResult child : policy.getAssociatedPolicies()) {
+                    vote = vote.and(GroupMemberDecision.of(result.getPermission(), child.getPolicy(), child.getEffect()));
+                }
+                policyRep.setMemberScopeDecision(vote.name());
+            }
 
             policies.add(policyRep);
         }

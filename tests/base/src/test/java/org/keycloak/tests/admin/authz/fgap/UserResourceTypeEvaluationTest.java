@@ -74,6 +74,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -917,36 +918,61 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
-    public void testViewUserMemberOfGroupDeniedByMemberScopeIsForbidden() {
-        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+    public void testViewSharedMemberThroughIndependentDelegation() {
+        UserRepresentation admin = realm.admin().users().search("myadmin").get(0);
+        var allowAdmin = createUserPolicy(realm, adminPermissionsClient, "Allow myadmin", admin.getId());
+        var allowAlice = createUserPolicy(realm, adminPermissionsClient, "Allow Alice", userAlice.getId());
+        GroupRepresentation groupA = createGroup("delegated-A");
+        GroupRepresentation groupB = createGroup("delegated-B");
+        createGroupPermission(groupA, Set.of(VIEW, VIEW_MEMBERS), allowAdmin);
+        createGroupPermission(groupB, Set.of(VIEW, VIEW_MEMBERS), allowAlice);
 
-        // grant myadmin 'view' on all users
-        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+        UserRepresentation shared = createUser("shared-member");
+        var target = realm.admin().users().get(shared.getId());
+        target.joinGroup(groupB.getId());
+        var users = realmAdminClient.realm(realm.getName()).users();
+        assertThrows(ForbiddenException.class, () -> users.get(shared.getId()).toRepresentation());
 
-        GroupRepresentation permittedGroup = createGroup("view-permitted-group");
-        GroupRepresentation unpermittedGroup = createGroup("view-unpermitted-group");
+        target.joinGroup(groupA.getId());
+        assertEquals(shared.getId(), users.get(shared.getId()).toRepresentation().getId());
+        assertEquals(List.of(groupA.getId()), users.get(shared.getId()).groups().stream().map(GroupRepresentation::getId).toList());
+        assertEquals(1, users.count(null, null, null, shared.getUsername()));
+        assertEquals(List.of(shared.getId()), users.search(shared.getUsername(), 0, 10).stream().map(UserRepresentation::getId).toList());
 
-        // myadmin can view/view-members only for the permitted group
-        createGroupPermission(permittedGroup, Set.of(VIEW, VIEW_MEMBERS), allowMyAdmin);
+        var membersA = realmAdminClient.realm(realm.getName()).groups().group(groupA.getId());
+        assertEquals(List.of(shared.getId()), membersA.members().stream().map(UserRepresentation::getId).toList());
 
-        // a permission scoped to the unpermitted group grants another user, so it denies myadmin under UNANIMOUS.
-        // it includes 'view-members', which protects the group's members, so myadmin must be denied.
-        UserPolicyRepresentation allowAlice = createUserPolicy(realm, adminPermissionsClient, "Only Alice User Policy", userAlice.getId());
-        createGroupPermission(unpermittedGroup, Set.of(VIEW, VIEW_MEMBERS), allowAlice);
+        var denyAdmin = createUserPolicy(Logic.NEGATIVE, realm, adminPermissionsClient, "Protect members of B", admin.getId());
+        createPermission(adminPermissionsClient, groupB.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), denyAdmin);
+        assertThrows(ForbiddenException.class, () -> users.get(shared.getId()).toRepresentation());
+        assertEquals(0, users.count(null, null, null, shared.getUsername()));
+        assertTrue(membersA.members().isEmpty());
+    }
 
-        // create a user member of both groups
-        UserRepresentation targetUser = createUser("member-of-both");
-        realm.admin().users().get(targetUser.getId()).joinGroup(permittedGroup.getId());
-        realm.admin().users().get(targetUser.getId()).joinGroup(unpermittedGroup.getId());
-        realm.cleanup().add(r -> r.users().delete(targetUser.getId()));
+    @Test
+    public void testLocalMemberConditionsWithAllGroupsGrant() {
+        String admin = realm.admin().users().search("myadmin").get(0).getId();
+        var allowAdmin = createUserPolicy(realm, adminPermissionsClient, "Allow myadmin", admin);
+        var allowAlice = createUserPolicy(realm, adminPermissionsClient, "Allow Alice", userAlice.getId());
+        var group = createGroup("restricted");
+        createAllPermission(adminPermissionsClient, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowAdmin, Set.of(VIEW_MEMBERS));
+        createGroupPermission(group, Set.of(VIEW_MEMBERS), allowAdmin);
+        createGroupPermission(group, Set.of(VIEW_MEMBERS), allowAlice);
 
-        // the unpermitted group protects its members via 'view-members', so myadmin must be denied
-        try {
-            realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).toRepresentation();
-            fail("Expected the user to be denied because the unpermitted group protects its members");
-        } catch (ForbiddenException expected) {
-        }
+        var shared = createUser("local-restrictions");
+        var target = realm.admin().users().get(shared.getId());
+        target.joinGroup(group.getId());
+        var users = realmAdminClient.realm(realm.getName()).users();
+        assertThrows(ForbiddenException.class, () -> users.get(shared.getId()).toRepresentation());
+        assertEquals(0, users.count(null, null, null, shared.getUsername()));
+
+        target.joinGroup(createGroup("independent").getId());
+        assertEquals(shared.getId(), users.get(shared.getId()).toRepresentation().getId());
+        assertEquals(1, users.count(null, null, null, shared.getUsername()));
+
+        createPermission(adminPermissionsClient, shared.getId(), usersType, Set.of(VIEW), allowAlice);
+        assertThrows(ForbiddenException.class, () -> users.get(shared.getId()).toRepresentation());
+        assertEquals(0, users.count(null, null, null, shared.getUsername()));
     }
 
     @Test
@@ -1059,7 +1085,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
-    public void testManageUserMemberOfGroupDeniedByMemberScopeIsForbidden() {
+    public void testUsersManageGrantSurvivesUnmatchedGroupMemberPermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowMyAdmin = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
 
@@ -1069,11 +1095,6 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         GroupRepresentation permittedGroup = createGroup("manage-permitted-group");
         GroupRepresentation unpermittedGroup = createGroup("manage-unpermitted-group");
 
-        // myadmin can manage/manage-members only for the permitted group
-        createGroupPermission(permittedGroup, Set.of(MANAGE, MANAGE_MEMBERS), allowMyAdmin);
-
-        // a permission scoped to the unpermitted group grants another user, so it denies myadmin under UNANIMOUS.
-        // it includes 'manage-members', which protects the group's members, so myadmin must be denied.
         UserPolicyRepresentation allowAlice = createUserPolicy(realm, adminPermissionsClient, "Only Alice User Policy", userAlice.getId());
         createGroupPermission(unpermittedGroup, Set.of(MANAGE, MANAGE_MEMBERS), allowAlice);
 
@@ -1083,17 +1104,10 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         realm.admin().users().get(targetUser.getId()).joinGroup(unpermittedGroup.getId());
         realm.cleanup().add(r -> r.users().delete(targetUser.getId()));
 
-        // the unpermitted group protects its members via 'manage-members', so myadmin must be denied
         UserRepresentation rep = realm.admin().users().get(targetUser.getId()).toRepresentation();
         rep.setFirstName("updated");
-        try {
-            realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).update(rep);
-            fail("Expected the user update to be denied because the unpermitted group protects its members");
-        } catch (ForbiddenException expected) {
-        }
-
-        // the denied update must not have been persisted
-        assertThat(realm.admin().users().get(targetUser.getId()).toRepresentation().getFirstName(), nullValue());
+        realmAdminClient.realm(realm.getName()).users().get(targetUser.getId()).update(rep);
+        assertEquals("updated", realm.admin().users().get(targetUser.getId()).toRepresentation().getFirstName());
     }
 
     @Test

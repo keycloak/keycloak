@@ -18,6 +18,7 @@
 
 package org.keycloak.authorization.fgap.evaluation.partial;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -28,7 +29,6 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
@@ -44,10 +44,14 @@ public final class UserResourceTypePolicyEvaluator implements ResourceTypePolicy
 
     @Override
     public void evaluate(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
+        evaluate(permission, authorization, policyConsumer, path -> {});
+    }
+
+    public void evaluate(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer, Consumer<List<String>> membershipConsumer) {
         UserModel user = resolveUser(permission, authorization);
 
         if (user != null) {
-            evaluateGroupMembershipPermissions(permission, user, authorization, policyConsumer);
+            evaluateGroupMembershipPermissions(permission, user, authorization, policyConsumer, membershipConsumer);
         }
     }
 
@@ -76,41 +80,19 @@ public final class UserResourceTypePolicyEvaluator implements ResourceTypePolicy
         return session.users().getUserByUsername(realm, userName);
     }
 
-    private void evaluateGroupMembershipPermissions(ResourcePermission permission, UserModel user, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
+    private void evaluateGroupMembershipPermissions(ResourcePermission permission, UserModel user, AuthorizationProvider authorization, Consumer<Policy> policyConsumer, Consumer<List<String>> membershipConsumer) {
         List<GroupModel> groupsStream = user.getGroupsStream().toList();
-
-        for (GroupModel directGroup : groupsStream) {
-            // Scopes claimed by the user's direct group. Ancestor policies are only
-            // inherited for uncovered scopes — per-scope "most specific wins".
-            Set<Scope> evaluatedScopes = new HashSet<>();
-
-            // evaluate, if any, policies associated with the direct group and collect the scopes evaluated
-            evaluateGroupPolicies(permission, authorization, directGroup, policy -> {
-                policyConsumer.accept(policy);
-                evaluatedScopes.addAll(policy.getScopes());
-            });
-
-            Set<GroupModel> visited = new HashSet<>();
-
-            visited.add(directGroup);
-
-            GroupModel ancestor = directGroup.getParent();
-
-            // Walk ancestors, skipping policies whose scopes the direct group already covers.
-            // evaluatedScopes is never updated here — ancestor policies do not claim scopes.
-            while (ancestor != null && visited.add(ancestor)) {
-                evaluateGroupPolicies(permission, authorization, ancestor, policy -> {
-                    Set<Scope> policyScopes = policy.getScopes();
-
-                    // evaluate, if any, policies associated with the ancestor group and only evaluate those whose scopes are not already evaluated by the direct group
-                    // the expected outcome is that the direct group policies will take precedence over ancestor group policies for the same scopes
-                    if (policyScopes.stream().anyMatch(s -> !evaluatedScopes.contains(s))) {
-                        policyConsumer.accept(policy);
-                    }
-                });
-
-                ancestor = ancestor.getParent();
+        Set<String> evaluatedGroups = new HashSet<>();
+        for (GroupModel group : groupsStream) {
+            List<String> path = new ArrayList<>();
+            Set<String> visited = new HashSet<>();
+            for (GroupModel current = group; current != null && visited.add(current.getId()); current = current.getParent()) {
+                path.add(current.getId());
+                if (evaluatedGroups.add(current.getId())) {
+                    evaluateGroupPolicies(permission, authorization, current, policyConsumer);
+                }
             }
+            membershipConsumer.accept(path);
         }
 
         if (!groupsStream.isEmpty()) {
