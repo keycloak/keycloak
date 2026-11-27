@@ -247,6 +247,30 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testUnresolvedNegativeMemberAggregateWithIndependentGrant() {
+        var admin = realm.admin().users().search("myadmin").get(0);
+        var allow = createUserPolicy(realm, adminPermissionsClient, "Allow myadmin", admin.getId());
+        var allowed = createGroup("delegated");
+        var protectedGroup = createGroup("protected");
+        createGroupPermission(allowed, Set.of(VIEW_MEMBERS), allow);
+        var time = new TimePolicyRepresentation();
+        time.setName("Always matching time");
+        try (Response response = adminPermissionsClient.authorization().policies().time().create(time)) {
+            assertEquals(201, response.getStatus());
+        }
+        var exclude = createAggregatedPolicy(adminPermissionsClient, "Exclude matching time", Logic.NEGATIVE,
+                DecisionStrategy.UNANIMOUS, time.getName());
+        createGroupPermission(protectedGroup, Set.of(VIEW_MEMBERS), exclude);
+        var shared = createUser("member-with-time-policy");
+        var target = realm.admin().users().get(shared.getId());
+        target.joinGroup(allowed.getId());
+        target.joinGroup(protectedGroup.getId());
+        var users = realmAdminClient.realm(realm.getName()).users();
+        assertThrows(ForbiddenException.class, () -> users.get(shared.getId()).toRepresentation());
+        assertEquals(0, users.count(null, null, null, shared.getUsername()));
+    }
+
+    @Test
     public void testAggregatePolicyWithNegativeChildDenyOverridesTypeWideAllow() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowAll = createUserPolicy(
@@ -1022,6 +1046,11 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
                 Logic.NEGATIVE, realm, adminPermissionsClient, "Deny My Admin User Policy", myadmin.getId());
         createPermission(adminPermissionsClient, parentGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), denyMyAdmin);
 
+        // A child permission for someone else cannot carve out an exception to its parent's protection.
+        String otherAdmin = realm.admin().users().search("user-30").get(0).getId();
+        var allowOther = createUserPolicy(realm, adminPermissionsClient, "Allow other admin", otherAdmin);
+        createPermission(adminPermissionsClient, childGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), allowOther);
+
         assertThrows(ForbiddenException.class, () -> realmAdminClient.realm(realm.getName())
                 .users().get(deniedUser.getId()).toRepresentation());
 
@@ -1349,7 +1378,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
-    public void testAllowedParentGroupDoesNotExpandToDescendantMembers() {
+    public void testAllowedParentIncludesDescendantMembersInSearchAndCount() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         UserPolicyRepresentation allowMyAdmin = createUserPolicy(
                 realm, adminPermissionsClient, "Allow My Admin Policy", myadmin.getId());
@@ -1382,64 +1411,9 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
                 .users().get(descendantMember.getId()).toRepresentation();
         assertThat(fetched.getUsername(), is(descendantMember.getUsername()));
 
-        // but search does NOT find the descendant member — allowed groups are not expanded to descendants
-        search = realmAdminClient.realm(realm.getName())
-                .users().search(descendantMember.getUsername(), 0, 10);
-        assertThat(search.stream().map(UserRepresentation::getId).toList(),
-                not(hasItems(descendantMember.getId())));
-        assertThat(realmAdminClient.realm(realm.getName()).users()
-                .count(null, null, null, descendantMember.getUsername()), is(0));
-
-        // workaround 1: grant VIEW_MEMBERS on the child group explicitly — descendant member becomes visible
-        createPermission(adminPermissionsClient, childGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), allowMyAdmin);
-
-        search = realmAdminClient.realm(realm.getName())
-                .users().search(descendantMember.getUsername(), 0, 10);
-        assertThat(search.stream().map(UserRepresentation::getId).toList(),
-                hasItems(descendantMember.getId()));
-        assertThat(realmAdminClient.realm(realm.getName()).users()
-                .count(null, null, null, descendantMember.getUsername()), is(1));
-    }
-
-    @Test
-    public void testAllowedParentGroupDoesNotExpandToDescendantMembersDirectPermissionWorkaround() {
-        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
-        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
-                realm, adminPermissionsClient, "Allow My Admin Policy", myadmin.getId());
-
-        GroupRepresentation parentGroup = createGroup("parent-" + KeycloakModelUtils.generateId());
-        GroupRepresentation childGroup = new GroupRepresentation();
-        childGroup.setName("child-" + KeycloakModelUtils.generateId());
-        try (Response response = realm.admin().groups().group(parentGroup.getId()).subGroup(childGroup)) {
-            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
-            childGroup.setId(ApiUtil.getCreatedId(response));
-        }
-
-        UserRepresentation descendantMember = realm.admin().users().search("user-12").get(0);
-        realm.admin().users().get(descendantMember.getId()).joinGroup(childGroup.getId());
-
-        // allow VIEW_MEMBERS on parent group only
-        createPermission(adminPermissionsClient, parentGroup.getId(), GROUPS_RESOURCE_TYPE, Set.of(VIEW_MEMBERS), allowMyAdmin);
-
-        // direct GET succeeds but search does not find the descendant member
-        UserRepresentation fetched = realmAdminClient.realm(realm.getName())
-                .users().get(descendantMember.getId()).toRepresentation();
-        assertThat(fetched.getUsername(), is(descendantMember.getUsername()));
-
-        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
-                .users().search(descendantMember.getUsername(), 0, 10);
-        assertThat(search.stream().map(UserRepresentation::getId).toList(),
-                not(hasItems(descendantMember.getId())));
-
-        // workaround 2: grant direct VIEW on the user — descendant member becomes visible
-        createPermission(adminPermissionsClient, descendantMember.getId(), USERS_RESOURCE_TYPE, Set.of(VIEW), allowMyAdmin);
-
-        search = realmAdminClient.realm(realm.getName())
-                .users().search(descendantMember.getUsername(), 0, 10);
-        assertThat(search.stream().map(UserRepresentation::getId).toList(),
-                hasItems(descendantMember.getId()));
-        assertThat(realmAdminClient.realm(realm.getName()).users()
-                .count(null, null, null, descendantMember.getUsername()), is(1));
+        search = realmAdminClient.realm(realm.getName()).users().search(descendantMember.getUsername(), 0, 10);
+        assertThat(search.stream().map(UserRepresentation::getId).toList(), hasItems(descendantMember.getId()));
+        assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, descendantMember.getUsername()), is(1));
     }
 
     @Test

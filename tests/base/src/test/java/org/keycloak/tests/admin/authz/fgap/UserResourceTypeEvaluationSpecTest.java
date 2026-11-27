@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.ForbiddenException;
@@ -34,6 +35,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionEffect;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationRequest;
 import org.keycloak.representations.idm.authorization.PolicyEvaluationResponse;
@@ -952,6 +954,67 @@ public class UserResourceTypeEvaluationSpecTest extends AbstractPermissionTest {
         assertUpdate(userJdoe, true);
         assertUpdate(userMary, false);
         assertUpdate(userTom, false);
+    }
+
+    @Test
+    public void testEveryMemberScopeIsIndependentAcrossMemberships() {
+        var memberScopes = AdminPermissionsSchema.USERS.getScopeAliases();
+        var scopes = memberScopes.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+        var groupA = getGroup("group-0");
+        var groupB = getGroup("group-1");
+        var allowBob = createUserPolicy(realm, adminPermissionsClient, "Allow Bob", userBob.getId());
+        createGroupPermission(groupA, scopes, allowPolicy);
+        createGroupPermission(groupB, scopes, allowBob);
+        joinGroup(userAlice, "group-1");
+
+        assertEvaluation(userAlice, DecisionEffect.PERMIT, memberScopes.keySet());
+        assertEvaluation(userBob, DecisionEffect.DENY, Set.of());
+        PolicyEvaluationRequest request = new PolicyEvaluationRequest();
+        request.setUserId(userBob.getId());
+        request.setResourceType(USERS_RESOURCE_TYPE);
+        var target = new ResourceRepresentation();
+        target.setName(userAlice.getId());
+        request.setResources(List.of(target));
+        var result = getPolicies().evaluate(request).getResults().get(0);
+        assertThat(result.getAllowedScopes().stream().map(ScopeRepresentation::getName).toList(),
+                containsInAnyOrder(memberScopes.keySet().toArray()));
+        assertThat(result.getPolicies().stream().map(p -> p.getMemberScopeDecision()).toList(),
+                containsInAnyOrder("NO_GRANT", "GRANT"));
+    }
+
+    @Test
+    public void testAggregateMemberDecisions() {
+        var group = getGroup("group-0");
+        var inner = createAggregatedPolicy(adminPermissionsClient, "Inner", Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE,
+                allowPolicy.getName(), denyPolicy.getName());
+        var outer = createAggregatedPolicy(adminPermissionsClient, "Outer", Logic.POSITIVE, DecisionStrategy.UNANIMOUS, inner.getName());
+        // Reusing the nested aggregate in two permissions also exercises a cached aggregate decision.
+        createGroupPermission(group, Set.of(VIEW_MEMBERS), outer);
+        createGroupPermission(group, Set.of(MANAGE_MEMBERS), outer);
+        allowAllUsers();
+
+        for (DecisionStrategy strategy : DecisionStrategy.values()) {
+            inner.setDecisionStrategy(strategy);
+            getPolicies().aggregate().findById(inner.getId()).update(inner);
+            boolean visible = strategy == DecisionStrategy.AFFIRMATIVE;
+            assertEvaluation(userAlice, visible ? DecisionEffect.PERMIT : DecisionEffect.DENY, Set.of(VIEW, MANAGE));
+            assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, userAlice.getUsername()), is(visible ? 1 : 0));
+        }
+
+        inner.setDecisionStrategy(DecisionStrategy.UNANIMOUS);
+        inner.setLogic(Logic.NEGATIVE);
+        getPolicies().aggregate().findById(inner.getId()).update(inner);
+        assertEvaluation(userAlice, DecisionEffect.PERMIT, Set.of(VIEW, MANAGE));
+        inner.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        getPolicies().aggregate().findById(inner.getId()).update(inner);
+        assertEvaluation(userAlice, DecisionEffect.DENY, Set.of(VIEW, MANAGE));
+
+        var onlyBob = createUserPolicy(realm, adminPermissionsClient, "Only Bob", userBob.getId());
+        inner.setLogic(Logic.POSITIVE);
+        inner.setPolicies(Set.of(onlyBob.getName()));
+        getPolicies().aggregate().findById(inner.getId()).update(inner);
+        assertEvaluation(userAlice, DecisionEffect.PERMIT, Set.of(VIEW, MANAGE));
+        assertThat(realmAdminClient.realm(realm.getName()).users().count(null, null, null, userAlice.getUsername()), is(1));
     }
 
     private void denyUser(ManagedUser user) {

@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -32,6 +33,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.GroupMemberDecision;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider.Outcome;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
@@ -75,7 +77,7 @@ public final class PartialEvaluator {
                 return List.of();
             }
 
-            PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, null, storage, builder, queryBuilder, path);
+            PartialEvaluationContext context = runEvaluation(session, adminUser, resourceType, storage, builder, queryBuilder, path);
             return buildPredicates(context);
         });
     }
@@ -88,7 +90,7 @@ public final class PartialEvaluator {
         return runWithoutAuthorization(session, () -> !shouldSkipPartialEvaluation(session, adminUser, resourceType));
     }
 
-    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, ResourceType groupResourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
+    private PartialEvaluationContext runEvaluation(KeycloakSession session, UserModel adminUser, ResourceType resourceType, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path) {
         Map<String, Map<String, PartialEvaluationContext>> cache = session.getAttributeOrDefault(PARTIAL_EVALUATION_CONTEXT_CACHE, Map.of());
 
         if (cache.getOrDefault(adminUser.getId(), Map.of()).containsKey(resourceType.getType())) {
@@ -105,48 +107,53 @@ public final class PartialEvaluator {
         List<PartialEvaluationPolicyProvider> policyProviders = getPartialEvaluationPolicyProviders(session);
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
 
-        for (PartialEvaluationPolicyProvider policyProvider : policyProviders) {
-            policyProvider.getPermissions(session, resourceType, groupResourceType, adminUser).forEach(permission -> {
-                Set<String> ids = permission.getResourceNames();
-                Set<Policy> policies = permission.getAssociatedPolicies();
+        // A direct user restriction can suppress membership grants even if its policy names a different admin.
+        Stream<Policy> permissions = AdminPermissionsSchema.USERS.equals(resourceType)
+                ? permissionsForScope(authorization, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)
+                : policyProviders.stream().flatMap(provider -> provider.getPermissions(session, resourceType, null, adminUser));
+        permissions.forEach(permission -> {
+            Set<String> ids = permission.getResourceNames();
+            Set<Policy> policies = permission.getAssociatedPolicies();
 
-                for (Policy policy : policies) {
-                    PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
+            for (Policy policy : policies) {
+                PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
 
-                    if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
-                        deniedResources.addAll(ids);
-                        continue;
-                    }
-
-                    PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
-
-                    if (provider == null) {
-                        continue;
-                    }
-
-                    Outcome granted = provider.evaluateOutcome(session, policy, adminUser);
-
-                    if (Outcome.SKIP.equals(granted)) {
-                        continue;
-                    }
-
-                    if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {
-                        deniedResources.addAll(ids);
-                        continue;
-                    }
-
-                    if (Logic.NEGATIVE.equals(policy.getLogic())) {
-                        granted = granted == Outcome.GRANT ? Outcome.DENY : Outcome.GRANT;
-                    }
-
-                    if (Outcome.GRANT.equals(granted)) {
-                        allowedResources.addAll(ids);
-                    } else {
-                        deniedResources.addAll(ids);
-                    }
+                if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
+                    deniedResources.addAll(ids);
+                    continue;
                 }
-            });
-        }
+
+                PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
+
+                if (provider == null) {
+                    if (AdminPermissionsSchema.USERS.equals(resourceType)) {
+                        deniedResources.addAll(ids);
+                    }
+                    continue;
+                }
+
+                Outcome granted = provider.evaluateOutcome(session, policy, adminUser);
+
+                if (Outcome.SKIP.equals(granted)) {
+                    continue;
+                }
+
+                if (Outcome.INVALID.equals(granted) || Outcome.FORCE_DENY.equals(granted)) {
+                    deniedResources.addAll(ids);
+                    continue;
+                }
+
+                if (Logic.NEGATIVE.equals(policy.getLogic())) {
+                    granted = granted == Outcome.GRANT ? Outcome.DENY : Outcome.GRANT;
+                }
+
+                if (Outcome.GRANT.equals(granted)) {
+                    allowedResources.addAll(ids);
+                } else {
+                    deniedResources.addAll(ids);
+                }
+            }
+        });
 
         allowedResources.removeAll(deniedResources);
 
@@ -223,22 +230,56 @@ public final class PartialEvaluator {
 
     private PartialEvaluationContext createEvaluationContext(KeycloakSession session, ResourceType resourceType, Set<String> allowedResources, Set<String> deniedResources, PartialEvaluationStorageProvider storage, CriteriaBuilder builder, CriteriaQuery<?> queryBuilder, Path<?> path, UserModel adminUser) {
         PartialEvaluationContext context = new PartialEvaluationContext(session, resourceType, allowedResources, deniedResources, storage, builder, queryBuilder, path);
-        String groupType = resourceType.getGroupType();
-
-        if (groupType != null) {
-            // if the resource type has support for groups, evaluate permissions for the group
-            ResourceType groupResourceType = AdminPermissionsSchema.SCHEMA.getResourceTypes().get(groupType);
-
-            if (groupResourceType == null) {
-                return context;
-            }
-
-            PartialEvaluationContext evaluateGroups = runEvaluation(session, adminUser, groupResourceType, groupResourceType, storage, builder, queryBuilder, path);
-            context.setAllowedGroups(evaluateGroups.getAllowedResources());
-            context.setDeniedGroups(evaluateGroups.getDeniedResources());
+        if (AdminPermissionsSchema.USERS.equals(resourceType)) {
+            evaluateMemberPermissions(session, adminUser, context);
         }
-
         return context;
+    }
+
+    private void evaluateMemberPermissions(KeycloakSession session, UserModel admin, PartialEvaluationContext context) {
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        Map<String, GroupMemberDecision> groups = new HashMap<>();
+        Map<String, GroupMemberDecision> policyDecisions = new HashMap<>();
+        permissionsForScope(authorization, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW_MEMBERS).forEach(permission -> {
+            GroupMemberDecision decision = GroupMemberDecision.GRANT;
+            for (Policy policy : permission.getAssociatedPolicies()) {
+                decision = decision.and(policyDecisions.computeIfAbsent(policy.getId(),
+                        id -> evaluateMemberPolicy(session, authorization, admin, policy)));
+            }
+            if (permission.getAssociatedPolicies().isEmpty()) {
+                decision = GroupMemberDecision.NO_GRANT;
+            }
+            for (String group : permission.getResourceNames()) {
+                groups.merge(group, decision, GroupMemberDecision::and);
+            }
+        });
+        context.setMemberDecisions(groups);
+    }
+
+    private Stream<Policy> permissionsForScope(AuthorizationProvider authorization, String resourceType, String scopeName) {
+        var stores = authorization.getStoreFactory();
+        var server = stores.getResourceServerStore().findByClient(authorization.getRealm().getAdminPermissionsClient());
+        var scope = stores.getScopeStore().findByName(server, scopeName);
+        if (scope == null) {
+            return Stream.empty();
+        }
+        return stores.getPolicyStore().findByScopes(server, List.of(scope)).stream()
+                .filter(permission -> resourceType.equals(permission.getResourceType()));
+    }
+
+    private GroupMemberDecision evaluateMemberPolicy(KeycloakSession session, AuthorizationProvider authorization, UserModel admin, Policy policy) {
+        PolicyProvider provider = authorization.getProvider(policy.getType());
+        if (!(provider instanceof PartialEvaluationPolicyProvider partial) || !provider.isValid(policy, authorization)) {
+            return GroupMemberDecision.INDETERMINATE;
+        }
+        Outcome outcome = partial.evaluateMemberOutcome(session, policy, admin);
+        boolean negative = policy.getLogic() == Logic.NEGATIVE;
+        return switch (outcome) {
+            case GRANT -> negative ? GroupMemberDecision.EXPLICIT_DENY : GroupMemberDecision.GRANT;
+            case DENY -> negative ? GroupMemberDecision.GRANT : GroupMemberDecision.NO_GRANT;
+            case EXPLICIT_DENY -> negative ? GroupMemberDecision.GRANT : GroupMemberDecision.EXPLICIT_DENY;
+            case INVALID, SKIP, FORCE_DENY -> GroupMemberDecision.INDETERMINATE;
+        };
     }
 
     private List<Predicate> getStorageFilters(PartialEvaluationContext context) {

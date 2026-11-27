@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.Decision.Effect;
-import org.keycloak.authorization.fgap.evaluation.partial.ResourceTypePolicyEvaluator;
 import org.keycloak.authorization.fgap.evaluation.partial.UserResourceTypePolicyEvaluator;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
@@ -44,7 +43,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOU
  */
 public final class FGAPPolicyEvaluator extends DefaultPolicyEvaluator {
 
-    private final Map<String, ? extends ResourceTypePolicyEvaluator> resourceTypePolicyEvaluators = Map.of(USERS_RESOURCE_TYPE, new UserResourceTypePolicyEvaluator());
+    private final UserResourceTypePolicyEvaluator users = new UserResourceTypePolicyEvaluator();
 
     @Override
     public void evaluate(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, Map<Policy, Map<Object, Effect>> decisionCache) {
@@ -52,22 +51,18 @@ public final class FGAPPolicyEvaluator extends DefaultPolicyEvaluator {
     }
 
     @Override
-    protected void evaluateResourcePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer) {
+    protected void evaluateResourcePolicies(ResourcePermission permission, AuthorizationProvider authorization, Consumer<Policy> policyConsumer, Decision decision) {
         super.evaluateResourcePolicies(permission, authorization, policyConsumer);
 
-        String resourceType = permission.getResourceType();
-
-        if (resourceType == null) {
-            return;
+        if (USERS_RESOURCE_TYPE.equals(permission.getResourceType())) {
+            GroupMemberPermissions members = ((FGAPDecision) decision).members;
+            users.evaluate(permission, authorization, policy -> {
+                if (policy.getAssociatedPolicies().isEmpty()) {
+                    members.record(policy, GroupMemberDecision.NO_GRANT);
+                }
+                policyConsumer.accept(policy);
+            }, members::addMembership);
         }
-
-        ResourceTypePolicyEvaluator resourceTypePolicyEvaluator = resourceTypePolicyEvaluators.get(resourceType);
-
-        if (resourceTypePolicyEvaluator == null) {
-            return;
-        }
-
-        resourceTypePolicyEvaluator.evaluate(permission, authorization, policyConsumer);
     }
 
     @Override

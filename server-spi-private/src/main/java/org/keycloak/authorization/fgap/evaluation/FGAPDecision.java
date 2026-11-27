@@ -29,6 +29,7 @@ import org.keycloak.authorization.policy.evaluation.Evaluation;
 
 class FGAPDecision implements Decision<Evaluation> {
 
+    final GroupMemberPermissions members = new GroupMemberPermissions();
     private final Decision<Evaluation> decision;
     private final Map<Scope, Set<Resource>> scopesGrantedByResource = new HashMap<>();
 
@@ -38,7 +39,8 @@ class FGAPDecision implements Decision<Evaluation> {
 
     @Override
     public void onDecision(Evaluation evaluation) {
-        decision.onDecision(new FGAPEvaluation(evaluation, scopesGrantedByResource));
+        members.onDecision(evaluation);
+        decision.onDecision(new FGAPEvaluation(evaluation, scopesGrantedByResource, members));
     }
 
     @Override

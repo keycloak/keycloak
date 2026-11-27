@@ -27,9 +27,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.keycloak.authorization.Decision.Effect;
+import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.representations.idm.authorization.Logic;
 
 /**
  * Represents a permission for a given resource.
@@ -44,6 +47,27 @@ public class ResourcePermission {
     private ResourceServer resourceServer;
     private Map<String, Set<String>> claims;
     private boolean granted;
+    // Aggregate decisions are cached per ResourcePermission. Retain the reason for their final denial
+    // for consumers (FGAP member scopes) that distinguish a negative policy from an unmatched grant.
+    private Set<String> explicitAggregateDenials;
+
+    public void setExplicitAggregateDenial(Policy aggregate, boolean explicit) {
+        if (!explicit) {
+            if (explicitAggregateDenials != null) {
+                explicitAggregateDenials.remove(aggregate.getId());
+            }
+            return;
+        }
+        if (explicitAggregateDenials == null) {
+            explicitAggregateDenials = new HashSet<>();
+        }
+        explicitAggregateDenials.add(aggregate.getId());
+    }
+
+    public boolean isExplicitDenial(Policy policy, Effect effect) {
+        return effect == Effect.DENY && (policy.getLogic() == Logic.NEGATIVE
+                || explicitAggregateDenials != null && explicitAggregateDenials.contains(policy.getId()));
+    }
 
     public ResourcePermission(Resource resource, Collection<Scope> scopes, ResourceServer resourceServer) {
         this(null, resource, scopes, resourceServer, null);
