@@ -26,6 +26,8 @@ import java.util.stream.Collectors;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
@@ -211,6 +213,13 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
 
         String emailAddress = MailUtils.getRecipient(message);
         Assertions.assertEquals(expectedEmail, emailAddress);
+
+        // the next email for the same user would not be sent during the cooldown
+        testingClient.server().run((KeycloakSession session) -> {
+            RealmModel realm = LDAPTestContext.init(session).getRealm();
+            UserModel user = session.users().getUserByUsername(realm, "johnkeycloak");
+            session.singleUseObjects().remove(EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, user.getId()));
+        });
     }
 
     private static void changeEmailAddressInLDAP(KeycloakTestingClient testingClient, String newEmail) {

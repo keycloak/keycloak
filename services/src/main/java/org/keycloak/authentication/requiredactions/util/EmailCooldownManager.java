@@ -17,10 +17,14 @@
 
 package org.keycloak.authentication.requiredactions.util;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -52,6 +56,20 @@ public class EmailCooldownManager {
         cache.put(getCacheKey(context, keyPrefix), cooldownSeconds, Map.of(KEY_EXPIRE, Long.toString(Time.currentTime() + cooldownSeconds)));
     }
 
+    /**
+     * Adds a cooldown entry for the id if there isn't one yet. The check and the add happen in one call, so two requests at the same time can't both get through.
+     * @return false if the id is still in cooldown
+     */
+    public static boolean addCooldownEntryIfAbsent(AuthenticationFlowContext context, String keyPrefix, String id) {
+        long cooldownSeconds = getCooldownInSeconds(context.getAuthenticatorConfig());
+        return cooldownSeconds <= 0 || context.getSession().singleUseObjects().putIfAbsent(getHashedCacheKey(keyPrefix, id), cooldownSeconds);
+    }
+
+    // the id of a federated user can be longer than the key the database store allows, so it is hashed
+    public static String getHashedCacheKey(String keyPrefix, String id) {
+        return keyPrefix + HashUtils.sha256UrlEncodedHash(id, StandardCharsets.UTF_8);
+    }
+
     public static ProviderConfigProperty createCooldownConfigProperty() {
         ProviderConfigProperty cooldown = new ProviderConfigProperty();
         cooldown.setName(EMAIL_RESEND_COOLDOWN_SECONDS);
@@ -64,6 +82,19 @@ public class EmailCooldownManager {
 
     private static String getCacheKey(RequiredActionContext context, String keyPrefix) {
         return keyPrefix + context.getUser().getId();
+    }
+
+    private static long getCooldownInSeconds(AuthenticatorConfigModel config) {
+        String value = config != null ? config.getConfig().get(EMAIL_RESEND_COOLDOWN_SECONDS) : null;
+        if (value == null || value.isBlank()) {
+            return EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            logger.warnf("Invalid value for %s: %s. Using the default.", EMAIL_RESEND_COOLDOWN_SECONDS, value);
+            return EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS;
+        }
     }
 
     private static long getCooldownInSeconds(RequiredActionContext context) {

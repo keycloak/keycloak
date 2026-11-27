@@ -202,6 +202,12 @@ Log parsers that interpret backslash escapes still read the original value and n
 Log parsers that match on the exact logged text must be updated to expect the doubled backslash.
 The change does not apply when the listener is configured with `--spi-events-listener--jboss-logging--quotes=none` or `--spi-events-listener--jboss-logging--sanitize=false`.
 
+=== Reset password emails have a cooldown
+
+The *Forgot password* form now sends at most one email to the same user every 30 seconds. A request made during the cooldown gets the same response, but no email is sent, and a `SEND_RESET_PASSWORD_ERROR` event with the error `slow_down` is recorded. Before, every request sent an email, so anyone who knew a username or an email address could flood the inbox of that user.
+
+To change the cooldown, click the settings icon of the *Send Reset Email* step in the *Reset Credentials* flow and set *Cooldown between reset emails (seconds)*. The value `0` turns the cooldown off.
+
 === OIDC identity provider now respects `email_verified=false` from the ID token when Trust Email is enabled
 // https://github.com/keycloak/keycloak/issues/54245
 

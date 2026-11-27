@@ -32,6 +32,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -533,6 +534,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
     }
 
+    // a second email for the same user would not be sent during the cooldown
+    private void clearEmailCooldown(String userId) {
+        String cooldownKey = EmailCooldownManager.getHashedCacheKey(ResetCredentialEmail.EMAIL_COOLDOWN_KEY_PREFIX, userId);
+        testingClient.server().run(session -> session.singleUseObjects().remove(cooldownKey));
+    }
+
     private void configureForceLogin(String value) {
         AuthenticationExecutionInfoRepresentation sendEmailExec = managedRealm.admin()
                 .flows()
@@ -646,6 +653,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void initiateResetPasswordFromResetPasswordPage(String username) {
+        // some tests reset the password several times in a row
+        clearEmailCooldown(userId);
         oauth.openLoginForm();
         loginPage.resetPassword();
 
@@ -1575,6 +1584,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     private void resetPasswordInNewTab(UserRepresentation user, String clientId, String redirectUri) throws IOException {
         try (BrowserTabUtil browserTabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             events.clear();
+            clearEmailCooldown(user.getId());
 
             final int emailCount = mail.getReceivedMessages().length;
 

@@ -32,6 +32,7 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
+import org.keycloak.authentication.requiredactions.util.EmailCooldownManager;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
@@ -73,6 +74,7 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
     public static final String PROVIDER_ID = "reset-credential-email";
     public static final String FORCE_LOGIN = "force-login";
     public static final String FEDERATED_OPTION = "only-federated";
+    public static final String EMAIL_COOLDOWN_KEY_PREFIX = "reset-credential-email-cooldown-known-";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -106,6 +108,15 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                     .detail(Details.USERNAME, username)
                     .error(Errors.INVALID_EMAIL);
 
+            context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
+            return;
+        }
+
+        if (!EmailCooldownManager.addCooldownEntryIfAbsent(context, EMAIL_COOLDOWN_KEY_PREFIX, user.getId())) {
+            event.clone().event(EventType.SEND_RESET_PASSWORD)
+                    .detail(Details.USERNAME, username)
+                    .user(user)
+                    .error(Errors.SLOW_DOWN);
             context.forkWithSuccessMessage(new FormMessage(Messages.EMAIL_SENT));
             return;
         }
@@ -227,6 +238,13 @@ public class ResetCredentialEmail implements Authenticator, AuthenticatorFactory
                 .type(ProviderConfigProperty.LIST_TYPE)
                 .options(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString(), FEDERATED_OPTION))
                 .defaultValue(FEDERATED_OPTION)
+                .add()
+                .property()
+                .name(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_SECONDS)
+                .label("Cooldown between reset emails (seconds)")
+                .helpText("Minimum delay in seconds before another reset email is sent to the same user. Set it to 0 to send an email for every request.")
+                .type(ProviderConfigProperty.INTEGER_TYPE)
+                .defaultValue(EmailCooldownManager.EMAIL_RESEND_COOLDOWN_DEFAULT_SECONDS)
                 .add()
                 .build();
     }
