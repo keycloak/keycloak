@@ -349,7 +349,10 @@ If your theme extends `rh-sso.v2`, change the parent to `rh-sso.v3` if available
 
 ==== Update admin console feature flags
 
-If you explicitly enable or disable the admin console through startup features, replace `admin:v2` with `admin:v3` in `--features` or `--features-disabled`. The `admin:v2` feature flag was removed with the PatternFly 6 admin console migration.
+If you explicitly enable the admin console version through startup features, replace `admin:v2` with `admin:v3` in `--features` (or remove the entry when `admin:v3` is the default).
+To disable the admin console, use the unversioned flag `--features-disabled=admin`.
+Versioned keys are rejected in `--features-disabled`.
+The `admin:v2` feature flag was removed with the PatternFly 6 admin console migration.
 
 ==== Update PatternFly dependencies and imports
 
