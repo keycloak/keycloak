@@ -267,6 +267,10 @@ public class HttpUtil {
         }
     }
 
+    public static String urlencodePathSegment(String value) {
+        return urlencode(value).replace("+", "%20");
+    }
+
     public static void setTruststore(File file, String password) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
         if (!file.isFile()) {
             throw new RuntimeException("Truststore file not found: " + file.getAbsolutePath());
