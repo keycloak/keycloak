@@ -31,11 +31,14 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
@@ -69,10 +72,19 @@ public class AcrStore {
 
     public int getRequestedLevelOfAuthentication(AuthenticationFlowModel executionModel) {
         String requiredLoa = authSession.getClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION);
-        int requestedLoaByClient = requiredLoa == null ? NO_LOA : Integer.parseInt(requiredLoa);
+        int requestedLoaByClient = requiredLoa == null ? getRequestedLevelOfAuthenticationByClientConfig() : Integer.parseInt(requiredLoa);
         int requestedLoaByKcAction = getRequestedLevelOfAuthenticationByKcAction(executionModel);
         logger.tracef("Level requested by client: %d, level requested by kc_action parameter: %d", requestedLoaByClient, requestedLoaByKcAction);
         return Math.max(requestedLoaByClient, requestedLoaByKcAction);
+    }
+
+    private int getRequestedLevelOfAuthenticationByClientConfig() {
+        ClientModel client = authSession.getClient();
+        if (client == null || SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            return NO_LOA;
+        }
+        List<String> acrValues = AcrUtils.getAcrValues(null, null, client);
+        return AcrUtils.getLowestLoaForAcrValues(acrValues, client).orElse(NO_LOA);
     }
 
     //

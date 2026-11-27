@@ -94,6 +94,7 @@ public class Profile {
         JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
+        WEBAUTHN_ML_DSA("WebAuthn ML-DSA signature algorithms", Type.EXPERIMENTAL, Feature.WEB_AUTHN),
 
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
 

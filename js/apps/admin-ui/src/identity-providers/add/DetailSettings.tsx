@@ -86,6 +86,10 @@ import DefaultTrustSettings from "./DefaultTrustSettings";
 import { IdpDomainsTab } from "./IdpDomainsTab";
 import { IdpOrganizationsTab } from "./IdpOrganizationsTab";
 import Oid4VpSettings from "./Oid4VpSettings";
+import {
+  toRequestedCredentialsForm,
+  toRequestedCredentialsJson,
+} from "./requestedCredentials";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -302,6 +306,12 @@ export default function DetailSettings() {
       Object.entries(p.config).map(([key, value]) => [beerify(key), value]),
     );
 
+    if (p.providerId === "oid4vp") {
+      transformedConfig.requestedCredentials = toRequestedCredentialsForm(
+        transformedConfig.requestedCredentials,
+      );
+    }
+
     if (p.providerId?.includes("saml")) {
       // Header (outside the Controller) reads these to show Reload/Import keys,
       // and the server treats an absent value as true.
@@ -390,6 +400,11 @@ export default function DetailSettings() {
     const p = convertFormValuesToObject<IdentityProviderRepresentation>(
       savedProvider || getValues(),
     );
+    if (providerId === "oid4vp" && p.config?.requestedCredentials) {
+      p.config.requestedCredentials = toRequestedCredentialsJson(
+        p.config.requestedCredentials,
+      );
+    }
     const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(

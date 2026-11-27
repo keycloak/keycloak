@@ -1,5 +1,6 @@
 package org.keycloak.tests.client;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,7 +65,7 @@ public class DcrVaultSecretDisclosureTest extends AbstractClientRegistrationTest
 
     @ParameterizedTest
     @ValueSource(strings = {"client-secret", "client-secret-jwt"})
-    public void testAdapterInstallationNeverResolvesVaultSecret(String authenticator) throws ClientRegistrationException {
+    public void testAdapterInstallationNeverResolvesVaultSecret(String authenticator) throws IOException {
         // Configure client with vault expression directly via Admin API (simulating operator setup)
         ClientRepresentation rep = client.admin().toRepresentation();
         rep.setSecret(VAULT_EXPRESSION);
@@ -73,10 +75,9 @@ public class DcrVaultSecretDisclosureTest extends AbstractClientRegistrationTest
         }
         client.admin().update(rep);
 
-        reg.auth(Auth.token(clientWithRat));
-
         // Layer 2 assertion: Adapter config must return raw expression, never resolved plaintext vault secret
-        AdapterConfig config = reg.getAdapterConfig(client.getClientId());
+        String installation = client.admin().getInstallationProvider("keycloak-oidc-keycloak-json");
+        AdapterConfig config = JsonSerialization.readValue(installation, AdapterConfig.class);
         assertNotNull(config);
 
         if ("client-secret-jwt".equals(authenticator)) {

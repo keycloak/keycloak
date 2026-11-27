@@ -50,7 +50,7 @@ public abstract class RoleBasedStepProvider implements WorkflowStepProvider {
 
     private RoleModel getRole(String name) {
         RoleModel role;
-        String[] parts = name.split("/");
+        String[] parts = name.split("/", 2);
 
         if (parts.length > 1) {
             ClientModel client = getRealm().getClientByClientId(parts[0]);

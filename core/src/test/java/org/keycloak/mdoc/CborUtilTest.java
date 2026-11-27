@@ -17,6 +17,7 @@
 package org.keycloak.mdoc;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -55,6 +56,20 @@ public class CborUtilTest {
         // a1 opens a map with exactly one entry, 61 61 is the text key "a", 01 the value 1.
         // An indefinite length map would start with bf instead, which ISO mdoc forbids.
         assertCborHex("a1 6161 01", CborUtil.encode(value));
+    }
+
+    @Test
+    public void shouldEncodeNestedMapsWithDefiniteLength() {
+        Map<String, Object> value = Collections.singletonMap("a", Collections.singletonMap("b", 1));
+
+        assertCborHex("a1 6161 a1 6162 01", CborUtil.encode(value));
+    }
+
+    @Test
+    public void shouldEncodeTaggedCborBytes() {
+        CborUtil.Tagged value = CborUtil.encodedCbor(Collections.singletonMap("a", 1));
+
+        assertCborHex("d818 44 a1 6161 01", CborUtil.encode(value));
     }
 
     @Test

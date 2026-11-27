@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.policy.provider;
 
+import java.util.Map;
+
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -66,6 +68,15 @@ public interface PolicyProviderFactory<R extends AbstractPolicyRepresentation> e
 
     default void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
 
+    }
+
+    /**
+     * Imports a generic representation, including a generic update of an existing policy.
+     * The previous configuration is supplied for generic updates and is empty for imports.
+     */
+    default void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization,
+            Map<String, String> previousConfig) {
+        onImport(policy, representation, authorization);
     }
 
     default void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorizationProvider) {

@@ -471,6 +471,10 @@ For example, a policy could use the request context to enforce time-based or loc
 }
 ----
 
+Keys starting with `kc.` are reserved for attributes set by {project_name}, such as `kc.client.id` and `kc.realm.name`, and
+are ignored when sent in `resource.properties` or `context`. The `kc.client.id` attribute is always set to the client that
+authenticated the request, so client policies are evaluated against the caller.
+
 Subject properties specified in `subject.properties` are also merged into the subject's identity attributes for policy evaluation.
 
 </@tmpl.guide>

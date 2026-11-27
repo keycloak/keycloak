@@ -81,6 +81,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, formData, user);
 
             if (isForceEmailVerification) {
+                UpdateEmail.forceEmailVerification(context.getSession());
                 user.addRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL);
             }
 

@@ -8,7 +8,7 @@ import org.keycloak.utils.StringUtil;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
-public class PermissionGrantRequest extends AbstractHttpPostRequest<JWTAuthorizationGrantRequest, AccessTokenResponse> {
+public class PermissionGrantRequest extends AbstractHttpPostRequest<PermissionGrantRequest, AccessTokenResponse> {
 
     public <T> PermissionGrantRequest(AbstractOAuthClient<?> client) {
         super(client);
@@ -30,6 +30,11 @@ public class PermissionGrantRequest extends AbstractHttpPostRequest<JWTAuthoriza
     @Override
     protected AccessTokenResponse toResponse(CloseableHttpResponse response) throws IOException {
         return new AccessTokenResponse(response);
+    }
+
+    public PermissionGrantRequest param(String name, String value) {
+        parameter(name, value);
+        return this;
     }
 
     public PermissionGrantRequest claimToken(String idToken) {

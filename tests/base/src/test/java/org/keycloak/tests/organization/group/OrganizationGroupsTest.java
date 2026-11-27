@@ -27,14 +27,19 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.OrganizationGroupsResource;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectOrganization;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedOrganization;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
@@ -72,6 +77,9 @@ public class OrganizationGroupsTest {
     @InjectUser(ref = "non-member", config = NonMemberConfig.class)
     ManagedUser nonMember;
 
+    @InjectAdminEvents
+    AdminEvents adminEvents;
+
     @Test
     public void testCreateOrganizationGroup() {
         GroupRepresentation groupRep = new GroupRepresentation();
@@ -91,6 +99,44 @@ public class OrganizationGroupsTest {
         groups = groups().getAll(null, null, null, null, null, true, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getAttributes(), nullValue());
+    }
+
+    @Test
+    public void testCreateOrganizationGroupAdminEvent() {
+        adminEvents.clear();
+
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("event-group");
+        String groupId = createGroup(organization, groupRep);
+
+        GroupRepresentation expectedRep = new GroupRepresentation();
+        expectedRep.setId(groupId);
+        expectedRep.setName("event-group");
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.CREATE)
+                .resourceType(ResourceType.ORGANIZATION_GROUP)
+                .resourcePath("organizations", organization.getId(), "groups", groupId)
+                .representation(expectedRep);
+    }
+
+    @Test
+    public void testMoveOrganizationGroupToTopLevelAdminEvent() {
+        String parentId = createGroup("parent");
+        String childId = createSubGroup(parentId, "child");
+        adminEvents.clear();
+
+        GroupRepresentation moveRep = new GroupRepresentation();
+        moveRep.setId(childId);
+        moveRep.setName("child");
+        try (Response response = groups().addTopLevelGroup(moveRep)) {
+            assertThat(response.getStatus(), is(Status.NO_CONTENT.getStatusCode()));
+        }
+
+        // moving an existing group is recorded on the collection, like for realm groups
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.ORGANIZATION_GROUP)
+                .resourcePath("organizations", organization.getId(), "groups");
     }
 
     @Test

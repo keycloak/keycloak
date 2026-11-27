@@ -82,7 +82,7 @@ public class ThemeResourcesMacrosTest {
     private String renderScripts(List<ThemeResourceDescriptor> scripts) throws Exception {
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_32);
         cfg.setOutputFormat(HTMLOutputFormat.INSTANCE);
-        cfg.setClassLoaderForTemplateLoading(getClass().getClassLoader(), "theme/base/login");
+        cfg.setClassLoaderForTemplateLoading(getClass().getClassLoader(), "theme-resources/templates");
 
         Template template = new Template("wrapper",
                 "<#import \"theme-resources.ftl\" as tags><@tags.renderScripts scripts pathPrefix defaultScriptType />",

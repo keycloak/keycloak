@@ -24,11 +24,11 @@ import java.util.Map;
 import java.util.UUID;
 
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
+import org.keycloak.broker.oid4vp.RequestedCredentials;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
@@ -39,11 +39,9 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
@@ -75,9 +73,7 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
     @TestSetup
     public void configureTestRealm() {
         super.configureTestRealm();
-        createVerifierIdp(Map.of(
-                OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks(),
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
+        createVerifierIdp(Map.of());
         createCompletionHolder("bob");
         createCompletionHolder("carol");
         createCompletionHolder("dave");
@@ -109,7 +105,7 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
                 {
                   "credentials": [
                     {
-                      "id": "credential",
+                      "id": "pid",
                       "format": "dc+sd-jwt",
                       "meta": { "vct_values": ["%s"] },
                       "claims": [
@@ -128,21 +124,11 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
     }
 
     @Test
-    public void configuredDcqlQueryReplacesTheInferredOne() throws Exception {
-        String configured = configuredDcqlQuery(sdJwtCredential("configured", """
-                , "claims": [{ "path": ["email"] }]"""));
-        testRealm.updateIdentityProvider(IDP_ALIAS, idp -> {
-            idp.getConfig().put(OID4VPIdentityProviderConfig.DCQL_QUERY, configured);
-            idp.getConfig().remove(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES);
-        });
-
-        assertEquals(JsonSerialization.readValue(configured, JsonNode.class), requestObject().path("dcql_query"));
-    }
-
-    @Test
-    public void everyDefaultCredentialTypeIsRequested() {
-        updateIdpConfig(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES,
-                sdJwtTypeCredentialVct + ", urn:eudi:pid:it:1,," + sdJwtTypeCredentialVct);
+    public void everyTypeOfTheCredentialIsRequested() {
+        updateRequestedCredentials(requestedCredentials(new RequestedCredentials(
+                List.of(new RequestedCredentials.Credential(CREDENTIAL_ID, OID4VCConstants.FORMAT_SD_JWT_VC,
+                        List.of(sdJwtTypeCredentialVct, "urn:eudi:pid:it:1"), List.of(ISSUER_TRUST_IDP_ALIAS))),
+                null, new RequestedCredentials.Principal(CREDENTIAL_ID, "email"))));
 
         JsonNode vctValues = requestObject().path("dcql_query").path("credentials").path(0).path("meta")
                 .path("vct_values");
@@ -152,7 +138,7 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
 
     @Test
     public void principalAttributeIsRequestedWithoutAMapper() {
-        updatePrincipalAttribute("personal_administrative_number");
+        updatePrincipalClaim("personal_administrative_number");
 
         JsonNode claims = requestObject().path("dcql_query").path("credentials").path(0).path("claims");
         assertEquals("personal_administrative_number", claims.path(claims.size() - 1).path("path").path(0).asText());
@@ -173,59 +159,24 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
     }
 
     @Test
-    public void missingDefaultCredentialTypesAreRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES, " ",
-                "Default credential types are required unless a DCQL query is configured");
+    public void missingRequestedCredentialsAreRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, " ",
+                "The requested credentials are required");
     }
 
     @Test
-    public void dcqlQueryRequestingAClaimTwiceIsRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
-                configuredDcqlQuery(sdJwtCredential("configured", """
-                        , "claims": [{ "path": ["email"] }, { "path": ["email"] }]""")),
-                "The credential 'configured' requests the claim [email] twice");
+    public void requestedCredentialsWithUnknownMemberAreRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, """
+                {"credentials": [{"id": "pid", "format": "dc+sd-jwt", "types": ["t"], "trustMaterialIdps": ["a"],
+                  "optional": true}],
+                 "principal": {"credential": "pid", "claim": "email"}}""",
+                "The requested credentials member 'optional' is not supported");
     }
 
     @Test
-    public void dcqlQueryRequestingSeveralCredentialsIsRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
-                configuredDcqlQuery(sdJwtCredential("first", ""), sdJwtCredential("second", "")),
-                "Requesting more than one credential is not supported");
-    }
-
-    @Test
-    public void dcqlQueryWithNullCredentialIsRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY, configuredDcqlQuery("null"),
-                "The credentials must not contain null");
-    }
-
-    @Test
-    public void dcqlQueryWithNullClaimIsRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
-                configuredDcqlQuery(sdJwtCredential("configured", ", \"claims\": [null]")),
-                "The claims of the credential 'configured' must not contain null");
-    }
-
-    @Test
-    public void dcqlQueryWithNullCredentialSetOptionIsRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
-                "{ \"credentials\": [" + sdJwtCredential("configured", "")
-                        + "], \"credential_sets\": [{ \"options\": [[null]] }] }",
-                "The options of the credential_sets must not contain null");
-    }
-
-    @Test
-    public void dcqlQueryWithUnknownMemberIsRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
-                configuredDcqlQuery(sdJwtCredential("configured", ", \"unknown\": true")),
-                "The DCQL query member 'unknown' is not supported");
-    }
-
-    @Test
-    public void dcqlQueryRequestingMultiplePresentationsIsRejectedOnUpdate() {
-        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.DCQL_QUERY,
-                configuredDcqlQuery(sdJwtCredential("configured", ", \"multiple\": true")),
-                "Requesting multiple presentations of the credential 'configured' is not supported");
+    public void credentialWithoutTrustMaterialIdpsIsRejectedOnUpdate() {
+        assertRejectedOnUpdate(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, requestedCredentials("email"),
+                "The credential 'pid' needs at least one trust material identity provider and no blank ones");
     }
 
     @Test
@@ -372,12 +323,27 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
     }
 
     @Test
-    public void directPostRejectsMultipleCredentials() throws Exception {
+    public void directPostRejectsMultiplePresentationsOfACredential() throws Exception {
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
-        String vpToken = wallet.present(credential, request);
+        String presentation = wallet.presentation(credential, request);
 
-        Oid4vpDirectPostResponse response = wallet.directPost(request, "[\"" + vpToken + "\",\"" + vpToken + "\"]");
+        Oid4vpDirectPostResponse response = wallet.directPost(request,
+                "{\"" + CREDENTIAL_ID + "\":[\"" + presentation + "\",\"" + presentation + "\"]}");
+        assertEquals(400, response.getStatusCode());
+        assertEquals("access_denied", response.getError());
+    }
+
+    @Test
+    public void directPostRejectsCredentialOfAnotherType() throws Exception {
+        updateRequestedCredentials(requestedCredentials(new RequestedCredentials(
+                List.of(new RequestedCredentials.Credential(CREDENTIAL_ID, OID4VCConstants.FORMAT_SD_JWT_VC,
+                        List.of("urn:eudi:pid:it:1"), List.of(ISSUER_TRUST_IDP_ALIAS))),
+                null, new RequestedCredentials.Principal(CREDENTIAL_ID, "email"))));
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = requestObject();
+
+        Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
         assertEquals(400, response.getStatusCode());
         assertEquals("access_denied", response.getError());
     }
@@ -387,7 +353,7 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         // address is an object claim, so configuring it as the principal must fail the login rather
         // than map onto an empty user id. The principal is resolved when the browser completes the
         // login, so the wallet post succeeds and the browser sees the error page.
-        updatePrincipalAttribute("address");
+        updatePrincipalClaim("address");
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
 
@@ -463,16 +429,6 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         }
     }
 
-    // The mapped claims originate from the holder user, so its representation is kept as the
-    // expectation. The holder is deleted because the first broker login would otherwise stop at
-    // the duplicate user check instead of creating the account.
-    private UserRepresentation deleteHolder(String username) {
-        UserRepresentation holder = testRealm.admin().users()
-                .get(requireExistingUser(username).getId()).toRepresentation();
-        deleteRealmUser(holder);
-        return holder;
-    }
-
     private UserRepresentation completeFirstLogin(OID4VCTestContext credential, UserRepresentation holder) throws Exception {
         JsonNode request = requestObject();
         driver.open(wallet.directPost(request, wallet.present(credential, request)).getRedirectUri());
@@ -485,36 +441,6 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(IdentityProviderModel.SYNC_MODE, syncMode.name());
         idp.update(rep);
-    }
-
-    // Dedicated credential holder per completed login test: completing a broker login for a
-    // holder changes how every later wallet login of that holder behaves, so the shared users stay
-    // untouched and the tests are order independent. Same profile shape as the shared users.
-    private void createCompletionHolder(String username) {
-        UserRepresentation user = new UserRepresentation();
-        user.setUsername(username);
-        user.setEnabled(true);
-        user.setEmail(username + "@email.cz");
-        user.setEmailVerified(true);
-        user.setFirstName("Bob");
-        user.setLastName("Baumeister");
-        user.setAttributes(Map.of(
-                "address_street_address", List.of("221B Baker Street"),
-                "address_locality", List.of("London")));
-        CredentialRepresentation password = new CredentialRepresentation();
-        password.setType(CredentialRepresentation.PASSWORD);
-        password.setValue(TEST_PASSWORD);
-        password.setTemporary(false);
-        user.setCredentials(List.of(password));
-        String id;
-        try (Response response = testRealm.admin().users().create(user)) {
-            assertEquals(201, response.getStatus(), "Failed to create the completion holder");
-            String location = response.getHeaderString("Location");
-            id = location.substring(location.lastIndexOf('/') + 1);
-        }
-        UserVerifiableCredentialRepresentation grant = new UserVerifiableCredentialRepresentation();
-        grant.setCredentialScopeName(sdJwtTypeCredentialScopeName);
-        testRealm.admin().users().get(id).verifiableCredentials().createCredential(grant);
     }
 
     private void tamperMappedValues(UserRepresentation user, String username) {
@@ -536,16 +462,6 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
                 "Expected the login error page, was: " + driver.driver().getCurrentUrl());
         assertTrue(page.contains("Session not active"),
                 "Expected the session not active error, was: " + page);
-    }
-
-    private static String configuredDcqlQuery(String... credentials) {
-        return "{ \"credentials\": [" + String.join(", ", credentials) + "] }";
-    }
-
-    private static String sdJwtCredential(String id, String moreMembers) {
-        return """
-                { "id": "%s", "format": "dc+sd-jwt", "meta": { "vct_values": ["%s"] }%s }"""
-                .formatted(id, sdJwtTypeCredentialVct, moreMembers);
     }
 
     private void assertRejectedOnUpdate(String key, String value, String expectedError) {

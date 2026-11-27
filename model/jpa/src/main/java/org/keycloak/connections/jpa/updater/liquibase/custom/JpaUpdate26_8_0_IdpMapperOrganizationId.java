@@ -18,7 +18,9 @@ package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import liquibase.exception.CustomChangeException;
@@ -30,9 +32,9 @@ import liquibase.structure.core.Table;
  * the IdP, which carried exactly one organization; now an IdP can be linked to several, so the mapper has to name the
  * one it applies to.
  * <p>
- * Runs before {@code IDENTITY_PROVIDER.ORGANIZATION_ID} is dropped and reads that column rather than
- * {@code ORG_IDENTITY_PROVIDER} — same data, but it does not depend on the statements of the preceding custom change
- * having been flushed.
+ * Runs before {@code IDENTITY_PROVIDER.ORGANIZATION_ID} is dropped and reads the IdP links from there rather than
+ * from {@code ORG_IDENTITY_PROVIDER} — same data, but it does not depend on the statements of the preceding custom
+ * change having been flushed.
  */
 public class JpaUpdate26_8_0_IdpMapperOrganizationId extends CustomKeycloakTask {
 
@@ -42,20 +44,30 @@ public class JpaUpdate26_8_0_IdpMapperOrganizationId extends CustomKeycloakTask 
     private static final String ORGANIZATION_GROUP_TYPE = "ORGANIZATION";
 
     @Override
+    protected boolean isApplicable() throws CustomChangeException {
+        // A database that predates organizations has no organization group mappers to migrate
+        return super.isApplicable() && hasTable("ORG");
+    }
+
+    @Override
     protected void generateStatementsImpl() throws CustomChangeException {
         String mapperConfigTable = database.correctObjectName("IDP_MAPPER_CONFIG", Table.class);
         String mapperTable = database.correctObjectName("IDENTITY_PROVIDER_MAPPER", Table.class);
-        String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
+
+        // realm id + IdP alias -> organization id
+        Map<String, String> organizationByIdp = new HashMap<>();
+        for (IdpOrganizationLink link : getIdpOrganizationLinks()) {
+            organizationByIdp.put(link.realmId() + '\0' + link.idpAlias(), link.organizationId());
+        }
 
         try {
             Set<String> alreadyMigrated = getMappersWithOrganizationId(mapperConfigTable);
             int count = 0;
 
             try (PreparedStatement ps = connection.prepareStatement(
-                    "SELECT c.IDP_MAPPER_ID, c.VALUE, ip.ORGANIZATION_ID FROM " + getTableName(mapperConfigTable) + " c" +
+                    "SELECT c.IDP_MAPPER_ID, c.VALUE, m.REALM_ID, m.IDP_ALIAS FROM " + getTableName(mapperConfigTable) + " c" +
                             " JOIN " + getTableName(mapperTable) + " m ON m.ID = c.IDP_MAPPER_ID" +
-                            " JOIN " + getTableName(idpTable) + " ip ON ip.PROVIDER_ALIAS = m.IDP_ALIAS AND ip.REALM_ID = m.REALM_ID" +
-                            " WHERE c.NAME = ? AND ip.ORGANIZATION_ID IS NOT NULL")) {
+                            " WHERE c.NAME = ?")) {
                 ps.setString(1, GROUP_TYPE);
 
                 try (ResultSet rs = ps.executeQuery()) {
@@ -64,9 +76,9 @@ public class JpaUpdate26_8_0_IdpMapperOrganizationId extends CustomKeycloakTask 
                         // VALUE is a CLOB and Oracle rejects a plain equality against one, so the group type is
                         // compared here instead of in the WHERE clause
                         String groupType = rs.getString(2);
-                        String organizationId = rs.getString(3);
+                        String organizationId = organizationByIdp.get(rs.getString(3) + '\0' + rs.getString(4));
 
-                        if (!ORGANIZATION_GROUP_TYPE.equals(groupType) || alreadyMigrated.contains(mapperId)) {
+                        if (organizationId == null || !ORGANIZATION_GROUP_TYPE.equals(groupType) || alreadyMigrated.contains(mapperId)) {
                             continue;
                         }
 

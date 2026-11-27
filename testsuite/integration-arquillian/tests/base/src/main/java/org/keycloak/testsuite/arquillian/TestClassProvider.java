@@ -28,7 +28,7 @@ public class TestClassProvider {
             "/org/jboss/jandex",
             "/org/openqa/selenium",
             "/com/webauthn4j",
-            "/com/fasterxml/jackson/dataformat/cbor",
+            "/tools/jackson",
             "/org/slf4j",
             "/org/apache",
             "/org/keycloak/util/ldap",

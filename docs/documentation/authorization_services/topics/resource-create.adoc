@@ -32,8 +32,24 @@ URIs can use the following pattern syntax for path matching:
 ** `+/*+` -- A trailing wildcard that matches any path starting with the prefix. For example, `+/api/*+` matches `+/api/foo+` and `+/api/foo/bar/baz+`.
 ** `+/*.ext+` -- A suffix wildcard that matches any URI ending with the given file extension. The extension must not be empty (`+/*.+` is not valid). For example, `+/*.html+` matches `+/page.html+` and `+/some/path/report.html+`.
 +
+When the pattern has a path in front of the wildcard, that path must match as well: `+/public/*.json+` matches `+/public/report.json+` and `+/public/reports/2026.json+`, but not `+/admin/secret.json+`. A suffix wildcard also does not match the bare path in front of it, so `+/public/*.json+` does not match `+/public+`.
++
+A pattern is matched in the form it is registered. A pattern that contains only a path, such as `+/*.html+`, matches requested URIs given as paths, such as `+/page.html+`, and does not match a requested URI given in absolute form, such as `+https://myserver/page.html+`. To match absolute URIs, register the resource with an absolute URI, in which case the scheme and authority must match too: `+https://myserver/public/*.json+` does not match `+https://other.example/public/report.json+`.
++
 These patterns can be combined, for example `+/api/{id}/files/*+`.
 Wildcards (`+*+`) are only supported as a trailing `+/*+` or as a suffix `+/*.ext+`. A wildcard in the middle of a path, such as `+/api/*/info+`, never matches and will be rejected when creating or updating resources.
++
+When a requested URI matches more than one pattern, the patterns are compared segment by segment and the one that pins the most down is selected.
+Within a segment, a literal name such as `+admin+` is the strongest constraint, a parameter such as `+{id}+` accepts any single segment, and a wildcard accepts everything that is left; the first segment where two patterns differ decides between them.
+For example, `+/public/private/secret.json+` is matched by both `+/public/*.json+` and `+/public/private/*+`, and resolves to `+/public/private/*+` because `+private+` is a literal where the other pattern has a wildcard.
+Likewise `+/api/acme/admin/report.json+` resolves to `+/api/{tenant}/admin/*+` rather than `+/api/*+`.
+Only the registered pattern is compared, never the form it takes once its parameters are filled in from the request.
+Where two patterns agree on every segment, the one that constrains its wildcard more wins, so `+/public/*.json+` is preferred over `+/public/*+`, and a pattern that stops exactly where the request does is preferred over one that continues with a wildcard, so `+/api/{id}/files+` is preferred over `+/api/{id}/files/*+`.
++
+This is a ranking, not a test for which pattern covers the fewest URIs.
+Two patterns that match the same URI usually cover neither more nor less than each other, so there is no narrowest one to select and the rule above simply has to settle them.
+Where one pattern does cover every URI the other does, the rule normally selects the narrower one, but not in every case: ranking a parameter above a wildcard is what selects `+/api/{tenant}/admin/*+` over the `+/api/*+` that contains it, and the same comparison selects `+/public/{dir}/*+` over the `+/public/*.json+` that it in turn contains.
+If two of your resources overlap and you need a specific one to answer, register a URI that matches the requests you mean to send it.
 +
 * *Scopes*
 +

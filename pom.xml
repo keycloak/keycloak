@@ -109,7 +109,7 @@
         <sun.xml.ws.version>4.0.0</sun.xml.ws.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
-        <undertow.version>2.3.24.Final</undertow.version>
+        <undertow.version>2.3.25.Final</undertow.version>
         <wildfly-elytron.version>2.9.2.SP1</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -249,7 +249,8 @@
         </testframework.surefire.args>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.30.3.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.32.0.RELEASE</webauthn4j.version>
+        <version.tools.jackson>3.2.4</version.tools.jackson>
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
         <version.org.wildfly.glow>1.5.2.Final</version.org.wildfly.glow>
@@ -342,6 +343,14 @@
     <dependencyManagement>
 
         <dependencies>
+            <!-- Jackson 3 requires newer shared annotations than the Quarkus BOM provides. -->
+            <dependency>
+                <groupId>tools.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.tools.jackson}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-bom</artifactId>

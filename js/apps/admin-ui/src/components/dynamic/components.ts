@@ -20,6 +20,7 @@ import { UrlComponent } from "./UrlComponent";
 import { UserProfileAttributeListComponent } from "./UserProfileAttributeListComponent";
 import { IntComponent } from "./IntComponent";
 import { NumberComponent } from "./NumberComponent";
+import { OID4VPCredentialListComponent } from "./OID4VPCredentialListComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
@@ -53,7 +54,8 @@ type ComponentType =
   | "File"
   | "Password"
   | "Url"
-  | "ClaimDisplay";
+  | "ClaimDisplay"
+  | "OID4VPCredentialList";
 
 export const COMPONENTS: {
   [index in ComponentType]: FunctionComponent<ComponentProps>;
@@ -77,6 +79,7 @@ export const COMPONENTS: {
   Password: PasswordComponent,
   Url: UrlComponent,
   ClaimDisplay: ClaimDisplayComponent,
+  OID4VPCredentialList: OID4VPCredentialListComponent,
 } as const;
 
 export const isValidComponentType = (value: string): value is ComponentType =>

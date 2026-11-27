@@ -95,10 +95,7 @@ public class CmdStdinContext {
     
         if (type == null) {
             // guess the correct endpoint from content of the file
-            if (content.startsWith("<")) {
-                // looks like XML
-                type = EndpointType.SAML2;
-            } else if (content.startsWith("{")) {
+            if (content.startsWith("{")) {
                 // looks like JSON?
                 // try parse as ClientRepresentation
                 try {
@@ -130,7 +127,7 @@ public class CmdStdinContext {
             }
         }
     
-        // check content type, making sure it can be parsed into .json if it's not saml xml
+        // check content type, making sure it can be parsed into .json
         if (content != null) {
             try {
                 if (type == EndpointType.DEFAULT && client == null) {

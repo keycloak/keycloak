@@ -23,6 +23,8 @@ import java.util.UUID;
 
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
+import org.keycloak.broker.oid4vp.mappers.AbstractOID4VPClaimMapper;
+import org.keycloak.broker.oid4vp.mappers.OID4VPSdJwtUserAttributeMapper;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderConfig;
 import org.keycloak.broker.trust.DefaultTrustIdentityProviderFactory;
 import org.keycloak.common.Profile;
@@ -33,6 +35,7 @@ import org.keycloak.keys.Attributes;
 import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.conformance.OpenIdConformanceServer;
 import org.keycloak.testframework.realm.ClientBuilder;
@@ -50,19 +53,21 @@ public class VpConformanceRealmConfig implements RealmConfig {
     public static final String IDP_ALIAS = "oid4vp";
     public static final String TRUST_IDP_ALIAS = "conformance-issuer-trust";
 
+    public static final String CREDENTIAL_ID = "pid_sd_jwt";
+
     // The suite presents a PID SD-JWT VC and discloses given_name and family_name. given_name is the
     // principal because the presented credential carries no stable subject claim.
-    static final String DCQL_QUERY = """
+    static final String REQUESTED_CREDENTIALS = """
             {
               "credentials": [
                 {
                   "id": "pid_sd_jwt",
                   "format": "dc+sd-jwt",
-                  "meta": { "vct_values": ["urn:eudi:pid:1"] },
-                  "claims": [{ "path": ["given_name"] }, { "path": ["family_name"] }]
+                  "types": ["urn:eudi:pid:1"],
+                  "trustMaterialIdps": ["conformance-issuer-trust"]
                 }
               ],
-              "credential_sets": [{ "options": [["pid_sd_jwt"]], "required": true }]
+              "principal": { "credential": "pid_sd_jwt", "claim": "given_name" }
             }
             """;
 
@@ -72,6 +77,7 @@ public class VpConformanceRealmConfig implements RealmConfig {
                 .clients(ClientBuilder.create(CLIENT_ID).publicClient().redirectUris("*"))
                 .update(rep -> {
                     rep.setIdentityProviders(List.of(issuerTrustIdentityProvider(), identityProvider()));
+                    rep.setIdentityProviderMappers(List.of(familyNameMapper()));
                     MultivaluedHashMap<String, ComponentExportRepresentation> components = new MultivaluedHashMap<>();
                     components.add(KeyProvider.class.getName(), verifierSigningKeyProvider());
                     rep.setComponents(components);
@@ -90,10 +96,20 @@ public class VpConformanceRealmConfig implements RealmConfig {
 
     // Overridable so the encrypted direct_post.jwt variant can enable response encryption.
     protected Map<String, String> idpConfig() {
-        return Map.of(
-                OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS, TRUST_IDP_ALIAS,
-                OID4VPIdentityProviderConfig.DCQL_QUERY, DCQL_QUERY,
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "given_name");
+        return Map.of(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS, REQUESTED_CREDENTIALS);
+    }
+
+    // Requests family_name next to the principal claim given_name.
+    private IdentityProviderMapperRepresentation familyNameMapper() {
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setName("family-name");
+        mapper.setIdentityProviderAlias(IDP_ALIAS);
+        mapper.setIdentityProviderMapper(OID4VPSdJwtUserAttributeMapper.PROVIDER_ID);
+        mapper.setConfig(Map.of(
+                AbstractOID4VPClaimMapper.CREDENTIAL, CREDENTIAL_ID,
+                AbstractOID4VPClaimMapper.CLAIM, "family_name",
+                OID4VPSdJwtUserAttributeMapper.USER_ATTRIBUTE, "lastName"));
+        return mapper;
     }
 
     // Trusts the presented credential's x5c certificate chain against the conformance CA through the

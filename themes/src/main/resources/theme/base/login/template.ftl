@@ -1,5 +1,9 @@
+<#import "alert.ftl" as loginAlert>
+<#import "aside.ftl" as loginAside>
 <#import "field.ftl" as field>
 <#import "footer.ftl" as loginFooter>
+<#import "header.ftl" as loginHeader>
+<#import "language-selector.ftl" as languageSelector>
 <#import "theme-resources.ftl" as themeResourceTags>
 <#-- Render the attempted username and restart-login action with <@layout.username/>. -->
 <#macro username>
@@ -36,6 +40,7 @@
 <#macro pageLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false
     bodyPageId="login-${pageId}" brandName=(realm.displayNameHtml)!'' pageTitle=(title!'')
     headerDescription="" displayMain=true>
+<#local asideHtml><@loginAside.content/></#local>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}" lang="${lang}"<#if (realm.internationalizationEnabled)!false> dir="${(locale.rtl)?then('rtl','ltr')}"</#if>>
 
@@ -167,8 +172,7 @@
 <div class="${properties.kcLogin!}">
   <div class="${properties.kcLoginContainer!}">
     <header id="kc-header" class="${properties.kcLoginHeader!}">
-      <div id="kc-header-wrapper"
-              class="${properties.kcLoginBrand!}">${kcSanitize(msg("loginTitleHtml",brandName))?no_esc}</div>
+      <@loginHeader.content brandName=brandName/>
     </header>
     <#if displayMain>
     <main class="${properties.kcLoginMain!}">
@@ -177,44 +181,7 @@
         <#if headerDescription?has_content>
             <p class="${properties.kcLoginMainHeaderDescription!}">${headerDescription}</p>
         </#if>
-        <#if ((realm.internationalizationEnabled)!false) && locale.supported?size gt 1>
-        <div class="${properties.kcLoginMainHeaderUtilities!}">
-          <div class="${properties.kcInputClass!}">
-            <select
-              aria-label="${msg("languages")}"
-              id="login-select-toggle"
-              onchange="if (this.value) window.location.href=this.value"
-            >
-              <#list locale.supported?sort_by("label") as l>
-                <option
-                  value="${l.url}"
-                  ${(l.languageTag == locale.currentLanguageTag)?then('selected','')}
-                >
-                  ${l.label}
-                </option>
-              </#list>
-            </select>
-            <span class="${properties.kcFormControlUtilClass!}">
-              <span class="${properties.kcFormControlToggleIcon!}">
-                <svg
-                  class="${properties.kcSvgIconClass!}"
-                  viewBox="0 0 320 512"
-                  fill="currentColor"
-                  aria-hidden="true"
-                  role="img"
-                  width="1em"
-                  height="1em"
-                >
-                  <path
-                    d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
-                  >
-                  </path>
-                </svg>
-              </span>
-            </span>
-          </div>
-        </div>
-        </#if>
+        <@languageSelector.select/>
       </div>
       <div class="${properties.kcLoginMainBody!}">
         <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
@@ -251,15 +218,7 @@
         <#-- App-initiated actions should not see warning messages about the need to complete the action -->
         <#-- during login.                                                                               -->
         <#if displayMessage && message?has_content && (message.type != 'warning' || !isAppInitiatedAction??)>
-            <div class="${properties.kcAlertClass!} ${properties['kcAlert' + message.type?cap_first + 'Class']!}">
-                <div class="${properties.kcAlertIconClass!}">
-                    <#if message.type = 'success'><span class="${properties.kcFeedbackSuccessIcon!}"></span></#if>
-                    <#if message.type = 'warning'><span class="${properties.kcFeedbackWarningIcon!}"></span></#if>
-                    <#if message.type = 'error'><span class="${properties.kcFeedbackErrorIcon!}"></span></#if>
-                    <#if message.type = 'info'><span class="${properties.kcFeedbackInfoIcon!}"></span></#if>
-                </div>
-                <span class="${properties.kcAlertTitleClass!} kc-feedback-text">${message.summary}</span>
-            </div>
+            <@loginAlert.alert message=message/>
         </#if>
 
         <#nested "form">
@@ -301,6 +260,9 @@
             <@loginFooter.content/>
         </div>
     </main>
+    </#if>
+    <#if asideHtml?markup_string?trim?has_content>
+      <aside id="kc-aside" class="${properties.kcLoginAside!}">${asideHtml}</aside>
     </#if>
   </div>
 </div>

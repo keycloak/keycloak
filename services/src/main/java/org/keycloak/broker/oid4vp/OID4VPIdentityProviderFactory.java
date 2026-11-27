@@ -44,45 +44,20 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
             .property()
-                .name(OID4VPIdentityProviderConfig.DEFAULT_CREDENTIAL_TYPES)
-                .label("Default Credential Types")
-                .helpText("Comma separated credential types (vct) the wallet may present, for example "
-                        + "'urn:eudi:pid:de:1,urn:eudi:pid:it:1'. The wallet presents one credential of any of "
-                        + "these types, disclosing the claims the identity provider mappers read. Required unless a "
-                        + "DCQL query is configured.")
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-            .property()
-                .name(OID4VPIdentityProviderConfig.DCQL_QUERY)
-                .label("DCQL Query (JSON)")
-                .helpText("Digital Credentials Query Language query describing the requested credential and "
-                        + "claims. Leave empty to infer it: one credential of the default credential types, "
-                        + "disclosing the claims the identity provider mappers read and the principal attribute. "
-                        + "Set it only for queries the mappers cannot express. Only a single credential is "
-                        + "supported.")
+                .name(OID4VPIdentityProviderConfig.REQUESTED_CREDENTIALS)
+                .label("Requested Credentials (JSON)")
+                .helpText("The credentials the wallet presents and the claim that links the user, for example "
+                        + "{\"credentials\": [{\"id\": \"pid\", \"format\": \"dc+sd-jwt\", "
+                        + "\"types\": [\"urn:eudi:pid:1\"], \"trustMaterialIdps\": [\"pid-trust\"]}], "
+                        + "\"principal\": {\"credential\": \"pid\", \"claim\": \"personal_administrative_number\"}}. "
+                        + "Each credential has a unique id, the format dc+sd-jwt, the accepted types (vct) and the "
+                        + "aliases of the trust material identity providers trusted to issue it. Without "
+                        + "\"credentialSets\" all credentials are required. With it, the wallet presents one option of "
+                        + "each required set, for example [{\"options\": [[\"pid\"]]}, {\"options\": [[\"membership\"]], "
+                        + "\"required\": false}]. Every option of at least one required set must contain the principal "
+                        + "credential. The DCQL query is generated from these credentials and the claims the mappers "
+                        + "of each credential read.")
                 .type(ProviderConfigProperty.TEXT_TYPE)
-                .add()
-            .property()
-                .name(OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS)
-                .label("Trusted Issuer JWKS")
-                .helpText("Inline JWK Set of trusted credential issuer keys used to verify the credential signature. "
-                        + "Ignored when trust material identity providers are configured.")
-                .type(ProviderConfigProperty.TEXT_TYPE)
-                .add()
-            .property()
-                .name(OID4VPIdentityProviderConfig.TRUST_MATERIAL_IDPS)
-                .label("Trust Material Identity Providers")
-                .helpText("Comma separated aliases of trust material identity providers supplying the trusted "
-                        + "credential issuer keys and X.509 trust anchors. Takes precedence over the inline "
-                        + "trusted issuer JWKS. If any of the providers exposes X.509 trust anchors, presented "
-                        + "credentials must carry an x5c certificate chain that validates against them.")
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
-            .property()
-                .name(OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE)
-                .label("Principal Attribute")
-                .helpText("Credential claim used as the user principal, i.e. its id and username.")
-                .type(ProviderConfigProperty.STRING_TYPE)
                 .required(true)
                 .add()
             .property()

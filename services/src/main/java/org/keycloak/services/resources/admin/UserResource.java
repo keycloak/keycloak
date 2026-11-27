@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -56,6 +57,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
@@ -73,6 +75,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.IdentityProviderCapability;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -85,6 +90,7 @@ import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.light.LightweightUserAdapter;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
@@ -97,6 +103,7 @@ import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityLinkRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
@@ -121,6 +128,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
+import org.keycloak.utils.StreamsUtil;
 import org.keycloak.utils.StringUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -523,6 +531,119 @@ public class UserResource {
         return session.users().getFederatedIdentitiesStream(realm, user)
                 .filter(identity -> session.identityProviders().getByAlias(identity.getIdentityProvider()) != null)
                 .map(ModelToRepresentation::toRepresentation);
+    }
+
+    /**
+     * Get the identity provider links for the user
+     *
+     * @param linked if {@code true} (default), returns the identity providers the user is currently linked to; if
+     *               {@code false}, returns the enabled identity providers available for the user to link to (i.e.
+     *               not already linked)
+     * @param search filter by provider alias or display name. Can be prefixed (name*), contains (*name*) or exact ("name"). Default prefixed
+     * @param firstResult pagination offset
+     * @param maxResults maximum results size
+     * @return a non-null {@code Stream} of identity provider links
+     */
+    @Path("federated-identity-links")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Get the identity provider links for the user",
+            description = "Returns the identity providers the user is currently linked to, or the enabled identity providers available for the user to link to, avoiding the need to separately fetch and cross-reference the full list of identity providers in the realm.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = FederatedIdentityLinkRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Stream<FederatedIdentityLinkRepresentation> getFederatedIdentityLinks(
+            @Parameter(description = "if true (default), returns the identity providers the user is linked to; if false, returns the identity providers available for the user to link to") @QueryParam("linked") Boolean linked,
+            @Parameter(description = "Filter by provider alias or display name. Can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size") @QueryParam("max") Integer maxResults) {
+        if (Boolean.FALSE.equals(linked)) {
+            auth.users().requireManage(user);
+            auth.realm().requireViewIdentityProviders();
+            return getAvailableIdentityProviderLinks(search, firstResult, maxResults);
+        }
+
+        auth.users().requireView(user);
+        return getLinkedIdentityProviderLinks(search, firstResult, maxResults);
+    }
+
+    private Stream<FederatedIdentityLinkRepresentation> getLinkedIdentityProviderLinks(String search, Integer firstResult, Integer maxResults) {
+        Set<String> socialProviderIds = socialProviderIds();
+        Stream<FederatedIdentityLinkRepresentation> linked = session.users().getFederatedIdentitiesStream(realm, user)
+                .map(fedIdentity -> {
+                    IdentityProviderModel provider = session.identityProviders().getByAlias(fedIdentity.getIdentityProvider());
+                    return provider == null ? null : toFederatedIdentityLink(provider, socialProviderIds, fedIdentity.getUserId(), fedIdentity.getUserName());
+                })
+                .filter(rep -> rep != null && matchesSearch(rep, search));
+        return StreamsUtil.paginatedStream(linked, firstResult, maxResults);
+    }
+
+    private Stream<FederatedIdentityLinkRepresentation> getAvailableIdentityProviderLinks(String search, Integer firstResult, Integer maxResults) {
+        // mirror the account console's LinkedAccountsResource: a managed organization member cannot be linked
+        // to any further identity provider, and organization-scoped providers are never offered for linking
+        if (!Organizations.resolveHomeBroker(session, user).isEmpty()) {
+            return Stream.empty();
+        }
+
+        String aliasesToExclude = session.users().getFederatedIdentitiesStream(realm, user)
+                .map(FederatedIdentityModel::getIdentityProvider)
+                .collect(Collectors.joining(","));
+
+        Map<String, String> options = new HashMap<>();
+        options.put(IdentityProviderModel.ENABLED, "true");
+        options.put(IdentityProviderModel.ORGANIZATION_ID, "");
+        options.put(IdentityProviderModel.ALIAS_NOT_IN, aliasesToExclude);
+        if (StringUtil.isNotBlank(search)) {
+            // JpaIdentityProviderStorageProvider#getAliasSearchPredicate also matches a provider whose resolved
+            // display name (e.g. a social provider factory's name, used as a fallback when no displayName is
+            // configured) matches the search term, keeping this in sync with the "linked" branch's matchesSearch
+            options.put(IdentityProviderModel.SEARCH, search);
+        }
+
+        Set<String> socialProviderIds = socialProviderIds();
+        IdentityProviderQuery query = IdentityProviderQuery.capability(IdentityProviderCapability.USER_LINKING).with(options);
+        return session.identityProviders().getAllStream(query, firstResult, maxResults == null ? 100 : maxResults)
+                .map(provider -> toFederatedIdentityLink(provider, socialProviderIds, null, null));
+    }
+
+    private FederatedIdentityLinkRepresentation toFederatedIdentityLink(IdentityProviderModel provider, Set<String> socialProviderIds, String userId, String userName) {
+        FederatedIdentityLinkRepresentation rep = new FederatedIdentityLinkRepresentation();
+        rep.setIdentityProvider(provider.getAlias());
+        rep.setProviderId(provider.getProviderId());
+        rep.setDisplayName(KeycloakModelUtils.getIdentityProviderDisplayName(session, provider));
+        rep.setSocial(socialProviderIds.contains(provider.getProviderId()));
+        rep.setUserId(userId);
+        rep.setUserName(userName);
+        return rep;
+    }
+
+    private Set<String> socialProviderIds() {
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class)
+                .map(ProviderFactory::getId)
+                .collect(Collectors.toSet());
+    }
+
+    private boolean matchesSearch(FederatedIdentityLinkRepresentation rep, String search) {
+        if (StringUtil.isBlank(search)) {
+            return true;
+        } else if (search.length() > 1 && search.startsWith("\"") && search.endsWith("\"")) {
+            String name = search.substring(1, search.length() - 1);
+            return rep.getIdentityProvider().equals(name) || rep.getDisplayName().equals(name);
+        } else if (search.length() > 1 && search.startsWith("*") && search.endsWith("*")) {
+            // non-exact searches are case-insensitive, matching the LIKE lower(...) semantics used by
+            // JpaIdentityProviderStorageProvider#getAliasSearchPredicate for the "linked=false" branch
+            String name = search.substring(1, search.length() - 1).toLowerCase(Locale.ROOT);
+            return rep.getIdentityProvider().toLowerCase(Locale.ROOT).contains(name) || rep.getDisplayName().toLowerCase(Locale.ROOT).contains(name);
+        } else if (search.endsWith("*")) {
+            String name = search.substring(0, search.length() - 1).toLowerCase(Locale.ROOT);
+            return rep.getIdentityProvider().toLowerCase(Locale.ROOT).startsWith(name) || rep.getDisplayName().toLowerCase(Locale.ROOT).startsWith(name);
+        } else {
+            String name = search.toLowerCase(Locale.ROOT);
+            return rep.getIdentityProvider().toLowerCase(Locale.ROOT).startsWith(name) || rep.getDisplayName().toLowerCase(Locale.ROOT).startsWith(name);
+        }
     }
 
     /**

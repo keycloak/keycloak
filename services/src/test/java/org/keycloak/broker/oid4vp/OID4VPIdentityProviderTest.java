@@ -19,23 +19,13 @@ package org.keycloak.broker.oid4vp;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
-import java.util.List;
 
-import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.crypto.KeyType;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.jose.jwk.JSONWebKeySet;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.crypto.HashUtils;
-import org.keycloak.util.JsonSerialization;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -58,41 +48,5 @@ public class OID4VPIdentityProviderTest {
         String expected = "x509_hash:"
                 + Base64Url.encode(HashUtils.hash(JavaAlgorithm.SHA256, cert.getEncoded()));
         Assert.assertEquals(expected, clientId);
-    }
-
-    @Test
-    public void resolveKeysFiltersByKid() throws Exception {
-        JWK first = jwk();
-        JWK second = jwk();
-        JSONWebKeySet jwks = new JSONWebKeySet();
-        jwks.setKeys(new JWK[] {first, second});
-
-        OID4VPIdentityProviderConfig config = new OID4VPIdentityProviderConfig();
-        config.setTrustedIssuerJwks(JsonSerialization.writeValueAsString(jwks));
-        OID4VPIdentityProvider provider = new OID4VPIdentityProvider(null, config);
-
-        List<JWK> matched = provider
-                .resolveKeys(TrustMaterialRequest.builder().kid(second.getKeyId()).build())
-                .toList();
-
-        Assert.assertEquals(1, matched.size());
-        Assert.assertEquals(second.getKeyId(), matched.get(0).getKeyId());
-    }
-
-    @Test
-    public void resolveKeysReturnsEmptyWhenNoJwksConfigured() {
-        OID4VPIdentityProvider provider = new OID4VPIdentityProvider(null, new OID4VPIdentityProviderConfig());
-        Assert.assertEquals(0, provider.resolveKeys(TrustMaterialRequest.builder().build()).count());
-    }
-
-    private static JWK jwk() {
-        KeyPair keyPair = KeyUtils.generateEcKeyPair("secp256r1");
-        KeyWrapper keyWrapper = new KeyWrapper();
-        keyWrapper.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
-        keyWrapper.setType(KeyType.EC);
-        keyWrapper.setAlgorithm(Algorithm.ES256);
-        keyWrapper.setUse(KeyUse.SIG);
-        keyWrapper.setPublicKey(keyPair.getPublic());
-        return JWKBuilder.create().kid(keyWrapper.getKid()).ec(keyWrapper.getPublicKey());
     }
 }

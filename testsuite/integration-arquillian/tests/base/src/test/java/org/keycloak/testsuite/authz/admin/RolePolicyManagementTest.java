@@ -203,7 +203,7 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
 
             getRealm().roles().deleteRole(role.getName());
             rolePolicyRep = rolePolicy.toRepresentation();
-            assertTrue(rolePolicyRep.getRoles().isEmpty());
+            assertEquals(1, rolePolicyRep.getRoles().size());
         }
     }
 

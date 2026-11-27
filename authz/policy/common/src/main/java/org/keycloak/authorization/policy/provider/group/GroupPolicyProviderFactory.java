@@ -20,6 +20,7 @@ package org.keycloak.authorization.policy.provider.group;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -43,6 +44,8 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation.GroupDefinition;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -85,7 +88,7 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         representation.setGroupsClaim(policy.getConfig().get("groupsClaim"));
 
         try {
-            representation.setGroups(getGroupsDefinition(policy.getConfig(), authorization));
+            representation.setGroups(getGroupsDefinition(policy.getConfig()));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize groups", cause);
         }
@@ -99,18 +102,30 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
 
     @Override
     public void onCreate(Policy policy, GroupPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updatePolicy(policy, representation.getGroupsClaim(), representation.getGroups(), authorization);
+        updatePolicy(policy, representation.getGroupsClaim(), representation.getGroups(), authorization, Set.of());
     }
 
     @Override
     public void onUpdate(Policy policy, GroupPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updatePolicy(policy, representation.getGroupsClaim(), representation.getGroups(), authorization);
+        try {
+            updatePolicy(policy, representation.getGroupsClaim(), representation.getGroups(), authorization,
+                    getUnresolvedPaths(policy.getConfig()));
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to deserialize groups", cause);
+        }
     }
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
+        onImport(policy, representation, authorization, Map.of());
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization, Map<String, String> previousConfig) {
         try {
-            updatePolicy(policy, representation.getConfig().get("groupsClaim"), getGroupsDefinition(representation.getConfig(), authorization), authorization);
+            Map<String, String> config = representation.getConfig();
+            updatePolicy(policy, config.get("groupsClaim"), getGroupsDefinition(config, ExportedGroupDefinition[].class),
+                    authorization, getUnresolvedPaths(previousConfig));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize groups", cause);
         }
@@ -120,17 +135,16 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
         Map<String, String> config = new HashMap<>();
         GroupPolicyRepresentation groupPolicy = toRepresentation(policy, authorization);
-        Set<GroupPolicyRepresentation.GroupDefinition> groups = groupPolicy.getGroups();
+        Set<ExportedGroupDefinition> groups = new LinkedHashSet<>();
 
-        for (GroupPolicyRepresentation.GroupDefinition definition: groups) {
-            GroupModel group = authorization.getRealm().getGroupById(definition.getId());
-
-            if (group == null) {
-                continue;
-            }
-
-            definition.setId(null);
-            definition.setPath(ModelToRepresentation.buildGroupPath(group));
+        for (GroupDefinition definition : groupPolicy.getGroups()) {
+            GroupModel group = definition.getId() == null ? null : authorization.getRealm().getGroupById(definition.getId());
+            ExportedGroupDefinition exported = new ExportedGroupDefinition();
+            exported.setId(group == null ? definition.getId() : null);
+            exported.setPath(group == null ? definition.getPath() : ModelToRepresentation.buildGroupPath(group));
+            exported.setExtendChildren(definition.isExtendChildren());
+            exported.setUnresolved(definition.getId() == null && definition.getPath() != null);
+            groups.add(exported);
         }
 
         try {
@@ -162,7 +176,8 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
 
     }
 
-    private void updatePolicy(Policy policy, String groupsClaim, Set<GroupPolicyRepresentation.GroupDefinition> groups, AuthorizationProvider authorization) {
+    private void updatePolicy(Policy policy, String groupsClaim, Set<GroupDefinition> groups, AuthorizationProvider authorization,
+            Set<String> unresolvedPaths) {
         if (groups == null) {
             throw new RuntimeException("You must provide at least one group");
         }
@@ -173,24 +188,29 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
             config.put("groupsClaim", groupsClaim);
         }
 
-        for (GroupPolicyRepresentation.GroupDefinition definition : groups) {
-            GroupModel group = getGroup(authorization, definition);
-
-            if (group == null) {
-                continue;
-            }
-
-            definition.setId(group.getId());
-            definition.setPath(null);
+        Set<GroupDefinition> updatedGroups = new LinkedHashSet<>();
+        for (GroupDefinition definition : groups) {
+            boolean unresolved = definition.getId() == null && definition.getPath() != null
+                    && (unresolvedPaths.contains(definition.getPath()) || definition instanceof ExportedGroupDefinition exported && exported.isUnresolved());
+            GroupModel group = unresolved ? null : getGroup(authorization, definition);
+            updatedGroups.add(new GroupDefinition(group == null ? definition.getId() : group.getId(),
+                    group == null ? definition.getPath() : null, definition.isExtendChildren()));
         }
 
         try {
-            config.put("groups", JsonSerialization.writeValueAsString(groups));
+            config.put("groups", JsonSerialization.writeValueAsString(updatedGroups));
         } catch (IOException cause) {
             throw new RuntimeException("Failed to serialize groups", cause);
         }
 
         policy.setConfig(config);
+    }
+
+    private Set<String> getUnresolvedPaths(Map<String, String> config) throws IOException {
+        return getGroupsDefinition(config).stream()
+                .filter(group -> group.getId() == null && group.getPath() != null)
+                .map(GroupDefinition::getPath)
+                .collect(Collectors.toSet());
     }
 
     private GroupModel getGroup(AuthorizationProvider authorization, GroupDefinition definition) {
@@ -240,16 +260,33 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         return group;
     }
 
-    private Set<GroupPolicyRepresentation.GroupDefinition> getGroupsDefinition(Map<String, String> config, AuthorizationProvider authorization) throws IOException {
+    private Set<GroupDefinition> getGroupsDefinition(Map<String, String> config) throws IOException {
+        return getGroupsDefinition(config, GroupDefinition[].class);
+    }
+
+    private Set<GroupDefinition> getGroupsDefinition(Map<String, String> config, Class<? extends GroupDefinition[]> definitionType) throws IOException {
         String groups = config.get("groups");
 
         if (groups == null) {
             return Collections.emptySet();
         }
 
-        return Arrays.stream(JsonSerialization.readValue(groups, GroupPolicyRepresentation.GroupDefinition[].class))
-                .filter(d -> getGroup(authorization, d) != null)
-                .sorted()
+        return Arrays.stream(JsonSerialization.readValue(groups, definitionType))
+                .sorted(Comparator.comparing(GroupDefinition::getId, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(GroupDefinition::getPath, Comparator.nullsLast(Comparator.naturalOrder())))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private static class ExportedGroupDefinition extends GroupDefinition {
+        private boolean unresolved;
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        public boolean isUnresolved() {
+            return unresolved;
+        }
+
+        public void setUnresolved(boolean unresolved) {
+            this.unresolved = unresolved;
+        }
     }
 }

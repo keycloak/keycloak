@@ -155,6 +155,9 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     }
 
                     for (Member member : values) {
+                        if (isBlank(member.getValue())) {
+                            throw new ModelValidationException("Member value is required");
+                        }
                         UserModel user = session.users().getUserById(realm, member.getValue());
                         if (user == null || !canViewUser(user)) {
                             throw new ModelValidationException("User with id " + member.getValue() + " not found");
@@ -172,6 +175,9 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     checkGroupMembershipPermission(session.getContext().getPermissions(), model);
 
                     for (Member member : values) {
+                        if (isBlank(member.getValue())) {
+                            throw new ModelValidationException("Member value is required");
+                        }
                         UserModel user = session.users().getUserById(realm, member.getValue());
                         if (user == null || !canViewUser(user)) {
                             throw new ModelValidationException("User with id " + member.getValue() + " not found");

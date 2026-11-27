@@ -18,6 +18,7 @@
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Savepoint;
 import java.sql.Statement;
@@ -27,6 +28,7 @@ import java.util.List;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 
 import liquibase.change.custom.CustomSqlChange;
 import liquibase.database.Database;
@@ -37,6 +39,7 @@ import liquibase.exception.ValidationErrors;
 import liquibase.resource.ResourceAccessor;
 import liquibase.snapshot.SnapshotGeneratorFactory;
 import liquibase.statement.SqlStatement;
+import liquibase.structure.core.Column;
 import liquibase.structure.core.Schema;
 import liquibase.structure.core.Table;
 
@@ -111,6 +114,72 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
         } catch (Exception e) {
             throw new CustomChangeException("Failed to check database availability", e);
         }
+    }
+
+    /**
+     * Checks whether the column exists on the database the task reads from. During manual migration script generation
+     * that is the pre-upgrade database, which lacks every table and column added by earlier changesets of the script.
+     */
+    protected boolean hasColumn(String tableName, String columnName) throws CustomChangeException {
+        try {
+            // The schema is required: the MySQL column snapshot dereferences it and fails with a NullPointerException otherwise
+            Table table = new Table().setName(database.correctObjectName(tableName, Table.class));
+            table.setSchema(new Schema((String) null, database.getDefaultSchemaName()));
+            Column column = new Column().setRelation(table).setName(database.correctObjectName(columnName, Column.class));
+            return SnapshotGeneratorFactory.getInstance().has(column, database);
+        } catch (Exception e) {
+            throw new CustomChangeException("Failed to check for existence of column " + tableName + "." + columnName, e);
+        }
+    }
+
+    /**
+     * Checks whether the table exists on the database the task reads from, see {@link #hasColumn(String, String)}.
+     */
+    protected boolean hasTable(String tableName) throws CustomChangeException {
+        try {
+            return SnapshotGeneratorFactory.getInstance().has(new Table().setName(database.correctObjectName(tableName, Table.class)), database);
+        } catch (Exception e) {
+            throw new CustomChangeException("Failed to check for existence of table " + tableName, e);
+        }
+    }
+
+    /**
+     * Link of an identity provider to its organization, as stored before 26.8 when an IdP carried exactly one organization.
+     */
+    protected record IdpOrganizationLink(String idpInternalId, String realmId, String idpAlias, String organizationId) {
+    }
+
+    /**
+     * Reads the identity provider to organization links of the database the task reads from. Since 26.0.0 they are in
+     * {@code IDENTITY_PROVIDER.ORGANIZATION_ID}. Before that they are in the {@code kc.org} entry of
+     * {@code IDENTITY_PROVIDER_CONFIG}, which is what the pre-upgrade database still holds when a manual migration script
+     * is generated from a 25.x starting version: the statements of the 26.0.0 migration are only part of the script.
+     */
+    protected List<IdpOrganizationLink> getIdpOrganizationLinks() throws CustomChangeException {
+        String idpTable = database.correctObjectName("IDENTITY_PROVIDER", Table.class);
+        String sql;
+        if (hasColumn("IDENTITY_PROVIDER", "ORGANIZATION_ID")) {
+            sql = "SELECT ip.INTERNAL_ID, ip.REALM_ID, ip.PROVIDER_ALIAS, ip.ORGANIZATION_ID FROM " + getTableName(idpTable) +
+                    " ip WHERE ip.ORGANIZATION_ID IS NOT NULL";
+        } else {
+            String configTable = database.correctObjectName("IDENTITY_PROVIDER_CONFIG", Table.class);
+            sql = "SELECT ip.INTERNAL_ID, ip.REALM_ID, ip.PROVIDER_ALIAS, c.VALUE FROM " + getTableName(idpTable) + " ip" +
+                    " JOIN " + getTableName(configTable) + " c ON c.IDENTITY_PROVIDER_ID = ip.INTERNAL_ID" +
+                    " WHERE c.NAME = '" + OrganizationModel.ORGANIZATION_ATTRIBUTE + "'";
+        }
+
+        List<IdpOrganizationLink> links = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String organizationId = rs.getString(4);
+                if (organizationId != null && !organizationId.isEmpty()) {
+                    links.add(new IdpOrganizationLink(rs.getString(1), rs.getString(2), rs.getString(3), organizationId));
+                }
+            }
+        } catch (Exception e) {
+            throw new CustomChangeException("Failed to read the identity provider organization links", e);
+        }
+        return links;
     }
 
     /**

@@ -16,6 +16,10 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
 import Oid4VpSettings from "./Oid4VpSettings";
+import {
+  toRequestedCredentialsForm,
+  toRequestedCredentialsJson,
+} from "./requestedCredentials";
 
 export default function AddOid4Vp() {
   const { adminClient } = useAdminClient();
@@ -24,7 +28,10 @@ export default function AddOid4Vp() {
   const id = "oid4vp";
 
   const form = useForm<IdentityProviderRepresentation>({
-    defaultValues: { alias: id },
+    defaultValues: {
+      alias: id,
+      config: { requestedCredentials: toRequestedCredentialsForm() },
+    },
     mode: "onChange",
   });
   const {
@@ -39,6 +46,12 @@ export default function AddOid4Vp() {
     try {
       await adminClient.identityProviders.create({
         ...provider,
+        config: {
+          ...provider.config,
+          requestedCredentials: toRequestedCredentialsJson(
+            provider.config!.requestedCredentials,
+          ),
+        },
         providerId: id,
       });
       addAlert(t("createIdentityProviderSuccess"), AlertVariant.success);

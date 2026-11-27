@@ -15,6 +15,15 @@ See the upgrading guide for migration details.
 
 = Security and Standards
 
+== Post-quantum WebAuthn signatures (experimental)
+
+{project_name} introduces experimental support for `ML-DSA-44`, `ML-DSA-65`, and `ML-DSA-87` in WebAuthn policies.
+Enable it with `--features=webauthn-ml-dsa`.
+Using these algorithms requires a compatible browser, authenticator, and server cryptographic provider.
+The default signature algorithms remain unchanged.
+
+For requirements, see link:{adminguide_link}#_webauthn-pqc[Post-quantum signature algorithms] in the {adminguide_name}.
+
 == PAR discovery respects the feature flag
 
 When the `par` feature is disabled, OpenID Connect discovery no longer advertises the pushed authorization request endpoint, including its mTLS alias, or `require_pushed_authorization_requests`.
@@ -40,11 +49,27 @@ The welcome page shares the `keycloak.v3` login theme's layout, form controls, b
 
 Realms that explicitly used `keycloak.v2` are migrated to `keycloak.v3` during upgrade. If you maintain a custom login theme based on `keycloak.v2`, or a custom welcome theme based on PatternFly 5, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
 
-== OID4VP verifier infers the DCQL query from mappers (experimental)
+== Login theme chrome macros
 
-The OID4VP identity provider no longer requires a hand-written DCQL query.
-Configure the accepted credential types (`vct`) in the new *Default Credential Types* setting, and the query sent to the wallet is built from the claims that the identity provider mappers read, plus the principal attribute.
+Custom login themes can override `header.ftl`, `aside.ftl`, `footer.ftl`, `alert.ftl`, and `language-selector.ftl` to customize brand content, a side panel for marketing or help text, the login-card footer, alerts, and the locale selector without replacing the full page layout.
 
-A DCQL query can still be configured for requests that mappers cannot express, such as claim sets.
-It takes precedence over the inferred query and is now validated when the identity provider is saved.
-Only a single credential in the `dc+sd-jwt` format can be requested.
+== OID4VP verifier requests multiple credentials (experimental)
+
+The OID4VP identity provider now requests credentials through the new *Requested credentials* section of the Admin Console, which lists the credentials, their accepted types, their trust material identity providers and the claim that identifies the user.
+The Admin REST API stores this as a JSON document in the `requestedCredentials` configuration property.
+It replaces the *DCQL Query*, *Principal Attribute*, *Trusted Issuer JWKS* and *Trust Material Identity Providers* settings, so existing OID4VP identity providers need to be configured again.
+Each of their mappers now selects one of the requested credentials in its *Credential* setting.
+Trusted issuer keys that were configured inline now go into a trust material identity provider.
+An OID4VP identity provider is no longer a trust material identity provider itself, so replace references to it in other trust material settings with that trust material identity provider.
+
+The DCQL query sent to the wallet is always built from the requested credentials and the claims that the identity provider mappers read.
+If a mapper refers to a credential that is no longer requested, Keycloak logs a warning and treats the claim of the mapper as missing.
+A user attribute mapper then removes its custom attribute at login, unless its sync mode is *Import*.
+
+Credential sets express optional credentials and alternatives.
+The credential holding the claim that identifies the user must be part of every option of at least one required credential set.
+The user is linked by the presented type (`vct`) of that credential together with the claim, so a credential of another type with the same claim value does not sign in as that user.
+Each accepted type of that credential therefore links its own identity.
+The claim must be unique across all trusted issuers of a type, since any of them can issue a credential with that value.
+Links to an OID4VP identity provider created by an earlier version no longer match and block the first broker login of their users, so remove them.
+Only credentials in the `dc+sd-jwt` format can be requested.

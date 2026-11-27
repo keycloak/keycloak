@@ -1,6 +1,7 @@
 import type { KeycloakAdminClient } from "../client.js";
 import type CredentialRepresentation from "../defs/credentialRepresentation.js";
 import type FederatedIdentityRepresentation from "../defs/federatedIdentityRepresentation.js";
+import type FederatedIdentityLinkRepresentation from "../defs/federatedIdentityLinkRepresentation.js";
 import type GroupRepresentation from "../defs/groupRepresentation.js";
 import type MappingsRepresentation from "../defs/mappingsRepresentation.js";
 import type { RequiredActionAlias } from "../defs/requiredActionProviderRepresentation.js";
@@ -315,6 +316,21 @@ export class Users extends Resource<{ realm?: string }> {
     method: "DELETE",
     path: "/{id}/federated-identity/{federatedIdentityId}",
     urlParamKeys: ["id", "federatedIdentityId"],
+  });
+
+  public listFederatedIdentityLinks = this.makeRequest<
+    {
+      id: string;
+      linked?: boolean;
+      search?: string;
+      first?: number;
+      max?: number;
+    },
+    FederatedIdentityLinkRepresentation[]
+  >({
+    method: "GET",
+    path: "/{id}/federated-identity-links",
+    urlParamKeys: ["id"],
   });
 
   /**

@@ -18,11 +18,9 @@
 package org.keycloak.authorization.policy.provider.client;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,14 +28,9 @@ import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
-import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.authorization.store.ResourceServerStore;
-import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientModel.ClientRemovedEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -46,6 +39,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 public class ClientPolicyProviderFactory implements PolicyProviderFactory<ClientPolicyRepresentation> {
+
+    private static final String UNRESOLVED_CLIENTS = "unresolvedClients";
 
     private ClientPolicyProvider provider = new ClientPolicyProvider(this::toRepresentation);
 
@@ -78,29 +73,57 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
     @Override
     public void onCreate(Policy policy, ClientPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateClients(policy, representation.getClients(), authorization);
+        updateClients(policy, representation.getClients(), authorization, Set.of(), Set.of());
     }
 
     @Override
     public void onUpdate(Policy policy, ClientPolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateClients(policy, representation.getClients(), authorization);
+        updateClients(policy, representation.getClients(), authorization, getClients(policy), Set.of());
+    }
+
+    public void updateFromUma(Policy policy, Set<String> clients, AuthorizationProvider authorization) {
+        RealmModel realm = authorization.getRealm();
+        Set<String> unresolvedIds = getClients(policy).stream()
+                .filter(id -> clients.contains(id) && realm.getClientById(id) == null)
+                .collect(Collectors.toSet());
+        updateClients(policy, clients, authorization, unresolvedIds, Set.of());
     }
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateClients(policy, getClients(policy), authorization);
+        onImport(policy, representation, authorization, Map.of());
+    }
+
+    @Override
+    public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization, Map<String, String> previousConfig) {
+        String policyName = policy.getName();
+        updateClients(policy, getClients(policy), authorization, readClients(previousConfig.get("clients"), policyName),
+                readClients(representation.getConfig().get(UNRESOLVED_CLIENTS), policyName));
+        policy.removeConfig(UNRESOLVED_CLIENTS);
     }
 
     @Override
     public void onExport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        ClientPolicyRepresentation userRep = toRepresentation(policy, authorization);
         Map<String, String> config = new HashMap<>();
+        Set<String> resolved = new HashSet<>();
+        Set<String> unresolved = new HashSet<>();
+        RealmModel realm = authorization.getRealm();
+        for (String id : getClients(policy)) {
+            ClientModel client = realm.getClientById(id);
+            if (client == null) {
+                unresolved.add(id);
+            } else {
+                resolved.add(client.getClientId());
+            }
+        }
 
         try {
-            RealmModel realm = authorization.getRealm();
-            config.put("clients", JsonSerialization.writeValueAsString(userRep.getClients().stream().map(id -> realm.getClientById(id).getClientId()).collect(Collectors.toList())));
+            config.put("clients", JsonSerialization.writeValueAsString(resolved));
+            if (!unresolved.isEmpty()) {
+                config.put(UNRESOLVED_CLIENTS, JsonSerialization.writeValueAsString(unresolved));
+            }
         } catch (IOException cause) {
-            throw new RuntimeException("Failed to export user policy [" + policy.getName() + "]", cause);
+            throw new RuntimeException("Failed to export client policy [" + policy.getName() + "]", cause);
         }
 
         representation.setConfig(config);
@@ -118,39 +141,6 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        factory.register(event -> {
-            if (event instanceof ClientRemovedEvent) {
-                KeycloakSession keycloakSession = ((ClientRemovedEvent) event).getKeycloakSession();
-                AuthorizationProvider provider = keycloakSession.getProvider(AuthorizationProvider.class);
-                StoreFactory storeFactory = provider.getStoreFactory();
-                PolicyStore policyStore = storeFactory.getPolicyStore();
-                ClientModel removedClient = ((ClientRemovedEvent) event).getClient();
-                ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
-                ResourceServer resourceServer = resourceServerStore.findByClient(removedClient);
-
-                if (resourceServer != null) {
-                    policyStore.findByType(resourceServer, getId()).forEach(policy -> {
-                        List<String> clients = new ArrayList<>();
-
-                        for (String clientId : getClients(policy)) {
-                            if (!clientId.equals(removedClient.getId())) {
-                                clients.add(clientId);
-                            }
-                        }
-
-                        try {
-                            if (clients.isEmpty()) {
-                                policyStore.delete(policy.getId());
-                            } else {
-                                policy.putConfig("clients", JsonSerialization.writeValueAsString(clients));
-                            }
-                        } catch (IOException e) {
-                            throw new RuntimeException("Error while synchronizing clients with policy [" + policy.getName() + "].", e);
-                        }
-                    });
-                }
-            }
-        });
     }
 
     @Override
@@ -163,16 +153,21 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
         return "client";
     }
 
-    private void updateClients(Policy policy, Set<String> clients, AuthorizationProvider authorization) {
+    private void updateClients(Policy policy, Set<String> clients, AuthorizationProvider authorization,
+            Set<String> existingClients, Set<String> unresolvedClients) {
         RealmModel realm = authorization.getRealm();
 
         if (clients == null) {
             throw new RuntimeException("No client provided.");
         }
 
-        Set<String> updatedClients = new HashSet<>();
+        Set<String> updatedClients = new HashSet<>(unresolvedClients);
 
         for (String id : clients) {
+            if (existingClients.contains(id)) {
+                updatedClients.add(id);
+                continue;
+            }
             ClientModel client = realm.getClientByClientId(id);
 
             if (client == null) {
@@ -194,13 +189,16 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
     }
 
     private Set<String> getClients(Policy policy) {
-        String clients = policy.getConfig().get("clients");
+        return readClients(policy.getConfig().get("clients"), policy.getName());
+    }
+
+    private Set<String> readClients(String clients, String policyName) {
 
         if (clients != null) {
             try {
                 return JsonSerialization.readValue(clients, Set.class);
             } catch (IOException e) {
-                throw new RuntimeException("Could not parse clients [" + clients + "] from policy config [" + policy.getName() + "].", e);
+                throw new RuntimeException("Could not parse clients [" + clients + "] from policy config [" + policyName + "].", e);
             }
         }
 

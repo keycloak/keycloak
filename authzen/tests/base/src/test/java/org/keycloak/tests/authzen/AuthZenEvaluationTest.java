@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -42,6 +43,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.authzen.client.AuthZenClient;
 import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationResult;
+import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationsResult;
 import org.keycloak.testframework.authzen.client.annotations.InjectAuthZenClient;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
@@ -53,6 +55,7 @@ import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.tests.authzen.providers.ReservedAttributePolicyProvider;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.http.entity.StringEntity;
@@ -225,6 +228,114 @@ public class AuthZenEvaluationTest {
                     .action("read")
                     .resource("endpoint", "/nested-context")
                     .contextProperty("request", Map.of("ip", "192.168.1.1"))
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    // Client policies match on kc.client.id, which is set from the authenticated client (the token's azp)
+    @Test
+    public void testClientPolicyMatchesAuthenticatedClient() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/caller-client-protected")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testClientPolicyDeniesOtherClient() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/other-client-protected")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    // kc.* attributes are reserved for the server, so a caller cannot impersonate another client through the context
+    @Test
+    public void testContextCannotOverrideClientId() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/other-client-protected")
+                    .contextProperty("kc.client.id", noAuthzClient.getClientId())
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    // Resource properties are merged into the same claims as the context, so they must be filtered the same way
+    @Test
+    public void testResourcePropertiesCannotOverrideClientId() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/other-client-protected")
+                    .resourceProperty("kc.client.id", noAuthzClient.getClientId())
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    // The batch endpoint shares the default context across items, so each item must be filtered
+    @Test
+    public void testEvaluationsContextCannotOverrideClientId() throws IOException {
+        EvaluationsResult result = authzenClient()
+              .evaluations(AuthZenClient.evaluationsRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .contextProperty("kc.client.id", noAuthzClient.getClientId())
+                    .addEvaluation(AuthZenClient.evaluationItem()
+                          .resource("endpoint", "/other-client-protected")
+                          .build())
+                    .addEvaluation(AuthZenClient.evaluationItem()
+                          .resource("endpoint", "/caller-client-protected")
+                          .build())
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertEquals(2, result.evaluations().size());
+        assertFalse(result.evaluations().get(0).decision());
+        assertTrue(result.evaluations().get(1).decision());
+    }
+
+    // The server never sets kc.test.reserved, so only the kc.* filter keeps it away from the policy
+    @Test
+    public void testContextCannotSupplyReservedAttribute() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/reserved-attribute-protected")
+                    .contextProperty(ReservedAttributePolicyProvider.ATTRIBUTE, "injected")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testResourcePropertiesCannotSupplyReservedAttribute() throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/reserved-attribute-protected")
+                    .resourceProperty(ReservedAttributePolicyProvider.ATTRIBUTE, "injected")
                     .build());
 
         assertEquals(200, result.statusCode());
@@ -937,6 +1048,18 @@ public class AuthZenEvaluationTest {
         createResource(authz, "/subject-protected", "endpoint", "read");
         String deptPolicyId = createRegexPolicy(authz, "Subject Department Policy", "department", "engineering", false);
         createResourcePermission(authz, "Subject Protected Permission", "/subject-protected", deptPolicyId);
+
+        createResource(authz, "/caller-client-protected", "endpoint", "read");
+        String callerClientPolicyId = createClientPolicy(authz, "Caller Client Policy", client.getClientId());
+        createResourcePermission(authz, "Caller Client Protected Permission", "/caller-client-protected", callerClientPolicyId);
+
+        createResource(authz, "/other-client-protected", "endpoint", "read");
+        String otherClientPolicyId = createClientPolicy(authz, "Other Client Policy", noAuthzClient.getClientId());
+        createResourcePermission(authz, "Other Client Protected Permission", "/other-client-protected", otherClientPolicyId);
+
+        createResource(authz, "/reserved-attribute-protected", "endpoint", "read");
+        String reservedAttributePolicyId = createReservedAttributePolicy(authz);
+        createResourcePermission(authz, "Reserved Attribute Protected Permission", "/reserved-attribute-protected", reservedAttributePolicyId);
     }
 
     // subject-id-client is used as the subject in CLIENT-type evaluations (subject.id = "subject-id-client").
@@ -1002,6 +1125,26 @@ public class AuthZenEvaluationTest {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         }
         return authz.policies().findByName("Always Grant").getId();
+    }
+
+    private static String createClientPolicy(AuthorizationResource authz, String name, String clientId) {
+        ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+        policy.setName(name);
+        policy.addClient(clientId);
+        try (Response response = authz.policies().client().create(policy)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        return authz.policies().client().findByName(name).getId();
+    }
+
+    private static String createReservedAttributePolicy(AuthorizationResource authz) {
+        PolicyRepresentation policy = new PolicyRepresentation();
+        policy.setName("Reserved Attribute Policy");
+        policy.setType(ReservedAttributePolicyProvider.ID);
+        try (Response response = authz.policies().create(policy)) {
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        }
+        return authz.policies().findByName("Reserved Attribute Policy").getId();
     }
 
     private static String createRegexPolicy(AuthorizationResource authz, String name,

@@ -51,6 +51,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -286,4 +287,25 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 			managedRealm.admin().clients().get(client.getId()).update(client);
 		}
 	}
+
+        @Test
+        public void updateEmailNoExcutionCode() throws Exception {
+		doAIA();
+		loginPage.login("test-user@localhost", "password");
+
+		emailUpdatePage.assertCurrent();
+		assertEquals("test-user@localhost", emailUpdatePage.getEmail());
+		assertTrue(emailUpdatePage.isCancelDisplayed());
+		((JavascriptExecutor) driver).executeScript(
+			"""
+			const form = document.getElementById("kc-update-email-form");
+			const url = new URL(form.action);
+			url.searchParams.delete("session_code");
+			url.searchParams.delete("execution");
+			form.action = url.toString();
+			""");
+		emailUpdatePage.changeEmail("new@localhost");
+		emailUpdatePage.assertCurrent();
+		assertEquals("test-user@localhost", emailUpdatePage.getEmail());
+        }
 }

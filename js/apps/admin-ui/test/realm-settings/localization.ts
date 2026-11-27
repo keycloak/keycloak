@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { selectMultiItem, switchOff, switchOn } from "../utils/form.ts";
 
 export async function goToLocalizationTab(page: Page) {
@@ -43,11 +43,13 @@ export async function clickCreateButton(page: Page) {
   await page.getByTestId("add-translation-confirm-button").click();
 }
 
-export async function editBundle(page: Page, row: number, value: string) {
-  await page.getByTestId(`editTranslationBtn-${row}`).click();
-  await page.getByTestId(`editTranslationValueInput-${row}`).fill(value);
+export async function editBundle(row: Locator, value: string) {
+  await row.getByRole("button", { name: "Edit button", exact: true }).click();
+  await row
+    .getByRole("textbox", { name: "Edit translation value" })
+    .fill(value);
 }
 
-export async function clickConfirmEditButton(page: Page, row: number) {
-  await page.getByTestId(`editTranslationAcceptBtn-${row}`).click();
+export async function clickConfirmEditButton(row: Locator) {
+  await row.getByRole("button", { name: "Accept editing button" }).click();
 }

@@ -33,6 +33,8 @@ public class CryptoInfoRepresentation {
 
     private List<String> clientSignatureAsymmetricAlgorithms;
 
+    private List<String> webAuthnSignatureAlgorithms;
+
     public String getCryptoProvider() {
         return cryptoProvider;
     }
@@ -63,5 +65,13 @@ public class CryptoInfoRepresentation {
 
     public void setClientSignatureAsymmetricAlgorithms(List<String> clientSignatureAsymmetricAlgorithms) {
         this.clientSignatureAsymmetricAlgorithms = clientSignatureAsymmetricAlgorithms;
+    }
+
+    public List<String> getWebAuthnSignatureAlgorithms() {
+        return webAuthnSignatureAlgorithms;
+    }
+
+    public void setWebAuthnSignatureAlgorithms(List<String> webAuthnSignatureAlgorithms) {
+        this.webAuthnSignatureAlgorithms = webAuthnSignatureAlgorithms;
     }
 }

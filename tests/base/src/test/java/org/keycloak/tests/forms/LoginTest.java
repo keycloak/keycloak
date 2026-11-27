@@ -70,6 +70,7 @@ import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.oauth.ParameterizedScopeBuilder;
@@ -142,6 +143,9 @@ public class LoginTest {
 
     @InjectPage
     protected LoginConfigTotpPage configTotpPage;
+
+    @InjectPage
+    OAuthGrantPage grantPage;
 
     @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
@@ -1133,6 +1137,45 @@ public class LoginTest {
 
         errorPage.assertCurrent();
         assertThat(errorPage.getError(), containsString("Account is disabled"));
+
+        // ensure password change didnt go through
+        managedRealm.updateUserWithCleanup("keycloak-user@localhost", user -> user.enabled(true));
+        oauth.openLoginForm();
+        loginPage.fillLogin("keycloak-user@localhost", getPassword("keycloak-user@localhost"));
+        loginPage.submit();
+        updatePasswordPage.assertCurrent();
+    }
+
+    @Test
+    public void testUserDisabledDuringGrantConsent() {
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.consentRequired(true));
+
+        oauth.openLoginForm();
+        oauth.fillLoginForm("login-test", getPassword("login-test"));
+        grantPage.assertCurrent();
+
+        managedRealm.updateUserWithCleanup("login-test", user -> user.enabled(false));
+
+        grantPage.accept();
+
+        errorPage.assertCurrent();
+        assertTrue(errorPage.getError().toLowerCase().contains("account is disabled"));
+    }
+
+    @Test
+    public void testClientDisabledDuringGrantConsent() {
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), c -> c.consentRequired(true));
+
+        oauth.openLoginForm();
+        oauth.fillLoginForm("login-test", getPassword("login-test"));
+        grantPage.assertCurrent();
+
+        managedRealm.updateClientWithCleanup(oauth.getClientId(), client -> client.enabled(false));
+
+        grantPage.accept();
+
+        errorPage.assertCurrent();
+        assertTrue(errorPage.getError().toLowerCase().contains("requester not enabled"));
     }
 
     @Test

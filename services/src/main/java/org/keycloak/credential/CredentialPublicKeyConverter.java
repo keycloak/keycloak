@@ -18,23 +18,23 @@ package org.keycloak.credential;
 
 import org.keycloak.common.util.Base64Url;
 
-import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.attestation.authenticator.COSEKey;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 public class CredentialPublicKeyConverter {
 
-    private CborConverter cborConverter;
+    private final CBORMapper cborMapper;
 
     public CredentialPublicKeyConverter(ObjectConverter objectConverter) {
-        this.cborConverter = objectConverter.getCborConverter();
+        this.cborMapper = objectConverter.getCborMapper();
     }
 
     public String convertToDatabaseColumn(COSEKey credentialPublicKey) {
-        return Base64Url.encode(cborConverter.writeValueAsBytes(credentialPublicKey));
+        return Base64Url.encode(cborMapper.writeValueAsBytes(credentialPublicKey));
     }
 
     public COSEKey convertToEntityAttribute(String s) {
-        return cborConverter.readValue(Base64Url.decode(s), COSEKey.class);
+        return cborMapper.readValue(Base64Url.decode(s), COSEKey.class);
     }
 }

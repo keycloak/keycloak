@@ -39,19 +39,36 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 /**
- * Base for OID4VP identity provider mappers that read a claim of the verified credential
- * presentation, addressed by a {@link ClaimPath} over the claims JSON. Subclasses decide where the
- * resolved values go. Not tied to a credential format: any format whose verification yields claims
- * JSON under {@link OID4VPIdentityProvider#CREDENTIAL_CLAIMS} can build on it.
+ * Base for OID4VP identity provider mappers that read a claim of one of the verified credential
+ * presentations, addressed by the credential id and a {@link ClaimPath} over its claims JSON.
+ * Subclasses decide where the resolved values go. Not tied to a credential format: any format whose
+ * verification yields claims JSON under {@link OID4VPIdentityProvider#CREDENTIAL_CLAIMS} can build on it.
  */
 public abstract class AbstractOID4VPClaimMapper extends AbstractIdentityProviderMapper
         implements EnvironmentDependentProviderFactory, DcqlQueryContributor {
 
     protected static final Logger logger = Logger.getLogger(AbstractOID4VPClaimMapper.class);
 
+    public static final String CREDENTIAL = "credential";
+
+    // Rendered by the admin console as a select of the credentials the identity provider requests
+
+    public static final String CREDENTIAL_LIST_TYPE = "OID4VPCredentialList";
     public static final String CLAIM = "claim";
 
     private static final String[] COMPATIBLE_PROVIDERS = {OID4VPIdentityProviderFactory.PROVIDER_ID};
+
+    protected static ProviderConfigProperty credentialProperty() {
+        ProviderConfigProperty property = new ProviderConfigProperty();
+        property.setName(CREDENTIAL);
+        property.setLabel("Credential");
+        property.setHelpText("Id of the requested credential to read the claim from, as configured in the requested "
+                + "credentials of the identity provider. If the credential is not presented, its claim counts as "
+                + "absent.");
+        property.setType(CREDENTIAL_LIST_TYPE);
+        property.setRequired(true);
+        return property;
+    }
 
     protected static ProviderConfigProperty claimProperty() {
         ProviderConfigProperty property = new ProviderConfigProperty();
@@ -62,6 +79,12 @@ public abstract class AbstractOID4VPClaimMapper extends AbstractIdentityProvider
                 + "To use dot (.) literally, escape it with backslash (\\.)");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         return property;
+    }
+
+    @Override
+    public String credentialId(IdentityProviderMapperModel mapperModel) {
+        String credential = mapperModel.getConfig().get(CREDENTIAL);
+        return StringUtil.isBlank(credential) ? null : credential.trim();
     }
 
     // Null when the claim path is missing or malformed.
@@ -111,26 +134,29 @@ public abstract class AbstractOID4VPClaimMapper extends AbstractIdentityProvider
         return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VP);
     }
 
-    protected JsonNode credentialClaims(BrokeredIdentityContext context) {
+    /**
+     * The claims of the credential this mapper reads, null if that credential was not presented.
+     */
+    protected JsonNode credentialClaims(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         Object claims = context.getContextData().get(OID4VPIdentityProvider.CREDENTIAL_CLAIMS);
-        if (claims == null) {
+        String credentialId = credentialId(mapperModel);
+        if (claims == null || credentialId == null) {
             return null;
-        }
-        if (claims instanceof JsonNode node) {
-            return node;
         }
         // The brokered context may have been serialized into the authentication session in
         // between, for example while the first broker login shows the review profile page.
-        return JsonSerialization.mapper.valueToTree(claims);
+        JsonNode claimsByCredential = claims instanceof JsonNode node ? node : JsonSerialization.mapper.valueToTree(claims);
+        JsonNode credentialClaims = claimsByCredential.get(credentialId);
+        return credentialClaims == null || credentialClaims.isNull() ? null : credentialClaims;
     }
 
     // Null when the claim is absent or the mapper is misconfigured.
-    protected List<String> claimValues(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    protected List<String> claimValues(IdentityProviderMapperModel mapperModel, JsonNode credentialClaims) {
         ClaimPath path = claimPath(mapperModel);
         if (path == null) {
             return null;
         }
-        List<JsonNode> matches = path.select(credentialClaims(context));
+        List<JsonNode> matches = path.select(credentialClaims);
         if (matches.isEmpty()) {
             return null;
         }

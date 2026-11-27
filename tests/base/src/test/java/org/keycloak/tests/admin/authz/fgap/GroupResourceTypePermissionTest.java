@@ -25,9 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -119,15 +117,15 @@ public class GroupResourceTypePermissionTest extends AbstractPermissionTest {
         //remove group
         realm.admin().groups().group(topGroup1.getId()).remove();
 
-        //check the resource was removed from policies
+        // Group policy references are preserved after deletion.
         GroupPolicyRepresentation groupPolicy = getPolicies().group().findByName("Only topGroup or topGroup1 Group Policy");
         assertThat(groupPolicy, notNullValue());
         Set<String> groupIds = groupPolicy.getGroups().stream().map(GroupDefinition::getId).collect(Collectors.toSet());
-        assertThat(groupIds, not(contains(topGroup1.getId())));
+        assertThat(groupIds, equalTo(Set.of(topGroup.getId(), topGroup1.getId())));
 
         GroupPolicyRepresentation groupPolicy1 = getPolicies().group().findByName("Only topGroup1 Group Policy");
         assertThat(groupPolicy1, notNullValue());
-        assertThat(groupPolicy1.getGroups().stream().map(GroupDefinition::getId).collect(Collectors.toSet()), empty());
+        assertThat(groupPolicy1.getGroups().stream().map(GroupDefinition::getId).collect(Collectors.toSet()), equalTo(Set.of(topGroup1.getId())));
 
         //there should be 1 permission left
         permissions = getScopePermissionsResource(adminPermissionsClient).findAll(null, null, null, null, null);

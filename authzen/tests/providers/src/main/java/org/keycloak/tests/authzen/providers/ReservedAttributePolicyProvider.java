@@ -1,0 +1,83 @@
+package org.keycloak.tests.authzen.providers;
+
+import org.keycloak.Config;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.policy.evaluation.Evaluation;
+import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.policy.provider.PolicyProviderAdminService;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+
+/**
+ * Grants access when the evaluation context contains the {@link #ATTRIBUTE} attribute. The server never sets this
+ * attribute, so a grant means a {@code kc.*} attribute supplied in the request reached the policy.
+ * Used by the AuthZen tests.
+ */
+public class ReservedAttributePolicyProvider implements PolicyProviderFactory<PolicyRepresentation>, PolicyProvider {
+
+    public static final String ID = "reserved-attribute";
+    public static final String ATTRIBUTE = "kc.test.reserved";
+
+    @Override
+    public String getName() {
+        return "Reserved Attribute";
+    }
+
+    @Override
+    public String getGroup() {
+        return "Test Suite";
+    }
+
+    @Override
+    public PolicyProvider create(AuthorizationProvider authorization) {
+        return this;
+    }
+
+    @Override
+    public PolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
+        return new PolicyRepresentation();
+    }
+
+    @Override
+    public Class getRepresentationType() {
+        return PolicyRepresentation.class;
+    }
+
+    @Override
+    public PolicyProviderAdminService getAdminResource(ResourceServer resourceServer, AuthorizationProvider authorization) {
+        return null;
+    }
+
+    @Override
+    public PolicyProvider create(KeycloakSession session) {
+        return null;
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getId() {
+        return ID;
+    }
+
+    @Override
+    public void evaluate(Evaluation evaluation) {
+        if (evaluation.getContext().getAttributes().exists(ATTRIBUTE)) {
+            evaluation.grant();
+        }
+    }
+}

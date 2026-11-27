@@ -27,6 +27,7 @@ import java.util.Collection;
 public abstract class PathMatcher<P> {
 
     private static final char WILDCARD = '*';
+    private static final String SUFFIX_WILDCARD = "/*.";
     private static final String SCHEME_AUTHORITY_SEPARATOR = "://";
 
     public P matches(final String targetUri) {
@@ -34,11 +35,8 @@ public abstract class PathMatcher<P> {
         if (normalizedUri == null) {
             return null;
         }
-        int patternCount = 0;
-        int bracketsPatternCount = 0;
         P matchingPath = null;
-        P matchingAnyPath = null;
-        P matchingAnySuffixPath = null;
+        String matchingPattern = null;
 
         for (P entry : getPaths()) {
             String expectedUri = getPath(entry);
@@ -47,94 +45,28 @@ public abstract class PathMatcher<P> {
                 continue;
             }
 
-            String matchingUri = null;
-
-            if (exactMatch(expectedUri, normalizedUri)) {
-                matchingUri = expectedUri;
-            }
+            boolean matches = exactMatch(expectedUri, normalizedUri);
 
             if (isTemplate(expectedUri)) {
                 String templateUri = buildUriFromTemplate(expectedUri, normalizedUri, false);
 
-                if (templateUri != null) {
-                    int length = expectedUri.split("\\/").length;
-                    int bracketsLength = expectedUri.split("\\{").length;
+                if (templateUri != null && resolvedMatch(expectedUri, templateUri, normalizedUri)) {
+                    matches = true;
+                    P resolved = resolvePathConfig(entry, normalizedUri);
 
-                    if (exactMatch(templateUri, normalizedUri) && (patternCount == 0 || length > patternCount || bracketsLength < bracketsPatternCount)) {
-                        matchingUri = templateUri;
-                        P resolved = resolvePathConfig(entry, normalizedUri);
-
-                        if (resolved != null) {
-                            entry = resolved;
-                        }
-
-                        patternCount = length;
-                        bracketsPatternCount = bracketsLength;
+                    if (resolved != null) {
+                        entry = resolved;
                     }
                 }
             }
 
-            if (matchingUri != null) {
-                StringBuilder path = new StringBuilder(expectedUri);
-                int patternIndex = path.indexOf("/" + WILDCARD);
-
-                if (patternIndex != -1) {
-                    path.delete(patternIndex, path.length());
-                }
-
-                patternIndex = path.indexOf("{");
-
-                if (patternIndex != -1) {
-                    path.delete(patternIndex, path.length());
-                }
-
-                String pathString = path.toString();
-
-                if ("".equals(pathString)) {
-                    pathString = "/";
-                }
-
-                if (matchingUri.equals(normalizedUri) || pathString.equals(normalizedUri)) {
-                    if (patternCount == 0) {
-                        return entry;
-                    } else {
-                        matchingPath = entry;
-                    }
-                }
-
-                if (WILDCARD == expectedUri.charAt(expectedUri.length() - 1)) {
-                    if (matchingAnyPath == null) {
-                        matchingAnyPath = entry;
-                    } else {
-                        String resourcePath = getPath(matchingAnyPath);
-
-                        if (resourcePath.split("/").length < matchingUri.split("/").length) {
-                            matchingAnyPath = entry;
-                        }
-                    }
-                } else {
-                    int suffixIndex = expectedUri.indexOf(WILDCARD + ".");
-
-                    if (suffixIndex != -1) {
-                        String protectedSuffix = expectedUri.substring(suffixIndex + 1);
-
-                        if (normalizedUri.endsWith(protectedSuffix)) {
-                            matchingAnySuffixPath = entry;
-                        }
-                    }
-                }
+            if (matches && (matchingPattern == null || isMoreSpecific(expectedUri, matchingPattern))) {
+                matchingPath = entry;
+                matchingPattern = expectedUri;
             }
         }
 
-        if (matchingPath != null) {
-            return matchingPath;
-        }
-
-        if (matchingAnySuffixPath != null) {
-            return matchingAnySuffixPath;
-        }
-
-        return matchingAnyPath;
+        return matchingPath;
     }
 
     protected abstract String getPath(P entry);
@@ -156,14 +88,145 @@ public abstract class PathMatcher<P> {
             return targetUri.equals(rootPath.substring(0, rootPath.length() - 1));
         }
 
-        String suffix = "/*.";
-        int suffixIndex = expectedUri.indexOf(suffix);
+        int suffixIndex = expectedUri.indexOf(SUFFIX_WILDCARD);
 
         if (suffixIndex != -1) {
-            return targetUri.endsWith(expectedUri.substring(suffixIndex + suffix.length() - 1));
+            // the pattern is "<prefix>/*<extension>", for example "/public/*.json". Both halves have to match:
+            // comparing only the extension would let "/public/*.json" match "/admin/secret.json", and for an
+            // absolute pattern it would also discard the scheme and authority, letting
+            // "https://trusted.example/public/*.json" match "https://evil.example/admin/secret.json".
+            // A templated prefix such as "/api/{id}/" never matches literally here on purpose - the caller
+            // re-checks the pattern once buildUriFromTemplate() has resolved it against the target URI.
+            String prefix = expectedUri.substring(0, suffixIndex + 1);
+            String extension = expectedUri.substring(suffixIndex + 2);
+
+            // the length check keeps a target too short to hold both halves from matching the prefix and the
+            // extension with the same, overlapping characters
+            return targetUri.length() >= prefix.length() + extension.length()
+                    && targetUri.startsWith(prefix)
+                    && targetUri.endsWith(extension);
         }
 
         return false;
+    }
+
+    /**
+     * Whether a template, once its parameters have been filled in from the target, matches that target.
+     * <p>
+     * Which wildcard the pattern declares, and the extension that follows it, are read from the registered
+     * pattern and never from the resolved URI. A parameter is filled in from the request, so the resolved URI
+     * can hold a "*" the request supplied, and looking the wildcard up there would read it as one the resource
+     * declared. "/api/{id}/private/*.json" against a request whose parameter is "*.json" resolves to
+     * "/api/*.json/private/*.json": its prefix then reads as "/api/" and its extension as
+     * ".json/private/*.json", so it matches "/api/*.json/evil.json/private/*.json", a target that has no
+     * "private" segment where the pattern puts one, and misses "/api/*.json/private/x.json", which it covers.
+     * <p>
+     * Only the prefix has to come from the resolved form, and it is everything up to the last segment: a
+     * wildcard is always the pattern's last segment and a parameter value is always a single segment, so the
+     * registered wildcard occupies the last segment of the resolved URI as well.
+     */
+    private boolean resolvedMatch(String pattern, String resolvedUri, String targetUri) {
+        if (endsWithWildcard(pattern)) {
+            // a trailing "/*" is copied into the resolved URI verbatim, so it is still its last character and
+            // exactMatch() reads the wildcard from there before it ever looks for a suffix one
+            return exactMatch(resolvedUri, targetUri);
+        }
+
+        int suffixIndex = pattern.indexOf(SUFFIX_WILDCARD);
+
+        if (suffixIndex == -1) {
+            // a template that declares no wildcard has to resolve to the target exactly
+            return targetUri.equals(resolvedUri);
+        }
+
+        String prefix = resolvedUri.substring(0, resolvedUri.lastIndexOf('/') + 1);
+        String extension = pattern.substring(suffixIndex + 2);
+
+        return targetUri.length() >= prefix.length() + extension.length()
+                && targetUri.startsWith(prefix)
+                && targetUri.endsWith(extension);
+    }
+
+    /**
+     * How much a single pattern segment pins down, from weakest to strongest. A wildcard accepts whatever is
+     * left of the target, a parameter accepts any one segment, and a literal names exactly one value.
+     */
+    private static final int WILDCARD_SEGMENT = 0;
+    private static final int PARAMETER_SEGMENT = 1;
+    private static final int LITERAL_SEGMENT = 2;
+
+    private int segmentStrength(String segment) {
+        if (!segment.isEmpty() && segment.charAt(0) == WILDCARD) {
+            return WILDCARD_SEGMENT;
+        }
+
+        return segment.indexOf('{') == -1 ? LITERAL_SEGMENT : PARAMETER_SEGMENT;
+    }
+
+    /**
+     * Decides whether {@code candidate} pins the requested URI down more than {@code current} does.
+     * <p>
+     * Both patterns matched the same target, so they are compared segment by segment on how much each one pins
+     * down, and the first position where they disagree decides. Comparing whole-pattern measures instead - a
+     * prefix length, a parameter count - cannot work: each of them collapses the pattern to a single number and
+     * then loses either the literal segments that follow a parameter or the depth that follows a wildcard, which
+     * is how "/api/*" came to outrank "/api/{tenant}/admin/*" even though the latter matches a strict subset.
+     * <p>
+     * This is a ranking, not a containment test. Two patterns that match the same target are usually
+     * incomparable, neither one covering a superset of the other, so there is no narrowest pattern to pick and
+     * the rule below simply has to settle them. Where one of them does cover a strict superset of the other the
+     * rule normally picks the narrower one, but not in every case: ranking a parameter above a wildcard is what
+     * keeps "/api/{tenant}/admin/*" ahead of the "/api/*" that contains it, and the very same comparison puts
+     * "/public/{dir}/*" ahead of "/public/*.json", which it also contains. The two cannot both be honoured, and
+     * the nesting is deliberately respected for the first. See
+     * {@code parameterSegmentIsPreferredEvenWhenTheSuffixPatternIsNarrower} in {@code PathMatcherTest}.
+     * <p>
+     * Only the registered patterns are compared, never their resolved forms. A resolved parameter reads as a
+     * literal but holds a value the request chose, so counting it as a constraint would let the catch-all
+     * "/{a}/{b}/*" pass itself off as "/admin/private/*" and outrank "/admin/*.json".
+     */
+    private boolean isMoreSpecific(String candidate, String current) {
+        String[] candidateSegments = candidate.split("/");
+        String[] currentSegments = current.split("/");
+        int shared = Math.min(candidateSegments.length, currentSegments.length);
+
+        for (int i = 0; i < shared; i++) {
+            String candidateSegment = candidateSegments[i];
+            String currentSegment = currentSegments[i];
+            int strength = segmentStrength(candidateSegment);
+            int currentStrength = segmentStrength(currentSegment);
+
+            if (strength != currentStrength) {
+                return strength > currentStrength;
+            }
+
+            // a wildcard is always the last segment of a pattern, so this is the final say: "/p/*.json" pins the
+            // target down more than "/p/*" does, and "*.report.json" more than "*.json"
+            if (strength == WILDCARD_SEGMENT && candidateSegment.length() != currentSegment.length()) {
+                return candidateSegment.length() > currentSegment.length();
+            }
+        }
+
+        // the two agree as far as the shorter one goes. Whatever the longer one adds can only be a wildcard -
+        // a literal or parameter segment would need a target segment the shorter pattern has already consumed -
+        // so the shorter pattern is the one that stops exactly where the target does: "/api/{v}/users" is more
+        // specific than "/api/{v}/users/*"
+        if (candidateSegments.length != currentSegments.length) {
+            return candidateSegments.length < currentSegments.length;
+        }
+
+        return breakTie(candidate, current);
+    }
+
+    /**
+     * Last resort for patterns that are equally specific by every meaningful measure, which happens when they are
+     * duplicates of each other - the same URI registered twice, or templates that differ only in their parameter
+     * names, such as "/api/{a}/{b}" and "/api/{version}/{resource}". Which one is chosen is arbitrary, but it must
+     * not depend on the order the resources are visited in: the callers iterate a {@link java.util.HashMap}, so
+     * without this the same request could resolve differently from one deployment or restart to the next.
+     */
+    private boolean breakTie(String pattern, String currentPattern) {
+        return pattern.compareTo(currentPattern) < 0;
     }
 
     protected String buildUriFromTemplate(String template, String targetUri, boolean onlyFirstParam) {

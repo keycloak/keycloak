@@ -89,4 +89,5 @@ export interface CryptoInfoRepresentation {
   supportedKeystoreTypes: string[];
   clientSignatureSymmetricAlgorithms: string[];
   clientSignatureAsymmetricAlgorithms: string[];
+  webAuthnSignatureAlgorithms: string[];
 }

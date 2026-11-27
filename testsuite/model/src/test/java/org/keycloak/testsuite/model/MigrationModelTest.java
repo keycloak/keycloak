@@ -111,96 +111,125 @@ public class MigrationModelTest extends KeycloakModelTest {
 
     @Test
     public void duplicates() {
-        inComittedTransaction(1, (session, i) -> {
-            String currentVersion = new ModelVersion(Version.VERSION).toString();
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        String currentVersion = new ModelVersion(Version.VERSION).toString();
+        try {
+            inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                List<MigrationModelEntity> entities = getMigrationEntities(em);
+                assertThat(entities.size(), is(1));
+                assertMigrationModelEntity(entities.get(0), currentVersion);
 
-            List<MigrationModelEntity> entities = getMigrationEntities(em);
-            assertThat(entities.size(), is(1));
-            assertMigrationModelEntity(entities.get(0), currentVersion);
+                MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+                assertThat(m.getStoredVersion(), is(currentVersion));
+                assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
 
-            MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
-            assertThat(m.getStoredVersion(), is(currentVersion));
-            assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
-
-            try {
-                setTimeOffset(-60000);
-                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.4");
-                em.flush();
-
-                setTimeOffset(-30000);
-                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.5");
-                em.flush();
-
-                setTimeOffset(0);
+                try {
+                    setTimeOffset(-60000);
+                    m.setStoredVersion("26.2.4");
+                    em.flush();
+                    setTimeOffset(-30000);
+                    m.setStoredVersion("26.2.5");
+                    em.flush();
+                } finally {
+                    setTimeOffset(0);
+                }
 
                 entities = getMigrationEntities(em);
                 assertThat(entities.size(), is(3));
-
                 logger.info("MigrationModelEntity entries: ");
                 entities.forEach(entity -> log.infof("--id: %s; %s; %s", entity.getId(), entity.getVersion(), entity.getUpdateTime()));
-
                 assertMigrationModelEntity(entities.get(0), currentVersion);
                 assertMigrationModelEntity(entities.get(1), "26.2.5");
                 assertMigrationModelEntity(entities.get(2), "26.2.4");
+                return null;
+            });
 
-                setTimeOffset(-29999);
-                session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.5");
-                assertThrows(ModelDuplicateException.class, em::flush);
+            assertThrows(ModelDuplicateException.class, () -> inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                try {
+                    setTimeOffset(-29999);
+                    session.getProvider(DeploymentStateProvider.class).getMigrationModel().setStoredVersion("26.2.5");
+                    em.flush();
+                } finally {
+                    setTimeOffset(0);
+                }
+                return null;
+            }));
 
-                entities = getMigrationEntities(em);
+            inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                List<MigrationModelEntity> entities = getMigrationEntities(em);
                 assertThat(entities.size(), is(3));
-
+                assertMigrationModelEntity(entities.get(0), currentVersion);
+                assertMigrationModelEntity(entities.get(1), "26.2.5");
+                assertMigrationModelEntity(entities.get(2), "26.2.4");
+                MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
                 assertThat(m.getStoredVersion(), is(currentVersion));
                 assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
-            } finally {
-                em.remove(entities.get(1));
-                em.remove(entities.get(2));
-            }
-
-            return null;
-        });
+                return null;
+            });
+        } finally {
+            setTimeOffset(0);
+            inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                getMigrationEntities(em).stream()
+                        .filter(entity -> "26.2.4".equals(entity.getVersion()) || "26.2.5".equals(entity.getVersion()))
+                        .forEach(em::remove);
+                return null;
+            });
+        }
     }
 
     @Test
     public void duplicatedUpdateTime() {
-        inComittedTransaction(1, (session, i) -> {
-            String currentVersion = new ModelVersion(Version.VERSION).toString();
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        try {
+            inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                String currentVersion = new ModelVersion(Version.VERSION).toString();
+                List<MigrationModelEntity> entities = getMigrationEntities(em);
+                assertThat(entities.size(), is(1));
+                assertMigrationModelEntity(entities.get(0), currentVersion);
+                MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
+                assertThat(m.getStoredVersion(), is(currentVersion));
+                assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
 
-            List<MigrationModelEntity> entities = getMigrationEntities(em);
-            assertThat(entities.size(), is(1));
-            assertMigrationModelEntity(entities.get(0), currentVersion);
-
-            MigrationModel m = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
-            assertThat(m.getStoredVersion(), is(currentVersion));
-            assertThat(entities.get(0).getId(), is(m.getResourcesTag()));
-
-            try {
                 MigrationModelEntity mm1 = new MigrationModelEntity();
                 mm1.setId("a");
                 mm1.setUpdatedTime(0);
                 mm1.setVersion("26.0.0");
                 em.persist(mm1);
-
                 em.flush();
+                return null;
+            });
 
-                // Same time, everything different - testing for the constraint to be present
+            assertThrows(ModelDuplicateException.class, () -> inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
                 MigrationModelEntity mm2 = new MigrationModelEntity();
                 mm2.setId("b");
                 mm2.setUpdatedTime(0);
                 mm2.setVersion("26.0.1");
                 em.persist(mm2);
+                em.flush();
+                return null;
+            }));
 
-                // added at the same time - exception thrown by the unique constraint
-                assertThrows(ModelDuplicateException.class, em::flush);
-
-            } finally {
-                em.remove(em.find(MigrationModelEntity.class, "a"));
-            }
-
-            return null;
-        });
+            inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                assertThat(em.find(MigrationModelEntity.class, "a"), notNullValue());
+                assertThat(em.find(MigrationModelEntity.class, "b"), is((MigrationModelEntity) null));
+                assertThat(getMigrationEntities(em).size(), is(2));
+                return null;
+            });
+        } finally {
+            inComittedTransaction(1, (session, i) -> {
+                EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+                MigrationModelEntity entity = em.find(MigrationModelEntity.class, "a");
+                if (entity != null) {
+                    em.remove(entity);
+                }
+                return null;
+            });
+        }
     }
 
     private void assertMigrationModelEntity(MigrationModelEntity model, String expectedVersion) {

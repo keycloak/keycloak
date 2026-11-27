@@ -23,7 +23,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
@@ -53,9 +52,7 @@ public class OID4VPCrossDeviceTest extends OID4VPVerifierTestBase {
     @TestSetup
     public void configureTestRealm() {
         super.configureTestRealm();
-        createVerifierIdp(Map.of(
-                OID4VPIdentityProviderConfig.TRUSTED_ISSUER_JWKS, realmSigningJwks(),
-                OID4VPIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "email"));
+        createVerifierIdp(Map.of());
     }
 
     @Test

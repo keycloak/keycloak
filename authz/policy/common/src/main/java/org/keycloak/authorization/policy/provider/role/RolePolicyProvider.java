@@ -23,6 +23,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.attribute.Attributes.Entry;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.identity.Identity;
@@ -40,8 +41,10 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation.RoleDefinition;
 
 import org.jboss.logging.Logger;
 
@@ -61,40 +64,80 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
     }
 
     @Override
+    public boolean isValid(Policy policy, AuthorizationProvider authorization) {
+        boolean negative = Logic.NEGATIVE.equals(policy.getLogic());
+        Set<RoleDefinition> roles = representationFunction.apply(policy, authorization).getRoles();
+        RealmModel realm = authorization.getRealm();
+        boolean hasResolvedRole = false;
+        for (RoleDefinition role : roles) {
+            boolean mustResolve = negative || Boolean.TRUE.equals(role.isRequired());
+            if (hasResolvedRole && !mustResolve) {
+                continue;
+            }
+            if (realm.getRoleById(role.getId()) != null) {
+                hasResolvedRole = true;
+            } else if (mustResolve) {
+                return false;
+            }
+        }
+        return hasResolvedRole;
+    }
+
+    @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
-        RolePolicyRepresentation policyRep = representationFunction.apply(policy, evaluation.getAuthorizationProvider());
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RealmModel realm = authorizationProvider.getKeycloakSession().getContext().getRealm();
         Identity identity = evaluation.getContext().getIdentity();
 
-        if (isGranted(realm, authorizationProvider, policyRep, identity)) {
+        Outcome outcome = evaluateRoles(policy, realm, authorizationProvider, identity);
+        if (outcome == Outcome.INVALID) {
+            evaluation.setEffect(Effect.INVALID);
+        } else if (outcome == Outcome.GRANT) {
             evaluation.grant();
         }
 
         logger.debugf("policy %s evaluated with status %s on identity %s", policy.getName(), evaluation.getEffect(), identity.getId());
     }
 
-    private boolean isGranted(RealmModel realm, AuthorizationProvider authorizationProvider, RolePolicyRepresentation policyRep, Identity identity) {
-        Set<RolePolicyRepresentation.RoleDefinition> roleIds = policyRep.getRoles();
+    private Outcome evaluateRoles(Policy policy, RealmModel realm, AuthorizationProvider authorizationProvider, Identity identity) {
+        RolePolicyRepresentation policyRep = representationFunction.apply(policy, authorizationProvider);
+        Set<RoleDefinition> roleIds = policyRep.getRoles();
+        boolean negative = Logic.NEGATIVE.equals(policy.getLogic());
+        boolean fetchRoles = Boolean.TRUE.equals(policyRep.isFetchRoles());
         boolean granted = false;
+        boolean missingRequiredMembership = false;
+        boolean hasResolvedRole = false;
 
-        for (RolePolicyRepresentation.RoleDefinition roleDefinition : roleIds) {
+        for (RoleDefinition roleDefinition : roleIds) {
+            boolean required = Boolean.TRUE.equals(roleDefinition.isRequired());
+            if (!negative && !required && (granted || missingRequiredMembership)) {
+                continue;
+            }
             RoleModel role = realm.getRoleById(roleDefinition.getId());
 
-            if (role != null) {
-                boolean isFetchRoles = policyRep.isFetchRoles() != null && policyRep.isFetchRoles();
-                boolean hasRole = hasRole(identity, role, realm, authorizationProvider, isFetchRoles);
-
-                if (!hasRole && roleDefinition.isRequired() != null && roleDefinition.isRequired()) {
-                    return false;
-                } else if (hasRole) {
-                    granted = true;
+            if (role == null) {
+                if (required || negative) {
+                    return Outcome.INVALID;
                 }
+                continue;
+            }
+            hasResolvedRole = true;
+
+            if (missingRequiredMembership || (granted && !required)) {
+                continue;
+            }
+            if (hasRole(identity, role, realm, authorizationProvider, fetchRoles)) {
+                granted = true;
+            } else if (required) {
+                missingRequiredMembership = true;
             }
         }
 
-        return granted;
+        if (!hasResolvedRole) {
+            return Outcome.INVALID;
+        }
+        return granted && !missingRequiredMembership ? Outcome.GRANT : Outcome.DENY;
     }
 
     private boolean hasRole(Identity identity, RoleModel role, RealmModel realm, AuthorizationProvider authorizationProvider, boolean fetchRoles) {
@@ -149,9 +192,14 @@ public class RolePolicyProvider implements PolicyProvider, PartialEvaluationPoli
 
     @Override
     public boolean evaluate(KeycloakSession session, Policy policy, UserModel adminUser) {
+        return evaluateOutcome(session, policy, adminUser) == Outcome.GRANT;
+    }
+
+    @Override
+    public Outcome evaluateOutcome(KeycloakSession session, Policy policy, UserModel adminUser) {
         RealmModel realm = session.getContext().getRealm();
         AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
-        return isGranted(realm, authorizationProvider, representationFunction.apply(policy, authorizationProvider), new UserModelIdentity(realm, adminUser));
+        return evaluateRoles(policy, realm, authorizationProvider, new UserModelIdentity(realm, adminUser));
     }
 
     @Override

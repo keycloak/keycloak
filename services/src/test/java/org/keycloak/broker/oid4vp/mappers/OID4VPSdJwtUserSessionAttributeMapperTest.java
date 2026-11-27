@@ -37,6 +37,8 @@ import static org.junit.Assert.assertTrue;
 
 public class OID4VPSdJwtUserSessionAttributeMapperTest {
 
+    private static final String PID = "pid";
+
     private final OID4VPSdJwtUserSessionAttributeMapper mapper = new OID4VPSdJwtUserSessionAttributeMapper();
 
     @Test
@@ -92,6 +94,18 @@ public class OID4VPSdJwtUserSessionAttributeMapperTest {
         assertNull(sessionNote(context, "phone"));
     }
 
+    // A credential that was not presented must not clear a note set by another mapper.
+    @Test
+    public void absentCredentialLeavesTheNoteUntouched() throws Exception {
+        BrokeredIdentityContext context = contextWithClaims("""
+                {"vct": "identity"}""");
+        context.setSessionNote("member_id", "42");
+
+        importNewUser(context, model("membership", "member_id", "member_id"));
+
+        assertEquals("42", sessionNote(context, "member_id"));
+    }
+
     @Test
     public void blankConfigurationSetsNoNote() throws Exception {
         BrokeredIdentityContext context = contextWithClaims("""
@@ -139,13 +153,22 @@ public class OID4VPSdJwtUserSessionAttributeMapperTest {
     }
 
     private void importNewUser(BrokeredIdentityContext context, String claimPath, String attribute) {
-        mapper.importNewUser(null, null, null, model(claimPath, attribute), context);
+        importNewUser(context, model(claimPath, attribute));
+    }
+
+    private void importNewUser(BrokeredIdentityContext context, IdentityProviderMapperModel model) {
+        mapper.importNewUser(null, null, null, model, context);
     }
 
     private static IdentityProviderMapperModel model(String claimPath, String attribute) {
+        return model(PID, claimPath, attribute);
+    }
+
+    private static IdentityProviderMapperModel model(String credential, String claimPath, String attribute) {
         IdentityProviderMapperModel model = new IdentityProviderMapperModel();
         model.setName("test-mapper");
         model.setConfig(Map.of(
+                OID4VPSdJwtUserSessionAttributeMapper.CREDENTIAL, credential,
                 OID4VPSdJwtUserSessionAttributeMapper.CLAIM, claimPath,
                 OID4VPSdJwtUserSessionAttributeMapper.ATTRIBUTE, attribute));
         return model;
@@ -160,7 +183,8 @@ public class OID4VPSdJwtUserSessionAttributeMapperTest {
     }
 
     private static BrokeredIdentityContext contextWithClaims(String claimsJson) throws Exception {
-        JsonNode claims = JsonSerialization.readValue(claimsJson, JsonNode.class);
+        JsonNode claims = JsonSerialization.mapper.createObjectNode()
+                .set(PID, JsonSerialization.readValue(claimsJson, JsonNode.class));
         OID4VPIdentityProviderConfig config = new OID4VPIdentityProviderConfig();
         config.setAlias("oid4vp");
         config.setEnabled(true);

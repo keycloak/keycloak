@@ -4,6 +4,12 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Authorization policies with deleted references
+
+Role policies with a missing required role and negative role, group, user, client, or client scope policies with unresolved references now evaluate as invalid.
+Deleting the last client scope referenced by a client scope policy leaves the policy attached to its dependent permissions.
+Update the affected policies to restore their intended authorization rules.
+
 === Allow UTF-8 email setting requires SMTPUTF8 server support
 // https://github.com/keycloak/keycloak/issues/55267
 
@@ -378,6 +384,40 @@ String saUserId = clientResource.toRepresentation().getServiceAccountUserId();
 The `getServiceAccountUser()` method has also been removed from the Java and JavaScript admin client libraries.
 If you need the full user representation for the service account, use the user ID from the client representation to fetch it via the Users API.
 
+=== Client registration `install` provider removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The `install` client registration provider, which was deprecated in {project_name} 26.8, has been removed.
+Requests to `/realms/<realm>/clients-registrations/install/<clientId>` now return a `404 Not Found` response.
+
+The following related APIs have also been removed:
+
+* The `getAdapterConfig()` method of the `ClientRegistration` class in the Java client registration library (`keycloak-client-registration-api`).
+* The `install` endpoint type (`-e install` or `-e adapter`) of the `kcreg get` command.
+
+Retrieve the adapter configuration of a client with the Admin REST API instead, using `GET /admin/realms/<realm>/clients/<client-uuid>/installation/providers/<provider-id>`, for example with the `keycloak-oidc-keycloak-json` provider.
+The same configuration is available from `kcadm.sh get clients/<client-uuid>/installation/providers/keycloak-oidc-keycloak-json`.
+
+The removed endpoint accepted client credentials or a registration access token, and it did not require authentication for public clients.
+The Admin REST API endpoint requires an access token with permission to view the client.
+Applications that loaded their `keycloak.json` anonymously from the removed endpoint, such as JavaScript applications, must bundle the configuration with the application or fetch it with an authenticated call.
+
+The `default` client registration provider remains deprecated and is not affected by this change.
+
+=== SAML Entity Descriptor client registration endpoint removed
+// https://github.com/keycloak/keycloak/issues/53478
+
+The deprecated client registration provider `saml2-entity-descriptor` has been removed.
+Requests to `/realms/<realm>/clients-registrations/saml2-entity-descriptor` now return an HTTP 404 status.
+
+The following related APIs have also been removed:
+
+* The `ClientRegistration.saml()` method and the `ClientRegistration.SAMLClientRegistration` class in the Java client registration API.
+* The `saml2` endpoint type of the `kcreg` command-line tool. `kcreg create -e saml2` is no longer accepted, and `kcreg create` no longer treats an XML input document as a SAML entity descriptor. Use JSON input, or the `default` and `oidc` endpoint types.
+
+To create a client from a SAML entity descriptor, convert the descriptor with the Admin REST API (`POST /admin/realms/<realm>/client-description-converter`), then create the returned client representation (`POST /admin/realms/<realm>/clients`).
+The conversion endpoint itself is not affected by this change.
+
 === Kerberos password authentication accepts only allowed realms
 // https://github.com/keycloak/keycloak/issues/54271
 
@@ -453,6 +493,19 @@ The `keycloak.v3` login theme inherits these shared templates and supplies Patte
 The previous Base login templates are no longer provided.
 Custom login themes with `parent=base` now inherit the new markup.
 Review and update their template overrides and CSS to match the new structure.
+
+==== Login header, aside, and alert macros
+
+The Base login layout now exposes additional overridable macros so custom themes can change chrome without copying `template.ftl`:
+
+* `header.ftl` — brand content above the login card
+* `aside.ftl` — optional side panel next to the login card for marketing or help text (empty by default)
+* `alert.ftl` — feedback alerts
+* `language-selector.ftl` — locale dropdown
+
+`footer.ftl` continues to provide the login-card footer.
+When `aside.ftl` renders content, `keycloak.v3` uses a two-column layout on wide viewports.
+See the UI customization guide for examples.
 
 === Auto-linking requires a trusted email (CVE-2026-97175)
 
@@ -582,6 +635,14 @@ The Redirect URL configured on an organization is now validated against the vali
 Previously, the Redirect URL was used without validation, which could allow an open redirect. After upgrading, if your organization has a custom Redirect URL pointing to your application, you must add that URL to the `account` client's *Valid Redirect URIs*. Otherwise, the redirect will silently fall back to the account console. This does not apply to invitations sent with a custom client, which always use the client's own base URL.
 
 The `invite-existing-user` endpoint now also accepts an optional `client_id` query parameter, the same way `invite-user` already does. If omitted, both endpoints default to the `account` client.
+
+=== Admin events for the creation of organization groups include the group ID
+// https://github.com/keycloak/keycloak/issues/55123
+
+The admin event recorded when a top-level organization group is created now has the resource path `organizations/\{orgId}/groups/\{groupId}`, the same way the creation of a realm group is recorded as `groups/\{groupId}`.
+Previously, the event was recorded as `organizations/\{orgId}/groups` without the ID of the new group, so it was not listed in the *Admin events* tab of the group.
+Events recorded before the upgrade keep their original resource path.
+If you filter admin events by this path, update your filter accordingly.
 
 === The `admin-permissions` client is treated as an internal client
 // https://github.com/keycloak/keycloak/issues/51630
@@ -741,6 +802,23 @@ keytool -importcert -alias <server-alias> -file server.crt \
 
 Deployments using CA-signed certificates or a truststore that already contains the server certificate are not affected.
 
+=== SCIM PATCH removes the members or groups listed in the operation value
+// https://github.com/keycloak/keycloak/issues/55307
+
+A SCIM `PATCH` with `"op": "remove"` and a list in `value` now removes the listed entries.
+On a group, `"path": "members"` removes the listed members; on a user, `"path": "groups"` removes the user from the listed groups.
+Previously, {project_name} answered `200 OK` and changed nothing.
+Microsoft Entra ID uses this form to remove a member from a provisioned group, so groups it manages may still hold members it already recorded as removed.
+The upgrade does not remove them; review the membership of such groups after upgrading.
+
+If a listed user or group does not exist, the request now fails with `400 Bad Request` and removes nothing.
+For group members, this matches the filter form `members[value eq "<id>"]`.
+A `remove` that has both a filter in its `path` and a `value` is now rejected with `400 Bad Request` for every attribute of a user or a group; previously the `value` was ignored.
+An entry without a `value` is also rejected with `400 Bad Request`: a member in an `add` or a `remove` on a group, and a group in an `add`, a `remove` or a `PUT` on a user.
+In an `add` or a `remove` on a multi-valued complex attribute such as `members` or `groups`, an entry that is not an object, for example `null` or a bare id, and an entry whose fields cannot be read, for example `{"value": {}}`, are now rejected with `400 Bad Request` instead of failing with `500 Internal Server Error`.
+Simple multi-valued attributes, such as a custom attribute that holds strings, still accept string entries.
+An `add` or a `remove` that spells such an attribute in another case, for example `"path": "Members"`, with a single object in `value` now works as the lowercase spelling does, instead of failing with `500 Internal Server Error`.
+
 === Hibernate second-level cache disabled
 // https://github.com/keycloak/keycloak/issues/55297
 
@@ -768,6 +846,28 @@ There is currently no escape syntax for `$` or `+${+`.
 As a workaround, use the default value of a property that is not defined, for example `+${undefined:$}+` to write a `$`.
 This did not work before, as the `$` prevented the placeholder from being closed.
 It only works as long as the property is not defined.
+
+=== Client ID Metadata Document executor verifies the back-channel URLs of the client metadata
+// https://github.com/keycloak/keycloak/issues/55378
+
+The `client-id-metadata-document` client policy executor of the experimental Client ID Metadata Document feature now verifies the `backchannel_logout_uri` and `backchannel_client_notification_endpoint` properties of a client metadata document in the same way as the other URLs that {project_name} sends a request to, such as the `jwks_uri` property.
+Their host must match one of the *Trusted domains* of the executor.
+Their scheme must be `https` unless *Allow http scheme* is `ON`.
+Their host must not resolve to a loopback, private, link-local, unique local or multicast address unless *Allow private-use addresses* is `ON`.
+If *Restrict same domain* is `ON`, they must also be under the same trusted domain as the Client ID URL and the Redirect URI.
+
+An authorization request of a client whose metadata does not pass these checks is rejected.
+This also applies to a client that was registered before the upgrade, because the URLs that {project_name} stored for it are checked on every authorization request.
+If such a client is legitimate, add the host of these URLs to *Trusted domains*.
+
+{project_name} does not remove the URLs that it stored for a client before the upgrade, and it keeps sending back-channel logout requests and CIBA client notifications to them.
+Therefore, review the clients that were registered through a Client ID Metadata Document before the upgrade, which are the clients whose client ID is the URL of the document.
+Delete a client whose back-channel logout URL or CIBA client notification endpoint is a destination that {project_name} should not send requests to.
+A deleted client is registered again from its client metadata document on its next authorization request.
+
+=== New index for searching users by attribute
+
+A new index over the table `USER_ATTRIBUTE` has been added to increase the performance for lowercase search queries.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

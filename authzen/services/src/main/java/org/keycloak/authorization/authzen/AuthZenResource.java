@@ -43,6 +43,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.permission.ResourcePermission;
+import org.keycloak.authorization.policy.evaluation.EvaluationContext;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
@@ -66,6 +67,8 @@ public class AuthZenResource {
     private static final String NAMESPACE_ID = "id:";
     private static final String NAMESPACE_USERNAME = "username:";
     private static final String NAMESPACE_EMAIL = "email:";
+
+    private static final String RESERVED_ATTRIBUTE_PREFIX = "kc.";
 
     private final KeycloakSession session;
 
@@ -193,17 +196,15 @@ public class AuthZenResource {
             return DECISION_FALSE;
         }
 
-        Map<String, List<String>> claims = null;
+        Map<String, List<String>> claims = new HashMap<>();
         if (request.resource().properties() != null) {
-            claims = new HashMap<>();
-            convertContext(request.resource().properties(), claims);
+            convertContext(withoutReservedAttributes(request.resource().properties()), claims);
         }
         if (request.context() != null) {
-            if (claims == null) {
-                claims = new HashMap<>();
-            }
-            convertContext(request.context(), claims);
+            convertContext(withoutReservedAttributes(request.context()), claims);
         }
+        // DefaultEvaluationContext only sets the client id for a KeycloakIdentity, so set it from the authenticated caller
+        claims.put(EvaluationContext.CLIENT_ID_ATTRIBUTE, List.of(token.getIssuedFor()));
 
         DefaultEvaluationContext context = new DefaultEvaluationContext(identity, claims, session);
         ResourcePermission permission = new ResourcePermission(resource, List.of(scope), resourceServer);
@@ -315,5 +316,15 @@ public class AuthZenResource {
 
     private static void convertContext(Map<String, Object> context, Map<String, List<String>> result) {
         convertValues(context, result);
+    }
+
+    /**
+     * Attributes in the {@code kc.} namespace are set by the server and trusted by policies, so values supplied in the
+     * request must never reach the evaluation context.
+     */
+    private static Map<String, Object> withoutReservedAttributes(Map<String, Object> attributes) {
+        Map<String, Object> filtered = new HashMap<>(attributes);
+        filtered.keySet().removeIf(name -> name.startsWith(RESERVED_ATTRIBUTE_PREFIX));
+        return filtered;
     }
 }

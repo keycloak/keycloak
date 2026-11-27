@@ -16,7 +16,6 @@
  */
 package org.keycloak.mdoc;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -25,17 +24,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializable;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
-import com.fasterxml.jackson.dataformat.cbor.CBORGenerator;
-import com.webauthn4j.converter.util.CborConverter;
 import com.webauthn4j.converter.util.ObjectConverter;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.JacksonSerializable;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.jsontype.TypeSerializer;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.StdSerializer;
+import tools.jackson.dataformat.cbor.CBORGenerator;
+import tools.jackson.dataformat.cbor.CBORMapper;
 
 final class CborUtil {
 
@@ -43,7 +42,7 @@ final class CborUtil {
     static final int TAG_ENCODED_CBOR = 24;
 
     private static final ObjectConverter OBJECT_CONVERTER = createObjectConverter();
-    private static final CborConverter CBOR_CONVERTER = OBJECT_CONVERTER.getCborConverter();
+    private static final CBORMapper CBOR_MAPPER = OBJECT_CONVERTER.getCborMapper();
     private static final DateTimeFormatter TDATE_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     // ISO mdoc requires definite length CBOR encoding, while Jackson's default Map serializer emits indefinite
@@ -51,16 +50,15 @@ final class CborUtil {
     private static ObjectConverter createObjectConverter() {
         SimpleModule definiteLengthMaps = new SimpleModule();
         definiteLengthMaps.addSerializer(new DefiniteLengthMapSerializer());
-        ObjectMapper cborMapper = new ObjectMapper(new CBORFactory());
-        cborMapper.registerModule(definiteLengthMaps);
-        return new ObjectConverter(new ObjectMapper(), cborMapper);
+        CBORMapper cborMapper = CBORMapper.builder().addModule(definiteLengthMaps).build();
+        return new ObjectConverter(JsonMapper.builder().build(), cborMapper);
     }
 
     private CborUtil() {
     }
 
     static byte[] encode(Object value) {
-        return CBOR_CONVERTER.writeValueAsBytes(value);
+        return CBOR_MAPPER.writeValueAsBytes(value);
     }
 
     // COSE signatures cover the protected-header byte string exactly. Jackson's default Map serializer emits an
@@ -70,7 +68,7 @@ final class CborUtil {
     }
 
     static Object decode(byte[] encoded) {
-        return CBOR_CONVERTER.readValue(encoded, Object.class);
+        return CBOR_MAPPER.readValue(encoded, Object.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -142,7 +140,7 @@ final class CborUtil {
         return new Tagged(TAG_ENCODED_CBOR, encode(value));
     }
 
-    static final class Tagged implements JsonSerializable {
+    static final class Tagged implements JacksonSerializable {
 
         private final int tag;
         private final Object value;
@@ -161,14 +159,14 @@ final class CborUtil {
         }
 
         @Override
-        public void serialize(JsonGenerator generator, SerializerProvider provider) throws IOException {
+        public void serialize(JsonGenerator generator, SerializationContext provider) throws JacksonException {
             ((CBORGenerator) generator).writeTag(tag);
-            generator.writeObject(value);
+            generator.writePOJO(value);
         }
 
         @Override
-        public void serializeWithType(JsonGenerator generator, SerializerProvider provider, TypeSerializer typeSerializer)
-                throws IOException {
+        public void serializeWithType(JsonGenerator generator, SerializationContext provider, TypeSerializer typeSerializer)
+                throws JacksonException {
             serialize(generator, provider);
         }
     }
@@ -180,23 +178,23 @@ final class CborUtil {
         }
 
         @Override
-        public void serialize(Map<?, ?> value, JsonGenerator generator, SerializerProvider provider) throws IOException {
+        public void serialize(Map<?, ?> value, JsonGenerator generator, SerializationContext provider) throws JacksonException {
             CBORGenerator cborGenerator = (CBORGenerator) generator;
-            cborGenerator.writeStartObject(value.size());
+            cborGenerator.writeStartObject(value, value.size());
             for (Map.Entry<?, ?> entry : value.entrySet()) {
                 Object key = entry.getKey();
                 if (key instanceof Number) {
-                    cborGenerator.writeFieldId(((Number) key).longValue());
+                    cborGenerator.writePropertyId(((Number) key).longValue());
                 } else {
-                    generator.writeFieldName(String.valueOf(key));
+                    generator.writeName(String.valueOf(key));
                 }
-                generator.writeObject(entry.getValue());
+                generator.writePOJO(entry.getValue());
             }
             generator.writeEndObject();
         }
     }
 
-    static final class IntegerMap implements JsonSerializable {
+    static final class IntegerMap implements JacksonSerializable {
 
         private final Map<Integer, Integer> value;
 
@@ -205,19 +203,19 @@ final class CborUtil {
         }
 
         @Override
-        public void serialize(JsonGenerator generator, SerializerProvider provider) throws IOException {
+        public void serialize(JsonGenerator generator, SerializationContext provider) throws JacksonException {
             CBORGenerator cborGenerator = (CBORGenerator) generator;
-            cborGenerator.writeStartObject(value.size());
+            cborGenerator.writeStartObject(value, value.size());
             for (Map.Entry<Integer, Integer> entry : value.entrySet().stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList())) {
-                cborGenerator.writeFieldId(entry.getKey());
+                cborGenerator.writePropertyId(entry.getKey());
                 generator.writeNumber(entry.getValue());
             }
             generator.writeEndObject();
         }
 
         @Override
-        public void serializeWithType(JsonGenerator generator, SerializerProvider provider, TypeSerializer typeSerializer)
-                throws IOException {
+        public void serializeWithType(JsonGenerator generator, SerializationContext provider, TypeSerializer typeSerializer)
+                throws JacksonException {
             serialize(generator, provider);
         }
     }

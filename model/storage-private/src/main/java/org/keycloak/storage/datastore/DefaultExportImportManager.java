@@ -529,6 +529,12 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         if (userImport != null) {
             userImport.run();
+        }
+
+        // organizations need their members imported first, and fine-grained admin permissions may reference them
+        importOrganizations(rep, newRealm);
+
+        if (userImport != null) {
             importRealmAuthorizationSettings(rep, newRealm, session);
         }
 
@@ -549,8 +555,6 @@ public class DefaultExportImportManager implements ExportImportManager {
                 DefaultKeyProviders.createProviders(newRealm);
             }
         }
-
-        importOrganizations(rep, newRealm);
     }
 
     @Override

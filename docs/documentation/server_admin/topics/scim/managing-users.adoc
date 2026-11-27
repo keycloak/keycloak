@@ -393,6 +393,28 @@ curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
   }'
 ----
 
+You can also list the groups to remove in the operation's `value`, without a filter in the path:
+
+[source,bash]
+----
+curl -X PATCH http://localhost:8080/realms/myrealm/scim/v2/Users/{id} \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/scim+json" \
+  -d '{
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "groups",
+        "value": [{"value": "{groupIdA}"}, {"value": "{groupIdB}"}]
+      }
+    ]
+  }'
+----
+
+A `remove` operation cannot have both a filter in the path and a `value`.
+Such a request is rejected with a `400 Bad Request` error.
+
 === Querying group membership
 
 To retrieve a user's groups, include `groups` in the `attributes` parameter:

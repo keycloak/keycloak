@@ -17,10 +17,11 @@
  */
 package org.keycloak.authorization.policy.provider.user;
 
-import java.util.function.BiFunction;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.Decision.Effect;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
@@ -32,8 +33,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ResourceType;
-import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
 import org.jboss.logging.Logger;
 
@@ -44,15 +45,23 @@ public class UserPolicyProvider implements PolicyProvider, PartialEvaluationPoli
 
     private static final Logger logger = Logger.getLogger(UserPolicyProvider.class);
 
-    private final BiFunction<Policy, AuthorizationProvider, UserPolicyRepresentation> representationFunction;
-
-    public UserPolicyProvider(BiFunction<Policy, AuthorizationProvider, UserPolicyRepresentation> representationFunction) {
-        this.representationFunction = representationFunction;
+    @Override
+    public boolean isValid(Policy policy, AuthorizationProvider authorization) {
+        Set<String> users = UserPolicyProviderFactory.getUsers(policy);
+        if (Logic.NEGATIVE.equals(policy.getLogic())) {
+            return !users.isEmpty() && users.stream().allMatch(id -> UserPolicyProviderFactory.getUserById(id, authorization) != null);
+        }
+        return users.stream().anyMatch(id -> UserPolicyProviderFactory.getUserById(id, authorization) != null);
     }
 
     @Override
     public void evaluate(Evaluation evaluation) {
         Policy policy = evaluation.getPolicy();
+
+        if (!isValid(policy, evaluation.getAuthorizationProvider())) {
+            evaluation.setEffect(Effect.INVALID);
+            return;
+        }
 
         if (policy.getConfig().getOrDefault("users", "").contains(evaluation.getContext().getIdentity().getId())) {
             evaluation.grant();

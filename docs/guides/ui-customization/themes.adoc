@@ -299,10 +299,31 @@ Or to use directly in HTML templates add the following to a custom HTML template
 <img src="${r"${url.resourcesPath}"}/img/image.jpg" alt="My image description">
 ----
 
-[[_theme_custom_footer]]
-=== Adding a custom footer to a login theme
+[[_theme_custom_login_chrome]]
+=== Customizing login header, aside, and footer
 
-In order to use a custom footer, create a `footer.ftl` file in your custom login theme with the desired content.
+The common login layout (`template.ftl`) renders three optional chrome macros that custom themes can override without copying the whole page shell:
+
+* `header.ftl` — brand content above the login card (realm name / logo by default)
+* `aside.ftl` — side panel next to the login card (empty by default; useful for marketing or help text)
+* `footer.ftl` — content at the bottom of the login card (empty by default)
+
+Each file declares a `content` macro. Create the same file in your custom login theme to replace the default.
+The `aside.ftl` and `footer.ftl` macros take no parameters.
+The `header.ftl` macro must accept a `brandName` parameter, because `template.ftl` passes the realm display name as a named argument.
+
+An example for a custom `header.ftl` may look like this:
+
+[source]
+----
+<#noparse>
+<#macro content brandName>
+  <div id="kc-header-wrapper" class="${properties.kcLoginBrand!}">
+    ${kcSanitize(msg("loginTitleHtml", brandName))?no_esc}
+  </div>
+</#macro>
+</#noparse>
+----
 
 An example for a custom `footer.ftl` may look like this:
 
@@ -321,6 +342,29 @@ An example for a custom `footer.ftl` may look like this:
 </#macro>
 </#noparse>
 ----
+
+An example for a custom `aside.ftl` may look like this:
+
+[source]
+----
+<#noparse>
+<#macro content>
+<div>
+    <h2>Welcome</h2>
+    <p>Sign in with your organization account to continue.</p>
+</div>
+</#macro>
+</#noparse>
+----
+
+When `aside.ftl` outputs content, the `keycloak.v3` theme switches to a two-column layout on wide viewports so the side panel appears next to the login card.
+
+You can also override `alert.ftl` and `language-selector.ftl` to customize feedback alerts and the locale dropdown without replacing `template.ftl`.
+
+[[_theme_custom_footer]]
+=== Adding a custom footer to a login theme
+
+See <<_theme_custom_login_chrome>> for customizing the login footer, header, and aside panel.
 
 === Adding an image to an email theme
 

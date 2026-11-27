@@ -48,6 +48,7 @@ import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
+import org.keycloak.crypto.WebAuthnSignatureAlgorithms;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -506,6 +507,7 @@ public class ServerInfoAdminResource {
                 .collect(Collectors.toList()));
         info.setClientSignatureSymmetricAlgorithms(clientSignatureSymmetricAlgorithms);
         info.setClientSignatureAsymmetricAlgorithms(clientSignatureAsymmetricAlgorithms);
+        info.setWebAuthnSignatureAlgorithms(new ArrayList<>(WebAuthnSignatureAlgorithms.getSupportedAlgorithms().keySet()));
 
         return info;
     }

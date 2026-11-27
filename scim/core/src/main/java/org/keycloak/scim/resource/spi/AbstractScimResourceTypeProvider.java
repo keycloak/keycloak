@@ -81,7 +81,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                 switch (op.toLowerCase()) {
                     case "add" -> schema.add(model, path, value);
                     case "replace" -> schema.replace(existing, model, path, value);
-                    case "remove" -> schema.remove(existing, model, path);
+                    case "remove" -> schema.remove(existing, model, path, value);
                     default -> throw new ModelValidationException("Unsupported patch operation " + op);
                 }
             }

@@ -25,6 +25,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import useToggle from "../../utils/useToggle";
+import { MissingPolicyReference } from "../MissingPolicyReference";
 import type { ComponentProps } from "../dynamic/components";
 
 type UserSelectVariant = "typeaheadMulti" | "typeahead";
@@ -32,6 +33,7 @@ type UserSelectVariant = "typeaheadMulti" | "typeahead";
 type UserSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: UserSelectVariant;
   isRequired?: boolean;
+  showMissing?: boolean;
 };
 
 const USER_SEARCH_LIMIT = 20;
@@ -51,6 +53,7 @@ export const UserSelect = ({
   defaultValue,
   isRequired,
   variant = "typeaheadMulti",
+  showMissing = false,
 }: UserSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -92,7 +95,10 @@ export const UserSelect = ({
       }
 
       const foundUsers = await Promise.all(
-        values.map((id) => adminClient.users.findOne({ id })),
+        values.map(async (id) => {
+          const user = await adminClient.users.findOne({ id });
+          return user ?? (showMissing ? { id } : null);
+        }),
       );
 
       return foundUsers.filter((user) => user !== null);
@@ -245,10 +251,17 @@ export const UserSelect = ({
                                   );
                                 }}
                               >
-                                {
-                                  users.find((u) => u.id === selection)
-                                    ?.username
-                                }
+                                {users.find((u) => u.id === selection)
+                                  ?.username ??
+                                  (showMissing &&
+                                    selectedUsers.some(
+                                      (user) => user.id === selection,
+                                    ) && (
+                                      <MissingPolicyReference
+                                        id={selection}
+                                        label={t("missingUser")}
+                                      />
+                                    ))}
                               </Chip>
                             ),
                           )}

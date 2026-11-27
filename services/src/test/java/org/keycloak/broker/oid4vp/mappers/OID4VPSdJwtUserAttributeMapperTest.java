@@ -40,6 +40,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class OID4VPSdJwtUserAttributeMapperTest {
 
+    private static final String PID = "pid";
+
     private final OID4VPSdJwtUserAttributeMapper mapper = new OID4VPSdJwtUserAttributeMapper();
 
     @Test
@@ -114,6 +116,16 @@ public class OID4VPSdJwtUserAttributeMapperTest {
         preprocess(context, "phone", "phone");
 
         assertNull(context.getUserAttribute("phone"));
+    }
+
+    @Test
+    public void absentCredentialMapsNothing() throws Exception {
+        BrokeredIdentityContext context = contextWithClaims("""
+                {"member_id": "42"}""");
+
+        preprocess(context, "membership", "member_id", "memberId");
+
+        assertNull(attributeValues(context, "memberId"));
     }
 
     @Test
@@ -194,16 +206,22 @@ public class OID4VPSdJwtUserAttributeMapperTest {
     }
 
     private void preprocess(BrokeredIdentityContext context, String claim, String attribute) {
+        preprocess(context, PID, claim, attribute);
+    }
+
+    private void preprocess(BrokeredIdentityContext context, String credential, String claim, String attribute) {
         IdentityProviderMapperModel model = new IdentityProviderMapperModel();
         model.setName("test-mapper");
         model.setConfig(Map.of(
+                OID4VPSdJwtUserAttributeMapper.CREDENTIAL, credential,
                 OID4VPSdJwtUserAttributeMapper.CLAIM, claim,
                 OID4VPSdJwtUserAttributeMapper.USER_ATTRIBUTE, attribute));
         mapper.preprocessFederatedIdentity(null, null, model, context);
     }
 
     private static BrokeredIdentityContext contextWithClaims(String claimsJson) throws Exception {
-        JsonNode claims = JsonSerialization.readValue(claimsJson, JsonNode.class);
+        JsonNode claims = JsonSerialization.mapper.createObjectNode()
+                .set(PID, JsonSerialization.readValue(claimsJson, JsonNode.class));
         OID4VPIdentityProviderConfig config = new OID4VPIdentityProviderConfig();
         config.setAlias("oid4vp");
         config.setEnabled(true);

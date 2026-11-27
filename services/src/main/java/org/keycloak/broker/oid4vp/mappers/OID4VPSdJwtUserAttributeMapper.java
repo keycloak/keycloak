@@ -31,6 +31,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.utils.StringUtil;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * Maps a claim of the presented SD JWT credential to a user property or attribute. A single mapper
  * covers the credential value types: string, number and boolean claims become a single text value,
@@ -49,6 +51,7 @@ public class OID4VPSdJwtUserAttributeMapper extends AbstractOID4VPClaimMapper {
     public static final String LAST_NAME = "lastName";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
+            .property(credentialProperty())
             .property(claimProperty())
             .property()
                 .name(USER_ATTRIBUTE)
@@ -90,10 +93,11 @@ public class OID4VPSdJwtUserAttributeMapper extends AbstractOID4VPClaimMapper {
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = attribute(mapperModel);
-        if (attribute == null) {
+        JsonNode claims = credentialClaims(mapperModel, context);
+        if (attribute == null || claims == null) {
             return;
         }
-        List<String> values = claimValues(mapperModel, context);
+        List<String> values = claimValues(mapperModel, claims);
         switch (attribute) {
             case USERNAME -> setIfPresent(values, context::setModelUsername);
             case EMAIL -> setIfPresent(values, context::setEmail);
@@ -110,7 +114,9 @@ public class OID4VPSdJwtUserAttributeMapper extends AbstractOID4VPClaimMapper {
         if (attribute == null) {
             return;
         }
-        List<String> values = claimValues(mapperModel, context);
+        // A credential the user no longer presents must not leave the claim it proved earlier
+        JsonNode claims = credentialClaims(mapperModel, context);
+        List<String> values = claims == null ? null : claimValues(mapperModel, claims);
         switch (attribute) {
             case USERNAME -> setIfPresent(values, user::setUsername);
             case EMAIL -> setIfPresent(values, user::setEmail);

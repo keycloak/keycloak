@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../../admin-client";
+import { MissingPolicyReference } from "../../../components/MissingPolicyReference";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
 import { GroupResourceContext } from "../../../context/group-resource/GroupResourceContext";
 
@@ -16,9 +17,12 @@ type GroupForm = {
 };
 
 export type GroupValue = {
-  id: string;
+  id?: string | null;
+  path?: string | null;
   extendChildren: boolean;
 };
+
+type SelectedGroup = GroupRepresentation & { unresolvedPath?: string };
 
 export const Group = () => {
   const { adminClient } = useAdminClient();
@@ -28,22 +32,27 @@ export const Group = () => {
   const values = getValues("groups");
 
   const [open, setOpen] = useState(false);
-  const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    [],
-  );
+  const [selectedGroups, setSelectedGroups] = useState<SelectedGroup[]>([]);
 
   useFetch(
     () => {
       if (values && values.length > 0)
         return Promise.all(
-          values.map((g) => adminClient.groups.findOne({ id: g.id })),
+          values.map(async ({ id, path }): Promise<SelectedGroup> => {
+            if (!id) {
+              return { unresolvedPath: path ?? undefined, subGroupCount: 0 };
+            }
+            return (
+              (await adminClient.groups.findOne({ id })) ?? {
+                id,
+                subGroupCount: 0,
+              }
+            );
+          }),
         );
       return Promise.resolve([]);
     },
-    (groups) => {
-      const filteredGroup = groups.filter((g) => g) as GroupRepresentation[];
-      setSelectedGroups(filteredGroup);
-    },
+    setSelectedGroups,
     [],
   );
 
@@ -113,8 +122,15 @@ export const Group = () => {
             </Thead>
             <Tbody>
               {selectedGroups.map((group, index) => (
-                <Tr key={group.id}>
-                  <Td>{group.path}</Td>
+                <Tr key={group.id ?? group.unresolvedPath}>
+                  <Td>
+                    {group.path ?? (
+                      <MissingPolicyReference
+                        id={group.id ?? group.unresolvedPath}
+                        label={t("missingGroup")}
+                      />
+                    )}
+                  </Td>
                   <Td>
                     <Controller
                       name={`groups.${index}.extendChildren`}
@@ -138,12 +154,17 @@ export const Group = () => {
                       className="keycloak__client-authorization__policy-row-remove"
                       icon={<MinusCircleIcon />}
                       onClick={() => {
-                        setValue("groups", [
-                          ...(values || []).filter(({ id }) => id !== group.id),
-                        ]);
-                        setSelectedGroups([
-                          ...selectedGroups.filter(({ id }) => id !== group.id),
-                        ]);
+                        setValue(
+                          "groups",
+                          (getValues("groups") || []).filter(
+                            (_, position) => position !== index,
+                          ),
+                        );
+                        setSelectedGroups(
+                          selectedGroups.filter(
+                            (_, position) => position !== index,
+                          ),
+                        );
                       }}
                     />
                   </Td>

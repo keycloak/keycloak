@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -571,17 +572,54 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
     }
 
     private Predicate getAliasSearchPredicate(String search, CriteriaBuilder builder, Root<IdentityProviderEntity> idp) {
-        if (search.startsWith("\"") && search.endsWith("\"")) {
+        // when no displayName is configured, the effective display name falls back to the social provider
+        // factory's name (see KeycloakModelUtils#getIdentityProviderDisplayName); that resolved name isn't
+        // stored anywhere, so it's matched here via the (small, bounded) set of registered factories instead
+        Set<String> matchingSocialProviderIds = getSocialProviderIdsMatchingName(search);
+        Predicate resolvedNamePredicate = matchingSocialProviderIds.isEmpty() ? null
+                : builder.and(
+                        builder.or(builder.isNull(idp.get(DISPLAY_NAME)), builder.equal(idp.get(DISPLAY_NAME), "")),
+                        idp.get("providerId").in(matchingSocialProviderIds));
+
+        Predicate predicate;
+        if (search.length() > 1 && search.startsWith("\"") && search.endsWith("\"")) {
             // exact search - alias must be an exact match
-            search = search.substring(1, search.length() - 1);
-            return builder.or(builder.equal(idp.get(ALIAS), search),builder.equal(idp.get(DISPLAY_NAME), search));
+            String exact = search.substring(1, search.length() - 1);
+            predicate = builder.or(builder.equal(idp.get(ALIAS), exact), builder.equal(idp.get(DISPLAY_NAME), exact));
         } else {
-            search = search.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
-            if (!search.endsWith("%")) {
-                search += "%"; // default to prefix search
+            String like = search.replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+            if (!like.endsWith("%")) {
+                like += "%"; // default to prefix search
             }
-            return builder.or(builder.like(builder.lower(idp.get(ALIAS)), search.toLowerCase(), '\\'),builder.like(builder.lower(idp.get(DISPLAY_NAME)), search.toLowerCase(), '\\'));
+            predicate = builder.or(builder.like(builder.lower(idp.get(ALIAS)), like.toLowerCase(), '\\'), builder.like(builder.lower(idp.get(DISPLAY_NAME)), like.toLowerCase(), '\\'));
         }
+
+        return resolvedNamePredicate == null ? predicate : builder.or(predicate, resolvedNamePredicate);
+    }
+
+    private Set<String> getSocialProviderIdsMatchingName(String search) {
+        String term;
+        java.util.function.BiPredicate<String, String> matches;
+        if (search.length() > 1 && search.startsWith("\"") && search.endsWith("\"")) {
+            term = search.substring(1, search.length() - 1);
+            // exact search is case-sensitive, matching UserResource#matchesSearch's quoted-search semantics
+            matches = String::equals;
+        } else if (search.length() > 1 && search.startsWith("*") && search.endsWith("*")) {
+            term = search.substring(1, search.length() - 1);
+            matches = (name, t) -> name.toLowerCase(Locale.ROOT).contains(t.toLowerCase(Locale.ROOT));
+        } else {
+            term = search.endsWith("*") ? search.substring(0, search.length() - 1) : search;
+            matches = (name, t) -> name.toLowerCase(Locale.ROOT).startsWith(t.toLowerCase(Locale.ROOT));
+        }
+        if (term.isEmpty()) {
+            return Set.of();
+        }
+        String finalTerm = term;
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class)
+                .map(IdentityProviderFactory.class::cast)
+                .filter(factory -> matches.test(factory.getName(), finalTerm))
+                .map(IdentityProviderFactory::getId)
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     private IdentityProviderModel toModel(IdentityProviderEntity entity) {

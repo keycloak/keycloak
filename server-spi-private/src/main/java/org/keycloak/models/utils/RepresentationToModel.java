@@ -1399,6 +1399,16 @@ public class RepresentationToModel {
     }
 
     public static Policy toModel(AbstractPolicyRepresentation representation, AuthorizationProvider authorization, Policy model) {
+        return toModel(representation, authorization, model, Map.of());
+    }
+
+    public static Policy updatePolicy(AbstractPolicyRepresentation representation, AuthorizationProvider authorization, Policy model) {
+        Map<String, String> previousConfig = representation instanceof PolicyRepresentation ? new HashMap<>(model.getConfig()) : Map.of();
+        return toModel(representation, authorization, model, previousConfig);
+    }
+
+    private static Policy toModel(AbstractPolicyRepresentation representation, AuthorizationProvider authorization, Policy model,
+            Map<String, String> previousConfig) {
         model.setName(representation.getName());
         model.setDescription(representation.getDescription());
         model.setDecisionStrategy(representation.getDecisionStrategy());
@@ -1471,7 +1481,7 @@ public class RepresentationToModel {
         }
 
         if (representation instanceof PolicyRepresentation) {
-            provider.onImport(model, PolicyRepresentation.class.cast(representation), authorization);
+            provider.onImport(model, PolicyRepresentation.class.cast(representation), authorization, previousConfig);
         } else if (representation.getId() == null) {
             provider.onCreate(model, representation, authorization);
         } else {

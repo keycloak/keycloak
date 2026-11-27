@@ -19,6 +19,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
@@ -896,6 +897,150 @@ public class GroupTest extends AbstractScimTest {
     }
 
     @Test
+    public void testPatchRemoveMembersByValue() {
+        // Microsoft Entra ID removes members with "path": "members" and the members to remove in "value"
+        User userA = createScimUser();
+        User userB = createScimUser();
+        User userC = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .add("members", "[{\"value\":\"" + userA.getId() + "\"},{\"value\":\"" + userB.getId() + "\"},{\"value\":\"" + userC.getId() + "\"}]")
+                .build());
+        adminEvents.clear();
+
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .remove("members", "[{\"$ref\":null,\"value\":\"" + userA.getId() + "\"}]")
+                .build());
+        assertEquals(List.of(userB.getId(), userC.getId()).stream().sorted().toList(), getMemberIds(group.getId()));
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertMembershipEvent(adminEvents.poll(), OperationType.DELETE, group, userA);
+        assertNull(adminEvents.poll());
+
+        // removing a user that is no longer a member succeeds and changes nothing, as with a filtered remove
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .remove("members", "[{\"value\":\"" + userA.getId() + "\"}]")
+                .build());
+        assertEquals(2, getMemberIds(group.getId()).size());
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP);
+        assertNull(adminEvents.poll());
+
+        // removing the last members leaves the group empty
+        client.groups().patch(group.getId(), PatchRequest.create()
+                .remove("members", "[{\"value\":\"" + userB.getId() + "\"},{\"value\":\"" + userC.getId() + "\"}]")
+                .build());
+        assertTrue(getMemberIds(group.getId()).isEmpty());
+    }
+
+    @Test
+    public void testPatchRemoveMembersByValueWithUnknownUserRemovesNobody() {
+        User userA = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String groupId = group.getId();
+        client.groups().patch(groupId, PatchRequest.create().add("members", userA.getId()).build());
+
+        String unknownId = KeycloakModelUtils.generateId();
+        assertBadRequest(() -> client.groups().patch(groupId, PatchRequest.create()
+                .remove("members", "[{\"value\":\"" + userA.getId() + "\"},{\"value\":\"" + unknownId + "\"}]")
+                .build()), "User with id " + unknownId + " not found");
+        assertEquals(List.of(userA.getId()), getMemberIds(groupId));
+    }
+
+    @Test
+    public void testPatchRemoveMembersByValueRejectsInvalidTargets() {
+        User userA = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String groupId = group.getId();
+        client.groups().patch(groupId, PatchRequest.create().add("members", userA.getId()).build());
+
+        // a member entry without a value
+        assertBadRequest(() -> client.groups().patch(groupId, PatchRequest.create().remove("members", "[{\"display\":\"someone\"}]").build()),
+                "Member value is required");
+        // a filter and a value together
+        assertBadRequest(() -> client.groups().patch(groupId, PatchRequest.create()
+                        .remove("members[value eq \"" + userA.getId() + "\"]", "[{\"value\":\"" + userA.getId() + "\"}]").build()),
+                "Patch operation remove cannot have both a filter in the path and a value");
+
+        assertEquals(List.of(userA.getId()), getMemberIds(groupId));
+    }
+
+    @Test
+    public void testPatchMembersRejectsEntriesThatAreNotObjects() {
+        User userA = createScimUser();
+        User userB = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String groupId = group.getId();
+        client.groups().patch(groupId, PatchRequest.create().add("members", userA.getId()).build());
+
+        // add and remove reject the same malformed entries with 400 instead of failing with 500
+        for (String value : List.of("[null]", "[\"" + userB.getId() + "\"]")) {
+            assertBadRequest(() -> client.groups().patch(groupId, PatchRequest.create().add("members", value).build()),
+                    "Each entry of members must be an object");
+        }
+        for (String value : List.of("[null]", "[\"" + userA.getId() + "\"]")) {
+            assertBadRequest(() -> client.groups().patch(groupId, PatchRequest.create().remove("members", value).build()),
+                    "Each entry of members must be an object");
+        }
+
+        assertEquals(List.of(userA.getId()), getMemberIds(groupId));
+    }
+
+    @Test
+    public void testPatchMembersWithPathInAnotherCase() {
+        // attribute names are case insensitive (RFC 7643, section 2.1), so "Members" with one member object works as "members" does
+        User userA = createScimUser();
+        User userB = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String groupId = group.getId();
+        client.groups().patch(groupId, PatchRequest.create().add("members", userA.getId()).build());
+
+        client.groups().patch(groupId, PatchRequest.create().remove("Members", "{\"value\":\"" + userA.getId() + "\"}").build());
+        assertTrue(getMemberIds(groupId).isEmpty());
+
+        client.groups().patch(groupId, PatchRequest.create().add("Members", "{\"value\":\"" + userB.getId() + "\"}").build());
+        assertEquals(List.of(userB.getId()), getMemberIds(groupId));
+    }
+
+    @Test
+    public void testPatchMembersRejectsEntriesWithAnInvalidValue() {
+        User userA = createScimUser();
+
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+        String groupId = group.getId();
+        client.groups().patch(groupId, PatchRequest.create().add("members", userA.getId()).build());
+
+        // remove and add reject an id that is not a string, such as an object, with 400 instead of failing with 500
+        for (String value : List.of("[{\"value\":{}}]", "{\"value\":{}}")) {
+            assertBadRequest(() -> client.groups().patch(groupId, PatchRequest.create().remove("members", value).build()),
+                    "Invalid value for members");
+            assertBadRequest(() -> client.groups().patch(groupId, PatchRequest.create().add("members", value).build()),
+                    "Invalid value for members");
+        }
+
+        assertEquals(List.of(userA.getId()), getMemberIds(groupId));
+    }
+
+    @Test
     public void testQueryGroupsExcludesOrganizationGroup() {
         realm.updateWithCleanup(realm -> realm.organizationsEnabled(true));
 
@@ -1291,5 +1436,27 @@ public class GroupTest extends AbstractScimTest {
         User created = client.users().create(user);
         adminEvents.clear();
         return created;
+    }
+
+    /**
+     * The ids of the group's direct members as stored, read through the admin API, sorted.
+     */
+    private List<String> getMemberIds(String groupId) {
+        return realm.admin().groups().group(groupId).members(0, Integer.MAX_VALUE).stream()
+                .map(UserRepresentation::getId)
+                .sorted()
+                .toList();
+    }
+
+    private static void assertBadRequest(Runnable request, String detail) {
+        try {
+            request.run();
+            fail("expected HTTP 400");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), error.getStatusInt());
+            assertTrue(error.getDetail().contains(detail), "expected detail containing '" + detail + "', got: " + error.getDetail());
+        }
     }
 }

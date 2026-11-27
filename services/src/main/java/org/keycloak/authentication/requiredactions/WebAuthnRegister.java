@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -46,7 +47,7 @@ import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
 import org.keycloak.credential.WebAuthnCredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialProviderFactory;
-import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.WebAuthnSignatureAlgorithms;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -293,7 +294,11 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             }
         }
         Challenge challenge = new DefaultChallenge(challengeNote);
-        ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge);
+        ServerProperty serverProperty = ServerProperty.builder()
+                .origins(allOrigins)
+                .rpId(rpId)
+                .challenge(challenge)
+                .build();
         // check User Verification by considering a malicious user might modify the result of calling WebAuthn API
         boolean isUserVerificationRequired = policy.getUserVerificationRequirement().equals(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
@@ -320,6 +325,9 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             // parse
             RegistrationData registrationData = webAuthnRegistrationManager.parse(registrationRequest);
             // validate
+            if (!WebAuthnSignatureAlgorithms.isEnabled(getAttestedCredentialData(registrationData).getCOSEKey().getAlgorithm())) {
+                throw new WebAuthnException("The credential signature algorithm is disabled");
+            }
             webAuthnRegistrationManager.verify(registrationData, registrationParameters);
 
             showInfoAfterWebAuthnApiCreate(registrationData);
@@ -412,41 +420,16 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
      * Returns the list of converted algorithm identifiers.
     **/
     private static List<Long> convertSignatureAlgorithms(List<String> signatureAlgorithmsList) {
-        List<Long> algs = new ArrayList<>();
-        if (signatureAlgorithmsList == null || signatureAlgorithmsList.isEmpty()) return algs;
-
-        for (String s : signatureAlgorithmsList) {
-            switch (s) {
-            case Algorithm.ES256 :
-                algs.add(COSEAlgorithmIdentifier.ES256.getValue());
-                break;
-            case Algorithm.RS256 :
-                algs.add(COSEAlgorithmIdentifier.RS256.getValue());
-                break;
-            case Algorithm.ES384 :
-                algs.add(COSEAlgorithmIdentifier.ES384.getValue());
-                break;
-            case Algorithm.RS384 :
-                algs.add(COSEAlgorithmIdentifier.RS384.getValue());
-                break;
-            case Algorithm.ES512 :
-                algs.add(COSEAlgorithmIdentifier.ES512.getValue());
-                break;
-            case Algorithm.RS512 :
-                algs.add(COSEAlgorithmIdentifier.RS512.getValue());
-                break;
-            case Algorithm.Ed25519:
-                algs.add(COSEAlgorithmIdentifier.EdDSA.getValue());
-                break;
-            case "RS1" :
-                algs.add(COSEAlgorithmIdentifier.RS1.getValue());
-                break;
-            default:
-                // NOP
-            }
+        if (CollectionUtil.isEmpty(signatureAlgorithmsList)) {
+            return List.of();
         }
 
-        return algs;
+        Map<String, COSEAlgorithmIdentifier> supportedAlgorithms = WebAuthnSignatureAlgorithms.getSupportedAlgorithms();
+        return signatureAlgorithmsList.stream()
+                .map(supportedAlgorithms::get)
+                .filter(Objects::nonNull)
+                .map(COSEAlgorithmIdentifier::getValue)
+                .toList();
     }
 
     private static List<PublicKeyCredentialParameters> buildExpectedCredentialParameters(WebAuthnPolicy policy) {

@@ -1,5 +1,5 @@
 <#outputformat "plainText">
-<#assign requiredActionsText><#if requiredActions??><#list requiredActions><#items as reqActionItem>${msg("requiredAction.${reqActionItem}")}<#sep>, </#sep></#items></#list></#if></#assign>
+<#assign requiredActionsText><#if requiredActions??><#list requiredActions><ol><#items as reqActionItem><li>${msg("requiredAction.${reqActionItem}")}</li></#items></ol></#list></#if></#assign>
 </#outputformat>
 
 <#import "template.ftl" as layout>

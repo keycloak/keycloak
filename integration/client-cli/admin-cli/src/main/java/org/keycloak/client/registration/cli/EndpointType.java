@@ -28,9 +28,7 @@ import org.keycloak.client.cli.util.HttpUtil;
  */
 public enum EndpointType {
     DEFAULT("default", "default"),
-    OIDC("openid-connect", "oidc", "oidc"),
-    INSTALL("install", "install", "adapter"),
-    SAML2("saml2-entity-descriptor", "saml2", "saml2");
+    OIDC("openid-connect", "oidc", "oidc");
 
     private String endpoint;
     private String preferredName;
@@ -47,10 +45,6 @@ public enum EndpointType {
             return DEFAULT;
         } else if (OIDC.endpoint.equals(name) || OIDC.alternativeNames.contains(name)) {
             return OIDC;
-        } else if (INSTALL.endpoint.equals(name) || INSTALL.alternativeNames.contains(name)) {
-            return INSTALL;
-        } else if (SAML2.endpoint.equals(name) || SAML2.alternativeNames.contains(name)) {
-            return SAML2;
         }
         throw new IllegalArgumentException("Endpoint not supported: " + name);
     }
@@ -68,8 +62,6 @@ public enum EndpointType {
             case DEFAULT:
             case OIDC:
                 return HttpUtil.APPLICATION_JSON;
-            case SAML2:
-                return HttpUtil.APPLICATION_XML;
             default:
                 throw new RuntimeException("Unsupported endpoint type: " + type);
         }

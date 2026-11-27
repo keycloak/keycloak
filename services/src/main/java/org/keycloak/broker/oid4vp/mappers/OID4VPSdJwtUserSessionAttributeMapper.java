@@ -28,6 +28,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.utils.StringUtil;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * Imports a claim of the presented SD JWT credential into a user session attribute, so it can be
  * surfaced in tokens through the user session note protocol mappers. Session notes hold one string
@@ -41,6 +43,7 @@ public class OID4VPSdJwtUserSessionAttributeMapper extends AbstractOID4VPClaimMa
     public static final String ATTRIBUTE = "attribute";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = ProviderConfigurationBuilder.create()
+            .property(credentialProperty())
             .property(claimProperty())
             .property()
                 .name(ATTRIBUTE)
@@ -102,10 +105,11 @@ public class OID4VPSdJwtUserSessionAttributeMapper extends AbstractOID4VPClaimMa
 
     protected void applySessionNote(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         String attribute = attribute(mapperModel);
-        if (attribute == null) {
+        JsonNode claims = credentialClaims(mapperModel, context);
+        if (attribute == null || claims == null) {
             return;
         }
-        List<String> values = claimValues(mapperModel, context);
+        List<String> values = claimValues(mapperModel, claims);
         // A null note value means removal, so a claim that disappeared from the presentation does
         // not leave a stale note on the session.
         context.setSessionNote(attribute, values == null || values.isEmpty() ? null : String.join(",", values));

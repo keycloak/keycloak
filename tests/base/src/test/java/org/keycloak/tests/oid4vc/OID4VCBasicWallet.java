@@ -314,8 +314,27 @@ public class OID4VCBasicWallet {
     }
 
     public String present(OID4VCTestContext ctx, JsonNode request, String nonce) {
+        return vpToken(request, presentation(ctx, request, nonce));
+    }
+
+    public String presentation(OID4VCTestContext ctx, JsonNode request) {
+        return presentation(ctx, request, request.path("nonce").asText());
+    }
+
+    public String presentation(OID4VCTestContext ctx, JsonNode request, String nonce) {
         String sdJwtVc = (String) ctx.getCredentialResponse().getCredentials().get(0).getCredential();
         return present(sdJwtVc, getECKeyPair(ctx), request.path("client_id").asText(), nonce);
+    }
+
+    /**
+     * Wraps a presentation into a vp_token keyed by the id of the first credential the DCQL query
+     * of the request asks for.
+     */
+    public static String vpToken(JsonNode request, String presentation) {
+        String credentialId = request.path("dcql_query").path("credentials").path(0).path("id").asText();
+        ObjectNode vpToken = JsonSerialization.mapper.createObjectNode();
+        vpToken.putArray(credentialId).add(presentation);
+        return vpToken.toString();
     }
 
     public Oid4vpDirectPostResponse directPost(JsonNode request, String vpToken) {

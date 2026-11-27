@@ -26,9 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -122,15 +120,15 @@ public class RoleResourceTypePermissionTest extends AbstractPermissionTest {
         //remove role
         realm.admin().roles().get(clientRole.getName()).remove();
 
-        //check the resource was removed from policies
+        // Role policy references are preserved after deletion.
         RolePolicyRepresentation rolePolicy = getPolicies().role().findByName("Only realmRole or clientRole Role Policy");
         assertThat(rolePolicy, notNullValue());
         Set<String> roleIds = rolePolicy.getRoles().stream().map(RoleDefinition::getId).collect(Collectors.toSet());
-        assertThat(roleIds, not(contains(clientRole.getId())));
+        assertThat(roleIds, equalTo(Set.of(realmRole.getId(), clientRole.getId())));
 
         RolePolicyRepresentation rolePolicy1 = getPolicies().role().findByName("Only clientRole Role Policy");
         assertThat(rolePolicy1, notNullValue());
-        assertThat(rolePolicy1.getRoles().stream().map(RoleDefinition::getId).collect(Collectors.toSet()), empty());
+        assertThat(rolePolicy1.getRoles().stream().map(RoleDefinition::getId).collect(Collectors.toSet()), equalTo(Set.of(clientRole.getId())));
 
         //there should be 1 permission left
         permissions = getScopePermissionsResource(adminPermissionsClient).findAll(null, null, null, null, null);
