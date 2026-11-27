@@ -181,6 +181,8 @@ This mapper adds a hardcoded attribute value to each {project_name} user linked 
 Role Mapper::
 This mapper configures role mappings from LDAP into {project_name} role mappings. A single role mapper can map LDAP roles (usually groups from a particular branch of the LDAP tree) into roles corresponding to a specified client's realm roles or client roles. You can configure more Role mappers for the same LDAP provider. For example, you can specify that role mappings from groups under `ou=main,dc=example,dc=org` map to realm role mappings, and role mappings from groups under `ou=finance,dc=example,dc=org` map to client role mappings of client `finance`.
 
+The `Drop non existing LDAP roles` setting is off by default. When enabled, a sync from LDAP to {project_name} removes roles created by this role mapper that are no longer returned by LDAP. The mapper does not take ownership of roles that already existed in {project_name}, including roles with the same name. Roles imported before this setting was introduced are not marked for removal. A failed or incomplete LDAP search stops the sync before any roles are removed. Review changes to the LDAP search base and filter before enabling this setting, because roles excluded by a complete search are considered absent.
+
 Hardcoded Role Mapper::
 This mapper grants a specified {project_name} role to each {project_name} user from the LDAP provider.
 

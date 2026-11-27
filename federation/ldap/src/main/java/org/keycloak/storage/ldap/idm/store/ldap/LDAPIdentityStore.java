@@ -285,7 +285,7 @@ public class LDAPIdentityStore implements IdentityStore {
             if (getConfig().isPagination() && identityQuery.getLimit() > 0) {
                 search = this.operationManager.searchPaginated(baseDN, condition, identityQuery);
             } else {
-                search = this.operationManager.search(baseDN, condition, identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
+                search = this.operationManager.search(baseDN, condition, identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope(), identityQuery.isRequireCompleteResults());
             }
 
             for (SearchResult result : search) {
