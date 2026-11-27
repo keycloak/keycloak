@@ -107,7 +107,12 @@ public class JWTClaimEnforcerExecutor implements ClientPolicyExecutorProvider<JW
     private  Map<String, Object> getAccessTokenMapFromJWTString(String jwt) throws ClientPolicyException {
         try {
             JWSInput jwsInput = new JWSInput(jwt);
-            return JsonSerialization.readValue(jwsInput.getContent(), new TypeReference<>() {});
+            Map<String, Object> tokenMap = JsonSerialization.readValue(jwsInput.getContent(), new TypeReference<>() {});
+            if (tokenMap == null) {
+                // The payload can be the JSON literal 'null', which is deserialized to a null map without any exception
+                throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "JWT is not valid");
+            }
+            return tokenMap;
         } catch (JWSInputException | IOException e) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "JWT is not valid");
         }

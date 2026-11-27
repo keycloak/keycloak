@@ -19,12 +19,14 @@
 
 package org.keycloak.tests.oauth.tokenexchange;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.representations.AccessToken;
@@ -174,6 +176,45 @@ public class StandardBaseTokenExchangeClientPoliciesV2Test extends AbstractBaseT
         testJWTClaimClientPolicies("username", "unknown-username", "^(admin|service|test-[0-9]+)$", false, "Value for claim 'username' not allowed");
         testJWTClaimClientPolicies("username", "testuser", null, true, "Value for claim 'username' not allowed");
         testJWTClaimClientPolicies("username", null, null, false, "Required claim 'username' is missing from the token");
+    }
+
+    @Test
+    public void testJWTClaimClientPoliciesWithNullPayloadSubjectToken() {
+        // Create executor configuration
+        JWTClaimEnforcerExecutor.Configuration claimsConfig = new JWTClaimEnforcerExecutor.Configuration();
+        claimsConfig.setClaimName("username");
+
+        // Create and update client profile
+        realm.updateClientProfile(List.of(
+                ClientProfileBuilder.create()
+                        .name(PROFILE_NAME)
+                        .description("Profile")
+                        .executor(JWTClaimEnforcerExecutorFactory.PROVIDER_ID, claimsConfig)
+                        .build()
+        ));
+
+        // Create grant type condition configuration
+        GrantTypeCondition.Configuration grantTypeConfig = ClientPolicyBuilder.grantTypeConditionConfiguration(
+                false, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE
+        );
+
+        // Create and update client policy
+        realm.updateClientPolicy(List.of(
+                ClientPolicyBuilder.create()
+                        .name(POLICY_NAME)
+                        .description("Policy")
+                        .condition(GrantTypeConditionFactory.PROVIDER_ID, grantTypeConfig)
+                        .profile(PROFILE_NAME)
+                        .build()
+        ));
+
+        // A subject token whose payload is the JSON literal 'null' deserializes to a null claim map
+        String nullPayloadSubjectToken = new JWSBuilder().content("null".getBytes(StandardCharsets.UTF_8)).none();
+
+        AccessTokenResponse response = tokenExchange(nullPayloadSubjectToken, "requester-client", "secret", null, null);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("JWT is not valid", response.getErrorDescription());
     }
 
     private void testJWTClaimClientPolicies(String claimName, String claimValue, String executorRegex, boolean success, String errorMessage) {
