@@ -237,8 +237,10 @@ public class OrganizationInvitationResource {
         // a client base URL that is not itself a registered redirect URI must not override the single-redirect-URI fallback.
         if (!StringUtil.isBlank(invitationTarget.redirectUri)) {
             ClientModel client = realm.getClientByClientId(invitationTarget.clientId);
-            if (client != null && RedirectUtils.verifyRedirectUri(session, invitationTarget.redirectUri, client) != null) {
-                builder.queryParam(OAuth2Constants.REDIRECT_URI, invitationTarget.redirectUri);
+            String validRedirectUri = client == null ? null
+                    : RedirectUtils.verifyRedirectUri(session, invitationTarget.redirectUri, client);
+            if (validRedirectUri != null) {
+                builder.queryParam(OAuth2Constants.REDIRECT_URI, validRedirectUri);
             }
         }
 
