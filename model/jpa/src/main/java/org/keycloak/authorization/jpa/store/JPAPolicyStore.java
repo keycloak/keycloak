@@ -251,7 +251,9 @@ public class JPAPolicyStore implements PolicyStore {
     public boolean existsByResourceTypeAndConfig(ResourceServer resourceServer, String resourceType, String configKey, String configValue) {
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByResourceTypeAndConfig", String.class);
 
-        query.setFlushMode(FlushModeType.COMMIT);
+        // pending changes are flushed, unlike other queries, so that a policy created or changed in the same transaction is
+        // not missed, as callers rely on a false result to skip work, e.g. evaluating the denies inherited from ancestor groups
+        query.setFlushMode(FlushModeType.AUTO);
         query.setParameter("serverId", resourceServer.getId());
         query.setParameter("type", resourceType);
         query.setParameter("configKey", configKey);

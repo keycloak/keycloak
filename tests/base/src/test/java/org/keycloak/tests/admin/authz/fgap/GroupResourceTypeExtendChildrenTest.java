@@ -32,6 +32,10 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.PolicyResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
@@ -698,6 +702,18 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
     }
 
     @Test
+    public void testExtendChildrenFoundBeforeCommit() {
+        ScopePermissionRepresentation permission = createGroupPermission(department, Set.of(VIEW), false, allowMyAdmin);
+
+        // pending changes are taken into account, otherwise the denies inherited from ancestors could be skipped
+        assertThat(runOnServer.fetch(ExtendChildrenCheck.enableInSameTransaction(realm.getName(), permission.getId()), String.class),
+                equalTo("false/true"));
+        // the change was rolled back
+        assertCanView(department);
+        assertCannotView(team);
+    }
+
+    @Test
     public void testCachedGroupPermissionsDoNotLeakBetweenGroups() {
         createGroupPermission(department, Set.of(VIEW, MANAGE), true, allowMyAdmin);
         // a permission of its own decides for the team, and is inherited by the subteam only if extended
@@ -1149,6 +1165,31 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
      * Holds the checks run on the server in a single session, separately from the test class which references classes
      * that are not available on the server.
      */
+    static final class ExtendChildrenCheck {
+
+        /**
+         * Enables extending the given permission directly through the store, without committing, and returns whether
+         * permissions extending to children groups are found in the same transaction.
+         */
+        static FetchOnServer enableInSameTransaction(String realmName, String permissionId) {
+            return session -> {
+                RealmModel realmModel = session.realms().getRealmByName(realmName);
+                session.getContext().setRealm(realmModel);
+                AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+                ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(realmModel.getAdminPermissionsClient());
+                Policy permission = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, permissionId);
+
+                // the change is not committed, so that it does not affect the other tests
+                session.getTransactionManager().setRollbackOnly();
+                boolean before = AdminPermissionsSchema.SCHEMA.hasExtendChildrenPermissions(session, resourceServer);
+                permission.putConfig(EXTEND_CHILDREN, Boolean.TRUE.toString());
+                AdminPermissionsSchema.SCHEMA.clearPermissionCaches(session, resourceServer);
+
+                return before + "/" + AdminPermissionsSchema.SCHEMA.hasExtendChildrenPermissions(session, resourceServer);
+            };
+        }
+    }
+
     static final class SessionCacheCheck {
 
         static FetchOnServer viewAndManage(String realmName, String adminId, List<String> groupIds) {
