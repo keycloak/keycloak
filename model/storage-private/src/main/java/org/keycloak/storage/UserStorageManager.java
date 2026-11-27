@@ -105,7 +105,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     protected UserProvider localStorage() {
-        return ((DefaultDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
+        return session.getProvider(DatastoreProvider.class).unwrap(DefaultDatastoreProvider.class).userLocalStorage();
     }
 
     private UserFederatedStorageProvider getFederatedStorage() {
@@ -1236,8 +1236,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         if (StorageId.isLocalStorage(user.getId())) {
-            if (UserStoragePrivateUtil.userLocalStorage(session) instanceof OnUserCache) {
-                ((OnUserCache)UserStoragePrivateUtil.userLocalStorage(session)).onCache(realm, user, delegate);
+            UserProvider localStorage = UserStoragePrivateUtil.userLocalStorage(session);
+            OnUserCache onUserCache = localStorage.unwrap(OnUserCache.class);
+            if (onUserCache != null) {
+                onUserCache.onCache(realm, user, delegate);
             }
         } else {
             OnUserCache provider = getStorageProviderInstance(realm, StorageId.providerId(user.getId()), OnUserCache.class);

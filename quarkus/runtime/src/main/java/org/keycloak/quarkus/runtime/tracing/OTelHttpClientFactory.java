@@ -47,7 +47,7 @@ public class OTelHttpClientFactory extends DefaultHttpClientFactory implements E
 
     @Override
     protected HttpClientBuilder newHttpClientBuilder(KeycloakSession session) {
-        var provider = (OTelTracingProvider) session.getProvider(TracingProvider.class);
+        var provider = session.getProvider(TracingProvider.class).unwrap(OTelTracingProvider.class);
         return new HttpClientBuilder(ApacheHttpClientTelemetry.builder(provider.getOpenTelemetry()).build().createHttpClientBuilder());
     }
 

@@ -123,7 +123,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
-        this.datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
+        this.datastoreProvider = session.getProvider(DatastoreProvider.class).unwrap(StoreManagers.class);
         session.getTransactionManager().enlistAfterCompletion(getTransaction());
     }
 

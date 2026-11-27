@@ -60,8 +60,8 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     public InfinispanOrganizationProvider(KeycloakSession session) {
         this.session = session;
-        this.realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
-        this.userCache = (UserCacheSession) session.getProvider(UserCache.class);
+        this.realmCache = session.getProvider(CacheRealmProvider.class).unwrap(RealmCacheSession.class);
+        this.userCache = session.getProvider(UserCache.class).unwrap(UserCacheSession.class);
         this.invitationManager = new InfinispanInvitationManager(getDelegate().getInvitationManager());
     }
 
