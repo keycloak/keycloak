@@ -4,6 +4,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
 } from "@patternfly/react-core";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -55,11 +58,30 @@ export const AddHostDialog = ({
 
   return (
     <Modal
-      title={t("addNode")}
       isOpen={isOpen}
       onClose={onClose}
       variant="small"
-      actions={[
+      aria-label={t("addNode")}
+    >
+      <ModalHeader title={t("addNode")} />
+      <ModalBody>
+        <FormProvider {...form}>
+          <Form
+            id="add-host-form"
+            onSubmit={handleSubmit(onSubmit)}
+            isHorizontal
+          >
+            <TextControl
+              name="node"
+              label={t("nodeHost")}
+              rules={{
+                required: t("required"),
+              }}
+            />
+          </Form>
+        </FormProvider>
+      </ModalBody>
+      <ModalFooter>
         <Button
           key="confirm"
           id="add-node-confirm"
@@ -68,7 +90,7 @@ export const AddHostDialog = ({
           isDisabled={!isDirty || !isValid}
         >
           {t("save")}
-        </Button>,
+        </Button>
         <Button
           key="cancel"
           id="add-node-cancel"
@@ -76,20 +98,8 @@ export const AddHostDialog = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <FormProvider {...form}>
-        <Form id="add-host-form" onSubmit={handleSubmit(onSubmit)} isHorizontal>
-          <TextControl
-            name="node"
-            label={t("nodeHost")}
-            rules={{
-              required: t("required"),
-            }}
-          />
-        </Form>
-      </FormProvider>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

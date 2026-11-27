@@ -35,6 +35,6 @@ public final class AdminExtProvider implements AdminRealmResourceProviderFactory
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_V2);
+        return Profile.isFeatureEnabled(Profile.Feature.ADMIN_V3);
     }
 }

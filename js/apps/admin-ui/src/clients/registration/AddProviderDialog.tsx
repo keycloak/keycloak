@@ -5,6 +5,8 @@ import {
   DataListItemCells,
   DataListItemRow,
   Modal,
+  ModalBody,
+  ModalHeader,
   ModalVariant,
 } from "@patternfly/react-core";
 import { useMemo } from "react";
@@ -44,51 +46,54 @@ export const AddProviderDialog = ({
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("chooseAPolicyProvider")}
       isOpen
       onClose={toggleDialog}
+      aria-label={t("chooseAPolicyProvider")}
     >
-      <DataList
-        onSelectDataListItem={(_event, id) => {
-          onConfirm(id);
-          toggleDialog();
-        }}
-        aria-label={t("addPredefinedMappers")}
-        isCompact
-      >
-        <DataListItem aria-label={t("headerName")} id="header">
-          <DataListItemRow>
-            <DataListItemCells
-              dataListCells={[t("name"), t("description")].map((name) => (
-                <DataListCell style={{ fontWeight: 700 }} key={name}>
-                  {name}
-                </DataListCell>
-              ))}
-            />
-          </DataListItemRow>
-        </DataListItem>
-        {rows.map((provider) => (
-          <DataListItem
-            aria-label={provider.id}
-            key={provider.id}
-            data-testid={provider.id}
-            id={provider.id}
-          >
+      <ModalHeader title={t("chooseAPolicyProvider")} />
+      <ModalBody>
+        <DataList
+          onSelectDataListItem={(_event, id) => {
+            onConfirm(id);
+            toggleDialog();
+          }}
+          aria-label={t("addPredefinedMappers")}
+          isCompact
+        >
+          <DataListItem aria-label={t("headerName")} id="header">
             <DataListItemRow>
               <DataListItemCells
-                dataListCells={[
-                  <DataListCell width={2} key={`name-${provider.id}`}>
-                    {provider.id}
-                  </DataListCell>,
-                  <DataListCell width={4} key={`description-${provider.id}`}>
-                    {provider.helpText}
-                  </DataListCell>,
-                ]}
+                dataListCells={[t("name"), t("description")].map((name) => (
+                  <DataListCell style={{ fontWeight: 700 }} key={name}>
+                    {name}
+                  </DataListCell>
+                ))}
               />
             </DataListItemRow>
           </DataListItem>
-        ))}
-      </DataList>
+          {rows.map((provider) => (
+            <DataListItem
+              aria-label={provider.id}
+              key={provider.id}
+              data-testid={provider.id}
+              id={provider.id}
+            >
+              <DataListItemRow>
+                <DataListItemCells
+                  dataListCells={[
+                    <DataListCell width={2} key={`name-${provider.id}`}>
+                      {provider.id}
+                    </DataListCell>,
+                    <DataListCell width={4} key={`description-${provider.id}`}>
+                      {provider.helpText}
+                    </DataListCell>,
+                  ]}
+                />
+              </DataListItemRow>
+            </DataListItem>
+          ))}
+        </DataList>
+      </ModalBody>
     </Modal>
   );
 };

@@ -36,7 +36,7 @@ export const isParameterizedScope = (scope: ClientScopeRepresentation) =>
   scope.attributes?.["is.parameterized.scope"] === "true";
 
 export const ParameterizedScopeLabel = () => (
-  <Label color="gold" isCompact>
+  <Label color="yellow" isCompact>
     parameterized
   </Label>
 );
@@ -66,7 +66,12 @@ export const clientScopeTypesDropdown = (
   scopes: ClientScopeRepresentation[] = [],
 ) =>
   filterDefaultForParameterized(clientScopeTypes, scopes).map((type) => (
-    <DropdownItem key={type} onClick={() => onClick(type as ClientScopeType)}>
+    <DropdownItem
+      key={type}
+      component="button"
+      data-testid={`add-scope-type-${type}`}
+      onClick={() => onClick(type as ClientScopeType)}
+    >
       {t(`clientScopeType.${type}`)}
     </DropdownItem>
   ));

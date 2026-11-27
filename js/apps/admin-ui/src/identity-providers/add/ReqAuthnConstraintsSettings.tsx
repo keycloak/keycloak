@@ -19,7 +19,7 @@ export const ReqAuthnConstraints = () => {
     <>
       <FormGroup
         label={t("comparison")}
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("comparisonHelp")} fieldLabelId="comparison" />
         }
         fieldId="comparison"
@@ -58,7 +58,7 @@ export const ReqAuthnConstraints = () => {
       <FormGroup
         label={t("authnContextClassRefs")}
         fieldId="kc-authnContextClassRefs"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("authnContextClassRefsHelp")}
             fieldLabelId="authnContextClassRefs"
@@ -75,7 +75,7 @@ export const ReqAuthnConstraints = () => {
       <FormGroup
         label={t("authnContextDeclRefs")}
         fieldId="kc-authnContextDeclRefs"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("authnContextDeclRefsHelp")}
             fieldLabelId="authnContextDeclRefs"

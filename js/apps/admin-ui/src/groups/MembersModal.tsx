@@ -1,5 +1,13 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { Button, Modal, ModalVariant, Label } from "@patternfly/react-core";
+import {
+  Button,
+  Label,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import { differenceBy } from "lodash-es";
 import { useState } from "react";
@@ -87,23 +95,60 @@ export const MemberModal = ({
   return (
     <Modal
       variant={ModalVariant.large}
-      title={t(titleKey)}
-      description={description}
       isOpen
       onClose={onClose}
-      actions={[
-        ...(onBack
-          ? [
-              <Button
-                data-testid="back"
-                key="back"
-                variant="secondary"
-                onClick={onBack}
-              >
-                {t("back")}
-              </Button>,
-            ]
-          : []),
+      aria-label={t(titleKey)}
+    >
+      <ModalHeader title={t(titleKey)} description={description} />
+      <ModalBody>
+        <KeycloakDataTable
+          loader={loader}
+          isPaginated
+          ariaLabelKey="titleUsers"
+          searchPlaceholderKey="searchForUser"
+          canSelectAll
+          onSelect={(rows) => setSelectedRows([...rows])}
+          emptyState={
+            <ListEmptyState
+              message={t("noUsersFound")}
+              instructions={t("emptyInstructions")}
+            />
+          }
+          columns={[
+            {
+              name: "username",
+              displayKey: "username",
+              cellRenderer: UserDetail,
+            },
+            {
+              name: "email",
+              displayKey: "email",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "lastName",
+              displayKey: "lastName",
+              cellFormatters: [emptyFormatter()],
+            },
+            {
+              name: "firstName",
+              displayKey: "firstName",
+              cellFormatters: [emptyFormatter()],
+            },
+          ]}
+        />
+      </ModalBody>
+      <ModalFooter>
+        {onBack && (
+          <Button
+            data-testid="back"
+            key="back"
+            variant="secondary"
+            onClick={onBack}
+          >
+            {t("back")}
+          </Button>
+        )}
         <Button
           data-testid="add"
           key="confirm"
@@ -114,7 +159,7 @@ export const MemberModal = ({
           }}
         >
           {t(confirmLabelKey)}
-        </Button>,
+        </Button>
         <Button
           data-testid="cancel"
           key="cancel"
@@ -122,45 +167,8 @@ export const MemberModal = ({
           onClick={onClose}
         >
           {t("cancel")}
-        </Button>,
-      ]}
-    >
-      <KeycloakDataTable
-        loader={loader}
-        isPaginated
-        ariaLabelKey="titleUsers"
-        searchPlaceholderKey="searchForUser"
-        canSelectAll
-        onSelect={(rows) => setSelectedRows([...rows])}
-        emptyState={
-          <ListEmptyState
-            message={t("noUsersFound")}
-            instructions={t("emptyInstructions")}
-          />
-        }
-        columns={[
-          {
-            name: "username",
-            displayKey: "username",
-            cellRenderer: UserDetail,
-          },
-          {
-            name: "email",
-            displayKey: "email",
-            cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "lastName",
-            displayKey: "lastName",
-            cellFormatters: [emptyFormatter()],
-          },
-          {
-            name: "firstName",
-            displayKey: "firstName",
-            cellFormatters: [emptyFormatter()],
-          },
-        ]}
-      />
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

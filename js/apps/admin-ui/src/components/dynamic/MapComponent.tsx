@@ -76,7 +76,7 @@ export const MapComponent = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
       isRequired={required}
     >
@@ -148,14 +148,13 @@ export const MapComponent = ({
                 </FlexItem>
                 <FlexItem>
                   <Button
+                    icon={<MinusCircleIcon />}
                     variant="link"
                     title={t("removeAttribute")}
                     isDisabled={isDisabled}
                     onClick={() => remove(index)}
                     data-testid={`${fieldName}.${index}.remove`}
-                  >
-                    <MinusCircleIcon />
-                  </Button>
+                  ></Button>
                 </FlexItem>
               </Flex>
             ))}
@@ -164,7 +163,7 @@ export const MapComponent = ({
             <ActionListItem>
               <Button
                 data-testid={`${fieldName}-add-row`}
-                className="pf-v5-u-px-0 pf-v5-u-mt-sm"
+                className="pf-v6-u-px-0 pf-v6-u-mt-sm"
                 variant="link"
                 icon={<PlusCircleIcon />}
                 onClick={() => appendNew()}
@@ -178,7 +177,7 @@ export const MapComponent = ({
       ) : (
         <EmptyState
           data-testid={`${name}-empty-state`}
-          className="pf-v5-u-p-0"
+          className="pf-v6-u-p-0"
           variant="xs"
         >
           <EmptyStateBody>

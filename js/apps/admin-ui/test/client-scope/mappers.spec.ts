@@ -115,7 +115,7 @@ test.describe("Mappers tab", () => {
     await page.getByRole("menuitem", { name: "By configuration" }).click();
 
     await page
-      .locator('[role="dialog"]')
+      .getByRole("dialog")
       .getByText("Audience", { exact: true })
       .click();
     await page.getByTestId("name").fill(mapperName);

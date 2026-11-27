@@ -18,7 +18,7 @@ import org.keycloak.quarkus.runtime.Providers;
 
 public class ProtocolMappers {
 
-    private static final String MESSAGES_RELATIVE_PATH = "js/apps/admin-ui/maven-resources/theme/keycloak.v2/admin/messages/messages_en.properties";
+    private static final String MESSAGES_RELATIVE_PATH = "js/apps/admin-ui/maven-resources/theme/keycloak.v3/admin/messages/messages_en.properties";
 
     private final Map<String, Map<String, List<ProtocolMapperInfo>>> mappers;
     private final Properties messages;

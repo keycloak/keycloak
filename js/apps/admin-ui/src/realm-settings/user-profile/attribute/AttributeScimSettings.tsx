@@ -108,7 +108,7 @@ export const AttributeScimSettings = () => {
     <FormAccess role="manage-realm" isHorizontal>
       <FormGroup
         label={t("scimAttributeMapping")}
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t("scimAttributeMappingHelp")}
             fieldLabelId="scimAttributeMapping"

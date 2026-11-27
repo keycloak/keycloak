@@ -9,8 +9,7 @@ import {
   FormGroup,
   PageSection,
   Popover,
-  Text,
-  TextContent,
+  Content,
   Title,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
@@ -163,14 +162,14 @@ export const WebauthnPolicy = ({
   );
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       {enabled && (
         <Popover bodyContent={t(`${namePrefix}FormHelp`)}>
-          <TextContent className="keycloak__section_intro__help">
-            <Text>
+          <Content className="keycloak__section_intro__help">
+            <Content component="p">
               <QuestionCircleIcon /> {t("webauthnIntro")}
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
         </Popover>
       )}
 
@@ -202,7 +201,7 @@ export const WebauthnPolicy = ({
                   labelPrefix="mediation"
                 />
               )}
-              <Divider className="pf-v5-u-mb-lg pf-v5-u-mt-lg" />
+              <Divider className="pf-v6-u-mb-lg pf-v6-u-mt-lg" />
               <Title headingLevel="h2" size="lg">
                 {t("webauthnPasswordlessPolicy")}
               </Title>
@@ -305,7 +304,7 @@ export const WebauthnPolicy = ({
           <FormGroup
             label={t("webAuthnPolicyAcceptableAaguids")}
             fieldId="webAuthnPolicyAcceptableAaguids"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("webAuthnPolicyAcceptableAaguidsHelp")}
                 fieldLabelId="webAuthnPolicyAcceptableAaguids"
@@ -321,7 +320,7 @@ export const WebauthnPolicy = ({
           <FormGroup
             label={t("webAuthnPolicyExtraOrigins")}
             fieldId="webAuthnPolicyExtraOrigins"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("webAuthnPolicyExtraOriginsHelp")}
                 fieldLabelId="webAuthnPolicyExtraOrigins"

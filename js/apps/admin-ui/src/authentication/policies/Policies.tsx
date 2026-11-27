@@ -29,12 +29,15 @@ export const Policies = () => {
       onSelect={(_, key) => setSubTab(key as string)}
       mountOnEnter
       unmountOnExit
+      isSubtab
+      aria-label={t("policies")}
     >
       <Tab
         id={PASSWORD_POLICY}
         data-testid={PASSWORD_POLICY}
         eventKey={PASSWORD_POLICY}
         title={<TabTitleText>{t(PASSWORD_POLICY)}</TabTitleText>}
+        aria-label={t(PASSWORD_POLICY)}
       >
         <PasswordPolicy realm={realm} realmUpdated={refresh} />
       </Tab>
@@ -43,6 +46,7 @@ export const Policies = () => {
         data-testid={OTP_POLICY}
         eventKey={OTP_POLICY}
         title={<TabTitleText>{t(OTP_POLICY)}</TabTitleText>}
+        aria-label={t(OTP_POLICY)}
       >
         <OtpPolicy realm={realm} realmUpdated={refresh} />
       </Tab>
@@ -51,6 +55,7 @@ export const Policies = () => {
         data-testid={WEBAUTHN_POLICY}
         eventKey={WEBAUTHN_POLICY}
         title={<TabTitleText>{t(WEBAUTHN_POLICY)}</TabTitleText>}
+        aria-label={t(WEBAUTHN_POLICY)}
       >
         <WebauthnPolicy realm={realm} realmUpdated={refresh} />
       </Tab>
@@ -59,6 +64,7 @@ export const Policies = () => {
         data-testid={WEBAUTHN_PASSWORDLESS_POLICY}
         eventKey={WEBAUTHN_PASSWORDLESS_POLICY}
         title={<TabTitleText>{t(WEBAUTHN_PASSWORDLESS_POLICY)}</TabTitleText>}
+        aria-label={t(WEBAUTHN_PASSWORDLESS_POLICY)}
       >
         <WebauthnPolicy realm={realm} realmUpdated={refresh} isPasswordLess />
       </Tab>
@@ -67,6 +73,7 @@ export const Policies = () => {
         data-testid={CIBA_POLICY}
         eventKey={CIBA_POLICY}
         title={<TabTitleText>{t(CIBA_POLICY)}</TabTitleText>}
+        aria-label={t(CIBA_POLICY)}
       >
         <CibaPolicy realm={realm} realmUpdated={refresh} />
       </Tab>

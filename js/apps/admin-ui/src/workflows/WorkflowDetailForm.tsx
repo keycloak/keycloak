@@ -127,7 +127,7 @@ export default function WorkflowDetailForm() {
       <ViewHeader titleKey={titlekeyMap[mode]} subKey={subkeyMap[mode]} />
 
       <FormProvider {...form}>
-        <PageSection variant="light">
+        <PageSection hasBodyWrapper={false}>
           <FormAccess
             isHorizontal
             onSubmit={
@@ -136,12 +136,12 @@ export default function WorkflowDetailForm() {
                 : handleSubmit(onCreate)
             }
             role={"manage-realm"}
-            className="pf-v5-u-mt-lg"
+            className="pf-v6-u-mt-lg"
             fineGrainedAccess={true}
           >
             <FormGroup
               label={t("workflowYAML")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("workflowYAMLHelp")}
                   fieldLabelId="code"

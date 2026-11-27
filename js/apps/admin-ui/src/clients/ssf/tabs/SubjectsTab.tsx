@@ -14,8 +14,7 @@ import {
   HelperText,
   HelperTextItem,
   Label,
-  Text,
-  TextContent,
+  Content,
   TextInput,
 } from "@patternfly/react-core";
 import {
@@ -190,14 +189,14 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
   };
 
   return (
-    <Card isFlat className="pf-v5-u-mt-md">
+    <Card className="pf-v6-u-mt-md">
       <CardHeader>
         <CardTitle>{t("ssfTabSubjects")}</CardTitle>
       </CardHeader>
       <CardBody>
-        <TextContent>
-          <Text>{t("ssfSubjectsHelp")}</Text>
-        </TextContent>
+        <Content>
+          <Content component="p">{t("ssfSubjectsHelp")}</Content>
+        </Content>
       </CardBody>
       <CardBody>
         <FormAccess
@@ -212,7 +211,7 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
           <FormGroup
             label={t("ssfSubjectType")}
             fieldId="ssfSubjectType"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("ssfSubjectTypeHelp")}
                 fieldLabelId="ssfSubjectType"
@@ -224,7 +223,7 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
               data-testid="ssfSubjectType"
               value={subjectType}
               onChange={(e) => setSubjectType(e.target.value as SubjectType)}
-              className="pf-v5-c-form-control"
+              className="pf-v6-c-form-control"
             >
               <option value="user-email">
                 {t("ssfSubjectType.userEmail")}

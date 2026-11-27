@@ -3,6 +3,9 @@ import {
   ButtonVariant,
   Form,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   Tooltip,
 } from "@patternfly/react-core";
@@ -40,20 +43,49 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
     <>
       <Tooltip content={t("edit")}>
         <Button
+          icon={<PencilAltIcon />}
           variant="plain"
           data-testid={`${execution.id}-edit`}
           aria-label={t("edit")}
           onClick={toggle}
-        >
-          <PencilAltIcon />
-        </Button>
+        />
       </Tooltip>
       {show && (
         <Modal
-          title={t("editFlow")}
           onClose={toggle}
           variant={ModalVariant.small}
-          actions={[
+          isOpen
+          aria-label={t("editFlow")}
+        >
+          <ModalHeader title={t("editFlow")} />
+          <ModalBody>
+            <Form
+              id="edit-flow-form"
+              onSubmit={form.handleSubmit(onSubmit)}
+              isHorizontal
+            >
+              <FormProvider {...form}>
+                <TextControl
+                  name="displayName"
+                  label={t("name")}
+                  labelIcon={t("flowNameHelp")}
+                  rules={{ required: t("required") }}
+                />
+                <TextAreaControl
+                  name="description"
+                  label={t("description")}
+                  labelIcon={t("flowDescriptionHelp")}
+                  rules={{
+                    maxLength: {
+                      value: 255,
+                      message: t("maxLength", { length: 255 }),
+                    },
+                  }}
+                />
+              </FormProvider>
+            </Form>
+          </ModalBody>
+          <ModalFooter>
             <Button
               key="confirm"
               data-testid="confirm"
@@ -62,7 +94,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               isDisabled={!form.formState.isValid}
             >
               {t("edit")}
-            </Button>,
+            </Button>
             <Button
               data-testid="cancel"
               key="cancel"
@@ -70,35 +102,8 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               onClick={toggle}
             >
               {t("cancel")}
-            </Button>,
-          ]}
-          isOpen
-        >
-          <Form
-            id="edit-flow-form"
-            onSubmit={form.handleSubmit(onSubmit)}
-            isHorizontal
-          >
-            <FormProvider {...form}>
-              <TextControl
-                name="displayName"
-                label={t("name")}
-                labelIcon={t("flowNameHelp")}
-                rules={{ required: t("required") }}
-              />
-              <TextAreaControl
-                name="description"
-                label={t("description")}
-                labelIcon={t("flowDescriptionHelp")}
-                rules={{
-                  maxLength: {
-                    value: 255,
-                    message: t("maxLength", { length: 255 }),
-                  },
-                }}
-              />
-            </FormProvider>
-          </Form>
+            </Button>
+          </ModalFooter>
         </Modal>
       )}
     </>

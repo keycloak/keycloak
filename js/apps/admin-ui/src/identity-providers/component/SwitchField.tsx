@@ -28,23 +28,25 @@ export const SwitchField = ({
           defaultValue ? defaultValue : fieldType === "string" ? "false" : false
         }
         control={control}
-        render={({ field }) => (
-          <Switch
-            id={label}
-            label={t("on")}
-            labelOff={t("off")}
-            isChecked={
-              fieldType === "string"
-                ? field.value === "true"
-                : (field.value as boolean)
-            }
-            onChange={(_event, value) =>
-              field.onChange(fieldType === "string" ? "" + value : value)
-            }
-            isDisabled={isReadOnly}
-            aria-label={label}
-          />
-        )}
+        render={({ field }) => {
+          const isChecked =
+            fieldType === "string"
+              ? field.value === "true"
+              : (field.value as boolean);
+
+          return (
+            <Switch
+              id={label}
+              label={isChecked ? t("on") : t("off")}
+              isChecked={isChecked}
+              onChange={(_event, value) =>
+                field.onChange(fieldType === "string" ? "" + value : value)
+              }
+              isDisabled={isReadOnly}
+              aria-label={label}
+            />
+          );
+        }}
       />
     </FormGroupField>
   );

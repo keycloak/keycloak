@@ -9,12 +9,11 @@ import {
   DataListItemCells,
   DataListItemRow,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
-  Text,
-  TextContent,
-  TextVariants,
 } from "@patternfly/react-core";
-
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 
@@ -90,123 +89,118 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
         isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")
       }
       variant={ModalVariant.medium}
-      header={
-        <TextContent
-          role="dialog"
-          aria-label={
-            isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")
-          }
-        >
-          <Text component={TextVariants.h1}>
-            {isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")}
-          </Text>
-          <Text>
-            {isBuiltIn
-              ? t("predefinedMappingDescription")
-              : t("configureMappingDescription")}
-          </Text>
-        </TextContent>
-      }
       isOpen={props.open}
       onClose={props.toggleDialog}
-      actions={
-        isBuiltIn
-          ? [
-              <Button
-                id="modal-confirm"
-                data-testid="confirm"
-                key="confirm"
-                isDisabled={rows.length === 0 || selectedRows.length === 0}
-                onClick={() => {
-                  props.onConfirm(selectedRows.map(({ item }) => item));
-                  props.toggleDialog();
-                }}
-              >
-                {t("add")}
-              </Button>,
-              <Button
-                id="modal-cancel"
-                data-testid="cancel"
-                key="cancel"
-                variant={ButtonVariant.link}
-                onClick={() => {
-                  props.toggleDialog();
-                }}
-              >
-                {t("cancel")}
-              </Button>,
-            ]
-          : []
-      }
     >
-      {!isBuiltIn && (
-        <DataList
-          onSelectDataListItem={(_event, id) => {
-            const mapper = protocolMappers.find((mapper) => mapper.id === id);
-            props.onConfirm(mapper!);
-            props.toggleDialog();
-          }}
-          aria-label={t("addPredefinedMappers")}
-          isCompact
-        >
-          <DataListItem aria-label={t("headerName")} id="header">
-            <DataListItemRow>
-              <DataListItemCells
-                dataListCells={header.map((name) => (
-                  <DataListCell style={{ fontWeight: 700 }} key={name}>
-                    {name}
-                  </DataListCell>
-                ))}
-              />
-            </DataListItemRow>
-          </DataListItem>
-          {sortedProtocolMappers.map((mapper) => (
-            <DataListItem
-              aria-label={mapper.name}
-              key={mapper.id}
-              id={mapper.id}
-            >
+      <ModalHeader
+        title={
+          isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")
+        }
+        description={
+          isBuiltIn
+            ? t("predefinedMappingDescription")
+            : t("configureMappingDescription")
+        }
+      />
+      <ModalBody>
+        {!isBuiltIn && (
+          <DataList
+            onSelectDataListItem={(_event, id) => {
+              const mapper = protocolMappers.find((mapper) => mapper.id === id);
+              props.onConfirm(mapper!);
+              props.toggleDialog();
+            }}
+            aria-label={t("addPredefinedMappers")}
+            isCompact
+          >
+            <DataListItem aria-label={t("headerName")} id="header">
               <DataListItemRow>
                 <DataListItemCells
-                  dataListCells={[
-                    <DataListCell key={`name-${mapper.id}`}>
-                      {mapper.name}
-                    </DataListCell>,
-                    <DataListCell key={`helpText-${mapper.id}`}>
-                      {mapper.helpText}
-                    </DataListCell>,
-                  ]}
+                  dataListCells={header.map((name) => (
+                    <DataListCell style={{ fontWeight: 700 }} key={name}>
+                      {name}
+                    </DataListCell>
+                  ))}
                 />
               </DataListItemRow>
             </DataListItem>
-          ))}
-        </DataList>
-      )}
-      {isBuiltIn && (
-        <KeycloakDataTable
-          loader={rows}
-          onSelect={setSelectedRows}
-          canSelectAll
-          ariaLabelKey="addPredefinedMappers"
-          searchPlaceholderKey="searchForMapper"
-          columns={[
-            {
-              name: "id",
-              displayKey: "name",
-            },
-            {
-              name: "description",
-              displayKey: "description",
-            },
-          ]}
-          emptyState={
-            <ListEmptyState
-              message={t("emptyMappers")}
-              instructions={t("emptyBuiltInMappersInstructions")}
-            />
-          }
-        />
-      )}
+            {sortedProtocolMappers.map((mapper) => (
+              <DataListItem
+                aria-label={mapper.name}
+                key={mapper.id}
+                id={mapper.id}
+              >
+                <DataListItemRow>
+                  <DataListItemCells
+                    dataListCells={[
+                      <DataListCell key={`name-${mapper.id}`}>
+                        {mapper.name}
+                      </DataListCell>,
+                      <DataListCell key={`helpText-${mapper.id}`}>
+                        {mapper.helpText}
+                      </DataListCell>,
+                    ]}
+                  />
+                </DataListItemRow>
+              </DataListItem>
+            ))}
+          </DataList>
+        )}
+        {isBuiltIn && (
+          <KeycloakDataTable
+            loader={rows}
+            onSelect={setSelectedRows}
+            canSelectAll
+            ariaLabelKey="addPredefinedMappers"
+            searchPlaceholderKey="searchForMapper"
+            columns={[
+              {
+                name: "id",
+                displayKey: "name",
+              },
+              {
+                name: "description",
+                displayKey: "description",
+              },
+            ]}
+            emptyState={
+              <ListEmptyState
+                message={t("emptyMappers")}
+                instructions={t("emptyBuiltInMappersInstructions")}
+              />
+            }
+          />
+        )}
+      </ModalBody>
+      <ModalFooter>
+        {isBuiltIn ? (
+          <>
+            <Button
+              id="modal-confirm"
+              data-testid="confirm"
+              key="confirm"
+              isDisabled={rows.length === 0 || selectedRows.length === 0}
+              onClick={() => {
+                props.onConfirm(selectedRows.map(({ item }) => item));
+                props.toggleDialog();
+              }}
+            >
+              {t("add")}
+            </Button>
+            <Button
+              id="modal-cancel"
+              data-testid="cancel"
+              key="cancel"
+              variant={ButtonVariant.link}
+              onClick={() => {
+                props.toggleDialog();
+              }}
+            >
+              {t("cancel")}
+            </Button>
+          </>
+        ) : null}
+      </ModalFooter>
     </Modal>
   );
 };

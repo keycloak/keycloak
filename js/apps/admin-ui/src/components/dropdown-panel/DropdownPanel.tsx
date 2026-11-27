@@ -24,12 +24,29 @@ const DropdownPanel: React.FC<DropdownPanelProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setSearchDropdownOpen(false);
+      const target = event.target as HTMLElement | null;
+      if (!target) {
+        return;
       }
+
+      if (dropdownRef.current?.contains(target)) {
+        return;
+      }
+
+      // Ignore clicks on this panel's own portaled menu (not every menu on the page).
+      const openToggle = dropdownRef.current?.querySelector(
+        '[aria-expanded="true"]',
+      );
+      const controlsId = openToggle?.getAttribute("aria-controls");
+      if (
+        controlsId &&
+        (target.closest(`#${CSS.escape(controlsId)}`) ||
+          document.getElementById(controlsId)?.contains(target))
+      ) {
+        return;
+      }
+
+      setSearchDropdownOpen(false);
     };
 
     document.addEventListener("mousedown", handleClickOutside);

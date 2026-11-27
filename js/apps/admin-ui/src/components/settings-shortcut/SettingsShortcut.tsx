@@ -11,12 +11,11 @@ type SettingsShortcutProps = {
 export const SettingsShortcut = ({ tooltip, to }: SettingsShortcutProps) => (
   <Tooltip content={tooltip}>
     <Button
+      icon={<CogIcon />}
       variant="plain"
       style={{ paddingBlock: 0 }}
       aria-label={tooltip}
       component={(props) => <Link {...props} to={to} />}
-    >
-      <CogIcon />
-    </Button>
+    />
   </Tooltip>
 );

@@ -62,6 +62,8 @@ export async function openExecutionConfig(page: Page, name: string) {
     .filter({ has: page.getByTestId(name) })
     .getByRole("button", { name: "Settings" })
     .click();
+  // Config is fetched on open; wait for the form before callers fill fields.
+  await expect(page.getByRole("dialog").getByTestId("alias")).toBeVisible();
 }
 
 export async function assertRowExists(page: Page, name: string, exists = true) {
@@ -85,23 +87,35 @@ export async function goToPoliciesTab(page: Page) {
   await page.getByTestId("policies").click();
 }
 
+async function clickPolicySubTab(page: Page, name: string, testId: string) {
+  // Prefer role+name so horizontally scrolled PF6 tabs remain actionable.
+  const byRole = page.getByRole("tab", { name, exact: true });
+  if (await byRole.count()) {
+    await byRole.click();
+    return;
+  }
+  await page.getByTestId(testId).click();
+}
+
 export async function goToOTPPolicyTab(page: Page) {
   await goToPoliciesTab(page);
-  await page.getByTestId("otpPolicy").click();
+  await clickPolicySubTab(page, "OTP Policy", "otpPolicy");
 }
 
 export async function goToWebAuthnTab(page: Page) {
   await goToPoliciesTab(page);
-  await page.getByTestId("webauthnPolicy").click();
+  await clickPolicySubTab(page, "WebAuthn Policy", "webauthnPolicy");
 }
 
 export async function goToCIBAPolicyTab(page: Page) {
   await goToPoliciesTab(page);
-  await page.getByTestId("cibaPolicy").click();
+  await clickPolicySubTab(page, "CIBA Policy", "cibaPolicy");
 }
 
 export async function addPolicy(page: Page, value: string) {
-  await selectItem(page, page.getByTestId("add-policy"), value);
+  const addPolicy = page.getByTestId("add-policy");
+  await expect(addPolicy).toBeVisible({ timeout: 15_000 });
+  await selectItem(page, addPolicy, value);
 }
 
 const toKey = (name: string) => {
