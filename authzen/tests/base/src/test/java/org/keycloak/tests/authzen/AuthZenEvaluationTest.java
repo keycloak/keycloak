@@ -109,7 +109,7 @@ public class AuthZenEvaluationTest {
         configureAuthorizationResources();
     }
 
-    // Resource properties are not used by Keycloak but are accepted and ignored per the AuthZen spec
+    // Resource properties are available to policies but do not affect this role-based policy.
     @Test
     public void testAdminUserAccessAdminResource() throws IOException {
         EvaluationResult result = authzenClient()
@@ -340,6 +340,38 @@ public class AuthZenEvaluationTest {
 
         assertEquals(200, result.statusCode());
         assertFalse(result.decision());
+    }
+
+    @Test
+    public void testResourcePropertiesCanBeReadSeparatelyFromContext() throws IOException {
+        assertRegionDecision("/resource-region-protected", "us", "eu", false);
+        assertRegionDecision("/resource-region-protected", "eu", "us", true);
+    }
+
+    @Test
+    public void testContextCanBeReadSeparatelyFromResourceProperties() throws IOException {
+        assertRegionDecision("/authzen-context-region-protected", "us", "eu", true);
+        assertRegionDecision("/authzen-context-region-protected", "eu", "us", false);
+    }
+
+    @Test
+    public void testLegacyAttributesKeepContextPrecedence() throws IOException {
+        assertRegionDecision("/legacy-region-protected", "us", "eu", true);
+    }
+
+    private void assertRegionDecision(String resourceName, String resourceRegion, String contextRegion,
+                                     boolean expectedDecision) throws IOException {
+        EvaluationResult result = authzenClient()
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", resourceName)
+                    .resourceProperty("region", resourceRegion)
+                    .contextProperty("region", contextRegion)
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertEquals(expectedDecision, result.decision());
     }
 
     @Test
@@ -1041,6 +1073,20 @@ public class AuthZenEvaluationTest {
         createResource(authz, "/nested-context", "endpoint", "read");
         String ipPolicyId = createRegexPolicy(authz, "Nested Context IP Policy", "request.ip", "10\\.0\\.0\\..*", true);
         createResourcePermission(authz, "Nested Context Permission", "/nested-context", ipPolicyId);
+
+        createResource(authz, "/resource-region-protected", "endpoint", "read");
+        String resourceRegionPolicyId = createRegexPolicy(authz, "Resource Region Policy",
+                "authzen.resource.properties.region", "^eu$", true);
+        createResourcePermission(authz, "Resource Region Permission", "/resource-region-protected", resourceRegionPolicyId);
+
+        createResource(authz, "/authzen-context-region-protected", "endpoint", "read");
+        String authzenContextRegionPolicyId = createRegexPolicy(authz, "AuthZEN Context Region Policy",
+                "authzen.context.region", "^eu$", true);
+        createResourcePermission(authz, "AuthZEN Context Region Permission", "/authzen-context-region-protected", authzenContextRegionPolicyId);
+
+        createResource(authz, "/legacy-region-protected", "endpoint", "read");
+        String legacyRegionPolicyId = createRegexPolicy(authz, "Legacy Region Policy", "region", "^eu$", true);
+        createResourcePermission(authz, "Legacy Region Permission", "/legacy-region-protected", legacyRegionPolicyId);
 
         createResource(authz, "/empty-type", null, "read");
         createResourcePermission(authz, "Empty Type Resource Permission", "/empty-type", alwaysGrantId);

@@ -67,6 +67,7 @@ public class AuthZenResource {
     private static final String NAMESPACE_ID = "id:";
     private static final String NAMESPACE_USERNAME = "username:";
     private static final String NAMESPACE_EMAIL = "email:";
+    private static final String AUTHZEN_ATTRIBUTES_CLAIM = "authzen";
 
     private static final String RESERVED_ATTRIBUTE_PREFIX = "kc.";
 
@@ -196,13 +197,7 @@ public class AuthZenResource {
             return DECISION_FALSE;
         }
 
-        Map<String, List<String>> claims = new HashMap<>();
-        if (request.resource().properties() != null) {
-            convertContext(withoutReservedAttributes(request.resource().properties()), claims);
-        }
-        if (request.context() != null) {
-            convertContext(withoutReservedAttributes(request.context()), claims);
-        }
+        Map<String, List<String>> claims = createEvaluationClaims(request.resource(), request.context());
         // DefaultEvaluationContext only sets the client id for a KeycloakIdentity, so set it from the authenticated caller
         claims.put(EvaluationContext.CLIENT_ID_ATTRIBUTE, List.of(token.getIssuedFor()));
 
@@ -326,5 +321,28 @@ public class AuthZenResource {
         Map<String, Object> filtered = new HashMap<>(attributes);
         filtered.keySet().removeIf(name -> name.startsWith(RESERVED_ATTRIBUTE_PREFIX));
         return filtered;
+    }
+
+    private static Map<String, List<String>> createEvaluationClaims(AuthZen.Resource resource, Map<String, Object> context) {
+        Map<String, List<String>> claims = new HashMap<>();
+        Map<String, Object> sources = new HashMap<>();
+
+        if (resource.properties() != null) {
+            Map<String, Object> properties = withoutReservedAttributes(resource.properties());
+            convertContext(properties, claims);
+            sources.put("resource", Map.of("properties", properties));
+        }
+
+        if (context != null) {
+            Map<String, Object> contextAttributes = withoutReservedAttributes(context);
+            // Preserve the existing behavior: context values take precedence when names overlap.
+            convertContext(contextAttributes, claims);
+            sources.put("context", contextAttributes);
+        }
+
+        if (!sources.isEmpty()) {
+            convertContext(Map.of(AUTHZEN_ATTRIBUTES_CLAIM, sources), claims);
+        }
+        return claims;
     }
 }
