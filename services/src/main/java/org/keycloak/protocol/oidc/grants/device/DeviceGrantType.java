@@ -276,6 +276,13 @@ public class DeviceGrantType extends OAuth2GrantTypeBase {
         String codeChallenge = deviceCodeModel.getCodeChallenge();
         String codeChallengeMethod = deviceCodeModel.getCodeChallengeMethod();
 
+        String errorDescription = PkceUtils.checkPKCEParams(client, codeChallengeMethod, codeChallenge);
+        if (errorDescription != null) {
+            event.detail(Details.REASON, errorDescription);
+            event.error(Errors.PKCE_VERIFICATION_FAILED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, errorDescription, Response.Status.BAD_REQUEST);
+        }
+
         if (codeChallengeMethod != null && !codeChallengeMethod.isEmpty()) {
             PkceUtils.checkParamsForPkceEnforcedClient(codeVerifier, codeChallenge, codeChallengeMethod, null, null, event, cors);
         } else {
