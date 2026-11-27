@@ -8,6 +8,7 @@ import org.keycloak.testframework.https.ManagedCertificates;
 import org.htmlunit.WebClientOptions;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxDriverService;
 import org.openqa.selenium.firefox.GeckoDriverService;
@@ -16,6 +17,17 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 class DriverUtils {
 
     static ChromeDriver createChromeDriver(boolean headless) {
+        return createChromeDriver(headless, new String[0]);
+    }
+
+    static String[] chromeTlsArguments(ManagedCertificates managedCerts) {
+        if (managedCerts != null && managedCerts.isTlsEnabled()) {
+            return new String[] { "--ignore-certificate-errors-spki-list=" + managedCerts.getServerCertificateSpkiSha256() };
+        }
+        return new String[0];
+    }
+
+    static ChromeDriver createChromeDriver(boolean headless, String... extraArguments) {
         ChromeDriverService.Builder builder = new ChromeDriverService.Builder();
 
         File driver = resolveDriver("CHROMEWEBDRIVER", "chromedriver");
@@ -24,7 +36,9 @@ class DriverUtils {
         }
 
         ChromeDriverService driverService = builder.build();
-        return new ChromeDriver(driverService, DriverOptions.createChromeOptions(headless));
+        ChromeOptions options = DriverOptions.createChromeOptions(headless);
+        options.addArguments(extraArguments);
+        return new ChromeDriver(driverService, options);
     }
 
     static FirefoxDriver  createFirefoxDriver(boolean headless) {
