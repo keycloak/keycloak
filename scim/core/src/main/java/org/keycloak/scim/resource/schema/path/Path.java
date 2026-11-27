@@ -83,13 +83,28 @@ public final class Path {
     /**
      * Whether the filter compares only the {@code value} sub-attribute, e.g. {@code members[value eq "..."]}. Such a
      * filter is turned into the value to remove by {@link #getValue(Attribute)}; any other is resolved against the
-     * entries the resource holds, by {@link #select(Attribute, JsonNode)}.
+     * entries the resource holds, by {@link #select(Attribute, JsonNode)}. A nested value filter, such as
+     * {@code emails[value[value eq "..."]]}, is never one: the conversion would ignore the nesting, while
+     * {@code select} refuses it.
      */
     public boolean filtersOnlyOnValue() {
         if (filter == null) {
             return true;
         }
-        return attributeNames(FilterUtils.parseFilter(filter)).stream().allMatch("value"::equalsIgnoreCase);
+        ScimFilterParser.FilterContext parsed = FilterUtils.parseFilter(filter);
+        return !hasValuePath(parsed) && attributeNames(parsed).stream().allMatch("value"::equalsIgnoreCase);
+    }
+
+    private static boolean hasValuePath(ScimFilterParser.FilterContext parsed) {
+        boolean[] found = {false};
+        new ScimFilterParserBaseVisitor<Void>() {
+            @Override
+            public Void visitValuePath(ScimFilterParser.ValuePathContext ctx) {
+                found[0] = true;
+                return null;
+            }
+        }.visit(parsed);
+        return found[0];
     }
 
     /**
@@ -126,8 +141,8 @@ public final class Path {
     /**
      * Checks the whole filter before any entry is compared, so that the outcome does not depend on the current entries
      * or on which side of an {@code and} or {@code or} decides. Each sub-attribute must be one of the complex type's,
-     * in any case (RFC 7643 section 2.1), each operator must apply to the sub-attribute's type, and nested value
-     * filters are refused.
+     * in any case (RFC 7643 section 2.1), each operator must apply to the sub-attribute's type, a boolean is compared
+     * only with {@code true} or {@code false}, and nested value filters are refused.
      *
      * @return the complex type's spelling of each sub-attribute the filter names, keyed by the name as written
      */
@@ -169,6 +184,13 @@ public final class Path {
                 if (!(isBoolean ? BOOLEAN_OPERATORS : STRING_OPERATORS).contains(operator)) {
                     throw new ModelValidationException("Operator '" + operator + "' is not supported for " + name
                             + " when selecting values of a multi-valued attribute");
+                }
+
+                String operand = FilterUtils.extractCompValue(ctx.compValue());
+
+                if (isBoolean && operand != null && !"true".equalsIgnoreCase(operand) && !"false".equalsIgnoreCase(operand)) {
+                    throw new ModelValidationException("Invalid boolean value " + operand + " for " + name + " in the filter for "
+                            + attribute.getName());
                 }
 
                 return null;

@@ -127,6 +127,30 @@ public class PathTest {
     }
 
     @Test
+    public void refusesABooleanComparedWithAnythingButTrueOrFalse() {
+        JsonNode work = current(new Email("work@x.example", "work", true));
+
+        // "abcde" is not "true", so ne would match primary: true and select the email
+        ModelValidationException error = assertThrows(ModelValidationException.class,
+                () -> path("emails[primary ne \"abcde\"]").select(EMAILS, work));
+        assertTrue(error.getMessage().contains("Invalid boolean value abcde"), error.getMessage());
+
+        assertEquals(1, path("emails[primary eq \"True\"]").select(EMAILS, work).size());
+        assertEquals(0, path("emails[primary eq false]").select(EMAILS, work).size());
+    }
+
+    @Test
+    public void aNestedValueFilterIsRefusedRatherThanConverted() {
+        Path nested = path("emails[value[value eq \"missing@x.example\"]].value");
+
+        // the conversion to a value would ignore the nesting, so a nested filter is never treated as value-only
+        assertFalse(nested.filtersOnlyOnValue());
+        ModelValidationException error = assertThrows(ModelValidationException.class,
+                () -> nested.select(EMAILS, current(new Email("work@x.example"))));
+        assertTrue(error.getMessage().contains("Nested value filters"), error.getMessage());
+    }
+
+    @Test
     public void aValueOnlyFilterKeepsTheValueRule() {
         assertTrue(path("members[value eq \"123\"]").filtersOnlyOnValue());
         assertTrue(path("members[value eq \"1\" or value eq \"2\"]").filtersOnlyOnValue());

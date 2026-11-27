@@ -1105,7 +1105,13 @@ public class UserTest extends AbstractScimTest {
         actual = client.users().get(expected.getId());
         assertRootAttributes(actual, expected);
 
-        // and sends the leaver's switch-off in the same request as a pending email change: all of it applies
+        // and sends the leaver's switch-off in the same request as a pending email change: all of it applies. The user
+        // was switched off above, so switch them on first, for the request below to change both
+        expected.setActive(true);
+        client.users().patch(expected.getId(), PatchRequest.create().replace("active", "true").build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
         expected.setEmail(expected.getEmail().replace("entra.org", "entra2.org"));
         expected.setActive(false);
         client.users().patch(expected.getId(), PatchRequest.create()
