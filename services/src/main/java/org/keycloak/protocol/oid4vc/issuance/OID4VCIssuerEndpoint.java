@@ -584,8 +584,8 @@ public class OID4VCIssuerEndpoint {
         offerStorage.putOfferState(offerState);
 
         String targetUserId = offerState.getTargetUserId();
-        LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, uid=%s, nonce=%s]",
-                grantType, credentialConfigurationIds, targetUserId, offerState.getNonce());
+        LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, uid=%s, offerId=%s]",
+                grantType, credentialConfigurationIds, targetUserId, offerState.getCredentialsOfferId());
 
         // Add event details
         eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized))
@@ -693,8 +693,8 @@ public class OID4VCIssuerEndpoint {
         // We treat the credential offer URI as an unprotected capability URL and rely solely on the later authorization step
         // i.e. an authenticated client/user session is not required nor checked against the offer state
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
-        LOGGER.debugf("Found credential offer: [ids=%s, cid=%s, uid=%s, nonce=%s]",
-                credOffer.getCredentialConfigurationIds(), offerState.getTargetClientId(), offerState.getTargetUserId(), offerState.getNonce());
+        LOGGER.debugf("Found credential offer: [ids=%s, cid=%s, uid=%s, offerId=%s]",
+                credOffer.getCredentialConfigurationIds(), offerState.getTargetClientId(), offerState.getTargetUserId(), offerState.getCredentialsOfferId());
 
         if (offerState.isExpired()) {
             var errorMessage = "Credential offer has already expired";
@@ -712,8 +712,6 @@ public class OID4VCIssuerEndpoint {
         if (credOffer.getCredentialConfigurationIds() != null && !credOffer.getCredentialConfigurationIds().isEmpty()) {
             eventBuilder.detail(Details.CREDENTIAL_TYPE, String.join(",", credOffer.getCredentialConfigurationIds()));
         }
-
-        LOGGER.debugf("Responding with offer: %s", JsonSerialization.valueAsString(credOffer));
 
         eventBuilder.success();
         return cors.add(Response.ok()
@@ -1878,7 +1876,10 @@ public class OID4VCIssuerEndpoint {
 
         protocolMappers.forEach(mapper -> mapper.setClaim(vc, authResult.session()));
 
-        LOGGER.debugf("The credential to sign is: %s", vc);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugf("Signing credential: [id=%s, format=%s, claims=%s]",
+                    credentialConfigId, credentialConfig.getFormat(), claimNamesForLog(credentialSubjectClaims));
+        }
 
         // Build format-specific credential
         CredentialBody credentialBody;
@@ -1966,6 +1967,22 @@ public class OID4VCIssuerEndpoint {
         }
 
         return credentialBuilder;
+    }
+
+    /**
+     * Returns the claim names without their values, for debug logging. A claim holding a map (an mDoc namespace or a
+     * nested claim) is reported as one {@code name/key} entry per key it contains.
+     */
+    private static List<String> claimNamesForLog(Map<String, Object> claims) {
+        List<String> names = new ArrayList<>();
+        claims.forEach((name, value) -> {
+            if (value instanceof Map<?, ?> nested) {
+                nested.keySet().forEach(key -> names.add(name + "/" + key));
+            } else {
+                names.add(name);
+            }
+        });
+        return names;
     }
 
     /**
