@@ -17,8 +17,10 @@
 package org.keycloak.testsuite.oauth;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import jakarta.ws.rs.core.Response;
 
@@ -29,6 +31,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -36,16 +39,22 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginExpiredPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
@@ -81,6 +90,12 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
     @Page
     protected ErrorPage errorPage;
+
+    @Page
+    protected LoginPasswordUpdatePage updatePasswordPage;
+
+    @Page
+    protected LoginExpiredPage loginExpiredPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -395,6 +410,132 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         String backToAppLink = errorPage.getBackToApplicationLink();
         ClientRepresentation thirdParty = findClientByClientId(adminClient.realm(REALM_NAME), THIRD_PARTY_APP).toRepresentation();
         Assertions.assertEquals(backToAppLink, thirdParty.getBaseUrl());
+    }
+
+    @Test
+    public void oauthGrantAcceptWithLegacyCodeField() {
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), DEFAULT_USERNAME);
+        addLogoutAndConsentCleanup(user, THIRD_PARTY_APP);
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+
+        // Custom themes based on the previous template submit the session code in the "code" field
+        String sessionCode = driver.findElement(By.name("session_code")).getAttribute("value");
+        URLUtils.sendPOSTRequestWithWebDriver(getConsentFormAction(), Map.of("code", sessionCode));
+        WaitUtils.waitForPageToLoad();
+
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), driver.getCurrentUrl());
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+    }
+
+    @Test
+    public void consentWithoutSessionCodeDoesNotGrantConsent() {
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), DEFAULT_USERNAME);
+        addLogoutAndConsentCleanup(user, THIRD_PARTY_APP);
+
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+
+        // Submit the consent form without its session code, while no other required action is pending
+        URLUtils.sendPOSTRequestWithWebDriver(getConsentFormAction(), Map.of());
+        WaitUtils.waitForPageToLoad();
+
+        // The consent screen is shown again, and nothing was granted
+        grantPage.assertCurrent();
+        Assertions.assertTrue(user.getUserSessions().isEmpty());
+        Assertions.assertTrue(user.getConsents().isEmpty());
+
+        // Submitting the consent screen with its session code still completes the login
+        grantPage.accept();
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), driver.getCurrentUrl());
+    }
+
+    @Test
+    public void consentWithoutSessionCodeDoesNotSkipRequiredActionConsentClient() {
+        assertConsentRequestDoesNotSkipRequiredAction(THIRD_PARTY_APP, actionUri -> Map.of(), false);
+    }
+
+    @Test
+    public void consentWithoutSessionCodeDoesNotSkipRequiredActionNoConsentClient() {
+        assertConsentRequestDoesNotSkipRequiredAction("test-app", actionUri -> Map.of(), false);
+    }
+
+    @Test
+    public void consentWithInvalidSessionCodeDoesNotSkipRequiredAction() {
+        assertConsentRequestDoesNotSkipRequiredAction(THIRD_PARTY_APP, actionUri -> Map.of("session_code", "invalid"), true);
+    }
+
+    @Test
+    public void consentWithSessionCodeOfOtherRequiredActionDoesNotSkipRequiredAction() {
+        assertConsentRequestDoesNotSkipRequiredAction(THIRD_PARTY_APP,
+                actionUri -> Map.of("session_code", ActionURIUtils.parseQueryParamsFromActionURI(actionUri).get("session_code")), false);
+    }
+
+    private void assertConsentRequestDoesNotSkipRequiredAction(String clientId, Function<String, Map<String, String>> consentForm, boolean expectPageExpired) {
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), DEFAULT_USERNAME);
+        UserRepresentation userRep = user.toRepresentation();
+        userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+        user.update(userRep);
+
+        // Undo any effect of the test, including a successful bypass, so that it does not leak into other tests
+        addLogoutAndConsentCleanup(user, clientId);
+        getCleanup().addCleanup(() -> {
+            UserRepresentation rep = user.toRepresentation();
+            rep.setRequiredActions(List.of());
+            user.update(rep);
+            AdminApiUtil.resetUserPassword(user, DEFAULT_PASSWORD, false);
+        });
+
+        oauth.client(clientId, "password");
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        updatePasswordPage.assertCurrent();
+
+        // Send the consent request directly, while the required action is still pending
+        String actionUri = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
+        String consentUri = actionUri.replace("/login-actions/required-action", "/login-actions/consent");
+        consentUri = ActionURIUtils.removeQueryParamFromURI(consentUri, "session_code");
+        consentUri = ActionURIUtils.removeQueryParamFromURI(consentUri, "execution");
+        URLUtils.sendPOSTRequestWithWebDriver(consentUri, consentForm.apply(actionUri));
+        WaitUtils.waitForPageToLoad();
+
+        // No authorization code is issued and the user did not get past the required action
+        Assertions.assertFalse(driver.getCurrentUrl().startsWith(oauth.getRedirectUri()), driver.getCurrentUrl());
+        Assertions.assertFalse(driver.getCurrentUrl().contains("code="), driver.getCurrentUrl());
+        Assertions.assertTrue(user.toRepresentation().getRequiredActions().contains(UserModel.RequiredAction.UPDATE_PASSWORD.name()));
+        Assertions.assertTrue(user.getUserSessions().isEmpty());
+        Assertions.assertTrue(user.getConsents().isEmpty());
+
+        // The user can continue with the pending required action and complete the login
+        if (expectPageExpired) {
+            loginExpiredPage.assertCurrent();
+            loginExpiredPage.clickLoginContinueLink();
+        }
+        updatePasswordPage.assertCurrent();
+        updatePasswordPage.changePassword("new-password", "new-password");
+        if (THIRD_PARTY_APP.equals(clientId)) {
+            grantPage.assertCurrent();
+            grantPage.accept();
+        }
+        Assertions.assertTrue(oauth.parseLoginResponse().isSuccess(), driver.getCurrentUrl());
+    }
+
+    private void addLogoutAndConsentCleanup(UserResource user, String clientId) {
+        getCleanup().addCleanup(() -> {
+            user.logout();
+            if (!user.getConsents().isEmpty()) {
+                user.revokeConsent(clientId);
+            }
+        });
+    }
+
+    private String getConsentFormAction() {
+        String action = driver.findElement(By.name("session_code")).findElement(By.xpath("./ancestor::form")).getAttribute("action");
+        return URI.create(driver.getCurrentUrl()).resolve(action).toString();
     }
 
     // KEYCLOAK-7470
