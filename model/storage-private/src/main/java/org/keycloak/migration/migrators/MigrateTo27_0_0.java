@@ -19,11 +19,13 @@ package org.keycloak.migration.migrators;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
  * Migrates login themes from Login v1 (`keycloak`) and Login v2 (`keycloak.v2`)
- * to Login v3 / PatternFly 6 (`keycloak.v3`).
+ * to Login v3 / PatternFly 6 (`keycloak.v3`), and adds the 2FA executions missing from built-in flows
+ * of older realms as disabled.
  */
 public class MigrateTo27_0_0 extends RealmMigration {
 
@@ -38,18 +40,22 @@ public class MigrateTo27_0_0 extends RealmMigration {
     }
 
     @Override
-    public void migrate(KeycloakSession session) {
-        // Liquibase migrates persisted themes; Java migration is only needed for imports.
-    }
-
-    @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
-        updateLoginTheme(realm);
+        // Liquibase migrates persisted themes; theme migration is only needed for imports.
+        addMissing2faExecutions(realm);
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         updateLoginTheme(realm);
+        addMissing2faExecutions(realm);
+    }
+
+    private void addMissing2faExecutions(RealmModel realm) {
+        DefaultAuthenticationFlows.addMissingConditional2faExecutions(realm,
+                DefaultAuthenticationFlows.BROWSER_FLOW, "browser-conditional-credential");
+        DefaultAuthenticationFlows.addMissingConditional2faExecutions(realm,
+                DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW, "first-broker-login-conditional-credential");
     }
 
     private void updateLoginTheme(RealmModel realm) {

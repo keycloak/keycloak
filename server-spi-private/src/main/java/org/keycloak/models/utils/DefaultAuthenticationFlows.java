@@ -752,6 +752,74 @@ public class DefaultAuthenticationFlows {
         addOrganizationFirstBrokerFlowStep(realm, firstBrokerLogin);
     }
 
+    /**
+     * Adds the 2FA executions introduced in newer versions to the conditional 2FA sub-flow of a built-in flow
+     * created by an older version. Missing executions are added as {@code DISABLED}, so the authentication
+     * behavior of the realm does not change, but administrators can enable them in the read-only built-in flow.
+     *
+     * @param realm the realm
+     * @param topLevelAlias the alias of the built-in top-level flow, for example {@link #BROWSER_FLOW}
+     * @param conditionalCredentialConfigAlias the alias for the configuration of the conditional credential execution
+     */
+    public static void addMissingConditional2faExecutions(RealmModel realm, String topLevelAlias, String conditionalCredentialConfigAlias) {
+        AuthenticationFlowModel topLevel = realm.getFlowByAlias(topLevelAlias);
+        if (topLevel == null || !topLevel.isBuiltIn()) {
+            return;
+        }
+
+        List<AuthenticationExecutionModel> executions = new LinkedList<>();
+        KeycloakModelUtils.deepFindAuthenticationExecutions(realm, topLevel, executions);
+
+        executions.stream()
+                .map(AuthenticationExecutionModel::getParentFlow)
+                .distinct()
+                .filter(parentFlowId -> !Objects.equals(parentFlowId, topLevel.getId()))
+                .map(realm::getAuthenticationFlowById)
+                .filter(Objects::nonNull)
+                .filter(AuthenticationFlowModel::isBuiltIn)
+                .filter(f -> hasAuthenticator(realm, f, "conditional-user-configured") && hasAuthenticator(realm, f, "auth-otp-form"))
+                .findFirst()
+                .ifPresent(flow -> {
+                    if (Profile.isFeatureEnabled(Profile.Feature.PASSKEYS) && !hasAuthenticator(realm, flow, "conditional-credential")) {
+                        AuthenticatorConfigModel configModel = realm.getAuthenticatorConfigByAlias(conditionalCredentialConfigAlias);
+                        if (configModel == null) {
+                            configModel = new AuthenticatorConfigModel();
+                            configModel.setAlias(conditionalCredentialConfigAlias);
+                            configModel.setConfig(Map.of("credentials", WebAuthnCredentialModel.TYPE_PASSWORDLESS));
+                            configModel = realm.addAuthenticatorConfig(configModel);
+                        }
+                        addDisabledExecution(realm, flow, "conditional-credential", configModel.getId());
+                    }
+                    if (Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN) && !hasAuthenticator(realm, flow, "webauthn-authenticator")) {
+                        addDisabledExecution(realm, flow, "webauthn-authenticator", null);
+                    }
+                    if (Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES) && !hasAuthenticator(realm, flow, "auth-recovery-authn-code-form")) {
+                        addDisabledExecution(realm, flow, "auth-recovery-authn-code-form", null);
+                    }
+                });
+    }
+
+    private static boolean hasAuthenticator(RealmModel realm, AuthenticationFlowModel flow, String authenticator) {
+        return realm.getAuthenticationExecutionsStream(flow.getId())
+                .anyMatch(e -> Objects.equals(authenticator, e.getAuthenticator()));
+    }
+
+    private static void addDisabledExecution(RealmModel realm, AuthenticationFlowModel flow, String authenticator, String configId) {
+        int priority = realm.getAuthenticationExecutionsStream(flow.getId())
+                .mapToInt(AuthenticationExecutionModel::getPriority)
+                .max()
+                .orElse(0) + 10;
+
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(flow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+        execution.setAuthenticator(authenticator);
+        execution.setPriority(priority);
+        execution.setAuthenticatorFlow(false);
+        execution.setAuthenticatorConfig(configId);
+        realm.addAuthenticatorExecution(execution);
+    }
+
     public static void samlEcpProfile(RealmModel realm) {
         AuthenticationFlowModel ecpFlow = new AuthenticationFlowModel();
 
