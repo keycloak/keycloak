@@ -189,8 +189,9 @@ public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluatio
             }
         }
 
-        if (memberScope && evaluated < associatedPolicies.size()) {
-            // An unresolved child may change whether a denial propagates to another membership.
+        if (memberScope && evaluated < associatedPolicies.size() && explicitDenial) {
+            // An unresolved child combined with an explicit denial may change
+            // whether that denial propagates to another membership.
             return Outcome.FORCE_DENY;
         }
         if (evaluated == 0) {

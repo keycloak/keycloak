@@ -126,7 +126,9 @@ public final class PartialEvaluator {
                 PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
 
                 if (provider == null) {
-                    if (AdminPermissionsSchema.USERS.equals(resourceType)) {
+                    // Unsupported policy type (Time, Client, JS, Regex). A positive
+                    // policy at worst does not grant; only negative ones might deny.
+                    if (AdminPermissionsSchema.USERS.equals(resourceType) && Logic.NEGATIVE.equals(policy.getLogic())) {
                         deniedResources.addAll(ids);
                     }
                     continue;
@@ -275,8 +277,15 @@ public final class PartialEvaluator {
 
     private GroupMemberDecision evaluateMemberPolicy(KeycloakSession session, AuthorizationProvider authorization, UserModel admin, Policy policy) {
         PolicyProvider provider = authorization.getProvider(policy.getType());
-        if (!(provider instanceof PartialEvaluationPolicyProvider partial) || !provider.isValid(policy, authorization)) {
+        if (provider == null || !provider.isValid(policy, authorization)) {
             return GroupMemberDecision.INDETERMINATE;
+        }
+        if (!(provider instanceof PartialEvaluationPolicyProvider partial)) {
+            // Unsupported policy type (Time, Client, JS, Regex).
+            // A positive policy at worst does not grant; a negative one might deny.
+            return policy.getLogic() == Logic.NEGATIVE
+                    ? GroupMemberDecision.INDETERMINATE
+                    : GroupMemberDecision.NO_GRANT;
         }
         Outcome outcome = partial.evaluateMemberOutcome(session, policy, admin);
         boolean negative = policy.getLogic() == Logic.NEGATIVE;

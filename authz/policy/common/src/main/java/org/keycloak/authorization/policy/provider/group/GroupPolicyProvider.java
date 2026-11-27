@@ -238,10 +238,11 @@ public class GroupPolicyProvider implements PolicyProvider, PartialEvaluationPol
         AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
         GroupPolicyRepresentation groupPolicy = representationFunction.apply(policy, authorizationProvider);
         String claim = groupPolicy.getGroupsClaim();
-        List<String> groups = memberScope && claim != null ? subject.getAttributes().get(claim) : null;
-        if (groups == null || groups.isEmpty()) {
-            groups = resolveSubjectGroupPaths(session, subject);
-        }
+        // Always resolve from actual memberships. The runtime evaluate() path reads the
+        // identity token claim, but partial evaluation has no token. Reading the user
+        // attribute named after groupsClaim would be untrusted — the admin can edit their
+        // own unmanaged attributes through the account console.
+        List<String> groups = resolveSubjectGroupPaths(session, subject);
         return evaluateGroups(session, realm, memberScope ? null : subject, groupPolicy, new Entry(claim, groups),
                 Logic.NEGATIVE.equals(policy.getLogic()));
     }

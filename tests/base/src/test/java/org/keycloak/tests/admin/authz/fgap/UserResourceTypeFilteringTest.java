@@ -465,6 +465,100 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testBareUnsupportedPolicyOnUsersViewDoesNotDeny() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Allow My Admin User Policy", myadmin.getId());
+        createAllPermission(adminPermissionsClient, usersType, allowMyAdmin, Set.of(VIEW));
+
+        List<UserRepresentation> baseline = realmAdminClient.realm(realm.getName())
+                .users().search(null, 0, 100);
+        assertThat(baseline, hasSize(Matchers.greaterThanOrEqualTo(50)));
+
+        // Attach a bare Time policy (unsupported for partial evaluation) to a specific user.
+        // This should not deny user-15 — partial evaluation cannot evaluate the policy,
+        // but it is positive-logic and at worst does not grant.
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Always Matching Time Policy");
+        try (Response response = adminPermissionsClient.authorization().policies().time()
+                .create(timePolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+        createPermission(adminPermissionsClient, "user-15", usersType, Set.of(VIEW), timePolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(null, 0, 100);
+        assertThat(search, hasSize(baseline.size()));
+    }
+
+    @Test
+    public void testBareUnsupportedPolicyOnViewMembersDoesNotBlockOtherGrants() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Allow My Admin User Policy", myadmin.getId());
+
+        // Grant view-members on group A, which contains user-10
+        GroupRepresentation grantedGroup = createGroup("granted-group");
+        UserRepresentation target = realm.admin().users().search("user-10").get(0);
+        realm.admin().users().get(target.getId()).joinGroup(grantedGroup.getId());
+        createGroupPermission(grantedGroup, Set.of(VIEW_MEMBERS), allowMyAdmin);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(target.getUsername(), 0, 10);
+        assertThat(search, hasSize(1));
+
+        // Attach a bare Time policy (positive, unsupported) to view-members on group B, which also contains user-10.
+        // This should not block user-10: the Time policy at worst does not grant, but should not
+        // override the grant from group A.
+        GroupRepresentation unrelatedGroup = createGroup("time-group");
+        realm.admin().users().get(target.getId()).joinGroup(unrelatedGroup.getId());
+
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Bare Time Policy");
+        try (Response response = adminPermissionsClient.authorization().policies().time()
+                .create(timePolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+        createGroupPermission(unrelatedGroup, Set.of(VIEW_MEMBERS), timePolicy);
+
+        search = realmAdminClient.realm(realm.getName())
+                .users().search(target.getUsername(), 0, 10);
+        assertThat(search, hasSize(1));
+        assertThat(search.get(0).getUsername(), is(target.getUsername()));
+    }
+
+    @Test
+    public void testPositiveAffirmativeAggregateWithUnsupportedChildOnViewMembersGrants() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdmin = createUserPolicy(
+                realm, adminPermissionsClient, "Allow My Admin User Policy", myadmin.getId());
+
+        GroupRepresentation group = createGroup("agg-group");
+        UserRepresentation target = realm.admin().users().search("user-20").get(0);
+        realm.admin().users().get(target.getId()).joinGroup(group.getId());
+
+        TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
+        timePolicy.setName("Time Policy");
+        try (Response response = adminPermissionsClient.authorization().policies().time()
+                .create(timePolicy)) {
+            assertThat(response.getStatus(), is(Response.Status.CREATED.getStatusCode()));
+        }
+
+        // POSITIVE AFFIRMATIVE aggregate with [Allow myadmin, Time].
+        // The user policy grants; the Time policy is unsupported for partial evaluation.
+        // With AFFIRMATIVE, one grant suffices — the unresolved Time child should not block.
+        AggregatePolicyRepresentation aggregatePolicy = createAggregatedPolicy(
+                adminPermissionsClient, "Positive Aff Aggregate With Time",
+                Logic.POSITIVE, DecisionStrategy.AFFIRMATIVE, allowMyAdmin.getName(), timePolicy.getName());
+        createGroupPermission(group, Set.of(VIEW_MEMBERS), aggregatePolicy);
+
+        List<UserRepresentation> search = realmAdminClient.realm(realm.getName())
+                .users().search(target.getUsername(), 0, 10);
+        assertThat(search, hasSize(1));
+        assertThat(search.get(0).getUsername(), is(target.getUsername()));
+    }
+
+    @Test
     public void testNestedNegativeAggregateWithUnsupportedGrandchildDenies() {
         TimePolicyRepresentation timePolicy = new TimePolicyRepresentation();
         timePolicy.setName("Always Matching Time Policy");
