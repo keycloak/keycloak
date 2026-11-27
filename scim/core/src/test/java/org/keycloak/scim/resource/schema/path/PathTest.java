@@ -133,7 +133,8 @@ public class PathTest {
         // "abcde" is not "true", so ne would match primary: true and select the email
         ModelValidationException error = assertThrows(ModelValidationException.class,
                 () -> path("emails[primary ne \"abcde\"]").select(EMAILS, work));
-        assertTrue(error.getMessage().contains("Invalid boolean value abcde"), error.getMessage());
+        assertTrue(error.getMessage().startsWith("Invalid boolean value {0}"), error.getMessage());
+        assertEquals("abcde", error.getParameters()[0]);
 
         assertEquals(1, path("emails[primary eq \"True\"]").select(EMAILS, work).size());
         assertEquals(0, path("emails[primary eq false]").select(EMAILS, work).size());

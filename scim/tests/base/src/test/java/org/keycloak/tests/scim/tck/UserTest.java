@@ -1134,6 +1134,20 @@ public class UserTest extends AbstractScimTest {
         actual = client.users().get(expected.getId());
         assertRootAttributes(actual, expected);
 
+        // a boolean compared with anything but true or false is refused, also when the value holds a brace that the
+        // error message must not treat as a placeholder
+        try {
+            client.users().patch(expected.getId(), PatchRequest.create()
+                    .replace("emails[primary ne \"{\"].value", "nobody@entra3.org")
+                    .build());
+            fail("Should have thrown an exception - primary is a boolean");
+        } catch (ScimClientException e) {
+            assertEquals(400, e.getError().getStatusInt());
+            assertTrue(e.getError().getDetail().contains("Invalid boolean value {"), e.getError().getDetail());
+        }
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
         // a filter that matches no current email is refused with noTarget (RFC 7644 section 3.12), for a replace and
         // for a remove, and the user's only email is left as it was
         for (PatchRequest noMatch : List.of(

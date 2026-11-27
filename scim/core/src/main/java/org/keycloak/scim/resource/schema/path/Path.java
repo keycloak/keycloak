@@ -189,8 +189,9 @@ public final class Path {
                 String operand = FilterUtils.extractCompValue(ctx.compValue());
 
                 if (isBoolean && operand != null && !"true".equalsIgnoreCase(operand) && !"false".equalsIgnoreCase(operand)) {
-                    throw new ModelValidationException("Invalid boolean value " + operand + " for " + name + " in the filter for "
-                            + attribute.getName());
+                    // the operand is a parameter, not part of the message: the message is a MessageFormat pattern
+                    throw new ModelValidationException("Invalid boolean value {0} for {1} in the filter for {2}", operand, name,
+                            attribute.getName());
                 }
 
                 return null;
