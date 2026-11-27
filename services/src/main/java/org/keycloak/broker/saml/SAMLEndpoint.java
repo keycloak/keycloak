@@ -279,7 +279,7 @@ public class SAMLEndpoint {
         protected KeyLocator getIDPKeyLocator() {
             if (StringUtil.isNotBlank(config.getMetadataDescriptorUrl()) && config.isUseMetadataDescriptorUrl()) {
                 String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(realm.getId(), config.getInternalId());
-                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl());
+                PublicKeyLoader keyLoader = new SamlMetadataPublicKeyLoader(session, config.getMetadataDescriptorUrl(), true, config.getIdpEntityId());
                 PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
                 return new SamlMetadataKeyLocator(modelKey, keyLoader, KeyUse.SIG, keyStorage);
             }

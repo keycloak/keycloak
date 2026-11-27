@@ -243,6 +243,23 @@ When processing a SAML assertion received from an identity provider, {project_na
 Depending on the Principal type of the identity provider, the principal is the subject `NameID` or the value of the configured attribute.
 Accounts whose link to the identity provider has an empty user ID can no longer log in through it; remove this link so that their owners can link the accounts again once the identity provider sends a non-empty principal.
 
+=== SAML identity provider metadata must contain the configured entity ID
+// https://github.com/keycloak/keycloak/issues/54973
+
+When a SAML identity provider has *Use metadata descriptor URL* enabled and an *Identity Provider Entity ID* configured, {project_name} now validates signatures only with the certificates of the metadata entity whose `entityID` is exactly the configured entity ID.
+If the metadata is an `EntitiesDescriptor` that contains several entities, {project_name} selects the entity with that `entityID`, including when it is inside a nested `EntitiesDescriptor`.
+Previously, the `entityID` in the metadata was not checked, and the certificates of the first entity were used when the metadata contained several entities.
+
+After upgrading, if the metadata does not contain an entity with the configured entity ID, {project_name} does not use any certificate from the metadata and logs a warning with the metadata URL and the configured entity ID.
+Logins through that identity provider then fail with an invalid signature error.
+To fix such an identity provider, set *Identity Provider Entity ID* to the `entityID` that the identity provider publishes in its metadata, or set *Metadata descriptor URL* to the metadata that contains the identity provider.
+The entity ID is compared as an exact string, so, for example, a trailing slash or a different letter case makes it a different entity ID.
+The *Identity Provider Entity ID* is also the issuer that {project_name} expects in the responses and assertions of the identity provider.
+If the metadata is corrected at its URL without changing the identity provider configuration, use the *Reload keys* action of the identity provider to download the certificates again.
+
+Identity providers without an *Identity Provider Entity ID* are not affected: the `entityID` in the metadata is not checked, and the certificates of the first entity are used as before.
+SAML clients that use a metadata descriptor URL are not affected.
+
 === SAML back-channel SLO via SessionIndex requires client signature
 // https://github.com/keycloak/keycloak/issues/53535
 

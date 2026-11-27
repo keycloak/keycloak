@@ -85,6 +85,16 @@ public class SamlMetadataKeyLocatorTest {
             + "</md:IDPSSODescriptor>"
             + "</md:EntityDescriptor>";
 
+    private static final String ENTITY_ID = "http://localhost:8080/realms/keycloak";
+    private static final String OTHER_ENTITY_ID = "http://localhost:8080/realms/other";
+
+    // descriptor of another entity, the key names and the cache duration are different
+    private static final String OTHER_DESCRIPTOR = DESCRIPTOR
+            .replace("entityID=\"" + ENTITY_ID + "\"", "entityID=\"" + OTHER_ENTITY_ID + "\"")
+            .replace("cacheDuration=\"P1D\"", "cacheDuration=\"PT1H\"")
+            .replace("<ds:KeyName>keycloak</ds:KeyName>", "<ds:KeyName>other</ds:KeyName>")
+            .replace("<ds:KeyName>keycloak2</ds:KeyName>", "<ds:KeyName>other2</ds:KeyName>");
+
     // test PublicKeyStorageProvider that just loads the keys in every call
     private static class TestPublicKeyStorageProvider implements PublicKeyStorageProvider {
 
@@ -141,6 +151,28 @@ public class SamlMetadataKeyLocatorTest {
         protected String getKeys() throws Exception {
             return descriptor;
         }
+    }
+
+    // PublicKeyLoader of an IDP from the metadata descriptor string that expects an entity ID
+    private static class TestSamlMetadataEntityIdPublicKeyLoader extends SamlMetadataPublicKeyLoader {
+
+        private final String descriptor;
+
+        public TestSamlMetadataEntityIdPublicKeyLoader(String descriptor, String entityId) {
+            super(null, ENTITY_ID + "/protocol/saml/descriptor", true, entityId);
+            this.descriptor = descriptor;
+        }
+
+        @Override
+        protected String getKeys() throws Exception {
+            return descriptor;
+        }
+    }
+
+    private static String aggregate(String... descriptors) {
+        return "<md:EntitiesDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\">"
+                + String.join("", descriptors)
+                + "</md:EntitiesDescriptor>";
     }
 
     @Test
@@ -242,5 +274,52 @@ public class SamlMetadataKeyLocatorTest {
         String desc = DESCRIPTOR.replaceFirst("cacheDuration=\"P1D\"", "validUntil=\"" + calendar.toXMLFormat() + "\"");
         loader = new TestSamlMetadataPublicKeyLoader(desc, true);
         MatcherAssert.assertThat(loader.loadKeys().getExpirationTime(), Matchers.allOf(Matchers.greaterThan(expiration - 5000), Matchers.lessThanOrEqualTo(expiration)));
+    }
+
+    @Test
+    public void testEntityId() throws Exception {
+        // the descriptor is used when it is the expected entity
+        PublicKeyLoader loader = new TestSamlMetadataEntityIdPublicKeyLoader(DESCRIPTOR, ENTITY_ID);
+        MatcherAssert.assertThat(loader.loadKeys().getKids(), Matchers.contains("keycloak", "keycloak2"));
+
+        // no keys are loaded when the descriptor is another entity
+        loader = new TestSamlMetadataEntityIdPublicKeyLoader(DESCRIPTOR, OTHER_ENTITY_ID);
+        MatcherAssert.assertThat(loader.loadKeys().getKeys(), Matchers.empty());
+
+        // the entity ID is compared as an exact string
+        loader = new TestSamlMetadataEntityIdPublicKeyLoader(DESCRIPTOR, ENTITY_ID + "/");
+        MatcherAssert.assertThat(loader.loadKeys().getKeys(), Matchers.empty());
+        loader = new TestSamlMetadataEntityIdPublicKeyLoader(DESCRIPTOR, ENTITY_ID.toUpperCase());
+        MatcherAssert.assertThat(loader.loadKeys().getKeys(), Matchers.empty());
+    }
+
+    @Test
+    public void testEntityIdInAggregate() throws Exception {
+        Long expiration = Time.currentTimeMillis() + (24 * 60 * 60 * 1000);
+
+        // the expected entity is used although it is not the first one, 5s window for its cacheDuration
+        PublicKeyLoader loader = new TestSamlMetadataEntityIdPublicKeyLoader(aggregate(OTHER_DESCRIPTOR, DESCRIPTOR), ENTITY_ID);
+        PublicKeysWrapper keys = loader.loadKeys();
+        MatcherAssert.assertThat(keys.getKids(), Matchers.contains("keycloak", "keycloak2"));
+        MatcherAssert.assertThat(keys.getExpirationTime(), Matchers.allOf(Matchers.greaterThanOrEqualTo(expiration), Matchers.lessThan(expiration + 5000)));
+
+        // the expected entity is also found in a nested aggregate
+        loader = new TestSamlMetadataEntityIdPublicKeyLoader(aggregate(OTHER_DESCRIPTOR, aggregate(DESCRIPTOR)), ENTITY_ID);
+        MatcherAssert.assertThat(loader.loadKeys().getKids(), Matchers.contains("keycloak", "keycloak2"));
+
+        // no keys are loaded when the aggregate does not contain the expected entity
+        loader = new TestSamlMetadataEntityIdPublicKeyLoader(aggregate(OTHER_DESCRIPTOR, aggregate(OTHER_DESCRIPTOR)), ENTITY_ID);
+        MatcherAssert.assertThat(loader.loadKeys().getKeys(), Matchers.empty());
+    }
+
+    @Test
+    public void testNoEntityId() throws Exception {
+        // the entity ID of the descriptor is not checked
+        PublicKeyLoader loader = new TestSamlMetadataEntityIdPublicKeyLoader(OTHER_DESCRIPTOR, null);
+        MatcherAssert.assertThat(loader.loadKeys().getKids(), Matchers.contains("other", "other2"));
+
+        // the first entity of an aggregate is used
+        loader = new TestSamlMetadataEntityIdPublicKeyLoader(aggregate(OTHER_DESCRIPTOR, DESCRIPTOR), null);
+        MatcherAssert.assertThat(loader.loadKeys().getKids(), Matchers.contains("other", "other2"));
     }
 }

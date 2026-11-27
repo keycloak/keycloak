@@ -21,6 +21,7 @@ image:images/saml-add-identity-provider.png[Add Identity Provider]
 
 |Identity Provider Entity ID
 |The Entity ID used to validate the Issuer for received SAML assertions. If empty, no Issuer validation is performed.
+When `Use metadata descriptor URL` is *ON*, this Entity ID also identifies the entity in the metadata whose certificates are used.
 
 |Single Sign-On Service URL
 |The SAML endpoint that starts the authentication process.  If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
@@ -95,6 +96,12 @@ itself.
 
 |Use metadata descriptor URL
 |When *ON*, the certificates to validate signatures are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. The SAML provider can validate signatures in two different ways. If a specific certificate is requested (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) the refresh is only done after a max cache time. This maximum time can be specified in the descriptor itself, `cacheDuration` or `validUntil` attributes, or the cache provider defines one. See https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works. The default cache TTL for SAML metadata is 24 hours (86,400 seconds).
+
+When the `Identity Provider Entity ID` is set, {project_name} uses only the certificates of the entity whose `entityID` in the metadata is exactly that Entity ID.
+If the metadata is an `EntitiesDescriptor` that contains several entities, for example the metadata of a federation, that entity is used wherever it is located in the metadata, including in a nested `EntitiesDescriptor`.
+If the metadata does not contain that entity, {project_name} does not use any certificate from the metadata and logs a warning with the metadata URL and the Entity ID.
+The signatures of the external IDP cannot be validated then, and logins fail until the metadata or the `Identity Provider Entity ID` is corrected.
+When the `Identity Provider Entity ID` is empty, the `entityID` in the metadata is not checked and the certificates of the first entity in the metadata are used.
 
 When the option is *OFF*, the certificates in `Validating X509 Certificates` are used to validate signatures.
 

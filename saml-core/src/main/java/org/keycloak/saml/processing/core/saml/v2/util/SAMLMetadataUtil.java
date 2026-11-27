@@ -133,6 +133,41 @@ public class SAMLMetadataUtil {
         return entityType;
     }
 
+    /**
+     * Parses the metadata and returns the entity descriptor of the given entity. If the metadata
+     * is an aggregate ({@code EntitiesDescriptor}), the entity is searched in it and in its nested
+     * aggregates. The entity ID is compared as an exact string.
+     *
+     * @param descriptor The metadata, an {@code EntityDescriptor} or an {@code EntitiesDescriptor}
+     * @param entityId The entity ID to look for
+     * @return The entity descriptor with the entity ID or null if the metadata does not contain it
+     * @throws ParsingException If the metadata cannot be parsed
+     */
+    public static EntityDescriptorType parseEntityDescriptorType(String descriptor, String entityId) throws ParsingException {
+        descriptor = removeUTF8BOM(descriptor);
+        Object parsedObject = SAMLParser.getInstance().parse(StaxParserUtil.getXMLEventReader(descriptor));
+
+        return locateEntityDescriptorType(parsedObject, entityId);
+    }
+
+    private static EntityDescriptorType locateEntityDescriptorType(Object parsedObject, String entityId) {
+        if (parsedObject instanceof EntitiesDescriptorType) {
+            for (Object child : ((EntitiesDescriptorType) parsedObject).getEntityDescriptor()) {
+                EntityDescriptorType entityType = locateEntityDescriptorType(child, entityId);
+                if (entityType != null) {
+                    return entityType;
+                }
+            }
+        } else if (parsedObject instanceof EntityDescriptorType) {
+            EntityDescriptorType entityType = (EntityDescriptorType) parsedObject;
+            if (entityId.equals(entityType.getEntityID())) {
+                return entityType;
+            }
+        }
+
+        return null;
+    }
+
     public static IDPSSODescriptorType locateIDPSSODescriptorType(EntityDescriptorType entityType) {
         return locateSSODescriptorType(entityType, SAMLMetadataUtil::getIDPSSODescriptorType);
     }
