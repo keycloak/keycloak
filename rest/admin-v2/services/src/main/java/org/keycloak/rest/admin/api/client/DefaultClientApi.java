@@ -7,15 +7,19 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jakarta.annotation.Nonnull;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
@@ -34,13 +38,18 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
 
 public class DefaultClientApi implements ClientApi {
     
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null).copy()
             .configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
-    
+
+    // only used to parse the patch document into a tree, the update itself is applied via MAPPER
+    private static final ObjectMapper YAML_MAPPER = new YAMLMapper()
+            .configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
+
     private final KeycloakSession session;
     private final String clientId;
     private final ClientResourceTypeProvider typeProvider;
@@ -53,7 +62,10 @@ public class DefaultClientApi implements ClientApi {
         this.typeProvider = typeProvider;
     }
 
+    // The media types are intentionally repeated from the interface: they are not inherited by this implementation,
+    // and without them the response content type is not negotiated (application/yaml requests would receive JSON).
     @GET
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Override
     public BaseClientRepresentation getClient() {
         try {
@@ -77,6 +89,8 @@ public class DefaultClientApi implements ClientApi {
     }
 
     @PUT
+    @Consumes({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Override
     public Response createOrUpdateClient(BaseClientRepresentation client) {
         assertSameClientIds(clientId, client.getClientId());
@@ -101,6 +115,8 @@ public class DefaultClientApi implements ClientApi {
      * rest, rather than the type layer
      */
     @PATCH
+    @Consumes({PatchTypeNames.JSON_MERGE, PatchTypeNames.YAML_MERGE})
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Override
     public BaseClientRepresentation patchClient(InputStream patch) {
         String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
@@ -119,29 +135,26 @@ public class DefaultClientApi implements ClientApi {
             }
             
             BaseClientRepresentation updated;
-            switch (patchType) {
-                case JSON_MERGE -> {
-                    JsonNode patchNode;
-                    try {
-                        patchNode = MAPPER.readValue(patch, JsonNode.class);
-                        if (!patchNode.isObject()) {
-                            throw new WebApplicationException("Cannot replace client resource with non-object", Response.Status.BAD_REQUEST);
-                        }
-                        final ObjectReader objectReader = MAPPER.readerForUpdating(current);
-                        updated = objectReader.readValue(patchNode);
-                    } catch (JsonMappingException e) {
-                        if (e.getPath().isEmpty()) {
-                            throw new WebApplicationException("Invalid patch", Response.Status.BAD_REQUEST);
-                        }
-                        var invalidField = e.getPath().stream().map(JsonMappingException.Reference::getFieldName).collect(Collectors.joining("."));
-                        throw new WebApplicationException("Invalid value for %s".formatted(invalidField), Response.Status.BAD_REQUEST);
-                    } catch (JsonProcessingException e) {
-                        throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
-                    } catch (IOException e) {
-                        throw new WebApplicationException("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
-                    }
+            try {
+                JsonNode patchNode = switch (patchType) {
+                    case JSON_MERGE -> MAPPER.readValue(patch, JsonNode.class);
+                    case YAML_MERGE -> YAML_MAPPER.readValue(patch, JsonNode.class);
+                };
+                if (patchNode == null || !patchNode.isObject()) {
+                    throw new WebApplicationException("Cannot replace client resource with non-object", Response.Status.BAD_REQUEST);
                 }
-                default -> throw new WebApplicationException("Invalid patch type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
+                final ObjectReader objectReader = MAPPER.readerForUpdating(current);
+                updated = objectReader.readValue(patchNode);
+            } catch (JsonMappingException e) {
+                if (e.getPath().isEmpty()) {
+                    throw new WebApplicationException("Invalid patch", Response.Status.BAD_REQUEST);
+                }
+                var invalidField = e.getPath().stream().map(JsonMappingException.Reference::getFieldName).collect(Collectors.joining("."));
+                throw new WebApplicationException("Invalid value for %s".formatted(invalidField), Response.Status.BAD_REQUEST);
+            } catch (JsonProcessingException e) {
+                throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
+            } catch (IOException e) {
+                throw new WebApplicationException("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
             }
             
             assertSameClientIds(clientId, updated.getClientId());

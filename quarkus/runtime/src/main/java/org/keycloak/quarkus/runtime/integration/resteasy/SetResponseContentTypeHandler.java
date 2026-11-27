@@ -17,8 +17,12 @@
 
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import java.util.Map;
+
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.jboss.resteasy.reactive.common.util.ServerMediaType;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 
@@ -26,21 +30,40 @@ import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
  * <p>A {@link ServerRestHandler} that set the media type produced by a JAX-RS resource method.
  *
  * <p>The main reason behind this handler is to make the response media type available to {@link org.keycloak.headers.DefaultSecurityHeadersProvider}.
+ *
+ * <p>When the method produces multiple media types, the type is negotiated against the Accept header
+ * using the same logic RESTEasy Reactive applies to {@code @Produces}. If nothing matches, the first produced type is used.
  */
 public class SetResponseContentTypeHandler implements ServerRestHandler {
 
-    private MediaType producesMediaType;
+    private final MediaType defaultMediaType;
+    private final ServerMediaType negotiator;
 
     public SetResponseContentTypeHandler(String[] producesMediaTypes) {
         if (producesMediaTypes.length == 0) {
-            this.producesMediaType = MediaType.APPLICATION_JSON_TYPE;
+            this.defaultMediaType = MediaType.APPLICATION_JSON_TYPE;
+            this.negotiator = null;
         } else {
-            this.producesMediaType = MediaType.valueOf(producesMediaTypes[0]);
+            this.defaultMediaType = MediaType.valueOf(producesMediaTypes[0]);
+            this.negotiator = producesMediaTypes.length > 1
+                    ? new ServerMediaType(ServerMediaType.mediaTypesFromArray(producesMediaTypes), null, false)
+                    : null;
         }
     }
 
     @Override
     public void handle(ResteasyReactiveRequestContext requestContext) {
-        requestContext.setResponseContentType(producesMediaType);
+        requestContext.setResponseContentType(select(requestContext));
+    }
+
+    private MediaType select(ResteasyReactiveRequestContext requestContext) {
+        if (negotiator != null) {
+            Map.Entry<MediaType, MediaType> negotiated = negotiator
+                    .negotiateProduces(requestContext.getHttpHeaders().getHeaderString(HttpHeaders.ACCEPT));
+            if (negotiated.getValue() != null) {
+                return negotiated.getValue();
+            }
+        }
+        return defaultMediaType;
     }
 }

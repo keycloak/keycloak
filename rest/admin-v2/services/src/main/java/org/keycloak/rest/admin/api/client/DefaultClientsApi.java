@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -19,6 +20,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.ListOptions;
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.Constants;
@@ -89,8 +91,10 @@ public class DefaultClientsApi implements ClientsApi {
         throw new IllegalArgumentException("sort direction must be asc or desc");
     }
     
+    // The media types are intentionally repeated from the interface: they are not inherited by this implementation,
+    // and without them the response content type is not negotiated (application/yaml requests would receive JSON).
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Override
     public Stream<BaseClientRepresentation> getClients(ListOptions listOptions) {
         try {
@@ -128,6 +132,8 @@ public class DefaultClientsApi implements ClientsApi {
     }
 
     @POST
+    @Consumes({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Override
     public Response createClient(@Valid BaseClientRepresentation client) {
         try {

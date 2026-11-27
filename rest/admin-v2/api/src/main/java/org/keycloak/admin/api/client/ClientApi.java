@@ -27,7 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 public interface ClientApi {
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Operation(summary = "Get a client", description = "Returns a single client by its clientId")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class))),
@@ -36,8 +36,8 @@ public interface ClientApi {
     BaseClientRepresentation getClient();
 
     @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Operation(summary = "Create or update a client", description = "Creates or updates a client in the realm")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class))),
@@ -57,9 +57,9 @@ public interface ClientApi {
     }
 
     @PATCH
-    @Consumes(PatchTypeNames.JSON_MERGE)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Patch a client", description = "Partially updates a client using JSON Merge Patch")
+    @Consumes({PatchTypeNames.JSON_MERGE, PatchTypeNames.YAML_MERGE})
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
+    @Operation(summary = "Patch a client", description = "Partially updates a client using JSON Merge Patch (in either JSON or YAML form)")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class))),
         @APIResponse(responseCode = "404", description = "Not Found")

@@ -15,6 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.ListOptions;
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.api.TypedResponse;
 import org.keycloak.common.constants.KeycloakOpenAPI;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
@@ -33,8 +34,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public interface ClientsApi {
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
+    @Consumes({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression. "
             + "Results are paginated using offset (0-based, default 0) and limit (default 100).")
     @APIResponses(value = {
@@ -48,8 +49,8 @@ public interface ClientsApi {
     }
 
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
+    @Produces({MediaType.APPLICATION_JSON, PatchTypeNames.APPLICATION_YAML})
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
     @APIResponses(value = {
             @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))

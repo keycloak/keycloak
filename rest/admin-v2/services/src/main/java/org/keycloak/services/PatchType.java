@@ -7,7 +7,8 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.admin.api.PatchTypeNames;
 
 public enum PatchType {
-    JSON_MERGE(PatchTypeNames.JSON_MERGE);
+    JSON_MERGE(PatchTypeNames.JSON_MERGE),
+    YAML_MERGE(PatchTypeNames.YAML_MERGE);
 
     private final MediaType mediaType;
 
