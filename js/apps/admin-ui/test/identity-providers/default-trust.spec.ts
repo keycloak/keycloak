@@ -10,7 +10,7 @@ import { clickSaveButton, createDefaultTrustProvider } from "./main.ts";
 
 const realmName = `idp-default-trust-${uuid()}`;
 const alias = "default-trust";
-const addDefaultTrustProviderUrl = `${SERVER_URL}/admin/master/console/#/${realmName}/identity-providers/default-trust/add`;
+const addDefaultTrustProviderUrl = `${SERVER_URL}/admin/master/console/${realmName}/identity-providers/default-trust/add`;
 const jwksUrl = "https://localhost/realms/test/protocol/openid-connect/certs";
 const jwks = '{"keys":[]}';
 
