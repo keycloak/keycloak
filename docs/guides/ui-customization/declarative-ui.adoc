@@ -115,7 +115,7 @@ public class AttributesTab implements UiTabProvider, UiTabProviderFactory<Compon
                 .property()
                 .name("logo")
                 .label("Logo")
-                .helpText("Logo shown in the Account Console")
+                .helpText("Logo URL stored as a realm attribute for custom integrations")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .build();
@@ -135,9 +135,14 @@ public class AttributesTab implements UiTabProvider, UiTabProviderFactory<Compon
 }
 ----
 
+This example stores the value as the realm `logo` attribute so custom themes or extensions can read it.
+The built-in Account Console logo comes from theme properties (`properties.logo`), not from that realm attribute, so you still need theme integration if you want the Account Console to display it.
+
 == Packaging and deploying
 
-Package the providers in a JAR with the ServiceLoader descriptors, copy the JAR to the `providers/` directory of the {project_name} server, and restart the server.
+Package the providers in a JAR with the ServiceLoader descriptors and copy the JAR to the `providers/` directory of the {project_name} server.
+If you start the server with `--optimized`, run `bin/kc.[sh|bat] build` first so the provider registry picks up the new JAR, then restart the server.
+Otherwise a normal restart is enough for {project_name} to discover the providers.
 For details on packaging providers, see the link:{server_providers}[Service Provider Interfaces] chapter in the {developerguide_name}.
 
 The Declarative UI SPI is enabled by default.
