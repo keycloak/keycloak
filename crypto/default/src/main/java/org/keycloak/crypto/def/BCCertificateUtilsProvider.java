@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -208,7 +209,10 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
                     break;
                 }
                 case JavaAlgorithm.Ed25519:
-                case JavaAlgorithm.Ed448: {
+                case JavaAlgorithm.Ed448:
+                case Algorithm.ML_DSA_44:
+                case Algorithm.ML_DSA_65:
+                case Algorithm.ML_DSA_87: {
                     signerBuilder = new JcaContentSignerBuilder(privateKey.getAlgorithm())
                             .setProvider(BouncyIntegration.PROVIDER);
                     break;
