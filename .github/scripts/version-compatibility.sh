@@ -21,7 +21,7 @@ ALL_RELEASES=$(gh release list \
   --template '{{range .}}{{.name}}{{"\n"}}{{end}}'
 )
 MAJOR_MINOR=${TARGET_BRANCH#"release/"}
-MAJOR_MINOR_RELEASES=$(echo "${ALL_RELEASES}" | (grep "${MAJOR_MINOR}" || true))
+MAJOR_MINOR_RELEASES=$(echo "${ALL_RELEASES}" | (grep -F -- "${MAJOR_MINOR}" || true))
 
 if [[ -z "${MAJOR_MINOR_RELEASES}" ]]; then
   echo "skip"
