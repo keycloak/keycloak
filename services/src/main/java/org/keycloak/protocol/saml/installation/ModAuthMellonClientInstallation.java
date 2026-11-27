@@ -19,6 +19,7 @@ package org.keycloak.protocol.saml.installation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.MatchResult;
@@ -26,6 +27,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import jakarta.ws.rs.core.Response;
 
@@ -40,12 +47,20 @@ import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.TransformerUtil;
+
+import org.jboss.logging.Logger;
+import org.w3c.dom.Document;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class ModAuthMellonClientInstallation implements ClientInstallationProvider {
+
+    private static final Logger logger = Logger.getLogger(ModAuthMellonClientInstallation.class);
+
     @Override
     public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI serverBaseUri, boolean includeSecrets) {
         SamlClient samlClient = new SamlClient(client);
@@ -58,10 +73,10 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
                 .replace(' ', '_');
         try {
             zip.putNextEntry(new ZipEntry(clientDirName + "/idp-metadata.xml"));
-            zip.write(idpDescriptor.getBytes());
+            zip.write(prettyPrintXml(idpDescriptor).getBytes(StandardCharsets.UTF_8));
             zip.closeEntry();
             zip.putNextEntry(new ZipEntry(clientDirName + "/sp-metadata.xml"));
-            zip.write(spDescriptor.getBytes());
+            zip.write(prettyPrintXml(spDescriptor).getBytes(StandardCharsets.UTF_8));
             zip.closeEntry();
             if (samlClient.requiresClientSignature()) {
                 if (samlClient.getClientSigningPrivateKey() != null) {
@@ -138,6 +153,30 @@ public class ModAuthMellonClientInstallation implements ClientInstallationProvid
     @Override
     public String getId() {
         return "mod-auth-mellon";
+    }
+
+    /**
+     * Indents the given XML so the files in the zip are readable. Signed documents are returned as-is, since adding
+     * whitespace would break the signature. If the XML can't be parsed, it is returned unchanged as well.
+     */
+    static String prettyPrintXml(String xml) {
+        if (xml == null || xml.isBlank()) {
+            return xml;
+        }
+        try {
+            Document document = DocumentUtil.getDocument(xml);
+            if (document.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature").getLength() > 0) {
+                return xml;
+            }
+            Transformer transformer = TransformerUtil.getTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            StringWriter out = new StringWriter();
+            transformer.transform(new DOMSource(document), new StreamResult(out));
+            return out.toString();
+        } catch (Exception e) {
+            logger.debug("Could not format XML for mod_auth_mellon installation, using it unformatted", e);
+            return xml;
+        }
     }
 
     private static byte[] createClientSigningPrivateKeyRfc7468Representation(String clientSigningPrivateKey) {
