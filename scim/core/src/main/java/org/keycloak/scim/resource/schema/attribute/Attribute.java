@@ -180,6 +180,22 @@ public class Attribute<M extends Model, R> {
         return Objects.equals(mutability, "immutable");
     }
 
+    public boolean isReadOnly() {
+        return Objects.equals(mutability, "readOnly");
+    }
+
+    /**
+     * Returns the mutability of the attribute as defined by RFC 7643 Section 7.
+     *
+     * @return {@code readOnly}, {@code immutable}, or {@code readWrite}
+     */
+    public String getMutability() {
+        if (isReadOnly() || isImmutable()) {
+            return mutability;
+        }
+        return "readWrite";
+    }
+
     public String getReturned() {
         return returned;
     }
@@ -335,6 +351,12 @@ public class Attribute<M extends Model, R> {
                         return this;
                     }
 
+                    // fallback to check if the path is the extension schema of the attribute, which is not
+                    // necessarily the id of the model schema when it serves multiple extension schemas
+                    if (isExtension() && path.equalsIgnoreCase(getSchema())) {
+                        return this;
+                    }
+
                     return schema.getAttributeByPath(path);
                 }).anyMatch(this::equals);
     }
@@ -470,6 +492,11 @@ public class Attribute<M extends Model, R> {
 
         public Builder<M, R> immutable() {
             this.mutability = "immutable";
+            return this;
+        }
+
+        public Builder<M, R> readOnly() {
+            this.mutability = "readOnly";
             return this;
         }
 

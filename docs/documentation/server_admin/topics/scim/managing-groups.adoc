@@ -26,6 +26,9 @@ conform to the `urn:ietf:params:scim:schemas:core:2.0:Group` schema as defined i
 | List of users that belong to this group. Read-only on GET; managed via PATCH.
 |===
 
+Additional group attributes can be exposed through custom extension schemas.
+See <<_scim_group_extension_attributes_,Group extension attributes>> for details.
+
 == Creating a group
 
 To create a group, send a `POST` request to the `/Groups` endpoint:
