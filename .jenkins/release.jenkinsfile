@@ -1,0 +1,103 @@
+@Library("ontotext-platform@v0.1.56") _
+
+pipeline {
+
+  parameters {
+    gitParameter(
+      name: 'branch',
+      description: 'The branch to check out',
+      branchFilter: 'origin/(.*)',
+      defaultValue: 'archive/release/25.0',
+      selectedValue: 'DEFAULT',
+      type: 'PT_BRANCH',
+      listSize: '0',
+      quickFilterEnabled: true
+    )
+
+    string(
+      name: 'buildVersion',
+      description: 'Keycloak version to build, also used as the image tag (e.g. 25.0.13-RC1-GW)',
+      defaultValue: params.buildVersion ? params.buildVersion : '25.0.13-RC1-GW'
+    )
+  }
+
+  agent {
+    label 'aws-small'
+  }
+
+  tools {
+    // build-images.sh requires JAVA_HOME to point to a JDK 21; Maven comes from ./mvnw.
+    jdk 'jdk21'
+  }
+
+  options {
+    disableConcurrentBuilds()
+    // Full Keycloak distribution build plus an emulated arm64 image build.
+    timeout(time: 120, unit: 'MINUTES')
+    timestamps()
+  }
+
+  environment {
+    // Keeper records
+    KEEPER_CREDENTIALS = 'ksm-jenkins'
+    KEEPER_DOCKER_LOGIN_RECORD = 'xRckZaBDxYhmpMgsaT4tCg'
+    KEEPER_M2_SETTINGS_FILE = 'keeper://RocWX7U8pe8qixMZ0MtZHg/file/settings-pp.xml'
+
+    // Dedicated buildx builder, selected via env var so the agent's global
+    // default builder is left untouched for other jobs.
+    BUILDX_BUILDER = 'keycloak-multiarch'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        withKsm(application: [
+          [
+            credentialsId: env.KEEPER_CREDENTIALS,
+            secrets: [
+              [destination: 'file', envVar: '', filePath: 'settings-pp.xml', notation: env.KEEPER_M2_SETTINGS_FILE]
+            ]
+          ]
+        ]) {
+          sh "mkdir -p ${HOME}/.m2 && cp ${WORKSPACE}/settings-pp.xml ${HOME}/.m2/settings.xml"
+        }
+
+        // -f discards version edits left behind if a previous run was killed before
+        // build-images.sh could restore them; the script refuses to run otherwise.
+        // -B resets the local branch to the freshly fetched remote head.
+        sh "git checkout -f -B '${params.branch}' 'origin/${params.branch}'"
+        sh 'rm -f settings-pp.xml'
+      }
+    }
+
+    stage('Prepare Docker') {
+      steps {
+        sh '''
+          command -v jq >/dev/null || { echo "ERROR: jq is required by build-images.sh" >&2; exit 1; }
+
+          # QEMU emulators so the amd64 agent can build the linux/arm64 image.
+          docker run --privileged --rm tonistiigi/binfmt --install arm64
+
+          # The default "docker" driver cannot build and push multi-platform images.
+          docker buildx inspect "${BUILDX_BUILDER}" >/dev/null 2>&1 \
+            || docker buildx create --name "${BUILDX_BUILDER}" --driver docker-container
+          docker buildx inspect --bootstrap "${BUILDX_BUILDER}"
+        '''
+
+        script {
+          docker_cmd.loginWithKeeper(
+            registry: 'maven.ontotext.com',
+            credentials: env.KEEPER_CREDENTIALS,
+            record: env.KEEPER_DOCKER_LOGIN_RECORD
+          )
+        }
+      }
+    }
+
+    stage('Build & Push Images') {
+      steps {
+        sh "./build-images.sh '${params.buildVersion}'"
+      }
+    }
+  }
+}
