@@ -147,6 +147,19 @@ public class ResourceService extends AbstractResourceService {
         if (permissions == null || permissions.isEmpty()) {
             throw new BadRequestException("invalid_permissions");    
         }
+
+        if (!resource.isOwnerManagedAccess()) {
+            throw new BadRequestException("invalid_permissions");
+        }
+
+        // resolve and validate every requested scope before changing any ticket
+        for (Permission permission : permissions) {
+            if (permission.getScopes() != null) {
+                for (String scopeId : permission.getScopes()) {
+                    getResourceScope(scopeId);
+                }
+            }
+        }
         
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
@@ -169,7 +182,7 @@ public class ResourceService extends AbstractResourceService {
                 Iterator<String> scopesIterator = permission.getScopes().iterator();
 
                 while (scopesIterator.hasNext()) {
-                    org.keycloak.authorization.model.Scope scope = getScope(scopesIterator.next(), resourceServer);
+                    org.keycloak.authorization.model.Scope scope = getResourceScope(scopesIterator.next());
                     Iterator<PermissionTicket> ticketIterator = tickets.iterator();
 
                     while (ticketIterator.hasNext()) {
@@ -227,7 +240,7 @@ public class ResourceService extends AbstractResourceService {
     }
 
     private void grantPermission(UserModel user, String scopeId) {
-        org.keycloak.authorization.model.Scope scope = getScope(scopeId, resourceServer);
+        org.keycloak.authorization.model.Scope scope = getResourceScope(scopeId);
         PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, user.getId());
         ticket.setGrantedTimestamp(Calendar.getInstance().getTimeInMillis());
     }
@@ -239,6 +252,16 @@ public class ResourceService extends AbstractResourceService {
             scope = scopeStore.findById(resourceServer, scopeId);
         }
         
+        return scope;
+    }
+
+    private org.keycloak.authorization.model.Scope getResourceScope(String scopeId) {
+        org.keycloak.authorization.model.Scope scope = getScope(scopeId, resourceServer);
+
+        if (scope == null || !resource.getScopes().contains(scope)) {
+            throw new BadRequestException("invalid_scope");
+        }
+
         return scope;
     }
 
