@@ -2,6 +2,7 @@ package org.keycloak.admin.api;
 
 import java.lang.annotation.Annotation;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -168,12 +169,12 @@ class TypedResponseTest {
 
         @Override
         public Set<String> getAllowedMethods() {
-            return Set.of();
+            return Collections.emptySet();
         }
 
         @Override
         public Map<String, NewCookie> getCookies() {
-            return Map.of();
+            return Collections.emptyMap();
         }
 
         @Override
@@ -198,7 +199,7 @@ class TypedResponseTest {
 
         @Override
         public Set<Link> getLinks() {
-            return Set.of();
+            return Collections.emptySet();
         }
 
         @Override

@@ -9,7 +9,7 @@
 
 ## Required toolchain
 - Use Maven Wrapper, not system Maven: `./mvnw`.
-- JDK: 17, 21, or 25 (CI uses 25 for most jobs, with some workflows pinned to 21; the Maven compiler release is 17).
+- JDK: 21, or 25 (CI uses 25 for most jobs, with some workflows pinned to 21; the Maven compiler release is 21).
 - Node.js: 24+ for UI work (`js/apps/admin-ui/CONTRIBUTING.md`).
 - PNPM workspace is managed from `js/`.
 

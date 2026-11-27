@@ -16,7 +16,7 @@ FIPS library is not officially validated with OpenJDK 25. Hence for FIPS 140-2 c
 To run in FIPS 140-2, {project_name} should run on a FIPS 140-2 enabled system. This requirement usually assumes RHEL or Fedora where FIPS was enabled during installation.
 See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/security_hardening/index#assembly_installing-the-system-in-fips-mode_security-hardening[RHEL documentation]
 for the details. When the system is in FIPS mode, it makes sure that the underlying OpenJDK is in FIPS mode as well and would use only
-https://docs.redhat.com/en/documentation/red_hat_build_of_openjdk/17/html/configuring_red_hat_build_of_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration#security_providers[FIPS enabled security providers].
+https://docs.redhat.com/en/documentation/red_hat_build_of_openjdk/21/html/configuring_red_hat_build_of_openjdk_21_on_rhel_with_fips/openjdk-default-fips-configuration#security_providers[FIPS enabled security providers].
 
 To check that the system is in FIPS mode, you can check it with the following command from the command line:
 
@@ -162,32 +162,6 @@ always fulfils this requirement.
 
 == Other restrictions
 
-To have SAML working, make sure that a `XMLDSig` security provider is available in your security providers.
-To have Kerberos working, make sure that a `SunJGSS` security provider is available. In FIPS enabled RHEL 9 in OpenJDK 21, the `XMLDSig` security provider may be already enabled
-in the `java.security` by default and the same applies with latest OpenJDK 17. But with older OpenJDK 17, it may not be enabled by default, which means that SAML effectively cannot work.
-
-To have SAML working, you can manually add the provider into `JAVA_HOME/conf/security/java.security` into the list fips providers. For example, add the line such as the following in case
-that it is not already available in your FIPS security providers:
-
-[source]
-----
-fips.provider.7=XMLDSig
-----
-
-Adding this security provider should work well. In fact, it is FIPS compliant and is already added by default in the OpenJDK 21 and newer versions of OpenJDK 17.
-Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=1940064[bugzilla].
-
-NOTE: It is recommended to look at `JAVA_HOME/conf/security/java.security` and check all configured providers here and make sure that the number matches. In other words, `fips.provider.7`
-assumes that there are already 6 providers configured with prefix like `fips.provider.N` in this file.
-
-If you prefer not to edit your `java.security` file inside java itself, you can create a custom java security file (for example named `kc.java.security`) and add only the single
-property above for adding XMLDSig provider into that file. Then start your {project_name} server with this property file attached:
-
-[source]
-----
--Djava.security.properties=/location/to/your/file/kc.java.security
-----
-
 For Kerberos/SPNEGO, the security provider `SunJGSS` is not yet fully FIPS compliant. Hence it is not recommended to add it to your list of security providers
 if you want to be FIPS compliant. The `KERBEROS` feature is disabled by default in {project_name} when it is executed on FIPS platform and when security provider is not
 available. Details are in the https://bugzilla.redhat.com/show_bug.cgi?id=2051628[bugzilla].
@@ -232,7 +206,6 @@ For example in the current directory, you can create sub-directory `files` and a
 
 * BC FIPS jar files as described above
 * Custom keystore file - named for example `keycloak-fips.keystore.bcfks`
-* Security file `kc.java.security` with added provider for SAML (Not needed with OpenJDK 21 or newer OpenJDK 17)
 
 Then create `Containerfile` in the current directory similar to this:
 
@@ -246,7 +219,6 @@ ADD files /tmp/files/
 WORKDIR /opt/keycloak
 RUN cp /tmp/files/*.jar /opt/keycloak/providers/
 RUN cp /tmp/files/keycloak-fips.keystore.* /opt/keycloak/conf/server.keystore
-RUN cp /tmp/files/kc.java.security /opt/keycloak/conf/
 
 RUN /opt/keycloak/bin/kc.sh build --features=fips --fips-mode=strict
 

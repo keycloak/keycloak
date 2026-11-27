@@ -13,10 +13,6 @@
     <name>Keycloak Admin API v2 Services</name>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.release>17</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Use OpenAPI 4.x compatible plugin version -->
         <smallrye.openapi.generator.plugin.version>4.3.1</smallrye.openapi.generator.plugin.version>
     </properties>

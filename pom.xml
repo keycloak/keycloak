@@ -29,11 +29,16 @@
     <packaging>pom</packaging>
 
     <properties>
+        <!-- Minimum OpenJDK version for server and adapter modules -->
+        <java.server.minimum.version>21</java.server.minimum.version>
+        <java.adapter.minimum.version>8</java.adapter.minimum.version>
+        <java.adapter.jackson3.minimum.version>17</java.adapter.jackson3.minimum.version> <!-- Jackson 3 requires OpenJDK 17+ -->
+
         <!-- Maven -->
         <maven.version>3.9.8</maven.version>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.source>${java.server.minimum.version}</maven.compiler.source>
+        <maven.compiler.target>${java.server.minimum.version}</maven.compiler.target>
+        <maven.compiler.release>${java.server.minimum.version}</maven.compiler.release>
         <maven.plugin-tools.version>3.15.1</maven.plugin-tools.version>
 
         <project.version.npm>999.0.0-SNAPSHOT</project.version.npm>

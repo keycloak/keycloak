@@ -30,6 +30,12 @@
     <artifactId>keycloak-client-cli-parent</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <maven.compiler.source>${java.server.minimum.version}</maven.compiler.source>
+        <maven.compiler.target>${java.server.minimum.version}</maven.compiler.target>
+        <maven.compiler.release>${java.server.minimum.version}</maven.compiler.release>
+    </properties>
+
     <modules>
         <module>admin-cli</module>
         <module>client-cli-dist</module>

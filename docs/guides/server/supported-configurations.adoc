@@ -13,7 +13,6 @@ This {section} provides an overview of the platforms, versions, and configuratio
 
 {project_name} requires a Java Virtual Machine (JVM) to run. The following Java Development Kit (JDK) versions are supported:
 
-* OpenJDK 17 (LTS)
 * OpenJDK 21 (LTS)
 * OpenJDK 25 (LTS)
 

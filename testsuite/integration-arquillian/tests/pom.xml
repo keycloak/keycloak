@@ -1665,7 +1665,7 @@
                     <scope>compile</scope>
                 </dependency>
 
-                <!-- OpenJDK 17 and further versions doesn't provide Nashorn library out of the box. -->
+                <!-- OpenJDK 21 and further versions doesn't provide Nashorn library out of the box. -->
                 <dependency>
                     <groupId>org.openjdk.nashorn</groupId>
                     <artifactId>nashorn-core</artifactId>

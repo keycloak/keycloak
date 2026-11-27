@@ -7,11 +7,11 @@ Also see [Operator guides](https://www.keycloak.org/guides#operator)
 
 ## Activating the Module
 
-When build from the project root directory, this module is only enabled if the installed JDK is 17 or newer. 
+When build from the project root directory, this module is only enabled if the installed OpenJDK is 21 or newer. 
 
 ## Building
 
-Ensure you have JDK 17 (or newer) installed.
+Ensure you have OpenJDK 21 (or newer) installed.
 
 Build the Docker image with:
 

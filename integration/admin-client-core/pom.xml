@@ -13,12 +13,6 @@
     <name>Keycloak Admin REST Client Core</name>
     <description>Jackson-agnostic core of the Keycloak Admin REST Client: resource interfaces, token management, and SPI.</description>
 
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <maven.compiler.release>8</maven.compiler.release>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

@@ -4,6 +4,10 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== OpenJDK 17 support removed
+
+Keycloak server no longer supports running on OpenJDK 17, and the minimum supported version is now OpenJDK 21.
+
 === Authorization policies with deleted references
 
 Role policies with a missing required role and negative role, group, user, client, or client scope policies with unresolved references now evaluate as invalid.
