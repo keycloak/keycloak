@@ -140,6 +140,25 @@ public interface PolicyStore {
     void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer);
 
     /**
+     * Returns whether at least one policy associated with the given resource type has the given config value, without
+     * loading the policies.
+     *
+     * <p>The result never misses such a policy, but it might include false positives: depending on the store and the
+     * database, the values might be matched as patterns or ignoring case. Callers must only rely on a {@code false}
+     * result, for instance to skip work, and check the policies themselves otherwise.
+     *
+     * @param resourceServer the resource server. Cannot be {@code null}.
+     * @param resourceType the type of a resource
+     * @param configKey the config key
+     * @param configValue the config value
+     * @return {@code false} if no such policy exists
+     */
+    default boolean existsByResourceTypeAndConfig(ResourceServer resourceServer, String resourceType, String configKey, String configValue) {
+        return findByResourceType(resourceServer, resourceType).stream()
+                .anyMatch(policy -> configValue.equals(policy.getConfig().get(configKey)));
+    }
+
+    /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Scope} within the given <code>scope</code>.
      *
      * @param resourceServer the resource server. Cannot be {@code null}.

@@ -977,6 +977,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
+        public boolean existsByResourceTypeAndConfig(ResourceServer resourceServer, String resourceType, String configKey, String configValue) {
+            // not cached, at the cost of one query per call: a stale result could wrongly report that no policy has the
+            // config, which callers rely on to skip work, e.g. evaluating the denies inherited from ancestor groups
+            return getPolicyStoreDelegate().existsByResourceTypeAndConfig(resourceServer, resourceType, configKey, configValue);
+        }
+
+        @Override
         public List<Policy> findByScopes(ResourceServer resourceServer, List<Scope> scopes) {
             if (scopes == null) return null;
             Set<Policy> result = new HashSet<>();

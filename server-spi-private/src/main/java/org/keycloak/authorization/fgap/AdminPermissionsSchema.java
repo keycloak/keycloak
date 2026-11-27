@@ -437,14 +437,6 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     }
 
     /**
-     * Returns {@code true} if at least one permission for the {@link #GROUPS_RESOURCE_TYPE} extends to children groups,
-     * so that callers can skip walking the group hierarchy otherwise. The result is cached for the lifetime of the session.
-     *
-     * @param session the session
-     * @param resourceServer the resource server of the admin permissions client
-     * @return {@code true} if there are permissions extending to children groups
-     */
-    /**
      * Returns the permissions associated with the given group. The result is cached for the lifetime of the session, as
      * the permissions of the ancestors of a group are looked up for every evaluation of the group, until
      * {@link #clearPermissionCaches(KeycloakSession, ResourceServer)} is called.
@@ -489,15 +481,26 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         session.removeAttribute(GROUP_PERMISSIONS_CACHE + "." + resourceServer.getId());
     }
 
+    /**
+     * Returns {@code true} if at least one permission for the {@link #GROUPS_RESOURCE_TYPE} might extend to children
+     * groups, so that callers can skip walking the group hierarchy otherwise. It never returns {@code false} when such
+     * a permission exists, but it might return {@code true} for permissions that do not target specific groups, which
+     * only costs evaluating them. The result is cached for the lifetime of the session, until
+     * {@link #clearPermissionCaches(KeycloakSession, ResourceServer)} is called.
+     *
+     * @param session the session
+     * @param resourceServer the resource server of the admin permissions client
+     * @return {@code true} if there might be permissions extending to children groups
+     */
     public boolean hasExtendChildrenPermissions(KeycloakSession session, ResourceServer resourceServer) {
         String key = EXTEND_CHILDREN_CACHE + "." + resourceServer.getId();
         Boolean result = session.getAttribute(key, Boolean.class);
 
         if (result == null) {
             AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-            result = authorization.getStoreFactory().getPolicyStore().findByResourceType(resourceServer, GROUPS_RESOURCE_TYPE)
-                    .stream()
-                    .anyMatch(this::isExtendChildren);
+            // may report permissions that do not target specific groups, which only costs evaluating them
+            result = authorization.getStoreFactory().getPolicyStore()
+                    .existsByResourceTypeAndConfig(resourceServer, GROUPS_RESOURCE_TYPE, EXTEND_CHILDREN, Boolean.TRUE.toString());
             session.setAttribute(key, result);
         }
 
