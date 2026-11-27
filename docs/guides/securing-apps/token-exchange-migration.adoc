@@ -15,7 +15,7 @@ V2 is the officially supported token exchange implementation aligned with link:h
 The migration path depends on the legacy token exchange scenario:
 
 * **Internal-internal exchange**: Follow <<_migration-internal-internal,Migrating internal-internal Token Exchange V1 to V2>> below.
-* **Internal-external exchange**: See link:{developerguide_link}#identity-brokering-apis[Identity Brokering APIs] for retrieving external provider tokens.
+* **Internal-external exchange**: See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for retrieving external provider tokens.
 * **External-internal exchange**: Follow <<_migration-external-internal,Migrating external-internal Token Exchange V1>> below.
 * **Subject impersonation**: V2 does not support the `requested_subject` parameter. For a separate flow based on user consent, see the preview delegation feature in <@links.securingapps id="token-exchange" anchor="_token-exchange-delegation" />.
 
@@ -616,7 +616,7 @@ For browser-based social login, use link:{adminguide_link}#_identity_broker[Iden
 JWT Authorization Grant returns an access token and creates a transient user session.
 It does not issue a refresh token, even if the client allows refresh tokens for other grants.
 
-NOTE: A transient user session exists only for the current request and is not persisted. It allows protocol mappers to run when the access token is generated. See link:{adminguide_link}#transient-session[Transient sessions] in the {adminguide_name}.
+NOTE: A transient user session exists only for the current request and is not persisted. It allows protocol mappers to run when the access token is generated. See link:{adminguide_link}#_transient-session[Transient sessions] in the {adminguide_name}.
 
 An application relying on a V1 refresh token must obtain access tokens through subsequent grant requests with valid assertions, following the provider's assertion reuse rules, or use a browser login flow that issues refresh tokens.
 
