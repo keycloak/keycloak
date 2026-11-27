@@ -126,7 +126,8 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
         user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
         authSession.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
 
-        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
+        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient(), true,
+                RedirectUtils.resolveForbiddenParams(authSession.getClient()));
         if (redirectUri != null) {
             authSession.setAuthNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");
             authSession.setRedirectUri(redirectUri);

@@ -38,6 +38,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.util.ResolveRelative;
 
@@ -73,9 +74,39 @@ public class RedirectUtils {
     }
 
     public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean requireRedirectUri) {
+        return verifyRedirectUri(session, redirectUri, client, requireRedirectUri, FORBIDDEN_OIDC_PARAMS);
+    }
+
+    public static String verifyRedirectUri(KeycloakSession session, String redirectUri, ClientModel client, boolean requireRedirectUri, Set<String> forbiddenParams) {
         if (client != null)
-            return verifyRedirectUri(session, client.getRootUrl(), redirectUri, client.getRedirectUris(), requireRedirectUri);
+            return verifyRedirectUri(session, client.getRootUrl(), redirectUri, client.getRedirectUris(), requireRedirectUri, forbiddenParams);
         return null;
+    }
+
+    /**
+     * The forbidden-parameter check guards the OIDC response parameters the server itself appends to a
+     * redirect URI (code, state, error, ...) from being pre-populated by the caller, the parameter-pollution
+     * scenario behind CVE-2026-9689. A SAML flow never appends those parameters to its redirect URIs,
+     * so for a SAML client the redirect URI is only matched against the configured redirect URIs,
+     * exactly as it was before the CVE fix (#53823).
+     *
+     * The exemption is only valid for redirects whose completion never appends OIDC response parameters.
+     * Call sites where the flow continues as OIDC regardless of the client's protocol - the reset-credentials
+     * flow for example, which forces the OIDC protocol and a code response type onto the authentication
+     * session - must keep the OIDC default set. The client-based verifyRedirectUri overloads therefore
+     * keep the secure OIDC default, and the call sites that know their redirect is completed without
+     * appending OIDC parameters pass {@code resolveForbiddenParams(...)} to the overload taking an
+     * explicit forbidden set.
+     */
+    public static Set<String> resolveForbiddenParams(ClientModel client) {
+        return resolveForbiddenParams(client == null ? null : client.getProtocol());
+    }
+
+    public static Set<String> resolveForbiddenParams(String protocol) {
+        if (SamlProtocol.LOGIN_PROTOCOL.equals(protocol)) {
+            return Collections.emptySet();
+        }
+        return FORBIDDEN_OIDC_PARAMS;
     }
 
     public static Set<String> resolveValidRedirects(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
