@@ -394,6 +394,14 @@ public void test() {
 }
 ```
 
+Extra command-line arguments can be passed to Chrome with `chromeArguments`. They are ignored by other browsers, and
+drivers requested with different arguments are not shared:
+
+```java
+@InjectWebDriver(ref = "args", chromeArguments = "--enable-features=DeviceBoundSessions")
+ManagedWebDriver driver;
+```
+
 ## OAuth Client
 
 A convenient way to test OAuth flows are with the OAuth Client. This provides convenient methods to perform different
