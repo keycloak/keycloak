@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 import { Logic } from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 import adminClient from "../utils/AdminClient.ts";
 import {
@@ -669,6 +670,93 @@ test.describe.serial("Client authorization evaluate permission scopes", () => {
     await assertEvaluatePermissionScopes(page, "Read invoices", {
       status: "Permit",
       granted: "invoice:read",
+      denied: "-",
+    });
+  });
+});
+
+test.describe.serial("Client authorization evaluate selected client", () => {
+  const clientId = `client-authz-evaluate-client-${crypto.randomUUID()}`;
+  const otherClientId = `client-authz-evaluate-other-${crypto.randomUUID()}`;
+  const username = `evaluate-client-user-${crypto.randomUUID()}`;
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+    const otherClient = await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId: otherClientId,
+    });
+    await adminClient.createUser({ username, enabled: true });
+
+    const scope = await adminClient.createAuthorizationScope(clientId, {
+      name: "doc:read",
+    });
+    const documents = await adminClient.createResource(clientId, {
+      name: "Documents",
+      scopes: [scope],
+    });
+    // Grants only when the evaluated token's azp is the other client.
+    const otherClientPolicy = await adminClient.createAuthzPolicy(clientId, {
+      name: "permit-other-client",
+      type: "client",
+      logic: Logic.POSITIVE,
+      clients: [otherClient.id],
+    } as PolicyRepresentation);
+    await adminClient.createAuthzPermission(clientId, {
+      name: "Read documents",
+      type: "scope",
+      resources: [documents._id!],
+      scopes: [scope.id!],
+      policies: [otherClientPolicy.id!],
+    });
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+    await adminClient.deleteClient(otherClientId);
+    await adminClient.deleteUser(username);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToEvaluateSubTab(page);
+    await selectItem(page, page.getByTestId("user"), username);
+  });
+
+  test("Should evaluate as the resource server client by default", async ({
+    page,
+  }) => {
+    await page.getByTestId("authorization-eval").click();
+
+    await expandEvaluateResource(page, "Documents");
+    await assertEvaluatePermissionScopes(page, "Read documents", {
+      status: "Deny",
+      granted: "-",
+      denied: "doc:read",
+    });
+  });
+
+  test("Should evaluate as the selected client", async ({ page }) => {
+    // The selected client used to be dropped from the request, so the
+    // evaluation always ran as the resource server client.
+    await inputClient(page, otherClientId);
+    await page.getByTestId("authorization-eval").click();
+
+    await expandEvaluateResource(page, "Documents");
+    await assertEvaluatePermissionScopes(page, "Read documents", {
+      status: "Permit",
+      granted: "doc:read",
       denied: "-",
     });
   });

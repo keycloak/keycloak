@@ -38,7 +38,6 @@ import {
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { FormFields } from "../ClientDetails";
 import { defaultContextAttributes } from "../utils";
 import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";
 import { Results } from "./evaluate/Results";
@@ -51,7 +50,7 @@ interface EvaluateFormInputs
     attributes: Record<string, string>[];
   };
   resources?: Record<string, string>[];
-  client: FormFields;
+  client: string;
   user: string[];
 }
 
@@ -144,7 +143,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     const keys = keyValueToArray(formValues.resources as KeyValueType[]);
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
-      clientId: formValues.client.id!,
+      clientId: formValues.client || undefined,
       userId: formValues.user![0],
       resources: resources
         .filter((resource) => Object.keys(keys).includes(resource.name!))
@@ -201,7 +200,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 name="client"
                 label="client"
                 helpText={"clientHelp"}
-                defaultValue={client.clientId}
+                clientKey="id"
+                defaultValue={client.id}
               />
               <UserSelect
                 name="user"
