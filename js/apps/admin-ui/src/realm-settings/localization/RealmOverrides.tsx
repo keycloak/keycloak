@@ -5,6 +5,7 @@ import {
   PaginatingTableToolbar,
   SelectVariant,
   useAlerts,
+  useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -34,8 +35,6 @@ import {
 } from "@patternfly/react-icons";
 import {
   ActionsColumn,
-  IRow,
-  IRowCell,
   Table,
   Tbody,
   Td,
@@ -43,8 +42,7 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { cloneDeep, isEqual, uniqWith } from "lodash-es";
-import { ChangeEvent, useEffect, useState, type FormEvent } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
@@ -63,7 +61,20 @@ type RealmOverridesProps = {
   tableData: Record<string, string>[] | undefined;
 };
 
-type EditStatesType = { [key: number]: boolean };
+type TranslationDraft = {
+  value: string;
+  isSaving: boolean;
+};
+
+type LocaleTranslations = {
+  realm: string;
+  locale: string;
+  entries: [string, string][];
+};
+
+function translationId(realm: string, locale: string, key: string) {
+  return JSON.stringify([realm, locale, key]);
+}
 
 export type TranslationForm = {
   key: string;
@@ -89,13 +100,13 @@ export const RealmOverrides = ({
   const { t, i18n } = useTranslation();
   const [addTranslationModalOpen, setAddTranslationModalOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [translations, setTranslations] = useState<[string, string][]>([]);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
   const [kebabOpen, setKebabOpen] = useState(false);
-  const { getValues, handleSubmit } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
-  const [tableRows, setTableRows] = useState<IRow[]>([]);
+  const [localeTranslations, setLocaleTranslations] =
+    useState<LocaleTranslations>();
   const [tableKey, setTableKey] = useState(0);
+  const tableRevision = useRef(0);
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
   const [filter, setFilter] = useState("");
@@ -105,81 +116,72 @@ export const RealmOverrides = ({
   const { whoAmI } = useWhoAmI();
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [areAllRowsSelected, setAreAllRowsSelected] = useState(false);
-  const [editStates, setEditStates] = useState<EditStatesType>({});
-  const [formValue, setFormValue] = useState("");
+  const [drafts, setDrafts] = useState<
+    Partial<Record<string, TranslationDraft>>
+  >({});
+  const [deletingIds, setDeletingIds] = useState(() => new Set<string>());
+  const realmName = realm.realm!;
+  const isDeleting = deletingIds.size > 0;
+  const canDeleteSelection =
+    !isDeleting &&
+    selectedRowKeys.length > 0 &&
+    !selectedRowKeys.some(
+      (key) =>
+        drafts[translationId(realmName, selectMenuLocale, key)]?.isSaving,
+    );
+
   const refreshTable = () => {
-    setTableKey(tableKey + 1);
+    // Invalidate pending reads before the refresh effect runs.
+    setTableKey(++tableRevision.current);
   };
 
-  useEffect(() => {
-    const fetchLocalizationTexts = async () => {
-      try {
-        let result = await adminClient.realms.getRealmLocalizationTexts({
-          first,
-          max,
-          realm: realm.realm!,
-          selectedLocale:
-            selectMenuLocale || getValues("defaultLocale") || whoAmI.locale,
+  const updateLocaleTranslations = (
+    updateEntries: (
+      entries: LocaleTranslations["entries"],
+    ) => LocaleTranslations["entries"],
+  ) => {
+    setLocaleTranslations((previous) =>
+      previous?.realm === realmName && previous.locale === selectMenuLocale
+        ? { ...previous, entries: updateEntries(previous.entries) }
+        : previous,
+    );
+    refreshTable();
+  };
+
+  useFetch(
+    () =>
+      adminClient.realms
+        .getRealmLocalizationTexts({
+          realm: realmName,
+          selectedLocale: selectMenuLocale,
+        })
+        .catch(() => undefined),
+    (result) => {
+      if (result && tableKey === tableRevision.current) {
+        setLocaleTranslations({
+          realm: realmName,
+          locale: selectMenuLocale,
+          entries: Object.entries(result),
         });
-
-        setTranslations(Object.entries(result));
-
-        if (filter) {
-          const searchInTranslations = (idx: number) => {
-            return Object.entries(result).filter((i) =>
-              i[idx].includes(filter),
-            );
-          };
-
-          const filtered = uniqWith(
-            searchInTranslations(0).concat(searchInTranslations(1)),
-            isEqual,
-          );
-
-          result = Object.fromEntries(filtered);
-        }
-
-        return Object.entries(result).slice(first, first + max);
-      } catch {
-        return [];
       }
-    };
+    },
+    [adminClient, realmName, selectMenuLocale, tableKey, tableData, first, max],
+  );
 
-    void fetchLocalizationTexts().then((translations) => {
-      const updatedRows: IRow[] = translations.map(
-        (translation): IRow => ({
-          rowEditBtnAriaLabel: () =>
-            t("rowEditBtnAriaLabel", {
-              translation: translation[1],
-            }),
-          rowSaveBtnAriaLabel: () =>
-            t("rowSaveBtnAriaLabel", {
-              translation: translation[1],
-            }),
-          rowCancelBtnAriaLabel: () =>
-            t("rowCancelBtnAriaLabel", {
-              translation: translation[1],
-            }),
-          cells: [
-            {
-              title: translation[0],
-              props: {
-                value: translation[0],
-              },
-            },
-            {
-              title: translation[1],
-              props: {
-                value: translation[1],
-              },
-            },
-          ],
-        }),
-      );
-
-      setTableRows(updatedRows);
-    });
-  }, [tableKey, tableData, first, max, filter]);
+  const translations =
+    localeTranslations?.realm === realmName &&
+    localeTranslations.locale === selectMenuLocale
+      ? localeTranslations.entries
+      : [];
+  const filteredTranslations = filter
+    ? [
+        ...translations.filter(([key]) => key.includes(filter)),
+        ...translations.filter(
+          ([key, value]) => !key.includes(filter) && value.includes(filter),
+        ),
+      ]
+    : translations;
+  const tableRows = filteredTranslations.slice(first, first + max);
 
   const handleModalToggle = () => {
     setAddTranslationModalOpen(!addTranslationModalOpen);
@@ -206,8 +208,7 @@ export const RealmOverrides = ({
       await adminClient.realms.addLocalization(
         {
           realm: currentRealm!,
-          selectedLocale:
-            selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
+          selectedLocale: selectMenuLocale,
           key: pair.key,
         },
         pair.value,
@@ -227,6 +228,17 @@ export const RealmOverrides = ({
     }
   };
 
+  const clearDraft = (id: string, expectedDraft?: TranslationDraft) => {
+    setDrafts((previous) => {
+      if (!previous[id] || (expectedDraft && previous[id] !== expectedDraft)) {
+        return previous;
+      }
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
+  };
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deleteConfirmTranslationTitle",
     messageKey: t("translationDeleteConfirmDialog", {
@@ -234,43 +246,63 @@ export const RealmOverrides = ({
     }),
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
+    confirmButtonDisabled: !canDeleteSelection,
     onCancel: () => {
       setSelectedRowKeys([]);
       setAreAllRowsSelected(false);
     },
     onConfirm: async () => {
+      const deletedKeys = new Set<string>();
+      setDeletingIds(
+        new Set(
+          selectedRowKeys.map((key) =>
+            translationId(realmName, selectMenuLocale, key),
+          ),
+        ),
+      );
+
       try {
         for (const key of selectedRowKeys) {
-          delete (
-            i18n.store.data[whoAmI.locale][currentRealm] as Record<
-              string,
-              string
-            >
-          )[key];
           await adminClient.realms.deleteRealmLocalizationTexts({
-            realm: currentRealm!,
+            realm: realmName,
             selectedLocale: selectMenuLocale,
-            key: key,
+            key,
           });
-        }
-        setAreAllRowsSelected(false);
-        setSelectedRowKeys([]);
-        refreshTable();
+          deletedKeys.add(key);
 
+          const messages = i18n.getResourceBundle(
+            selectMenuLocale,
+            encodeURIComponent(realmName),
+          ) as Record<string, string> | undefined;
+          if (messages) {
+            delete messages[key];
+          }
+        }
         addAlert(t("deleteAllTranslationsSuccess"), AlertVariant.success);
       } catch (error) {
         addError("deleteAllTranslationsError", error);
+      } finally {
+        if (deletedKeys.size > 0) {
+          updateLocaleTranslations((entries) =>
+            entries.filter(([key]) => !deletedKeys.has(key)),
+          );
+          for (const key of deletedKeys) {
+            clearDraft(translationId(realmName, selectMenuLocale, key));
+          }
+          setSelectedRowKeys((previous) =>
+            previous === selectedRowKeys
+              ? previous.filter((key) => !deletedKeys.has(key))
+              : previous,
+          );
+          setAreAllRowsSelected(false);
+        }
+        setDeletingIds(new Set());
       }
     },
   });
 
-  const handleRowSelect = (
-    event: ChangeEvent<HTMLInputElement>,
-    rowIndex: number,
-  ) => {
-    const selectedKey = (tableRows[rowIndex].cells?.[0] as IRowCell).props
-      .value;
-    if (event.target.checked) {
+  const handleRowSelect = (selectedKey: string, isSelected: boolean) => {
+    if (isSelected) {
       setSelectedRowKeys((prevSelected) => [...prevSelected, selectedKey]);
     } else {
       setSelectedRowKeys((prevSelected) =>
@@ -279,8 +311,7 @@ export const RealmOverrides = ({
     }
 
     setAreAllRowsSelected(
-      tableRows.length ===
-        selectedRowKeys.length + (event.target.checked ? 1 : -1),
+      tableRows.length === selectedRowKeys.length + (isSelected ? 1 : -1),
     );
   };
 
@@ -288,48 +319,33 @@ export const RealmOverrides = ({
     if (areAllRowsSelected) {
       setSelectedRowKeys([]);
     } else {
-      setSelectedRowKeys(
-        tableRows.map((row) => (row.cells?.[0] as IRowCell).props.value),
-      );
+      setSelectedRowKeys(tableRows.map(([key]) => key));
     }
     setAreAllRowsSelected(!areAllRowsSelected);
   };
 
-  const isRowSelected = (key: any) => {
-    return selectedRowKeys.includes(key);
-  };
-
-  const onSubmit = async (inputValue: string, rowIndex: number) => {
-    const newRows = cloneDeep(tableRows);
-
-    const newRow = cloneDeep(newRows[rowIndex]);
-    (newRow.cells?.[1] as IRowCell).props.value = inputValue;
-    newRows[rowIndex] = newRow;
+  const saveTranslation = async (key: string, draft: TranslationDraft) => {
+    const id = translationId(realmName, selectMenuLocale, key);
+    const savingDraft = { ...draft, isSaving: true };
+    setDrafts((previous) => ({ ...previous, [id]: savingDraft }));
 
     try {
-      const key = (newRow.cells?.[0] as IRowCell).props.value;
-      const value = (newRow.cells?.[1] as IRowCell).props.value;
-
       await adminClient.realms.addLocalization(
-        {
-          realm: realm.realm!,
-          selectedLocale:
-            selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
-          key,
-        },
-        value,
+        { realm: realmName, selectedLocale: selectMenuLocale, key },
+        draft.value,
       );
 
+      updateLocaleTranslations((entries) =>
+        entries.map((entry) => (entry[0] === key ? [key, draft.value] : entry)),
+      );
+      clearDraft(id, savingDraft);
       addAlert(t("updateTranslationSuccess"), AlertVariant.success);
-      setTableRows(newRows);
     } catch (error) {
+      setDrafts((previous) =>
+        previous[id] === savingDraft ? { ...previous, [id]: draft } : previous,
+      );
       addError("updateTranslationError", error);
     }
-
-    setEditStates((prevEditStates) => ({
-      ...prevEditStates,
-      [rowIndex]: false,
-    }));
   };
 
   return (
@@ -368,6 +384,7 @@ export const RealmOverrides = ({
           setFilter(search);
           setFirst(0);
           setMax(10);
+          refreshTable();
         }}
         inputGroupPlaceholder={t("searchForTranslation")}
         toolbarItem={
@@ -406,7 +423,7 @@ export const RealmOverrides = ({
                     component="button"
                     data-testid="delete-selected-TranslationBtn"
                     isDisabled={
-                      translations.length === 0 || selectedRowKeys.length === 0
+                      translations.length === 0 || !canDeleteSelection
                     }
                     onClick={() => {
                       toggleDeleteDialog();
@@ -430,7 +447,13 @@ export const RealmOverrides = ({
               isDisabled={!internationalizationEnabled}
               onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
               onSelect={(value) => {
-                setSelectMenuLocale(value.toString());
+                const locale = value.toString();
+                if (locale !== selectMenuLocale) {
+                  setSelectMenuLocale(locale);
+                  setSelectedRowKeys([]);
+                  setAreAllRowsSelected(false);
+                  setFirst(0);
+                }
                 setSelectMenuValueSelected(true);
                 refreshTable();
                 setFilterDropdownOpen(false);
@@ -477,6 +500,7 @@ export const RealmOverrides = ({
                     type="checkbox"
                     aria-label={t("selectAll")}
                     checked={areAllRowsSelected}
+                    disabled={isDeleting}
                     onChange={toggleSelectAllRows}
                     data-testid="selectAll"
                   />
@@ -487,131 +511,129 @@ export const RealmOverrides = ({
               </Tr>
             </Thead>
             <Tbody>
-              {tableRows.map((row, rowIndex) => (
-                <Tr key={(row.cells?.[0] as IRowCell).props.value}>
-                  <Td
-                    className="pf-v5-u-px-lg"
-                    select={{
-                      rowIndex,
-                      onSelect: (event) =>
-                        handleRowSelect(
-                          event as ChangeEvent<HTMLInputElement>,
-                          rowIndex,
-                        ),
-                      isSelected: isRowSelected(
-                        (row.cells?.[0] as IRowCell).props.value,
-                      ),
-                    }}
-                  />
-                  <Td className="pf-m-sm pf-v5-u-px-sm" dataLabel={t("key")}>
-                    {(row.cells?.[0] as IRowCell).props.value}
-                  </Td>
-                  <Td
-                    className="pf-m-sm pf-v5-u-px-sm"
-                    dataLabel={t("value")}
-                    key={rowIndex}
-                  >
-                    <Form
-                      isHorizontal
-                      className="kc-form-translationValue"
-                      onSubmit={handleSubmit(async () => {
-                        await onSubmit(formValue, rowIndex);
-                      })}
-                    >
-                      <FormGroup
-                        fieldId="kc-translationValue"
-                        className="pf-v5-u-display-inline-block"
-                      >
-                        {editStates[rowIndex] ? (
-                          <>
-                            <TextInput
-                              aria-label={t("editTranslationValue")}
-                              type="text"
-                              className="pf-v5-u-w-initial"
-                              data-testid={`editTranslationValueInput-${rowIndex}`}
-                              value={formValue}
-                              onChange={(
-                                event: FormEvent<HTMLInputElement>,
-                                value: string,
-                              ) => {
-                                setFormValue(value);
-                              }}
-                              key={`edit-input-${rowIndex}`}
-                            />
-                            <Button
-                              variant="link"
-                              className="pf-m-plain"
-                              data-testid={`editTranslationAcceptBtn-${rowIndex}`}
-                              type="submit"
-                              aria-label={t("acceptBtn")}
-                              icon={<CheckIcon />}
-                            />
-                            <Button
-                              variant="link"
-                              className="pf-m-plain"
-                              data-testid={`editTranslationCancelBtn-${rowIndex}`}
-                              icon={<TimesIcon />}
-                              aria-label={t("cancelBtn")}
-                              onClick={() => {
-                                setEditStates((prevEditStates) => ({
-                                  ...prevEditStates,
-                                  [rowIndex]: false,
-                                }));
-                              }}
-                            />
-                          </>
-                        ) : (
-                          <>
-                            <span>
-                              {(row.cells?.[1] as IRowCell).props.value}
-                            </span>
-                            <Button
-                              onClick={() => {
-                                const currentValue = (
-                                  tableRows[rowIndex].cells?.[1] as IRowCell
-                                ).props.value;
-                                setFormValue(currentValue);
-                                setEditStates((prevState) => ({
-                                  ...prevState,
-                                  [rowIndex]: true,
-                                }));
-                              }}
-                              key={`edit-button-${rowIndex}`}
-                              aria-label={t("editBtn")}
-                              variant="link"
-                              className="pf-m-plain"
-                              data-testid={`editTranslationBtn-${rowIndex}`}
-                            >
-                              <PencilAltIcon />
-                            </Button>
-                          </>
-                        )}
-                      </FormGroup>
-                    </Form>
-                  </Td>
-                  <Td isActionCell>
-                    <ActionsColumn
-                      items={[
-                        {
-                          title: t("delete"),
-                          onClick: () => {
-                            setSelectedRowKeys([
-                              (row.cells?.[0] as IRowCell).props.value,
-                            ]);
+              {tableRows.map(([key, value], rowIndex) => {
+                const id = translationId(realmName, selectMenuLocale, key);
+                const draft = drafts[id];
+                const isDeletingRow = deletingIds.has(id);
 
-                            if (translations.length === 1) {
-                              setAreAllRowsSelected(true);
-                            }
-
-                            toggleDeleteDialog();
-                            setKebabOpen(false);
-                          },
-                        },
-                      ]}
+                return (
+                  <Tr key={id}>
+                    <Td
+                      className="pf-v5-u-px-lg"
+                      select={{
+                        rowIndex,
+                        onSelect: (_, isSelected) =>
+                          handleRowSelect(key, isSelected),
+                        isSelected: selectedRowKeys.includes(key),
+                        isDisabled: isDeleting,
+                      }}
                     />
-                  </Td>
-                </Tr>
-              ))}
+                    <Td className="pf-m-sm pf-v5-u-px-sm" dataLabel={t("key")}>
+                      {key}
+                    </Td>
+                    <Td
+                      className="pf-m-sm pf-v5-u-px-sm"
+                      dataLabel={t("value")}
+                    >
+                      <Form
+                        isHorizontal
+                        className="kc-form-translationValue"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          if (draft && !draft.isSaving && !isDeletingRow) {
+                            void saveTranslation(key, draft);
+                          }
+                        }}
+                      >
+                        <FormGroup
+                          fieldId="kc-translationValue"
+                          className="pf-v5-u-display-inline-block"
+                        >
+                          {draft ? (
+                            <>
+                              <TextInput
+                                aria-label={t("editTranslationValue")}
+                                type="text"
+                                className="pf-v5-u-w-initial"
+                                data-testid={`editTranslationValueInput-${rowIndex}`}
+                                value={draft.value}
+                                isDisabled={draft.isSaving || isDeletingRow}
+                                onChange={(_, value) => {
+                                  setDrafts((previous) => ({
+                                    ...previous,
+                                    [id]: { ...draft, value },
+                                  }));
+                                }}
+                              />
+                              <Button
+                                key="save"
+                                variant="link"
+                                className="pf-m-plain"
+                                data-testid={`editTranslationAcceptBtn-${rowIndex}`}
+                                type="submit"
+                                isDisabled={draft.isSaving || isDeletingRow}
+                                aria-label={t("acceptBtn")}
+                                icon={<CheckIcon />}
+                              />
+                              <Button
+                                variant="link"
+                                className="pf-m-plain"
+                                data-testid={`editTranslationCancelBtn-${rowIndex}`}
+                                type="button"
+                                isDisabled={draft.isSaving || isDeletingRow}
+                                icon={<TimesIcon />}
+                                aria-label={t("cancelBtn")}
+                                onClick={() => clearDraft(id, draft)}
+                              />
+                            </>
+                          ) : (
+                            <>
+                              <span>{value}</span>
+                              <Button
+                                key="edit"
+                                type="button"
+                                isDisabled={isDeletingRow}
+                                onClick={() => {
+                                  setDrafts((previous) => ({
+                                    ...previous,
+                                    [id]: { value, isSaving: false },
+                                  }));
+                                }}
+                                aria-label={t("editBtn")}
+                                variant="link"
+                                className="pf-m-plain"
+                                data-testid={`editTranslationBtn-${rowIndex}`}
+                              >
+                                <PencilAltIcon />
+                              </Button>
+                            </>
+                          )}
+                        </FormGroup>
+                      </Form>
+                    </Td>
+                    <Td isActionCell>
+                      <ActionsColumn
+                        isDisabled={isDeleting || draft?.isSaving}
+                        items={[
+                          {
+                            title: t("delete"),
+                            onClick: () => {
+                              setSelectedRowKeys([key]);
+
+                              if (translations.length === 1) {
+                                setAreAllRowsSelected(true);
+                              }
+
+                              toggleDeleteDialog();
+                              setKebabOpen(false);
+                            },
+                          },
+                        ]}
+                      />
+                    </Td>
+                  </Tr>
+                );
+              })}
             </Tbody>
           </Table>
         )}
