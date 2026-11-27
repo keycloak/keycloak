@@ -78,14 +78,18 @@ public abstract class JwsToken {
 
     public void verifySignature(SignatureVerifierContext verifier) throws VerificationException {
         Objects.requireNonNull(verifier, "verifier must not be null");
-        String headerAlgorithm = jwsHeader == null || jwsHeader.getAlgorithm() == null
+        JWSHeader protectedHeader = jwsInput == null ? null : jwsInput.getHeader();
+        String headerAlgorithm = protectedHeader == null || protectedHeader.getAlgorithm() == null
                 ? null
-                : jwsHeader.getRawAlgorithm();
+                : protectedHeader.getRawAlgorithm();
         String verifierAlgorithm = verifier.getAlgorithm();
         if (headerAlgorithm == null || verifierAlgorithm == null || !headerAlgorithm.equals(verifierAlgorithm)) {
             throw new VerificationException(String.format(
                     "JWS header algorithm '%s' does not match verifier algorithm '%s'",
                     headerAlgorithm, verifierAlgorithm));
+        }
+        if (protectedHeader.getOtherClaims().containsKey("crit")) {
+            throw new VerificationException("Critical JWS header parameters are not supported");
         }
         try {
             if (!verifier.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8),

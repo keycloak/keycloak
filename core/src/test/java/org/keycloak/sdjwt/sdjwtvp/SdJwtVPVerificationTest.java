@@ -190,6 +190,24 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
+    public void keyBindingJwtWithUnsupportedCriticalHeaderIsRejected() {
+        SignatureSignerContext signer = testSettings.holderSigContext;
+        ObjectNode header = mapper.createObjectNode()
+                .put("alg", signer.getAlgorithm())
+                .put("typ", OID4VCConstants.KEYBINDING_JWT_TYP)
+                .put("example", true);
+        header.putArray("crit").add("example");
+        String keyBindingJwt = TestUtils.signWithProtectedHeader(header, exampleKbPayload(), signer);
+        SdJwtVP presentation = exampleSdJwtWithKeyBindingJwt(keyBindingJwt);
+
+        VerificationException exception = assertThrows(VerificationException.class, () -> presentation.verify(
+                defaultIssuerVerifyingKeys(),
+                defaultIssuerSignedJwtVerificationOpts().build(),
+                defaultKeyBindingJwtVerificationOpts().build()));
+        assertEquals("Critical JWS header parameters are not supported", exception.getCause().getMessage());
+    }
+
+    @Test
     public void testShouldFail_IfKeyBindingHeaderAlgorithmDiffersFromVerifierAlgorithm() {
         SignatureSignerContext signer = TestSettings.signerWithReportedAlgorithm(
                 testSettings.holderSigContext, Algorithm.ES384);
@@ -570,10 +588,13 @@ public abstract class SdJwtVPVerificationTest {
                 .withPayload(kbPayloadSubstitute)
                 .withSignerContext(signerContext)
                 .build();
+        return exampleSdJwtWithKeyBindingJwt(keyBindingJWT.getJws());
+    }
 
+    private SdJwtVP exampleSdJwtWithKeyBindingJwt(String keyBindingJwt) {
         String sdJwtVPString = TestUtils.readFileAsString(getClass(), "sdjwt/s20.1-sdjwt+kb.txt");
         String sdJwtWithoutKb = sdJwtVPString.substring(0, sdJwtVPString.lastIndexOf(OID4VCConstants.SDJWT_DELIMITER) + 1);
 
-        return SdJwtVP.of(sdJwtWithoutKb + keyBindingJWT.getJws());
+        return SdJwtVP.of(sdJwtWithoutKb + keyBindingJwt);
     }
 }

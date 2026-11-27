@@ -83,6 +83,22 @@ public abstract class SdJwtVerificationTest {
     }
 
     @Test
+    public void issuerHeaderExtensionIsAcceptedOnlyWhenNonCritical() throws VerificationException {
+        SignatureSignerContext signer = testSettings.issuerSigContext;
+        ObjectNode header = mapper.createObjectNode().put("alg", signer.getAlgorithm()).put("example", true);
+        ObjectNode payload = exampleFlatSdJwtV1().build().getPayload();
+        IssuerSignedJwtVerificationOpts options = optionalTimeClaimVerificationOpts().build();
+
+        String signed = TestUtils.signWithProtectedHeader(header, payload, signer);
+        new SdJwt(new IssuerSignedJWT(signed), null).verify(defaultIssuerVerifyingKeys(), options);
+
+        header.putArray("crit").add("example");
+        String signedWithCrit = TestUtils.signWithProtectedHeader(header, payload, signer);
+        SdJwt sdJwt = new SdJwt(new IssuerSignedJWT(signedWithCrit), null);
+        assertThrows(VerificationException.class, () -> sdJwt.verify(defaultIssuerVerifyingKeys(), options));
+    }
+
+    @Test
     public void sdJwtVerificationShouldFail_WhenHeaderAlgorithmDiffersFromVerifierAlgorithm() {
         SdJwt sdJwt = SdJwt.builder()
                 .withIssuerSignedJwt(exampleFlatSdJwtV1().build())

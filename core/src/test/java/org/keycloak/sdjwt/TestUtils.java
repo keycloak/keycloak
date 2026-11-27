@@ -20,9 +20,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.SignatureSignerContext;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -77,6 +79,14 @@ public class TestUtils {
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not rewrite JWS header", e);
         }
+    }
+
+    // JWSBuilder only serializes the standard header fields.
+    public static String signWithProtectedHeader(ObjectNode header, ObjectNode payload, SignatureSignerContext signer) {
+        String encodedHeader = Base64Url.encode(header.toString().getBytes(StandardCharsets.UTF_8));
+        String encodedPayload = Base64Url.encode(payload.toString().getBytes(StandardCharsets.UTF_8));
+        String signingInput = encodedHeader + "." + encodedPayload;
+        return signingInput + "." + Base64Url.encode(signer.sign(signingInput.getBytes(StandardCharsets.US_ASCII)));
     }
 
 }
