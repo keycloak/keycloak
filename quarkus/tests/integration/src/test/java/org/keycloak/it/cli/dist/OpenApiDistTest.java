@@ -18,6 +18,7 @@
 package org.keycloak.it.cli.dist;
 
 import java.io.IOException;
+import java.net.URI;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -37,6 +38,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(stopServer = Mode.MANUAL, requestPort = 9000, containerExposedPorts = {8080, 9000})
@@ -77,9 +79,17 @@ public class OpenApiDistTest {
   @Test
   @Launch({"start-dev", "--openapi-ui-enabled=true", "--openapi-enabled=true", FEATURES_OPTION})
   void testOpenApiUiEndpointEnabled(KeycloakDistribution distribution) {
-    when().get(OPENAPI_UI_ENDPOINT)
+    String location = given().redirects().follow(false).when().get(OPENAPI_UI_ENDPOINT)
         .then()
-        .statusCode(200);
+        .statusCode(302)
+        .extract().header("Location");
+    URI redirect = URI.create(OPENAPI_UI_ENDPOINT).resolve(location);
+    assertEquals(URI.create(OPENAPI_UI_ENDPOINT + "/"), redirect);
+
+    when().get(redirect.toString())
+        .then()
+        .statusCode(200)
+        .contentType("text/html");
   }
 
   @StopServer(Mode.BEFORE_QUARKUS)
