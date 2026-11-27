@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -352,7 +353,12 @@ public class ClientStreamStore implements SsfStreamStore {
     public List<StreamConfig> findStreamsForSsfReceiverClients() {
         RealmModel realm = session.getContext().getRealm();
         Map<String, String> attributes = Map.of(SSF_ENABLED_KEY, "true");
-        return session.clients()
+        // As the system, not as the acting admin: events fired during an admin
+        // request run in that request's session, where fine-grained admin
+        // permissions would otherwise hide receiver clients the admin may not
+        // view, and those receivers would miss the event. The stream is consumed
+        // inside the scope, so the suppression still applies when the query runs.
+        return AdminPermissionsSchema.runWithoutAuthorization(session, () -> session.clients()
                 .searchClientsByAttributes(realm, attributes, null, null)
                 // The attribute search already matches ssf.enabled=true, but it
                 // cannot express the client on/off state — filter disabled
@@ -361,7 +367,7 @@ public class ClientStreamStore implements SsfStreamStore {
                 .filter(SsfUtil::isReceiverEnabled)
                 .map(this::extractStreamConfig)
                 .filter(Objects::nonNull)
-                .toList();
+                .toList());
     }
 
     @Override
