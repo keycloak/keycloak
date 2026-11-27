@@ -66,6 +66,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.common.util.PathMatcher;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.support.EntityManagers;
@@ -1315,6 +1316,8 @@ public class RepresentationToModel {
         RealmModel realm = authorization.getRealm();
 
         for (ResourceRepresentation resource : rep.getResources()) {
+            validateUris(resource);
+
             ResourceOwnerRepresentation owner = resource.getOwner();
 
             if (owner == null) {
@@ -1335,6 +1338,21 @@ public class RepresentationToModel {
         importPolicies(authorization, resourceServer, rep.getPolicies(), null);
 
         return resourceServer;
+    }
+
+    private static void validateUris(ResourceRepresentation resource) {
+        Set<String> uris = resource.getUris();
+
+        if (uris == null) {
+            return;
+        }
+
+        for (String uri : uris) {
+            String error = PathMatcher.validateTemplate(uri);
+            if (error != null) {
+                throw new ModelValidationException("URI [" + uri + "] is not a valid template: " + error);
+            }
+        }
     }
 
     private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {

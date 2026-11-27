@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -17,10 +18,12 @@ import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.partialimport.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -209,5 +212,35 @@ public class PartialImportClientTest extends AbstractPartialImportTest {
         }
 
         assertTrue(managedRealm.admin().clients().findByClientId("evil-partial-import-test").isEmpty());
+    }
+
+    // https://github.com/keycloak/keycloak/issues/55592
+    @Test
+    public void testAddClientsWithInvalidAuthorizationResourceUriFails() {
+        setFail();
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("invalid-uri-partial-import-test");
+        client.setServiceAccountsEnabled(true);
+        client.setBearerOnly(false);
+        client.setPublicClient(false);
+        client.setAuthorizationServicesEnabled(true);
+
+        ResourceServerRepresentation authzSettings = new ResourceServerRepresentation();
+        ResourceRepresentation resource = new ResourceRepresentation("foo");
+
+        resource.setUris(Set.of("/api/*/info"));
+        authzSettings.setResources(List.of(resource));
+        client.setAuthorizationSettings(authzSettings);
+
+        piRep.setClients(List.of(client));
+
+        try (Response response = managedRealm.admin().partialImport(piRep)) {
+            assertEquals(400, response.getStatus());
+            OAuth2ErrorRepresentation errorRep = response.readEntity(OAuth2ErrorRepresentation.class);
+            Assertions.assertTrue(errorRep.getErrorDescription().contains("is not a valid template"));
+        }
+
+        assertTrue(managedRealm.admin().clients().findByClientId("invalid-uri-partial-import-test").isEmpty());
     }
 }
