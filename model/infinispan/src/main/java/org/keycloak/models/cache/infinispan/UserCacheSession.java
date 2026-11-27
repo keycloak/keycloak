@@ -1082,11 +1082,19 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        // Only the username/token are updated here (see JpaUserProvider#updateFederatedIdentity), so the
-        // identityProvider/socialUserId mapping used by the reverse lookup key does not change; invalidating
-        // just the links list is enough, and keeps reverse-lookup queries cached across broker logins that
-        // merely refresh the stored token
-        invalidateFederationLink(realm, federatedUser.getId(), null);
+        // For users stored locally, only the username/token are updated here (see JpaUserProvider#updateFederatedIdentity)
+        // and the identityProvider/socialUserId mapping used by the reverse lookup key never changes. For externally
+        // stored users though, JpaUserFederatedStorageProvider#updateFederatedIdentity does allow the broker user id to
+        // change, so both the old and new reverse lookup keys need invalidating in that case; otherwise invalidating
+        // just the links list is enough, and keeps reverse-lookup queries cached across broker logins that merely
+        // refresh the stored token
+        FederatedIdentityModel existingLink = getFederatedIdentity(realm, federatedUser, federatedIdentityModel.getIdentityProvider());
+        if (existingLink != null && !Objects.equals(existingLink.getUserId(), federatedIdentityModel.getUserId())) {
+            invalidateFederationLink(realm, federatedUser.getId(), existingLink);
+            invalidateFederationLink(realm, federatedUser.getId(), federatedIdentityModel);
+        } else {
+            invalidateFederationLink(realm, federatedUser.getId(), null);
+        }
         getDelegate().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
     }
 
