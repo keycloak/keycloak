@@ -55,6 +55,23 @@ public class AutoUpdateLogicTest {
     }
 
     @Test
+    public void testContainersAreSelectedByName() {
+        // init containers of the pod template run before the 'actual' init container of the update job
+        var podTemplateInitContainer = terminated("pod-template-init", 0, "Completed");
+
+        var featureDisabled = new PodBuilder().withNewStatus()
+                .addToInitContainerStatuses(podTemplateInitContainer, terminated("actual", 4, "Error"))
+                .endStatus().build();
+        assertEquals(Outcome.RECREATE, AutoUpdateLogic.checkUpdateType(featureDisabled).outcome());
+
+        var compatible = new PodBuilder().withNewStatus()
+                .addToInitContainerStatuses(podTemplateInitContainer, terminated("actual", 0, "Completed"))
+                .addToContainerStatuses(terminated("desired", 0, "Completed"))
+                .endStatus().build();
+        assertEquals(Outcome.ROLLING, AutoUpdateLogic.checkUpdateType(compatible).outcome());
+    }
+
+    @Test
     public void testPodWithoutStatusIsRetried() {
         assertEquals(Outcome.RETRY, AutoUpdateLogic.checkUpdateType(new PodBuilder().build()).outcome());
     }

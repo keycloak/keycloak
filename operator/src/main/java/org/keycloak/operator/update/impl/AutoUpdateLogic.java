@@ -278,18 +278,21 @@ public class AutoUpdateLogic extends BaseUpdateLogic {
                 .findFirst();
     }
 
+    // the job keeps init containers of the pod template, so the containers are selected by name
     private static Optional<ContainerStatus> initContainer(Pod pod) {
-        return java.util.Optional.ofNullable(pod.getStatus())
+        return Optional.ofNullable(pod.getStatus())
                 .map(PodStatus::getInitContainerStatuses)
-                .map(Collection::stream)
-                .flatMap(Stream::findFirst);
+                .flatMap(statuses -> findByName(statuses, KeycloakUpdateJobDependentResource.INIT_CONTAINER_NAME));
     }
 
     public static Optional<ContainerStatus> container(Pod pod) {
-        return java.util.Optional.ofNullable(pod.getStatus())
+        return Optional.ofNullable(pod.getStatus())
                 .map(PodStatus::getContainerStatuses)
-                .map(Collection::stream)
-                .flatMap(Stream::findFirst);
+                .flatMap(statuses -> findByName(statuses, KeycloakUpdateJobDependentResource.CONTAINER_NAME));
+    }
+
+    private static Optional<ContainerStatus> findByName(Collection<ContainerStatus> statuses, String name) {
+        return statuses.stream().filter(status -> name.equals(status.getName())).findFirst();
     }
 
     private static Optional<Integer> terminatedExitCode(ContainerStatus containerStatus) {

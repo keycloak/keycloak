@@ -68,8 +68,8 @@ public class KeycloakUpdateJobDependentResource extends CRUDKubernetesDependentR
     private static final String LABEL_SELECTOR = "app=keycloak-update-job,app.kubernetes.io/managed-by=keycloak-operator";
 
     // container configuration
-    private static final String INIT_CONTAINER_NAME = "actual";
-    private static final String CONTAINER_NAME = "desired";
+    public static final String INIT_CONTAINER_NAME = "actual";
+    public static final String CONTAINER_NAME = "desired";
     private static final List<String> INIT_CONTAINER_ARGS = List.of("update-compatibility", "metadata", "--file", UPDATES_FILE_PATH);
     private static final List<String> CONTAINER_ARGS = List.of("update-compatibility", "check", "--file", UPDATES_FILE_PATH);
 

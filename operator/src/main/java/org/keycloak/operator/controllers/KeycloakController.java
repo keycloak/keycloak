@@ -218,8 +218,9 @@ public class KeycloakController implements Reconciler<Keycloak> {
     private UpdateControl<Keycloak> withInterruptedStatus(Keycloak kc, StatefulSet existingDeployment, UpdateLogic updateLogic,
             UpdateControl<Keycloak> updateLogicControl, Context<Keycloak> context) {
         var currentStatus = kc.getStatus();
+        // without a previous status, no generation is known to be applied
         var observedGeneration = Optional.ofNullable(currentStatus).map(KeycloakStatus::getObservedGeneration)
-                .orElse(kc.getMetadata().getGeneration());
+                .orElse(0L);
         var statusAggregator = new KeycloakStatusAggregator(currentStatus, observedGeneration);
         updateStatus(kc, existingDeployment, statusAggregator, context);
         updateLogic.updateStatus(statusAggregator);
