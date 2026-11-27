@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { TFunction } from "i18next";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ErrorOption, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -35,14 +35,25 @@ import type { TFuncKey } from "../i18n-type";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 
+function toFormValues(profile: UserRepresentation): UserRepresentation {
+  return {
+    ...profile,
+    attributes: Object.fromEntries(
+      Object.entries(profile.attributes || {}).map(([k, v]) => [beerify(k), v]),
+    ),
+  };
+}
+
 export const PersonalInfo = () => {
   const { t } = useTranslation();
   const context = useEnvironment<AccountEnvironment>();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const form = useForm<UserRepresentation>({ mode: "onChange" });
-  const { handleSubmit, reset, setValue, setError } = form;
+  const { handleSubmit, reset, setError } = form;
+  const saveInProgress = useRef(false);
   const { addAlert } = useAccountAlerts();
 
   usePromise(
@@ -54,14 +65,17 @@ export const PersonalInfo = () => {
     ([personalInfo, supportedLocales]) => {
       setUserProfileMetadata(personalInfo.userProfileMetadata);
       setSupportedLocales(supportedLocales);
-      reset(personalInfo);
-      Object.entries(personalInfo.attributes || {}).forEach(([k, v]) =>
-        setValue(`attributes[${beerify(k)}]`, v),
-      );
+      reset(toFormValues(personalInfo));
     },
   );
 
   const onSubmit = async (user: UserRepresentation) => {
+    if (saveInProgress.current) {
+      return;
+    }
+    saveInProgress.current = true;
+    setIsSaving(true);
+
     try {
       const attributes = Object.fromEntries(
         Object.entries(user.attributes || {}).map(([k, v]) => [
@@ -70,6 +84,10 @@ export const PersonalInfo = () => {
         ]),
       );
       await savePersonalInfo(context, { ...user, attributes });
+      const savedUser = await getPersonalInfo({ context })
+        .then(toFormValues)
+        .catch(() => user);
+      reset(savedUser, { keepValues: true });
       const locale = attributes["locale"]?.toString();
       if (locale) {
         window.dispatchEvent(
@@ -87,6 +105,9 @@ export const PersonalInfo = () => {
           setError(name as string, error as ErrorOption),
         ((key: TFuncKey, param?: object) => t(key, param as any)) as TFunction,
       );
+    } finally {
+      saveInProgress.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -147,6 +168,7 @@ export const PersonalInfo = () => {
               type="submit"
               id="save-btn"
               variant="primary"
+              isDisabled={isSaving}
             >
               {t("save")}
             </Button>
@@ -154,6 +176,7 @@ export const PersonalInfo = () => {
               data-testid="cancel"
               id="cancel-btn"
               variant="link"
+              isDisabled={isSaving}
               onClick={() => reset()}
             >
               {t("cancel")}

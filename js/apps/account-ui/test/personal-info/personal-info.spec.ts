@@ -7,17 +7,24 @@ import { adminClient } from "../support/admin-client.ts";
 import userProfileRealm from "../realms/user-profile-realm.json" with { type: "json" };
 
 test.describe("Personal info", () => {
-  test("sets basic information", async ({ page }) => {
+  test("restores saved basic information on cancel", async ({ page }) => {
     await using testBed = await createTestBed();
 
     await login(page, testBed.realm);
 
-    await page.getByTestId("email").fill("edewit@somewhere.com");
+    await page.getByTestId("email").fill("EdeWit@Somewhere.com");
     await page.getByTestId("firstName").fill("Erik");
     await page.getByTestId("lastName").fill("de Wit");
     await page.getByTestId("save").click();
 
     await assertLastAlert(page, "Your account has been updated.");
+
+    await page.getByTestId("email").fill("unsaved@somewhere.com");
+    await page.getByTestId("lastName").fill("Unsaved");
+    await page.getByTestId("cancel").click();
+
+    await expect(page.getByTestId("email")).toHaveValue("edewit@somewhere.com");
+    await expect(page.getByTestId("lastName")).toHaveValue("de Wit");
   });
 });
 
