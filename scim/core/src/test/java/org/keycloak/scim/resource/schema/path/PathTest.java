@@ -86,6 +86,47 @@ public class PathTest {
     }
 
     @Test
+    public void subAttributeNamesIgnoreCase() {
+        // RFC 7643 section 2.1: attribute names are case insensitive
+        JsonNode both = current(new Email("work@x.example", "work", true), new Email("home@x.example", "home", false));
+
+        assertEquals("work@x.example", path("emails[TYPE eq \"work\"].value").select(EMAILS, both).get(0).get("value").asText());
+        assertEquals("work@x.example", path("emails[Primary eq true]").select(EMAILS, both).get(0).get("value").asText());
+        assertEquals(2, path("emails[Value pr]").select(EMAILS, both).size());
+    }
+
+    @Test
+    public void refusesAnOperatorThatDoesNotApplyToTheSubAttribute() {
+        JsonNode work = current(new Email("work@x.example", "work", true));
+
+        // a boolean only takes eq and ne, so "tru" is not a prefix match of true
+        for (String operator : List.of("co", "sw", "ew", "gt")) {
+            ModelValidationException error = assertThrows(ModelValidationException.class,
+                    () -> path("emails[primary " + operator + " \"tru\"]").select(EMAILS, work));
+            assertTrue(error.getMessage().contains("'" + operator + "' is not supported for primary"), error.getMessage());
+        }
+
+        // a string takes no ordering operator
+        assertThrows(ModelValidationException.class, () -> path("emails[type gt \"work\"]").select(EMAILS, work));
+    }
+
+    @Test
+    public void checksTheWholeFilterBeforeMatching() {
+        JsonNode work = current(new Email("work@x.example", "work", true));
+
+        // the first branch matches, so evaluation alone would never reach the unsupported second one
+        assertThrows(ModelValidationException.class,
+                () -> path("emails[type eq \"work\" or type gt \"work\"]").select(EMAILS, work));
+        assertThrows(ModelValidationException.class,
+                () -> path("emails[type eq \"home\" and primary co \"tru\"]").select(EMAILS, work));
+        assertThrows(ModelValidationException.class,
+                () -> path("emails[type eq \"work\" or kind eq \"work\"]").select(EMAILS, work));
+
+        // with no entries at all, an invalid filter is still refused rather than matching nothing
+        assertThrows(ModelValidationException.class, () -> path("emails[type gt \"work\"]").select(EMAILS, null));
+    }
+
+    @Test
     public void aValueOnlyFilterKeepsTheValueRule() {
         assertTrue(path("members[value eq \"123\"]").filtersOnlyOnValue());
         assertTrue(path("members[value eq \"1\" or value eq \"2\"]").filtersOnlyOnValue());
