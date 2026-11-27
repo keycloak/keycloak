@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -63,6 +64,7 @@ public class KeycloakMain implements QuarkusApplication {
     public static final String RUNNING_MESSAGE = "The server is running";
     private static AbstractNonServerCommand COMMAND;
     private static Consumer<Throwable> ERROR_HANDLER;
+    private static WindowsServiceLifecycle WINDOWS_SERVICE;
 
     static {
         InfinispanUtils.configureVirtualThreads();
@@ -140,24 +142,39 @@ public class KeycloakMain implements QuarkusApplication {
         ERROR_HANDLER = cause -> errorHandler.error(picocli.getErrWriter(),
                 String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                 cause.getCause());
-        try {
+        AtomicInteger result = new AtomicInteger(CommandLine.ExitCode.SOFTWARE);
+        try (WindowsServiceLifecycle service = WindowsServiceLifecycle.start()) {
+            WINDOWS_SERVICE = service;
+            checkWindowsServiceStartup();
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
-                if (cause != null) {
-                    errorHandler.error(picocli.getErrWriter(),
-                            String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
-                            cause.getCause());
+                if (WindowsServiceLifecycle.isStartupCancellation(cause)) {
+                    Logger.getLogger(KeycloakMain.class).info("Windows service startup cancelled");
+                    result.set(CommandLine.ExitCode.OK);
+                } else {
+                    if (cause != null) {
+                        errorHandler.error(picocli.getErrWriter(),
+                                String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
+                                cause.getCause());
+                    }
+                    result.set(exitCode);
                 }
-                picocli.exit(exitCode);
             });
         } catch (Throwable cause) {
-            errorHandler.error(picocli.getErrWriter(),
-                    String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
-                    cause.getCause());
+            if (WindowsServiceLifecycle.isStartupCancellation(cause)) {
+                Logger.getLogger(KeycloakMain.class).info("Windows service startup cancelled");
+                result.set(CommandLine.ExitCode.OK);
+            } else {
+                result.set(CommandLine.ExitCode.SOFTWARE);
+                errorHandler.error(picocli.getErrWriter(),
+                        String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
+                        cause);
+            }
         } finally {
+            WINDOWS_SERVICE = null;
             ERROR_HANDLER = null;
             COMMAND = null;
         }
-        picocli.exit(CommandLine.ExitCode.SOFTWARE);
+        picocli.exit(result.get());
     }
 
     /**
@@ -184,10 +201,19 @@ public class KeycloakMain implements QuarkusApplication {
                 application.getBootstrapFuture().ifPresentOrElse(future -> future.whenComplete(started),
                         () -> started.accept(null, null));
             }
+            if (WINDOWS_SERVICE != null) {
+                WINDOWS_SERVICE.started();
+            }
             Quarkus.waitForExit();
         }
 
         return ApplicationLifecycleManager.getExitCode();
+    }
+
+    public static void checkWindowsServiceStartup() {
+        if (WINDOWS_SERVICE != null) {
+            WINDOWS_SERVICE.checkStartupStop();
+        }
     }
     
     public static void asyncExit(int exitCode, Throwable t) {

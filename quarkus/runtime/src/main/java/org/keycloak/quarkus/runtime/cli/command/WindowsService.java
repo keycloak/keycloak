@@ -21,7 +21,7 @@ import picocli.CommandLine.Command;
 
 @Command(name = WindowsService.NAME,
         description = "Manage Keycloak as a Windows service.",
-        subcommands = {WindowsServiceInstall.class, WindowsServiceUninstall.class})
+        subcommands = {WindowsServiceInstall.class, WindowsServiceUninstall.class, WindowsServiceStop.class})
 public class WindowsService {
 
     public static final String NAME = "windows-service";

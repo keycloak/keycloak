@@ -23,9 +23,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.WindowsServiceLifecycle;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import picocli.CommandLine;
@@ -38,10 +40,19 @@ import picocli.CommandLine.Option;
             "%nInstall a Windows service that runs Keycloak using 'kc.bat start'.",
             "",
             "This command requires prunsrv.exe to be present in the bin directory.",
+            "Apache Commons Daemon 1.6.1 or later is recommended.",
             "Download it from https://downloads.apache.org/commons/daemon/binaries/windows/",
+            "Run this command from an elevated terminal.",
             "",
             "The service runs in exe mode, executing kc.bat as an external process.",
-            "This means all environment variables and configuration files are respected.",
+            "The service uses system-wide environment variables and conf/keycloak.conf.",
+            "It does not inherit the installing user's environment variables.",
+            "",
+            "Stopping the service requests orderly Quarkus shutdown.",
+            "Stop requests received before Keycloak bootstrap cancel startup.",
+            "The stop timeout includes the stop command's JVM, remaining startup, and server shutdown.",
+            "Procrun forcefully terminates the process tree if the timeout expires.",
+            "Reinstall existing services configured to run 'kc.bat stop' after upgrading.",
             "",
             "For faster startup, run 'kc.bat build' before installing the service.",
             "Without a pre-build, the first service start will be slower as it builds."
@@ -79,7 +90,7 @@ public class WindowsServiceInstall extends AbstractCommand {
     String description;
 
     @Option(names = "--startup",
-            description = "Service startup mode: auto, manual.",
+            description = "Service startup mode: auto, delayed, manual. Default: auto.",
             defaultValue = "auto")
     String startupMode;
 
@@ -92,8 +103,8 @@ public class WindowsServiceInstall extends AbstractCommand {
     String servicePassword;
 
     @Option(names = "--stop-timeout",
-            description = "Timeout in seconds to wait for service to stop gracefully.",
-            defaultValue = "30")
+            description = "Time in seconds for the stop command and server shutdown before Procrun forcefully terminates the process tree. Default: 60.",
+            defaultValue = "60")
     Integer stopTimeout;
 
     @Option(names = "--depends-on",
@@ -112,6 +123,9 @@ public class WindowsServiceInstall extends AbstractCommand {
 
     @Override
     protected void runCommand() {
+        if (stopTimeout < 0) {
+            throw new CommandLine.ParameterException(spec.commandLine(), "--stop-timeout must not be negative.");
+        }
         if (!Environment.isWindows()) {
             executionError(spec.commandLine(), "Windows service management is only available on Windows.");
         }
@@ -202,7 +216,8 @@ public class WindowsServiceInstall extends AbstractCommand {
         cmd.add("--StopMode=exe");
         cmd.add("--StopPath=" + homePath);
         cmd.add("--StopImage=" + kcBatPath);
-        cmd.add("--StopParams=stop");
+        cmd.add("--StopParams=tools;windows-service;stop");
+        cmd.add("++Environment=" + WindowsServiceLifecycle.SERVICE_ID_ENV + "=" + UUID.randomUUID());
         cmd.add("--StopTimeout=" + stopTimeout);
 
         // Add service dependencies if specified

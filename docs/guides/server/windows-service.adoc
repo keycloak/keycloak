@@ -5,10 +5,15 @@
     title="Run {project_name} as a Windows Service"
     summary="Install and run {project_name} as a Windows service using Apache Commons Daemon.">
 
-This guide explains how to install and run {project_name} as a Windows service using Apache Commons Daemon. The service runs `kc.bat` in "exe" mode so behavior matches running `kc.bat start` manually. The service runs in "exe" mode, where Procrun executes `kc.bat start` as an external process. Environment variables, such as `KC_*`, along with `conf/keycloak.conf`, are respected. The `kc.bat` script handles augmentation and build logic, ensuring the service behaves exactly like a manual start.
+This guide explains how to install and run {project_name} as a Windows service using Apache Commons Daemon.
+Procrun runs `kc.bat start` as an external process in "exe" mode, preserving the script's augmentation and build logic.
+The service uses system-wide environment variables, such as `KC_*`, and `conf/keycloak.conf`.
+It does not inherit the environment variables of the user who installs the service.
 
 ==  Apache Commons Daemon Setup
-To run {project_name} as a Windows service, you need the Apache Commons Daemon Procrun binary (`prunsrv.exe`). Download it for your platform: https://downloads.apache.org/commons/daemon/binaries/windows/
+To run {project_name} as a Windows service, you need the Apache Commons Daemon Procrun binary (`prunsrv.exe`).
+Apache Commons Daemon 1.6.1 or later is recommended.
+Download it for your platform: https://downloads.apache.org/commons/daemon/binaries/windows/
 
 Then place `prunsrv.exe` into the Keycloak `bin` folder.
 
@@ -17,7 +22,7 @@ Then place `prunsrv.exe` into the Keycloak `bin` folder.
 copy "path\to\prunsrv.exe" "%KEYCLOAK_HOME%\bin\prunsrv.exe"
 ----
 
-Use the amd64 binary for 64-bit and x86 for 32-bit systems.
+Use the amd64 binary for x86-64 systems or the ARM64 binary for Windows on ARM64.
 
 == Optional: Pre-build
 
@@ -25,12 +30,14 @@ Pre-building is optional. If you do not pre-build, Keycloak will build automatic
 
 [source,bash]
 ----
-bin/kc.bat build --db=postgres
+bin\kc.bat build --db=postgres
 ----
 
 == Installing the Service
 
 Keycloak includes a `tools windows-service` subcommand to simplify service installation and uninstallation.
+
+Run service installation, uninstallation, start, and stop commands from an elevated terminal (Run as administrator).
 
 [source,bash]
 ----
@@ -51,7 +58,7 @@ Install a basic service (runs as Local System by default):
 bin\kc.bat tools windows-service install --name keycloak
 ----
 
-Manual startup and longer stop timeout:
+Manual startup with an explicit stop timeout:
 
 [source,bash]
 ----
@@ -79,14 +86,15 @@ Use `--depends-on` to ensure required Windows services start before Keycloak (fo
 bin\kc.bat tools windows-service install --depends-on="postgresql-x64-15;Tcpip;Afd"
 ----
 
-The default is to run the service as the Local System account - `--service-user` and `--service-password` can be omitted (recommended). To run as a specific user, the account must have the "Log on as a service" right.
+By default, the service runs as the Local System account, so `--service-user` and `--service-password` can be omitted.
+To run as a specific user, the account must have the "Log on as a service" right.
 
 [source,bash]
 ----
 bin\kc.bat tools windows-service install --service-user="DOMAIN\Username" --service-password="password"
 ----
 
-You can supply the service password securely via an environment variable, which is recommended:
+You can supply the service password through an environment variable instead of including it in the installation command line:
 
 [source,bash]
 ----
@@ -108,7 +116,18 @@ Stop the service:
 net stop keycloak
 ----
 
-Uninstall the service:
+Stopping the service requests an orderly shutdown of {project_name}, including leaving the cache cluster and completing HTTP requests according to the configured shutdown timeouts.
+If the stop request is received before {project_name} bootstrap begins, startup is cancelled and initialized resources are released instead.
+Requests received later follow normal shutdown once runtime startup completes.
+The `--stop-timeout` installation option limits the total time Procrun waits for its stop command and the server process to exit (60 seconds by default).
+This includes starting the stop command's JVM and waiting for the shutdown event if the server is still starting.
+If you configure `shutdown-delay` or `shutdown-timeout`, make `--stop-timeout` longer than their combined duration, with additional time for the stop command and other shutdown work.
+If this timeout expires, Procrun forcefully terminates the process tree.
+
+After upgrading, existing services configured to run `kc.bat stop` must be uninstalled and reinstalled to use the updated stop command.
+Record any custom service installation options before uninstalling.
+
+Uninstall the service (Procrun stops it first if it is running):
 
 [source,bash]
 ----
@@ -121,7 +140,9 @@ Check status using the Windows Services console (`services.msc`).
 
 When {project_name} runs as a service, it is recommended to enable file logging - see <@links.server id="logging"/>.
 
-The service wrapper logs (e.g. `commons-daemon.YYYY-MM-DD.log`) respects the `log-path` option value during service creation.
+The service wrapper writes its logs (for example, `commons-daemon.YYYY-MM-DD.log`) to the directory containing the configured `log-file` at installation time.
+Set `log-file` in `conf/keycloak.conf` or use the `KC_LOG_FILE` environment variable when installing the service.
+If no custom `log-file` is configured, wrapper logs are stored in `<KEYCLOAK_HOME>\data\log`.
 
 == Configuration Changes
 
@@ -162,8 +183,12 @@ When you create the service, the following Apache Commons Daemon Procrun setting
 * StartParams: `start`
 * StopMode: `exe`
 * StopImage: `<KEYCLOAK_HOME>\bin\kc.bat`
-* StopParams: `stop`
-* StopTimeout: configurable (default: 30 seconds)
+* StopParams: `tools;windows-service;stop`
+* StopTimeout: configurable (default: 60 seconds; `0` also uses Procrun's default of 60 seconds)
+
+The installer also assigns an internal service ID through Procrun's `Environment` setting.
+The server creates a Windows event for this ID before runtime initialization, using the service account's default access permissions.
+{project_name}'s internal stop command, invoked by Procrun, waits for this event to be created and signals it under the same account.
 
 Service configuration is stored in the Windows Registry under:
 
