@@ -110,12 +110,16 @@ public interface WorkflowStateProvider extends Provider {
     ScheduledStep getScheduledStep(String workflowId, String resourceId);
 
     /**
-     * Retrieves all scheduled steps associated with the specified resource.
+     * Retrieves all scheduled steps associated with the specified resource, scoped to the given realm.
+     * </p>
+     * Only steps belonging to workflows of the given realm are returned, even when a resource with
+     * the same ID exists in another realm.
      *
      * @param resourceId the ID of the resource
+     * @param realmId the ID of the realm the resource belongs to
      * @return a stream of scheduled steps for the given resource
      */
-    Stream<ScheduledStep> getScheduledStepsByResource(String resourceId);
+    Stream<ScheduledStep> getScheduledStepsByResource(String resourceId, String realmId);
 
     /**
      * Retrieves all scheduled steps associated with the specified workflow.

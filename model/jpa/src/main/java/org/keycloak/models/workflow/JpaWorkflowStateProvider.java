@@ -139,13 +139,24 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
-    public Stream<ScheduledStep> getScheduledStepsByResource(String resourceId) {
+    public Stream<ScheduledStep> getScheduledStepsByResource(String resourceId, String realmId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<WorkflowStateEntity> query = cb.createQuery(WorkflowStateEntity.class);
         Root<WorkflowStateEntity> stateRoot = query.from(WorkflowStateEntity.class);
 
-        Predicate byResource = cb.equal(stateRoot.get("resourceId"), resourceId);
-        query.where(byResource);
+        // WORKFLOW_STATE has no realm column, so scope the lookup to workflows (COMPONENT records)
+        // that belong to the given realm, to avoid returning state for a resource with the same id
+        // in a different realm.
+        Subquery<String> workflowIdsInRealm = query.subquery(String.class);
+        Root<ComponentEntity> component = workflowIdsInRealm.from(ComponentEntity.class);
+        workflowIdsInRealm.select(component.get("id"))
+                .where(cb.and(
+                        cb.equal(component.get("providerType"), WorkflowProvider.class.getName()),
+                        cb.equal(component.get("realm").get("id"), realmId)));
+
+        query.where(cb.and(
+                cb.equal(stateRoot.get("resourceId"), resourceId),
+                stateRoot.get("workflowId").in(workflowIdsInRealm)));
 
         return em.createQuery(query).getResultStream()
                 .map(this::toScheduledStep);

@@ -141,7 +141,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     @Override
     public Stream<WorkflowRepresentation> getScheduledWorkflowsByResource(String resourceId) {
-        return stateProvider.getScheduledStepsByResource(resourceId).map(scheduledStep -> {
+        return stateProvider.getScheduledStepsByResource(resourceId, realm.getId()).map(scheduledStep -> {
             Workflow workflow = getWorkflow(scheduledStep.workflowId());
             if (workflow == null) {
                 log.warnf("Scheduled step %s references non-existing workflow %s for resource %s, skipping",
@@ -387,7 +387,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
                 if (scheduledSteps[0] == null) {
                     // Lazily loading the current steps for this resource
-                    scheduledSteps[0] = stateProvider.getScheduledStepsByResource(event.getResourceId())
+                    scheduledSteps[0] = stateProvider.getScheduledStepsByResource(event.getResourceId(), realm.getId())
                             .collect(Collectors.toMap(ScheduledStep::workflowId, Function.identity()));
                 }
                 ScheduledStep scheduledStep = scheduledSteps[0].get(workflow.getId());
