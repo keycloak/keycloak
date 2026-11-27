@@ -72,8 +72,11 @@ public class UserCacheManager extends CacheManager {
         invalidations.add(UserCacheSession.getVerifiableCredentialsCacheKey(userId));
     }
 
-    public void federatedIdentityLinkUpdatedInvalidation(String userId, Set<String> invalidations) {
-        invalidations.add(UserCacheSession.getFederatedIdentityLinksCacheKey(userId));
+    public void federatedIdentityLinkUpdatedInvalidation(String userId, String realmId, String identityProviderId, String socialUserId, Set<String> invalidations) {
+        // Needs to invalidate both directions, otherwise a federated identity query for this link that is looked up
+        // (and thereby cached) while the transaction that added/updated the link is still open would stay cached
+        // with a stale result if that transaction is later rolled back.
+        federatedIdentityLinkRemovedInvalidation(userId, realmId, identityProviderId, socialUserId, invalidations);
     }
 
     public void federatedIdentityLinkRemovedInvalidation(String userId, String realmId, String identityProviderId, String socialUserId, Set<String> invalidations) {

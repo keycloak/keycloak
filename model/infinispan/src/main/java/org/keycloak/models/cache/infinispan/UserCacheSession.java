@@ -550,7 +550,17 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             if (model == null) return null;
             userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) return managedUsers.get(userId).user();
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null && realm.getId().equals(managed.realmId())) {
+                // the user was already loaded by another lookup in this session (for example by username/email),
+                // so the federated identity query for this key still needs to be cached
+                UserModel managedUser = managed.user();
+                if (managedUser instanceof UserAdapter) {
+                    query = new FederatedIdentityUserListQuery(loaded, cacheKey, realm, userId, socialLink.getIdentityProvider());
+                    cache.addRevisioned(query, startupRevision, getLifespan(realm, managedUser));
+                }
+                return managedUser;
+            }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
             if (adapter instanceof UserAdapter) {
@@ -634,9 +644,17 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             }
             userId = model.getId();
             if (invalidations.contains(userId)) return model;
-            if (managedUsers.containsKey(userId)) {
+            ManagedUser managed = managedUsers.get(userId);
+            if (managed != null && realm.getId().equals(managed.realmId())) {
                 logger.tracev("return managed user");
-                return managedUsers.get(userId).user();
+                // the user was already loaded by another lookup in this session (for example by getUserById),
+                // so the service account username query for this key still needs to be cached
+                UserModel managedUser = managed.user();
+                if (managedUser instanceof UserAdapter && client.getId().equals(managedUser.getServiceAccountClientLink())) {
+                    query = new UserListQuery(loaded, cacheKey, realm, userId);
+                    cache.addRevisioned(query, startupRevision, getLifespan(realm, managedUser));
+                }
+                return managedUser;
             }
 
             UserModel adapter = getUserAdapter(realm, userId, loaded, model);
@@ -1079,19 +1097,35 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public void addFederatedIdentity(RealmModel realm, UserModel user, FederatedIdentityModel socialLink) {
-        invalidateFederationLink(user.getId());
+        // Needs to invalidate both directions: a transaction that adds a link and looks it up via its reverse
+        // key before rolling back must not leave a stale entry for that key behind
+        invalidateFederationLink(realm, user.getId(), socialLink);
         getDelegate().addFederatedIdentity(realm, user, socialLink);
     }
 
     @Override
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
-        invalidateFederationLink(federatedUser.getId());
+        // For users stored locally, only the username/token are updated here (see JpaUserProvider#updateFederatedIdentity)
+        // and the identityProvider/socialUserId mapping used by the reverse lookup key never changes. For externally
+        // stored users though, JpaUserFederatedStorageProvider#updateFederatedIdentity does allow the broker user id to
+        // change, so both the old and new reverse lookup keys need invalidating in that case; otherwise invalidating
+        // just the links list is enough, and keeps reverse-lookup queries cached across broker logins that merely
+        // refresh the stored token
+        FederatedIdentityModel existingLink = getFederatedIdentity(realm, federatedUser, federatedIdentityModel.getIdentityProvider());
+        if (existingLink != null && !Objects.equals(existingLink.getUserId(), federatedIdentityModel.getUserId())) {
+            invalidateFederationLink(realm, federatedUser.getId(), existingLink);
+            invalidateFederationLink(realm, federatedUser.getId(), federatedIdentityModel);
+        } else {
+            invalidateFederationLink(realm, federatedUser.getId(), null);
+        }
         getDelegate().updateFederatedIdentity(realm, federatedUser, federatedIdentityModel);
     }
 
-    private void invalidateFederationLink(String userId) {
-        cache.federatedIdentityLinkUpdatedInvalidation(userId, invalidations);
-        invalidationEvents.add(UserFederationLinkUpdatedEvent.create(userId));
+    private void invalidateFederationLink(RealmModel realm, String userId, FederatedIdentityModel socialLink) {
+        String identityProviderId = socialLink == null ? null : socialLink.getIdentityProvider();
+        String socialUserId = socialLink == null ? null : socialLink.getUserId();
+        cache.federatedIdentityLinkUpdatedInvalidation(userId, realm.getId(), identityProviderId, socialUserId, invalidations);
+        invalidationEvents.add(UserFederationLinkUpdatedEvent.create(userId, realm.getId(), identityProviderId, socialUserId));
     }
 
     @Override
