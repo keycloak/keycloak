@@ -28,6 +28,8 @@ import {
   Translations,
 } from "./user-profile/attribute/TranslatableField";
 import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotations";
+import type { IndexedComponentConfig } from "./user-profile/attribute/AddComponentTypeDialog";
+import { AttributeConverters } from "./user-profile/attribute/AttributeConverters";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import {
@@ -43,19 +45,19 @@ type IndexedAnnotations = {
   value?: Record<string, unknown>;
 };
 
-export type IndexedValidations = {
-  key: string;
-  value?: Record<string, unknown>;
-};
+export type IndexedValidations = IndexedComponentConfig;
+
+export type IndexedConverters = IndexedComponentConfig;
 
 type UserProfileAttributeFormFields = Omit<
   UserProfileAttribute,
-  "validations" | "annotations"
+  "validations" | "converters" | "annotations"
 > &
   Translations &
   Attribute &
   Permission & {
     validations: IndexedValidations[];
+    converters: IndexedConverters[];
     annotations: IndexedAnnotations[];
     hasSelector: boolean;
     hasRequiredScopes: boolean;
@@ -106,6 +108,7 @@ const CreateAttributeFormContent = ({
         sections={[
           { title: t("generalSettings"), panel: <AttributeGeneralSettings /> },
           { title: t("permission"), panel: <AttributePermission /> },
+          { title: t("converters"), panel: <AttributeConverters /> },
           { title: t("validations"), panel: <AttributeValidations /> },
           { title: t("annotations"), panel: <AttributeAnnotations /> },
           { title: t("scimSettings"), panel: <AttributeScimSettings /> },
@@ -150,6 +153,7 @@ export default function NewAttributeSettings() {
       const {
         annotations,
         validations,
+        converters,
         permissions,
         selector,
         required,
@@ -184,6 +188,13 @@ export default function NewAttributeSettings() {
           value: value as Record<string, unknown>,
         })),
       );
+      form.setValue(
+        "converters",
+        Object.entries(converters || {}).map(([key, value]) => ({
+          key,
+          value: value as Record<string, unknown>,
+        })),
+      );
       form.setValue("isRequired", required !== undefined);
       form.setValue("multivalued", multivalued === true);
       form.setValue("defaultValue", defaultValue);
@@ -213,6 +224,14 @@ export default function NewAttributeSettings() {
       {} as Record<string, unknown>,
     );
 
+    const converters = formFields.converters.reduce(
+      (prevConverters, currentConverter) => {
+        prevConverters[currentConverter.key] = currentConverter.value || {};
+        return prevConverters;
+      },
+      {} as Record<string, unknown>,
+    );
+
     const annotations = formFields.annotations
       .filter((item) => !(item.key === SCIM_ANNOTATION_KEY && !item.value))
       .reduce(
@@ -237,6 +256,7 @@ export default function NewAttributeSettings() {
             multivalued: formFields.multivalued,
             annotations,
             validations,
+            converters,
           },
           formFields.defaultValue
             ? { defaultValue: formFields.defaultValue }
@@ -258,6 +278,7 @@ export default function NewAttributeSettings() {
             multivalued: formFields.multivalued,
             annotations,
             validations,
+            converters,
           },
           formFields.defaultValue
             ? { defaultValue: formFields.defaultValue }

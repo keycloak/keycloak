@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.convert.ConverterConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -106,13 +107,21 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
+        return createAttributes(context, attributes, user, metadata, true);
+    }
+
+    /**
+     * @param applyConverters {@code false} if the {@code attributes} are the values stored for the {@code user}
+     */
+    protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
+            UserModel user, UserProfileMetadata metadata, boolean applyConverters) {
         UnmanagedAttributePolicy unmanagedAttributePolicy = getUnmanagedAttributePolicy();
 
         if (isServiceAccountUser(user)) {
-            return new ServiceAccountAttributes(context, attributes, user, metadata, session, unmanagedAttributePolicy);
+            return new ServiceAccountAttributes(context, attributes, user, metadata, session, unmanagedAttributePolicy, applyConverters);
         }
 
-        return new DefaultAttributes(context, attributes, user, metadata, session, unmanagedAttributePolicy);
+        return new DefaultAttributes(context, attributes, user, metadata, session, unmanagedAttributePolicy, applyConverters);
     }
 
     private UnmanagedAttributePolicy getUnmanagedAttributePolicy() {
@@ -129,20 +138,21 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
 
     @Override
     public UserProfile create(UserProfileContext context, UserModel user) {
-        return createUserProfile(context, user.getAttributes(), user);
+        // the profile holds the stored values, so they are not converted
+        return createUserProfile(context, user.getAttributes(), user, false);
     }
 
     @Override
     public UserProfile create(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
-        return createUserProfile(context, attributes, user);
+        return createUserProfile(context, attributes, user, true);
     }
 
     @Override
     public UserProfile create(UserProfileContext context, Map<String, ?> attributes) {
-        return createUserProfile(context, attributes, null);
+        return createUserProfile(context, attributes, null, true);
     }
 
-    private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user) {
+    private UserProfile createUserProfile(UserProfileContext context, Map<String, ?> attributes, UserModel user, boolean applyConverters) {
         UserProfileMetadata defaultMetadata = contextualMetadataRegistry.get(context);
 
         if (defaultMetadata == null) {
@@ -151,7 +161,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         }
 
         UserProfileMetadata metadata = configureUserProfile(defaultMetadata, session);
-        Attributes profileAttributes = createAttributes(context, attributes, user, metadata);
+        Attributes profileAttributes = createAttributes(context, attributes, user, metadata, applyConverters);
         return new DefaultUserProfile(metadata, profileAttributes, createUserFactory(), user, session);
     }
 
@@ -291,6 +301,15 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 }
             }
 
+            List<AttributeConverterMetadata> converters = new ArrayList<>();
+            Map<String, Map<String, Object>> convertersConfig = attrConfig.getConverters();
+
+            if (convertersConfig != null) {
+                for (Map.Entry<String, Map<String, Object>> cc : convertersConfig.entrySet()) {
+                    converters.add(createConfiguredConverter(cc.getKey(), cc.getValue()));
+                }
+            }
+
             UPAttributeRequired rc = attrConfig.getRequired();
             if (rc != null) {
                 validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
@@ -391,6 +410,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                             .addReadCondition(readAllowed)
                             .addWriteCondition(writeAllowed)
                             .addValidators(validators)
+                            .addConverters(converters)
                             .setRequired(required)
                             .setDefaultValue(attrConfig.getDefaultValue())
                             .setMultivalued(attrConfig.isMultivalued());
@@ -400,6 +420,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
                         .setAttributeGroupMetadata(groupMetadata)
+                        .addConverters(converters)
                         .setDefaultValue(attrConfig.getDefaultValue())
                         .setMultivalued(attrConfig.isMultivalued());
             }
@@ -479,6 +500,17 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         return new AttributeValidatorMetadata(validator, ValidatorConfig.builder().config(validatorConfig).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build());
     }
 
+    /**
+     * Create converter for conversion configured in the user profile config.
+     *
+     * @param converter id to create converter for
+     * @param converterConfig of the converter
+     * @return converter metadata to run given conversion
+     */
+    protected AttributeConverterMetadata createConfiguredConverter(String converter, Map<String, Object> converterConfig) {
+        return new AttributeConverterMetadata(converter, ConverterConfig.builder().config(converterConfig).build());
+    }
+
     private UPConfig getConfigFromComponentModel(ComponentModel model) {
         UPConfig cached = getParsedConfigFromCache(model);
 
@@ -520,7 +552,8 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
             UPConfig parsedConfig = getConfigFromComponentModel(component);
 
             //validate configuration to catch things like changed/removed validators etc, and warn early and clearly about this problem
-            List<String> errors = UPConfigUtils.validate(session, parsedConfig);
+            //converters that are not available are skipped when converting, see AttributeConverterMetadata#bind
+            List<String> errors = UPConfigUtils.validateExisting(session, parsedConfig);
             if (!errors.isEmpty()) {
                 throw new RuntimeException("UserProfile configuration for realm '" + realm.getName() + "' is invalid: " + errors);
             }

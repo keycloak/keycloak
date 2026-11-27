@@ -13,12 +13,14 @@ import {
 } from "../utils/table.ts";
 import { goToLoginTab } from "./login.ts";
 import {
+  clickAddConverter,
   clickAddValidator,
   clickCancelAttribute,
   clickCreateUser,
   clickCreateAttribute,
   fillEmailAndOptionalUsername,
   clickSaveAttribute,
+  clickSaveConverter,
   clickSaveValidator,
   fillAttributeForm,
   goToAttributeGroupsTab,
@@ -153,6 +155,28 @@ test.describe.serial("User profile tabs", () => {
       expect(await adminClient.getLocalizationTexts("en", realmName)).toEqual({
         loginAccountTitle: "My Custom Login",
       });
+    });
+
+    test("Adds and removes converter to/from existing attribute and performs save", async ({
+      page,
+    }) => {
+      await clickTableRowItem(page, modifyName);
+      await clickAddConverter(page);
+      await selectItem(
+        page,
+        page.getByRole("button", { name: "Select an option" }),
+        "trim-whitespace Removes leading and/or trailing whitespace from the attribute value.",
+      );
+      await clickSaveConverter(page);
+      await expect(
+        page.locator('tbody [data-label="Converter name"]'),
+      ).toContainText("trim-whitespace");
+
+      await page.getByTestId("deleteConverter").click();
+      await confirmModal(page);
+      await expect(page.locator(".kc-emptyConverters")).toContainText(
+        "No converters.",
+      );
     });
   });
 

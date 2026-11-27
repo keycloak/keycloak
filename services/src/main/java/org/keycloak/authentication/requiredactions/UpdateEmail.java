@@ -164,7 +164,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             if (newEmail != null && Boolean.TRUE.equals(context.getSession().removeAttribute(FORCE_EMAIL_VERIFICATION))) {
                 // Remove VERIFY_EMAIL to ensure UPDATE_EMAIL takes precedence when both realm verification and forced verification are enabled.
                 user.removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-                sendEmailUpdateConfirmation(context, false);
+                sendEmailUpdateConfirmation(context, normalizeEmail(context.getSession(), user, newEmail), false);
             } else {
                 // Check if email verification is pending and show message for subsequent visits
                 String pendingEmail = getPendingEmailVerification(context);
@@ -206,6 +206,9 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             return;
         }
 
+        // use the email as normalized by the user profile (e.g. converted), not the raw submitted value
+        newEmail = emailUpdateValidationResult.getAttributes().getFirst(UserModel.EMAIL);
+
         final boolean logoutSessions = "on".equals(formData.getFirst("logout-sessions"));
         if (!isVerifyEmailEnabled(realm, context.getConfig()) || Validation.isBlank(newEmail)
                 || Objects.equals(user.getEmail(), newEmail) && user.isEmailVerified()) {
@@ -216,10 +219,10 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             return;
         }
 
-        sendEmailUpdateConfirmation(context, logoutSessions);
+        sendEmailUpdateConfirmation(context, newEmail, logoutSessions);
     }
 
-    private void sendEmailUpdateConfirmation(RequiredActionContext context, boolean logoutSessions) {
+    private void sendEmailUpdateConfirmation(RequiredActionContext context, String newEmail, boolean logoutSessions) {
         // Check rate limiting cooldown
         Long remaining = EmailCooldownManager.retrieveCooldownEntry(context, EMAIL_RESEND_COOLDOWN_KEY_PREFIX);
         if (remaining != null) {
@@ -238,7 +241,6 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
         UserModel user = context.getUser();
         String oldEmail = user.getEmail();
-        String newEmail = context.getHttpRequest().getDecodedFormParameters().getFirst(UserModel.EMAIL);
 
         RealmModel realm = context.getRealm();
         int validityInSecs = realm.getActionTokenGeneratedByUserLifespan(UpdateEmailActionToken.TOKEN_TYPE);
@@ -292,13 +294,24 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     public static UserProfile validateEmailUpdate(KeycloakSession session, UserModel user, String newEmail) {
+        UserProfile profile = createEmailUpdateProfile(session, user, newEmail);
+        profile.validate();
+        return profile;
+    }
+
+    /**
+     * Returns the given email as the user profile normalizes it, for example after its converters are applied.
+     */
+    private static String normalizeEmail(KeycloakSession session, UserModel user, String newEmail) {
+        return createEmailUpdateProfile(session, user, newEmail).getAttributes().getFirst(UserModel.EMAIL);
+    }
+
+    private static UserProfile createEmailUpdateProfile(KeycloakSession session, UserModel user, String newEmail) {
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         formData.putSingle(UserModel.USERNAME, user.getUsername());
         formData.putSingle(UserModel.EMAIL, newEmail);
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
-        UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_EMAIL, formData, user);
-        profile.validate();
-        return profile;
+        return profileProvider.create(UserProfileContext.UPDATE_EMAIL, formData, user);
     }
 
     public static void updateEmailNow(EventBuilder event, UserModel user, UserProfile emailUpdateValidationResult) {

@@ -71,14 +71,15 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
         event.event(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name());
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>(context.getHttpRequest().getDecodedFormParameters());
         UserModel user = context.getUser();
-        String newEmail = formData.getFirst(UserModel.EMAIL);
-        boolean isEmailUpdated = newEmail != null && !ofNullable(user.getEmail()).orElse("").equals(newEmail);
         RealmModel realm = context.getRealm();
-        boolean isForceEmailVerification = isEmailUpdated && UpdateEmail.isVerifyEmailEnabled(realm);
 
         try {
             UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
             UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, formData, user);
+            // compare the email as the user profile normalizes it (e.g. converted), not the raw submitted value
+            String newEmail = formData.getFirst(UserModel.EMAIL) == null ? null : profile.getAttributes().getFirst(UserModel.EMAIL);
+            boolean isEmailUpdated = newEmail != null && !ofNullable(user.getEmail()).orElse("").equals(newEmail);
+            boolean isForceEmailVerification = isEmailUpdated && UpdateEmail.isVerifyEmailEnabled(realm);
 
             if (isForceEmailVerification) {
                 UpdateEmail.forceEmailVerification(context.getSession());
