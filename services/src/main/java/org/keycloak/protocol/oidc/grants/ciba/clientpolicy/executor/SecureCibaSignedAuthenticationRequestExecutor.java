@@ -141,7 +141,7 @@ public class SecureCibaSignedAuthenticationRequestExecutor implements ClientPoli
         }
 
         // check whether signed authentication request not expired
-        long exp = signedAuthReq.get("exp").asLong();
+        long exp = getTimestampClaim(signedAuthReq, "exp");
         if (Time.currentTime() > exp) { // TODO: Time.currentTime() is int while exp is long...
             logger.trace("request object expired.");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Request Expired");
@@ -154,15 +154,28 @@ public class SecureCibaSignedAuthenticationRequestExecutor implements ClientPoli
         }
 
         // check whether signed authentication request not yet being processed
-        long nbf = signedAuthReq.get("nbf").asLong();
+        long nbf = getTimestampClaim(signedAuthReq, "nbf");
         if (Time.currentTime() < nbf) { // TODO: Time.currentTime() is int while nbf is long...
             logger.trace("request object not yet being processed.");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Request not yet being processed");
         }
 
+        // check whether signed authentication request expires before nbf
+        if (exp < nbf) {
+            logger.trace("signed authentication request expires before the lower bound nbf.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter in the signed authentication request: exp is before nbf");
+        }
+
         // check whether signed authentication request's available period is short
         int availablePeriod = Optional.ofNullable(configuration.getAvailablePeriod()).orElse(DEFAULT_AVAILABLE_PERIOD).intValue();
-        if (exp - nbf > availablePeriod) {
+        long lifetime;
+        try {
+            lifetime = Math.subtractExact(exp, nbf);
+        } catch (ArithmeticException e) {
+            //does not even fit into a long, so defo longer than the available period
+            lifetime = Long.MAX_VALUE;
+        }
+        if (lifetime > availablePeriod) {
             logger.trace("signed authentication request's available period is long.");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "signed authentication request's available period is long");
         }
@@ -217,6 +230,15 @@ public class SecureCibaSignedAuthenticationRequestExecutor implements ClientPoli
         }
 
         logger.trace("Passed.");
+    }
+
+    private long getTimestampClaim(JsonNode signedAuthReq, String claim) throws ClientPolicyException {
+        JsonNode value = signedAuthReq.get(claim);
+        if (!value.isIntegralNumber() || !value.canConvertToLong()) {
+            logger.tracef("signed authentication request claim '%s' is not a valid timestamp.", claim);
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter in the signed authentication request: " + claim);
+        }
+        return value.asLong();
     }
 
 }
