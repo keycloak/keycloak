@@ -15,7 +15,12 @@ export const PageBreadCrumbs = () => {
   const { realm } = useRealm();
   const { pathname } = useLocation();
 
-  const excludePaths = new Set(["/", `/${realm}`, `/${realm}/page-section`]);
+  const excludePaths = new Set([
+    "/",
+    `/${realm}`,
+    `/${realm}/page-section`,
+    `/${realm}/ui-script`,
+  ]);
 
   // Find every route whose pattern is a prefix of the current URL.
   type Crumb = {
