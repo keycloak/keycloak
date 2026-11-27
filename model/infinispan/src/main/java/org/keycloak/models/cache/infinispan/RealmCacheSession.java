@@ -1573,6 +1573,19 @@ public class RealmCacheSession implements CacheRealmProvider {
         return compositeRoles.stream();
     }
 
+    /**
+     * Not cached: the batch is keyed by the caller's ids, which on the admin listings come from
+     * {@code first}/{@code max}/{@code search}, so entries would rarely be hit twice and would evict
+     * the role entries that are.
+     * <p>
+     * The override is still required - the {@link RoleProvider} default would resolve each id through
+     * this session and undo the batching.
+     */
+    @Override
+    public Set<String> getCompositeRoleIds(RealmModel realm, Set<String> roleIds) {
+        return getRoleDelegate().getCompositeRoleIds(realm, roleIds);
+    }
+
     // Don't cache ClientInitialAccessModel for now
     @Override
     public ClientInitialAccessModel createClientInitialAccessModel(RealmModel realm, int expiration, int count) {

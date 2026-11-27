@@ -455,11 +455,20 @@ public class ModelToRepresentation {
     }
 
     public static RoleRepresentation toRepresentation(RoleModel role) {
+        return toRepresentation(role, role.isComposite());
+    }
+
+    /**
+     * Takes the composite flag instead of resolving it, so a caller converting many roles can
+     * resolve it for the whole batch with {@link org.keycloak.models.RoleProvider#getCompositeRoleIds}
+     * rather than one lookup per role.
+     */
+    public static RoleRepresentation toRepresentation(RoleModel role, boolean composite) {
         RoleRepresentation rep = new RoleRepresentation();
         rep.setId(role.getId());
         rep.setName(role.getName());
         rep.setDescription(role.getDescription());
-        rep.setComposite(role.isComposite());
+        rep.setComposite(composite);
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
         rep.setAttributes(role.getAttributes());
@@ -467,11 +476,18 @@ public class ModelToRepresentation {
     }
 
     public static RoleRepresentation toBriefRepresentation(RoleModel role) {
+        return toBriefRepresentation(role, role.isComposite());
+    }
+
+    /**
+     * @see #toRepresentation(RoleModel, boolean)
+     */
+    public static RoleRepresentation toBriefRepresentation(RoleModel role, boolean composite) {
         RoleRepresentation rep = new RoleRepresentation();
         rep.setId(role.getId());
         rep.setName(role.getName());
         rep.setDescription(role.getDescription());
-        rep.setComposite(role.isComposite());
+        rep.setComposite(composite);
         rep.setClientRole(role.isClientRole());
         rep.setContainerId(role.getContainerId());
         return rep;

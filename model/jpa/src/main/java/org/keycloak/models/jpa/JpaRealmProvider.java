@@ -549,6 +549,25 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
+    public Set<String> getCompositeRoleIds(RealmModel realm, Set<String> roleIds) {
+        if (roleIds == null || roleIds.isEmpty()) {
+            return Set.of();
+        }
+        // One lookup for a whole page instead of a RoleAdapter.isComposite() query per role. It
+        // projects the id only, so no RoleEntity rows are hydrated.
+        //
+        // Chunked for the same reason as getCompositeRolesStream: databases cap the number of
+        // bind parameters per statement (e.g. MSSQL: 2100).
+        List<List<String>> roleIdChunks = CollectionUtil.partition(roleIds, jpaInParametersLimitThreshold);
+        return roleIdChunks.stream()
+                .flatMap(roleIdsChunk -> closing(em.createNamedQuery("getCompositeParentRoleIds", String.class)
+                        .setParameter("realmId", realm.getId())
+                        .setParameter("parentRoleIds", roleIdsChunk)
+                        .getResultStream()))
+                .collect(Collectors.toSet());
+    }
+
+    @Override
     public GroupModel getGroupById(RealmModel realm, String id) {
         GroupEntity groupEntity = em.find(GroupEntity.class, id);
         if (groupEntity == null) return null;
