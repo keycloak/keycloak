@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @KeycloakIntegrationTest(config = PresentationServerConfig.class)
 public class OID4VPMultiCredentialTest extends OID4VPVerifierTestBase {
 
+    private static final String EITHER_TYPE = "eitherType";
     private static final String MEMBERSHIP = "membership";
     private static final String MEMBERSHIP_TRUST_IDP_ALIAS = "oid4vp-membership-trust";
     private static final String MEMBERSHIP_MAPPER = "memberFamilyName-mapper";
@@ -230,6 +231,23 @@ public class OID4VPMultiCredentialTest extends OID4VPVerifierTestBase {
     }
 
     @Test
+    public void optionalCredentialWithholdingItsRequestedClaimIsRejected() throws Exception {
+        OID4VCTestContext pid = issueCredential();
+        OID4VCTestContext membership = issueCredential(null, sdJwtNaturalPersonCredentialScope);
+        JsonNode request = requestObject();
+        ObjectNode vpToken = JsonSerialization.mapper.createObjectNode();
+        vpToken.putArray(CREDENTIAL_ID).add(wallet.presentation(pid, request));
+        vpToken.putArray(MEMBERSHIP).add(wallet.presentationOfRequestedClaims(membership, request, MEMBERSHIP, "familyName"));
+
+        Oid4vpDirectPostResponse response = wallet.directPost(request, vpToken.toString());
+
+        assertEquals(400, response.getStatusCode());
+        assertEquals("access_denied", response.getError());
+        assertEquals("The credential 'membership' does not disclose the requested claim 'familyName'",
+                response.getErrorDescription());
+    }
+
+    @Test
     public void presentationOfAnUnrequestedCredentialIsRejected() throws Exception {
         OID4VCTestContext credential = issueCredential();
         JsonNode request = requestObject();
@@ -266,11 +284,6 @@ public class OID4VPMultiCredentialTest extends OID4VPVerifierTestBase {
 
     @Test
     public void principalOfAnotherTypeDoesNotSignInTheLinkedUser() throws Exception {
-        updateRequestedCredentials(requestedCredentials(new RequestedCredentials(
-                List.of(new RequestedCredentials.Credential(CREDENTIAL_ID, OID4VCConstants.FORMAT_SD_JWT_VC,
-                        List.of(sdJwtTypeCredentialVct, membershipVct),
-                        List.of(ISSUER_TRUST_IDP_ALIAS, MEMBERSHIP_TRUST_IDP_ALIAS))),
-                null, new RequestedCredentials.Principal(CREDENTIAL_ID, "email"))));
         OID4VCTestContext pid = issueCredential("judy");
         OID4VCTestContext membership = issueCredential("judy", sdJwtNaturalPersonCredentialScope);
         UserRepresentation holder = deleteHolder("judy");
@@ -282,8 +295,15 @@ public class OID4VPMultiCredentialTest extends OID4VPVerifierTestBase {
         assertEquals(links, federatedUserIds(user));
         endBrowserSession(user.getId());
 
+        // No mapper refers to this credential id, so only the email claim is requested, which both types carry.
+        updateRequestedCredentials(requestedCredentials(new RequestedCredentials(
+                List.of(new RequestedCredentials.Credential(EITHER_TYPE, OID4VCConstants.FORMAT_SD_JWT_VC,
+                        List.of(sdJwtTypeCredentialVct, membershipVct),
+                        List.of(ISSUER_TRUST_IDP_ALIAS, MEMBERSHIP_TRUST_IDP_ALIAS))),
+                null, new RequestedCredentials.Principal(EITHER_TYPE, "email"))));
+
         request = requestObject();
-        driver.open(wallet.directPost(request, vpToken(request, Map.of(CREDENTIAL_ID, membership))).getRedirectUri());
+        driver.open(wallet.directPost(request, vpToken(request, Map.of(EITHER_TYPE, membership))).getRedirectUri());
 
         assertLoginContinued();
         assertEquals(links, federatedUserIds(user));

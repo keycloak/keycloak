@@ -22,8 +22,11 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -53,7 +56,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
-import org.keycloak.sdjwt.consumer.PresentationRequirements;
 import org.keycloak.sdjwt.consumer.SdJwtPresentationConsumer;
 import org.keycloak.sdjwt.consumer.TrustedSdJwtIssuer;
 import org.keycloak.sdjwt.vp.KeyBindingJWT;
@@ -418,8 +420,8 @@ public class OID4VPIdentityProviderEndpoint {
     }
 
     /**
-     * Verifies the presentation of each presented credential and requires the presented credentials
-     * to satisfy the required credential sets.
+     * Verifies the presentation of each presented credential against its credential query.
+     * The presented credentials must satisfy the required credential sets.
      *
      * @return the disclosed claims of the presented credentials by credential id
      */
@@ -430,24 +432,23 @@ public class OID4VPIdentityProviderEndpoint {
             throw new VerificationException("vp_token does not contain the required credentials, presented were "
                     + presentations.keySet());
         }
+        Map<String, DcqlQuery.CredentialQuery> queries = dcqlQuery().credentials().stream()
+                .collect(Collectors.toMap(DcqlQuery.CredentialQuery::id, Function.identity()));
         ObjectNode claims = JsonSerialization.mapper.createObjectNode();
         for (RequestedCredentials.Credential credential : requested.credentials()) {
             String presentation = presentations.get(credential.id());
             if (presentation == null) {
                 continue;
             }
-            SdJwtVpVerificationResult result = verifyPresentation(credential, presentation, nonce);
-            if (!credential.types().contains(result.getCredentialType())) {
-                throw new VerificationException("The credential '" + credential.id() + "' has the type '"
-                        + result.getCredentialType() + "', which is not requested");
-            }
+            SdJwtVpVerificationResult result = verifyPresentation(credential, Objects.requireNonNull(queries.get(credential.id())),
+                    presentation, nonce);
             claims.set(credential.id(), result.getClaims());
         }
         return claims;
     }
 
     protected SdJwtVpVerificationResult verifyPresentation(RequestedCredentials.Credential credential,
-            String presentation, String nonce) throws VerificationException {
+            DcqlQuery.CredentialQuery query, String presentation, String nonce) throws VerificationException {
         SdJwtVP sdJwtVP;
         try {
             sdJwtVP = SdJwtVP.of(presentation);
@@ -479,16 +480,10 @@ public class OID4VPIdentityProviderEndpoint {
                 .withNonceCheck(nonce)
                 .build();
 
-        // TODO require the claims the DCQL query requests for this credential: derive
-        // PresentationRequirements from the query and enforce them here. The principal check in
-        // requirePrincipalClaim then becomes just another requested claim.
-        // https://github.com/keycloak/keycloak/issues/50657
-        PresentationRequirements noAdditionalRequirements = disclosedPayload -> {
-        };
         TrustedSdJwtIssuer trustedIssuer = provider.trustedIssuerResolver(credential)
                 .resolve(sdJwtVP.getIssuerSignedJWT());
         return new SdJwtPresentationConsumer().verifySdJwtPresentation(
-                sdJwtVP, noAdditionalRequirements, List.of(trustedIssuer), issuerOpts, kbOpts);
+                sdJwtVP, query, List.of(trustedIssuer), issuerOpts, kbOpts);
     }
 
     private static void requireAcceptedAlgorithm(String algorithm, String jwt) throws VerificationException {

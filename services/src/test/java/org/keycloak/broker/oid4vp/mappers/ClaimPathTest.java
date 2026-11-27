@@ -63,6 +63,20 @@ public class ClaimPathTest {
     }
 
     @Test
+    public void printsTheParsedDotNotation() {
+        for (String path : List.of("email", "address.locality", "degrees[].type", "nationalities[0]", "matrix[][]",
+                "org\\.example")) {
+            assertEquals(path, ClaimPath.parse(path).toString());
+        }
+    }
+
+    @Test
+    public void serializesAsClaimsPathPointer() throws Exception {
+        assertEquals("[\"degrees\",null,\"type\"]",
+                JsonSerialization.writeValueAsString(ClaimPath.parse("degrees[].type")));
+    }
+
+    @Test
     public void rejectsMalformedPaths() {
         assertNull(ClaimPath.parse(null));
         assertNull(ClaimPath.parse(""));

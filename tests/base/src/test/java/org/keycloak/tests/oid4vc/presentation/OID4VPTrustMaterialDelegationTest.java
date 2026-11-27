@@ -313,7 +313,9 @@ public class OID4VPTrustMaterialDelegationTest extends OID4VPVerifierTestBase {
         claims.put("iat", Time.currentTimeSeconds());
         claims.put("exp", Time.currentTimeSeconds() + 300);
         claims.put("email", "external-holder@example.com");
+        claims.put("firstName", "Holder");
         claims.put("lastName", "External");
+        claims.set("address", JsonSerialization.mapper.createObjectNode().put("locality", "Berlin"));
         claims.set("cnf", JsonSerialization.mapper.createObjectNode()
                 .set("jwk", JsonSerialization.mapper.valueToTree(
                         JWKBuilder.create().algorithm(Algorithm.ES256).ec(holderKey.getPublicKey(), KeyUse.SIG))));
