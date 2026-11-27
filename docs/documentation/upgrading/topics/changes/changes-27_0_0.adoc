@@ -784,6 +784,17 @@ For example, if an administrator marked the user's email as not verified, a late
 Previously, the flag was left unchanged for existing users with an unchanged address in this situation.
 If this behavior is not desired, set *Trust Email* to *OFF* for that identity provider. {project_name} then leaves the flag unchanged for existing users whose email address has not changed, and sets it to `false` for new users until the email is verified locally.
 
+=== Client roles managed through Admin API v2 emit client events instead of role events
+// https://github.com/keycloak/keycloak/issues/51326
+
+When managing clients using the declarative Client Admin API v2 (`client-admin-api:v2`), role modifications no longer emit individual `CLIENT_ROLE` admin events (`CREATE` or `DELETE`).
+Instead, operations emit a single `CLIENT` admin event (`CREATE`, `UPDATE`, or `DELETE`) representing the client resource as a whole, with the `apiVersion` detail set to `v2`.
+
+The `representation` property of the `CLIENT` event contains the full declarative client representation, including the updated list of client roles in the `roles` field.
+Because the representation reflects the resulting state of the client rather than an incremental delta of modified roles, event listeners and integrations that previously tracked individual `CLIENT_ROLE` events must now inspect the client's `roles` field and compare it against the previously known state or snapshot of the client to determine which roles were added, modified, or removed.
+
+Managing client roles through the legacy Admin API v1 role endpoints (`/admin/realms/{realm}/clients/{id}/roles`) continues to emit individual `CLIENT_ROLE` admin events as before.
+
 === Custom truststore in `kcadm` and `kcreg` now rejects self-signed certificates not present in the truststore
 
 When `kcadm` or `kcreg` is configured with a custom truststore (via `--truststore` or `config truststore`), a self-signed server certificate is now only accepted if it has been explicitly imported into that truststore.

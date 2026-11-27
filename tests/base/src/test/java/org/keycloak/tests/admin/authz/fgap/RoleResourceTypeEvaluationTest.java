@@ -273,6 +273,55 @@ public class RoleResourceTypeEvaluationTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testCreateRoleWithCompositesRequiresMapCompositePermission() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);
+        String myclientId = myclient.getId();
+
+        RoleRepresentation allowedSubRole = new RoleRepresentation();
+        allowedSubRole.setName("allowedCreateSubRole");
+        realm.admin().clients().get(myclientId).roles().create(allowedSubRole);
+        allowedSubRole = realm.admin().clients().get(myclientId).roles().get("allowedCreateSubRole").toRepresentation();
+
+        RoleRepresentation restrictedSubRole = new RoleRepresentation();
+        restrictedSubRole.setName("restrictedCreateSubRole");
+        realm.admin().clients().get(myclientId).roles().create(restrictedSubRole);
+
+        // grant FGAP MANAGE on myclient, but MAP_ROLE_COMPOSITE only on allowedSubRole
+        UserPolicyRepresentation policy = createUserPolicy(realm, adminPermissionsClient, "Only My Admin User Policy", myadmin.getId());
+        createPermission(adminPermissionsClient, myclientId, AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE, Set.of(MANAGE), policy);
+        createPermission(adminPermissionsClient, allowedSubRole.getId(), rolesType, Set.of(MAP_ROLE_COMPOSITE), policy);
+        realmAdminClient.tokenManager().grantToken();
+
+        var clientRoles = realmAdminClient.realm(realm.getName()).clients().get(myclientId).roles();
+
+        // creating a role that includes a composite the admin cannot map is denied, and the role is not left behind
+        RoleRepresentation denied = new RoleRepresentation();
+        denied.setName("deniedCompositeRole");
+        denied.setComposite(true);
+        denied.setComposites(new RoleRepresentation.Composites());
+        denied.getComposites().setClient(Map.of("myclient", List.of("restrictedCreateSubRole")));
+        try {
+            clientRoles.create(denied);
+            fail("Should not be able to create a composite without MAP_ROLE_COMPOSITE permission");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(ForbiddenException.class));
+        }
+        assertThat(realm.admin().clients().get(myclientId).roles().list().stream().map(RoleRepresentation::getName).collect(Collectors.toList()),
+                not(hasItem("deniedCompositeRole")));
+
+        // the composite the admin is allowed to map succeeds
+        RoleRepresentation allowed = new RoleRepresentation();
+        allowed.setName("allowedCompositeRole");
+        allowed.setComposite(true);
+        allowed.setComposites(new RoleRepresentation.Composites());
+        allowed.getComposites().setClient(Map.of("myclient", List.of("allowedCreateSubRole")));
+        clientRoles.create(allowed);
+        assertThat(realm.admin().clients().get(myclientId).roles().get("allowedCompositeRole").getRoleComposites().stream()
+                .map(RoleRepresentation::getName).collect(Collectors.toList()), hasItem("allowedCreateSubRole"));
+    }
+
+    @Test
     public void testDeleteCompositeRoleRequiresMapCompositePermission() {
         UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
         ClientRepresentation myclient = realm.admin().clients().findByClientId("myclient").get(0);

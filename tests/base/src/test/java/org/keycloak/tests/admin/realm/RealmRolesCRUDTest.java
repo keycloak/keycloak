@@ -16,6 +16,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -64,9 +65,32 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
 
     @Test
     public void createRoleWithSameName() {
-        Assertions.assertThrows(ClientErrorException.class, () -> {
+        ClientErrorException e = Assertions.assertThrows(ClientErrorException.class, () -> {
             managedRealm.admin().roles().create(RoleBuilder.create().name("role-a").build());
         });
+        assertEquals(409, e.getResponse().getStatus());
+        assertEquals("Role with name role-a already exists", e.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
+    }
+
+    @Test
+    public void renameRoleToExistingNameReturnsConflict() {
+        RoleRepresentation role = managedRealm.admin().roles().get("role-a").toRepresentation();
+        role.setName("role-b");
+
+        ClientErrorException e = Assertions.assertThrows(ClientErrorException.class,
+                () -> managedRealm.admin().roles().get("role-a").update(role));
+        assertEquals(409, e.getResponse().getStatus());
+    }
+
+    @Test
+    public void createRoleWithUnknownCompositeReturnsNotFound() {
+        RoleRepresentation role = RoleBuilder.create().name("composite-with-unknown").build();
+        role.setComposite(true);
+        role.setComposites(new RoleRepresentation.Composites());
+        role.getComposites().setRealm(Set.of("does-not-exist"));
+
+        NotFoundException e = Assertions.assertThrows(NotFoundException.class, () -> managedRealm.admin().roles().create(role));
+        assertEquals("Realm Role with name does-not-exist does not exist", e.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
     }
 
     @Test
