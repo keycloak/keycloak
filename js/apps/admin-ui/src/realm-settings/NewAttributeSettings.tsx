@@ -10,6 +10,7 @@ import {
   PageSection,
 } from "@patternfly/react-core";
 import { flatten } from "flat";
+import { omit } from "lodash-es";
 import { useState } from "react";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -200,8 +201,8 @@ export default function NewAttributeSettings() {
       delete formFields.selector;
     }
 
-    if (!hasRequiredScopes) {
-      delete formFields.required?.scopes;
+    if (!hasRequiredScopes && formFields.required) {
+      formFields.required = omit(formFields.required, "scopes");
     }
 
     const validations = formFields.validations.reduce(

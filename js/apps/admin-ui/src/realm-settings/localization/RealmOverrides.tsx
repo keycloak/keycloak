@@ -44,6 +44,7 @@ import {
 } from "@patternfly/react-table";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import type { i18n as I18n } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -74,6 +75,34 @@ type LocaleTranslations = {
 
 function translationId(realm: string, locale: string, key: string) {
   return JSON.stringify([realm, locale, key]);
+}
+
+async function reloadLocaleResourcesWithoutKeys(
+  i18n: I18n,
+  locale: string,
+  realm: string,
+  deletedKeys: Iterable<string>,
+) {
+  // reloadResources merges into the existing bundle, so removed overrides would
+  // otherwise stay available to t() until a full page reload.
+  await i18n.reloadResources();
+  const existing = i18n.getResourceBundle(locale, realm) as
+    | Record<string, string>
+    | undefined;
+  if (!existing) {
+    return;
+  }
+  const next = { ...existing };
+  let changed = false;
+  for (const key of deletedKeys) {
+    if (key in next) {
+      delete next[key];
+      changed = true;
+    }
+  }
+  if (changed) {
+    i18n.addResourceBundle(locale, realm, next, false, true);
+  }
 }
 
 export type TranslationForm = {
@@ -269,14 +298,6 @@ export const RealmOverrides = ({
             key,
           });
           deletedKeys.add(key);
-
-          const messages = i18n.getResourceBundle(
-            selectMenuLocale,
-            encodeURIComponent(realmName),
-          ) as Record<string, string> | undefined;
-          if (messages) {
-            delete messages[key];
-          }
         }
         addAlert(t("deleteAllTranslationsSuccess"), AlertVariant.success);
       } catch (error) {
@@ -295,6 +316,12 @@ export const RealmOverrides = ({
               : previous,
           );
           setAreAllRowsSelected(false);
+          await reloadLocaleResourcesWithoutKeys(
+            i18n,
+            selectMenuLocale,
+            realmName,
+            deletedKeys,
+          );
         }
         setDeletingIds(new Set());
       }

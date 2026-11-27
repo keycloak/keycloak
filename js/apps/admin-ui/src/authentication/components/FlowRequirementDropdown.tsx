@@ -33,8 +33,7 @@ export const FlowRequirementDropdown = ({
         <Select
           onOpenChange={(isOpen) => setOpen(isOpen)}
           onSelect={(_event, value) => {
-            flow.requirement = value?.toString();
-            onChange(flow);
+            onChange({ ...flow, requirement: value?.toString() });
             setOpen(false);
           }}
           selected={flow.requirement}
