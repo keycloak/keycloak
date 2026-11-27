@@ -171,14 +171,52 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
     }
 
     /**
-     * Test the AMR protocol mapper when the max age of the stored amr value has been exceeded.
-     * Expected: AMR = []
+     * Test the AMR protocol mapper when the code is exchanged a few seconds after a password and OTP login, with the
+     * default max age of 0. Both executions were completed by the authentication being tokenized, so both are reported
+     * whichever second the token is minted in.
+     * Expected: AMR = ["password", "totp"]
      */
     @Test
-    public void testAmrPastMaxAge() {
-        setAmr("browser", "auth-username-password-form", "password", 10);
+    public void testAmrPasswordTotpDelayedCodeExchange() {
+        setAmr("browser", "auth-username-password-form", "password", 0);
+        setAmr("browser", "auth-otp-form", "totp", 0);
 
-        List<String> expectedAmrs = new ArrayList<>();
+        List<String> expectedAmrs = new ArrayList<>() {{
+            add("password");
+            add("totp");
+        }};
+        oauth.openLoginForm();
+        authenticatePassword("totp-user",PASSWORD);
+        authenticateTOTP();
+        String totpUserId = getTotpUserId();
+
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(totpUserId).getEvent();
+
+        // the OTP step already moved the clock by one TOTP interval; exchange the code five seconds after it
+        timeOffSet.set(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS + 5);
+
+        Tokens tokens = sendTokenRequest(loginEvent, totpUserId, "openid", CLIENT_ID);
+
+        assertAmr(tokens.idToken, expectedAmrs);
+        assertAmr(tokens.accessToken, expectedAmrs);
+
+        logout(totpUserId, tokens);
+    }
+
+    /**
+     * Test the AMR protocol mapper when the token is requested after the max age of the stored amr value has passed,
+     * but within the same authentication that completed the execution. The max age only applies to executions
+     * carried over from an earlier authentication in the SSO session, so the value is still reported.
+     * Expected: AMR = ["password"]
+     */
+    @Test
+    public void testAmrPastMaxAgeWithinCurrentAuthentication() {
+        setAmr("browser", "auth-username-password-form", "password", 0);
+
+        List<String> expectedAmrs = new ArrayList<>() {{
+            add("password");
+        }};
         oauth.openLoginForm();
         authenticatePassword("test-user",PASSWORD);
 
@@ -189,6 +227,35 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest {
 
         Tokens tokens = sendTokenRequest(loginEvent, passwordUser.getId(), "openid", CLIENT_ID);
 
+        assertAmr(tokens.idToken, expectedAmrs);
+        assertAmr(tokens.accessToken, expectedAmrs);
+
+        logout(passwordUser.getId(), tokens);
+    }
+
+    /**
+     * Test the AMR protocol mapper when the user authenticates again through the SSO session after the max age
+     * of the stored amr value has been exceeded.
+     * Expected: AMR = ["password"] for the first authentication, AMR = [] for the second one
+     */
+    @Test
+    public void testAmrPastMaxAge() {
+        Tokens tokens;
+
+        setAmr("browser", "auth-username-password-form", "password", 10);
+
+        oauth.openLoginForm();
+        authenticatePassword("test-user",PASSWORD);
+        tokens = assertLogin(passwordUser.getId());
+        assertAmr(tokens.idToken, new ArrayList<>() {{
+            add("password");
+        }});
+
+        timeOffSet.set(20);
+
+        List<String> expectedAmrs = new ArrayList<>();
+        oauth.openLoginForm();
+        tokens = assertLogin(passwordUser.getId());
         assertAmr(tokens.idToken, expectedAmrs);
         assertAmr(tokens.accessToken, expectedAmrs);
 

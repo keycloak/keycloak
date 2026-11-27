@@ -1250,6 +1250,13 @@ public class AuthenticationProcessor {
             clientSessionCtx.getClientSession().removeNote(FIRST_OFFLINE_ACCESS);
         }
 
+        // The executions this authentication completed are fixed on the client session like its level, which
+        // TokenManager.attachAuthenticationSession set just above. Only real authentications pass through here; a client
+        // session attached with a synthetic authentication session, as by token exchange, keeps what its login recorded.
+        String currentAuthenticationExecutions = authSession.getAuthNote(Constants.AUTHENTICATORS_COMPLETED_CURRENT_AUTHENTICATION);
+        clientSessionCtx.getClientSession().setNote(Constants.AMR_CURRENT_AUTHENTICATION_EXECUTIONS,
+                currentAuthenticationExecutions != null ? currentAuthenticationExecutions : "[]");
+
         event.user(user)
                 .detail(Details.USERNAME, username)
                 .session(userSession);
