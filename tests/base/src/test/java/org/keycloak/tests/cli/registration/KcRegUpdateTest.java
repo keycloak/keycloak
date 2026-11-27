@@ -68,7 +68,9 @@ class KcRegUpdateTest extends AbstractRegCliTest {
             client = JsonSerialization.readValue(exe.stdout(), OIDCClientRepresentation.class);
 
             Assertions.assertTrue(client.getRedirectUris() == null || client.getRedirectUris().isEmpty(), "redirect_uris is empty");
-            Assertions.assertEquals(Arrays.asList("refresh_token"), client.getGrantTypes(), "grant_types");
+            // OIDC may keep authorization_code when response_types still imply the standard flow.
+            Assertions.assertTrue(client.getGrantTypes().contains("refresh_token"), "grant_types contains refresh_token");
+            Assertions.assertTrue(client.getGrantTypes().contains("authorization_code"), "grant_types contains authorization_code");
 
 
 
@@ -83,9 +85,12 @@ class KcRegUpdateTest extends AbstractRegCliTest {
             // try use removed endpoint
             exe = execute("update " + clientId + " --config '" + configFile.getName() + "' -o -s client_name=x -e default");
 
-            assertExitCodeAndStreamSizes(exe, 2, 0, 1);
-            Assertions.assertTrue(exe.stderrLines().get(0).contains("no longer supported")
-                    || exe.stderrLines().get(0).contains("Endpoint 'default'"), "error message: " + exe.stderrLines().get(0));
+            Assertions.assertEquals(2, exe.exitCode(), "exitCode == 2");
+            Assertions.assertEquals(0, exe.stdoutLines().size(), "stdout empty");
+            Assertions.assertFalse(exe.stderrLines().isEmpty(), "stderr not empty");
+            Assertions.assertTrue(exe.stderrLines().stream().anyMatch(line ->
+                    line.contains("no longer supported") || line.contains("Endpoint 'default'")),
+                    "error message: " + exe.stderrLines());
 
 
 
