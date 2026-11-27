@@ -193,6 +193,25 @@ jobs:
           ns=$(echo "$out" | yq -N 'select(.kind == "ClusterRoleBinding") | .subjects[] | select(.kind == "ServiceAccount") | .namespace' | sort -u)
           if [ "$ns" != "custom-namespace" ]; then echo "expected subject namespace custom-namespace, got: $ns"; exit 1; fi
 
+      - name: helm template — resources and scheduling values
+        run: |
+          set -euo pipefail
+          out=$(helm template kc-op operator/target/helm/kubernetes/keycloak-operator-helm \
+            --set operator.resources.limits.cpu=null \
+            --set operator.nodeSelector.pool=ops \
+            --set 'operator.tolerations[0].key=dedicated' \
+            --set 'operator.tolerations[0].operator=Exists' \
+            --set 'operator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight=100' \
+            --set 'operator.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].podAffinityTerm.topologyKey=kubernetes.io/hostname')
+          spec=$(echo "$out" | yq -N 'select(.kind == "Deployment") | .spec.template.spec')
+          # A request or limit set to null is dropped (no empty `cpu:` key); the others keep their defaults.
+          test "$(yq '.containers[0].resources.limits | has("cpu")' <<<"$spec")" = "false"
+          test "$(yq '.containers[0].resources.limits.memory' <<<"$spec")" != "null"
+          test "$(yq '.nodeSelector.pool' <<<"$spec")" = "ops"
+          test "$(yq '.nodeSelector."kubernetes.io/os"' <<<"$spec")" = "linux"
+          test "$(yq '.tolerations[0].key' <<<"$spec")" = "dedicated"
+          test "$(yq '.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight' <<<"$spec")" = "100"
+
       - name: helm template — crds.enabled=false
         run: |
           set -euo pipefail

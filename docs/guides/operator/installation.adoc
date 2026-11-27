@@ -282,7 +282,10 @@ Common values you may want to override:
 | Value | Description
 | `operator.image` | Operator image reference. Defaults to the image published for this release.
 | `operator.resources.limits.cpu` / `operator.resources.limits.memory` | Container CPU/memory limits.
-| `operator.resources.requests.cpu` / `operator.resources.requests.memory` | Container CPU/memory requests.
+| `operator.resources.requests.cpu` / `operator.resources.requests.memory` | Container CPU/memory requests. Set one to `null` to remove it, for example `--set operator.resources.limits.cpu=null`.
+| `operator.affinity` | Affinity for the Operator pod. Defaults to `{}`.
+| `operator.nodeSelector` | Node selector for the Operator pod. Defaults to `kubernetes.io/os: linux`.
+| `operator.tolerations` | Tolerations for the Operator pod. Not set by default.
 | `crds.enabled` | Whether to install the CRDs as part of this release. Defaults to `true`.
 |===
 
