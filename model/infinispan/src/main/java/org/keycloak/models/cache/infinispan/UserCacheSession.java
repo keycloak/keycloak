@@ -307,12 +307,12 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             String userId = model.getId();
             if (invalidations.contains(userId)) return model;
             ManagedUser managed = managedUsers.get(userId);
-            if (managed != null) {
+            if (managed != null && realm.getId().equals(managed.realmId())) {
                 logger.tracev("return managed user");
                 UserModel managedUser = managed.user();
                 // the user was loaded by another lookup in this session (for example by email), so the query for
                 // this key still needs to be cached, but only if the managed user is really a match for the key
-                if (realm.getId().equals(managed.realmId()) && username.equalsIgnoreCase(managedUser.getUsername())) {
+                if (username.equalsIgnoreCase(managedUser.getUsername())) {
                     cacheUserQuery(realm, cacheKey, loaded, managedUser);
                 }
                 return managedUser;
@@ -391,9 +391,13 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         CachedUser cached = cache.get(userId, CachedUser.class);
         if (cached == null) {
             return cacheUser(realm, delegate, loaded);
-        } else {
-            return validateCache(realm, cached, () -> getDelegate().getUserById(realm, userId));
         }
+        if (!realm.getId().equals(cached.getRealm())) {
+            // the shared cache holds an entry for this id under a different realm; the delegate already resolved
+            // the user for the requested realm, so return it rather than losing it to validateCache's realm check
+            return delegate;
+        }
+        return validateCache(realm, cached, () -> getDelegate().getUserById(realm, userId));
     }
 
     protected UserModel validateCache(RealmModel realm, CachedUser cached, Supplier<UserModel> supplier) {
@@ -493,10 +497,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             String userId = model.getId();
             if (invalidations.contains(userId)) return model;
             ManagedUser managed = managedUsers.get(userId);
-            if (managed != null) {
+            if (managed != null && realm.getId().equals(managed.realmId())) {
                 UserModel managedUser = managed.user();
                 // see getUserByUsername: cache the query for this key, but only if the managed user is a match for it
-                if (realm.getId().equals(managed.realmId()) && email.equalsIgnoreCase(managedUser.getEmail())) {
+                if (email.equalsIgnoreCase(managedUser.getEmail())) {
                     cacheUserQuery(realm, cacheKey, loaded, managedUser);
                 }
                 return managedUser;

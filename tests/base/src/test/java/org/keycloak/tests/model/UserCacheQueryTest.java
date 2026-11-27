@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
+import org.keycloak.models.cache.infinispan.entities.CachedUser;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
@@ -58,6 +59,8 @@ public class UserCacheQueryTest {
     private static final String EMAIL = "alice@example.org";
     private static final String LOCAL_USERNAME = "bob";
     private static final String LOCAL_EMAIL = "bob@example.org";
+    private static final String COLLIDING_REALM_1 = "user-cache-query-collision-1";
+    private static final String COLLIDING_REALM_2 = "user-cache-query-collision-2";
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -186,6 +189,111 @@ public class UserCacheQueryTest {
         });
         assertThat(CountingUserStorageProvider.BY_EMAIL_CALLS.get(), equalTo(0));
         assertThat(CountingUserStorageProvider.BY_USERNAME_CALLS.get(), equalTo(0));
+    }
+
+    @TestOnServer
+    public void getUserByUsernameResolvesUserWhenCachedEntryBelongsToAnotherRealm(KeycloakSession session) {
+        try {
+            String bobId = setUpCollidingRealms(session);
+
+            // realm2's own user must still resolve, even though the shared cache entry for its id was forged to belong to realm1
+            inSession(session, s -> {
+                RealmModel realm1 = s.realms().getRealmByName(COLLIDING_REALM_1);
+                RealmModel realm2 = s.realms().getRealmByName(COLLIDING_REALM_2);
+
+                // force the forged cache entry into this session's managed-user map under realm1, as if it had
+                // already been resolved earlier in the session, so the lookup below cannot just rely on the
+                // distributed cache's own realm check
+                s.users().getUserById(realm1, bobId);
+
+                UserModel user = s.users().getUserByUsername(realm2, "bob");
+                assertThat(user, notNullValue());
+                assertThat(user.getEmail(), equalTo("bob@example.org"));
+
+                // the resolved user must not have been lost to a poisoned null managed-user entry for the rest of the session
+                assertThat(s.users().getUserById(realm2, bobId), notNullValue());
+            });
+        } finally {
+            removeCollidingRealms(session);
+        }
+    }
+
+    @TestOnServer
+    public void getUserByEmailResolvesUserWhenCachedEntryBelongsToAnotherRealm(KeycloakSession session) {
+        try {
+            String bobId = setUpCollidingRealms(session);
+
+            // realm2's own user must still resolve, even though the shared cache entry for its id was forged to belong to realm1
+            inSession(session, s -> {
+                RealmModel realm1 = s.realms().getRealmByName(COLLIDING_REALM_1);
+                RealmModel realm2 = s.realms().getRealmByName(COLLIDING_REALM_2);
+
+                // force the forged cache entry into this session's managed-user map under realm1, as if it had
+                // already been resolved earlier in the session, so the lookup below cannot just rely on the
+                // distributed cache's own realm check
+                s.users().getUserById(realm1, bobId);
+
+                UserModel user = s.users().getUserByEmail(realm2, "bob@example.org");
+                assertThat(user, notNullValue());
+                assertThat(user.getUsername(), equalTo("bob"));
+
+                // the resolved user must not have been lost to a poisoned null managed-user entry for the rest of the session
+                assertThat(s.users().getUserById(realm2, bobId), notNullValue());
+            });
+        } finally {
+            removeCollidingRealms(session);
+        }
+    }
+
+    /**
+     * Sets up two realms, each with their own local user (realm1/alice, realm2/bob). Since a user's id is the
+     * primary key of its table, two real users can never actually share the same id. To still exercise the shared
+     * user cache's behavior for that case (which is only keyed by id, not by realm), this forges a collision by
+     * directly planting a {@link CachedUser} for alice (realm1) under bob's (realm2) id, as if the shared cache had
+     * (wrongly) returned alice's entry for a lookup of bob's id.
+     *
+     * @return bob's id, under which the forged cache entry for realm1 was planted
+     */
+    private static String setUpCollidingRealms(KeycloakSession session) {
+        String[] ids = new String[2];
+        inSession(session, s -> {
+            RealmModel realm1 = new RealmManager(s).createRealm(COLLIDING_REALM_1);
+            UserModel alice = s.users().addUser(realm1, "alice");
+            alice.setEmail("alice@example.org");
+            ids[0] = alice.getId();
+        });
+        inSession(session, s -> {
+            RealmModel realm2 = new RealmManager(s).createRealm(COLLIDING_REALM_2);
+            UserModel bob = s.users().addUser(realm2, "bob");
+            bob.setEmail("bob@example.org");
+            ids[1] = bob.getId();
+        });
+        String bobId = ids[1];
+
+        inSession(session, s -> {
+            RealmModel realm1 = s.realms().getRealmByName(COLLIDING_REALM_1);
+            UserModel alice = s.users().getUserByUsername(realm1, "alice");
+            CachedUser forged = new CachedUser(0, realm1, alice, 0);
+
+            Cache<String, Object> userCache = s.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_CACHE_NAME);
+            Cache<String, Object> revisions = s.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.USER_REVISIONS_CACHE_NAME);
+            userCache.put(bobId, forged);
+            revisions.put(bobId, 0L);
+        });
+
+        return bobId;
+    }
+
+    private static void removeCollidingRealms(KeycloakSession session) {
+        inSession(session, s -> {
+            RealmManager realmManager = new RealmManager(s);
+            for (String realmName : new String[] { COLLIDING_REALM_1, COLLIDING_REALM_2 }) {
+                RealmModel realm = realmManager.getRealmByName(realmName);
+                if (realm != null) {
+                    realmManager.removeRealm(realm);
+                }
+            }
+        });
     }
 
     @TestOnServer
