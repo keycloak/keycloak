@@ -45,7 +45,13 @@ public class EmailCooldownManager {
         if (cooldownDetails == null) {
             return null;
         }
-        long remaining = (Long.parseLong(cooldownDetails.get(KEY_EXPIRE)) - Time.currentTime());
+        String expire = cooldownDetails.get(KEY_EXPIRE);
+        if (expire == null) {
+            // Entries created by the atomic claim (addCooldownEntryIfAbsent) record no expiry, since the
+            // putIfAbsent lifespan already bounds the cooldown; report the full configured window.
+            return getCooldownInSeconds(context);
+        }
+        long remaining = (Long.parseLong(expire) - Time.currentTime());
         // Avoid the awkward situation where due to rounding the value is zero
         return remaining > 0 ? remaining : null;
     }
@@ -54,6 +60,26 @@ public class EmailCooldownManager {
         SingleUseObjectProvider cache = context.getSession().singleUseObjects();
         long cooldownSeconds = getCooldownInSeconds(context);
         cache.put(getCacheKey(context, keyPrefix), cooldownSeconds, Map.of(KEY_EXPIRE, Long.toString(Time.currentTime() + cooldownSeconds)));
+    }
+
+    /**
+     * Atomically admits a single email send for the user in the given cooldown window.
+     * The check and the insert happen in one {@link SingleUseObjectProvider#putIfAbsent} call, so of several
+     * concurrent requests only one is admitted; the others get {@code false} and must not send an email.
+     *
+     * @return {@code true} if this request won the slot and should send the email
+     */
+    public static boolean addCooldownEntryIfAbsent(RequiredActionContext context, String keyPrefix) {
+        long cooldownSeconds = getCooldownInSeconds(context);
+        if (cooldownSeconds <= 0) {
+            return true;
+        }
+        SingleUseObjectProvider cache = context.getSession().singleUseObjects();
+        // putIfAbsent is applied immediately and its lifespan bounds the cooldown window. We deliberately do not
+        // record the expiry as a second entry: put() is deferred to transaction commit, after the email is sent,
+        // which would re-anchor the key's TTL past the intended expiry and reject valid retries in that gap.
+        // retrieveCooldownEntry reports the full configured window when no expiry is recorded.
+        return cache.putIfAbsent(getCacheKey(context, keyPrefix), cooldownSeconds);
     }
 
     /**

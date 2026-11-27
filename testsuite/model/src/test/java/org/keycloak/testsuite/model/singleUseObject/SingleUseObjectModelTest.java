@@ -23,6 +23,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
@@ -30,11 +31,13 @@ import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.Constants;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.revoketokens.jpa.RevokedTokenExpirationAction;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -241,6 +244,30 @@ public class SingleUseObjectModelTest extends KeycloakModelTest {
             assertThrows(IllegalArgumentException.class, () -> singleUseStore.putIfAbsent(key, 0));
             assertThrows(IllegalArgumentException.class, () -> singleUseStore.putIfAbsent(key, -1));
         });
+    }
+
+    @Test
+    public void testConcurrentPutIfAbsentAdmitsSingleCaller() {
+        // Guards the atomic admission that VerifyEmail relies on (issue 55405): of several concurrent requests
+        // for the same key, only one may be admitted to send a verification email within the cooldown window.
+        // A non-atomic check-then-write would let more than one caller through here.
+        String key = "verify-email-cooldown-" + UUID.randomUUID();
+        KeycloakSessionFactory factory = getFactory();
+
+        long admitted = IntStream.range(0, 20).parallel()
+                .filter(i -> KeycloakModelUtils.runJobInTransactionWithResult(factory,
+                        session -> session.singleUseObjects().putIfAbsent(key, 60)))
+                .count();
+        Assert.assertEquals(1, admitted);
+
+        // Once the cooldown lifespan has elapsed, a new request is admitted again.
+        setTimeOffset(70);
+        try {
+            Assert.assertTrue(KeycloakModelUtils.runJobInTransactionWithResult(factory,
+                    session -> session.singleUseObjects().putIfAbsent(key, 60)));
+        } finally {
+            setTimeOffset(0);
+        }
     }
 
     @Test

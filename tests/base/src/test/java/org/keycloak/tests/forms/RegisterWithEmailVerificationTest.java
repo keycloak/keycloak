@@ -100,7 +100,7 @@ public class RegisterWithEmailVerificationTest {
     @InjectPage(ref = "verifyEmailPage", webDriverRef = "driver")
     VerifyEmailPage verifyEmailPage;
 
-    @InjectTimeOffSet
+    @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
     @InjectWebDriver(ref = "driver2", lifecycle = LifeCycle.CLASS)
@@ -255,6 +255,8 @@ public class RegisterWithEmailVerificationTest {
             assertTrue(mailServer.waitForIncomingEmail(2));
             MimeMessage message = mailServer.getLastReceivedMessage();
             String forgetPasswordEmailLink = MailUtils.getPasswordResetEmailLink(message);
+            // Issue 55405: wait out the per-user verify email cooldown so the reset flow can send a fresh verification email
+            timeOffSet.set(40);
             driver2.open(forgetPasswordEmailLink);
 
             // Need to verify email now
