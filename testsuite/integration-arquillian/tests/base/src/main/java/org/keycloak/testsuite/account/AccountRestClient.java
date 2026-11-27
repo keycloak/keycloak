@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
 
-import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.resources.account.AccountCredentialResource;
@@ -73,18 +72,6 @@ public class AccountRestClient implements AutoCloseable {
                 .filter(credentialRep -> userLabel.equals(credentialRep.getUserLabel()))
                 .findFirst()
                 .orElse(null);
-    }
-
-    public SimpleHttpResponse removeCredential(String credentialId) {
-        try {
-            return SimpleHttpDefault
-                    .doDelete(getAccountUrl("credentials/" + credentialId), httpClient)
-                    .acceptJson()
-                    .auth(tokenProvider.get())
-                    .asResponse();
-        } catch (IOException ioe) {
-            throw new RuntimeException("Failed to delete credential", ioe);
-        }
     }
 
     // TODO: Other objects...
