@@ -78,6 +78,8 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
         case REGISTER_PROTOCOL_MAPPER:
         case UPDATE_PROTOCOL_MAPPER:
         case UNREGISTER_PROTOCOL_MAPPER:
+        case REGISTER_ROLE_MAPPING:
+        case UNREGISTER_ROLE_MAPPING:
             if (isAuthMethodMatched((ClientPolicyCRUDContext)context)) return ClientPolicyVote.YES;
             return ClientPolicyVote.NO;
         default:
