@@ -50,6 +50,7 @@ abstract class BaseUpdateLogic implements UpdateLogic {
     protected final Context<Keycloak> context;
     protected final Keycloak keycloak;
     private Consumer<KeycloakStatusAggregator> statusConsumer = KeycloakStatusAggregator::resetUpdateType;
+    private boolean retrying;
 
     BaseUpdateLogic(Context<Keycloak> context, Keycloak keycloak) {
         this.context = context;
@@ -126,6 +127,21 @@ abstract class BaseUpdateLogic implements UpdateLogic {
         Log.debugf("Decided recreate update type. Reason: %s", reason);
         statusConsumer = status -> status.addUpdateType(true, reason);
         ContextUtils.storeUpdateType(context, UpdateType.RECREATE, reason);
+    }
+
+    /**
+     * Reports that no update type could be decided yet, and the decision is retried. The current {@link StatefulSet} is
+     * kept as it is. The message stays in the status until the status is updated after a decision.
+     */
+    void reportRetry(String message) {
+        Log.debugf("Update type not decided, retrying. Reason: %s", message);
+        statusConsumer = statusConsumer.andThen(status -> status.addWarningMessage(message));
+        retrying = true;
+    }
+
+    @Override
+    public boolean updateStatusOnInterrupt() {
+        return retrying;
     }
 
     static IllegalStateException containerNotFound() {

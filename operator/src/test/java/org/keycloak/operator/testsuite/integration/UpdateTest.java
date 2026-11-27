@@ -25,7 +25,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
@@ -35,13 +37,16 @@ import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.update.UpdateStrategy;
 import org.keycloak.operator.update.impl.AutoUpdateLogic;
+import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.fabric8.kubernetes.client.dsl.Gettable;
 import io.quarkus.test.junit.QuarkusTest;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -72,11 +77,12 @@ public class UpdateTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, true);
         await(updateCondition);
 
-        // changing the image to non-existing will always use the recreate update type.
+        var image = currentImage(kc);
+        // with a non-existing image, the update-compatibility check can't run and the job doesn't produce a result.
         kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
         disableProbes(kc);
         updateCondition = switch (updateStrategy) {
-            case AUTO -> eventuallyRecreateUpdateStatus(k8sclient, kc, "Unexpected update-compatibility command");
+            case AUTO -> eventuallyUpdateJobRetryStatus(kc);
             case RECREATE_ON_IMAGE_CHANGE -> eventuallyRecreateUpdateStatus(k8sclient, kc, "Image changed");
             case EXPLICIT -> eventuallyRollingUpdateStatus(k8sclient, kc, "Explicit strategy configured. Revision matches.");
         };
@@ -86,6 +92,7 @@ public class UpdateTest extends BaseOperatorTest {
 
         if (updateStrategy == UpdateStrategy.AUTO) {
             assertUpdateJobExists(kc);
+            assertStatefulSetNotUpdated(kc, image);
         }
     }
 
@@ -146,6 +153,31 @@ public class UpdateTest extends BaseOperatorTest {
     }
 
     @DisabledIfApiServerTest
+    @Test
+    public void testIncompatibleChange() throws InterruptedException {
+        var kc = createInitialDeployment(UpdateStrategy.AUTO);
+        var updateCondition = assertUnknownUpdateTypeStatus(kc);
+        deployKeycloak(k8sclient, kc, true);
+        await(updateCondition);
+
+        // switching from the ispn to the local cache is not compatible with a rolling update
+        var reason = "Incompatible changes detected.";
+        updateCondition = eventuallyRecreateUpdateStatus(k8sclient, kc, reason);
+        kc.getSpec().getAdditionalOptions().add(new ValueOrSecret("cache", "local"));
+        deployKeycloak(k8sclient, kc, true);
+        await(updateCondition);
+
+        // the reason is kept while the StatefulSet is scaled down and up again
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).ignoreExceptions().untilAsserted(() -> {
+            var statefulSet = k8sclient.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(kc)).get();
+            assertEquals(kc.getSpec().getInstances(), statefulSet.getStatus().getReadyReplicas());
+            assertFalse(Boolean.parseBoolean(statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MIGRATING_ANNOTATION)));
+            assertTrue(statefulSet.getMetadata().getAnnotations().get(Constants.KEYCLOAK_UPDATE_REASON_ANNOTATION).startsWith(reason));
+        });
+        CRAssert.assertKeycloakStatusCondition(k8sclient.resource(kc).get(), KeycloakStatusCondition.UPDATE_TYPE, true, reason);
+    }
+
+    @DisabledIfApiServerTest
     @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
     @Test
     public void testNoJobReuse() throws InterruptedException {
@@ -169,19 +201,22 @@ public class UpdateTest extends BaseOperatorTest {
         var hash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
         assertEquals(0, containerExitCode(job));
 
-        //let's trigger a recreate
-        updateCondition = eventuallyRecreateUpdateStatus(k8sclient, kc, "Unexpected update-compatibility command");
-        // enough to crash the Pod and return exit code != 0
+        // let's run a job without a result, the current StatefulSet is kept
+        var image = currentImage(kc);
+        updateCondition = eventuallyUpdateJobRetryStatus(kc);
+        // the check command can't start and the pod reaches its deadline
         kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
         disableProbes(kc);
 
         deployKeycloak(k8sclient, kc, false);
         await(updateCondition);
+        assertStatefulSetNotUpdated(kc, image);
 
         job = assertUpdateJobExists(kc);
         var newHash = job.getMetadata().getAnnotations().get(KeycloakUpdateJobDependentResource.KEYCLOAK_CR_HASH_ANNOTATION);
         assertNotEquals(hash, newHash);
-        assertNotEquals(0, containerExitCode(job));
+        var podReason = AutoUpdateLogic.findPodForJob(k8sclient, job).map(Pod::getStatus).map(PodStatus::getReason);
+        assertEquals(Optional.of("DeadlineExceeded"), podReason);
     }
 
     @Test
@@ -249,6 +284,37 @@ public class UpdateTest extends BaseOperatorTest {
                 .map(AutoUpdateLogic::exitCode);
         assertTrue(maybeExitCode.isPresent());
         return maybeExitCode.get();
+    }
+
+    private String currentImage(Keycloak keycloak) {
+        return RecreateOnImageChangeUpdateLogic.extractImage(k8sclient.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(keycloak)).get());
+    }
+
+    private void assertStatefulSetNotUpdated(Keycloak keycloak, String image) {
+        var statefulSet = k8sclient.apps().statefulSets().withName(KeycloakDeploymentDependentResource.getName(keycloak)).get();
+        assertEquals(image, RecreateOnImageChangeUpdateLogic.extractImage(statefulSet));
+        assertEquals(keycloak.getSpec().getInstances(), statefulSet.getSpec().getReplicas());
+    }
+
+    private CompletableFuture<Void> eventuallyUpdateJobRetryStatus(Keycloak keycloak) {
+        return k8sclient.resource(keycloak).informOnCondition(kcs -> {
+            if (kcs.isEmpty() || kcs.get(0).getStatus() == null) {
+                return false;
+            }
+            var current = kcs.get(0);
+            // the new generation is not applied while the update job is retried
+            var observedGeneration = current.getStatus().getObservedGeneration();
+            if (observedGeneration == null || observedGeneration >= current.getMetadata().getGeneration()) {
+                return false;
+            }
+            try {
+                CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, false, "the update job will be retried");
+                CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, false, "pod DeadlineExceeded");
+                return true;
+            } catch (AssertionError e) {
+                return false;
+            }
+        }).thenAccept(unused -> {});
     }
 
     private CompletableFuture<Void> assertUnknownUpdateTypeStatus(Keycloak keycloak) {
