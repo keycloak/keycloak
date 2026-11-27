@@ -36,6 +36,8 @@ export type FileUploadFormProps = Omit<FileUploadProps, "onChange"> & {
   extension: string;
   onChange: (value: string) => void;
   helpText?: string;
+  /** Shown instead of the help text, with the field marked as invalid. */
+  errorText?: string;
   unWrap?: boolean;
   language?: string;
   previewMaxLength?: number;
@@ -45,6 +47,7 @@ export const FileUploadForm = ({
   id,
   onChange,
   helpText = "helpFileUpload",
+  errorText,
   unWrap = false,
   previewMaxLength = 102400, // 100KB
   language,
@@ -126,10 +129,16 @@ export const FileUploadForm = ({
             setFileUpload((prev) => ({ ...prev, isLoading: false }))
           }
           isLoading={fileUpload.isLoading}
+          validated={errorText ? "error" : rest.validated}
           dropzoneProps={{
             accept: { "application/text": [extension] },
           }}
         />
+      )}
+      {unWrap && errorText && (
+        <HelperText>
+          <HelperTextItem variant="error">{errorText}</HelperTextItem>
+        </HelperText>
       )}
       {!unWrap && (
         <FormGroup label={t("resourceFile")} fieldId={id + "-filename"}>
@@ -151,6 +160,7 @@ export const FileUploadForm = ({
               setFileUpload((prev) => ({ ...prev, isLoading: false }))
             }
             isLoading={fileUpload.isLoading}
+            validated={errorText ? "error" : rest.validated}
             hideDefaultPreview
           >
             {!rest.hideDefaultPreview &&
@@ -173,7 +183,11 @@ export const FileUploadForm = ({
           </FileUpload>
           <FormHelperText>
             <HelperText>
-              <HelperTextItem>{t(helpText)}</HelperTextItem>
+              {errorText ? (
+                <HelperTextItem variant="error">{errorText}</HelperTextItem>
+              ) : (
+                <HelperTextItem>{t(helpText)}</HelperTextItem>
+              )}
             </HelperText>
           </FormHelperText>
         </FormGroup>

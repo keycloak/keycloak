@@ -29,6 +29,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
   const { refresh, whoAmI } = useWhoAmI();
   const { addAlert, addError } = useAlerts();
   const [realm, setRealm] = useState<RealmRepresentation>();
+  const [jsonError, setJsonError] = useState<string>();
 
   const form = useForm<RealmRepresentation>({
     mode: "onChange",
@@ -72,6 +73,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
           formState={formState}
           allowInvalid
           allowNonDirty
+          isDisabled={!!jsonError}
           key="confirm"
         >
           {t("create")}
@@ -98,6 +100,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
             id="kc-realm-filename"
             allowEditingUploadedText
             onChange={handleFileChange}
+            onParseError={setJsonError}
           />
           <TextControl
             name="realm"
