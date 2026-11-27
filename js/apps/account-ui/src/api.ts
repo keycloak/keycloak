@@ -40,26 +40,44 @@ export const fetchPermission = async (
   return parseResponse<Permission[]>(response);
 };
 
-export const updateRequest = (
+export const updateRequest = async (
   context: KeycloakContext<BaseEnvironment>,
   resourceId: string,
   username: string,
   scopes: Scope[] | string[],
-) =>
-  request(`/resources/${resourceId}/permissions`, context, {
-    method: "PUT",
-    body: [{ username, scopes }],
-  });
+) => {
+  const response = await request(
+    `/resources/${resourceId}/permissions`,
+    context,
+    {
+      method: "PUT",
+      body: [{ username, scopes }],
+    },
+  );
+  if (!response.ok) {
+    throw await parseResponse(response);
+  }
+  return response;
+};
 
-export const updatePermissions = (
+export const updatePermissions = async (
   context: KeycloakContext<BaseEnvironment>,
   resourceId: string,
   permissions: Permission[],
-) =>
-  request(`/resources/${resourceId}/permissions`, context, {
-    method: "PUT",
-    body: permissions,
-  });
+) => {
+  const response = await request(
+    `/resources/${resourceId}/permissions`,
+    context,
+    {
+      method: "PUT",
+      body: permissions,
+    },
+  );
+  if (!response.ok) {
+    throw await parseResponse(response);
+  }
+  return response;
+};
 
 function checkResponse<T>(response: T) {
   if (!response) throw new Error("Could not fetch");
