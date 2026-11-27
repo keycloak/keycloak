@@ -19,6 +19,7 @@ package org.keycloak.models.utils;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -279,12 +280,29 @@ public class RepresentationToModel {
                         logger.warnf("Using deprecated 'credentials' format in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
 
                         if (PasswordCredentialModel.TYPE.equals(cred.getType()) || PasswordCredentialModel.PASSWORD_HISTORY.equals(cred.getType())) {
+                            List<String> missing = new ArrayList<>();
+                            if (cred.getHashIterations() == null) missing.add("hashIterations");
+                            if (cred.getAlgorithm() == null) missing.add("algorithm");
+                            if (cred.getHashedSaltedValue() == null) missing.add("hashedSaltedValue");
+                            if (cred.getSalt() == null) missing.add("salt");
+                            if (!missing.isEmpty()) {
+                                throw new ModelValidationException("Invalid deprecated password credential format: missing " + String.join(", ", missing));
+                            }
                             PasswordCredentialData credentialData = new PasswordCredentialData(cred.getHashIterations(), cred.getAlgorithm());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             // Created this manually to avoid conversion from Base64 and back
                             cred.setSecretData("{\"value\":\"" + cred.getHashedSaltedValue() + "\",\"salt\":\"" + cred.getSalt() + "\"}");
                             cred.setPriority(10);
                         } else if (OTPCredentialModel.TOTP.equals(cred.getType()) || OTPCredentialModel.HOTP.equals(cred.getType())) {
+                            List<String> missing = new ArrayList<>();
+                            if (cred.getDigits() == null) missing.add("digits");
+                            if (cred.getCounter() == null) missing.add("counter");
+                            if (cred.getPeriod() == null) missing.add("period");
+                            if (cred.getAlgorithm() == null) missing.add("algorithm");
+                            if (cred.getHashedSaltedValue() == null) missing.add("hashedSaltedValue");
+                            if (!missing.isEmpty()) {
+                                throw new ModelValidationException("Invalid deprecated OTP credential format: missing " + String.join(", ", missing));
+                            }
                             OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), cred.getDigits(), cred.getCounter(), cred.getPeriod(), cred.getAlgorithm(), null);
                             OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
