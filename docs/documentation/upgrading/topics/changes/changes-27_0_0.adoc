@@ -529,6 +529,29 @@ Explicit `false` values for `wantAssertionsSigned` and `validateSignature` remai
 
 Disabling signature validation reduces protection against forged identity-provider responses.
 
+=== Authorization resource URI templates are now validated on every creation and import path
+// https://github.com/keycloak/keycloak/issues/55592
+
+{project_name} rejects an Authorization Services resource URI template that uses a `+*+` wildcard outside of the
+two supported forms, a trailing `+/*+` or a suffix `+/*.ext+`, with an error such as `+URI [...] is not a valid
+template: wildcard '*' is only supported as trailing '/*' or as a suffix pattern '/*.ext'+`. This validation
+previously ran only on the resource endpoints, `+POST+`/`+PUT .../authz/resource-server/resource+` and the
+Protection API's `+resource_set+` endpoint. Every other path that stores resources skipped it, so a template the
+resource endpoints reject could still be imported and would be matched at runtime like any other resource.
+
+The same validation now also runs on:
+
+* `+POST .../authz/resource-server/import+`
+* Client create and update with an embedded `+authorizationSettings+`
+* Dynamic client registration update
+* Realm import, partial import, and the directory-based import of a realm's authorization settings
+
+A realm export, partial export, or client configuration created on an earlier version can contain a resource URI
+that was never a valid template, since nothing enforced the rule where it was stored. Importing it now fails with
+the error above instead of silently storing it. Correct the URI before re-importing: a wildcard belongs only at
+the end of the pattern or as a file-extension suffix, for example `+/api/*+` or `+/api/*.json+`, never in the
+middle of a path such as `+/api/*/info+`.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

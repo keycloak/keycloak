@@ -643,6 +643,47 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         assertFalse(authzSettings.getPolicies().isEmpty());
     }
 
+    // https://github.com/keycloak/keycloak/issues/55592
+    @Test
+    @DatabaseTest
+    public void testUpdateAuthorizationSettingsRejectsInvalidResourceUri() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation clientRep = buildClient();
+        clientRep.setAuthorizationServicesEnabled(true);
+
+        ClientRepresentation rep = registerClient(clientRep, true);
+        rep = managedRealm.admin().clients().get(rep.getId()).toRepresentation();
+
+        assertTrue(rep.getAuthorizationServicesEnabled());
+
+        ResourceServerRepresentation authzSettings = new ResourceServerRepresentation();
+        ResourceRepresentation resource = new ResourceRepresentation("foo", "scope-a");
+
+        resource.setUris(Set.of("/api/*/info"));
+        authzSettings.setResources(List.of(resource));
+
+        rep.setAuthorizationSettings(authzSettings);
+
+        try {
+            reg.update(rep);
+            fail("Expected ClientRegistrationException — invalid resource URI template must be rejected");
+        } catch (ClientRegistrationException e) {
+            HttpErrorException cause = (HttpErrorException) e.getCause();
+            assertThat(cause.getStatusLine().getStatusCode(), is(400));
+
+            OAuth2ErrorRepresentation errorRep;
+            try {
+                errorRep = JsonSerialization.readValue(cause.getErrorResponse(), OAuth2ErrorRepresentation.class);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+            assertThat(errorRep.getErrorDescription(), CoreMatchers.containsString("is not a valid template"));
+        }
+
+        authzSettings = managedRealm.admin().clients().get(rep.getId()).authorization().exportSettings();
+        assertTrue(authzSettings.getResources().isEmpty());
+    }
+
     //#51340
     @Test
     public void updateProtocolViaRegistrationTokenShouldBeRejected() throws ClientRegistrationException {

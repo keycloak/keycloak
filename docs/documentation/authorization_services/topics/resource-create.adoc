@@ -37,7 +37,9 @@ When the pattern has a path in front of the wildcard, that path must match as we
 A pattern is matched in the form it is registered. A pattern that contains only a path, such as `+/*.html+`, matches requested URIs given as paths, such as `+/page.html+`, and does not match a requested URI given in absolute form, such as `+https://myserver/page.html+`. To match absolute URIs, register the resource with an absolute URI, in which case the scheme and authority must match too: `+https://myserver/public/*.json+` does not match `+https://other.example/public/report.json+`.
 +
 These patterns can be combined, for example `+/api/{id}/files/*+`.
-Wildcards (`+*+`) are only supported as a trailing `+/*+` or as a suffix `+/*.ext+`. A wildcard in the middle of a path, such as `+/api/*/info+`, never matches and will be rejected when creating or updating resources.
+A `+*+` is recognized as a wildcard only when it is the last character of the pattern, or when it is preceded by `+/+` and followed by `+.+`; everywhere else it is treated as a literal character.
+For example, `+/a/*.x/b+` is read as the literal prefix `+/a/+`, a suffix wildcard, and the extension `+.x/b+`, so it matches `+/a/some.x/b+`. `+/api/*/info+`, however, has its `+*+` followed by `+/+`, so it is never recognized as a wildcard and the pattern is instead treated as a literal path that matches only `+/api/*/info+` itself.
+A `+*+` used in neither of the recognized forms is rejected when creating or updating resources.
 +
 When a requested URI matches more than one pattern, the patterns are compared segment by segment and the one that pins the most down is selected.
 Within a segment, a literal name such as `+admin+` is the strongest constraint, a parameter such as `+{id}+` accepts any single segment, and a wildcard accepts everything that is left; the first segment where two patterns differ decides between them.
