@@ -324,9 +324,13 @@ class AdminClient {
     });
   }
 
-  async addUserProfile(realm: string, userProfile: UserProfileConfig) {
+  async getUserProfile(realm: string) {
     await this.#login();
-    const currentProfile = await this.#client.users.getProfile({ realm });
+    return await this.#client.users.getProfile({ realm });
+  }
+
+  async addUserProfile(realm: string, userProfile: UserProfileConfig) {
+    const currentProfile = await this.getUserProfile(realm);
     await this.#client.users.updateProfile({
       groups: [...(userProfile.groups || []), ...(currentProfile.groups || [])],
       attributes: [

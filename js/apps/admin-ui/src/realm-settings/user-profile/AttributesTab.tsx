@@ -27,8 +27,6 @@ import { useUserProfile } from "./UserProfileContext";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
 
-type movedAttributeType = UserProfileAttribute;
-
 type AttributesTabProps = {
   setTableData: React.Dispatch<
     React.SetStateAction<Record<string, string>[] | undefined>
@@ -37,7 +35,7 @@ type AttributesTabProps = {
 
 export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   const { adminClient } = useAdminClient();
-  const { config, save } = useUserProfile();
+  const { config, save, isSaving } = useUserProfile();
   const { realm } = useRealm();
   const { t } = useTranslation();
   const combinedLocales = useLocale();
@@ -45,8 +43,9 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   const [filter, setFilter] = useState("allGroups");
   const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
     useToggle();
-  const [data, setData] = useState(config?.attributes);
   const [attributeToDelete, setAttributeToDelete] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isUpdating = isSaving || isDeleting;
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteAttributeConfirmTitle"),
@@ -55,8 +54,9 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
     }),
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
+    confirmButtonDisabled: isUpdating,
     onConfirm: async () => {
-      if (!config?.attributes) return;
+      if (isUpdating || !config?.attributes) return;
 
       const translationsToDelete = config.attributes.find(
         (attribute) => attribute.name === attributeToDelete,
@@ -71,6 +71,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           ? translationsToDelete.slice(2, -1)
           : undefined;
 
+      setIsDeleting(true);
       try {
         if (formattedTranslationsToDelete) {
           await Promise.all(
@@ -120,6 +121,8 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         console.error(
           `Error removing translations or updating attributes: ${error}`,
         );
+      } finally {
+        setIsDeleting(false);
       }
     },
   });
@@ -129,23 +132,37 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
   }
 
   const attributes = config.attributes ?? [];
-  const groups = config.groups ?? [];
+  const matchesFilter = (attribute: UserProfileAttribute) =>
+    filter === "allGroups" || attribute.group === filter;
+  const visibleAttributes = attributes.filter(matchesFilter);
 
-  const executeMove = async (
-    attribute: UserProfileAttribute,
-    newIndex: number,
-  ) => {
-    const fromIndex = attributes.findIndex((attr) => {
-      return attr.name === attribute.name;
-    });
+  const executeMove = async (nameDragged: string, newOrder: string[]) => {
+    const fromIndex = visibleAttributes.findIndex(
+      (attribute) => attribute.name === nameDragged,
+    );
+    const toIndex = newOrder.indexOf(nameDragged);
+    if (
+      isUpdating ||
+      newOrder.length !== visibleAttributes.length ||
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex === toIndex
+    ) {
+      return;
+    }
 
-    let movedAttribute: movedAttributeType = {};
-    movedAttribute = attributes[fromIndex];
-    attributes.splice(fromIndex, 1);
-    attributes.splice(newIndex, 0, movedAttribute);
+    const reordered = [...visibleAttributes];
+    const [movedAttribute] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, movedAttribute);
+
+    // Refill the slots in the full list that belong to the visible attributes.
+    let visibleIndex = 0;
+    const updatedAttributes = attributes.map((attribute) =>
+      matchesFilter(attribute) ? reordered[visibleIndex++] : attribute,
+    );
 
     await save(
-      { ...config, attributes, groups },
+      { ...config, attributes: updatedAttributes, groups: config.groups ?? [] },
       {
         successMessageKey: "updatedUserProfileSuccess",
         errorMessageKey: "updatedUserProfileError",
@@ -179,13 +196,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
               onToggle={toggleIsFilterTypeDropdownOpen}
               toggleIcon={<FilterIcon />}
               onSelect={(value) => {
-                const filter = value.toString();
-                setFilter(filter);
-                setData(
-                  filter === "allGroups"
-                    ? attributes
-                    : attributes.filter((attr) => attr.group === filter),
-                );
+                setFilter(value.toString());
                 toggleIsFilterTypeDropdownOpen();
               }}
               selections={filter === "allGroups" ? t(filter) : filter}
@@ -226,15 +237,8 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
       <DeleteConfirm />
       <DraggableTable
         keyField="name"
-        onDragFinish={async (nameDragged, items) => {
-          const keys = attributes.map((e) => e.name);
-          const newIndex = items.indexOf(nameDragged);
-          const oldIndex = keys.indexOf(nameDragged);
-          const dragged = attributes[oldIndex];
-          if (!dragged.name) return;
-
-          await executeMove(dragged, newIndex);
-        }}
+        onDragFinish={executeMove}
+        restoreOrderOnDrop
         actions={[
           {
             title: t("edit"),
@@ -249,7 +253,8 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           },
           {
             title: t("delete"),
-            isActionable: ({ name }) => !RESTRICTED_ATTRIBUTES.includes(name!),
+            isActionable: ({ name }) =>
+              !isUpdating && !RESTRICTED_ATTRIBUTES.includes(name!),
             onClick: (_key, _idx, component) => {
               setAttributeToDelete(component.name);
               toggleDeleteDialog();
@@ -271,7 +276,7 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
             displayKey: t("attributeGroup"),
           },
         ]}
-        data={data ?? attributes}
+        data={visibleAttributes}
       />
     </>
   );

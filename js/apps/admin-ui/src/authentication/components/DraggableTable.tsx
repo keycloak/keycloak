@@ -37,6 +37,7 @@ type DraggableTableProps<T> = Omit<TableProps, "data" | "ref"> & {
   data: T[];
   actions?: Action<T>[];
   onDragFinish: (dragged: string, newOrder: string[]) => void;
+  restoreOrderOnDrop?: boolean;
 };
 
 export function DraggableTable<T>({
@@ -45,6 +46,7 @@ export function DraggableTable<T>({
   data,
   actions,
   onDragFinish,
+  restoreOrderOnDrop,
   ...props
 }: DraggableTableProps<T>) {
   const { t } = useTranslation();
@@ -59,7 +61,7 @@ export function DraggableTable<T>({
 
   const itemOrder: string[] = useMemo(
     () => data.map((d) => get(d, keyField)),
-    [data],
+    [data, keyField],
   );
 
   const onDragStart = (evt: ReactDragEvent) => {
@@ -130,8 +132,15 @@ export function DraggableTable<T>({
   };
 
   const onDrop = (evt: ReactDragEvent) => {
+    evt.preventDefault();
+    if (restoreOrderOnDrop) {
+      // The data supplied by the caller determines the committed order.
+      move(itemOrder);
+    }
     if (isValidDrop(evt)) {
-      onDragFinish(state.draggedItemId, state.tempItemOrder);
+      if (state.draggingToItemIndex !== -1) {
+        onDragFinish(state.draggedItemId, state.tempItemOrder);
+      }
     } else {
       onDragCancel();
     }
@@ -154,8 +163,9 @@ export function DraggableTable<T>({
         bodyRef.current?.children || [],
       ).findIndex((item) => item.id === dragId);
       if (draggingToItemIndex !== state.draggingToItemIndex) {
+        // Tables that keep the dropped order use it for the next drag.
         const tempItemOrder = moveItem(
-          itemOrder,
+          restoreOrderOnDrop ? [...itemOrder] : itemOrder,
           state.draggedItemId,
           draggingToItemIndex,
         );
@@ -171,6 +181,9 @@ export function DraggableTable<T>({
   };
 
   const onDragEnd = (evt: ReactDragEvent) => {
+    if (restoreOrderOnDrop) {
+      move(itemOrder);
+    }
     const tr = evt.target as HTMLTableRowElement;
     tr.classList.remove(styles.modifiers.ghostRow);
     tr.setAttribute("aria-grabbed", "false");
@@ -211,12 +224,7 @@ export function DraggableTable<T>({
           ))}
         </Tr>
       </Thead>
-      <Tbody
-        ref={bodyRef}
-        onDragOver={onDragOver}
-        onDrop={onDragOver}
-        onDragLeave={onDragLeave}
-      >
+      <Tbody ref={bodyRef} onDragOver={onDragOver} onDragLeave={onDragLeave}>
         {data.map((row) => (
           <Tr
             key={get(row, keyField)}
