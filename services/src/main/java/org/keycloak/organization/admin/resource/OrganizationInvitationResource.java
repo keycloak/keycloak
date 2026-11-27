@@ -34,6 +34,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
@@ -226,11 +227,24 @@ public class OrganizationInvitationResource {
     }
 
     private String createRegistrationLink(UserModel user, OrganizationInvitationModel invitation, InvitationTarget invitationTarget) {
-        return OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
+        UriBuilder builder = OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.CODE)
                 .queryParam(Constants.CLIENT_ID, invitationTarget.clientId)
-                .queryParam(Constants.TOKEN, createToken(user, invitation, invitationTarget))
-                .buildFromMap(Map.of("realm", realm.getName(), "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL)).toString();
+                .queryParam(Constants.TOKEN, createToken(user, invitation, invitationTarget));
+
+        // the registration endpoint only fills in a missing redirect_uri when the client has exactly one redirect URI,
+        // so pass the resolved redirect URI explicitly. Only append it when it is a valid redirect URI for the client:
+        // a client base URL that is not itself a registered redirect URI must not override the single-redirect-URI fallback.
+        if (!StringUtil.isBlank(invitationTarget.redirectUri)) {
+            ClientModel client = realm.getClientByClientId(invitationTarget.clientId);
+            String validRedirectUri = client == null ? null
+                    : RedirectUtils.verifyRedirectUri(session, invitationTarget.redirectUri, client);
+            if (validRedirectUri != null) {
+                builder.queryParam(OAuth2Constants.REDIRECT_URI, validRedirectUri);
+            }
+        }
+
+        return builder.buildFromMap(Map.of("realm", realm.getName(), "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL)).toString();
     }
 
     private String createToken(UserModel user, OrganizationInvitationModel invitation, InvitationTarget invitationTarget) {
