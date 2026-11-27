@@ -1022,6 +1022,11 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
+    public void removeIssuedVerifiableCredentials(RealmModel realm, String userId) {
+        getDelegate().removeIssuedVerifiableCredentials(realm, userId);
+    }
+
+    @Override
     public void removeExpiredIssuedVerifiableCredentials() {
         getDelegate().removeExpiredIssuedVerifiableCredentials();
     }

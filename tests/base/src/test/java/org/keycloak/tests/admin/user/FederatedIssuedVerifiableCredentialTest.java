@@ -145,6 +145,44 @@ public class FederatedIssuedVerifiableCredentialTest extends AbstractUserTest {
 
     @Test
     @DatabaseTest
+    public void testRemoveAllIssuedCredentialsForFederatedUser() {
+        String federatedUserId = createFederatedUser("fed-user-remove-all");
+        String otherFederatedUserId = createFederatedUser("fed-user-remove-all-other");
+        String clientId = createTestClient("wallet-remove-all");
+        String scopeId = resolveScopeId(CLIENT_SCOPE_NAME_1);
+
+        runOnServer.run(session -> {
+            UserVerifiableCredentialModel addedVc = session.users().addVerifiableCredential(
+                    federatedUserId, new UserVerifiableCredentialModel("vc-remove-all", scopeId));
+            UserVerifiableCredentialModel otherAddedVc = session.users().addVerifiableCredential(
+                    otherFederatedUserId, new UserVerifiableCredentialModel("vc-remove-all-other", scopeId));
+
+            IssuedVerifiableCredentialModel first = new IssuedVerifiableCredentialModel(federatedUserId, addedVc.getId(), clientId);
+            first.setRevision("rev-001");
+            session.users().addIssuedVerifiableCredential(first);
+
+            IssuedVerifiableCredentialModel second = new IssuedVerifiableCredentialModel(federatedUserId, addedVc.getId(), clientId);
+            second.setRevision("rev-002");
+            session.users().addIssuedVerifiableCredential(second);
+
+            IssuedVerifiableCredentialModel other = new IssuedVerifiableCredentialModel(otherFederatedUserId, otherAddedVc.getId(), clientId);
+            other.setRevision("rev-003");
+            session.users().addIssuedVerifiableCredential(other);
+        });
+
+        runOnServer.run(session -> {
+            assertEquals(2, session.users().getIssuedVerifiableCredentialsStreamByUser(federatedUserId).count());
+            assertEquals(1, session.users().getIssuedVerifiableCredentialsStreamByUser(otherFederatedUserId).count());
+
+            session.users().removeIssuedVerifiableCredentials(session.getContext().getRealm(), federatedUserId);
+
+            assertEquals(0, session.users().getIssuedVerifiableCredentialsStreamByUser(federatedUserId).count());
+            assertEquals(1, session.users().getIssuedVerifiableCredentialsStreamByUser(otherFederatedUserId).count());
+        });
+    }
+
+    @Test
+    @DatabaseTest
     public void testIssuedVCDeletedWhenUserVCDeletedForFederatedUser() {
         String federatedUserId = createFederatedUser("fed-user-cascade");
         String clientId = createTestClient("wallet-cascade");
