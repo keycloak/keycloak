@@ -115,6 +115,7 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <script type="module" src="${url.resourcesPath}/js/disableSubmitOnSameTab.js"></script>
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <#global passwordVisibilityScriptLoaded=true>
     <#if url.ssoLoginInOtherTabsUrl??>

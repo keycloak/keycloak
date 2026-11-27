@@ -5,7 +5,7 @@
         ${msg("logoutConfirmTitle")}
     <#elseif section = "form">
         <div id="kc-logout-confirm" class="content-area">
-            <form class="form-actions ${properties.kcFormClass!}" action="${url.logoutConfirmAction}" onsubmit="confirmLogout.disabled = true; return true;" method="POST">
+            <form class="form-actions ${properties.kcFormClass!}" action="${url.logoutConfirmAction}" data-kc-disable-submit="confirmLogout" method="POST">
                 <p class="instruction">${msg("logoutConfirmHeader")}</p>
                 <input type="hidden" name="session_code" value="${logoutConfirm.code}">
                 <@buttons.actionGroup id="kc-form-buttons">
