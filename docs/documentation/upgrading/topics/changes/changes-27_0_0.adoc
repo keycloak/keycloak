@@ -827,7 +827,12 @@ An `add` or a `remove` that spells such an attribute in another case, for exampl
 With the caches enabled, Hibernate's `SimpleTimestamper` kept every thread that opened a database session at 100% CPU after the system clock was moved backwards, until the clock caught up with the previously issued timestamp.
 
 This change has no effect on the data stored or cached by {project_name}.
-If you use a custom extension that relies on Hibernate's second-level or query cache, set `quarkus.hibernate-orm.second-level-caching-enabled=true` in `conf/quarkus.properties` and run `kc.sh build`.
+The unused `org.hibernate.orm:hibernate-jcache`, `com.github.ben-manes.caffeine:jcache` and dependencies needed only for JCache, such as `javax.cache:cache-api`, are no longer bundled.
+If you use a custom extension that relies on Hibernate's second-level or query cache, install `org.hibernate.orm:hibernate-jcache`, `com.github.ben-manes.caffeine:jcache`, `javax.cache:cache-api` and `com.typesafe:config` in the `providers` directory, using versions compatible with the bundled Hibernate ORM and Quarkus versions.
+Do not duplicate dependencies already bundled with {project_name}, such as Hibernate ORM core and Caffeine core.
+To re-enable caching by default, set `quarkus.hibernate-orm.second-level-caching-enabled=true` in `conf/quarkus.properties`.
+Custom persistence units inherit this setting unless they explicitly set `hibernate.cache.use_second_level_cache` or `hibernate.cache.use_query_cache` in their `persistence.xml` properties.
+Then run `kc.sh build`.
 
 === In template strings, a `$` that does not start a placeholder is no longer corrupted
 // https://github.com/keycloak/keycloak/issues/55326

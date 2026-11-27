@@ -48,6 +48,16 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-orm</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.hibernate.orm</groupId>
+                    <artifactId>hibernate-jcache</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.ben-manes.caffeine</groupId>
+                    <artifactId>jcache</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
