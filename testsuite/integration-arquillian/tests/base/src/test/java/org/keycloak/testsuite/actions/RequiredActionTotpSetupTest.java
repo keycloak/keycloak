@@ -31,6 +31,7 @@ import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFa
 import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
@@ -185,6 +186,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         //submit with wrong otp
         totpPage.configure("wrongOtp");
         totpPage.assertCurrent();
+
+        EventAssertion.assertError(events.poll()).type(EventType.UPDATE_CREDENTIAL_ERROR)
+                .userId(userId)
+                .error(Errors.INVALID_USER_CREDENTIALS)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .details(Details.USERNAME, "setuptotp");
 
         //assert totpSecret doesn't change after a wrong submit
         assertEquals(totpSecret, totpPage.getTotpSecret());

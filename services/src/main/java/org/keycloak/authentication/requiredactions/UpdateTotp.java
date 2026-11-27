@@ -38,6 +38,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -136,6 +137,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             context.challenge(challenge);
+            event.error(Errors.INVALID_USER_CREDENTIALS);
             return;
         }
         OTPCredentialProvider otpCredentialProvider = (OTPCredentialProvider) context.getSession().getProvider(CredentialProvider.class, "keycloak-otp");
@@ -162,6 +164,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                         .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                         .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
                 context.challenge(challenge);
+                event.error(Errors.INVALID_USER_CREDENTIALS);
                 return;
             }
         } catch (ModelDuplicateException e) {
