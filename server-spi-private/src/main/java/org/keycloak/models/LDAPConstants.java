@@ -90,6 +90,9 @@ public class LDAPConstants {
     // Config option to specify if registrations will be synced or not
     public static final String SYNC_REGISTRATIONS = "syncRegistrations";
 
+    // Config option to remove imported users, which no longer exist in LDAP, during full synchronization
+    public static final String REMOVE_INVALID_USERS_ON_SYNC = "removeInvalidUsersOnSync";
+
     // Custom user search filter
     public static final String CUSTOM_USER_SEARCH_FILTER = "customUserSearchFilter";
 
