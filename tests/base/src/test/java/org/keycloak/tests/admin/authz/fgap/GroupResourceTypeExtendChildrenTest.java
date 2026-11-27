@@ -766,6 +766,38 @@ public class GroupResourceTypeExtendChildrenTest extends AbstractPermissionTest 
         assertViewConsistent(subteam, false);
     }
 
+    @Test
+    public void testInheritedMemberScopeDenyWithNegativeAggregatedPolicyOfGroupPolicyForAnotherGroup() {
+        GroupRepresentation others = createGroup("others");
+        GroupPolicyRepresentation denyOthers = createGroupPolicy(realm, adminPermissionsClient, "Deny Others", Logic.NEGATIVE, others.getId());
+        // both policies grant myadmin, which is not a member of the other group, so the negative aggregate denies it.
+        // The group policy is skipped by partial evaluation for non-members, which must not turn the aggregate into a grant
+        AggregatePolicyRepresentation denyAggregated = createAggregatedPolicy(adminPermissionsClient, "Deny My Admin Not In Others",
+                Logic.NEGATIVE, DecisionStrategy.UNANIMOUS, allowMyAdmin.getName(), denyOthers.getName());
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
+        createGroupPermission(team, Set.of(VIEW_MEMBERS), true, denyAggregated);
+        UserRepresentation member = createMember("subteam-member", subteam);
+
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+    }
+
+    @Test
+    public void testInheritedMemberScopeDenyWithNestedNegativeAggregatedPolicyOfGroupPolicyForAnotherGroup() {
+        GroupRepresentation others = createGroup("others");
+        GroupPolicyRepresentation denyOthers = createGroupPolicy(realm, adminPermissionsClient, "Deny Others", Logic.NEGATIVE, others.getId());
+        AggregatePolicyRepresentation allowBoth = createAggregatedPolicy(adminPermissionsClient, "Allow My Admin Not In Others",
+                Logic.POSITIVE, DecisionStrategy.UNANIMOUS, allowMyAdmin.getName(), denyOthers.getName());
+        AggregatePolicyRepresentation denyNested = createAggregatedPolicy(adminPermissionsClient, "Deny Nested",
+                Logic.NEGATIVE, DecisionStrategy.UNANIMOUS, allowBoth.getName());
+        createGroupPermission(department, Set.of(VIEW_MEMBERS), true, allowMyAdmin);
+        createGroupPermission(team, Set.of(VIEW_MEMBERS), true, denyNested);
+        UserRepresentation member = createMember("subteam-member", subteam);
+
+        assertCannotView(member);
+        assertThat(searchUserIds(member), empty());
+    }
+
     // --- several extended permissions on the same group ---
 
     @Test

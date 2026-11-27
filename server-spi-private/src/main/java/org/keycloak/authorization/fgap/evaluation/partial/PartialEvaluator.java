@@ -57,6 +57,7 @@ public final class PartialEvaluator {
 
     // the type of the group policies, which skip their evaluation when the admin is not a member of their groups
     private static final String GROUP_POLICY_TYPE = "group";
+    private static final String AGGREGATE_POLICY_TYPE = "aggregate";
 
     private final ExtendChildrenPartialEvaluator extendChildrenEvaluator = new ExtendChildrenPartialEvaluator();
 
@@ -120,7 +121,7 @@ public final class PartialEvaluator {
                 Set<Policy> policies = permission.getAssociatedPolicies();
 
                 for (Policy policy : policies) {
-                    Boolean granted = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, false);
+                    Boolean granted = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, false, Set.of());
 
                     if (granted == null) {
                         continue;
@@ -181,7 +182,7 @@ public final class PartialEvaluator {
         boolean undecided = false;
 
         for (Policy policy : permission.getAssociatedPolicies()) {
-            Boolean outcome = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, true);
+            Boolean outcome = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, true, new HashSet<>());
 
             if (Boolean.FALSE.equals(outcome)) {
                 return false;
@@ -200,15 +201,24 @@ public final class PartialEvaluator {
     /**
      * @param resolveSkippedGroupPolicy {@code true} to resolve a group policy skipped because the {@code adminUser} is not a
      *                                  member of its groups as it is during direct evaluation, where the policy does not match
-     *                                  the admin and its logic applies
+     *                                  the admin and its logic applies, including within aggregated policies
+     * @param visitedAggregates the aggregated policies being evaluated, to stop on cycles
      * @return {@code true} if the {@code policy} grants access to the {@code adminUser}, {@code false} if it denies access,
      * or {@code null} if it can not be partially evaluated or should be skipped
      */
-    private Boolean evaluatePolicy(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy policy, UserModel adminUser, boolean resolveSkippedGroupPolicy) {
-        PolicyProvider runtimeProvider = authorization.getProvider(policy.getType());
-
-        if (runtimeProvider != null && !runtimeProvider.isValid(policy, authorization)) {
+    private Boolean evaluatePolicy(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy policy, UserModel adminUser, boolean resolveSkippedGroupPolicy, Set<String> visitedAggregates) {
+        if (isInvalid(authorization, policy)) {
             return false;
+        }
+
+        if (resolveSkippedGroupPolicy && AGGREGATE_POLICY_TYPE.equals(policy.getType())) {
+            // the aggregated policy provider ignores skipped group policies, which only lowers the number of grants, so
+            // the aggregate is denied, and granted when its logic is negative, while direct evaluation might deny it
+            return switch (evaluateAggregate(session, authorization, policyProviders, policy, adminUser, visitedAggregates)) {
+                case GRANT -> true;
+                case SKIP -> null;
+                default -> false;
+            };
         }
 
         PartialEvaluationPolicyProvider provider = getPartialEvaluationPolicyProvider(policy, policyProviders);
@@ -235,6 +245,81 @@ public final class PartialEvaluator {
         }
 
         return Outcome.GRANT.equals(granted);
+    }
+
+    /**
+     * Evaluates an aggregated policy from the outcome of each of its policies, resolving the skipped group policies as
+     * {@link #evaluatePolicy} does. The outcome is only decided if the policies that can not be decided can not change it.
+     *
+     * @return the outcome after applying the logic of the aggregated policy: {@link Outcome#SKIP} if it can not be decided,
+     * or {@link Outcome#INVALID} if any of its policies, at any depth, is invalid, which denies access regardless of the
+     * logic of the aggregated policies, as with {@code AggregatePolicyProvider}
+     */
+    private Outcome evaluateAggregate(KeycloakSession session, AuthorizationProvider authorization, List<PartialEvaluationPolicyProvider> policyProviders, Policy aggregate, UserModel adminUser, Set<String> visitedAggregates) {
+        Set<Policy> policies = aggregate.getAssociatedPolicies();
+
+        if (policies.isEmpty() || !visitedAggregates.add(aggregate.getId())) {
+            return Outcome.SKIP;
+        }
+
+        int grants = 0;
+        int undecided = 0;
+
+        try {
+            for (Policy policy : policies) {
+                if (isInvalid(authorization, policy)) {
+                    return Outcome.INVALID;
+                }
+
+                Boolean outcome;
+
+                if (AGGREGATE_POLICY_TYPE.equals(policy.getType())) {
+                    Outcome nested = evaluateAggregate(session, authorization, policyProviders, policy, adminUser, visitedAggregates);
+
+                    if (Outcome.INVALID.equals(nested)) {
+                        return Outcome.INVALID;
+                    }
+
+                    outcome = Outcome.SKIP.equals(nested) ? null : Outcome.GRANT.equals(nested);
+                } else {
+                    outcome = evaluatePolicy(session, authorization, policyProviders, policy, adminUser, true, visitedAggregates);
+                }
+
+                if (outcome == null) {
+                    undecided++;
+                } else if (outcome) {
+                    grants++;
+                }
+            }
+        } finally {
+            visitedAggregates.remove(aggregate.getId());
+        }
+
+        // decided only if the outcome is the same whether all the undecided policies deny or grant access
+        boolean granted = decide(aggregate, grants, policies.size());
+
+        if (granted != decide(aggregate, grants + undecided, policies.size())) {
+            return Outcome.SKIP;
+        }
+
+        if (Logic.NEGATIVE.equals(aggregate.getLogic())) {
+            granted = !granted;
+        }
+
+        return granted ? Outcome.GRANT : Outcome.DENY;
+    }
+
+    private boolean isInvalid(AuthorizationProvider authorization, Policy policy) {
+        PolicyProvider provider = authorization.getProvider(policy.getType());
+        return provider != null && !provider.isValid(policy, authorization);
+    }
+
+    private boolean decide(Policy aggregate, int grants, int total) {
+        return switch (aggregate.getDecisionStrategy()) {
+            case AFFIRMATIVE -> grants > 0;
+            case UNANIMOUS -> grants == total;
+            case CONSENSUS -> grants > total - grants;
+        };
     }
 
     public List<Predicate> buildPredicates(PartialEvaluationContext context) {
