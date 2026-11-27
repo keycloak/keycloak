@@ -102,5 +102,15 @@ public class ServerInfoTest {
         Map<String, ProviderRepresentation> jpaProviders = info.getProviders().get("connectionsJpa").getProviders();
         ProviderRepresentation jpaProvider = jpaProviders.values().iterator().next();
         Assertions.assertNotNull(jpaProvider.getOperationalInfo());
+
+        // Caches that the features in use do not define, such as loginFailures with
+        // login-failures:v2, are not reported, so no cache reads as FAILED.
+        Map<String, ProviderRepresentation> infinispanProviders = info.getProviders().get("connectionsInfinispan").getProviders();
+        for (ProviderRepresentation infinispanProvider : infinispanProviders.values()) {
+            Map<String, String> operationalInfo = infinispanProvider.getOperationalInfo();
+            if (operationalInfo != null) {
+                Assertions.assertFalse(operationalInfo.containsValue("FAILED"), operationalInfo.toString());
+            }
+        }
     }
 }
