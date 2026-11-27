@@ -33,6 +33,7 @@ In addition, the client for which the access token was issued must be allowed to
 
 These external tokens can be re-established by either logging in again through the provider, or using the client initiated account linking API.
 
+[[identity-brokering-api-v2]]
 ==== Identity brokering API V2
 
 [NOTE]

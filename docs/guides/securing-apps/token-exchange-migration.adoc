@@ -15,7 +15,7 @@ V2 is the officially supported token exchange implementation aligned with link:h
 The migration path depends on the legacy token exchange scenario:
 
 * **Internal-internal exchange**: Follow <<_migration-internal-internal,Migrating internal-internal Token Exchange V1 to V2>> below.
-* **Internal-external exchange**: See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for retrieving external provider tokens.
+* **Internal-external exchange**: Follow <<_migration-internal-external,Migrating internal-external Token Exchange V1>> below.
 * **External-internal exchange**: Follow <<_migration-external-internal,Migrating external-internal Token Exchange V1>> below.
 * **Subject impersonation**: V2 does not support the `requested_subject` parameter. For a separate flow based on user consent, see the preview delegation feature in <@links.securingapps id="token-exchange" anchor="_token-exchange-delegation" />.
 
@@ -455,6 +455,74 @@ For issues during migration:
 * Review <@links.securingapps id="token-exchange" anchor="_standard-token-exchange" />
 * Consult the link:{adminguide_link}[{adminguide_name}] for client configuration
 * Review RFC 8693 for token exchange specification details
+
+[[_migration-internal-external]]
+== Migrating internal-external Token Exchange V1
+
+This chapter covers applications that used legacy Token Exchange V1 to obtain an external identity provider's token by submitting a {project_name} access token before upgrading to {project_name} 27.
+Migrate these requests to Identity Brokering API V2, which retrieves the external token associated with the user and the configured identity provider.
+Standard Token Exchange V2 exchanges tokens within the same realm and does not replace this use case.
+
+[[_internal-external-migration-differences]]
+=== Review the differences
+
+[cols="1,2,2", options="header"]
+|===
+|Aspect |V1 internal-external exchange (before {project_name} 27) |Identity Brokering API V2
+|Endpoint |`POST /realms/{realm}/protocol/openid-connect/token` |`POST /realms/{realm}/broker/{provider_alias}/token`
+|Internal access token |`subject_token` parameter |`token` parameter
+|Identity provider selection |`requested_issuer` parameter |Provider alias in the URL
+|Grant parameters |Token exchange `grant_type` and optional token type parameters |No `grant_type`, `subject_token_type`, or `requested_token_type`
+|Client authentication |Could be used by public or confidential clients, subject to legacy permissions |Requires a confidential client and client authentication
+|Permissions |Required the identity provider's FGAP V1 `token-exchange` permission |Client capability and an explicit list of allowed identity provider aliases
+|===
+
+Identity Brokering API V1 is a different feature from Token Exchange V1.
+Use Identity Brokering API V2 directly for this migration.
+
+[[_internal-external-migration-configuration]]
+=== Configure external token retrieval
+
+Follow link:{developerguide_link}#identity-brokering-api-v2[Identity brokering API V2] in the {developerguide_name} to enable the feature, choose token storage settings, and configure the requester client.
+
+NOTE: Identity Brokering API V2 does not require fine-grained admin permissions (FGAP). Configure *Allow retrieve external tokens* and *Allowed Identity Providers for External Tokens* on the requester client instead of recreating the FGAP V1 `token-exchange` permission used before the upgrade.
+
+If the application previously called Token Exchange V1 from a public client, move external token retrieval to a confidential client that can authenticate to the API.
+Enabling *Standard token exchange* on a client does not enable external token retrieval.
+
+The internal access token must be a valid user access token from the same realm.
+The authenticated requester client must either be the client for which the token was issued or be included in the token's audience.
+If a backend retrieves external tokens on behalf of a different client, configure the internal token's audience accordingly.
+For audience configuration, see link:{adminguide_link}#audience-support[Audience support] in the {adminguide_name}.
+Client policies can apply additional restrictions; see link:{developerguide_link}#_identity-brokering-apis-client-policies[Integration with client policies].
+
+[[_internal-external-migration-requests]]
+=== Update the request
+
+Replace the legacy token endpoint request with the `POST` request shown in link:{developerguide_link}#identity-brokering-api-v2[Identity brokering API V2].
+Move the provider alias from `requested_issuer` to the URL and rename `subject_token` to `token`.
+Remove the token exchange grant and token type parameters.
+
+[[_internal-external-migration-responses]]
+=== Update response and account linking handling
+
+For the response format, see link:{developerguide_link}#identity-brokering-api-v2[Identity brokering API V2].
+For OAuth and OIDC providers, the response does not expose the provider's refresh token or ID token.
+
+Retrieving a token does not create an external account link or obtain a token for an unlinked user.
+Do not depend on the legacy `account-link-url` response field.
+For establishing the link and obtaining an external token before retrying, see link:{developerguide_link}#_client-initiated-account-linking[Client initiated account linking].
+
+=== Validate the migration
+
+Check the migrated configuration in a test realm:
+
+* [ ] An authenticated, permitted confidential client can retrieve a usable external token for a linked user.
+* [ ] Requests fail when *Allow retrieve external tokens* is disabled or the provider alias is absent from the client's allowed list.
+* [ ] A public client cannot retrieve tokens through the V2 endpoint.
+* [ ] A token issued to another client is rejected unless the authenticated requester is included in its audience.
+* [ ] The chosen storage settings make an external token available after broker login or account linking.
+* [ ] The application handles missing links, unavailable tokens, and OAuth-style errors without relying on `account-link-url`.
 
 [[_migration-external-internal]]
 == Migrating external-internal Token Exchange V1
