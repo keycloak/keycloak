@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.authz.fgap;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,10 +35,14 @@ import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.admin.client.resource.WorkflowResource;
+import org.keycloak.admin.client.resource.WorkflowsResource;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.workflow.DisableUserStepProviderFactory;
+import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.protocol.oidc.mappers.HardcodedRole;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -49,6 +54,8 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.representations.workflows.WorkflowRepresentation;
+import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
@@ -885,14 +892,42 @@ public class RealmAdminAccessTest extends AbstractPermissionTest {
                 .roles().get(AdminRoles.MANAGE_REALM).toRepresentation();
         serverAdminClient.realm("master").users().get(masterUserRealmAdmin.getId())
                 .roles().clientLevel(myRealmMasterClient.getId()).add(List.of(masterRealmAdminRole));
+        WorkflowRepresentation definition = WorkflowRepresentation.withName("master-manage-realm-read")
+                .withSteps(WorkflowStepRepresentation.create().of(DisableUserStepProviderFactory.ID)
+                        .after(Duration.ofDays(10)).build())
+                .build();
+        String workflowId;
+        try (Response response = realm.admin().workflows().create(definition)) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
+        realm.cleanup().add(r -> r.workflows().workflow(workflowId).delete().close());
         try (Keycloak masterRealmAdminClient = adminClientFactory.create().realm("master")
                 .username("mymasteradmin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build()) {
 
-            // can not access workflows with manage-realm role in master realm
-            try {
-                masterRealmAdminClient.realm(realm.getName()).workflows().list();
-                fail("Should not have access to manage workflows if user is master realm admin with manage-realm role in a realm");
-            } catch (ForbiddenException ignore) {}
+            WorkflowsResource workflows = masterRealmAdminClient.realm(realm.getName()).workflows();
+            WorkflowResource workflow = workflows.workflow(workflowId);
+
+            // manage-realm allows reading workflows, but not administering them
+            assertThat(workflows.list().stream().map(WorkflowRepresentation::getId).toList(), hasItem(workflowId));
+            WorkflowRepresentation actual = workflow.toRepresentation();
+            assertThat(actual.getName(), equalTo(definition.getName()));
+            assertThat(actual.getSteps().get(0).getUses(), equalTo(DisableUserStepProviderFactory.ID));
+
+            try (Response response = workflows.create(definition)) {
+                assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+            }
+            try (Response response = workflow.update(actual)) {
+                assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+            }
+            try (Response response = workflow.delete()) {
+                assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+            }
+            assertThrows(ForbiddenException.class, () -> workflow.activate(ResourceType.USERS.name(), myadmin.getId()));
+            assertThrows(ForbiddenException.class, () -> workflow.deactivate(ResourceType.USERS.name(), myadmin.getId()));
+            String stepId = actual.getSteps().get(0).getId();
+            try (Response response = workflows.migrate(stepId, stepId)) {
+                assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
+            }
         }
     }
 
