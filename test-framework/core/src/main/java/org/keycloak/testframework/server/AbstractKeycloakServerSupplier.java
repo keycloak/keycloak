@@ -63,6 +63,7 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
             command.option("https-key-store-file", managedCert.getServerKeyStorePath());
             command.option("https-key-store-password", managedCert.getServerKeyStorePassword());
             command.option("https-key-store-type", managedCert.getKeystoreFormat().name());
+            command.addOption("truststore-paths", managedCert.getClientTrustStorePath());
         }
 
         if (managedCert.isMTlsEnabled()) {
@@ -70,7 +71,7 @@ public abstract class AbstractKeycloakServerSupplier implements Supplier<Keycloa
             if (KeystoreUtil.TruststoreFormat.PEM.name().equalsIgnoreCase(KeystoreUtil.getTruststoreType(
                     null, managedCert.getServerTrustStorePath(), managedCert.getKeystoreFormat().name()))) {
                 // for PEM file use common truststore paths option
-                command.option("truststore-paths", managedCert.getServerTrustStorePath());
+                command.addOption("truststore-paths", managedCert.getServerTrustStorePath());
             } else {
                 // for other formats use the https-trust-store-file option
                 command.option("https-trust-store-file", managedCert.getServerTrustStorePath());
