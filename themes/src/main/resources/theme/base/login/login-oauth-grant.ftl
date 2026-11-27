@@ -48,7 +48,7 @@
             </#if>
 
             <form class="${properties.kcFormClass!} ${properties.kcMarginTopClass!}" action="${url.oauthAction}" method="POST">
-                <input type="hidden" name="code" value="${oauth.code}">
+                <input type="hidden" name="session_code" value="${oauth.code}">
                 <@buttons.actionGroup horizontal=true>
                     <@buttons.button id="kc-login" name="accept" label="doYes"/>
                     <@buttons.button id="kc-cancel" name="cancel" label="doNo" type="secondary"/>

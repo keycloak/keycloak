@@ -1071,6 +1071,13 @@ public class LoginActionsService {
         MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         event.event(EventType.LOGIN);
         String code = formData.getFirst(SESSION_CODE);
+        if (code == null) {
+            // Support custom themes that still submit the legacy field
+            code = formData.getFirst(OAuth2Constants.CODE);
+            if (code != null) {
+                logger.debugf("Consent form submitted the legacy '%s' field. Use '%s' in the template.", OAuth2Constants.CODE, SESSION_CODE);
+            }
+        }
         String clientId = session.getContext().getUri().getQueryParameters().getFirst(Constants.CLIENT_ID);
         String tabId = session.getContext().getUri().getQueryParameters().getFirst(Constants.TAB_ID);
         String clientData = session.getContext().getUri().getQueryParameters().getFirst(Constants.CLIENT_DATA);
@@ -1082,6 +1089,12 @@ public class LoginActionsService {
         AuthenticationSessionModel authSession = checks.getAuthenticationSession();
 
         initLoginEvent(authSession);
+
+        if (!checks.isActionRequest()) {
+            // Request without a session code is not a consent submission, the action matching the consent screen
+            // was not verified. Continue with whatever is pending instead of granting the consent.
+            return AuthenticationManager.nextActionAfterAuthentication(session, authSession, clientConnection, request, session.getContext().getUri(), event);
+        }
 
         UserModel user = authSession.getAuthenticatedUser();
         ClientModel client = authSession.getClient();
