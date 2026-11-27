@@ -64,4 +64,115 @@ describe("Client", () => {
     expect(await client.getAccessToken()).to.equal(renewedAccessToken);
     expect(client.refreshToken).to.equal(refreshToken);
   });
+
+  describe("custom fetch", () => {
+    type FetchCall = {
+      input: RequestInfo | URL;
+      init?: RequestInit;
+    };
+
+    const jsonResponse = (body: unknown = {}) =>
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+
+    const createRecordingFetch = () => {
+      const calls: FetchCall[] = [];
+      const fetchImpl: typeof fetch = async (input, init) => {
+        calls.push({ input, init });
+        return jsonResponse([]);
+      };
+      return { calls, fetchImpl };
+    };
+
+    const withToken = (client: KeycloakAdminClient) => {
+      client.registerTokenProvider({
+        getAccessToken: async () => "access-token",
+      });
+      return client;
+    };
+
+    it("uses a fetch injected via the constructor for v1 requests", async () => {
+      const { calls, fetchImpl } = createRecordingFetch();
+      const client = withToken(
+        new KeycloakAdminClient({
+          baseUrl: "http://example.test",
+          realmName: "test",
+          requestOptions: { headers: { "X-Custom-Header": "custom" } },
+          fetch: fetchImpl,
+        }),
+      );
+
+      await client.serverInfo.find();
+
+      expect(calls).to.have.length(1);
+      expect(String(calls[0].input)).to.equal(
+        "http://example.test/admin/serverinfo",
+      );
+      expect(
+        new Headers(calls[0].init?.headers).get("X-Custom-Header"),
+      ).to.equal("custom");
+      expect(new Headers(calls[0].init?.headers).get("Authorization")).to.equal(
+        "Bearer access-token",
+      );
+    });
+
+    it("uses a fetch injected via setConfig for v1 requests", async () => {
+      const { calls, fetchImpl } = createRecordingFetch();
+      const client = withToken(
+        new KeycloakAdminClient({
+          baseUrl: "http://example.test",
+          realmName: "test",
+        }),
+      );
+      client.setConfig({ fetch: fetchImpl });
+
+      await client.serverInfo.find();
+
+      expect(calls).to.have.length(1);
+      expect(String(calls[0].input)).to.equal(
+        "http://example.test/admin/serverinfo",
+      );
+    });
+
+    it("uses a fetch injected via the constructor for v2 requests", async () => {
+      const { calls, fetchImpl } = createRecordingFetch();
+      const client = withToken(
+        new KeycloakAdminClient({
+          baseUrl: "http://example.test",
+          realmName: "test",
+          enableExperimentalApis: true,
+          fetch: fetchImpl,
+        }),
+      );
+
+      await client.clients.v2().get();
+
+      expect(calls).to.have.length(1);
+      expect(String(calls[0].input)).to.include("/admin/api/test/clients/v2");
+    });
+
+    it("falls back to the global fetch when none is configured", async () => {
+      const originalFetch = globalThis.fetch;
+      const { calls, fetchImpl } = createRecordingFetch();
+      globalThis.fetch = fetchImpl;
+
+      try {
+        const client = withToken(
+          new KeycloakAdminClient({
+            baseUrl: "http://example.test",
+            realmName: "test",
+          }),
+        );
+
+        await client.serverInfo.find();
+
+        expect(calls).to.have.length(1);
+        expect(client.getFetch()).to.equal(globalThis.fetch);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
 });

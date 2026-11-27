@@ -70,6 +70,7 @@ export default function ImportForm() {
         body: contents,
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
       },
+      adminClient.getFetch(),
     );
 
     if (!response.ok) {

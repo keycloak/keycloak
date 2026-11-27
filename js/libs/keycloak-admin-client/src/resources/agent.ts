@@ -245,14 +245,18 @@ export class Agent {
     url.search = stringifyQueryParams(searchParams);
 
     try {
-      const res = await fetchWithError(url, {
-        ...requestOptions,
-        headers: requestHeaders,
-        method,
-        ...(this.#client.timeout
-          ? { signal: AbortSignal.timeout(this.#client.timeout) }
-          : {}),
-      });
+      const res = await fetchWithError(
+        url,
+        {
+          ...requestOptions,
+          headers: requestHeaders,
+          method,
+          ...(this.#client.timeout
+            ? { signal: AbortSignal.timeout(this.#client.timeout) }
+            : {}),
+        },
+        this.#client.getFetch(),
+      );
 
       // now we get the response of the http request
       // if `resourceIdInLocationHeader` is true, we'll get the resourceId from the location header field

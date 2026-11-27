@@ -36,6 +36,7 @@ export async function fetchAdminUI<T>(
       method: "GET",
       headers: buildHeaders(adminClient, accessToken),
     },
+    adminClient.getFetch(),
   );
 
   return await response.json();
@@ -63,6 +64,7 @@ export async function postAdminUI<T>(
       }),
       body: JSON.stringify(body),
     },
+    adminClient.getFetch(),
   );
 
   const text = await response.text();

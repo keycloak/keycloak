@@ -1,5 +1,5 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchAdminUI, postAdminUI } from "./admin-ui-endpoint";
 
 describe("admin-ui-endpoint", () => {
@@ -7,21 +7,16 @@ describe("admin-ui-endpoint", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    fetchMock = vi.fn().mockResolvedValue(new Response("{}"));
     adminClient = new KeycloakAdminClient({
       baseUrl: "http://localhost:8080",
       realmName: "test",
       requestOptions: { headers: { "X-Custom-Header": "custom" } },
+      fetch: fetchMock,
     });
     adminClient.registerTokenProvider({
       getAccessToken: () => Promise.resolve("token"),
     });
-
-    fetchMock = vi.fn().mockResolvedValue(new Response("{}"));
-    vi.stubGlobal("fetch", fetchMock);
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
   });
 
   const sentHeaders = () => new Headers(fetchMock.mock.calls[0][1].headers);

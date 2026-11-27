@@ -284,6 +284,7 @@ export const RealmSettingsTabs = () => {
             ...getAuthorizationHeaders(await adminClient.getAccessToken()),
           },
         },
+        adminClient.getFetch(),
       );
       if (!response.ok) throw new Error(response.statusText);
       addAlert(t("realmSaveSuccess"), AlertVariant.success);
