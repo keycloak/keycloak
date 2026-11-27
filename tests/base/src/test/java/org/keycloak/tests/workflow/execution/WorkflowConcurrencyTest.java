@@ -236,7 +236,7 @@ public class WorkflowConcurrencyTest extends AbstractWorkflowTest {
         // store the first step id for later comparison
         String firstStepId = runOnServer.fetch(session-> {
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId, session.getContext().getRealm().getId()).toList();
             assertThat(steps, hasSize(1));
             return steps.get(0).stepId();
         }, String.class);
@@ -251,7 +251,7 @@ public class WorkflowConcurrencyTest extends AbstractWorkflowTest {
             assertTrue(user.isEnabled());
 
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId, realm.getId()).toList();
             assertThat(steps, hasSize(1));
             return steps.get(0).stepId();
         }, String.class);
@@ -262,7 +262,7 @@ public class WorkflowConcurrencyTest extends AbstractWorkflowTest {
 
         runOnServer.run(session -> {
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId, session.getContext().getRealm().getId()).toList();
             // step id must remain the same as before
             assertThat(steps, hasSize(1));
             assertThat(steps.get(0).stepId(), is(secondStepId));
@@ -274,7 +274,7 @@ public class WorkflowConcurrencyTest extends AbstractWorkflowTest {
         // workflow should have been restarted or cancelled
         runOnServer.run(session -> {
             WorkflowStateProvider provider = session.getProvider(WorkflowStateProvider.class);
-            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId).toList();
+            List< WorkflowStateProvider.ScheduledStep> steps = provider.getScheduledStepsByResource(userId, session.getContext().getRealm().getId()).toList();
             // step id must be the first one now as the workflow was restarted
             if (cancelled) {
                 assertThat(steps, hasSize(0));

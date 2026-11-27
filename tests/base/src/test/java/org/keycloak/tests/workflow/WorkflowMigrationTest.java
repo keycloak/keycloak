@@ -198,7 +198,7 @@ public class WorkflowMigrationTest extends AbstractWorkflowTest {
             // the workflow state table should have a scheduled step for the user in the first workflow
             for (int i = 0; i <= 3; i++) {
                 WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-                List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userIds[i]).toList();
+                List<WorkflowStateProvider.ScheduledStep> steps = stateProvider.getScheduledStepsByResource(userIds[i], session.getContext().getRealm().getId()).toList();
                 assertThat(steps, hasSize(1));
                 assertThat(steps.get(0).workflowId(), is(secondWorkflowId));
                 assertThat(steps.get(0).stepId(), is(toStepId));

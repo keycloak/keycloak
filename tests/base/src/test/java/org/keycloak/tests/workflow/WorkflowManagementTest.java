@@ -18,6 +18,7 @@
 package org.keycloak.tests.workflow;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
 
@@ -757,10 +758,14 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         });
     }
 
-    @Test
-    @DatabaseTest
-    public void testUserRemovalOnlyDeletesOwnRealmWorkflowState() {
-        // create a workflow in the managed realm and activate it for alice
+    /**
+     * Sets up a workflow for alice in the managed realm, plus a second realm with a client whose id is
+     * forced to collide with alice's user id and an unrelated control client, both with a pending
+     * workflow step. Used to exercise realm-isolation of workflow state across a resource id collision.
+     */
+    private record CrossRealmCollisionFixture(String realmBName, String realmBId, String workflowIdA, String workflowIdB, String controlClientId) implements Serializable {}
+
+    private CrossRealmCollisionFixture createCrossRealmCollisionFixture(String realmBName) {
         WorkflowsResource workflowsRealmA = managedRealm.admin().workflows();
         String workflowIdA;
         try (Response response = workflowsRealmA.create(WorkflowRepresentation.withName("realm-a-user-workflow")
@@ -773,50 +778,55 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
         }
         workflowsRealmA.workflow(workflowIdA).activate(ResourceType.USERS.name(), userAlice.getId());
 
-        // create a second realm with a client whose id is forced to collide with alice's user id,
-        // plus an unrelated control client, both with a pending workflow step
         RealmRepresentation realmBRep = new RealmRepresentation();
-        realmBRep.setRealm("realm-b-cross-realm-state-test");
+        realmBRep.setRealm(realmBName);
         realmBRep.setEnabled(true);
         bootstrapAdmin.realms().create(realmBRep);
 
+        RealmResource realmB = bootstrapAdmin.realm(realmBName);
+        String realmBId = realmB.toRepresentation().getId();
+
+        ClientRepresentation collidingClient = new ClientRepresentation();
+        collidingClient.setId(userAlice.getId());
+        collidingClient.setClientId("colliding-client");
+        collidingClient.setEnabled(true);
+        realmB.clients().create(collidingClient).close();
+
+        String controlClientId;
+        ClientRepresentation controlClient = new ClientRepresentation();
+        controlClient.setClientId("control-client");
+        controlClient.setEnabled(true);
+        try (Response response = realmB.clients().create(controlClient)) {
+            controlClientId = ApiUtil.getCreatedId(response);
+        }
+
+        String workflowIdB;
+        try (Response response = realmB.workflows().create(WorkflowRepresentation.withName("realm-b-client-workflow")
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(DisableClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build())
+                .build())) {
+            workflowIdB = ApiUtil.getCreatedId(response);
+        }
+        realmB.workflows().workflow(workflowIdB).activate(ResourceType.CLIENTS.name(), userAlice.getId());
+        realmB.workflows().workflow(workflowIdB).activate(ResourceType.CLIENTS.name(), controlClientId);
+
+        return new CrossRealmCollisionFixture(realmBName, realmBId, workflowIdA, workflowIdB, controlClientId);
+    }
+
+    @Test
+    @DatabaseTest
+    public void testUserRemovalOnlyDeletesOwnRealmWorkflowState() {
+        CrossRealmCollisionFixture fixture = createCrossRealmCollisionFixture("realm-b-cross-realm-state-test");
+
         try {
-            RealmResource realmB = bootstrapAdmin.realm("realm-b-cross-realm-state-test");
-
-            ClientRepresentation collidingClient = new ClientRepresentation();
-            collidingClient.setId(userAlice.getId());
-            collidingClient.setClientId("colliding-client");
-            collidingClient.setEnabled(true);
-            realmB.clients().create(collidingClient).close();
-
-            String controlClientId;
-            ClientRepresentation controlClient = new ClientRepresentation();
-            controlClient.setClientId("control-client");
-            controlClient.setEnabled(true);
-            try (Response response = realmB.clients().create(controlClient)) {
-                controlClientId = ApiUtil.getCreatedId(response);
-            }
-
-            String workflowIdB;
-            try (Response response = realmB.workflows().create(WorkflowRepresentation.withName("realm-b-client-workflow")
-                    .withSteps(
-                            WorkflowStepRepresentation.create().of(DisableClientStepProviderFactory.ID)
-                                    .after(Duration.ofDays(5))
-                                    .build())
-                    .build())) {
-                workflowIdB = ApiUtil.getCreatedId(response);
-            }
-            realmB.workflows().workflow(workflowIdB).activate(ResourceType.CLIENTS.name(), userAlice.getId());
-            realmB.workflows().workflow(workflowIdB).activate(ResourceType.CLIENTS.name(), controlClientId);
-
             // verify state exists in both realms before the removal
-            final String wfIdA = workflowIdA;
-            final String wfIdB = workflowIdB;
             runOnServer.run((RunOnServer) session -> {
                 WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory()
                         .getProviderFactory(WorkflowStateProvider.class).create(session);
-                assertThat(stateProvider.getScheduledStepsByWorkflow(wfIdA).toList(), hasSize(1));
-                assertThat(stateProvider.getScheduledStepsByWorkflow(wfIdB).toList(), hasSize(2));
+                assertThat(stateProvider.getScheduledStepsByWorkflow(fixture.workflowIdA()).toList(), hasSize(1));
+                assertThat(stateProvider.getScheduledStepsByWorkflow(fixture.workflowIdB()).toList(), hasSize(2));
             });
 
             // delete alice from the managed realm; her id collides with the realm B client id
@@ -827,7 +837,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory()
                         .getProviderFactory(WorkflowStateProvider.class).create(session);
                 assertThat("alice's own workflow state should be removed",
-                        stateProvider.getScheduledStepsByWorkflow(wfIdA).toList(), hasSize(0));
+                        stateProvider.getScheduledStepsByWorkflow(fixture.workflowIdA()).toList(), hasSize(0));
             });
 
             // realm B's state for both the colliding client and the control client must remain intact
@@ -835,10 +845,38 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
                 WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory()
                         .getProviderFactory(WorkflowStateProvider.class).create(session);
                 assertThat("realm A user deletion must not remove colliding realm B client state",
-                        stateProvider.getScheduledStepsByWorkflow(wfIdB).toList(), hasSize(2));
+                        stateProvider.getScheduledStepsByWorkflow(fixture.workflowIdB()).toList(), hasSize(2));
             });
         } finally {
-            try { bootstrapAdmin.realm("realm-b-cross-realm-state-test").remove(); } catch (Exception ignored) {}
+            try { bootstrapAdmin.realm(fixture.realmBName()).remove(); } catch (Exception ignored) {}
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void testGetScheduledStepsByResourceIsScopedToRealm() {
+        CrossRealmCollisionFixture fixture = createCrossRealmCollisionFixture("realm-b-read-scope-test");
+
+        try {
+            String realmAId = managedRealm.getId();
+            String collidingId = userAlice.getId();
+
+            runOnServer.run((RunOnServer) session -> {
+                WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory()
+                        .getProviderFactory(WorkflowStateProvider.class).create(session);
+
+                List<ScheduledStep> stepsInRealmA = stateProvider.getScheduledStepsByResource(collidingId, realmAId).toList();
+                assertThat("only realm A's own workflow state for the colliding id should be returned",
+                        stepsInRealmA, hasSize(1));
+                assertThat(stepsInRealmA.get(0).workflowId(), is(fixture.workflowIdA()));
+
+                List<ScheduledStep> stepsInRealmB = stateProvider.getScheduledStepsByResource(collidingId, fixture.realmBId()).toList();
+                assertThat("only realm B's own workflow state for the colliding id should be returned",
+                        stepsInRealmB, hasSize(1));
+                assertThat(stepsInRealmB.get(0).workflowId(), is(fixture.workflowIdB()));
+            });
+        } finally {
+            try { bootstrapAdmin.realm(fixture.realmBName()).remove(); } catch (Exception ignored) {}
         }
     }
 
