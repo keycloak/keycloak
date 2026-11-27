@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -100,9 +101,12 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 waitForStart(outputHandler);
                 ReadinessProbe.waitUntilReady(this, startTimeout);
             } catch (Exception e) {
+                // Must run before the process is killed, as it inspects the still running server
+                log.error(StartupDiagnostics.collect(keycloakProcess, outputHandler.output(), getErrorOutput()));
                 ProcessUtils.killRunningProcess(keycloakProcess);
                 throw e;
             } finally {
+                outputHandler.stopRecording();
                 stderrDrainer.interrupt();
             }
 
@@ -368,6 +372,10 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
         private CountDownLatch startupLatch = new CountDownLatch(1);
 
+        // Raw lines regardless of the configured log level, to be reported if the startup fails
+        private final List<String> output = new ArrayList<>();
+        private boolean recording = true;
+
         private OutputHandler(Process process) {
             this.process = process;
         }
@@ -378,6 +386,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             try {
                 for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
+                    remember(line);
                     logLine(line);
                 }
             } catch (IOException e) {
@@ -386,6 +395,28 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 if (startupLatch.getCount() != 0) {
                     startupLatch.countDown();
                 }
+            }
+        }
+
+        private void remember(String line) {
+            synchronized (output) {
+                if (recording) {
+                    output.add(line);
+                }
+            }
+        }
+
+        // Only the startup output is of interest, don't keep growing for the lifetime of the server
+        void stopRecording() {
+            synchronized (output) {
+                recording = false;
+                output.clear();
+            }
+        }
+
+        List<String> output() {
+            synchronized (output) {
+                return List.copyOf(output);
             }
         }
 
