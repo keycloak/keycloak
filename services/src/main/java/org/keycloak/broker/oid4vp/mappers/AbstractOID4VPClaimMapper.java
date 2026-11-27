@@ -116,7 +116,7 @@ public abstract class AbstractOID4VPClaimMapper extends AbstractIdentityProvider
         if (path == null) {
             return List.of();
         }
-        return List.of(new DcqlQuery.ClaimsQuery(null, path.toClaimsPathPointer(), null));
+        return List.of(new DcqlQuery.ClaimsQuery(null, path, null));
     }
 
     @Override

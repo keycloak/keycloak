@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.keycloak.utils.JsonUtils;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -71,6 +72,7 @@ public class ClaimPath {
      * The path in DCQL notation, for example {@code ["address", "locality"]} for
      * {@code address.locality} and {@code ["nationalities", null]} for {@code nationalities[]}.
      */
+    @JsonValue
     public List<Object> toClaimsPathPointer() {
         List<Object> pointer = new ArrayList<>();
         for (Step step : steps) {
@@ -81,6 +83,27 @@ public class ClaimPath {
             }
         }
         return pointer;
+    }
+
+    /**
+     * The path in dot notation, for example {@code degrees[].type}.
+     */
+    @Override
+    public String toString() {
+        StringBuilder path = new StringBuilder();
+        for (Step step : steps) {
+            switch (step.kind()) {
+                case FIELD -> {
+                    if (!path.isEmpty()) {
+                        path.append('.');
+                    }
+                    path.append(step.field().replace(".", "\\."));
+                }
+                case ALL_ELEMENTS -> path.append("[]");
+                case FIRST_ELEMENT -> path.append("[0]");
+            }
+        }
+        return path.toString();
     }
 
     /**

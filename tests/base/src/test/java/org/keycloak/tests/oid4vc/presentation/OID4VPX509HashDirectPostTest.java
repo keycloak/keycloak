@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpDirectPostResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vpRequestObjectResponse;
@@ -346,6 +347,30 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         Oid4vpDirectPostResponse response = wallet.directPost(request, wallet.present(credential, request));
         assertEquals(400, response.getStatusCode());
         assertEquals("access_denied", response.getError());
+        assertEquals("The credential 'pid' has the type '" + sdJwtTypeCredentialVct + "', which is not requested",
+                response.getErrorDescription());
+    }
+
+    @Test
+    public void presentationDisclosingOnlyTheRequestedClaimsContinuesLogin() throws Exception {
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = requestObject();
+
+        Oid4vpDirectPostResponse response = wallet.directPost(request, OID4VCBasicWallet.vpToken(request,
+                wallet.presentationOfRequestedClaims(credential, request, CREDENTIAL_ID)));
+
+        driver.open(response.getRedirectUri());
+        assertLoginContinued();
+    }
+
+    @Test
+    public void directPostRejectsPresentationWithholdingAMappedClaim() throws Exception {
+        assertWithheldClaimRejected("lastName");
+    }
+
+    @Test
+    public void directPostRejectsPresentationWithholdingThePrincipalClaim() throws Exception {
+        assertWithheldClaimRejected("email");
     }
 
     @Test
@@ -454,6 +479,18 @@ public class OID4VPX509HashDirectPostTest extends OID4VPVerifierTestBase {
         UserRepresentation tampered = federatedUser(username);
         assertEquals("Tampered", tampered.getFirstName());
         assertNull(tampered.getAttributes().get("addressJson"));
+    }
+
+    private void assertWithheldClaimRejected(String claim) {
+        OID4VCTestContext credential = issueCredential();
+        JsonNode request = requestObject();
+
+        Oid4vpDirectPostResponse response = wallet.directPost(request, OID4VCBasicWallet.vpToken(request,
+                wallet.presentationOfRequestedClaims(credential, request, CREDENTIAL_ID, claim)));
+        assertEquals(400, response.getStatusCode());
+        assertEquals("access_denied", response.getError());
+        assertEquals("The credential 'pid' does not disclose the requested claim '" + claim + "'",
+                response.getErrorDescription());
     }
 
     private void assertLoginRejected() {

@@ -24,13 +24,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.keycloak.OID4VCConstants;
+import org.keycloak.broker.oid4vp.mappers.ClaimPath;
 import org.keycloak.broker.oid4vp.mappers.DcqlQueryContributor;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.common.VerificationException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.sdjwt.consumer.PresentationRequirements;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 /**
@@ -54,8 +59,33 @@ public record DcqlQuery(
             Meta meta,
             @JsonProperty("trusted_authorities") List<TrustedAuthoritiesQuery> trustedAuthorities,
             @JsonProperty("require_cryptographic_holder_binding") Boolean requireCryptographicHolderBinding,
-            List<ClaimsQuery> claims,
-            @JsonProperty("claim_sets") List<List<String>> claimSets) {
+            // Claims are optional, but a present claims array must not be empty (OID4VP 1.0 §6.1).
+            // Without claims only the always disclosed claims are presented.
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<ClaimsQuery> claims,
+            @JsonProperty("claim_sets") List<List<String>> claimSets) implements PresentationRequirements {
+
+        /**
+         * Requires the presented credential to have one of the requested types and to disclose the
+         * requested claims (OID4VP 1.0 §6.4.1).
+         *
+         * @see <a href="https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#section-8.6">OID4VP 1.0 §8.6 — VP Token Validation</a>
+         */
+        @Override
+        public void checkIfSatisfiedBy(JsonNode disclosedPayload) throws VerificationException {
+            JsonNode type = disclosedPayload.get(OID4VCConstants.CLAIM_NAME_VCT);
+            String vct = type != null && type.isTextual() ? type.textValue() : null;
+            if (!meta.vctValues().contains(vct)) {
+                throw new VerificationException("The credential '" + id + "' has the type '" + vct
+                        + "', which is not requested");
+            }
+            // TODO once claim sets are requested, require the claims of one claim set option instead of all claims.
+            for (ClaimsQuery claim : claims) {
+                if (!claim.isDisclosedIn(disclosedPayload)) {
+                    throw new VerificationException("The credential '" + id + "' does not disclose the requested claim '"
+                            + claim.path() + "'");
+                }
+            }
+        }
     }
 
     /**
@@ -74,13 +104,20 @@ public record DcqlQuery(
     }
 
     /**
-     * Each path element is a string for an object member, null for all array elements or a non
-     * negative integer for an array index (OID4VP 1.0 §7).
+     * The path is serialized as a DCQL claims path pointer (OID4VP 1.0 §7).
      *
      * @see <a href="https://openid.net/specs/openid-4-verifiable-presentations-1_0.html#section-6.3">OID4VP 1.0 §6.3 — Claims Query</a>
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record ClaimsQuery(String id, List<Object> path, List<Object> values) {
+    public record ClaimsQuery(String id, ClaimPath path, List<Object> values) {
+
+        /**
+         * Whether the path selects at least one claim of the disclosed payload (OID4VP 1.0 §7.1.1).
+         * A null value or an element of the wrong kind selects nothing, as in {@link ClaimPath#select}.
+         */
+        public boolean isDisclosedIn(JsonNode disclosedPayload) {
+            return !path.select(disclosedPayload).isEmpty();
+        }
     }
 
     /**
@@ -99,7 +136,7 @@ public record DcqlQuery(
     public static DcqlQuery fromMappers(KeycloakSessionFactory sessionFactory,
             Stream<IdentityProviderMapperModel> mappers, RequestedCredentials requested) {
         // A claim must not be requested twice (OID4VP 1.0 §6.1), even if several mappers read it.
-        Map<String, Map<List<Object>, ClaimsQuery>> claimsByCredential = new LinkedHashMap<>();
+        Map<String, Map<List<ClaimPath.Step>, ClaimsQuery>> claimsByCredential = new LinkedHashMap<>();
         requested.credentials().forEach(credential -> claimsByCredential.put(credential.id(), new LinkedHashMap<>()));
         mappers.sorted(Comparator.comparing(IdentityProviderMapperModel::getName)).forEach(mapper -> {
             IdentityProviderMapper target = (IdentityProviderMapper) sessionFactory
@@ -109,26 +146,24 @@ public record DcqlQuery(
                 if (requestedClaims.isEmpty()) {
                     return;
                 }
-                Map<List<Object>, ClaimsQuery> claims = claimsByCredential.get(contributor.credentialId(mapper));
+                Map<List<ClaimPath.Step>, ClaimsQuery> claims = claimsByCredential.get(contributor.credentialId(mapper));
                 if (claims == null) {
                     logger.warnf("Skipping the mapper '%s', which refers to the credential '%s' that is not requested",
                             mapper.getName(), contributor.credentialId(mapper));
                     return;
                 }
-                requestedClaims.forEach(claim -> claims.putIfAbsent(claim.path(), claim));
+                requestedClaims.forEach(claim -> claims.putIfAbsent(claim.path().steps(), claim));
             }
         });
-        List<Object> principalPath = requested.principal().claimPath().toClaimsPathPointer();
+        ClaimPath principalPath = requested.principal().claimPath();
         claimsByCredential.get(requested.principal().credential())
-                .putIfAbsent(principalPath, new ClaimsQuery(null, principalPath, null));
+                .putIfAbsent(principalPath.steps(), new ClaimsQuery(null, principalPath, null));
 
         List<CredentialQuery> credentials = requested.credentials().stream()
                 .map(credential -> {
                     Collection<ClaimsQuery> claims = claimsByCredential.get(credential.id()).values();
-                    // An empty claims array is not allowed. Without claims only the always disclosed claims are presented.
                     return new CredentialQuery(credential.id(), credential.format(), null,
-                            new Meta(List.copyOf(credential.types())), null, null,
-                            claims.isEmpty() ? null : List.copyOf(claims), null);
+                            new Meta(List.copyOf(credential.types())), null, null, List.copyOf(claims), null);
                 })
                 .toList();
         List<CredentialSetQuery> credentialSets = requested.credentialSets() == null ? null

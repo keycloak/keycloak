@@ -289,12 +289,16 @@ public class OID4VCBasicWallet {
      * binding JWT signed by {@code holderKey} and bound to the verifier ({@code audience}, {@code nonce}).
      */
     public String present(String sdJwtVc, KeyWrapper holderKey, String audience, String nonce) {
+        return SdJwtVP.of(sdJwtVc)
+                .present(null, true, keyBindingClaims(audience, nonce), new ECDSASignatureSignerContext(holderKey));
+    }
+
+    private static ObjectNode keyBindingClaims(String audience, String nonce) {
         ObjectNode keyBindingClaims = JsonSerialization.mapper.createObjectNode();
         keyBindingClaims.put("aud", audience);
         keyBindingClaims.put("nonce", nonce);
         keyBindingClaims.put("iat", Time.currentTimeSeconds());
-        return SdJwtVP.of(sdJwtVc)
-                .present(null, true, keyBindingClaims, new ECDSASignatureSignerContext(holderKey));
+        return keyBindingClaims;
     }
 
     public String requestUri(String walletUrl) {
@@ -324,6 +328,31 @@ public class OID4VCBasicWallet {
     public String presentation(OID4VCTestContext ctx, JsonNode request, String nonce) {
         String sdJwtVc = (String) ctx.getCredentialResponse().getCredentials().get(0).getCredential();
         return present(sdJwtVc, getECKeyPair(ctx), request.path("client_id").asText(), nonce);
+    }
+
+    /**
+     * Builds a presentation that discloses the requested claims of a credential and leaves out the
+     * withheld ones. The requested claims are those of the DCQL credential query with the id
+     * {@code credentialId}. Claims are matched by name, so a nested claim goes with its top level
+     * claim. Always disclosed claims like vct cannot be withheld.
+     */
+    public String presentationOfRequestedClaims(OID4VCTestContext ctx, JsonNode request, String credentialId,
+            String... withheldClaims) {
+        Set<String> disclosed = new HashSet<>();
+        for (JsonNode credential : request.path("dcql_query").path("credentials")) {
+            if (credential.path("id").asText().equals(credentialId)) {
+                credential.path("claims").forEach(claim -> claim.path("path").forEach(component -> {
+                    if (component.isTextual()) {
+                        disclosed.add(component.textValue());
+                    }
+                }));
+            }
+        }
+        disclosed.removeAll(List.of(withheldClaims));
+        String sdJwtVc = (String) ctx.getCredentialResponse().getCredentials().get(0).getCredential();
+        return SdJwtVP.of(sdJwtVc).presentWithSpecifiedClaims(List.copyOf(disclosed), false,
+                keyBindingClaims(request.path("client_id").asText(), request.path("nonce").asText()),
+                new ECDSASignatureSignerContext(getECKeyPair(ctx)));
     }
 
     /**
