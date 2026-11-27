@@ -1,0 +1,1 @@
+func_tion foo(){ return 'fail';} foo();

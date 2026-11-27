@@ -50,29 +50,7 @@ public class TimeOffSet {
      */
     public void set(int offset) throws RuntimeException {
         currentOffset = offset;
-
-        // set for tests
-        Time.setOffset(currentOffset);
-
-        // set for KC server
-        var time = Map.of(KEY_OFFSET, currentOffset, CACHES, enableForCaches);
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            String json = objectMapper.writeValueAsString(time);
-
-            HttpPut request = new HttpPut(serverUrl + TIME_OFFSET_ENDPOINT);
-            request.setEntity(new StringEntity(json));
-            request.setHeader("Content-type", "application/json");
-
-            HttpResponse response = httpClient.execute(request);
-            if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
-                var statusLine = response.getStatusLine();
-                throw new WebApplicationException(String.format("Unexpected response status for TimeOffSet: %d %s", statusLine.getStatusCode(), statusLine.getReasonPhrase()));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        setRemoteOffset(offset);
     }
 
     /**
@@ -96,5 +74,33 @@ public class TimeOffSet {
 
     public boolean hasChanged() {
         return currentOffset != 0;
+    }
+
+    private void setRemoteOffset(int offset) {
+        if (httpClient == null || serverUrl == null) {
+            throw new IllegalStateException("Remote time offset is not initialized");
+        }
+
+        // set for tests
+        Time.setOffset(offset);
+
+        // set for KC server
+        var time = Map.of(KEY_OFFSET, offset, CACHES, enableForCaches);
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String json = objectMapper.writeValueAsString(time);
+
+            HttpPut request = new HttpPut(serverUrl + TIME_OFFSET_ENDPOINT);
+            request.setEntity(new StringEntity(json));
+            request.setHeader("Content-type", "application/json");
+
+            HttpResponse response = httpClient.execute(request);
+            if (response.getStatusLine().getStatusCode() != Response.Status.OK.getStatusCode()) {
+                var statusLine = response.getStatusLine();
+                throw new WebApplicationException(String.format("Unexpected response status for TimeOffSet: %d %s", statusLine.getStatusCode(), statusLine.getReasonPhrase()));
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
