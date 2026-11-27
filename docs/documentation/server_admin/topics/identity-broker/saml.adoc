@@ -98,6 +98,12 @@ itself.
 
 When the option is *OFF*, the certificates in `Validating X509 Certificates` are used to validate signatures.
 
+|Validate metadata signature
+|When *ON*, {project_name} validates the signature of the metadata downloaded from the `Metadata descriptor URL` before the certificates in the metadata are used. This option is available when `Use metadata descriptor URL` is *ON*. The metadata must be signed with the key of one of the certificates in `Metadata signing certificates`. The signature must be the enveloped signature of the root element of the metadata document, as defined in the SAML metadata specification. If the root element is an `EntitiesDescriptor` that is not signed this way, the signature of its first `EntityDescriptor`, which is the entity {project_name} reads the certificates from, is validated instead. If the metadata is not signed, or the signature is not valid, the certificates in the metadata are not used, a warning is logged, and the certificates that are already cached are not replaced. As a consequence, a login with the identity provider fails if the certificate needed to validate its signature is not already cached. When the option is *OFF*, the signature of the metadata is not validated.
+
+|Metadata signing certificates
+|The public certificates {project_name} uses to validate the signature of the metadata when `Validate metadata signature` is *ON*. Multiple certificates can be entered separated by comma (`,`). Certificates that are expired or not yet valid are ignored. These certificates are not used to validate the signatures of SAML requests and responses, and the certificates and keys included in the metadata document are never used to validate its signature.
+
 |Validating X509 Certificates
 |The public certificates {project_name} uses to validate the signatures of SAML requests and responses from the external IDP when `Use metadata descriptor URL` is *OFF*. Multiple certificates can be entered separated by comma (`,`). The certificates can be re-imported from the `Metadata descriptor URL` clicking the `Import Keys` action in the identity provider page. The action downloads the current certificates in the metadata endpoint and assigns them to the config in this same option. You need to click `Save` to definitely store the re-imported certificates.
 

@@ -48,6 +48,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.useMetadataDescriptorUrl",
   });
 
+  const validateMetadataSignature = useWatch({
+    control,
+    name: "config.validateMetadataSignature",
+  });
+
   const principalType = useWatch({
     control,
     name: "config.principalType",
@@ -320,6 +325,26 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
                 labelIcon={t("validatingX509CertsHelp")}
                 readOnly={readOnly}
               />
+            )}
+            {useMetadataDescriptorUrl === "true" && (
+              <>
+                <DefaultSwitchControl
+                  name="config.validateMetadataSignature"
+                  label={t("validateMetadataSignature")}
+                  labelIcon={t("validateMetadataSignatureHelp")}
+                  isDisabled={readOnly}
+                  stringify
+                />
+                {validateMetadataSignature === "true" && (
+                  <TextAreaControl
+                    name="config.metadataSigningCertificate"
+                    label={t("metadataSigningCertificate")}
+                    labelIcon={t("metadataSigningCertificateHelp")}
+                    readOnly={readOnly}
+                    rules={{ required: t("required") }}
+                  />
+                )}
+              </>
             )}
           </>
         )}

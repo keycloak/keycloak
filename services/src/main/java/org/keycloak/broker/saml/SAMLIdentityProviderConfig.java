@@ -68,6 +68,8 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
+    public static final String VALIDATE_METADATA_SIGNATURE = "validateMetadataSignature";
+    public static final String METADATA_SIGNING_CERTIFICATE = "metadataSigningCertificate";
     public static final String DESCRIPTOR_CACHE_SECONDS = "descriptorCacheSeconds";
     public static final String ONE_TIME_USE_MAX_AGE_SECONDS = "oneTimeUseMaxAgeSeconds";
     public static final long DEFAULT_ONE_TIME_USE_MAX_AGE_SECONDS = 60 * 60;
@@ -440,6 +442,27 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         return Boolean.parseBoolean(getConfig().get(USE_METADATA_DESCRIPTOR_URL));
     }
 
+    public void setValidateMetadataSignature(boolean validateMetadataSignature) {
+        getConfig().put(VALIDATE_METADATA_SIGNATURE, String.valueOf(validateMetadataSignature));
+    }
+
+    public boolean isValidateMetadataSignature() {
+        return Boolean.parseBoolean(getConfig().get(VALIDATE_METADATA_SIGNATURE));
+    }
+
+    public void setMetadataSigningCertificate(String metadataSigningCertificate) {
+        getConfig().put(METADATA_SIGNING_CERTIFICATE, metadataSigningCertificate);
+    }
+
+    public String[] getMetadataSigningCertificates() {
+        String crt = getConfig().get(METADATA_SIGNING_CERTIFICATE);
+        if (StringUtil.isBlank(crt)) {
+            return new String[] { };
+        }
+        // multiple certificates are separated by comma, like the certificates in the signing certificate option
+        return crt.split(",");
+    }
+
     public Long getDescriptorCacheSeconds() {
         String descriptorCacheSeconds = getConfig().get(DESCRIPTOR_CACHE_SECONDS);
         if (descriptorCacheSeconds != null && !descriptorCacheSeconds.isEmpty()) {
@@ -475,6 +498,9 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         if (isUseMetadataDescriptorUrl()) {
             if (StringUtil.isBlank(getMetadataDescriptorUrl())) {
                 throw new IllegalArgumentException(USE_METADATA_DESCRIPTOR_URL + " needs a non-empty URL for " + METADATA_DESCRIPTOR_URL);
+            }
+            if (isValidateMetadataSignature() && getMetadataSigningCertificates().length == 0) {
+                throw new IllegalArgumentException(VALIDATE_METADATA_SIGNATURE + " needs a non-empty certificate for " + METADATA_SIGNING_CERTIFICATE);
             }
         }
         if (StringUtil.isNotBlank(getArtifactResolutionServiceUrl())) {

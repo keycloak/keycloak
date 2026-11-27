@@ -36,6 +36,15 @@ This protects brokered logins against assertion replay, in particular in IdP-ini
 How long a consumed assertion is remembered is bounded by the new *OneTimeUse maximum age* setting of the SAML identity provider, which defaults to 1 hour.
 See the upgrading guide for details.
 
+== Signature validation for SAML identity provider metadata
+// https://github.com/keycloak/keycloak/issues/54972
+
+When *Use metadata descriptor URL* is enabled for a SAML identity provider, the certificates used to validate the signatures of the identity provider are downloaded from its metadata, and the integrity of the metadata depends on the configured URL and its transport.
+With the new *Validate metadata signature* setting, {project_name} only uses the certificates in the metadata if the metadata is signed with one of the certificates configured in *Metadata signing certificates*.
+The setting is disabled by default, so existing identity providers are not affected.
+
+For more details, see the SAML v2.0 Identity Providers section of the link:{adminguide_link}[{adminguide_name}].
+
 == Credential ID in credential update events
 
 The `UPDATE_CREDENTIAL` events emitted by built-in required actions now carry the `credential_id` detail when a credential was created or updated in the {project_name} credential store, as the `REMOVE_CREDENTIAL` event already did. The detail is omitted when an external user-storage provider handles the update because there is no {project_name} credential ID to report.
