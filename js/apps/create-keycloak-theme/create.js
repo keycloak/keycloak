@@ -30,12 +30,24 @@ function parseType(value) {
 
 async function promptType() {
   const rl = createInterface({ input, output });
+  const closed = new Promise((_, reject) => {
+    rl.once("close", () => {
+      reject(
+        new Error(
+          "Input closed before a theme type was selected. Pass the type as an argument, for example: npm create keycloak-theme my-theme admin",
+        ),
+      );
+    });
+  });
   try {
     for (;;) {
       const answer = (
-        await rl.question(
-          `Select a type (${TYPES.map((t) => chalk.green(t)).join(" / ")}): `,
-        )
+        await Promise.race([
+          rl.question(
+            `Select a type (${TYPES.map((t) => chalk.green(t)).join(" / ")}): `,
+          ),
+          closed,
+        ])
       )
         .trim()
         .toLowerCase();
@@ -69,13 +81,18 @@ function main() {
       parseType,
     )
     .action(async (name, typeArg, options) => {
-      const type = options.type || typeArg || (await promptType());
-      console.log(
-        `Creating a new ${chalk.green(name)} project of type ${chalk.green(type)}`,
-      );
+      try {
+        const type = options.type || typeArg || (await promptType());
+        console.log(
+          `Creating a new ${chalk.green(name)} project of type ${chalk.green(type)}`,
+        );
 
-      await createProject(name, type);
-      done(name);
+        await createProject(name, type);
+        done(name);
+      } catch (error) {
+        console.error(chalk.red(error instanceof Error ? error.message : error));
+        process.exitCode = 1;
+      }
     })
     .on("--help", () => {
       console.log();
