@@ -563,12 +563,13 @@ public class LDAPOperationManager {
             // Prepare to receive password policy response control.
             env.put(LdapContext.CONTROL_FACTORIES, PasswordPolicyControlFactory.class.getName());
 
-            // Create connection but avoid triggering automatic bind request by not setting security principal and credentials yet.
-            // That allows us to send optional StartTLS request before binding.
-            authCtx = new InitialLdapContext(env, null);
-
-            // Send StartTLS request and setup SSL context if needed.
             if (config.isStartTls()) {
+                // Create connection but avoid triggering automatic bind request by not setting security principal and credentials yet.
+                // That allows us to send StartTLS request before binding.
+                // Note: failover between multiple connection URLs only happens during context creation, so a bind failure
+                // after StartTLS will not fail over to the next URL.
+                authCtx = new InitialLdapContext(env, null);
+
                 SSLSocketFactory sslSocketFactory = null;
                 if (LDAPUtil.shouldUseTruststoreSpi(config)) {
                     TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
@@ -581,15 +582,24 @@ public class LDAPOperationManager {
                 if (tlsResponse == null) {
                     throw new AuthenticationException("Null TLS Response returned from the authentication");
                 }
+
+                // Configure given credentials.
+                authCtx.addToEnvironment(Context.SECURITY_AUTHENTICATION, "simple");
+                authCtx.addToEnvironment(Context.SECURITY_PRINCIPAL, dn.toString());
+                authCtx.addToEnvironment(Context.SECURITY_CREDENTIALS, password);
+
+                // Send bind request. Throws AuthenticationException when authentication fails.
+                authCtx.reconnect(getControls());
+            } else {
+                // Bind during context creation so that JNDI can fail over to the next URL of a multi-URL connection URL
+                // when a server accepts the connection but fails to answer the bind (e.g. read timeout). Failover is
+                // only performed during context creation, not by reconnect(). Request controls are sent with the bind
+                // and response controls (e.g. password policy) are available via getResponseControls().
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
+                env.put(Context.SECURITY_PRINCIPAL, dn.toString());
+                env.put(Context.SECURITY_CREDENTIALS, password);
+                authCtx = new InitialLdapContext(env, getControls());
             }
-
-            // Configure given credentials.
-            authCtx.addToEnvironment(Context.SECURITY_AUTHENTICATION, "simple");
-            authCtx.addToEnvironment(Context.SECURITY_PRINCIPAL, dn.toString());
-            authCtx.addToEnvironment(Context.SECURITY_CREDENTIALS, password);
-
-            // Send bind request. Throws AuthenticationException when authentication fails.
-            authCtx.reconnect(getControls());
 
             // Check for password policy response control in the response.
             // If present and forced password change is required, throw an exception.
