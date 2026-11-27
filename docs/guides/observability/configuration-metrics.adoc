@@ -53,6 +53,14 @@ system_load_average_1m 4.005859375
 ...
 ----
 
+== LDAP request metrics
+
+LDAP federation can record request duration metrics when the experimental `ldap-metrics` feature and server metrics are enabled (`--features=ldap-metrics --metrics-enabled=true`). The `--spi-storage--ldap--metrics-enabled=false` startup option disables these metrics for all LDAP providers.
+
+To include percentile histogram buckets for LDAP request durations, set `--spi-storage--ldap--metrics-histograms-enabled=true`. To add explicit service level objective (SLO) buckets in milliseconds, set `--spi-storage--ldap--metrics-histogram-slots=5,10,25,50,250`. You can configure explicit buckets on their own or together with the default histogram buckets.
+
+Both histogram settings are disabled or unset by default. Enabling histograms increases the number of exported time series.
+
 == Next steps
 
 Read the {sections} <@links.observability id="keycloak-service-level-indicators"/> and <@links.observability id="metrics-for-troubleshooting"/> to see how to use the metrics.
