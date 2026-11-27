@@ -14,9 +14,9 @@ import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -54,7 +54,7 @@ public class OpenshiftV4IdentityProvider extends AbstractOAuth2IdentityProvider<
                 throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode());
             }
             try (InputStream content = response.getEntity().getContent()) {
-                return new ObjectMapper().readValue(content, Map.class);
+                return JsonSerialization.readValue(content, Map.class);
             }
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not initialize oAuth metadata", e);

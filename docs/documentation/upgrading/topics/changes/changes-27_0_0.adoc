@@ -847,6 +847,31 @@ As a workaround, use the default value of a property that is not defined, for ex
 This did not work before, as the `$` prevented the placeholder from being closed.
 It only works as long as the property is not defined.
 
+=== REST layer uses the Quarkus managed `ObjectMapper`
+
+The Admin REST API and the other REST endpoints now use the `ObjectMapper` that is managed by Quarkus, instead of one created by {project_name}.
+{project_name} applies its own configuration on top of it.
+
+==== JSON properties of custom representations with the `http-optimized-serializers` feature
+
+When the preview feature `http-optimized-serializers` is enabled, {project_name} uses serializers that Quarkus generates at build time instead of reflection.
+These generated serializers are created for every class that a REST endpoint accepts or returns, including the representations of custom extensions.
+They derive the property name from the getter name by lowercasing only the first character.
+Jackson without this feature lowercases all leading uppercase characters.
+
+As a result, a getter that starts with two or more consecutive uppercase characters is serialized under a different name.
+For example, `getOAuth2DeviceCodeLifespan()` is serialized as `oAuth2DeviceCodeLifespan` instead of `oauth2DeviceCodeLifespan`, and `getOIDCRequest()` as `oIDCRequest` instead of `oidcrequest`.
+Clients that deserialize with the standard names then fail with an unrecognized field error.
+
+{project_name} sets the names explicitly on its own representations, so the Admin REST API is not affected.
+Custom extensions that provide an endpoint with their own representation, and that enable this feature, must do the same for such getters.
+Add `@JsonProperty("<name>")` with the intended name to the getter.
+Representations whose getters start with a single uppercase character followed by a lowercase character, such as `getName()`, are not affected.
+
+The generated serializers also skip a property that is declared as a non-public field annotated with `@JsonProperty` but has no public getter.
+The property is then missing from the response without any error, and clients see `null` for it.
+Add a public getter for such fields, annotated with `@JsonProperty` when the JSON name differs from the getter-derived name.
+
 === Client ID Metadata Document executor verifies the back-channel URLs of the client metadata
 // https://github.com/keycloak/keycloak/issues/55378
 

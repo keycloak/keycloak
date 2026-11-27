@@ -21,12 +21,12 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.scim.ClientResourceTypeProvider;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
-import org.keycloak.services.util.ObjectMapperResolver;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -37,9 +37,6 @@ import com.fasterxml.jackson.databind.ObjectReader;
 
 
 public class DefaultClientApi implements ClientApi {
-    
-    private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null).copy()
-            .configure(DeserializationFeature.FAIL_ON_TRAILING_TOKENS, true);
     
     private final KeycloakSession session;
     private final String clientId;
@@ -123,11 +120,12 @@ public class DefaultClientApi implements ClientApi {
                 case JSON_MERGE -> {
                     JsonNode patchNode;
                     try {
-                        patchNode = MAPPER.readValue(patch, JsonNode.class);
+                        ObjectMapper mapper = ((DefaultKeycloakSessionFactory) session.getKeycloakSessionFactory()).getObjectMapper();
+                        patchNode = mapper.reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readValue(patch, JsonNode.class);
                         if (!patchNode.isObject()) {
                             throw new WebApplicationException("Cannot replace client resource with non-object", Response.Status.BAD_REQUEST);
                         }
-                        final ObjectReader objectReader = MAPPER.readerForUpdating(current);
+                        final ObjectReader objectReader = mapper.readerForUpdating(current);
                         updated = objectReader.readValue(patchNode);
                     } catch (JsonMappingException e) {
                         if (e.getPath().isEmpty()) {

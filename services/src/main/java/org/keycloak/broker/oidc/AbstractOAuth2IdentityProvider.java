@@ -176,7 +176,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     public static final String ACCESS_DENIED = "access_denied";
-    protected static ObjectMapper mapper = new ObjectMapper();
+    protected static ObjectMapper mapper = JsonSerialization.mapper;
 
     public static final String OAUTH2_PARAMETER_ACCESS_TOKEN = "access_token";
     public static final String OAUTH2_PARAMETER_SCOPE = "scope";

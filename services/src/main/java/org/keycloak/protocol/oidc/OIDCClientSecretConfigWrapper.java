@@ -1,5 +1,6 @@
 package org.keycloak.protocol.oidc;
 
+import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
@@ -17,10 +18,8 @@ import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_CREATION_TIME;
@@ -256,7 +255,6 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     public String toJson() {
-        ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> map = new HashMap<>();
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
@@ -270,8 +268,8 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
             map.put("rotatedSecretCreationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientRotatedSecretCreationTime()))));
             map.put("rotatedSecretExpirationTimeSeconds", getClientRotatedSecretExpirationTime());
             map.put("rotatedSecretExpirationTime", sdf.format(new Date(TimeUnit.SECONDS.toMillis(getClientRotatedSecretExpirationTime()))));
-            return mapper.writeValueAsString(map);
-        } catch (JsonProcessingException e) {
+            return JsonSerialization.writeValueAsString(map);
+        } catch (IOException e) {
             return "";
         }
     }

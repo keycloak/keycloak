@@ -24,6 +24,7 @@ import java.util.Optional;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jws.crypto.HashUtils;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,7 +40,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
  */
 public class SdJwtUtils {
 
-    public static final ObjectMapper mapper = new ObjectMapper();
+    public static final ObjectMapper mapper = JsonSerialization.plainMapper;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     public static String encodeNoPad(byte[] bytes) {
@@ -125,13 +126,10 @@ public class SdJwtUtils {
     static ArraySpacedPrettyPrinter arraySpacedPrettyPrinter = new ArraySpacedPrettyPrinter();
 
     static class ArraySpacedPrettyPrinter extends MinimalPrettyPrinter {
-        final ObjectMapper prettyPrinObjectMapper;
         final ObjectWriter writer;
 
         public ArraySpacedPrettyPrinter() {
-            prettyPrinObjectMapper = new ObjectMapper();
-            prettyPrinObjectMapper.setDefaultPrettyPrinter(this);
-            writer = prettyPrinObjectMapper.writer(this);
+            writer = JsonSerialization.plainMapper.writer(this);
         }
 
         @Override

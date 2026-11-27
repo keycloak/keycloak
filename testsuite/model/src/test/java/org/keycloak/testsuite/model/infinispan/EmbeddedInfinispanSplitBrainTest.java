@@ -146,8 +146,26 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
          awaitBarrier(barrier);
 
          if (index == 0) {
+            // Remove the cached entry so that it can only reappear through the reload triggered by the split view change
+            inComittedTransaction(session -> {
+               session.getProvider(InfinispanConnectionProvider.class)
+                     .<String, SingleUseObjectValueEntity>getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE)
+                     .remove(tokenId + SingleUseObjectProvider.REVOKED_KEY);
+            });
             partitionManager.splitCluster(new int[]{0}, new int[]{1});
          }
+         awaitBarrier(barrier);
+
+         // Wait for the asynchronous reload triggered by the split view change to restore the token in each partition,
+         // so that it cannot restore the entry again after it is removed below
+         await("Split-induced token reload finished")
+               .atMost(Duration.ofSeconds(10))
+               .pollInterval(Duration.ofMillis(100))
+               .pollInSameThread()
+               .until(() -> {
+                  Function<KeycloakSession, Boolean> contains = session -> session.revokedTokens().contains(tokenId);
+                  return inComittedTransaction(contains);
+               });
          awaitBarrier(barrier);
 
          // Simulate both partitions losing the cached entry while the database and cluster-wide startup marker survive.
@@ -155,6 +173,7 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
             var cache = session.getProvider(InfinispanConnectionProvider.class)
                   .<String, SingleUseObjectValueEntity>getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
             cache.remove(tokenId + SingleUseObjectProvider.REVOKED_KEY);
+            cache.put(InfinispanSingleUseObjectProviderFactory.LOADED, new SingleUseObjectValueEntity(java.util.Collections.emptyMap()));
             assertNotNull(cache.get(InfinispanSingleUseObjectProviderFactory.LOADED));
             assertFalse(session.revokedTokens().contains(tokenId));
          });
