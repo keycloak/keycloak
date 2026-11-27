@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
 import org.keycloak.authorization.Decision.Effect;
+import org.keycloak.authorization.fgap.evaluation.partial.GroupResourceTypePolicyEvaluator;
 import org.keycloak.authorization.fgap.evaluation.partial.ResourceTypePolicyEvaluator;
 import org.keycloak.authorization.fgap.evaluation.partial.UserResourceTypePolicyEvaluator;
 import org.keycloak.authorization.model.Policy;
@@ -37,6 +38,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
 /**
@@ -44,7 +46,9 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOU
  */
 public final class FGAPPolicyEvaluator extends DefaultPolicyEvaluator {
 
-    private final Map<String, ? extends ResourceTypePolicyEvaluator> resourceTypePolicyEvaluators = Map.of(USERS_RESOURCE_TYPE, new UserResourceTypePolicyEvaluator());
+    private final Map<String, ? extends ResourceTypePolicyEvaluator> resourceTypePolicyEvaluators = Map.of(
+            USERS_RESOURCE_TYPE, new UserResourceTypePolicyEvaluator(),
+            GROUPS_RESOURCE_TYPE, new GroupResourceTypePolicyEvaluator());
 
     @Override
     public void evaluate(ResourcePermission permission, AuthorizationProvider authorizationProvider, EvaluationContext executionContext, Decision decision, Map<Policy, Map<Object, Effect>> decisionCache) {

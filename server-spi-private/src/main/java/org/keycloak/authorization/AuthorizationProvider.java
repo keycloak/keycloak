@@ -453,6 +453,11 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
+            public boolean existsByResourceTypeAndConfig(ResourceServer resourceServer, String resourceType, String configKey, String configValue) {
+                return policyStore.existsByResourceTypeAndConfig(resourceServer, resourceType, configKey, configValue);
+            }
+
+            @Override
             public void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
                 policyStore.findByResourceType(resourceServer, type, policyConsumer);
             }

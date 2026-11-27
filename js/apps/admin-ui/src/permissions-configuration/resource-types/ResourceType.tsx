@@ -8,6 +8,7 @@ import { UserSelect } from "../../components/users/UserSelect";
 import { RoleSelect } from "./RoleSelect";
 import { ClientSelectComponent } from "./ClientSelectComponent";
 import { OrganizationSelect } from "./OrganizationSelect";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 type ResourceTypeProps = {
   withEnforceAccessTo?: boolean;
@@ -73,6 +74,9 @@ export const ResourceType = ({
             onChange={() => {
               setIsSpecificResources(false);
               form.setValue("resources", []);
+              if (normalizedResourceType === "groups") {
+                form.setValue("config.extendChildren", "false");
+              }
             }}
             className="pf-v5-u-mb-md"
           />
@@ -103,6 +107,17 @@ export const ResourceType = ({
           isRadio={!withEnforceAccessTo}
         />
       )}
+      {withEnforceAccessTo &&
+        isSpecificResources &&
+        normalizedResourceType === "groups" && (
+          <DefaultSwitchControl
+            name="config.extendChildren"
+            label={t("extendToChildren")}
+            labelIcon={t("extendToChildrenPermissionHelp")}
+            defaultValue="false"
+            stringify
+          />
+        )}
     </>
   );
 };
