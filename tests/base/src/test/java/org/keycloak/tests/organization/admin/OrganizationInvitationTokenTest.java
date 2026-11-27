@@ -56,6 +56,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
@@ -151,6 +152,35 @@ public class OrganizationInvitationTokenTest extends AbstractOrganizationTest {
         assertEquals("http://localhost:8080/app-one", parameters.getFirst("redirect_uri"));
 
         // Without an explicit redirect_uri the registration endpoint rejects the link with "Invalid parameter: redirect_uri"
+        driver.open(link);
+        registerPage.assertCurrent();
+    }
+
+    @Test
+    public void testRegistrationLinkOmitsRedirectUriWhenClientBaseUrlIsNotARegisteredRedirectUri() throws IOException {
+        realm.updateWithCleanup(r -> r.registrationAllowed(true));
+        realm.cleanup().add(r -> r.users().searchByEmail(INVITEE_EMAIL, true)
+                .forEach(user -> r.users().get(user.getId()).remove()));
+        String clientId = "home-url-app";
+        try (Response response = realm.admin().clients().create(ClientBuilder.create(clientId)
+                .name(clientId)
+                .secret("secret")
+                .baseUrl("http://localhost:8080/home")
+                .redirectUris("http://localhost:8080/callback/*")
+                .build())) {
+            String id = ApiUtil.getCreatedId(response);
+            realm.cleanup().add(r -> r.clients().get(id).remove());
+        }
+        OrganizationResource organization = realm.admin().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(INVITEE_EMAIL, "Invited", "User", clientId).close();
+
+        String link = getInvitationLink(mailServer);
+        var parameters = UriUtils.parseQueryParameters(URI.create(link).getRawQuery(), true);
+        assertEquals(clientId, parameters.getFirst("client_id"));
+        // The client base URL is not a registered redirect URI, so it must not be appended; the registration endpoint
+        // then falls back to the client's single redirect URI, so the link still resolves to the registration page.
+        assertNull(parameters.getFirst("redirect_uri"));
+
         driver.open(link);
         registerPage.assertCurrent();
     }

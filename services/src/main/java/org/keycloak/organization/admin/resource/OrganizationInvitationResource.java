@@ -233,9 +233,13 @@ public class OrganizationInvitationResource {
                 .queryParam(Constants.TOKEN, createToken(user, invitation, invitationTarget));
 
         // the registration endpoint only fills in a missing redirect_uri when the client has exactly one redirect URI,
-        // so pass the already resolved and validated redirect URI explicitly
+        // so pass the resolved redirect URI explicitly. Only append it when it is a valid redirect URI for the client:
+        // a client base URL that is not itself a registered redirect URI must not override the single-redirect-URI fallback.
         if (!StringUtil.isBlank(invitationTarget.redirectUri)) {
-            builder.queryParam(OAuth2Constants.REDIRECT_URI, invitationTarget.redirectUri);
+            ClientModel client = realm.getClientByClientId(invitationTarget.clientId);
+            if (client != null && RedirectUtils.verifyRedirectUri(session, invitationTarget.redirectUri, client) != null) {
+                builder.queryParam(OAuth2Constants.REDIRECT_URI, invitationTarget.redirectUri);
+            }
         }
 
         return builder.buildFromMap(Map.of("realm", realm.getName(), "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL)).toString();
