@@ -213,6 +213,12 @@ public class ComponentResource {
                 session.setAttribute(SECRET_PLACEHOLDER_FIELDS_ATTR, secretPlaceholderFields);
             }
             RepresentationToModel.updateComponent(session, rep, model, false);
+            if (rep.getProviderType() == null) {
+                rep.setProviderType(model.getProviderType());
+            }
+            if (rep.getProviderId() == null) {
+                rep.setProviderId(model.getProviderId());
+            }
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             realm.updateComponent(model);
             return Response.noContent().build();
