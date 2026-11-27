@@ -382,7 +382,12 @@ export const GroupTree = ({
       }}
       inputGroupName="searchForGroups"
       inputGroupPlaceholder={t("searchForGroups")}
-      inputGroupOnEnter={setSearch}
+      inputGroupOnEnter={(value) => {
+        if (value !== search) {
+          setFirst(0);
+          setSearch(value);
+        }
+      }}
       toolbarItem={
         <InputGroup className="pf-v5-u-pt-sm">
           <InputGroupItem>
@@ -391,7 +396,12 @@ export const GroupTree = ({
               data-testid="exact-search"
               name="exact"
               isChecked={exact}
-              onChange={(_event, value) => setExact(value)}
+              onChange={(_event, value) => {
+                if (search) {
+                  setFirst(0);
+                }
+                setExact(value);
+              }}
               className="pf-v5-u-mr-xs"
             />
           </InputGroupItem>

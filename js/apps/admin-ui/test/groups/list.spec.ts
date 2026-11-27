@@ -163,3 +163,60 @@ test.describe.serial("Search group under current group", () => {
     await assertAxeViolations(page);
   });
 });
+
+test("Restarts group tree pagination when the search changes", async ({
+  page,
+}) => {
+  const groupName = "paginated-group";
+  const groups = [
+    { name: groupName },
+    ...Array.from({ length: 20 }, (_, index) => ({
+      name: `${groupName}-${index}`,
+    })),
+  ];
+  await using testBed = await createTestBed({ groups });
+  await login(page);
+  await goToRealm(page, testBed.realm);
+  await goToGroups(page);
+
+  const tree = page.getByRole("tree");
+  const firstGroup = tree.getByText(groupName, { exact: true });
+  const searchGroup = page.getByTestId("searchForGroups");
+  const search = searchGroup.getByPlaceholder("Search group");
+  const toolbar = page
+    .getByTestId("table-toolbar")
+    .filter({ has: searchGroup });
+  const nextPage = toolbar.getByLabel("Go to next page");
+  const previousPage = toolbar.getByLabel("Go to previous page");
+
+  await expect(firstGroup).toBeVisible();
+  await nextPage.click();
+  await expect(firstGroup).toBeHidden();
+
+  await search.fill(`${groupName}-19`);
+  await search.press("Enter");
+  await expect(
+    tree.getByText(`${groupName}-19`, { exact: true }),
+  ).toBeVisible();
+
+  await search.fill(groupName);
+  await search.press("Enter");
+  await expect(firstGroup).toBeVisible();
+  await nextPage.click();
+  await expect(firstGroup).toBeHidden();
+
+  await search.press("Enter");
+  await expect(previousPage).toBeEnabled();
+
+  await searchGroup.getByRole("button", { name: "Reset", exact: true }).click();
+  await expect(firstGroup).toBeVisible();
+
+  await search.fill(groupName);
+  await search.press("Enter");
+  await nextPage.click();
+  await expect(firstGroup).toBeHidden();
+
+  await toolbar.getByTestId("exact-search").check();
+  await expect(firstGroup).toBeVisible();
+  await expect(tree.getByRole("treeitem")).toHaveCount(1);
+});
