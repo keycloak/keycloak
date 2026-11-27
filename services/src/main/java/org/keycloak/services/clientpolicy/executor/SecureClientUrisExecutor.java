@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
@@ -77,7 +78,7 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
             case REGISTER:
                 if (context instanceof AdminClientRegisterContext || context instanceof DynamicClientRegisterContext) {
                     ClientRepresentation clientRep = ((ClientCRUDContext)context).getProposedClientRepresentation();
-                    confirmSecureUris(clientRep);
+                    confirmSecureUris(clientRep, null);
 
                     // Use rootUrl as default redirectUrl to avoid creation of redirectUris with wildcards, which is done at later stages during client creation
                     if (clientRep.getRootUrl() != null && (clientRep.getRedirectUris() == null || clientRep.getRedirectUris().isEmpty())) {
@@ -90,7 +91,8 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
                 return;
             case UPDATE:
                 if (context instanceof AdminClientUpdateContext || context instanceof DynamicClientUpdateContext) {
-                    confirmSecureUris(((ClientCRUDContext) context).getProposedClientRepresentation());
+                    ClientCRUDContext crudContext = (ClientCRUDContext) context;
+                    confirmSecureUris(crudContext.getProposedClientRepresentation(), crudContext.getTargetClient());
                 } else {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "not allowed input format.");
                 }
@@ -102,14 +104,17 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Se
         }
     }
 
-    private void confirmSecureUris(ClientRepresentation clientRep) throws ClientPolicyException {
-        ClientUriField.validate(clientRep, (field, values) -> {
+    private void confirmSecureUris(ClientRepresentation clientRep, ClientModel storedClient) throws ClientPolicyException {
+        String rootUrl = ClientUriField.ROOT_URL.getValues(clientRep, storedClient).stream().findFirst().orElse(null);
+        List<String> redirectUris = ClientUriField.REDIRECT_URIS.getValues(clientRep, storedClient);
+
+        ClientUriField.validate(clientRep, storedClient, (field, values) -> {
             if (field == ClientUriField.WEB_ORIGINS || field == ClientUriField.POST_LOGOUT_REDIRECT_URIS) {
                 if (field == ClientUriField.POST_LOGOUT_REDIRECT_URIS) {
                     values = values.stream().filter(value -> !"-".equals(value)).toList();
                 }
-                values = List.copyOf(RedirectUtils.resolveUrlsWithRedirects(session, values, clientRep.getRootUrl(),
-                        clientRep.getRedirectUris(), field == ClientUriField.WEB_ORIGINS));
+                values = List.copyOf(RedirectUtils.resolveUrlsWithRedirects(session, values, rootUrl,
+                        redirectUris, field == ClientUriField.WEB_ORIGINS));
             }
             String errorName = switch (field) {
                 case BACKCHANNEL_LOGOUT_URL -> "logoutUrl";

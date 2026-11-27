@@ -86,6 +86,23 @@ General validation also preserves the legacy web origin literals `${authAdminUrl
 Trusted Hosts resolves relative logo URLs against the {project_name} frontend URL and checks that host against its allowlist. The client's root URL does not determine where the browser loads a logo.
 The pattern executor continues to match literal configured values, including markers and relative URLs, and respects an explicit field selection. Sector identifier URLs in pairwise protocol mappers remain subject to their separate validation.
 
+=== Secure client URI executors validate the stored client on update
+// https://github.com/keycloak/keycloak/issues/53952
+
+The *Secure Client URIs* and *Secure Client URIs Pattern* executors now validate the client state that the update produces, instead of the submitted representation alone.
+A URI field that the update payload does not carry keeps its stored value, so that value is checked again.
+
+A partial update therefore fails when the client still holds a non-compliant URI, even when the update does not touch that field.
+This situation occurs for clients registered before the policy was enabled.
+Correct those URIs, or submit them with compliant values in the same update, before updating such clients.
+
+A field submitted with an empty value is cleared and is no longer checked, so an update can remove a non-compliant URI.
+
+Web origins follow the same fallback as persistence.
+A client that holds no web origin of its own has the origins of its redirect URIs persisted, so those derived origins are now validated too, both on registration and on update.
+A request that only sets redirect URIs can therefore be rejected by a policy that selects `webOrigins`.
+Apart from those derived origins, client registration is unchanged, because no stored client exists to merge with.
+
 === Login theme moved to `keycloak.v3` and PatternFly 6
 // https://github.com/keycloak/keycloak/issues/52342
 

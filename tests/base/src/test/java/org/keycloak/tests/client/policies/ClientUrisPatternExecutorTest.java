@@ -324,6 +324,73 @@ public class ClientUrisPatternExecutorTest extends AbstractClientPoliciesTest {
         Assertions.assertEquals("Invalid " + fieldName, cpe.getErrorDetail());
     }
 
+    @Test
+    public void testPartialUpdateRevalidatesUrisStoredBeforeThePolicyWasEnabled() throws Exception {
+        String id = createClientByAdmin(realm, generateSuffixedName("pre-existing-uri"), OIDCLoginProtocol.LOGIN_PROTOCOL,
+                client -> {
+                    client.setRedirectUris(List.of(VALID_URL));
+                    client.setAttributes(Map.of(OIDCConfigAttributes.JWKS_URL, INVALID_URL));
+                });
+        setupPolicy(List.of(SAFE_PATTERN), List.of("jwksUri"));
+
+        ClientRepresentation partial = new ClientRepresentation();
+        partial.setDescription("updated description");
+        ClientPolicyException error = Assertions.assertThrows(ClientPolicyException.class,
+                () -> updateClientByAdminPartial(realm, id, partial));
+        Assertions.assertEquals("Invalid jwksUri", error.getErrorDetail());
+
+        ClientResource resource = realm.admin().clients().get(id);
+        Assertions.assertNull(resource.toRepresentation().getDescription());
+
+        ClientRepresentation replacement = new ClientRepresentation();
+        replacement.setAttributes(Map.of(OIDCConfigAttributes.JWKS_URL, VALID_URL));
+        updateClientByAdminPartial(realm, id, replacement);
+        Assertions.assertEquals(VALID_URL, resource.toRepresentation().getAttributes().get(OIDCConfigAttributes.JWKS_URL));
+    }
+
+    @Test
+    public void testUpdateRevalidatesWebOriginsDerivedFromTheUpdatedRedirectUris() throws Exception {
+        // a client without redirect URIs stores no web origin, so persistence later derives them from the updated ones
+        String id = createClientByAdmin(realm, generateSuffixedName("derived-origins"), OIDCLoginProtocol.LOGIN_PROTOCOL,
+                client -> client.setRedirectUris(List.of()));
+        ClientResource resource = realm.admin().clients().get(id);
+        Assertions.assertEquals(List.of(), resource.toRepresentation().getWebOrigins());
+        setupPolicy(List.of(SAFE_PATTERN), List.of("webOrigins"));
+
+        ClientRepresentation partial = new ClientRepresentation();
+        partial.setRedirectUris(List.of(INVALID_URL));
+        ClientPolicyException error = Assertions.assertThrows(ClientPolicyException.class,
+                () -> updateClientByAdminPartial(realm, id, partial));
+        Assertions.assertEquals("Invalid webOrigins", error.getErrorDetail());
+        Assertions.assertEquals(List.of(), resource.toRepresentation().getRedirectUris());
+
+        partial.setRedirectUris(List.of(VALID_URL));
+        updateClientByAdminPartial(realm, id, partial);
+        Assertions.assertEquals(List.of("https://trusted.com"), resource.toRepresentation().getWebOrigins());
+    }
+
+    @Test
+    public void testCreateValidatesWebOriginsDerivedFromTheRedirectUris() throws Exception {
+        // a client created without web origins gets the origins of its redirect URIs persisted
+        setupPolicy(List.of(SAFE_PATTERN), List.of("webOrigins"));
+
+        ClientPolicyException error = Assertions.assertThrows(ClientPolicyException.class,
+                () -> createClientByAdmin(realm, generateSuffixedName("untrusted-origins"), OIDCLoginProtocol.LOGIN_PROTOCOL,
+                        client -> client.setRedirectUris(List.of(INVALID_URL))));
+        Assertions.assertEquals("Invalid webOrigins", error.getErrorDetail());
+
+        String id = createClientByAdmin(realm, generateSuffixedName("trusted-origins"), OIDCLoginProtocol.LOGIN_PROTOCOL,
+                client -> client.setRedirectUris(List.of(VALID_URL)));
+        ClientResource resource = realm.admin().clients().get(id);
+        Assertions.assertEquals(List.of("https://trusted.com"), resource.toRepresentation().getWebOrigins());
+
+        // the client the policy accepts on creation remains updatable
+        ClientRepresentation partial = new ClientRepresentation();
+        partial.setDescription("updated description");
+        updateClientByAdminPartial(realm, id, partial);
+        Assertions.assertEquals("updated description", resource.toRepresentation().getDescription());
+    }
+
     private void setupPolicy(List<String> allowedPatterns, List<String> fieldsToValidate) throws Exception {
         SecureClientUrisPatternExecutor.Configuration executorConfig = new SecureClientUrisPatternExecutor.Configuration();
         executorConfig.setAllowedPatterns(allowedPatterns);

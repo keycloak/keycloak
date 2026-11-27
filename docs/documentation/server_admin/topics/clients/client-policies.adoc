@@ -260,6 +260,11 @@ The Secure Client URIs executor resolves `+` in web origins and post-logout redi
 The Secure Client URIs Pattern executor matches configured values literally, including `+`, `-`, and `*`, in the configured field order.
 Include patterns for these literal values when your policy allows them. Selected attributes are checked regardless of the client's protocol.
 
+On update, both executors check the client state that results from the request.
+A URI field the request does not include keeps its stored value and is checked again, so an update fails while the client still holds a non-compliant URI.
+Submit a compliant value for that field, or an empty value to remove it, to update such a client.
+When a client holds no web origin of its own, the origins derived from its redirect URIs are checked, on registration as well, as those are the origins that get persisted.
+
 The sector identifier URL stored in a pairwise protocol mapper is validated separately and is outside this catalog.
 
 The *Allow IPv4 loopback address* and *Allow IPv6 loopback address* options of *Secure Redirect URIs Enforcer* apply only to literal IP addresses.
