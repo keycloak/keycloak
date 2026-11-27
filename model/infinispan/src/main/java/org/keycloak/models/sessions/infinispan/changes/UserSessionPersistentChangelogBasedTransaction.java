@@ -21,7 +21,6 @@ package org.keycloak.models.sessions.infinispan.changes;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.PersistentUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -36,6 +35,7 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
 
     private static final Logger LOG = Logger.getLogger(UserSessionPersistentChangelogBasedTransaction.class);
     private final boolean pessimisticLockingAuthenticationSession;
+    private PersistentUserSessionProvider provider;
 
     public UserSessionPersistentChangelogBasedTransaction(KeycloakSession session,
                                                           CacheHolder<String, UserSessionEntity> cacheHolder,
@@ -43,6 +43,13 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
                                                           boolean pessimisticLockingAuthenticationSession) {
         super(session, USER_SESSION_CACHE_NAME, cacheHolder, offlineCacheHolder);
         this.pessimisticLockingAuthenticationSession = pessimisticLockingAuthenticationSession;
+    }
+
+    /**
+     * Sets the provider that owns this transaction, which imports the user sessions this transaction loads.
+     */
+    public void setProvider(PersistentUserSessionProvider provider) {
+        this.provider = provider;
     }
 
     public SessionEntityWrapper<UserSessionEntity> get(RealmModel realm, String key, UserSessionModel userSession, boolean offline) {
@@ -114,11 +121,11 @@ public class UserSessionPersistentChangelogBasedTransaction extends PersistentSe
         }
 
         if (getCache(offline) == null) {
-            return ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).wrapPersistentEntity(persistentUserSession.getRealm(), offline, persistentUserSession);
+            return provider.wrapPersistentEntity(persistentUserSession.getRealm(), offline, persistentUserSession);
         }
 
         LOG.debugf("Attempting to import user-session for sessionId=%s offline=%s", sessionId, offline);
-        SessionEntityWrapper<UserSessionEntity> ispnUserSessionEntity = ((PersistentUserSessionProvider) kcSession.getProvider(UserSessionProvider.class)).importUserSession(persistentUserSession, offline);
+        SessionEntityWrapper<UserSessionEntity> ispnUserSessionEntity = provider.importUserSession(persistentUserSession, offline);
 
         if (ispnUserSessionEntity != null) {
             LOG.debugf("user-session found after import for sessionId=%s offline=%s", sessionId, offline);

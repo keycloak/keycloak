@@ -125,7 +125,7 @@ public final class ExpirationTaskFactory {
     }
 
     private static Optional<BaseExpirationTask> getEventTask(KeycloakSession session) {
-        ProviderFactory<UserSessionProvider> provider = session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class);
+        ProviderFactory<UserSessionProvider> provider = session.getKeycloakSessionFactory().getProviderFactory(UserSessionProvider.class, InfinispanUtils.EMBEDDED_PROVIDER_ID);
         if (!(provider instanceof InfinispanUserSessionProviderFactory iuspf)) {
             return Optional.empty();
         }

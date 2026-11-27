@@ -86,7 +86,7 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
             } else {
                 return;
             }
-            ((JpaRealmProvider) e.getKeycloakSession().getProvider(RealmProvider.class)).preRemove(realm, role);
+            ((JpaRealmProvider) e.getKeycloakSession().getProvider(RealmProvider.class, getId())).preRemove(realm, role);
         }
     }
 

@@ -110,11 +110,13 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     public UserSessionProvider create(KeycloakSession session) {
         if (MultiSiteUtils.isPersistentSessionsEnabled()) {
             var tx = createPersistentTransaction(session);
-            return new PersistentUserSessionProvider(
+            var provider = new PersistentUserSessionProvider(
                     session,
                     tx.userTx,
                     tx.clientTx
             );
+            tx.userTx.setProvider(provider);
+            return provider;
         }
         var tx = createVolatileTransaction(session);
         return new InfinispanUserSessionProvider(
@@ -248,7 +250,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
 
         cluster.registerListener(REALM_REMOVED_SESSION_EVENT,
-                new AbstractUserSessionClusterListener<RealmRemovedSessionEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class) {
+                new AbstractUserSessionClusterListener<RealmRemovedSessionEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class, getId()) {
 
             @Override
             protected void eventReceived(UserSessionProvider provider, RealmRemovedSessionEvent sessionEvent) {
@@ -262,7 +264,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         });
 
         cluster.registerListener(REMOVE_USER_SESSIONS_EVENT,
-                new AbstractUserSessionClusterListener<RemoveUserSessionsEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class) {
+                new AbstractUserSessionClusterListener<RemoveUserSessionsEvent, UserSessionProvider>(sessionFactory, UserSessionProvider.class, getId()) {
 
             @Override
             protected void eventReceived(UserSessionProvider provider, RemoveUserSessionsEvent sessionEvent) {

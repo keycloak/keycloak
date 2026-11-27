@@ -60,7 +60,7 @@ public class JpaEventStoreProviderFactory implements EventStoreProviderFactory, 
     @Override
     public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
         if(type == PeriodicEventInvalidation.JPA_EVENT_STORE) {
-            ((JpaEventStoreProvider) session.getProvider(EventStoreProvider.class)).clearExpiredAdminEvents();
+            ((JpaEventStoreProvider) session.getProvider(EventStoreProvider.class, getId())).clearExpiredAdminEvents();
         }
     }
 }

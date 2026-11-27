@@ -37,16 +37,23 @@ public abstract class AbstractUserSessionClusterListener<SE extends SessionClust
 
     private final Class<T> providerClazz;
 
-    public AbstractUserSessionClusterListener(KeycloakSessionFactory sessionFactory, Class<T> providerClazz) {
+    private final String providerId;
+
+    /**
+     * @param providerId the ID of the provider that handles the event, so it reaches that provider even when another
+     *                   provider of the same type, for example a wrapper, is the default
+     */
+    public AbstractUserSessionClusterListener(KeycloakSessionFactory sessionFactory, Class<T> providerClazz, String providerId) {
         this.sessionFactory = sessionFactory;
         this.providerClazz = providerClazz;
+        this.providerId = providerId;
     }
 
 
     @Override
     public void eventReceived(ClusterEvent event) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, (KeycloakSession session) -> {
-            T provider = session.getProvider(providerClazz);
+            T provider = session.getProvider(providerClazz, providerId);
             SE sessionEvent = (SE) event;
 
             if (log.isDebugEnabled()) {
