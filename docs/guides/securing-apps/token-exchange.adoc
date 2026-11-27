@@ -1030,7 +1030,7 @@ NOTE:  SAML identity providers are not supported at this time.  Twitter tokens c
 
 NOTE: A combination of <<_standard-token-exchange,Standard Token Exchange V2>> and <@links.securingapps id="jwt-authorization-grant" /> is recommended instead of the legacy external to internal Token Exchange. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information about how those two supported features can be used to substitute the legacy Token Exchange.
 
-For migration steps and differences in user provisioning, accepted tokens, and refresh token handling, see <@links.securingapps id="token-exchange-migration-external-internal" />.
+For migration steps and differences in user provisioning, accepted tokens, and refresh token handling, see the external-internal chapter of <@links.securingapps id="token-exchange-migration" />.
 
 ==== Granting permission for the exchange
 

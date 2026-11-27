@@ -16,7 +16,7 @@ The migration path depends on the legacy token exchange scenario:
 
 * **Internal-internal exchange**: Follow <<_migration-internal-internal,Migrating internal-internal Token Exchange V1 to V2>> below.
 * **Internal-external exchange**: See link:{developerguide_link}#identity-brokering-apis[Identity Brokering APIs] for retrieving external provider tokens.
-* **External-internal exchange**: See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for using Standard Token Exchange V2 with JWT Authorization Grant.
+* **External-internal exchange**: Follow <<_migration-external-internal,Migrating external-internal Token Exchange V1>> below.
 * **Subject impersonation**: V2 does not support the `requested_subject` parameter. For a separate flow based on user consent, see the preview delegation feature in <@links.securingapps id="token-exchange" anchor="_token-exchange-delegation" />.
 
 Delegation is not a direct replacement for `requested_subject`. It requires the `token-exchange-delegation` and `parameterized-scopes` features, FGAP V2 delegation permissions, user consent, and an `actor_token` in the exchange request. Follow the complete delegation flow in the linked documentation.
@@ -455,5 +455,184 @@ For issues during migration:
 * Review <@links.securingapps id="token-exchange" anchor="_standard-token-exchange" />
 * Consult the link:{adminguide_link}[{adminguide_name}] for client configuration
 * Review RFC 8693 for token exchange specification details
+
+[[_migration-external-internal]]
+== Migrating external-internal Token Exchange V1
+
+This chapter covers applications that used legacy Token Exchange V1 to exchange a token issued by an external identity provider for a {project_name} token before upgrading to {project_name} 27.
+Legacy external-internal exchange could import a new user into the destination realm and return a refresh token.
+These behaviors differ from JWT Authorization Grant, so migration involves reviewing user provisioning and token handling as well as changing the request parameters.
+
+Standard Token Exchange V2 exchanges tokens within the same realm.
+For external-internal scenarios, {project_name} supports JWT Authorization Grant to accept a signed JWT assertion from a configured identity provider and issue a local access token.
+When the external issuer is another {project_name} realm, Standard Token Exchange V2 in that realm can produce the assertion for the destination realm.
+See <@links.securingapps id="jwt-authorization-grant" /> and <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" />.
+
+[[_external-internal-migration-paths]]
+=== Choose a migration path
+
+[cols="2,3", options="header"]
+|===
+|Previous V1 usage |Migration path
+
+|The external issuer provides a signed JWT suitable for JWT Authorization Grant, and the destination user is already linked to the identity provider.
+|Use JWT Authorization Grant in the destination realm.
+
+|The external issuer is another {project_name} realm, and an assertion targeted at the destination realm is needed.
+|Use Standard Token Exchange V2 in the source realm, followed by JWT Authorization Grant in the destination realm. The destination user must already be linked to the source identity provider.
+
+|The application uses a Google token.
+|Use a Google ID token as the assertion, with the Google identity provider configured for JWT Authorization Grant. A Google access token cannot be used for this grant. See <<_external-internal-migration-social,Social providers>>.
+
+|The application relies on creating or linking users during the exchange.
+|Complete identity brokering through the browser, or provision the local account and federated identity link before using JWT Authorization Grant. See <<_external-internal-migration-users,User creation and account linking>>.
+
+|The application has only an opaque external access token.
+|That token cannot be submitted as a JWT assertion. Use browser-based link:{adminguide_link}#_identity_broker[Identity Brokering] to obtain a {project_name} token, or obtain a suitable signed JWT from an issuer supported by JWT Authorization Grant.
+|===
+
+[[_external-internal-migration-users]]
+=== User creation and account linking
+
+Legacy external-internal exchange could create a local user and link that user to the external identity provider.
+It did not automatically link an existing local account with the same email or username: an existing account without the required federated identity link could cause the exchange to fail.
+
+JWT Authorization Grant requires an existing, enabled user linked to the configured identity provider.
+The link must associate the provider alias and the external user's identifier with the local user.
+For the OIDC and JWT Authorization Grant identity provider types, that external identifier is the assertion's `sub` claim.
+Creating a local account with a matching email or username is insufficient.
+
+The grant does not create users, add federated identity links, or execute the first broker login flow.
+If the link is missing, the request fails with `invalid_grant` and the description `User not found`.
+Changing the identity provider's first login flow does not make it run during a JWT Authorization Grant request.
+
+Choose one of the following approaches before migrating an application that depends on user creation during exchange:
+
+* *Browser identity brokering*: Direct the user through {project_name} authentication with the external identity provider. The first broker login flow handles user creation or account linking according to the realm's configuration. Once the user is linked, the application can use JWT Authorization Grant for subsequent requests. See link:{adminguide_link}#_identity_broker_first_login[First login flow].
+* *Administrative provisioning*: Create the local user, or select an existing user, and add the federated identity link before sending the grant request. The link's user ID must be the external subject identifier, rather than the local user's ID. The link can be created through the link:{apidocs_adminrest_link}[Admin REST API] operation for adding a social login provider to a user.
+
+If an application must create and link an unknown user in the same non-interactive request that obtains a token, JWT Authorization Grant does not provide that behavior.
+
+[[_external-internal-migration-configuration]]
+=== Configure the destination realm
+
+. Configure an identity provider that supports JWT Authorization Grant. For a generic JWT issuer, use the *JWT Authorization Grant* identity provider type. For an OIDC issuer, use the *OpenID Connect v1.0* or *Keycloak OpenID Connect* type.
+. Configure the provider's issuer and signature verification keys, and enable *JWT Authorization Grant* in its settings.
+. In *Clients*, select the requester client. In *Settings* -> *Capability config*, enable *Client authentication* and *JWT Authorization Grant*.
+. Add the provider to *Allowed Identity Providers for JWT Authorization Grant* on the requester client, and configure the client's authentication method.
+. Configure the requester client's default and optional client scopes and protocol mappers for the access token the application needs.
+. Ensure the user has the federated identity link described above and has completed any required actions. If the requester client requires consent, the user must already have granted consent to the requested scopes.
+
+NOTE: Fine-grained admin permissions (FGAP) are not required for JWT Authorization Grant or the Standard Token Exchange V2 step of identity chaining. Legacy external-internal exchange required FGAP V1 token exchange permissions.
+
+Legacy token exchange permissions do not enable JWT Authorization Grant.
+The grant checks the client capability, the identity provider's grant support, and the client's allowed identity providers.
+Client policies can enforce additional restrictions, such as limiting requested scopes to those in the assertion.
+See <@links.securingapps id="jwt-authorization-grant" /> for the complete configuration and client policy options.
+
+Only confidential clients can send JWT Authorization Grant requests.
+An application currently using a public client must use a confidential requester for this grant.
+Enabling the *Standard token exchange* capability on the destination client does not enable JWT Authorization Grant.
+
+=== Obtain a suitable assertion
+
+The assertion must be a signed JWT that the configured identity provider can validate.
+An arbitrary external access token does not necessarily meet the grant's requirements.
+
+For the assertion claim requirements, signature validation, audience configuration, and assertion reuse settings, see <@links.securingapps id="jwt-authorization-grant" />.
+Assertion audience validation and the audience configuration of the access token returned to the application are separate concerns.
+For Google, see <<_external-internal-migration-social,Social providers>>.
+
+When the source is another {project_name} realm, follow <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" />.
+That guide configures an audience for the destination realm, obtains an assertion with Standard Token Exchange V2 in the source realm, and submits it to JWT Authorization Grant in the destination realm.
+It also includes the browser login needed to link the destination user to the source identity provider.
+
+[[_external-internal-migration-requests]]
+=== Update the token request
+
+[cols="1,2,3", options="header"]
+|===
+|Parameter |Legacy external-internal exchange |JWT Authorization Grant
+|`grant_type` |`urn:ietf:params:oauth:grant-type:token-exchange` |`urn:ietf:params:oauth:grant-type:jwt-bearer`
+|External token |`subject_token` |`assertion`, containing a suitable signed JWT
+|Provider selection |`subject_issuer` can specify the provider alias |The assertion's `iss` selects the configured provider; omit `subject_issuer`
+|`subject_token_type` |Identifies the external token type |Omit it; the assertion must be a JWT
+|`audience` |Can select a different target client for the issued token |Omit it; the requester client's scopes and protocol mappers determine the issued token. The assertion's `aud` must independently pass validation for the destination server
+|`scope` |Used the scope configuration of the target client selected by `audience` |Requests optional scopes of the authenticated requester client, in addition to its default scopes
+|`requested_token_type` |Can request access and refresh tokens |Omit it; JWT Authorization Grant returns an access token and does not issue a refresh token
+|===
+
+If V1 used `audience` to select another client's scopes or protocol mappers, configure the JWT grant requester with the scopes and mappers needed for the destination resource.
+Do not copy the V1 target client ID into the assertion's `aud` claim as a replacement for the request parameter.
+
+The following requests use client secret authentication for `requester-client` in the destination realm `myrealm`.
+Assume `api-read` is an optional scope assigned to that client and is available to the user.
+The V1 identity provider alias was `external-idp`.
+`EXTERNAL_TOKEN` represents an external access token accepted by the legacy exchange; `JWT_ASSERTION` is an assertion obtained from the external issuer that meets the JWT grant requirements.
+The V1 request is a historical reference for the application's behavior before upgrading. Use the JWT Authorization Grant request with {project_name} 27.
+
+[source,bash]
+.Before {project_name} 27: Legacy external-internal exchange
+----
+curl --request POST \
+  'https://keycloak.example.com/realms/myrealm/protocol/openid-connect/token' \
+  --user "requester-client:$CLIENT_SECRET" \
+  --data-urlencode 'grant_type=urn:ietf:params:oauth:grant-type:token-exchange' \
+  --data-urlencode "subject_token=$EXTERNAL_TOKEN" \
+  --data-urlencode 'subject_token_type=urn:ietf:params:oauth:token-type:access_token' \
+  --data-urlencode 'subject_issuer=external-idp' \
+  --data-urlencode 'requested_token_type=urn:ietf:params:oauth:token-type:access_token' \
+  --data-urlencode 'scope=api-read'
+----
+
+[source,bash]
+.After: JWT Authorization Grant
+----
+curl --request POST \
+  'https://keycloak.example.com/realms/myrealm/protocol/openid-connect/token' \
+  --user "requester-client:$CLIENT_SECRET" \
+  --data-urlencode 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer' \
+  --data-urlencode "assertion=$JWT_ASSERTION" \
+  --data-urlencode 'scope=api-read'
+----
+
+[[_external-internal-migration-social]]
+=== Social providers
+
+The Google identity provider supports JWT Authorization Grant using a *Google ID token* as the assertion.
+Enable *JWT Authorization Grant* on the Google provider, enable the grant on the confidential requester client, and add the Google provider to the client's allowed identity providers.
+The Google subject must already be linked to the destination user.
+
+Use the Google ID token in the `assertion` parameter of the JWT grant request above.
+Google access tokens cannot be used for this grant.
+For the provider's audience validation, assertion reuse, expiration settings, and setup when the application's Google client ID differs from the provider's configured client ID, see the *JWT Authorization Grant for Google Identity Provider* section in <@links.securingapps id="jwt-authorization-grant" />.
+
+JWT Authorization Grant requires a suitable JWT and a provider that supports validating it.
+The legacy ability to exchange a social provider's access token through a UserInfo call does not make an opaque token usable as a JWT assertion.
+For browser-based social login, use link:{adminguide_link}#_identity_broker[Identity Brokering], which also supports the first login and account linking flows.
+
+=== Update session and response handling
+
+JWT Authorization Grant returns an access token and creates a transient user session.
+It does not issue a refresh token, even if the client allows refresh tokens for other grants.
+
+NOTE: A transient user session exists only for the current request and is not persisted. It allows protocol mappers to run when the access token is generated. See link:{adminguide_link}#transient-session[Transient sessions] in the {adminguide_name}.
+
+An application relying on a V1 refresh token must obtain access tokens through subsequent grant requests with valid assertions, following the provider's assertion reuse rules, or use a browser login flow that issues refresh tokens.
+
+Remove assumptions that this grant returns a `refresh_token` or creates a persistent user session.
+The assertion expiration and the returned access token expiration are separate: the provider's *Limit access token expiration* setting can cap the access token expiration to the assertion expiration.
+See <@links.securingapps id="jwt-authorization-grant" /> for response and session details.
+
+=== Validate the migration
+
+Check the migrated configuration in a test realm:
+
+* [ ] A valid assertion for an enabled, linked user returns an access token with the required scopes and audiences.
+* [ ] A valid assertion without a corresponding user link fails with `invalid_grant` and `User not found`, without creating a new user.
+* [ ] After the user completes browser brokering or administrative provisioning and linking, a new valid assertion produces a successful grant.
+* [ ] Assertions with an invalid signature, an unaccepted audience, or an invalid expiration are rejected.
+* [ ] The application handles assertion reuse according to the configured provider's rules.
+* [ ] The application handles the absence of a refresh token.
 
 </@tmpl.guide>

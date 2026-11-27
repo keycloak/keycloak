@@ -27,7 +27,7 @@ The **JWT Authorization Grant** is a new type of Identity Provider in {project_n
 
 {project_name} requires the `sub` claim in the assertion to be the user identifier in the external provider. The {project_name} user should be previously linked to the Identity Provider. This way there is a link between the external and the internal user ID.
 
-For applications migrating from legacy external-internal token exchange, see <@links.securingapps id="token-exchange-migration-external-internal" /> for the differences in user creation, account linking, and token handling.
+For applications migrating from legacy external-internal token exchange, see the external-internal chapter of <@links.securingapps id="token-exchange-migration" /> for the differences in user creation, account linking, and token handling.
 
 The exact processing that {project_name} performs over the assertion is the following (check the mentioned RFCs for more details about what requirements are needed in the assertion JWT):
 
