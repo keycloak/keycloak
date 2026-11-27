@@ -181,7 +181,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
         }
 
         if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_GRANT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.BAD_REQUEST);
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.BAD_REQUEST);
         }
     }
 

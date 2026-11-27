@@ -102,7 +102,8 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
             if (MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC.equals(e.getDescription())) {
                 event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.NOT_ALLOWED);
-                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.UNAUTHORIZED);
+                // Same response as HolderOfKeyEnforcerExecutor gives for this refresh request (RFC 6749 section 5.2)
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, e.getDescription(), Response.Status.BAD_REQUEST);
             } else {
                 event.detail(Details.REASON, e.getDescription());
                 event.error(Errors.INVALID_TOKEN);
