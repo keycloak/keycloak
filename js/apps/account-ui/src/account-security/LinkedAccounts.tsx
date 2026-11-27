@@ -53,7 +53,7 @@ export const LinkedAccounts = () => {
     >
       <Stack hasGutter>
         <StackItem>
-          <Title headingLevel="h2" className="pf-v5-u-mb-lg" size="xl">
+          <Title headingLevel="h2" className="pf-v6-u-mb-lg" size="xl">
             {t("linkedLoginProviders")}
           </Title>
           <LinkedAccountsToolbar
@@ -105,7 +105,7 @@ export const LinkedAccounts = () => {
         <StackItem>
           <Title
             headingLevel="h2"
-            className="pf-v5-u-mt-xl pf-v5-u-mb-lg"
+            className="pf-v6-u-mt-xl pf-v6-u-mb-lg"
             size="xl"
           >
             {t("unlinkedLoginProviders")}

@@ -63,8 +63,8 @@ test.describe("Resources", () => {
     await page1.getByTestId("users").fill("alice");
     await page1.getByTestId("add").click();
 
-    await expect(page1.getByRole("group", { name: "Share with" })).toHaveText(
-      "Share with alice",
+    await expect(page1.getByRole("list", { name: "Share with" })).toContainText(
+      "alice",
     );
 
     await page1

@@ -1,5 +1,11 @@
 = User interface
 
+== Account Console upgraded to PatternFly 6
+
+The built-in Account Console theme is now `keycloak.v4`, based on PatternFly 6. The previous `keycloak.v3` Account Console theme has been removed.
+
+Realms that explicitly used `keycloak`, `keycloak.v2`, or `keycloak.v3` as the account theme are migrated to `keycloak.v4` during upgrade. If you maintain a custom Account Console theme based on `keycloak.v3`, see the link:{upgradingguide_link}[{upgradingguide_name}] for migration steps.
+
 == Login v1 theme removed
 
 The legacy Login v1 theme based on PatternFly 3/4 has been deprecated for a long time and has been removed for this release.

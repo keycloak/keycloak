@@ -1,5 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { Modal, ModalVariant } from "@patternfly/react-core";
+import {
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalVariant,
+} from "@patternfly/react-core";
 import {
   Table,
   TableVariant,
@@ -23,32 +28,37 @@ export const UserAttributesDialog = ({
 }: UserAttributesDialogProps) => {
   const { t } = useTranslation();
 
+  const modalTitle = t("credentialUserAttributesFor", { credentialScopeName });
+
   return (
     <Modal
       variant={ModalVariant.medium}
-      title={t("credentialUserAttributesFor", { credentialScopeName })}
       isOpen
       onClose={onClose}
+      aria-label={modalTitle}
     >
-      <Table
-        aria-label={t("credentialUserAttributes")}
-        variant={TableVariant.compact}
-      >
-        <Thead>
-          <Tr>
-            <Th>{t("credentialAttributeName")}</Th>
-            <Th>{t("credentialAttributeValue")}</Th>
-          </Tr>
-        </Thead>
-        <Tbody>
-          {Object.entries(userAttributes).map(([key, values]) => (
-            <Tr key={key}>
-              <Td>{key}</Td>
-              <Td>{values.join(", ")}</Td>
+      <ModalHeader title={modalTitle} />
+      <ModalBody>
+        <Table
+          aria-label={t("credentialUserAttributes")}
+          variant={TableVariant.compact}
+        >
+          <Thead>
+            <Tr>
+              <Th>{t("credentialAttributeName")}</Th>
+              <Th>{t("credentialAttributeValue")}</Th>
             </Tr>
-          ))}
-        </Tbody>
-      </Table>
+          </Thead>
+          <Tbody>
+            {Object.entries(userAttributes).map(([key, values]) => (
+              <Tr key={key}>
+                <Td>{key}</Td>
+                <Td>{values.join(", ")}</Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </ModalBody>
     </Modal>
   );
 };

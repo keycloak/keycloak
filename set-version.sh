@@ -29,6 +29,7 @@ cd -
 # NPM publish
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/keycloak-admin-client/package.json)" > js/libs/keycloak-admin-client/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/ui-shared/package.json)" > js/libs/ui-shared/package.json
+echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/libs/ui-shared-pf6/package.json)" > js/libs/ui-shared-pf6/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/apps/account-ui/package.json)" > js/apps/account-ui/package.json
 echo "$(jq '. += {"version": "'$NEW_NPM_VERSION'"}' js/apps/admin-ui/package.json)" > js/apps/admin-ui/package.json
 

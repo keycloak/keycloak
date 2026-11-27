@@ -1,6 +1,6 @@
 {
   "realm": "groups",
-  "accountTheme": "keycloak.v3",
+  "accountTheme": "keycloak.v4",
   "enabled": true,
   "userManagedAccessAllowed": true,
   "sslRequired": "external",

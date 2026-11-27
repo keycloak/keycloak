@@ -47,6 +47,6 @@ export function getTextArea(page: Page) {
   return page.getByRole("textbox", { name: "File content" });
 }
 
-export async function assertTextAreaContains(page: Page, content: string) {
-  await expect(getTextArea(page)).toContainText(content);
+export async function assertTextAreaValue(page: Page, content: string) {
+  await expect(getTextArea(page)).toHaveValue(content);
 }

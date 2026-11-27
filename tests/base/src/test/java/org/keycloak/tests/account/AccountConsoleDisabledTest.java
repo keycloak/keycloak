@@ -31,7 +31,7 @@ public class AccountConsoleDisabledTest {
 
         try (CloseableHttpResponse response = httpClient.execute(request)) {
             Assertions.assertEquals(404, response.getStatusLine().getStatusCode(),
-                    "Account console should return 404 when ACCOUNT_V3 feature is disabled");
+                    "Account console should return 404 when ACCOUNT_V4 feature is disabled");
         }
     }
 
@@ -39,7 +39,7 @@ public class AccountConsoleDisabledTest {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.featuresDisabled(Profile.Feature.ACCOUNT_V3);
+            return config.featuresDisabled(Profile.Feature.ACCOUNT_V4);
         }
     }
 }

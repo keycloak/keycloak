@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
         },
       }
     : {
-        outDir: "target/classes/theme/keycloak.v3/account/resources",
+        outDir: "target/classes/theme/keycloak.v4/account/resources",
       };
   return {
     base: "",
