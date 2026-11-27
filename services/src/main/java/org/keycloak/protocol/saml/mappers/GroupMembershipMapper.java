@@ -19,16 +19,21 @@ package org.keycloak.protocol.saml.mappers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -81,6 +86,13 @@ public class GroupMembershipMapper extends AbstractSAMLProtocolMapper implements
         property.setDefaultValue("true");
         property.setHelpText("Include full path to group i.e. /top/level1/level2, false will just specify the group name");
         configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName("include.parent.groups");
+        property.setLabel("Include parent groups");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue("false");
+        property.setHelpText("Include all parent groups of each group the user is a member of, i.e. if the user is a member of /Users/Superusers, the attribute also contains /Users. The list of groups is de-duplicated.");
+        configProperties.add(property);
 
 
     }
@@ -115,6 +127,10 @@ public class GroupMembershipMapper extends AbstractSAMLProtocolMapper implements
         return "true".equals(mappingModel.getConfig().get("full.path"));
     }
 
+    public static boolean includeParentGroups(ProtocolMapperModel mappingModel) {
+        return "true".equals(mappingModel.getConfig().get("include.parent.groups"));
+    }
+
 
     @Override
     public void transformAttributeStatement(AttributeStatementType attributeStatement, ProtocolMapperModel mappingModel, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
@@ -123,7 +139,16 @@ public class GroupMembershipMapper extends AbstractSAMLProtocolMapper implements
 
         boolean fullPath = useFullPath(mappingModel);
         final AtomicReference<AttributeType> singleAttributeType = new AtomicReference<>(null);
-        userSession.getUser().getGroupsStream().forEach(group -> {
+        Stream<GroupModel> groups = userSession.getUser().getGroupsStream();
+        if (includeParentGroups(mappingModel)) {
+            // de-duplicate by group id, as the user may be a direct member of a group and of one
+            // of its ancestors, and group names are not unique across the hierarchy
+            Set<String> seen = new HashSet<>();
+            groups = groups
+                    .flatMap(group -> KeycloakModelUtils.getGroupHierarchy(group).stream())
+                    .filter(group -> seen.add(group.getId()));
+        }
+        groups.forEach(group -> {
             String groupName;
             if (fullPath) {
                 groupName = ModelToRepresentation.buildGroupPath(group);

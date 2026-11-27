@@ -140,6 +140,30 @@ public class GroupMappersTest extends AbstractGroupTest {
                 KeycloakModelUtils.buildGroupPath(GroupProvider.DEFAULT_ESCAPE_SLASHES, TOP_GROUP, "child/slash")));
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testGroupMappersWithParentGroups() {
+        UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(), LEVEL_2_GROUP_USER);
+
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), CLIENT_ID);
+        ProtocolMappersResource protocolMappers = client.getProtocolMappers();
+        ProtocolMapperRepresentation groupsMapper = ProtocolMapperUtil.getMapperByNameAndProtocol(
+                protocolMappers, OIDCLoginProtocol.LOGIN_PROTOCOL, "groups");
+        Assertions.assertNotNull(groupsMapper);
+        groupsMapper.getConfig().put("include.parent.groups", Boolean.TRUE.toString());
+        protocolMappers.update(groupsMapper.getId(), groupsMapper);
+
+        groupsMapper.getConfig().remove("include.parent.groups");
+        managedRealm.cleanup().add(r -> r.clients().get(client.toRepresentation().getId())
+                .getProtocolMappers().update(groupsMapper.getId(), groupsMapper));
+
+        AccessToken token = login(user.getUsername(), CLIENT_ID, CLIENT_SECRET);
+        Assertions.assertNotNull(token.getOtherClaims().get("groups"));
+        Map<String, Collection<String>> groups = (Map<String, Collection<String>>) token.getOtherClaims().get("groups");
+        // level2GroupUser is a member of topGroup/level2group, the parent group is included as well
+        MatcherAssert.assertThat(groups.get("groups"), Matchers.containsInAnyOrder(TOP_GROUP, LEVEL_2_GROUP));
+    }
+
     private static class GroupMappersTestRealmConfig implements RealmConfig {
 
         private ProtocolMapperRepresentation[] createMappers() {

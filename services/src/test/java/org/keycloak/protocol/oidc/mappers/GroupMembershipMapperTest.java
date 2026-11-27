@@ -98,6 +98,28 @@ public class GroupMembershipMapperTest {
         return stub(UserSessionModel.class, sessionReturns);
     }
 
+    /**
+     * Creates a group stub with a name, id and an optional parent group.
+     */
+    private static GroupModel createGroup(String name, String id, GroupModel parent) {
+        Map<String, Object> returns = new HashMap<>();
+        returns.put("getName", name);
+        returns.put("getId", id);
+        if (parent != null) {
+            returns.put("getParent", parent);
+        }
+        return stub(GroupModel.class, returns);
+    }
+
+    private static UserSessionModel createUserSessionWithGroups(GroupModel... groups) {
+        List<GroupModel> groupList = Arrays.asList(groups);
+        Map<String, Object> userReturns = Collections.singletonMap("getGroupsStream",
+            (Supplier<Stream<GroupModel>>) () -> groupList.stream());
+        UserModel user = stub(UserModel.class, userReturns);
+        Map<String, Object> sessionReturns = Collections.singletonMap("getUser", user);
+        return stub(UserSessionModel.class, sessionReturns);
+    }
+
     @Test
     public void testSetClaimMapsGroupsWithoutMutatingTheMappingModel() {
         ProtocolMapperModel mappingModel = createMappingModel();
@@ -127,5 +149,88 @@ public class GroupMembershipMapperTest {
 
         MatcherAssert.assertThat(secondToken.getOtherClaims().get("groups"), Matchers.equalTo(Collections.singletonList("admins")));
         MatcherAssert.assertThat(mappingModel.getConfig(), Matchers.not(Matchers.hasKey("multivalued")));
+    }
+
+    @Test
+    public void testSetClaimExcludesParentGroupsByDefault() {
+        ProtocolMapperModel mappingModel = createMappingModel();
+        GroupModel top = createGroup("top", "id-top", null);
+        GroupModel level1 = createGroup("level1", "id-level1", top);
+        UserSessionModel userSession = createUserSessionWithGroups(level1);
+        GroupMembershipMapper mapper = new GroupMembershipMapper();
+
+        IDToken token = new IDToken();
+        mapper.setClaim(token, mappingModel, userSession);
+
+        // without include.parent.groups, only the direct group membership is mapped
+        MatcherAssert.assertThat(token.getOtherClaims().get("groups"), Matchers.equalTo(Collections.singletonList("level1")));
+    }
+
+    @Test
+    public void testSetClaimIncludesParentGroupsWhenEnabled() {
+        ProtocolMapperModel mappingModel = createMappingModel();
+        mappingModel.getConfig().put("include.parent.groups", "true");
+        GroupModel top = createGroup("top", "id-top", null);
+        GroupModel level1 = createGroup("level1", "id-level1", top);
+        UserSessionModel userSession = createUserSessionWithGroups(level1);
+        GroupMembershipMapper mapper = new GroupMembershipMapper();
+
+        IDToken token = new IDToken();
+        mapper.setClaim(token, mappingModel, userSession);
+
+        // the parent group is included, ordered from the top-level group down
+        MatcherAssert.assertThat(token.getOtherClaims().get("groups"), Matchers.equalTo(Arrays.asList("top", "level1")));
+    }
+
+    @Test
+    public void testSetClaimIncludesParentGroupsWithFullPath() {
+        ProtocolMapperModel mappingModel = createMappingModel();
+        mappingModel.getConfig().put("full.path", "true");
+        mappingModel.getConfig().put("include.parent.groups", "true");
+        GroupModel top = createGroup("top", "id-top", null);
+        GroupModel level1 = createGroup("level1", "id-level1", top);
+        UserSessionModel userSession = createUserSessionWithGroups(level1);
+        GroupMembershipMapper mapper = new GroupMembershipMapper();
+
+        IDToken token = new IDToken();
+        mapper.setClaim(token, mappingModel, userSession);
+
+        MatcherAssert.assertThat(token.getOtherClaims().get("groups"), Matchers.equalTo(Arrays.asList("/top", "/top/level1")));
+    }
+
+    @Test
+    public void testSetClaimDeduplicatesWhenMemberOfAncestorAndDescendant() {
+        ProtocolMapperModel mappingModel = createMappingModel();
+        mappingModel.getConfig().put("include.parent.groups", "true");
+        GroupModel top = createGroup("top", "id-top", null);
+        GroupModel level1 = createGroup("level1", "id-level1", top);
+        // the user is a direct member of both the group and its ancestor
+        UserSessionModel userSession = createUserSessionWithGroups(top, level1);
+        GroupMembershipMapper mapper = new GroupMembershipMapper();
+
+        IDToken token = new IDToken();
+        mapper.setClaim(token, mappingModel, userSession);
+
+        // the ancestor appears only once
+        MatcherAssert.assertThat(token.getOtherClaims().get("groups"), Matchers.equalTo(Arrays.asList("top", "level1")));
+    }
+
+    @Test
+    public void testSetClaimKeepsDistinctGroupsSharingName() {
+        ProtocolMapperModel mappingModel = createMappingModel();
+        mappingModel.getConfig().put("include.parent.groups", "true");
+        GroupModel branchA = createGroup("A", "id-A", null);
+        GroupModel branchB = createGroup("B", "id-B", null);
+        GroupModel teamA = createGroup("team", "id-team-A", branchA);
+        GroupModel teamB = createGroup("team", "id-team-B", branchB);
+        // two different groups happen to share the name "team"
+        UserSessionModel userSession = createUserSessionWithGroups(teamA, teamB);
+        GroupMembershipMapper mapper = new GroupMembershipMapper();
+
+        IDToken token = new IDToken();
+        mapper.setClaim(token, mappingModel, userSession);
+
+        // de-duplication is by group id, so both "team" groups are kept
+        MatcherAssert.assertThat(token.getOtherClaims().get("groups"), Matchers.equalTo(Arrays.asList("A", "team", "B", "team")));
     }
 }
