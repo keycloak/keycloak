@@ -124,16 +124,9 @@ Custom account themes are left unchanged.
 
 If you maintain a custom Account Console theme that extends or copies `keycloak.v3`, migrate it to PatternFly 6 before switching its parent to `keycloak.v4`.
 
-The helper script below migrates an Account UI *source checkout* (a directory whose `package.json` name is `@keycloak/keycloak-account-ui`), not an installed or inherited theme directory under `themes/`.
-Pass the path of that source package with `--app-path`:
-
-[source,bash]
-----
-node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs --app-path /path/to/keycloak-account-ui
-----
-
-Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
-For CSS-only custom themes that only override resources of `keycloak.v3`, update PatternFly 5 classes and CSS variables to PatternFly 6 manually; the helper does not process those theme directories.
+For Account UI *source checkouts* (a directory whose `package.json` name is `@keycloak/keycloak-account-ui`), run PatternFly's React and CSS codemods (`@patternfly/pf-codemods`, `@patternfly/css-vars-updater`, `@patternfly/class-name-updater`).
+Those tools do not rewrite installed or inherited theme directories under `themes/`.
+For CSS-only custom themes that only override resources of `keycloak.v3`, update PatternFly 5 classes and CSS variables to PatternFly 6 manually.
 If you explicitly enable `account:v3` (for example `--features=account:v3` or `KC_FEATURES=account:v3`), replace it with `account:v4`, or remove the entry because `account:v4` is enabled by default.
 Servers that still request `account:v3` fail feature validation at startup.
 
@@ -159,7 +152,9 @@ parent=keycloak.v3
 
 If your theme extends `rh-sso.v2`, change the parent to `rh-sso.v3` if available in your distribution, or extend `keycloak.v3` instead.
 
-If you explicitly enable or disable the admin console through startup features, replace `admin:v2` with `admin:v3` in `--features` or `--features-disabled`.
+If you explicitly enable the admin console version through startup features, replace `admin:v2` with `admin:v3` in `--features` (or remove the entry when `admin:v3` is the default).
+To disable the admin console, use the unversioned flag `--features-disabled=admin`.
+Versioned keys are rejected in `--features-disabled`.
 The `admin:v2` feature flag was removed with the PatternFly 6 admin console migration.
 
 The admin console now uses PatternFly 6 React components and design tokens.
@@ -168,15 +163,7 @@ Custom admin themes that bundle their own React components should:
 * Upgrade `@patternfly/react-core` and related packages to PatternFly 6.
 * Replace deprecated PatternFly 5 APIs removed during the migration, including modal variants, `Chip` (use `Label`), and drag-and-drop helpers that depended on removed packages.
 * Update CSS class prefixes from `pf-v5-*` to `pf-v6-*` and replace `--pf-v5-global--*` variables with the corresponding `--pf-t--global--*` tokens where applicable.
-
-To assist with migrating an Admin UI source checkout, use:
-
-[source,bash]
-----
-node misc/scripts/migrate-admin-ui-pf5-to-pf6.mjs --app-path /path/to/keycloak-admin-ui
-----
-
-Run the script in dry-run mode first, review the generated report, and then rerun with `--apply` when ready.
+* Run PatternFly's React and CSS codemods against an Admin UI source checkout when migrating forked React sources.
 
 The built-in quick-theme generator now produces admin themes with `parent=keycloak.v3`.
 Download a new quick theme after upgrading if you previously generated one for `keycloak.v2`.

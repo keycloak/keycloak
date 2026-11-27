@@ -24,15 +24,15 @@ For general theme structure, see <@links.uicustomization id="themes" />.
 | PatternFly 6
 
 | Welcome
-| `keycloak` welcome theme
+| `keycloak.v3` (replaces standalone `keycloak`)
 | PatternFly 6
 
 | Account Console
-| `keycloak.v4` (replaces `keycloak.v3`)
+| `keycloak.v4` (replaces `keycloak.v3`) when the Account PF6 migration is enabled
 | PatternFly 6
 
 | Admin Console
-| `keycloak.v3` (replaces `keycloak.v2`)
+| `keycloak.v3` (replaces `keycloak.v2`) when the Admin PF6 migration is enabled
 | PatternFly 6
 |===
 
@@ -132,10 +132,12 @@ Even after a successful script run, verify:
 
 == Welcome themes
 
-The built-in welcome theme uses PatternFly 6 markup and `vendor/patternfly-v6/` stylesheets.
+The built-in welcome theme is `keycloak.v3` and shares its layout and PatternFly 6 styles with login.
+The standalone `keycloak` welcome theme has been removed.
 
 If your custom welcome theme copied PatternFly 5 classes or stylesheets:
 
+. Set `parent=keycloak.v3` (or replace an explicit `spi-theme--welcome-theme=keycloak` startup setting with `keycloak.v3`).
 . Update `theme.properties` so `stylesCommon` (or equivalent) loads PatternFly 6 vendor CSS.
 . Replace `pf-v5-*` classes in `index.ftl` and custom CSS with PatternFly 6 equivalents.
 . Re-test first-boot admin creation and the post-bootstrap redirect to the Admin Console.
@@ -164,27 +166,12 @@ Servers that still request `account:v3` fail feature validation at startup.
 If you maintain a fork of `@keycloak/keycloak-account-ui` (or an equivalent source package that reuses those components):
 
 . Upgrade `@patternfly/react-core` and related PatternFly packages to PatternFly 6.
-. Run the Account helper script (or PatternFly's React and CSS codemods) against that source package.
+. Run PatternFly's React and CSS codemods (`@patternfly/pf-codemods`, `@patternfly/css-vars-updater`, `@patternfly/class-name-updater`) against that source package.
 . Replace removed PatternFly 5 React APIs and `pf-v5-*` class names.
 . Point the account theme `parent=` at `keycloak.v4`.
 
-The helper script migrates an Account UI *source checkout* whose `package.json` name is `@keycloak/keycloak-account-ui`.
-It does not rewrite installed or inherited theme directories under `themes/`.
-
-[source,bash]
-----
-# Dry-run (default)
-node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs \
-  --app-path /path/to/keycloak-account-ui
-
-# Apply after reviewing the report
-node misc/scripts/migrate-account-ui-pf5-to-pf6.mjs \
-  --app-path /path/to/keycloak-account-ui \
-  --apply \
-  --fail-on-unresolved
-----
-
-The script runs `@patternfly/pf-codemods` (`--v6`), `@patternfly/css-vars-updater`, and `@patternfly/class-name-updater` on a staged copy, writes reports under `misc/scripts/reports/`, and creates a backup when `--apply` succeeds.
+Those upstream PatternFly tools operate on an Account UI *source checkout*.
+They do not rewrite installed or inherited theme directories under `themes/`.
 
 === CSS-only account themes
 
@@ -203,7 +190,9 @@ Custom admin themes must be updated manually.
 
 === Feature flags
 
-If you explicitly enable or disable the admin console through startup features, replace `admin:v2` with `admin:v3` in `--features` or `--features-disabled`.
+If you explicitly enable the admin console version through startup features, replace `admin:v2` with `admin:v3` in `--features` (or remove the entry when `admin:v3` is the default).
+To disable the admin console, use the unversioned flag `--features-disabled=admin`.
+Versioned keys are rejected in `--features-disabled`.
 The `admin:v2` feature flag was removed with the PatternFly 6 admin console migration.
 
 === Rename the admin theme parent
@@ -228,22 +217,7 @@ If you maintain a fork of the Admin UI (or bundle your own PatternFly React comp
 . Upgrade `@patternfly/react-core` and related packages to PatternFly 6.
 . Replace deprecated PatternFly 5 APIs removed during the migration, including modal variants, `Chip` (use `Label`), and drag-and-drop helpers that depended on removed packages.
 . Update CSS class prefixes from `pf-v5-*` to `pf-v6-*` and replace `--pf-v5-global--*` variables with the corresponding `--pf-t--global--*` tokens where applicable.
-. Run the Admin helper script against your Admin UI source checkout.
-
-[source,bash]
-----
-# Dry-run (default); defaults to js/apps/admin-ui
-node misc/scripts/migrate-admin-ui-pf5-to-pf6.mjs \
-  --app-path /path/to/keycloak-admin-ui
-
-# Apply after reviewing the report
-node misc/scripts/migrate-admin-ui-pf5-to-pf6.mjs \
-  --app-path /path/to/keycloak-admin-ui \
-  --apply \
-  --fail-on-unresolved
-----
-
-The script runs the same PatternFly codemod pipeline as the Account helper on a staged copy of the Admin UI app, writes reports under `misc/scripts/reports/`, and creates a backup when `--apply` succeeds.
+. Run PatternFly's React and CSS codemods (`@patternfly/pf-codemods`, `@patternfly/css-vars-updater`, `@patternfly/class-name-updater`) against your Admin UI source checkout.
 
 === Quick theme downloads
 
