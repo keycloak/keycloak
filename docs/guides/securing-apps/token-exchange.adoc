@@ -1169,14 +1169,19 @@ image::exchange-users-client-policy.png[Client Policy Creation]
 
 . Enter the starting client that is the authenticated client that is requesting a token exchange.
 
-. Return to the users' *impersonation* permission and add the client policy you just
-defined.
+. Return to the users' *admin-impersonating* permission and add the client policy you
+just defined.
 +
 .Apply Client Policy
 image::exchange-users-apply-policy.png[Apply Client Policy]
 
 Your client now has permission to impersonate users.  If you do not do this correctly, you will get a 403 Forbidden response if you
 try to make this type of exchange.
+
+The *admin-impersonating* permission controls which clients can initiate an
+impersonation. The *user-impersonated* permission controls which users can be
+impersonated, but does not grant a client permission to initiate a direct naked
+impersonation.
 
 NOTE: Public clients are not allowed to do direct naked impersonations.
 
