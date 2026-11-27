@@ -668,7 +668,7 @@ public class TokenManager {
                 clientScopes).distinct();
     }
 
-    private static OrganizationScope tryResolveOrganizationScope(KeycloakSession session, String scopeParam, UserModel user) {
+    public static OrganizationScope tryResolveOrganizationScope(KeycloakSession session, String scopeParam, UserModel user) {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             OrganizationScope orgScope = OrganizationScope.valueOfScope(session, scopeParam);
 
